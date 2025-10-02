@@ -5,6 +5,7 @@ import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useForm, ValidationError } from '@formspree/react'
 import { Section, Button, Input } from '@/components/ui'
+import CustomDropdownMinimal from './CustomDropdown'
 // ========================================
 // 📦 DYNAMIC DATA (Backend-Ready)
 // ========================================
@@ -170,7 +171,7 @@ export default function Contact() {
       
       case 'dropdown':
         return (
-          <CustomDropdown
+          <CustomDropdownMinimal
             label={field.label}
             options={field.options}
             value={formData[field.name]}
