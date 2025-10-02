@@ -215,9 +215,9 @@ export default function Contact() {
         className="py-16 sm:py-20 md:py-24"
       >
         <div className="max-w-3xl mx-auto text-center">
-          <div className="p-8 bg-green-50 border border-green-200 rounded-lg">
-            <h3 className="text-lg font-semibold text-green-800 mb-2">Message Sent Successfully!</h3>
-            <p className="text-green-700">{contactData.messages.success}</p>
+          <div className="p-8 bg-gray-50 border-2 border-black rounded-lg">
+            <h3 className="text-lg font-semibold text-black mb-2">Message Sent Successfully!</h3>
+            <p className="text-gray-600">{contactData.messages.success}</p>
           </div>
         </div>
       </Section>
