@@ -24,9 +24,7 @@ export default function ProjectCard({ project }) {
             <img 
               src={project.thumbnail} 
               alt={project.title}
-              className={`w-full h-full object-cover transition-opacity duration-300 ${
-                imageLoaded ? 'opacity-100' : 'opacity-0'
-              }`}
+              className="w-full h-full object-cover transition-transform duration-300"
               loading="lazy"
               onLoad={() => setImageLoaded(true)}
               onError={() => setImageError(true)}
