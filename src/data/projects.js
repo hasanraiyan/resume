@@ -22,14 +22,13 @@ export const projectsData = {
 
             // Full description (for detail page)
             fullDescription: `
-          A comprehensive e-commerce solution built for a high-end fashion brand targeting affluent customers. 
           The platform features stunning product galleries, personalized recommendations, and a seamless checkout process.
           
           The project required careful attention to performance optimization while maintaining beautiful visuals and animations.
         `,
 
             // Images
-            thumbnail: 'https://picsum.photos/800/600?random=20',
+            thumbnail: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=600&fit=crop&crop=center',
             images: [
                 {
                     id: 1,
@@ -114,7 +113,7 @@ export const projectsData = {
           Built with performance in mind, the site maintains 90+ Lighthouse scores despite heavy animations.
         `,
 
-            thumbnail: 'https://picsum.photos/800/600?random=21',
+            thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop&crop=center',
             images: [
                 {
                     id: 1,
@@ -188,7 +187,7 @@ export const projectsData = {
           The platform integrates with multiple data sources and provides actionable insights through interactive visualizations.
         `,
 
-            thumbnail: 'https://picsum.photos/800/600?random=22',
+            thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop&crop=center',
             images: [
                 {
                     id: 1,
@@ -261,7 +260,7 @@ export const projectsData = {
           Features include real-time table availability, waitlist management, and customer preferences tracking.
         `,
 
-            thumbnail: 'https://picsum.photos/800/600?random=30',
+            thumbnail: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=600&fit=crop&crop=center',
             images: [
                 {
                     id: 1,
@@ -320,7 +319,7 @@ export const projectsData = {
           Features include map-based search, 3D virtual tours, and comprehensive property management tools.
         `,
 
-            thumbnail: 'https://picsum.photos/800/600?random=31',
+            thumbnail: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop&crop=center',
             images: [
                 {
                     id: 1,
@@ -379,7 +378,7 @@ export const projectsData = {
           Integrates with wearable devices and provides personalized workout recommendations.
         `,
 
-            thumbnail: 'https://picsum.photos/800/600?random=32',
+            thumbnail: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop&crop=center',
             images: [
                 {
                     id: 1,
@@ -438,7 +437,7 @@ export const projectsData = {
           Features include customizable event pages, email marketing, and check-in management.
         `,
 
-            thumbnail: 'https://picsum.photos/800/600?random=33',
+            thumbnail: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&h=600&fit=crop&crop=center',
             images: [
                 {
                     id: 1,
@@ -498,7 +497,7 @@ export const projectsData = {
           Features include video streaming, interactive quizzes, discussion forums, and progress analytics.
         `,
 
-            thumbnail: 'https://picsum.photos/800/600?random=34',
+            thumbnail: 'https://images.unsplash.com/photo-1501504905252-473c47e087f8?w=800&h=600&fit=crop&crop=center',
             images: [
                 {
                     id: 1,

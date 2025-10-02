@@ -11,6 +11,17 @@ import { Badge } from '@/components/ui'
 export default function ProjectCard({ project }) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
+  
+  // Debug logging for image loading issues
+  const handleImageLoad = () => {
+    console.log(`Image loaded successfully: ${project.title}`)
+    setImageLoaded(true)
+  }
+  
+  const handleImageError = (e) => {
+    console.error(`Image failed to load for ${project.title}:`, e.target.src)
+    setImageError(true)
+  }
 
   return (
     <Link 
@@ -26,8 +37,9 @@ export default function ProjectCard({ project }) {
               alt={project.title}
               className="w-full h-full object-cover transition-transform duration-300"
               loading="lazy"
-              onLoad={() => setImageLoaded(true)}
-              onError={() => setImageError(true)}
+              onLoad={handleImageLoad}
+              onError={handleImageError}
+              crossOrigin="anonymous"
             />
           ) : (
             <div className="flex items-center justify-center h-full text-gray-400">
@@ -35,9 +47,9 @@ export default function ProjectCard({ project }) {
             </div>
           )}
           
-          {/* Loading state */}
+          {/* Loading state - only show if image hasn't loaded yet */}
           {!imageLoaded && !imageError && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-200 z-10">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-400"></div>
             </div>
           )}
