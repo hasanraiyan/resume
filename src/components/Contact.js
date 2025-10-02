@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useForm, ValidationError } from '@formspree/react'
 import { Section, Button, Input } from '@/components/ui'
 import CustomDropdown from './CustomDropdown'
 
@@ -84,6 +85,9 @@ const contactData = {
 // 🎨 COMPONENT
 // ========================================
 export default function Contact() {
+  // Replace "YOUR_FORM_ID" with your actual Formspree form ID
+  const [state, handleFormspreeSubmit] = useForm("mrbykylg")
+  
   const initialFormData = contactData.form.fields.reduce((acc, field) => {
     acc[field.name] = field.defaultValue || ''
     return acc
@@ -125,16 +129,12 @@ export default function Contact() {
     }
   }, [])
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     console.log('Form submitted:', formData)
     
-    // Future: Send to backend
-    // fetch(contactData.apiEndpoint, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(formData)
-    // })
+    // Use Formspree to handle form submission
+    await handleFormspreeSubmit(e)
   }
 
   const handleChange = (e) => {
@@ -162,6 +162,11 @@ export default function Contact() {
               placeholder={field.placeholder}
               className="w-full border-b-2 border-gray-300 pb-3 focus:border-black focus:outline-none transition text-sm sm:text-base bg-transparent hover-target resize-none"
             />
+            <ValidationError 
+              prefix={field.label} 
+              field={field.name}
+              errors={state.errors}
+            />
           </div>
         )
       
@@ -179,17 +184,44 @@ export default function Contact() {
       
       default: // text, email, etc.
         return (
-          <Input
-            label={field.label}
-            type={field.type}
-            name={field.name}
-            value={formData[field.name]}
-            onChange={handleChange}
-            required={field.required}
-            placeholder={field.placeholder}
-          />
+          <div>
+            <Input
+              label={field.label}
+              type={field.type}
+              name={field.name}
+              value={formData[field.name]}
+              onChange={handleChange}
+              required={field.required}
+              placeholder={field.placeholder}
+            />
+            <ValidationError 
+              prefix={field.label} 
+              field={field.name}
+              errors={state.errors}
+            />
+          </div>
         )
     }
+  }
+
+  // Show success message if form was submitted successfully
+  if (state.succeeded) {
+    return (
+      <Section 
+        id="contact" 
+        title={`${contactData.heading.title} ${contactData.heading.subtitle}`}
+        description={contactData.heading.description}
+        centered={true}
+        className="py-16 sm:py-20 md:py-24"
+      >
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="p-8 bg-green-50 border border-green-200 rounded-lg">
+            <h3 className="text-lg font-semibold text-green-800 mb-2">Message Sent Successfully!</h3>
+            <p className="text-green-700">{contactData.messages.success}</p>
+          </div>
+        </div>
+      </Section>
+    )
   }
 
   return (
@@ -229,9 +261,10 @@ export default function Contact() {
               <Button
                 type="submit"
                 variant="primary"
+                disabled={state.submitting}
                 className="w-full sm:w-auto px-10 sm:px-14 py-4 sm:py-5"
               >
-                {contactData.form.submitButton.text}
+                {state.submitting ? contactData.form.submitButton.loadingText : contactData.form.submitButton.text}
               </Button>
             </div>
 
