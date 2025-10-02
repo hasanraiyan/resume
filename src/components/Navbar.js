@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { gsap } from 'gsap'
 import { Button } from '@/components/ui'
 
@@ -18,7 +19,7 @@ const navbarData = {
     {
       id: 1,
       label: "Home",
-      href: "/#home"
+      href: "/"
     },
     {
       id: 2,
@@ -29,6 +30,11 @@ const navbarData = {
       id: 3,
       label: "Work",
       href: "/#work"
+    },
+    {
+      id: 4,
+      label: "Projects",
+      href: "/projects"
     }
   ],
   
@@ -105,6 +111,7 @@ const navbarData = {
 // ========================================
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const pathname = usePathname()
 
   useEffect(() => {
     const magneticBtns = document.querySelectorAll('.magnetic-btn')
@@ -140,13 +147,18 @@ export default function Navbar() {
     const handleHashClick = (e) => {
       const href = e.currentTarget.getAttribute('href')
       if (href?.startsWith('/#')) {
-        e.preventDefault()
-        const id = href.replace('/#', '')
-        const element = document.getElementById(id)
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'start' })
-          setIsMenuOpen(false)
-        }
+        // If we're on the home page, scroll to section
+        if (pathname === '/') {
+          e.preventDefault()
+          const id = href.replace('/#', '')
+          const element = document.getElementById(id)
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            setIsMenuOpen(false)
+          }
+        } 
+        // If we're on another page, let Next.js handle navigation to home page
+        // and scrolling will be handled by useEffect on the home page
       }
     }
 
@@ -160,7 +172,7 @@ export default function Navbar() {
         link.removeEventListener('click', handleHashClick)
       })
     }
-  }, [])
+  }, [pathname])
 
   // Prevent body scroll when menu is open
   useEffect(() => {
@@ -191,7 +203,13 @@ export default function Navbar() {
                 <Link
                   key={link.id}
                   href={link.href}
-                  className="text-sm lg:text-base text-gray-800 hover:text-gray-600 font-medium underline-animate transition hover-target"
+                  className={`text-sm lg:text-base font-medium underline-animate transition hover-target ${
+                    // Highlight active link based on current path
+                    (link.href === '/' && pathname === '/') || 
+                    (link.href !== '/' && pathname.startsWith(link.href))
+                      ? 'text-black font-semibold'
+                      : 'text-gray-800 hover:text-gray-600'
+                  }`}
                 >
                   {link.label}
                 </Link>
@@ -266,7 +284,13 @@ export default function Navbar() {
                   key={item.id}
                   href={item.href}
                   onClick={() => setIsMenuOpen(false)}
-                  className="text-2xl font-bold text-gray-800 hover:text-gray-600 transition py-4 border-b border-gray-100"
+                  className={`text-2xl font-bold transition py-4 border-b border-gray-100 ${
+                    // Highlight active link based on current path
+                    (item.href === '/' && pathname === '/') || 
+                    (item.href !== '/' && pathname.startsWith(item.href))
+                      ? 'text-black'
+                      : 'text-gray-800 hover:text-gray-600'
+                  }`}
                 >
                   {item.label}
                 </Link>
@@ -279,6 +303,7 @@ export default function Navbar() {
                 href={navbarData.mobileMenu.cta.href}
                 variant="primary"
                 className="block w-full text-center px-8 py-4 text-lg font-semibold"
+                onClick={() => setIsMenuOpen(false)}
               >
                 {navbarData.mobileMenu.cta.text}
               </Button>
@@ -294,6 +319,7 @@ export default function Navbar() {
                   rel="noopener noreferrer"
                   className="text-xl text-gray-600 hover:text-black transition w-12 h-12 flex items-center justify-center"
                   aria-label={social.name}
+                  onClick={() => setIsMenuOpen(false)}
                 >
                   <i className={social.icon}></i>
                 </a>
