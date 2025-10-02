@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { gsap } from 'gsap'
 import { Button } from '@/components/ui'
 
@@ -10,30 +11,30 @@ import { Button } from '@/components/ui'
 const navbarData = {
   logo: {
     text: "JD",
-    link: "#home"
+    link: "/"
   },
   
   navigationLinks: [
     {
       id: 1,
       label: "Home",
-      href: "#home"
+      href: "/#home"
     },
     {
       id: 2,
       label: "About",
-      href: "#about"
+      href: "/#about"
     },
     {
       id: 3,
       label: "Work",
-      href: "#work"
+      href: "/#work"
     }
   ],
   
   cta: {
     text: "Let's Talk",
-    href: "#contact"
+    href: "/#contact"
   },
   
   mobileMenu: {
@@ -41,35 +42,40 @@ const navbarData = {
       {
         id: 1,
         label: "Home",
-        href: "#home"
+        href: "/"
       },
       {
         id: 2,
         label: "About",
-        href: "#about"
+        href: "/#about"
       },
       {
         id: 3,
         label: "Work",
-        href: "#work"
+        href: "/#work"
       },
       {
         id: 4,
+        label: "Projects",
+        href: "/projects"
+      },
+      {
+        id: 5,
         label: "Contact",
-        href: "#contact"
+        href: "/#contact"
       }
     ],
     
     cta: {
       text: "Let's Talk",
-      href: "#contact"
+      href: "/#contact"
     },
     
     socialLinks: [
       {
         id: 1,
         name: "Dribbble",
-        url: "https://dribbble.com/yourusername", // Replace with actual URL
+        url: "https://dribbble.com/yourusername",
         icon: "fab fa-dribbble"
       },
       {
@@ -130,18 +136,30 @@ export default function Navbar() {
       btn.addEventListener('mouseleave', handleMouseLeave)
     })
 
-    // Smooth scroll
-    const anchors = document.querySelectorAll('a[href^="#"]')
-    anchors.forEach((anchor) => {
-      anchor.addEventListener('click', function (e) {
+    // Smooth scroll for hash links
+    const handleHashClick = (e) => {
+      const href = e.currentTarget.getAttribute('href')
+      if (href?.startsWith('/#')) {
         e.preventDefault()
-        const target = document.querySelector(this.getAttribute('href'))
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        const id = href.replace('/#', '')
+        const element = document.getElementById(id)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' })
           setIsMenuOpen(false)
         }
-      })
+      }
+    }
+
+    const hashLinks = document.querySelectorAll('a[href^="/#"]')
+    hashLinks.forEach((link) => {
+      link.addEventListener('click', handleHashClick)
     })
+
+    return () => {
+      hashLinks.forEach((link) => {
+        link.removeEventListener('click', handleHashClick)
+      })
+    }
   }, [])
 
   // Prevent body scroll when menu is open
@@ -160,23 +178,23 @@ export default function Navbar() {
           <div className="flex items-center justify-between h-16 sm:h-20">
             
             {/* Logo */}
-            <a 
+            <Link 
               href={navbarData.logo.link} 
               className="text-xl sm:text-2xl font-bold hover-target z-50"
             >
               {navbarData.logo.text}
-            </a>
+            </Link>
 
             {/* Desktop Menu */}
             <div className="hidden md:flex items-center space-x-8 lg:space-x-10">
               {navbarData.navigationLinks.map((link) => (
-                <a
+                <Link
                   key={link.id}
                   href={link.href}
                   className="text-sm lg:text-base text-gray-800 hover:text-gray-600 font-medium underline-animate transition hover-target"
                 >
                   {link.label}
-                </a>
+                </Link>
               ))}
               
               {/* CTA Button */}
@@ -217,7 +235,7 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile Menu Overlay - Slide from Right */}
+      {/* Mobile Menu Overlay */}
       <div
         className={`md:hidden fixed inset-0 z-40 transition-all duration-500 ease-in-out ${
           isMenuOpen
@@ -244,13 +262,14 @@ export default function Navbar() {
             {/* Menu Items */}
             <nav className="flex-1 flex flex-col justify-start space-y-2">
               {navbarData.mobileMenu.menuItems.map((item) => (
-                <a
+                <Link
                   key={item.id}
                   href={item.href}
+                  onClick={() => setIsMenuOpen(false)}
                   className="text-2xl font-bold text-gray-800 hover:text-gray-600 transition py-4 border-b border-gray-100"
                 >
                   {item.label}
-                </a>
+                </Link>
               ))}
             </nav>
 

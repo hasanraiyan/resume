@@ -1,119 +1,66 @@
 'use client'
 
 import { useEffect } from 'react'
+import Link from 'next/link'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { Section, Button, Badge } from '@/components/ui'
+import { getFeaturedProjects } from '@/data/projects'
 
 // ========================================
 // 📦 DYNAMIC DATA (Backend-Ready)
 // ========================================
 const workData = {
   heading: {
-    title: "Selected Works",
-    description: "A collection of my favorite projects"
+    title: "Featured Works",
+    description: "A curated selection of my best projects"
   },
   
-  projects: [
-    {
-      id: 1,
-      projectNumber: '01',
-      category: 'E-COMMERCE',
-      title: 'Luxury Fashion Store',
-      description: 'A sophisticated e-commerce platform for a luxury fashion brand, featuring immersive product galleries, seamless checkout experience, and advanced filtering systems.',
-      tags: [
-        { id: 1, name: 'React' },
-        { id: 2, name: 'Shopify' },
-        { id: 3, name: 'GSAP' }
-      ],
-      image: {
-        url: 'https://picsum.photos/800/600?random=20',
-        alt: 'Luxury Fashion Store Project'
-      },
-      link: {
-        url: '/projects/luxury-fashion-store', // Replace with actual project URL
-        text: 'View Project',
-        icon: 'fas fa-arrow-right'
-      },
-      layout: {
-        reverse: false // Image on left, content on right
-      }
-    },
-    {
-      id: 2,
-      projectNumber: '02',
-      category: 'PORTFOLIO',
-      title: 'Creative Agency Site',
-      description: 'A bold and dynamic website for a creative agency, showcasing their portfolio with stunning animations and interactive elements that engage visitors.',
-      tags: [
-        { id: 1, name: 'Next.js' },
-        { id: 2, name: 'Three.js' },
-        { id: 3, name: 'Framer' }
-      ],
-      image: {
-        url: 'https://picsum.photos/800/600?random=21',
-        alt: 'Creative Agency Site Project'
-      },
-      link: {
-        url: '/projects/creative-agency-site',
-        text: 'View Project',
-        icon: 'fas fa-arrow-right'
-      },
-      layout: {
-        reverse: true // Image on right, content on left
-      }
-    },
-    {
-      id: 3,
-      projectNumber: '03',
-      category: 'SAAS',
-      title: 'Analytics Dashboard',
-      description: 'A comprehensive analytics platform with real-time data visualization, customizable dashboards, and powerful reporting tools for business intelligence.',
-      tags: [
-        { id: 1, name: 'Vue.js' },
-        { id: 2, name: 'D3.js' },
-        { id: 3, name: 'Node.js' }
-      ],
-      image: {
-        url: 'https://picsum.photos/800/600?random=22',
-        alt: 'Analytics Dashboard Project'
-      },
-      link: {
-        url: '/projects/analytics-dashboard',
-        text: 'View Project',
-        icon: 'fas fa-arrow-right'
-      },
-      layout: {
-        reverse: false
-      }
-    }
-  ]
+  cta: {
+    text: "View All Projects",
+    link: "/projects",
+    icon: "fas fa-arrow-right"
+  }
 }
 
 // ========================================
 // 🎨 COMPONENT
 // ========================================
 export default function Work() {
+  // Get only featured projects (2-3)
+  const featuredProjects = getFeaturedProjects()
+
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
 
-    const container = document.querySelector('#work')
-    if (container) {
-      const projectsContainer = container.querySelector('.space-y-12')
-      if (projectsContainer) {
-        gsap.from(projectsContainer.children, {
-          opacity: 0,
-          y: 50,
-          duration: 1,
-          stagger: 0.2,
-          scrollTrigger: {
-            trigger: '#work',
-            start: 'top 80%',
-            end: 'bottom 20%',
-            toggleActions: 'play none none reverse',
-          },
-        })
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      const container = document.querySelector('#work')
+      if (container) {
+        const projectsContainer = container.querySelector('.space-y-12')
+        if (projectsContainer && projectsContainer.children.length > 0) {
+          // Reset any existing transforms
+          gsap.set(projectsContainer.children, { opacity: 1, y: 0 })
+          
+          gsap.from(projectsContainer.children, {
+            opacity: 0,
+            y: 50,
+            duration: 1,
+            stagger: 0.2,
+            scrollTrigger: {
+              trigger: '#work',
+              start: 'top 80%',
+              end: 'bottom 20%',
+              toggleActions: 'play none none reverse',
+              refreshPriority: -1,
+            },
+          })
+        }
       }
+    }, 100)
+
+    return () => {
+      clearTimeout(timer)
     }
   }, [])
 
@@ -126,9 +73,9 @@ export default function Work() {
       className="py-16 sm:py-20 md:py-24 bg-white"
     >
 
-        {/* Projects List */}
+        {/* Featured Projects List */}
         <div className="space-y-12 sm:space-y-16 md:space-y-20">
-          {workData.projects.map((project) => (
+          {featuredProjects.map((project) => (
             <div
               key={project.id}
               className="grid lg:grid-cols-2 gap-8 sm:gap-10 md:gap-12 items-center"
@@ -137,18 +84,20 @@ export default function Work() {
               {/* Project Image */}
               <div
                 className={`image-reveal rounded-lg overflow-hidden shadow-2xl hover-target ${
-                  project.layout.reverse ? 'lg:order-2' : ''
+                  project.id % 2 === 0 ? 'lg:order-2' : ''
                 }`}
               >
-                <img 
-                  src={project.image.url} 
-                  alt={project.image.alt} 
-                  className="w-full" 
-                />
+                <Link href={`/projects/${project.slug}`}>
+                  <img 
+                    src={project.thumbnail} 
+                    alt={project.title} 
+                    className="w-full" 
+                  />
+                </Link>
               </div>
 
               {/* Project Content */}
-              <div className={project.layout.reverse ? 'lg:order-1' : ''}>
+              <div className={project.id % 2 === 0 ? 'lg:order-1' : ''}>
                 
                 {/* Category Badge */}
                 <div className="text-xs font-semibold tracking-widest mb-2 sm:mb-3 text-gray-600">
@@ -157,7 +106,12 @@ export default function Work() {
                 
                 {/* Project Title */}
                 <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-5">
-                  {project.title}
+                  <Link 
+                    href={`/projects/${project.slug}`}
+                    className="hover:text-gray-600 transition"
+                  >
+                    {project.title}
+                  </Link>
                 </h3>
                 
                 {/* Project Description */}
@@ -167,25 +121,41 @@ export default function Work() {
                 
                 {/* Technology Tags */}
                 <div className="flex flex-wrap gap-2 sm:gap-3 mb-5 sm:mb-7">
-                  {project.tags.map((tag) => (
+                  {project.tags.slice(0, 3).map((tag) => (
                     <Badge key={tag.id} variant="tag">
                       {tag.name}
                     </Badge>
                   ))}
+                  {project.tags.length > 3 && (
+                    <Badge variant="tag">
+                      +{project.tags.length - 3} more
+                    </Badge>
+                  )}
                 </div>
                 
                 {/* View Project Link */}
                 <Button
-                  href={project.link.url}
+                  href={`/projects/${project.slug}`}
                   variant="ghost"
                   className="inline-flex items-center"
                 >
-                  {project.link.text} <i className={`${project.link.icon} ml-2`}></i>
+                  View Case Study <i className="fas fa-arrow-right ml-2"></i>
                 </Button>
               </div>
 
             </div>
           ))}
+        </div>
+
+        {/* View All Projects Button */}
+        <div className="text-center mt-12 sm:mt-16 md:mt-20">
+          <Button
+            href={workData.cta.link}
+            variant="primary"
+            className="px-8 sm:px-12 py-4 sm:py-5 text-base sm:text-lg"
+          >
+            {workData.cta.text} <i className={`${workData.cta.icon} ml-3`}></i>
+          </Button>
         </div>
     </Section>
   )

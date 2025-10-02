@@ -1,19 +1,21 @@
+import Link from 'next/link'
+
 // ========================================
 // 📦 DYNAMIC DATA (Backend-Ready)
 // ========================================
 const footerData = {
   logo: {
     text: "JD",
-    link: "#home" // Link to top or home
+    link: "/"
   },
   
   socialLinks: [
     {
       id: 1,
       name: "Dribbble",
-      url: "https://dribbble.com/yourusername", // Replace with actual URL
+      url: "https://dribbble.com/yourusername",
       label: "Dribbble",
-      icon: "fab fa-dribbble" // Optional: for icon version
+      icon: "fab fa-dribbble"
     },
     {
       id: 2,
@@ -39,7 +41,7 @@ const footerData = {
   ],
   
   copyright: {
-    year: new Date().getFullYear(), // Dynamic year
+    year: new Date().getFullYear(),
     name: "John Doe",
     text: "All rights reserved"
   }
@@ -55,12 +57,12 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
           
           {/* Logo */}
-          <a 
+          <Link 
             href={footerData.logo.link}
             className="text-xl sm:text-2xl font-bold hover-target"
           >
             {footerData.logo.text}
-          </a>
+          </Link>
           
           {/* Social Links */}
           <div className="flex flex-wrap justify-center gap-6 sm:gap-7">

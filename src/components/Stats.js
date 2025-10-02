@@ -59,29 +59,40 @@ export default function Stats() {
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
 
-    const container = document.querySelector('.stats-section .max-w-6xl')
-    if (container) {
-      gsap.from(container.children, {
-        opacity: 0,
-        y: 50,
-        duration: 1,
-        stagger: 0.2,
-        scrollTrigger: {
-          trigger: '.stats-section',
-          start: 'top 80%',
-          end: 'bottom 20%',
-          toggleActions: 'play none none reverse',
-        },
-      })
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      const container = document.querySelector('.stats-section .max-w-6xl')
+      if (container && container.children.length > 0) {
+        // Reset any existing transforms
+        gsap.set(container.children, { opacity: 1, y: 0 })
+
+        gsap.from(container.children, {
+          opacity: 0,
+          y: 50,
+          duration: 1,
+          stagger: 0.2,
+          scrollTrigger: {
+            trigger: '.stats-section',
+            start: 'top 80%',
+            end: 'bottom 20%',
+            toggleActions: 'play none none reverse',
+            refreshPriority: -1,
+          },
+        })
+      }
+    }, 100)
+
+    return () => {
+      clearTimeout(timer)
     }
   }, [])
 
   return (
     <section className="stats-section py-12 sm:py-16 md:py-20 bg-black text-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10 text-center">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
           {statsData.stats.map((stat) => (
-            <div key={stat.id}>
+            <div key={stat.id} className="text-center">
               <div className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2 sm:mb-3">
                 {stat.number}
               </div>

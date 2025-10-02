@@ -82,18 +82,32 @@ export default function Hero() {
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
 
-    gsap.from('#home .max-w-6xl > div > div', {
-      opacity: 0,
-      y: 50,
-      duration: 1,
-      stagger: 0.2,
-      scrollTrigger: {
-        trigger: '#home',
-        start: 'top 80%',
-        end: 'bottom 20%',
-        toggleActions: 'play none none reverse',
-      },
-    })
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      const elements = document.querySelectorAll('#home .max-w-6xl > div > div')
+      if (elements.length > 0) {
+        // Reset any existing transforms
+        gsap.set(elements, { opacity: 1, y: 0 })
+        
+        gsap.from(elements, {
+          opacity: 0,
+          y: 50,
+          duration: 1,
+          stagger: 0.2,
+          scrollTrigger: {
+            trigger: '#home',
+            start: 'top 80%',
+            end: 'bottom 20%',
+            toggleActions: 'play none none reverse',
+            refreshPriority: -1,
+          },
+        })
+      }
+    }, 100)
+
+    return () => {
+      clearTimeout(timer)
+    }
   }, [])
 
   return (

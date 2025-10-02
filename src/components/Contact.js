@@ -94,23 +94,34 @@ export default function Contact() {
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
 
-    const container = document.querySelector('#contact')
-    if (container) {
-      const formContainer = container.querySelector('.max-w-3xl')
-      if (formContainer) {
-        gsap.from(formContainer.children, {
-          opacity: 0,
-          y: 50,
-          duration: 1,
-          stagger: 0.2,
-          scrollTrigger: {
-            trigger: '#contact',
-            start: 'top 80%',
-            end: 'bottom 20%',
-            toggleActions: 'play none none reverse',
-          },
-        })
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      const container = document.querySelector('#contact')
+      if (container) {
+        const formContainer = container.querySelector('.max-w-3xl')
+        if (formContainer && formContainer.children.length > 0) {
+          // Reset any existing transforms
+          gsap.set(formContainer.children, { opacity: 1, y: 0 })
+          
+          gsap.from(formContainer.children, {
+            opacity: 0,
+            y: 50,
+            duration: 1,
+            stagger: 0.2,
+            scrollTrigger: {
+              trigger: '#contact',
+              start: 'top 80%',
+              end: 'bottom 20%',
+              toggleActions: 'play none none reverse',
+              refreshPriority: -1,
+            },
+          })
+        }
       }
+    }, 100)
+
+    return () => {
+      clearTimeout(timer)
     }
   }, [])
 

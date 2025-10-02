@@ -60,23 +60,34 @@ export default function About() {
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
 
-    const container = document.querySelector('#about')
-    if (container) {
-      const gridContainer = container.querySelector('.grid.lg\\:grid-cols-2')
-      if (gridContainer) {
-        gsap.from(gridContainer.children, {
-          opacity: 0,
-          y: 50,
-          duration: 1,
-          stagger: 0.2,
-          scrollTrigger: {
-            trigger: '#about',
-            start: 'top 80%',
-            end: 'bottom 20%',
-            toggleActions: 'play none none reverse',
-          },
-        })
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      const container = document.querySelector('#about')
+      if (container) {
+        const gridContainer = container.querySelector('.grid.lg\\:grid-cols-2')
+        if (gridContainer && gridContainer.children.length > 0) {
+          // Reset any existing transforms
+          gsap.set(gridContainer.children, { opacity: 1, y: 0 })
+          
+          gsap.from(gridContainer.children, {
+            opacity: 0,
+            y: 50,
+            duration: 1,
+            stagger: 0.2,
+            scrollTrigger: {
+              trigger: '#about',
+              start: 'top 80%',
+              end: 'bottom 20%',
+              toggleActions: 'play none none reverse',
+              refreshPriority: -1,
+            },
+          })
+        }
       }
+    }, 100)
+
+    return () => {
+      clearTimeout(timer)
     }
   }, [])
 
