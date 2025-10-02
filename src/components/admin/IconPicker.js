@@ -1,0 +1,248 @@
+'use client'
+
+import { useState, useEffect, useRef } from 'react'
+
+// Comprehensive icon database with categories and search keywords
+const ICON_DATABASE = {
+  social: [
+    { class: 'fab fa-facebook', name: 'Facebook', keywords: ['facebook', 'social', 'fb'] },
+    { class: 'fab fa-twitter', name: 'Twitter', keywords: ['twitter', 'social', 'x'] },
+    { class: 'fab fa-instagram', name: 'Instagram', keywords: ['instagram', 'social', 'insta'] },
+    { class: 'fab fa-linkedin', name: 'LinkedIn', keywords: ['linkedin', 'social', 'professional'] },
+    { class: 'fab fa-github', name: 'GitHub', keywords: ['github', 'social', 'code', 'git'] },
+    { class: 'fab fa-dribbble', name: 'Dribbble', keywords: ['dribbble', 'social', 'design'] },
+    { class: 'fab fa-behance', name: 'Behance', keywords: ['behance', 'social', 'design', 'portfolio'] },
+    { class: 'fab fa-youtube', name: 'YouTube', keywords: ['youtube', 'social', 'video'] },
+    { class: 'fab fa-tiktok', name: 'TikTok', keywords: ['tiktok', 'social', 'video'] },
+    { class: 'fab fa-discord', name: 'Discord', keywords: ['discord', 'social', 'gaming', 'chat'] },
+    { class: 'fab fa-whatsapp', name: 'WhatsApp', keywords: ['whatsapp', 'social', 'messaging'] },
+    { class: 'fab fa-telegram', name: 'Telegram', keywords: ['telegram', 'social', 'messaging'] },
+    { class: 'fab fa-snapchat', name: 'Snapchat', keywords: ['snapchat', 'social'] },
+    { class: 'fab fa-pinterest', name: 'Pinterest', keywords: ['pinterest', 'social'] },
+    { class: 'fab fa-reddit', name: 'Reddit', keywords: ['reddit', 'social'] },
+    { class: 'fab fa-medium', name: 'Medium', keywords: ['medium', 'social', 'blog', 'writing'] },
+    { class: 'fab fa-dev', name: 'Dev.to', keywords: ['dev', 'developer', 'social', 'coding'] },
+    { class: 'fab fa-codepen', name: 'CodePen', keywords: ['codepen', 'social', 'code'] },
+    { class: 'fab fa-stack-overflow', name: 'Stack Overflow', keywords: ['stackoverflow', 'social', 'code', 'qa'] },
+    { class: 'fab fa-twitch', name: 'Twitch', keywords: ['twitch', 'social', 'gaming', 'streaming'] }
+  ],
+  professional: [
+    { class: 'fab fa-google', name: 'Google', keywords: ['google', 'search', 'professional'] },
+    { class: 'fab fa-apple', name: 'Apple', keywords: ['apple', 'tech', 'professional'] },
+    { class: 'fab fa-microsoft', name: 'Microsoft', keywords: ['microsoft', 'tech', 'professional'] },
+    { class: 'fab fa-slack', name: 'Slack', keywords: ['slack', 'work', 'communication'] },
+    { class: 'fab fa-skype', name: 'Skype', keywords: ['skype', 'communication', 'video'] },
+    { class: 'fab fa-zoom', name: 'Zoom', keywords: ['zoom', 'meeting', 'video'] }
+  ],
+  general: [
+    { class: 'fas fa-envelope', name: 'Email', keywords: ['email', 'contact', 'mail'] },
+    { class: 'fas fa-phone', name: 'Phone', keywords: ['phone', 'contact', 'call'] },
+    { class: 'fas fa-globe', name: 'Website', keywords: ['website', 'web', 'globe', 'www'] },
+    { class: 'fas fa-link', name: 'Link', keywords: ['link', 'url', 'website'] },
+    { class: 'fas fa-map-marker-alt', name: 'Location', keywords: ['location', 'address', 'map'] },
+    { class: 'fas fa-calendar', name: 'Calendar', keywords: ['calendar', 'date', 'schedule'] },
+    { class: 'fas fa-download', name: 'Download', keywords: ['download', 'file'] },
+    { class: 'fas fa-external-link-alt', name: 'External Link', keywords: ['external', 'link', 'open'] }
+  ]
+}
+
+// Flatten all icons for search
+const ALL_ICONS = Object.values(ICON_DATABASE).flat()
+
+// Custom scrollbar styles (inline to avoid external CSS dependency)
+const scrollbarStyles = `
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 3px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
+`
+
+export default function IconPicker({ 
+  selectedIcon = '', 
+  onIconSelect, 
+  placeholder = 'Select an icon...',
+  className = ''
+}) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [filteredIcons, setFilteredIcons] = useState(ALL_ICONS)
+  const dropdownRef = useRef(null)
+  const inputRef = useRef(null)
+
+  // Filter icons based on search and category
+  useEffect(() => {
+    let icons = selectedCategory === 'all' ? ALL_ICONS : ICON_DATABASE[selectedCategory] || []
+    
+    if (searchTerm) {
+      icons = icons.filter(icon => 
+        icon.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        icon.keywords.some(keyword => keyword.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        icon.class.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+    
+    setFilteredIcons(icons)
+  }, [searchTerm, selectedCategory])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Handle icon selection
+  const handleIconSelect = (iconClass) => {
+    onIconSelect(iconClass)
+    setIsOpen(false)
+    setSearchTerm('')
+  }
+
+  // Get display name for selected icon
+  const getSelectedIconInfo = () => {
+    return ALL_ICONS.find(icon => icon.class === selectedIcon)
+  }
+
+  const selectedIconInfo = getSelectedIconInfo()
+
+  return (
+    <>
+      <style>{scrollbarStyles}</style>
+      <div className={`relative ${className}`} ref={dropdownRef}>
+      {/* Trigger Button */}
+      <button
+        type="button"
+        onClick={() => {
+          setIsOpen(!isOpen)
+          if (!isOpen) {
+            setTimeout(() => inputRef.current?.focus(), 100)
+          }
+        }}
+        className="w-full flex items-center justify-between p-3 border border-neutral-300 rounded-lg hover:border-neutral-400 focus:ring-2 focus:ring-black focus:border-transparent transition-all bg-white"
+      >
+        <div className="flex items-center space-x-3">
+          {selectedIcon ? (
+            <>
+              <i className={`${selectedIcon} text-lg text-neutral-700`}></i>
+              <span className="text-sm text-neutral-700">
+                {selectedIconInfo?.name || selectedIcon}
+              </span>
+            </>
+          ) : (
+            <span className="text-sm text-neutral-500">{placeholder}</span>
+          )}
+        </div>
+        <i className={`fas fa-chevron-${isOpen ? 'up' : 'down'} text-sm text-neutral-400 transition-transform`}></i>
+      </button>
+
+      {/* Dropdown */}
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-2 bg-white border border-neutral-200 rounded-lg shadow-xl">
+          <div className="p-4 border-b border-neutral-200">
+            {/* Search Input */}
+            <div className="relative mb-3">
+              <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 text-sm"></i>
+              <input
+                ref={inputRef}
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search icons..."
+                className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-sm"
+              />
+            </div>
+
+            {/* Category Tabs */}
+            <div className="flex space-x-1">
+              {[
+                { key: 'all', label: 'All' },
+                { key: 'social', label: 'Social' },
+                { key: 'professional', label: 'Professional' },
+                { key: 'general', label: 'General' }
+              ].map(category => (
+                <button
+                  key={category.key}
+                  onClick={() => {
+                    setSelectedCategory(category.key)
+                    setSearchTerm('')
+                  }}
+                  className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                    selectedCategory === category.key
+                      ? 'bg-black text-white'
+                      : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                  }`}
+                >
+                  {category.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Icons Grid */}
+          <div className="max-h-80 overflow-y-auto p-4 custom-scrollbar">
+            {filteredIcons.length > 0 ? (
+              <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
+                {filteredIcons.map((icon, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleIconSelect(icon.class)}
+                    className={`p-3 rounded-lg hover:bg-neutral-100 transition-colors group relative ${
+                      selectedIcon === icon.class ? 'bg-blue-50 border border-blue-200' : ''
+                    }`}
+                    title={icon.name}
+                  >
+                    <i className={`${icon.class} text-lg text-neutral-600 group-hover:text-black transition-colors`}></i>
+                    
+                    {/* Tooltip */}
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                      {icon.name}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-neutral-500">
+                <i className="fas fa-search text-2xl mb-2"></i>
+                <p className="text-sm">No icons found for "{searchTerm}"</p>
+              </div>
+            )}
+          </div>
+
+          {/* Quick Actions */}
+          <div className="p-3 border-t border-neutral-200 bg-neutral-50">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-neutral-500">
+                {filteredIcons.length} icon{filteredIcons.length !== 1 ? 's' : ''} available
+              </span>
+              {selectedIcon && (
+                <button
+                  onClick={() => handleIconSelect('')}
+                  className="text-xs text-red-600 hover:text-red-800 transition-colors"
+                >
+                  Clear Selection
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      </div>
+    </>
+  )
+}

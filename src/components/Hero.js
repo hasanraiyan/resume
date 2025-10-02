@@ -1,14 +1,15 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { Button, Badge } from '@/components/ui'
+import { useHeroData } from '@/hooks/useHeroData'
 
 // ========================================
-// 📦 DYNAMIC DATA (Backend-Ready)
+// 📦 FALLBACK DATA (Default values)
 // ========================================
-const heroData = {
+const defaultHeroData = {
   badge: {
     text: "CREATIVE DEVELOPER"
   },
@@ -79,7 +80,20 @@ const heroData = {
 // 🎨 COMPONENT
 // ========================================
 export default function Hero() {
+  const { heroData: fetchedHeroData, loading, error } = useHeroData()
+  const [heroData, setHeroData] = useState(defaultHeroData)
+
+  // Update hero data when fetched data changes
   useEffect(() => {
+    if (fetchedHeroData) {
+      setHeroData(fetchedHeroData)
+    }
+  }, [fetchedHeroData])
+
+  // GSAP Animation
+  useEffect(() => {
+    if (loading) return // Don't animate until data is loaded
+
     gsap.registerPlugin(ScrollTrigger)
 
     // Small delay to ensure DOM is ready
@@ -108,7 +122,7 @@ export default function Hero() {
     return () => {
       clearTimeout(timer)
     }
-  }, [])
+  }, [loading])
 
   return (
     <section id="home" className="min-h-screen flex items-center pt-16 sm:pt-20">
@@ -157,9 +171,9 @@ export default function Hero() {
             
             {/* Social Links */}
             <div className="flex gap-6 sm:gap-7 mt-8 sm:mt-10 justify-center sm:justify-start">
-              {heroData.socialLinks.map((social) => (
+              {heroData.socialLinks.map((social, index) => (
                 <a
-                  key={social.id}
+                  key={social.id || social._id || index}
                   href={social.url}
                   target="_blank"
                   rel="noopener noreferrer"
