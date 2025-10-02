@@ -1,12 +1,9 @@
 'use client'
-
 import { useEffect } from 'react'
 import Link from 'next/link'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { Section, Button, Badge } from '@/components/ui'
-import { getFeaturedProjects } from '@/data/projects'
-
 // ========================================
 // 📦 DYNAMIC DATA (Backend-Ready)
 // ========================================
@@ -15,7 +12,6 @@ const workData = {
     title: "Featured Works",
     description: "A curated selection of my best projects"
   },
-
   cta: {
     text: "View All Projects",
     link: "/projects",
@@ -26,9 +22,7 @@ const workData = {
 // ========================================
 // 🎨 COMPONENT
 // ========================================
-export default function Work() {
-  // Get only featured projects (2-3)
-  const featuredProjects = getFeaturedProjects()
+export default function Work({ featuredProjects = [] }) {
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
@@ -83,7 +77,7 @@ export default function Work() {
 
             {/* Project Image */}
             <div
-              className={`image-reveal rounded-lg overflow-hidden shadow-2xl hover-target ${project.id % 2 === 0 ? 'lg:order-2' : ''
+              className={`image-reveal rounded-lg overflow-hidden shadow-2xl hover-target ${parseInt(project.projectNumber) % 2 === 0 ? 'lg:order-2' : ''
                 }`}
             >
               <Link href={`/projects/${project.slug}`}>
@@ -96,7 +90,7 @@ export default function Work() {
             </div>
 
             {/* Project Content */}
-            <div className={project.id % 2 === 0 ? 'lg:order-1' : ''}>
+            <div className={parseInt(project.projectNumber) % 2 === 0 ? 'lg:order-1' : ''}>
 
               {/* Category Badge */}
               <div className="text-xs font-semibold tracking-widest mb-2 sm:mb-3 text-gray-600">
@@ -120,12 +114,12 @@ export default function Work() {
 
               {/* Technology Tags */}
               <div className="flex flex-wrap gap-2 sm:gap-3 mb-5 sm:mb-7">
-                {project.tags.slice(0, 3).map((tag) => (
-                  <Badge key={tag.id} variant="tag">
+                {project.tags?.slice(0, 3).map((tag, index) => (
+                  <Badge key={index} variant="tag">
                     {tag.name}
                   </Badge>
                 ))}
-                {project.tags.length > 3 && (
+                {project.tags && project.tags.length > 3 && (
                   <Badge variant="tag">
                     +{project.tags.length - 3} more
                   </Badge>

@@ -63,9 +63,11 @@ export function spacing(value, type = 'p') {
   return responsive(value, type)
 }
 
-export default {
+const classNameUtils = {
   cn,
   conditional,
   responsive,
-  spacing,
+  spacing
 }
+
+export default classNameUtils

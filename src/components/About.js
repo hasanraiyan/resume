@@ -13,9 +13,9 @@ const aboutData = {
   
   bio: {
     paragraphs: [
-      "I&apos;m a passionate creative developer with a love for crafting exceptional digital experiences. My journey in design and development has been driven by curiosity and a constant desire to learn.",
+      "I'm a passionate creative developer with a love for crafting exceptional digital experiences. My journey in design and development has been driven by curiosity and a constant desire to learn.",
       "With expertise spanning from concept to execution, I bring ideas to life through clean code, thoughtful design, and attention to detail that makes every project unique.",
-      "When I&apos;m not coding, you&apos;ll find me exploring new design trends, experimenting with new technologies, or enjoying a good cup of coffee while sketching new ideas."
+      "When I'm not coding, you'll find me exploring new design trends, experimenting with new technologies, or enjoying a good cup of coffee while sketching new ideas."
     ]
   },
   

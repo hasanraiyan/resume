@@ -6,6 +6,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useForm, ValidationError } from '@formspree/react'
 import { Section, Button, Input } from '@/components/ui'
 import CustomDropdownMinimal from './CustomDropdown'
+import { createContactSubmission } from '@/app/actions/contactActions'
 // ========================================
 // 📦 DYNAMIC DATA (Backend-Ready)
 // ========================================
@@ -132,8 +133,22 @@ export default function Contact() {
     e.preventDefault()
     console.log('Form submitted:', formData)
     
-    // Use Formspree to handle form submission
-    await handleFormspreeSubmit(e)
+    try {
+      // Save to MongoDB first
+      const mongoFormData = new FormData()
+      Object.keys(formData).forEach(key => {
+        mongoFormData.append(key, formData[key])
+      })
+      
+      await createContactSubmission(mongoFormData)
+      
+      // Then use Formspree for email notifications
+      await handleFormspreeSubmit(e)
+    } catch (error) {
+      console.error('Error saving contact:', error)
+      // Still try Formspree even if MongoDB fails
+      await handleFormspreeSubmit(e)
+    }
   }
 
   const handleChange = (e) => {

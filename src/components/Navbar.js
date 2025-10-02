@@ -39,7 +39,7 @@ const navbarData = {
   ],
   
   cta: {
-    text: "Let&apos;s Talk",
+    text: "Let's Talk",
     href: "/#contact"
   },
   
@@ -73,7 +73,7 @@ const navbarData = {
     ],
     
     cta: {
-      text: "Let&apos;s Talk",
+      text: "Let's Talk",
       href: "/#contact"
     },
     
@@ -147,7 +147,7 @@ export default function Navbar() {
     const handleHashClick = (e) => {
       const href = e.currentTarget.getAttribute('href')
       if (href?.startsWith('/#')) {
-        // If we&apos;re on the home page, scroll to section
+        // If we're on the home page, scroll to section
         if (pathname === '/') {
           e.preventDefault()
           const id = href.replace('/#', '')
@@ -157,7 +157,7 @@ export default function Navbar() {
             setIsMenuOpen(false)
           }
         } 
-        // If we&apos;re on another page, let Next.js handle navigation to home page
+        // If we're on another page, let Next.js handle navigation to home page
         // and scrolling will be handled by useEffect on the home page
       }
     }

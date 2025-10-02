@@ -20,7 +20,7 @@ const heroData = {
   },
   
   introduction: {
-    text: "I&apos;m John Doe, a creative developer focused on building beautiful and functional digital experiences that make a difference.",
+    text: "I'm John Doe, a creative developer focused on building beautiful and functional digital experiences that make a difference.",
     name: "John Doe", // Separate for easy replacement
     role: "creative developer"
   },

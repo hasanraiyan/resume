@@ -1,5 +1,6 @@
 import { Space_Grotesk, Playfair_Display } from 'next/font/google'
 import './globals.css'
+import SessionProvider from '@/components/SessionProvider'
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -28,7 +29,9 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className="bg-gray-50">
-        {children}
+        <SessionProvider>
+          {children}
+        </SessionProvider>
       </body>
     </html>
   )
