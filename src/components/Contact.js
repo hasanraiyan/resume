@@ -5,8 +5,6 @@ import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useForm, ValidationError } from '@formspree/react'
 import { Section, Button, Input } from '@/components/ui'
-import CustomDropdown from './CustomDropdown'
-
 // ========================================
 // 📦 DYNAMIC DATA (Backend-Ready)
 // ========================================

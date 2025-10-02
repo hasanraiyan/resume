@@ -226,7 +226,7 @@ export default function ProjectDetailClient({ project, relatedProjects }) {
               Interested in working together?
             </h3>
             <p className="text-gray-600 mb-6 sm:mb-8">
-              Let's create something amazing for your business
+              Let&apos;s create something amazing for your business
             </p>
             <Button
               href="/#contact"
