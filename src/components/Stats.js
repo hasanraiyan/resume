@@ -33,13 +33,13 @@ export default function Stats() {
   ]
 
   return (
-    <section className="stats-section py-20 bg-black text-white">
-      <div className="max-w-6xl mx-auto px-6 lg:px-12">
-        <div className="grid md:grid-cols-4 gap-10 text-center">
+    <section className="stats-section py-12 sm:py-16 md:py-20 bg-black text-white">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10 text-center">
           {stats.map((stat, index) => (
             <div key={index}>
-              <div className="text-5xl font-bold mb-3">{stat.number}</div>
-              <div className="text-gray-400 text-base">{stat.label}</div>
+              <div className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2 sm:mb-3">{stat.number}</div>
+              <div className="text-gray-400 text-xs sm:text-sm md:text-base">{stat.label}</div>
             </div>
           ))}
         </div>
