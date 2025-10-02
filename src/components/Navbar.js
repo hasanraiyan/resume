@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { gsap } from 'gsap'
+import { Button } from '@/components/ui'
 
 // ========================================
 // 📦 DYNAMIC DATA (Backend-Ready)
@@ -179,12 +180,13 @@ export default function Navbar() {
               ))}
               
               {/* CTA Button */}
-              <a
+              <Button
                 href={navbarData.cta.href}
-                className="bg-black text-white px-4 lg:px-5 py-2 lg:py-2.5 text-sm lg:text-base hover:bg-gray-800 transition magnetic-btn hover-target"
+                variant="primary"
+                className="px-4 lg:px-5 py-2 lg:py-2.5 text-sm lg:text-base"
               >
                 {navbarData.cta.text}
-              </a>
+              </Button>
             </div>
 
             {/* Mobile Menu Button */}
@@ -254,12 +256,13 @@ export default function Navbar() {
 
             {/* CTA Button */}
             <div className="mt-8">
-              <a
+              <Button
                 href={navbarData.mobileMenu.cta.href}
-                className="block w-full bg-black text-white text-center px-8 py-4 text-lg font-semibold hover:bg-gray-800 transition"
+                variant="primary"
+                className="block w-full text-center px-8 py-4 text-lg font-semibold"
               >
                 {navbarData.mobileMenu.cta.text}
-              </a>
+              </Button>
             </div>
 
             {/* Social Links */}

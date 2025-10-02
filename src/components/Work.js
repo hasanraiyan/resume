@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { Section, Button, Badge } from '@/components/ui'
 
 // ========================================
 // 📦 DYNAMIC DATA (Backend-Ready)
@@ -96,36 +97,34 @@ export default function Work() {
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
 
-    const container = document.querySelector('#work .max-w-6xl')
+    const container = document.querySelector('#work')
     if (container) {
-      gsap.from(container.children, {
-        opacity: 0,
-        y: 50,
-        duration: 1,
-        stagger: 0.2,
-        scrollTrigger: {
-          trigger: '#work',
-          start: 'top 80%',
-          end: 'bottom 20%',
-          toggleActions: 'play none none reverse',
-        },
-      })
+      const projectsContainer = container.querySelector('.space-y-12')
+      if (projectsContainer) {
+        gsap.from(projectsContainer.children, {
+          opacity: 0,
+          y: 50,
+          duration: 1,
+          stagger: 0.2,
+          scrollTrigger: {
+            trigger: '#work',
+            start: 'top 80%',
+            end: 'bottom 20%',
+            toggleActions: 'play none none reverse',
+          },
+        })
+      }
     }
   }, [])
 
   return (
-    <section id="work" className="py-16 sm:py-20 md:py-24 bg-white">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-12">
-        
-        {/* Section Header */}
-        <div className="text-center mb-12 sm:mb-16">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-5">
-            {workData.heading.title}
-          </h2>
-          <p className="text-base sm:text-lg text-gray-600">
-            {workData.heading.description}
-          </p>
-        </div>
+    <Section 
+      id="work" 
+      title={workData.heading.title}
+      description={workData.heading.description}
+      centered={true}
+      className="py-16 sm:py-20 md:py-24 bg-white"
+    >
 
         {/* Projects List */}
         <div className="space-y-12 sm:space-y-16 md:space-y-20">
@@ -169,28 +168,25 @@ export default function Work() {
                 {/* Technology Tags */}
                 <div className="flex flex-wrap gap-2 sm:gap-3 mb-5 sm:mb-7">
                   {project.tags.map((tag) => (
-                    <span
-                      key={tag.id}
-                      className="px-3 py-1.5 bg-gray-100 text-xs sm:text-sm font-semibold"
-                    >
+                    <Badge key={tag.id} variant="tag">
                       {tag.name}
-                    </span>
+                    </Badge>
                   ))}
                 </div>
                 
                 {/* View Project Link */}
-                <a
+                <Button
                   href={project.link.url}
-                  className="inline-flex items-center text-sm sm:text-base font-semibold underline-animate hover-target"
+                  variant="ghost"
+                  className="inline-flex items-center"
                 >
                   {project.link.text} <i className={`${project.link.icon} ml-2`}></i>
-                </a>
+                </Button>
               </div>
 
             </div>
           ))}
         </div>
-      </div>
-    </section>
+    </Section>
   )
 }

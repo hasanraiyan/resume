@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { Button, Badge } from '@/components/ui'
 
 // ========================================
 // 📦 DYNAMIC DATA (Backend-Ready)
@@ -104,8 +105,10 @@ export default function Hero() {
           <div className="order-2 lg:order-1">
             
             {/* Badge */}
-            <div className="text-xs font-semibold tracking-widest mb-4 sm:mb-5 text-gray-600">
-              {heroData.badge.text}
+            <div className="mb-4 sm:mb-5">
+              <Badge variant="category">
+                {heroData.badge.text}
+              </Badge>
             </div>
             
             {/* Main Heading */}
@@ -122,18 +125,20 @@ export default function Hero() {
             
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-5">
-              <a
+              <Button
                 href={heroData.cta.primary.link}
-                className="bg-black text-white px-6 sm:px-7 py-3 sm:py-3.5 text-sm sm:text-base font-medium hover:bg-gray-800 transition magnetic-btn hover-target text-center"
+                variant="primary"
+                className="px-6 sm:px-7 py-3 sm:py-3.5 text-center"
               >
                 {heroData.cta.primary.text}
-              </a>
-              <a
+              </Button>
+              <Button
                 href={heroData.cta.secondary.link}
-                className="border-2 border-black px-6 sm:px-7 py-3 sm:py-3.5 text-sm sm:text-base font-medium hover:bg-black hover:text-white transition magnetic-btn hover-target text-center"
+                variant="secondary"
+                className="px-6 sm:px-7 py-3 sm:py-3.5 text-center"
               >
                 {heroData.cta.secondary.text}
-              </a>
+              </Button>
             </div>
             
             {/* Social Links */}
