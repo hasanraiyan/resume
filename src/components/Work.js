@@ -1,0 +1,110 @@
+'use client'
+
+import { useEffect } from 'react'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+
+export default function Work() {
+  useEffect(() => {
+    gsap.registerPlugin(ScrollTrigger)
+
+    const container = document.querySelector('#work .max-w-7xl')
+    if (container) {
+      gsap.from(container.children, {
+        opacity: 0,
+        y: 50,
+        duration: 1,
+        stagger: 0.2,
+        scrollTrigger: {
+          trigger: '#work',
+          start: 'top 80%',
+          end: 'bottom 20%',
+          toggleActions: 'play none none reverse',
+        },
+      })
+    }
+  }, [])
+
+  const projects = [
+    {
+      id: '01',
+      category: 'E-COMMERCE',
+      title: 'Luxury Fashion Store',
+      description:
+        'A sophisticated e-commerce platform for a luxury fashion brand, featuring immersive product galleries, seamless checkout experience, and advanced filtering systems.',
+      tags: ['React', 'Shopify', 'GSAP'],
+      image: 'https://picsum.photos/800/600?random=20',
+    },
+    {
+      id: '02',
+      category: 'PORTFOLIO',
+      title: 'Creative Agency Site',
+      description:
+        'A bold and dynamic website for a creative agency, showcasing their portfolio with stunning animations and interactive elements that engage visitors.',
+      tags: ['Next.js', 'Three.js', 'Framer'],
+      image: 'https://picsum.photos/800/600?random=21',
+      reverse: true,
+    },
+    {
+      id: '03',
+      category: 'SAAS',
+      title: 'Analytics Dashboard',
+      description:
+        'A comprehensive analytics platform with real-time data visualization, customizable dashboards, and powerful reporting tools for business intelligence.',
+      tags: ['Vue.js', 'D3.js', 'Node.js'],
+      image: 'https://picsum.photos/800/600?random=22',
+    },
+  ]
+
+  return (
+    <section id="work" className="py-32 bg-white">
+      <div className="max-w-7xl mx-auto px-8 lg:px-16">
+        <div className="text-center mb-20">
+          <h2 className="text-6xl font-bold mb-6">Selected Works</h2>
+          <p className="text-xl text-gray-600">A collection of my favorite projects</p>
+        </div>
+        <div className="space-y-24">
+          {projects.map((project) => (
+            <div
+              key={project.id}
+              className="grid lg:grid-cols-2 gap-16 items-center"
+            >
+              <div
+                className={`image-reveal rounded-lg overflow-hidden shadow-2xl hover-target ${
+                  project.reverse ? 'lg:order-2' : ''
+                }`}
+              >
+                <img src={project.image} alt="Project" className="w-full" />
+              </div>
+              <div className={project.reverse ? 'lg:order-1' : ''}>
+                <div className="text-sm font-semibold tracking-widest mb-4 text-gray-600">
+                  {project.id} — {project.category}
+                </div>
+                <h3 className="text-5xl font-bold mb-6">{project.title}</h3>
+                <p className="text-lg text-gray-700 mb-8 leading-relaxed">
+                  {project.description}
+                </p>
+                <div className="flex gap-4 mb-8">
+                  {project.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="px-4 py-2 bg-gray-100 text-sm font-semibold"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <a
+                  href="#"
+                  className="inline-flex items-center text-lg font-semibold underline-animate hover-target"
+                >
+                  View Project <i className="fas fa-arrow-right ml-3"></i>
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
