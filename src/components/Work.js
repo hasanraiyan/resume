@@ -8,7 +8,7 @@ export default function Work() {
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
 
-    const container = document.querySelector('#work .max-w-7xl')
+    const container = document.querySelector('#work .max-w-6xl')
     if (container) {
       gsap.from(container.children, {
         opacity: 0,
@@ -57,17 +57,17 @@ export default function Work() {
   ]
 
   return (
-    <section id="work" className="py-32 bg-white">
-      <div className="max-w-7xl mx-auto px-8 lg:px-16">
-        <div className="text-center mb-20">
-          <h2 className="text-6xl font-bold mb-6">Selected Works</h2>
-          <p className="text-xl text-gray-600">A collection of my favorite projects</p>
+    <section id="work" className="py-24 bg-white">
+      <div className="max-w-6xl mx-auto px-6 lg:px-12">
+        <div className="text-center mb-16">
+          <h2 className="text-5xl font-bold mb-5">Selected Works</h2>
+          <p className="text-lg text-gray-600">A collection of my favorite projects</p>
         </div>
-        <div className="space-y-24">
+        <div className="space-y-20">
           {projects.map((project) => (
             <div
               key={project.id}
-              className="grid lg:grid-cols-2 gap-16 items-center"
+              className="grid lg:grid-cols-2 gap-12 items-center"
             >
               <div
                 className={`image-reveal rounded-lg overflow-hidden shadow-2xl hover-target ${
@@ -77,18 +77,18 @@ export default function Work() {
                 <img src={project.image} alt="Project" className="w-full" />
               </div>
               <div className={project.reverse ? 'lg:order-1' : ''}>
-                <div className="text-sm font-semibold tracking-widest mb-4 text-gray-600">
+                <div className="text-xs font-semibold tracking-widest mb-3 text-gray-600">
                   {project.id} — {project.category}
                 </div>
-                <h3 className="text-5xl font-bold mb-6">{project.title}</h3>
-                <p className="text-lg text-gray-700 mb-8 leading-relaxed">
+                <h3 className="text-4xl font-bold mb-5">{project.title}</h3>
+                <p className="text-base text-gray-700 mb-7 leading-relaxed">
                   {project.description}
                 </p>
-                <div className="flex gap-4 mb-8">
+                <div className="flex gap-3 mb-7">
                   {project.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="px-4 py-2 bg-gray-100 text-sm font-semibold"
+                      className="px-3 py-1.5 bg-gray-100 text-sm font-semibold"
                     >
                       {tag}
                     </span>
@@ -96,9 +96,9 @@ export default function Work() {
                 </div>
                 <a
                   href="#"
-                  className="inline-flex items-center text-lg font-semibold underline-animate hover-target"
+                  className="inline-flex items-center text-base font-semibold underline-animate hover-target"
                 >
-                  View Project <i className="fas fa-arrow-right ml-3"></i>
+                  View Project <i className="fas fa-arrow-right ml-2"></i>
                 </a>
               </div>
             </div>

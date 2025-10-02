@@ -8,7 +8,7 @@ export default function Hero() {
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
 
-    gsap.from('#home .max-w-7xl > div > div', {
+    gsap.from('#home .max-w-6xl > div > div', {
       opacity: 0,
       y: 50,
       duration: 1,
@@ -23,47 +23,47 @@ export default function Hero() {
   }, [])
 
   return (
-    <section id="home" className="min-h-screen flex items-center pt-24">
-      <div className="max-w-7xl mx-auto px-8 lg:px-16 w-full py-20">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
+    <section id="home" className="min-h-screen flex items-center pt-20">
+      <div className="max-w-6xl mx-auto px-6 lg:px-12 w-full py-16">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <div className="text-sm font-semibold tracking-widest mb-6 text-gray-600">
+            <div className="text-xs font-semibold tracking-widest mb-5 text-gray-600">
               CREATIVE DEVELOPER
             </div>
-            <h1 className="text-7xl lg:text-8xl font-bold mb-6 leading-none">
+            <h1 className="text-6xl lg:text-7xl font-bold mb-5 leading-none">
               Crafting
               <span className="block text-stroke">Digital</span>
               Excellence
             </h1>
-            <p className="text-xl text-gray-600 mb-12 max-w-lg leading-relaxed">
+            <p className="text-lg text-gray-600 mb-10 max-w-lg leading-relaxed">
               I&apos;m John Doe, a creative developer focused on building beautiful and
               functional digital experiences that make a difference.
             </p>
-            <div className="flex gap-6">
+            <div className="flex gap-5">
               <a
                 href="#work"
-                className="bg-black text-white px-8 py-4 text-lg font-medium hover:bg-gray-800 transition magnetic-btn hover-target"
+                className="bg-black text-white px-7 py-3.5 text-base font-medium hover:bg-gray-800 transition magnetic-btn hover-target"
               >
                 View My Work
               </a>
               <a
                 href="#contact"
-                className="border-2 border-black px-8 py-4 text-lg font-medium hover:bg-black hover:text-white transition magnetic-btn hover-target"
+                className="border-2 border-black px-7 py-3.5 text-base font-medium hover:bg-black hover:text-white transition magnetic-btn hover-target"
               >
                 Contact Me
               </a>
             </div>
-            <div className="flex gap-8 mt-12">
-              <a href="#" className="text-2xl hover:opacity-60 transition hover-target">
+            <div className="flex gap-7 mt-10">
+              <a href="#" className="text-xl hover:opacity-60 transition hover-target">
                 <i className="fab fa-dribbble"></i>
               </a>
-              <a href="#" className="text-2xl hover:opacity-60 transition hover-target">
+              <a href="#" className="text-xl hover:opacity-60 transition hover-target">
                 <i className="fab fa-behance"></i>
               </a>
-              <a href="#" className="text-2xl hover:opacity-60 transition hover-target">
+              <a href="#" className="text-xl hover:opacity-60 transition hover-target">
                 <i className="fab fa-instagram"></i>
               </a>
-              <a href="#" className="text-2xl hover:opacity-60 transition hover-target">
+              <a href="#" className="text-xl hover:opacity-60 transition hover-target">
                 <i className="fab fa-linkedin"></i>
               </a>
             </div>
@@ -76,9 +76,9 @@ export default function Hero() {
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="absolute -bottom-8 -right-8 bg-white p-8 shadow-2xl rounded-lg">
-              <div className="text-5xl font-bold">5+</div>
-              <div className="text-gray-600">Years Experience</div>
+            <div className="absolute -bottom-7 -right-7 bg-white p-6 shadow-2xl rounded-lg">
+              <div className="text-4xl font-bold">5+</div>
+              <div className="text-gray-600 text-sm">Years Experience</div>
             </div>
           </div>
         </div>

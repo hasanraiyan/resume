@@ -15,7 +15,7 @@ export default function Contact() {
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
 
-    const container = document.querySelector('#contact .max-w-7xl')
+    const container = document.querySelector('#contact .max-w-6xl')
     if (container) {
       gsap.from(container.children, {
         opacity: 0,
@@ -46,23 +46,23 @@ export default function Contact() {
   }
 
   return (
-    <section id="contact" className="py-32">
-      <div className="max-w-7xl mx-auto px-8 lg:px-16">
-        <div className="text-center mb-20">
-          <h2 className="text-7xl lg:text-8xl font-bold mb-6">
+    <section id="contact" className="py-24">
+      <div className="max-w-6xl mx-auto px-6 lg:px-12">
+        <div className="text-center mb-16">
+          <h2 className="text-6xl lg:text-7xl font-bold mb-5">
             Let&apos;s Create
             <br />
             Something Amazing
           </h2>
-          <p className="text-xl text-gray-600">
+          <p className="text-lg text-gray-600">
             Have a project in mind? Let&apos;s talk about it.
           </p>
         </div>
-        <div className="max-w-4xl mx-auto">
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="grid md:grid-cols-2 gap-8">
+        <div className="max-w-3xl mx-auto">
+          <form onSubmit={handleSubmit} className="space-y-7">
+            <div className="grid md:grid-cols-2 gap-7">
               <div>
-                <label className="block text-sm font-semibold mb-3 tracking-wider">
+                <label className="block text-xs font-semibold mb-2 tracking-wider">
                   YOUR NAME
                 </label>
                 <input
@@ -70,11 +70,11 @@ export default function Contact() {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  className="w-full border-b-2 border-gray-300 pb-4 focus:border-black focus:outline-none transition text-lg bg-transparent hover-target"
+                  className="w-full border-b-2 border-gray-300 pb-3 focus:border-black focus:outline-none transition text-base bg-transparent hover-target"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold mb-3 tracking-wider">
+                <label className="block text-xs font-semibold mb-2 tracking-wider">
                   YOUR EMAIL
                 </label>
                 <input
@@ -82,19 +82,19 @@ export default function Contact() {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full border-b-2 border-gray-300 pb-4 focus:border-black focus:outline-none transition text-lg bg-transparent hover-target"
+                  className="w-full border-b-2 border-gray-300 pb-3 focus:border-black focus:outline-none transition text-base bg-transparent hover-target"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-3 tracking-wider">
+              <label className="block text-xs font-semibold mb-2 tracking-wider">
                 PROJECT TYPE
               </label>
               <select
                 name="projectType"
                 value={formData.projectType}
                 onChange={handleChange}
-                className="w-full border-b-2 border-gray-300 pb-4 focus:border-black focus:outline-none transition text-lg bg-transparent hover-target"
+                className="w-full border-b-2 border-gray-300 pb-3 focus:border-black focus:outline-none transition text-base bg-transparent hover-target"
               >
                 <option>Web Design</option>
                 <option>Web Development</option>
@@ -104,21 +104,21 @@ export default function Contact() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-3 tracking-wider">
+              <label className="block text-xs font-semibold mb-2 tracking-wider">
                 YOUR MESSAGE
               </label>
               <textarea
                 name="message"
                 value={formData.message}
                 onChange={handleChange}
-                rows="6"
-                className="w-full border-b-2 border-gray-300 pb-4 focus:border-black focus:outline-none transition text-lg resize-none bg-transparent hover-target"
+                rows="5"
+                className="w-full border-b-2 border-gray-300 pb-3 focus:border-black focus:outline-none transition text-base resize-none bg-transparent hover-target"
               ></textarea>
             </div>
-            <div className="text-center pt-8">
+            <div className="text-center pt-7">
               <button
                 type="submit"
-                className="bg-black text-white px-16 py-6 text-lg font-semibold hover:bg-gray-800 transition magnetic-btn hover-target"
+                className="bg-black text-white px-14 py-5 text-base font-semibold hover:bg-gray-800 transition magnetic-btn hover-target"
               >
                 Send Message
               </button>
