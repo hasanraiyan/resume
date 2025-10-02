@@ -6,7 +6,6 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useForm, ValidationError } from '@formspree/react'
 import { Section, Button, Input } from '@/components/ui'
 import CustomDropdownMinimal from './CustomDropdown'
-import { createContactSubmission } from '@/app/actions/contactActions'
 // ========================================
 // 📦 DYNAMIC DATA (Backend-Ready)
 // ========================================
@@ -129,27 +128,33 @@ export default function Contact() {
     }
   }, [])
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    console.log('Form submitted:', formData)
-    
-    try {
-      // Save to MongoDB first
-      const mongoFormData = new FormData()
-      Object.keys(formData).forEach(key => {
-        mongoFormData.append(key, formData[key])
-      })
+  // Save to MongoDB when Formspree succeeds
+  useEffect(() => {
+    if (state.succeeded) {
+      // Formspree succeeded, now save to MongoDB
+      const saveToMongoDB = async () => {
+        try {
+          const response = await fetch('/api/contacts', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData),
+          })
+          
+          if (response.ok) {
+            console.log('Contact saved to MongoDB successfully')
+          }
+        } catch (error) {
+          console.error('Error saving contact to MongoDB:', error)
+        }
+      }
       
-      await createContactSubmission(mongoFormData)
-      
-      // Then use Formspree for email notifications
-      await handleFormspreeSubmit(e)
-    } catch (error) {
-      console.error('Error saving contact:', error)
-      // Still try Formspree even if MongoDB fails
-      await handleFormspreeSubmit(e)
+      saveToMongoDB()
     }
-  }
+  }, [state.succeeded, formData])
+
+  const handleSubmit = handleFormspreeSubmit
 
   const handleChange = (e) => {
     setFormData({

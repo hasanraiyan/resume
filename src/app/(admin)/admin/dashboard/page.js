@@ -1,6 +1,17 @@
 import Link from 'next/link';
 import { getAllProjects } from '@/app/actions/projectActions';
 import { getAllContacts } from '@/app/actions/contactActions';
+import { Button, Card } from '@/components/ui';
+
+function getStatIcon(statName) {
+  switch (statName) {
+    case 'Total Projects': return 'fas fa-folder';
+    case 'Featured Projects': return 'fas fa-star';
+    case 'Total Contacts': return 'fas fa-envelope';
+    case 'New Messages': return 'fas fa-bell';
+    default: return 'fas fa-chart-bar';
+  }
+}
 
 export default async function AdminDashboard() {
   const [projectsResult, contactsResult] = await Promise.all([
@@ -41,84 +52,87 @@ export default async function AdminDashboard() {
   ];
 
   return (
-    <div className="px-4 py-6 sm:px-0">
-      <div className="border-b border-gray-200 pb-5">
-        <h3 className="text-lg leading-6 font-medium text-gray-900">Dashboard Overview</h3>
-        <p className="mt-2 max-w-4xl text-sm text-gray-500">
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="border-b-2 border-neutral-200 pb-6">
+        <h1 className="text-4xl font-bold text-black font-['Playfair_Display'] mb-2">
+          Dashboard Overview
+        </h1>
+        <p className="text-neutral-600 text-lg">
           Quick overview of your portfolio content and recent activity.
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Link key={stat.name} href={stat.link} className="group">
-            <div className="relative bg-white pt-5 px-4 pb-12 sm:pt-6 sm:px-6 shadow rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-              <dt>
-                <div className={`absolute ${stat.color} rounded-md p-3`}>
-                  <div className="w-6 h-6 text-white">📊</div>
+            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group-hover:bg-neutral-50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-neutral-600 uppercase tracking-wider">
+                    {stat.name}
+                  </p>
+                  <p className="text-3xl font-bold text-black mt-2 font-['Playfair_Display']">
+                    {stat.value}
+                  </p>
                 </div>
-                <p className="ml-16 text-sm font-medium text-gray-500 truncate">{stat.name}</p>
-              </dt>
-              <dd className="ml-16 pb-6 flex items-baseline sm:pb-7">
-                <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
-              </dd>
-            </div>
+                <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center group-hover:bg-neutral-800 transition-colors">
+                  <i className={`text-white ${getStatIcon(stat.name)}`}></i>
+                </div>
+              </div>
+            </Card>
           </Link>
         ))}
       </div>
 
       {/* Quick Actions */}
-      <div className="mt-8">
-        <h4 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h4>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Link
-            href="/admin/projects/new"
-            className="relative rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm flex items-center space-x-3 hover:border-gray-400 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-black"
-          >
-            <div className="flex-shrink-0">
-              <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center">
-                <span className="text-white text-xl">+</span>
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-black font-['Playfair_Display']">Quick Actions</h2>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          
+          <Link href="/admin/projects/new" className="group">
+            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group-hover:bg-black group-hover:text-white">
+              <div className="flex items-start space-x-4">
+                <div className="w-12 h-12 bg-black group-hover:bg-white rounded-lg flex items-center justify-center transition-colors">
+                  <i className="fas fa-plus text-white group-hover:text-black text-lg"></i>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-black group-hover:text-white mb-1">Add New Project</h3>
+                  <p className="text-sm text-neutral-600 group-hover:text-neutral-300">Create a new portfolio project</p>
+                </div>
               </div>
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="absolute inset-0" aria-hidden="true" />
-              <p className="text-sm font-medium text-gray-900">Add New Project</p>
-              <p className="text-sm text-gray-500 truncate">Create a new portfolio project</p>
-            </div>
+            </Card>
           </Link>
 
-          <Link
-            href="/admin/projects"
-            className="relative rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm flex items-center space-x-3 hover:border-gray-400 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-black"
-          >
-            <div className="flex-shrink-0">
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                <span className="text-gray-600 text-xl">📂</span>
+          <Link href="/admin/projects" className="group">
+            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group-hover:bg-neutral-900 group-hover:text-white">
+              <div className="flex items-start space-x-4">
+                <div className="w-12 h-12 bg-neutral-100 group-hover:bg-white rounded-lg flex items-center justify-center transition-colors">
+                  <i className="fas fa-folder text-neutral-600 group-hover:text-black text-lg"></i>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-black group-hover:text-white mb-1">Manage Projects</h3>
+                  <p className="text-sm text-neutral-600 group-hover:text-neutral-300">View and edit all projects</p>
+                </div>
               </div>
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="absolute inset-0" aria-hidden="true" />
-              <p className="text-sm font-medium text-gray-900">Manage Projects</p>
-              <p className="text-sm text-gray-500 truncate">View and edit all projects</p>
-            </div>
+            </Card>
           </Link>
 
-          <Link
-            href="/admin/contacts"
-            className="relative rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm flex items-center space-x-3 hover:border-gray-400 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-black"
-          >
-            <div className="flex-shrink-0">
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                <span className="text-gray-600 text-xl">📧</span>
+          <Link href="/admin/contacts" className="group">
+            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group-hover:bg-neutral-900 group-hover:text-white">
+              <div className="flex items-start space-x-4">
+                <div className="w-12 h-12 bg-neutral-100 group-hover:bg-white rounded-lg flex items-center justify-center transition-colors">
+                  <i className="fas fa-envelope text-neutral-600 group-hover:text-black text-lg"></i>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-black group-hover:text-white mb-1">View Messages</h3>
+                  <p className="text-sm text-neutral-600 group-hover:text-neutral-300">Check contact submissions</p>
+                </div>
               </div>
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="absolute inset-0" aria-hidden="true" />
-              <p className="text-sm font-medium text-gray-900">View Messages</p>
-              <p className="text-sm text-gray-500 truncate">Check contact submissions</p>
-            </div>
+            </Card>
           </Link>
+          
         </div>
       </div>
     </div>

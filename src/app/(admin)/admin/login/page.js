@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import CustomCursor from '@/components/CustomCursor';
+import { Button, Card } from '@/components/ui';
 
 export default function AdminLogin() {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
@@ -46,67 +47,100 @@ export default function AdminLogin() {
   return (
     <>
       <CustomCursor />
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Admin Login
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to access the admin dashboard
-          </p>
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50 py-12 px-6 font-['Space_Grotesk']">
+        
+        {/* Background Pattern */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-4 -right-4 w-72 h-72 bg-black opacity-5 rounded-full"></div>
+          <div className="absolute -bottom-8 -left-8 w-96 h-96 bg-black opacity-3 rounded-full"></div>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
+
+        <div className="relative max-w-md w-full">
+          
+          {/* Logo/Brand */}
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center space-x-3 mb-4">
+              <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-lg">A</span>
+              </div>
+              <h1 className="text-3xl font-bold text-black font-['Playfair_Display']">Admin</h1>
             </div>
-          )}
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="username" className="sr-only">
-                Username
-              </label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-black focus:border-black focus:z-10 sm:text-sm"
-                placeholder="Username"
-                value={credentials.username}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-black focus:border-black focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={credentials.password}
-                onChange={handleChange}
-              />
-            </div>
+            <p className="text-neutral-600">Sign in to access your dashboard</p>
           </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Signing in...' : 'Sign in'}
-            </button>
+          <Card className="p-8 border-2 border-neutral-200">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              
+              {error && (
+                <div className="bg-red-50 border-2 border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm font-medium">
+                  <i className="fas fa-exclamation-triangle mr-2"></i>
+                  {error}
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="username" className="block text-sm font-semibold text-black mb-2 uppercase tracking-wider">
+                    Username
+                  </label>
+                  <input
+                    id="username"
+                    name="username"
+                    type="text"
+                    required
+                    className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:outline-none focus:border-black transition-colors text-black placeholder-neutral-400"
+                    placeholder="Enter your username"
+                    value={credentials.username}
+                    onChange={handleChange}
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="password" className="block text-sm font-semibold text-black mb-2 uppercase tracking-wider">
+                    Password
+                  </label>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    required
+                    className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:outline-none focus:border-black transition-colors text-black placeholder-neutral-400"
+                    placeholder="Enter your password"
+                    value={credentials.password}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={isLoading}
+                variant="primary"
+                className="w-full py-4 text-base font-semibold"
+              >
+                {isLoading ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin mr-2"></i>
+                    Signing in...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-sign-in-alt mr-2"></i>
+                    Sign In
+                  </>
+                )}
+              </Button>
+              
+            </form>
+          </Card>
+
+          {/* Footer */}
+          <div className="text-center mt-8 text-sm text-neutral-500">
+            Protected by secure authentication
           </div>
-        </form>
+          
+        </div>
       </div>
-    </div>
     </>
   );
 }

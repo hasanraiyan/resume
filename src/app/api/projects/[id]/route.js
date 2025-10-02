@@ -6,25 +6,24 @@ export async function GET(request, { params }) {
   try {
     await dbConnect()
     
-    const { slug } = await params
-    console.log('API: Received parameter:', slug)
+    const { id } = params
+    console.log('API: Searching for project with ID:', id)
     
-    let project;
-    
-    // Check if it's a MongoDB ObjectId (24 hex characters) or a slug
-    if (/^[0-9a-fA-F]{24}$/.test(slug)) {
-      console.log('Searching by ObjectId:', slug)
-      project = await Project.findById(slug).lean()
-    } else {
-      console.log('Searching by slug:', slug)
-      project = await Project.findOne({ slug }).lean()
+    // Check if ID is valid MongoDB ObjectId format
+    if (!/^[0-9a-fA-F]{24}$/.test(id)) {
+      console.log('Invalid ObjectId format:', id)
+      return NextResponse.json(
+        { success: false, message: 'Invalid project ID format' },
+        { status: 400 }
+      )
     }
     
+    const project = await Project.findById(id).lean()
     console.log('Project found:', project ? 'Yes' : 'No')
     
     if (!project) {
-      // For debugging, show some sample projects
-      const allProjects = await Project.find({}, '_id title slug').limit(5).lean()
+      // Let's also try to find projects with similar IDs or list all projects for debugging
+      const allProjects = await Project.find({}, '_id title').limit(5).lean()
       console.log('Sample projects in database:', allProjects)
       
       return NextResponse.json(
@@ -57,25 +56,14 @@ export async function PUT(request, { params }) {
   try {
     await dbConnect()
     
-    const { slug } = await params
+    const { id } = params
     const body = await request.json()
     
-    let updatedProject;
-    
-    // Check if it's a MongoDB ObjectId or a slug
-    if (/^[0-9a-fA-F]{24}$/.test(slug)) {
-      updatedProject = await Project.findByIdAndUpdate(
-        slug,
-        body,
-        { new: true, runValidators: true }
-      ).lean()
-    } else {
-      updatedProject = await Project.findOneAndUpdate(
-        { slug },
-        body,
-        { new: true, runValidators: true }
-      ).lean()
-    }
+    const updatedProject = await Project.findByIdAndUpdate(
+      id,
+      body,
+      { new: true, runValidators: true }
+    ).lean()
     
     if (!updatedProject) {
       return NextResponse.json(
@@ -109,15 +97,8 @@ export async function DELETE(request, { params }) {
   try {
     await dbConnect()
     
-    const { slug } = await params
-    let deletedProject;
-    
-    // Check if it's a MongoDB ObjectId or a slug
-    if (/^[0-9a-fA-F]{24}$/.test(slug)) {
-      deletedProject = await Project.findByIdAndDelete(slug)
-    } else {
-      deletedProject = await Project.findOneAndDelete({ slug })
-    }
+    const { id } = params
+    const deletedProject = await Project.findByIdAndDelete(id)
     
     if (!deletedProject) {
       return NextResponse.json(

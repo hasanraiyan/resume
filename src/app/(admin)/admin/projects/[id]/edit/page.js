@@ -1,15 +1,18 @@
 'use client';
 
-import { useState } from 'react';
-import { createProject } from '@/app/actions/projectActions';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { updateProject } from '@/app/actions/projectActions';
 import { Input, Button, Card } from '@/components/ui';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 import CustomDropdownMinimal from '@/components/CustomDropdown';
 
-export default function NewProjectPage() {
-  const [images, setImages] = useState([{ url: '', alt: '', caption: '' }]);
-  const [tags, setTags] = useState([{ name: '', category: '' }]);
+export default function EditProjectPage({ params }) {
+  const router = useRouter();
+  const [project, setProject] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [projectId, setProjectId] = useState(null);
 
   const categoryOptions = [
     { value: 'Web Development', label: 'Web Development' },
@@ -19,38 +22,79 @@ export default function NewProjectPage() {
     { value: 'E-commerce', label: 'E-commerce' }
   ];
 
-  const addImage = () => {
-    setImages([...images, { url: '', alt: '', caption: '' }]);
-  };
+  // Handle params (which might be a Promise in Next.js 15)
+  useEffect(() => {
+    const getParams = async () => {
+      const resolvedParams = await params;
+      setProjectId(resolvedParams.id);
+    };
+    getParams();
+  }, [params]);
 
-  const removeImage = (index) => {
-    setImages(images.filter((_, i) => i !== index));
-  };
+  useEffect(() => {
+    const fetchProject = async () => {
+      try {
+        console.log('Fetching project with ID:', projectId);
+        const response = await fetch(`/api/projects/${projectId}`);
+        console.log('Response status:', response.status);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Project data:', data);
+          setProject(data.project);
+          setSelectedCategory(data.project?.category || '');
+        } else {
+          const errorData = await response.json();
+          console.error('API Error:', errorData);
+          console.log('Sample projects available:', errorData.sampleProjects);
+        }
+      } catch (error) {
+        console.error('Error fetching project:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const updateImage = (index, field, value) => {
-    const newImages = [...images];
-    newImages[index][field] = value;
-    setImages(newImages);
-  };
+    if (projectId) {
+      fetchProject();
+    }
+  }, [projectId]);
 
-  const addTag = () => {
-    setTags([...tags, { name: '', category: '' }]);
-  };
+  if (loading) {
+    return (
+      <AdminPageWrapper title="Edit Project" description="Loading project data...">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-2 border-black border-t-transparent mx-auto"></div>
+            <p className="mt-4 text-neutral-600">Loading project...</p>
+          </div>
+        </div>
+      </AdminPageWrapper>
+    );
+  }
 
-  const removeTag = (index) => {
-    setTags(tags.filter((_, i) => i !== index));
-  };
-
-  const updateTag = (index, field, value) => {
-    const newTags = [...tags];
-    newTags[index][field] = value;
-    setTags(newTags);
-  };
+  if (!project) {
+    return (
+      <AdminPageWrapper title="Project Not Found">
+        <div className="text-center py-20">
+          <div className="w-16 h-16 bg-neutral-100 rounded-lg flex items-center justify-center mx-auto mb-6">
+            <i className="fas fa-exclamation-triangle text-neutral-400 text-2xl"></i>
+          </div>
+          <h3 className="text-xl font-semibold text-black mb-2">Project not found</h3>
+          <p className="text-neutral-600 mb-8">The project you're looking for doesn't exist or may have been deleted.</p>
+          <Button href="/admin/projects" variant="primary">
+            <i className="fas fa-arrow-left mr-2"></i>
+            Back to Projects
+          </Button>
+        </div>
+      </AdminPageWrapper>
+    );
+  }
 
   return (
     <AdminPageWrapper
-      title="Create New Project"
-      description="Add a new project to your portfolio. Fill out all the required information to showcase your work."
+      title="Edit Project"
+      description={`Editing "${project.title}" - Update your project information and settings.`}
       actionButton={
         <Button href="/admin/projects" variant="ghost">
           <i className="fas fa-arrow-left mr-2"></i>
@@ -60,11 +104,7 @@ export default function NewProjectPage() {
     >
       <Card className="max-w-4xl mx-auto">
         <form action={async (formData) => {
-          // Add images and tags as JSON strings
-          formData.append('images', JSON.stringify(images.filter(img => img.url)));
-          formData.append('tags', JSON.stringify(tags.filter(tag => tag.name)));
-          
-          await createProject(formData);
+          await updateProject(projectId, formData);
         }} className="space-y-8 p-8">
           
           {/* Basic Information */}
@@ -82,7 +122,7 @@ export default function NewProjectPage() {
                   name="title"
                   type="text"
                   required
-                  placeholder="My Awesome Project"
+                  defaultValue={project.title}
                   className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:outline-none focus:border-black transition-colors"
                 />
               </div>
@@ -95,7 +135,7 @@ export default function NewProjectPage() {
                   name="slug"
                   type="text"
                   required
-                  placeholder="my-awesome-project"
+                  defaultValue={project.slug}
                   className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:outline-none focus:border-black transition-colors"
                 />
               </div>
@@ -108,7 +148,7 @@ export default function NewProjectPage() {
                   name="projectNumber"
                   type="text"
                   required
-                  placeholder="01"
+                  defaultValue={project.projectNumber}
                   className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:outline-none focus:border-black transition-colors"
                 />
               </div>
@@ -121,7 +161,6 @@ export default function NewProjectPage() {
                   onChange={(e) => setSelectedCategory(e.target.value)}
                   name="category"
                 />
-                {/* Hidden input for form submission */}
                 <input type="hidden" name="category" value={selectedCategory} />
               </div>
 
@@ -133,7 +172,7 @@ export default function NewProjectPage() {
                   name="tagline"
                   type="text"
                   required
-                  placeholder="A brief, catchy description"
+                  defaultValue={project.tagline}
                   className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:outline-none focus:border-black transition-colors"
                 />
               </div>
@@ -146,7 +185,7 @@ export default function NewProjectPage() {
                   name="thumbnail"
                   type="url"
                   required
-                  placeholder="https://example.com/image.jpg"
+                  defaultValue={project.thumbnail}
                   className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:outline-none focus:border-black transition-colors"
                 />
               </div>
@@ -167,7 +206,7 @@ export default function NewProjectPage() {
                 name="description"
                 rows={3}
                 required
-                placeholder="Brief project description for listings..."
+                defaultValue={project.description}
                 className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:outline-none focus:border-black transition-colors resize-none"
               />
             </div>
@@ -180,7 +219,7 @@ export default function NewProjectPage() {
                 name="fullDescription"
                 rows={6}
                 required
-                placeholder="Detailed project description for the project page..."
+                defaultValue={project.fullDescription}
                 className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:outline-none focus:border-black transition-colors resize-none"
               />
             </div>
@@ -190,6 +229,7 @@ export default function NewProjectPage() {
                 name="featured"
                 type="checkbox"
                 value="true"
+                defaultChecked={project.featured}
                 className="w-5 h-5 text-black border-2 border-neutral-300 rounded focus:ring-black focus:ring-2"
                 id="featured"
               />
@@ -203,14 +243,31 @@ export default function NewProjectPage() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end space-x-4 pt-6 border-t-2 border-neutral-200">
-            <Button href="/admin/projects" variant="ghost">
-              Cancel
+          <div className="flex justify-between items-center pt-6 border-t-2 border-neutral-200">
+            <Button 
+              type="button"
+              variant="ghost"
+              className="text-red-600 hover:text-red-800 hover:bg-red-50"
+              onClick={() => {
+                if (confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+                  // TODO: Add delete functionality
+                  console.log('Delete project:', projectId);
+                }
+              }}
+            >
+              <i className="fas fa-trash mr-2"></i>
+              Delete Project
             </Button>
-            <Button type="submit" variant="primary">
-              <i className="fas fa-plus mr-2"></i>
-              Create Project
-            </Button>
+            
+            <div className="flex space-x-4">
+              <Button href="/admin/projects" variant="ghost">
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary">
+                <i className="fas fa-save mr-2"></i>
+                Update Project
+              </Button>
+            </div>
           </div>
 
         </form>

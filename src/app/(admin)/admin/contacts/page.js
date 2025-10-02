@@ -1,4 +1,6 @@
 import { getAllContacts } from '@/app/actions/contactActions';
+import { Card, Badge } from '@/components/ui';
+import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 
 export default async function ContactsListPage() {
   const result = await getAllContacts();
@@ -15,96 +17,107 @@ export default async function ContactsListPage() {
   };
 
   return (
-    <div className="px-4 py-6 sm:px-0">
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-xl font-semibold text-gray-900">Contact Messages</h1>
-          <p className="mt-2 text-sm text-gray-700">
-            Messages submitted through the contact form on your portfolio.
-          </p>
-        </div>
-      </div>
+    <AdminPageWrapper
+      title="Contact Messages"
+      description="Messages submitted through the contact form on your portfolio. Manage and respond to client inquiries."
+    >
 
       {contacts.length === 0 ? (
-        <div className="mt-8 text-center">
-          <svg
-            className="mx-auto h-12 w-12 text-gray-400"
-            stroke="currentColor"
-            fill="none"
-            viewBox="0 0 48 48"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 14v20c0 4.418 7.163 8 16 8 1.381 0 2.721-.087 4-.252M8 14c0 4.418 7.163 8 16 8s16-3.582 16-8M8 14c0-4.418 7.163-8 16-8s16 3.582 16 8m0 0v14m-16-4c0 4.418 7.163 8 16 8 1.381 0 2.721-.087 4-.252"
-            />
-          </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No messages</h3>
-          <p className="mt-1 text-sm text-gray-500">No contact form submissions yet.</p>
+        <div className="text-center py-20">
+          <div className="w-16 h-16 bg-neutral-100 rounded-lg flex items-center justify-center mx-auto mb-6">
+            <i className="fas fa-envelope text-neutral-400 text-2xl"></i>
+          </div>
+          <h3 className="text-xl font-semibold text-black mb-2">No messages yet</h3>
+          <p className="text-neutral-600">Contact form submissions will appear here.</p>
         </div>
       ) : (
-        <div className="mt-8 flex flex-col">
-          <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
-            <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
-              <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-                <table className="min-w-full divide-y divide-gray-300">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Contact Info
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Project Type
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Received
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Message
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {contacts.map((contact) => (
-                      <tr key={contact._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{contact.name}</div>
-                            <div className="text-sm text-gray-500">{contact.email}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                            {contact.projectType?.replace('-', ' ') || 'Not specified'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(contact.status)}`}>
-                            {contact.status.charAt(0).toUpperCase() + contact.status.slice(1)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(contact.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900 max-w-xs truncate">
-                            {contact.message}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+        <div className="space-y-4">
+          {contacts.map((contact) => (
+            <Card key={contact._id} className="p-6 hover:shadow-lg transition-shadow border-l-4 border-l-transparent hover:border-l-black">
+              <div className="flex items-start justify-between">
+                
+                {/* Contact Info */}
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center">
+                      <span className="text-white font-semibold text-sm">
+                        {contact.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-black">{contact.name}</h3>
+                      <p className="text-sm text-neutral-600">{contact.email}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <p className="text-neutral-800 leading-relaxed">"{contact.message}"</p>
+                  </div>
+                  
+                  <div className="flex items-center space-x-4 text-sm text-neutral-500">
+                    <span className="flex items-center">
+                      <i className="fas fa-calendar-alt mr-1"></i>
+                      {new Date(contact.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </span>
+                    <span className="flex items-center">
+                      <i className="fas fa-clock mr-1"></i>
+                      {new Date(contact.createdAt).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Status & Actions */}
+                <div className="flex flex-col items-end space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Badge 
+                      variant="tag" 
+                      className={`${getStatusColor(contact.status)} border-0`}
+                    >
+                      <i className={`mr-1 ${
+                        contact.status === 'new' ? 'fas fa-circle' :
+                        contact.status === 'read' ? 'fas fa-eye' :
+                        contact.status === 'replied' ? 'fas fa-check' :
+                        'fas fa-archive'
+                      }`}></i>
+                      {contact.status.charAt(0).toUpperCase() + contact.status.slice(1)}
+                    </Badge>
+                    
+                    {contact.projectType && (
+                      <Badge variant="tag" className="bg-neutral-100 text-neutral-700">
+                        {contact.projectType.replace('-', ' ')}
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <div className="flex space-x-2">
+                    <button className="text-neutral-600 hover:text-black transition-colors p-2">
+                      <i className="fas fa-reply"></i>
+                    </button>
+                    <a 
+                      href={`mailto:${contact.email}`}
+                      className="text-neutral-600 hover:text-black transition-colors p-2"
+                    >
+                      <i className="fas fa-envelope"></i>
+                    </a>
+                    <button className="text-neutral-600 hover:text-black transition-colors p-2">
+                      <i className="fas fa-archive"></i>
+                    </button>
+                  </div>
+                </div>
+                
               </div>
-            </div>
-          </div>
+            </Card>
+          ))}
         </div>
       )}
-    </div>
+      
+    </AdminPageWrapper>
   );
 }
