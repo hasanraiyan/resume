@@ -1,40 +1,90 @@
+// ========================================
+// 📦 DYNAMIC DATA (Backend-Ready)
+// ========================================
+const footerData = {
+  logo: {
+    text: "JD",
+    link: "#home" // Link to top or home
+  },
+  
+  socialLinks: [
+    {
+      id: 1,
+      name: "Dribbble",
+      url: "https://dribbble.com/yourusername", // Replace with actual URL
+      label: "Dribbble",
+      icon: "fab fa-dribbble" // Optional: for icon version
+    },
+    {
+      id: 2,
+      name: "Behance",
+      url: "https://behance.net/yourusername",
+      label: "Behance",
+      icon: "fab fa-behance"
+    },
+    {
+      id: 3,
+      name: "Instagram",
+      url: "https://instagram.com/yourusername",
+      label: "Instagram",
+      icon: "fab fa-instagram"
+    },
+    {
+      id: 4,
+      name: "LinkedIn",
+      url: "https://linkedin.com/in/yourusername",
+      label: "LinkedIn",
+      icon: "fab fa-linkedin"
+    }
+  ],
+  
+  copyright: {
+    year: new Date().getFullYear(), // Dynamic year
+    name: "John Doe",
+    text: "All rights reserved"
+  }
+}
+
+// ========================================
+// 🎨 COMPONENT
+// ========================================
 export default function Footer() {
-    return (
-      <footer className="py-8 sm:py-10 border-t-2 border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-12">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="text-xl sm:text-2xl font-bold hover-target">JD</div>
-            <div className="flex flex-wrap justify-center gap-6 sm:gap-7">
+  return (
+    <footer className="py-8 sm:py-10 border-t-2 border-gray-200">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-12">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+          
+          {/* Logo */}
+          <a 
+            href={footerData.logo.link}
+            className="text-xl sm:text-2xl font-bold hover-target"
+          >
+            {footerData.logo.text}
+          </a>
+          
+          {/* Social Links */}
+          <div className="flex flex-wrap justify-center gap-6 sm:gap-7">
+            {footerData.socialLinks.map((social) => (
               <a
-                href="#"
+                key={social.id}
+                href={social.url}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-gray-600 hover:text-black transition hover-target text-sm"
+                aria-label={social.name}
               >
-                Dribbble
+                {social.label}
               </a>
-              <a
-                href="#"
-                className="text-gray-600 hover:text-black transition hover-target text-sm"
-              >
-                Behance
-              </a>
-              <a
-                href="#"
-                className="text-gray-600 hover:text-black transition hover-target text-sm"
-              >
-                Instagram
-              </a>
-              <a
-                href="#"
-                className="text-gray-600 hover:text-black transition hover-target text-sm"
-              >
-                LinkedIn
-              </a>
-            </div>
-            <div className="text-gray-600 text-xs sm:text-sm text-center md:text-right">
-              &copy; 2024 John Doe. All rights reserved.
-            </div>
+            ))}
           </div>
+          
+          {/* Copyright */}
+          <div className="text-gray-600 text-xs sm:text-sm text-center md:text-right">
+            &copy; {footerData.copyright.year} {footerData.copyright.name}. {footerData.copyright.text}.
+          </div>
+          
         </div>
-      </footer>
-    )
-  } 
+      </div>
+    </footer>
+  )
+}

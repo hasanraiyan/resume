@@ -3,6 +3,99 @@
 import { useEffect, useState } from 'react'
 import { gsap } from 'gsap'
 
+// ========================================
+// 📦 DYNAMIC DATA (Backend-Ready)
+// ========================================
+const navbarData = {
+  logo: {
+    text: "JD",
+    link: "#home"
+  },
+  
+  navigationLinks: [
+    {
+      id: 1,
+      label: "Home",
+      href: "#home"
+    },
+    {
+      id: 2,
+      label: "About",
+      href: "#about"
+    },
+    {
+      id: 3,
+      label: "Work",
+      href: "#work"
+    }
+  ],
+  
+  cta: {
+    text: "Let's Talk",
+    href: "#contact"
+  },
+  
+  mobileMenu: {
+    menuItems: [
+      {
+        id: 1,
+        label: "Home",
+        href: "#home"
+      },
+      {
+        id: 2,
+        label: "About",
+        href: "#about"
+      },
+      {
+        id: 3,
+        label: "Work",
+        href: "#work"
+      },
+      {
+        id: 4,
+        label: "Contact",
+        href: "#contact"
+      }
+    ],
+    
+    cta: {
+      text: "Let's Talk",
+      href: "#contact"
+    },
+    
+    socialLinks: [
+      {
+        id: 1,
+        name: "Dribbble",
+        url: "https://dribbble.com/yourusername", // Replace with actual URL
+        icon: "fab fa-dribbble"
+      },
+      {
+        id: 2,
+        name: "Behance",
+        url: "https://behance.net/yourusername",
+        icon: "fab fa-behance"
+      },
+      {
+        id: 3,
+        name: "Instagram",
+        url: "https://instagram.com/yourusername",
+        icon: "fab fa-instagram"
+      },
+      {
+        id: 4,
+        name: "LinkedIn",
+        url: "https://linkedin.com/in/yourusername",
+        icon: "fab fa-linkedin"
+      }
+    ]
+  }
+}
+
+// ========================================
+// 🎨 COMPONENT
+// ========================================
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
@@ -64,36 +157,33 @@ export default function Navbar() {
       <nav className="fixed w-full z-50 top-0 bg-white bg-opacity-90 backdrop-blur-sm border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-12">
           <div className="flex items-center justify-between h-16 sm:h-20">
+            
             {/* Logo */}
-            <a href="#home" className="text-xl sm:text-2xl font-bold hover-target z-50">
-              JD
+            <a 
+              href={navbarData.logo.link} 
+              className="text-xl sm:text-2xl font-bold hover-target z-50"
+            >
+              {navbarData.logo.text}
             </a>
 
             {/* Desktop Menu */}
             <div className="hidden md:flex items-center space-x-8 lg:space-x-10">
+              {navbarData.navigationLinks.map((link) => (
+                <a
+                  key={link.id}
+                  href={link.href}
+                  className="text-sm lg:text-base text-gray-800 hover:text-gray-600 font-medium underline-animate transition hover-target"
+                >
+                  {link.label}
+                </a>
+              ))}
+              
+              {/* CTA Button */}
               <a
-                href="#home"
-                className="text-sm lg:text-base text-gray-800 hover:text-gray-600 font-medium underline-animate transition hover-target"
-              >
-                Home
-              </a>
-              <a
-                href="#about"
-                className="text-sm lg:text-base text-gray-800 hover:text-gray-600 font-medium underline-animate transition hover-target"
-              >
-                About
-              </a>
-              <a
-                href="#work"
-                className="text-sm lg:text-base text-gray-800 hover:text-gray-600 font-medium underline-animate transition hover-target"
-              >
-                Work
-              </a>
-              <a
-                href="#contact"
+                href={navbarData.cta.href}
                 className="bg-black text-white px-4 lg:px-5 py-2 lg:py-2.5 text-sm lg:text-base hover:bg-gray-800 transition magnetic-btn hover-target"
               >
-                Let&apos;s Talk
+                {navbarData.cta.text}
               </a>
             </div>
 
@@ -148,70 +238,44 @@ export default function Navbar() {
           }`}
         >
           <div className="flex flex-col h-full pt-24 pb-8 px-8">
+            
             {/* Menu Items */}
             <nav className="flex-1 flex flex-col justify-start space-y-2">
-              <a
-                href="#home"
-                className="text-2xl font-bold text-gray-800 hover:text-gray-600 transition py-4 border-b border-gray-100"
-              >
-                Home
-              </a>
-              <a
-                href="#about"
-                className="text-2xl font-bold text-gray-800 hover:text-gray-600 transition py-4 border-b border-gray-100"
-              >
-                About
-              </a>
-              <a
-                href="#work"
-                className="text-2xl font-bold text-gray-800 hover:text-gray-600 transition py-4 border-b border-gray-100"
-              >
-                Work
-              </a>
-              <a
-                href="#contact"
-                className="text-2xl font-bold text-gray-800 hover:text-gray-600 transition py-4 border-b border-gray-100"
-              >
-                Contact
-              </a>
+              {navbarData.mobileMenu.menuItems.map((item) => (
+                <a
+                  key={item.id}
+                  href={item.href}
+                  className="text-2xl font-bold text-gray-800 hover:text-gray-600 transition py-4 border-b border-gray-100"
+                >
+                  {item.label}
+                </a>
+              ))}
             </nav>
 
             {/* CTA Button */}
             <div className="mt-8">
               <a
-                href="#contact"
+                href={navbarData.mobileMenu.cta.href}
                 className="block w-full bg-black text-white text-center px-8 py-4 text-lg font-semibold hover:bg-gray-800 transition"
               >
-                Let&apos;s Talk
+                {navbarData.mobileMenu.cta.text}
               </a>
             </div>
 
             {/* Social Links */}
             <div className="flex justify-center gap-6 mt-8 pt-6 border-t border-gray-200">
-              <a
-                href="#"
-                className="text-xl text-gray-600 hover:text-black transition w-12 h-12 flex items-center justify-center"
-              >
-                <i className="fab fa-dribbble"></i>
-              </a>
-              <a
-                href="#"
-                className="text-xl text-gray-600 hover:text-black transition w-12 h-12 flex items-center justify-center"
-              >
-                <i className="fab fa-behance"></i>
-              </a>
-              <a
-                href="#"
-                className="text-xl text-gray-600 hover:text-black transition w-12 h-12 flex items-center justify-center"
-              >
-                <i className="fab fa-instagram"></i>
-              </a>
-              <a
-                href="#"
-                className="text-xl text-gray-600 hover:text-black transition w-12 h-12 flex items-center justify-center"
-              >
-                <i className="fab fa-linkedin"></i>
-              </a>
+              {navbarData.mobileMenu.socialLinks.map((social) => (
+                <a
+                  key={social.id}
+                  href={social.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xl text-gray-600 hover:text-black transition w-12 h-12 flex items-center justify-center"
+                  aria-label={social.name}
+                >
+                  <i className={social.icon}></i>
+                </a>
+              ))}
             </div>
           </div>
         </div>
