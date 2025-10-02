@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Badge } from '@/components/ui'
 
 /**
@@ -19,7 +20,7 @@ export default function ProjectCard({ project }) {
   }
   
   const handleImageError = (e) => {
-    console.error(`Image failed to load for ${project.title}:`, e.target.src)
+    console.error(`Image failed to load for ${project.title}:`, e)
     setImageError(true)
   }
 
@@ -32,14 +33,15 @@ export default function ProjectCard({ project }) {
       <div className="relative overflow-hidden rounded-lg mb-4 sm:mb-5 image-reveal">
         <div className="aspect-[4/3] bg-gray-200 flex items-center justify-center">
           {!imageError ? (
-            <img 
+            <Image 
               src={project.thumbnail} 
               alt={project.title}
+              fill
               className={`w-full h-full object-cover transition-all duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
               loading="lazy"
               onLoad={handleImageLoad}
               onError={handleImageError}
-              crossOrigin="anonymous"
+              unoptimized={true}
             />
           ) : (
             <div className="flex items-center justify-center h-full text-gray-400">
@@ -56,7 +58,7 @@ export default function ProjectCard({ project }) {
         </div>
         
         {/* Overlay on hover */}
-        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300"></div>
+        <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-all duration-300"></div>
       </div>
 
       {/* Project Info */}
