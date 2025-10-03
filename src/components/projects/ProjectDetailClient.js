@@ -103,6 +103,29 @@ export default function ProjectDetailClient({ project, relatedProjects }) {
           )}
         </div>
       </Section>
+
+      {/* Call to Action Section */}
+      <Section className="py-16 sm:py-20 bg-gray-50">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">
+            Interested in working together?
+          </h2>
+          <p className="text-lg sm:text-xl text-gray-600 mb-8 sm:mb-10">
+            Let's create something amazing for your business
+          </p>
+          <Button 
+            href="/contact" 
+            variant="primary" 
+            className="inline-flex items-center bg-black hover:bg-gray-800 text-white px-8 py-4 text-lg font-semibold"
+          >
+            Get In Touch
+            <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </Button>
+        </div>
+      </Section>
+
       <RelatedProjects projects={relatedProjects} />
     </main>
   );
