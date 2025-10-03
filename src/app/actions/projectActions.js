@@ -6,43 +6,44 @@ import Project from '@/models/Project';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+function processFormData(formData) {
+  return {
+    title: formData.get('title'),
+    slug: formData.get('slug'),
+    featured: formData.get('featured') === 'true',
+    projectNumber: formData.get('projectNumber'),
+    category: formData.get('category'),
+    tagline: formData.get('tagline'),
+    description: formData.get('description'),
+    fullDescription: formData.get('fullDescription'),
+    thumbnail: formData.get('thumbnail'),
+    // Parse the JSON string fields
+    images: JSON.parse(formData.get('images') || '[]'),
+    tags: JSON.parse(formData.get('tags') || '[]'),
+    links: JSON.parse(formData.get('links') || '{}'),
+    details: JSON.parse(formData.get('details') || '{}'),
+  };
+}
+
 export async function createProject(formData) {
   await dbConnect();
 
   try {
-    const projectData = {
-      title: formData.get('title'),
-      slug: formData.get('slug'),
-      featured: formData.get('featured') === 'true',
-      projectNumber: formData.get('projectNumber'),
-      category: formData.get('category'),
-      tagline: formData.get('tagline'),
-      description: formData.get('description'),
-      fullDescription: formData.get('fullDescription'),
-      thumbnail: formData.get('thumbnail'),
-      // Parse JSON fields if they exist
-      images: formData.get('images') ? JSON.parse(formData.get('images')) : [],
-      tags: formData.get('tags') ? JSON.parse(formData.get('tags')) : [],
-    };
-    
+    const projectData = processFormData(formData);
     const newProject = new Project(projectData);
     await newProject.save();
 
-    // Refresh pages that show project data
     revalidatePath('/projects');
     revalidatePath('/admin/projects');
     revalidatePath('/');
-
   } catch (error) {
-    // Handle errors, e.g., validation or duplicate slug
     console.error('Create Project Error:', error);
     return { 
       success: false, 
-      message: error.code === 11000 ? 'Project with this slug already exists.' : 'Failed to create project.' 
+      message: error.code === 11000 ? 'Slug already exists.' : 'Failed to create project.' 
     };
   }
   
-  // Redirect to the admin project list after success
   redirect('/admin/projects');
 }
 
@@ -50,20 +51,7 @@ export async function updateProject(id, formData) {
   await dbConnect();
 
   try {
-    const projectData = {
-      title: formData.get('title'),
-      slug: formData.get('slug'),
-      featured: formData.get('featured') === 'true',
-      projectNumber: formData.get('projectNumber'),
-      category: formData.get('category'),
-      tagline: formData.get('tagline'),
-      description: formData.get('description'),
-      fullDescription: formData.get('fullDescription'),
-      thumbnail: formData.get('thumbnail'),
-      images: formData.get('images') ? JSON.parse(formData.get('images')) : [],
-      tags: formData.get('tags') ? JSON.parse(formData.get('tags')) : [],
-    };
-    
+    const projectData = processFormData(formData);
     const updatedProject = await Project.findByIdAndUpdate(
       id, 
       projectData, 
@@ -74,47 +62,39 @@ export async function updateProject(id, formData) {
       return { success: false, message: 'Project not found.' };
     }
 
-    // Refresh pages that show project data
     revalidatePath('/projects');
     revalidatePath(`/projects/${updatedProject.slug}`);
     revalidatePath('/admin/projects');
     revalidatePath('/');
-
   } catch (error) {
     console.error('Update Project Error:', error);
     return { 
       success: false, 
-      message: error.code === 11000 ? 'Project with this slug already exists.' : 'Failed to update project.' 
+      message: error.code === 11000 ? 'Slug already exists.' : 'Failed to update project.' 
     };
   }
   
-  redirect('/admin/projects');
+  // No redirect here to allow success message to show on edit page
 }
 
 export async function deleteProject(id) {
   await dbConnect();
-
   try {
     const deletedProject = await Project.findByIdAndDelete(id);
-    
     if (!deletedProject) {
       return { success: false, message: 'Project not found.' };
     }
-
-    // Refresh pages that show project data
     revalidatePath('/projects');
     revalidatePath('/admin/projects');
     revalidatePath('/');
-
   } catch (error) {
     console.error('Delete Project Error:', error);
     return { success: false, message: 'Failed to delete project.' };
   }
-
-  // Redirect to projects list after successful deletion
   redirect('/admin/projects');
 }
 
+// ... rest of the functions (getAllProjects, etc.) remain the same
 export async function getAllProjects() {
   await dbConnect();
 

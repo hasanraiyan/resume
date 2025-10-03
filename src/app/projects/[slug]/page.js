@@ -6,6 +6,31 @@ import ProjectDetailClient from '@/components/projects/ProjectDetailClient'
 import dbConnect from '@/lib/dbConnect'
 import Project from '@/models/Project'
 
+// Helper function to recursively convert MongoDB documents to plain objects
+function serializeMongoDocument(obj) {
+  if (!obj) return obj;
+  
+  if (Array.isArray(obj)) {
+    return obj.map(serializeMongoDocument);
+  }
+  
+  if (typeof obj === 'object' && obj !== null) {
+    const serialized = {};
+    for (const key in obj) {
+      if (key === '_id' && obj[key]) {
+        serialized[key] = obj[key].toString();
+      } else if (typeof obj[key] === 'object') {
+        serialized[key] = serializeMongoDocument(obj[key]);
+      } else {
+        serialized[key] = obj[key];
+      }
+    }
+    return serialized;
+  }
+  
+  return obj;
+}
+
 // ========================================
 //  GENERATE STATIC PARAMS (Optional but recommended)
 // Pre-render all project pages at build time
@@ -54,12 +79,11 @@ export default async function ProjectDetailPage({ params }) {
     notFound()
   }
 
-  // Convert MongoDB _id to string and get related projects
-  const projectData = {
+  // Serialize project data to remove MongoDB-specific objects
+  const projectData = serializeMongoDocument({
     ...project,
     id: project._id.toString(),
-    _id: project._id.toString(),
-  }
+  });
 
   // Get related projects from the same category (limit to 3)
   const relatedProjectsData = await Project.find({ 
@@ -69,11 +93,13 @@ export default async function ProjectDetailPage({ params }) {
   .limit(3)
   .lean()
 
-  const relatedProjects = relatedProjectsData.map(p => ({
-    ...p,
-    id: p._id.toString(),
-    _id: p._id.toString(),
-  }))
+  // Serialize related projects data
+  const relatedProjects = relatedProjectsData.map(p => 
+    serializeMongoDocument({
+      ...p,
+      id: p._id.toString(),
+    })
+  );
 
   return (
     <>
