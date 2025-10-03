@@ -10,6 +10,7 @@ import Footer from '@/components/Footer'
 import HomePageClient from '@/components/HomePageClient'
 import dbConnect from '@/lib/dbConnect'
 import Project from '@/models/Project'
+import { serializeProjects } from '@/lib/serialize'
 
 export default async function Home() {
   await dbConnect()
@@ -17,12 +18,8 @@ export default async function Home() {
   // Fetch featured projects from MongoDB
   const featuredProjectsData = await Project.find({ featured: true }).sort({ createdAt: -1 }).lean()
   
-  // Convert MongoDB _id to string for client components
-  const featuredProjects = featuredProjectsData.map(project => ({
-    ...project,
-    id: project._id.toString(),
-    _id: project._id.toString(),
-  }))
+  // Serialize all ObjectIds recursively for client components
+  const featuredProjects = serializeProjects(featuredProjectsData)
 
   return (
     <>

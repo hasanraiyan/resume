@@ -5,18 +5,16 @@ import { Section } from '@/components/ui'
 import ProjectsPageClient from '@/components/projects/ProjectsPageClient'
 import dbConnect from '@/lib/dbConnect'
 import Project from '@/models/Project'
+import { serializeProjects } from '@/lib/serialize'
+
 export default async function ProjectsPage() {
   await dbConnect()
   
   // Fetch all projects from MongoDB, convert to plain objects
   const allProjects = await Project.find({}).sort({ createdAt: -1 }).lean()
   
-  // Convert MongoDB _id to string for client components
-  const projects = allProjects.map(project => ({
-    ...project,
-    id: project._id.toString(),
-    _id: project._id.toString(),
-  }))
+  // Serialize all ObjectIds recursively for client components
+  const projects = serializeProjects(allProjects)
 
   return (
     <>

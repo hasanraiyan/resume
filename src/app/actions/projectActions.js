@@ -5,6 +5,7 @@ import dbConnect from '@/lib/dbConnect';
 import Project from '@/models/Project';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { serializeProject, serializeProjects } from '@/lib/serialize';
 
 function processFormData(formData) {
   return {
@@ -94,13 +95,13 @@ export async function deleteProject(id) {
   redirect('/admin/projects');
 }
 
-// ... rest of the functions (getAllProjects, etc.) remain the same
 export async function getAllProjects() {
   await dbConnect();
 
   try {
     const projects = await Project.find({}).sort({ createdAt: -1 }).lean();
-    return { success: true, projects };
+    const serializedProjects = serializeProjects(projects);
+    return { success: true, projects: serializedProjects };
   } catch (error) {
     console.error('Get Projects Error:', error);
     return { success: false, projects: [] };
@@ -112,7 +113,11 @@ export async function getProjectBySlug(slug) {
 
   try {
     const project = await Project.findOne({ slug }).lean();
-    return { success: true, project };
+    if (!project) {
+      return { success: false, project: null };
+    }
+    const serializedProject = serializeProject(project);
+    return { success: true, project: serializedProject };
   } catch (error) {
     console.error('Get Project Error:', error);
     return { success: false, project: null };
@@ -124,7 +129,8 @@ export async function getFeaturedProjects() {
 
   try {
     const projects = await Project.find({ featured: true }).sort({ createdAt: -1 }).lean();
-    return { success: true, projects };
+    const serializedProjects = serializeProjects(projects);
+    return { success: true, projects: serializedProjects };
   } catch (error) {
     console.error('Get Featured Projects Error:', error);
     return { success: false, projects: [] };
