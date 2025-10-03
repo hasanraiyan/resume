@@ -146,7 +146,7 @@ export default function ProjectGallery({ images }) {
                     className={`relative flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded overflow-hidden transition-all duration-200 ring-offset-1 ${
                       activeImage === actualIndex
                         ? 'ring-2 ring-black scale-105'
-                        : 'opacity-60 hover:opacity-100 hover:scale-105'
+                        : 'opacity-60 hover:opacity-100'
                     }`}
                   >
                     <img 
