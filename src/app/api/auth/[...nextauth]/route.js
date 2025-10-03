@@ -86,10 +86,21 @@ export const authOptions = {
     },
     async redirect({ url, baseUrl }) {
       try {
+        console.log('NextAuth redirect callback:', { url, baseUrl });
+        
         // Allows relative callback URLs
-        if (url.startsWith("/")) return `${baseUrl}${url}`;
+        if (url.startsWith("/")) {
+          const redirectUrl = `${baseUrl}${url}`;
+          console.log('Redirecting to:', redirectUrl);
+          return redirectUrl;
+        }
         // Allows callback URLs on the same origin
-        else if (new URL(url).origin === baseUrl) return url;
+        else if (new URL(url).origin === baseUrl) {
+          console.log('Redirecting to same origin:', url);
+          return url;
+        }
+        
+        console.log('Falling back to baseUrl:', baseUrl);
         return baseUrl;
       } catch (error) {
         console.error('Redirect callback error:', error);

@@ -9,6 +9,12 @@ export default withAuth(
       authorized: ({ token, req }) => {
         // Check if user has admin role for admin routes
         if (req.nextUrl.pathname.startsWith('/admin')) {
+          console.log('Middleware auth check:', {
+            pathname: req.nextUrl.pathname,
+            hasToken: !!token,
+            tokenRole: token?.role,
+            isAdmin: token?.role === 'admin'
+          });
           return token?.role === 'admin';
         }
         return true;
@@ -18,5 +24,5 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ['/admin/:path*']
+  matcher: ['/admin/((?!api|_next/static|_next/image|favicon.ico).*)']
 };
