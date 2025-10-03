@@ -59,7 +59,7 @@ export const componentStyles = {
   // ==================
   cards: {
     base: `
-      bg-white rounded-lg overflow-hidden
+      bg-white rounded-lg
       transition-shadow duration-300
     `,
     

@@ -107,7 +107,7 @@ export default function CustomDropdownMinimal({
               className={`w-full text-left px-4 py-3 text-sm sm:text-base transition-colors ${
                 option.value === value
                   ? 'bg-gray-50 font-semibold'
-                  : 'hover:bg-gray-50'
+                   : 'hover:bg-gray-50'
               }`}
             >
               {option.label}
