@@ -22,8 +22,8 @@ const defaultProject = {
   description: '',
   fullDescription: '',
   featured: false,
-  images: [{ url: '', alt: '', caption: '' }],
-  tags: [{ name: '', category: '' }],
+  images: [],
+  tags: [],
   links: { live: '', github: '', figma: '' },
   details: { client: '', year: '', duration: '', role: '', challenge: '', solution: '', results: [] }
 };
