@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { useForm, ValidationError } from '@formspree/react'
 import { Section, Input } from '@/components/ui'
 import CustomDropdownMinimal from './CustomDropdown'
 import ActionButton from '@/components/admin/ActionButton'
+import { createContactSubmission } from '@/app/actions/contactActions'
 // ========================================
 // 📦 DYNAMIC DATA (Backend-Ready)
 // ========================================
@@ -95,15 +95,14 @@ const contactData = {
 // 🎨 COMPONENT
 // ========================================
 export default function Contact() {
-  // Replace "YOUR_FORM_ID" with your actual Formspree form ID
-  const [state, handleFormspreeSubmit] = useForm("mrbykylg")
-  
   const initialFormData = contactData.form.fields.reduce((acc, field) => {
     acc[field.name] = field.defaultValue || ''
     return acc
   }, {})
 
   const [formData, setFormData] = useState(initialFormData)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitResult, setSubmitResult] = useState(null)
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
@@ -139,33 +138,32 @@ export default function Contact() {
     }
   }, [])
 
-  // Save to MongoDB when Formspree succeeds
-  useEffect(() => {
-    if (state.succeeded) {
-      // Formspree succeeded, now save to MongoDB
-      const saveToMongoDB = async () => {
-        try {
-          const response = await fetch('/api/contacts', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData),
-          })
-          
-          if (response.ok) {
-            console.log('Contact saved to MongoDB successfully')
-          }
-        } catch (error) {
-          console.error('Error saving contact to MongoDB:', error)
-        }
-      }
-      
-      saveToMongoDB()
-    }
-  }, [state.succeeded, formData])
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setSubmitResult(null)
 
-  const handleSubmit = handleFormspreeSubmit
+    try {
+      // Create FormData object from the form
+      const formDataObj = new FormData(e.target)
+      
+      // Call the server action directly
+      const result = await createContactSubmission(formDataObj)
+
+      if (result.success) {
+        setSubmitResult('success')
+        // Clear the form
+        setFormData(initialFormData)
+      } else {
+        setSubmitResult('error')
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error)
+      setSubmitResult('error')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   const handleChange = (e) => {
     setFormData({
@@ -193,11 +191,6 @@ export default function Contact() {
               className="w-full border-b-2 border-gray-300 pb-3 focus:border-black focus:outline-none transition text-sm sm:text-base bg-transparent hover-target resize-none"
               suppressHydrationWarning={true}
             />
-            <ValidationError 
-              prefix={field.label} 
-              field={field.name}
-              errors={state.errors}
-            />
           </div>
         )
       
@@ -210,6 +203,7 @@ export default function Contact() {
             onChange={handleChange}
             name={field.name}
             required={field.required}
+            placeholder={field.placeholder}
           />
         )
       
@@ -223,12 +217,6 @@ export default function Contact() {
               value={formData[field.name]}
               onChange={handleChange}
               required={field.required}
-              placeholder={field.placeholder}
-            />
-            <ValidationError 
-              prefix={field.label} 
-              field={field.name}
-              errors={state.errors}
             />
           </div>
         )
@@ -236,7 +224,7 @@ export default function Contact() {
   }
 
   // Show success message if form was submitted successfully
-  if (state.succeeded) {
+  if (submitResult === 'success') {
     return (
       <Section 
         id="contact" 
@@ -290,7 +278,7 @@ export default function Contact() {
             {/* Submit Button */}
             <div className="text-center pt-6 sm:pt-7">
               <ActionButton
-                isSaving={state.submitting}
+                isSaving={isSubmitting}
                 text={contactData.form.submitButton.text}
                 savingText={contactData.form.submitButton.loadingText}
                 variant="primary"

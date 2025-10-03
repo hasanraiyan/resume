@@ -1,6 +1,7 @@
 import { getAllContacts } from '@/app/actions/contactActions';
 import { Card, Badge } from '@/components/ui';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
+import ContactActions from '@/components/admin/ContactActions';
 
 export default async function ContactsListPage() {
   const result = await getAllContacts();
@@ -97,18 +98,14 @@ export default async function ContactsListPage() {
                   </div>
                   
                   <div className="flex space-x-2">
-                    <button className="text-neutral-600 hover:text-black transition-colors p-2">
-                      <i className="fas fa-reply"></i>
-                    </button>
                     <a 
                       href={`mailto:${contact.email}`}
                       className="text-neutral-600 hover:text-black transition-colors p-2"
+                      title="Send email"
                     >
                       <i className="fas fa-envelope"></i>
                     </a>
-                    <button className="text-neutral-600 hover:text-black transition-colors p-2">
-                      <i className="fas fa-archive"></i>
-                    </button>
+                    <ContactActions contactId={contact._id} />
                   </div>
                 </div>
                 
