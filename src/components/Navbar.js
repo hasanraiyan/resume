@@ -5,114 +5,43 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { gsap } from 'gsap'
 import { Button } from '@/components/ui'
+import { useSiteContext } from '@/context/SiteContext' // Import the context hook
 
-// ========================================
-// 📦 DYNAMIC DATA (Backend-Ready)
-// ========================================
-const navbarData = {
-  logo: {
-    text: "JD",
-    link: "/"
-  },
-  
-  navigationLinks: [
-    {
-      id: 1,
-      label: "Home",
-      href: "/"
-    },
-    {
-      id: 2,
-      label: "About",
-      href: "/#about"
-    },
-    {
-      id: 3,
-      label: "Work",
-      href: "/#work"
-    },
-    {
-      id: 4,
-      label: "Projects",
-      href: "/projects"
-    }
-  ],
-  
-  cta: {
-    text: "Let's Talk",
-    href: "/#contact"
-  },
-  
-  mobileMenu: {
-    menuItems: [
-      {
-        id: 1,
-        label: "Home",
-        href: "/"
-      },
-      {
-        id: 2,
-        label: "About",
-        href: "/#about"
-      },
-      {
-        id: 3,
-        label: "Work",
-        href: "/#work"
-      },
-      {
-        id: 4,
-        label: "Projects",
-        href: "/projects"
-      },
-      {
-        id: 5,
-        label: "Contact",
-        href: "/#contact"
-      }
-    ],
-    
-    cta: {
-      text: "Let's Talk",
-      href: "/#contact"
-    },
-    
-    socialLinks: [
-      {
-        id: 1,
-        name: "Dribbble",
-        url: "https://dribbble.com/yourusername",
-        icon: "fab fa-dribbble"
-      },
-      {
-        id: 2,
-        name: "Behance",
-        url: "https://behance.net/yourusername",
-        icon: "fab fa-behance"
-      },
-      {
-        id: 3,
-        name: "Instagram",
-        url: "https://instagram.com/yourusername",
-        icon: "fab fa-instagram"
-      },
-      {
-        id: 4,
-        name: "LinkedIn",
-        url: "https://linkedin.com/in/yourusername",
-        icon: "fab fa-linkedin"
-      }
-    ]
-  }
-}
-
-// ========================================
-// 🎨 COMPONENT
-// ========================================
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const pathname = usePathname()
+  const { initials, heroData } = useSiteContext() // Use context to get dynamic data
 
+  // --- Data for the Navbar ---
+  // The logo is now dynamic, but the links are static structural elements.
+  const logo = {
+    text: initials || "JD", // Use initials from context, with a fallback
+    link: "/"
+  };
+  
+  const navigationLinks = [
+    { id: 1, label: "Home", href: "/" },
+    { id: 2, label: "About", href: "/#about" },
+    { id: 3, label: "Work", href: "/#work" },
+    { id: 4, label: "Projects", href: "/projects" }
+  ];
+  
+  const cta = {
+    text: "Let's Talk",
+    href: "/#contact"
+  };
+
+  // Mobile menu combines navigation and social links from heroData
+  const mobileMenu = {
+    menuItems: [
+      ...navigationLinks,
+      { id: 5, label: "Contact", href: "/#contact" }
+    ],
+    cta: cta,
+    socialLinks: heroData?.socialLinks || [] // Use social links from context
+  };
+
+  // useEffect for magnetic buttons and smooth scrolling
   useEffect(() => {
     const magneticBtns = document.querySelectorAll('.magnetic-btn')
 
@@ -143,11 +72,9 @@ export default function Navbar() {
       btn.addEventListener('mouseleave', handleMouseLeave)
     })
 
-    // Smooth scroll for hash links
     const handleHashClick = (e) => {
       const href = e.currentTarget.getAttribute('href')
       if (href?.startsWith('/#')) {
-        // If we're on the home page, scroll to section
         if (pathname === '/') {
           e.preventDefault()
           const id = href.replace('/#', '')
@@ -157,8 +84,6 @@ export default function Navbar() {
             setIsMenuOpen(false)
           }
         } 
-        // If we're on another page, let Next.js handle navigation to home page
-        // and scrolling will be handled by useEffect on the home page
       }
     }
 
@@ -191,20 +116,19 @@ export default function Navbar() {
             
             {/* Logo */}
             <Link 
-              href={navbarData.logo.link} 
+              href={logo.link} 
               className="text-xl sm:text-2xl font-bold hover-target z-50"
             >
-              {navbarData.logo.text}
+              {logo.text}
             </Link>
 
             {/* Desktop Menu */}
             <div className="hidden md:flex items-center space-x-8 lg:space-x-10">
-              {navbarData.navigationLinks.map((link) => (
+              {navigationLinks.map((link) => (
                 <Link
                   key={link.id}
                   href={link.href}
                   className={`text-sm lg:text-base font-medium underline-animate transition hover-target ${
-                    // Highlight active link based on current path
                     (link.href === '/' && pathname === '/') || 
                     (link.href !== '/' && pathname.startsWith(link.href))
                       ? 'text-black font-semibold'
@@ -217,11 +141,11 @@ export default function Navbar() {
               
               {/* CTA Button */}
               <Button
-                href={navbarData.cta.href}
+                href={cta.href}
                 variant="primary"
                 className="px-4 lg:px-5 py-2 lg:py-2.5 text-sm lg:text-base"
               >
-                {navbarData.cta.text}
+                {cta.text}
               </Button>
             </div>
 
@@ -279,13 +203,12 @@ export default function Navbar() {
             
             {/* Menu Items */}
             <nav className="flex-1 flex flex-col justify-start space-y-2">
-              {navbarData.mobileMenu.menuItems.map((item) => (
+              {mobileMenu.menuItems.map((item) => (
                 <Link
                   key={item.id}
                   href={item.href}
                   onClick={() => setIsMenuOpen(false)}
                   className={`text-2xl font-bold transition py-4 border-b border-gray-100 ${
-                    // Highlight active link based on current path
                     (item.href === '/' && pathname === '/') || 
                     (item.href !== '/' && pathname.startsWith(item.href))
                       ? 'text-black'
@@ -300,20 +223,20 @@ export default function Navbar() {
             {/* CTA Button */}
             <div className="mt-8">
               <Button
-                href={navbarData.mobileMenu.cta.href}
+                href={mobileMenu.cta.href}
                 variant="primary"
                 className="block w-full text-center px-8 py-4 text-lg font-semibold"
                 onClick={() => setIsMenuOpen(false)}
               >
-                {navbarData.mobileMenu.cta.text}
+                {mobileMenu.cta.text}
               </Button>
             </div>
 
             {/* Social Links */}
             <div className="flex justify-center gap-6 mt-8 pt-6 border-t border-gray-200">
-              {navbarData.mobileMenu.socialLinks.map((social) => (
+              {mobileMenu.socialLinks.map((social) => (
                 <a
-                  key={social.id}
+                  key={social._id || social.id}
                   href={social.url}
                   target="_blank"
                   rel="noopener noreferrer"

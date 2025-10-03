@@ -1,6 +1,12 @@
-import { Space_Grotesk, Playfair_Display } from 'next/font/google'
-import './globals.css'
-import SessionProvider from '@/components/SessionProvider'
+import { Space_Grotesk, Playfair_Display } from 'next/font/google';
+import './globals.css';
+import SessionProvider from '@/components/SessionProvider';
+import { SiteProvider } from '@/context/SiteContext';
+import dbConnect from '@/lib/dbConnect';
+import HeroSection from '@/models/HeroSection';
+import { serializeForClient } from '@/lib/serialize';
+
+// (Font definitions remain the same)
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -14,12 +20,26 @@ const playfairDisplay = Playfair_Display({
   variable: '--font-playfair',
 })
 
+// Helper to generate initials
+const getInitials = (name = '') => {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase();
+};
+
 export const metadata = {
   title: 'Portfolio - Minimalist Creative',
   description: 'Creative Developer Portfolio',
-}
+};
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  await dbConnect();
+  let heroData = await HeroSection.findOne({ isActive: true }).lean();
+  if (!heroData) {
+    heroData = await HeroSection.seedDefault();
+  }
+
+  const serializedHeroData = serializeForClient(heroData);
+  const initials = getInitials(serializedHeroData.introduction?.name);
+
   return (
     <html lang="en" className={`${spaceGrotesk.variable} ${playfairDisplay.variable}`}>
       <head>
@@ -30,9 +50,11 @@ export default function RootLayout({ children }) {
       </head>
       <body className="bg-gray-50">
         <SessionProvider>
-          {children}
+          <SiteProvider value={{ heroData: serializedHeroData, initials }}>
+            {children}
+          </SiteProvider>
         </SessionProvider>
       </body>
     </html>
-  )
+  );
 }

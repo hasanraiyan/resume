@@ -1,56 +1,27 @@
+
+'use client'
+
 import Link from 'next/link'
+import { useSiteContext } from '@/context/SiteContext' // Import the context hook
 
-// ========================================
-// 📦 DYNAMIC DATA (Backend-Ready)
-// ========================================
-const footerData = {
-  logo: {
-    text: "JD",
-    link: "/"
-  },
-  
-  socialLinks: [
-    {
-      id: 1,
-      name: "Dribbble",
-      url: "https://dribbble.com/yourusername",
-      label: "Dribbble",
-      icon: "fab fa-dribbble"
-    },
-    {
-      id: 2,
-      name: "Behance",
-      url: "https://behance.net/yourusername",
-      label: "Behance",
-      icon: "fab fa-behance"
-    },
-    {
-      id: 3,
-      name: "Instagram",
-      url: "https://instagram.com/yourusername",
-      label: "Instagram",
-      icon: "fab fa-instagram"
-    },
-    {
-      id: 4,
-      name: "LinkedIn",
-      url: "https://linkedin.com/in/yourusername",
-      label: "LinkedIn",
-      icon: "fab fa-linkedin"
-    }
-  ],
-  
-  copyright: {
-    year: new Date().getFullYear(),
-    name: "John Doe",
-    text: "All rights reserved"
-  }
-}
-
-// ========================================
-// 🎨 COMPONENT
-// ========================================
 export default function Footer() {
+  const { heroData, initials } = useSiteContext() // Use context to get dynamic data
+
+  // --- Dynamically build footer data ---
+  const logo = {
+    text: initials || "JD", // Use initials from context
+    link: "/"
+  };
+  
+  // Use social links from the heroData object
+  const socialLinks = heroData?.socialLinks || [];
+  
+  const copyright = {
+    year: new Date().getFullYear(),
+    name: heroData?.introduction?.name || "Your Name", // Use name from context
+    text: "All rights reserved"
+  };
+
   return (
     <footer className="py-8 sm:py-10 border-t-2 border-gray-200">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-12">
@@ -58,31 +29,32 @@ export default function Footer() {
           
           {/* Logo */}
           <Link 
-            href={footerData.logo.link}
+            href={logo.link}
             className="text-xl sm:text-2xl font-bold hover-target"
           >
-            {footerData.logo.text}
+            {logo.text}
           </Link>
           
           {/* Social Links */}
           <div className="flex flex-wrap justify-center gap-6 sm:gap-7">
-            {footerData.socialLinks.map((social) => (
+            {socialLinks.map((social) => (
               <a
-                key={social.id}
+                // Use MongoDB's _id if available, otherwise fall back to id or name
+                key={social._id || social.id || social.name}
                 href={social.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-600 hover:text-black transition hover-target text-sm"
                 aria-label={social.name}
               >
-                {social.label}
+                {social.name}
               </a>
             ))}
           </div>
           
           {/* Copyright */}
           <div className="text-gray-600 text-xs sm:text-sm text-center md:text-right">
-            &copy; {footerData.copyright.year} {footerData.copyright.name}. {footerData.copyright.text}.
+            &copy; {copyright.year} {copyright.name}. {copyright.text}.
           </div>
           
         </div>
