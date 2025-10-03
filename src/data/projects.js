@@ -13,7 +13,7 @@ export const projectsData = {
 
             // Basic Info
             projectNumber: '01',
-            category: 'E-COMMERCE',
+            category: 'e-commerce',
             title: 'Luxury Fashion Store',
             tagline: 'Premium Shopping Experience',
 
@@ -100,7 +100,7 @@ export const projectsData = {
             featured: true,
 
             projectNumber: '02',
-            category: 'PORTFOLIO',
+            category: 'portfolio',
             title: 'Creative Agency Site',
             tagline: 'Bold & Dynamic Web Presence',
 
@@ -174,7 +174,7 @@ export const projectsData = {
             featured: true,
 
             projectNumber: '03',
-            category: 'SAAS',
+            category: 'saas',
             title: 'Analytics Dashboard',
             tagline: 'Data Visualization Platform',
 
@@ -249,12 +249,11 @@ export const projectsData = {
             featured: false,
 
             projectNumber: '04',
-            category: 'MOBILE',
+            category: 'mobile',
             title: 'Restaurant Booking App',
             tagline: 'Seamless Dining Reservations',
 
             description: 'Mobile-first restaurant reservation platform with real-time availability, menu browsing, and integrated payment system.',
-
             fullDescription: `
           A comprehensive booking solution for restaurants that streamlines the reservation process.
           Features include real-time table availability, waitlist management, and customer preferences tracking.
@@ -308,7 +307,7 @@ export const projectsData = {
             featured: false,
 
             projectNumber: '05',
-            category: 'WEB APP',
+            category: 'web-app',
             title: 'Real Estate Platform',
             tagline: 'Property Discovery Made Easy',
 
@@ -367,7 +366,7 @@ export const projectsData = {
             featured: false,
 
             projectNumber: '06',
-            category: 'MOBILE',
+            category: 'mobile',
             title: 'Fitness Tracking App',
             tagline: 'Your Personal Workout Companion',
 
@@ -426,7 +425,7 @@ export const projectsData = {
             featured: false,
 
             projectNumber: '07',
-            category: 'SAAS',
+            category: 'saas',
             title: 'Event Management Platform',
             tagline: 'Organize Events Effortlessly',
 
@@ -486,7 +485,7 @@ export const projectsData = {
             featured: false,
 
             projectNumber: '08',
-            category: 'EDUCATION',
+            category: 'education',
             title: 'Online Learning Platform',
             tagline: 'Education For Everyone',
 

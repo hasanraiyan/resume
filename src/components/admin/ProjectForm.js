@@ -16,7 +16,7 @@ const defaultProject = {
   title: '',
   slug: '',
   projectNumber: '',
-  category: 'Web Development',
+  category: 'web-app',
   tagline: '',
   thumbnail: '',
   description: '',
@@ -50,24 +50,23 @@ export default function ProjectForm({
         images: initialData.images?.length > 0 ? initialData.images : [{ url: '', alt: '', caption: '' }],
         tags: initialData.tags?.length > 0 ? initialData.tags : [{ name: '', category: '' }],
         links: { ...defaultProject.links, ...initialData.links },
-        details: { ...defaultProject.details, ...initialData.details },
       };
       setFormData(data);
     }
   }, [initialData]);
-  
+
   const categoryOptions = [
-    { value: 'Web Development', label: 'Web Development' },
-    { value: 'Mobile App', label: 'Mobile App' },
-    { value: 'UI/UX Design', label: 'UI/UX Design' },
-    { value: 'Branding', label: 'Branding' },
-    { value: 'E-commerce', label: 'E-commerce' }
+    { value: 'e-commerce', label: 'E-Commerce' },
+    { value: 'portfolio', label: 'Portfolio' },
+    { value: 'saas', label: 'SaaS' },
+    { value: 'mobile', label: 'Mobile' },
+    { value: 'web-app', label: 'Web App' },
+    { value: 'education', label: 'Education' }
   ];
 
   const generateSlug = (title) => {
     return title.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim();
   };
-
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const [section, field] = name.split('.');
