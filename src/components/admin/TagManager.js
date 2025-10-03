@@ -1,7 +1,14 @@
-'use client';
-
 import { useState } from 'react';
 import { Button } from '@/components/ui';
+import CustomDropdownMinimal from '@/components/CustomDropdown';
+
+const categoryOptions = [
+  { value: 'Web Development', label: 'Web Development' },
+  { value: 'Mobile App', label: 'Mobile App' },
+  { value: 'UI/UX Design', label: 'UI/UX Design' },
+  { value: 'Branding', label: 'Branding' },
+  { value: 'E-commerce', label: 'E-commerce' }
+];
 
 export default function TagManager({ tags, setTags }) {
   const [editingIndex, setEditingIndex] = useState(null);
@@ -48,15 +55,12 @@ export default function TagManager({ tags, setTags }) {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-black mb-1 uppercase">Category</label>
-                  <select value={tag.category} onChange={(e) => updateTag(index, 'category', e.target.value)} className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm">
-                    <option value="">Select</option>
-                    <option value="frontend">Frontend</option>
-                    <option value="backend">Backend</option>
-                    <option value="database">Database</option>
-                    <option value="tool">Tool</option>
-                    <option value="framework">Framework</option>
-                    <option value="library">Library</option>
-                  </select>
+                  <CustomDropdownMinimal
+                    options={categoryOptions}
+                    value={tag.category}
+                    onChange={(value) => updateTag(index, 'category', value)}
+                    className="text-sm"
+                  />
                 </div>
               </div>
             )}
