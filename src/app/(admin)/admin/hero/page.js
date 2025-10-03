@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper'
 import HeroPreview from '@/components/admin/HeroPreview'
 import IconPicker from '@/components/admin/IconPicker'
+import ActionButton from '@/components/admin/ActionButton';
 
 export default function HeroAdminPage() {
   const { data: session, status } = useSession()
@@ -665,30 +666,8 @@ export default function HeroAdminPage() {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-4 pt-6 border-t border-neutral-200">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="px-6 py-3 bg-black text-white rounded-lg hover:bg-neutral-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-          >
-            {saving ? (
-              <>
-                <i className="fas fa-spinner fa-spin mr-2"></i>
-                Saving...
-              </>
-            ) : (
-              <>
-                <i className="fas fa-save mr-2"></i>
-                Save Changes
-              </>
-            )}
-          </button>
-          <button
-            onClick={handleReset}
-            className="px-6 py-3 border-2 border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors font-medium"
-          >
-            <i className="fas fa-undo mr-2"></i>
-            Reset Changes
-          </button>
+          <ActionButton isSaving={saving} onClick={handleSave} text="Save Changes" savingText="Saving..." />
+          <ActionButton onClick={handleReset} text="Reset Changes" variant="ghost" />
         </div>
       </div>
     </AdminPageWrapper>

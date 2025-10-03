@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Card } from '@/components/ui';
+import { Card } from '@/components/ui';
+import ActionButton from './ActionButton';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 import CustomDropdownMinimal from '@/components/CustomDropdown';
 import ProjectPreviewCard from './ProjectPreviewCard';
@@ -121,6 +122,7 @@ export default function ProjectForm({
     } catch (error) {
       console.error('Failed to save project:', error);
       setMessage({ type: 'error', text: 'An error occurred while saving.' });
+    } finally {
       setSaving(false);
     }
   };
@@ -213,16 +215,16 @@ export default function ProjectForm({
               <h3 className="text-lg font-bold text-black font-['Playfair_Display'] mb-4">Actions</h3>
               <div className="space-y-4">
                 <div className="flex items-center space-x-3 p-3 bg-neutral-50 rounded-lg"><input name="featured" type="checkbox" checked={formData.featured} onChange={handleChange} className="w-5 h-5 text-black border-2 border-neutral-300 rounded focus:ring-black" id="featured" /><div><label htmlFor="featured" className="font-semibold text-black cursor-pointer">Featured Project</label><p className="text-sm text-neutral-600">Show on homepage.</p></div></div>
-                <Button type="submit" variant="primary" disabled={saving} className="w-full">{saving ? 'Saving...' : (isEditing ? 'Update Project' : 'Create Project')}</Button>
-                <Button type="button" href="/admin/projects" variant="ghost" className="w-full">Cancel</Button>
+                <ActionButton isSaving={saving} text={isEditing ? 'Update Project' : 'Create Project'} savingText="Saving..." className="w-full" />
+                <ActionButton onClick={() => router.push('/admin/projects')} text="Cancel" variant="ghost" className="w-full" />
               </div>
-              {isEditing && (<><div className="h-px bg-neutral-200 my-6"></div><Button type="button" variant="ghost" onClick={() => setShowDeleteModal(true)} className="w-full text-red-600 hover:bg-red-50">Delete Project</Button></>)}
+              {isEditing && (<><div className="h-px bg-neutral-200 my-6"></div><ActionButton onClick={() => setShowDeleteModal(true)} text="Delete Project" variant="ghost" className="w-full text-red-600 hover:bg-red-50" /></>)}
             </Card>
           </div>
         </div>
       </form>
 
-      {showDeleteModal && ( <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"> <div className="bg-white rounded-lg max-w-md w-full p-6"> <h3 className="text-lg font-semibold text-black">Delete Project</h3> <p className="text-neutral-600 my-4">Are you sure you want to delete this project? This action cannot be undone.</p> <div className="flex gap-3"> <Button onClick={() => setShowDeleteModal(false)} variant="ghost" className="flex-1">Cancel</Button> <Button onClick={handleDelete} disabled={deleting} className="flex-1 bg-red-600 text-white hover:bg-red-700">{deleting ? 'Deleting...' : 'Delete Project'}</Button> </div> </div> </div> )}
+      {showDeleteModal && ( <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"> <div className="bg-white rounded-lg max-w-md w-full p-6"> <h3 className="text-lg font-semibold text-black">Delete Project</h3> <p className="text-neutral-600 my-4">Are you sure you want to delete this project? This action cannot be undone.</p> <div className="flex gap-3"> <ActionButton onClick={() => setShowDeleteModal(false)} text="Cancel" variant="ghost" className="flex-1" /> <ActionButton onClick={handleDelete} isSaving={deleting} text="Delete Project" savingText="Deleting..." className="flex-1 bg-red-600 text-white hover:bg-red-700" /> </div> </div> </div> )}
     </AdminPageWrapper>
   );
 }
