@@ -106,12 +106,13 @@ export async function deleteProject(id) {
     revalidatePath('/admin/projects');
     revalidatePath('/');
 
-    return { success: true, message: 'Project deleted successfully.' };
-
   } catch (error) {
     console.error('Delete Project Error:', error);
     return { success: false, message: 'Failed to delete project.' };
   }
+
+  // Redirect to projects list after successful deletion
+  redirect('/admin/projects');
 }
 
 export async function getAllProjects() {

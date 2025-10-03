@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { updateProject } from '@/app/actions/projectActions';
+import { updateProject, deleteProject } from '@/app/actions/projectActions';
 import { Input, Button, Card } from '@/components/ui';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 import CustomDropdownMinimal from '@/components/CustomDropdown';
@@ -12,6 +12,7 @@ export default function EditProjectPage({ params }) {
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [projectId, setProjectId] = useState(null);
   const [images, setImages] = useState([]);
@@ -127,6 +128,21 @@ export default function EditProjectPage({ params }) {
       setMessage({ type: 'error', text: 'Failed to update project. Please try again.' });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      // Server action will redirect automatically on success
+      await deleteProject(projectId);
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      setMessage({ type: 'error', text: 'An error occurred while deleting the project' });
+      setShowDeleteModal(false);
+      setDeleting(false);
     }
   };
 
@@ -564,15 +580,21 @@ export default function EditProjectPage({ params }) {
                 Cancel
               </Button>
               <Button
-                onClick={() => {
-                  // TODO: Implement delete functionality
-                  console.log('Delete project:', projectId);
-                  setShowDeleteModal(false);
-                }}
-                className="flex-1 bg-red-600 text-white hover:bg-red-700"
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <i className="fas fa-trash mr-2"></i>
-                Delete Project
+                {deleting ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin mr-2"></i>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-trash mr-2"></i>
+                    Delete Project
+                  </>
+                )}
               </Button>
             </div>
           </div>
