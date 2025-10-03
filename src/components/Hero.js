@@ -269,11 +269,17 @@ export default function Hero() {
           {/* Right Column - Profile Image */}
           <div className="relative order-1 lg:order-2 max-w-sm mx-auto lg:max-w-none">
             <div className="aspect-square bg-black rounded-full overflow-hidden image-reveal hover-target">
-              <img
-                src={heroData.profile.image.url}
-                alt={heroData.profile.image.alt}
-                className="w-full h-full object-cover"
-              />
+              {heroData.profile.image.url ? (
+                <img
+                  src={heroData.profile.image.url}
+                  alt={heroData.profile.image.alt}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center text-white text-lg font-semibold">
+                  No Image
+                </div>
+              )}
             </div>
             
             {/* Experience Badge */}

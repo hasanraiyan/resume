@@ -117,7 +117,7 @@ export default function CustomDropdownMinimal({
             {/* Hover indicator */}
             <div
               ref={indicatorRef}
-              className="absolute left-0 top-0 w-1 h-12 bg-black opacity-0 pointer-events-none"
+              className="absolute left-0 top-0 w-1 h-12 bg-black opacity-0 pointer-events-none z-10"
             />
 
             {/* Scrollable options container */}
