@@ -281,6 +281,7 @@ export default function EditProjectPage({ params }) {
                 />
               </div>
             </div>
+            </div>
           </Card>
 
           {/* Descriptions Card */}
