@@ -57,19 +57,33 @@ export default function ProjectGallery({ images }) {
       {/* Main Image with Carousel Controls */}
       <div className="relative group">
         <div className="image-reveal rounded-lg overflow-hidden shadow-2xl bg-gray-100">
-          <div className="relative aspect-video">
-            <img 
-              src={images[activeImage].url} 
-              alt={images[activeImage].alt} 
-              className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
+          <div className="relative w-full min-h-[400px] max-h-[600px]">
+            {/* Blurred background */}
+            <div
+              className="absolute inset-0 blur-sm scale-110"
+              style={{
+                backgroundImage: `url(${images[activeImage].url})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                filter: 'blur(8px)',
+                transform: 'scale(1.1)',
+              }}
             />
-            
+            {/* Main image */}
+            <img
+              src={images[activeImage].url}
+              alt={images[activeImage].alt}
+              className="relative z-10 w-full h-full object-contain bg-transparent transition-opacity duration-300"
+              style={{ maxHeight: '600px' }}
+            />
+
             {/* Navigation Arrows */}
             {images.length > 1 && (
               <>
                 <button
                   onClick={prevImage}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-2 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100 backdrop-blur-sm"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-2 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100 backdrop-blur-sm z-20"
                   aria-label="Previous image"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -78,7 +92,7 @@ export default function ProjectGallery({ images }) {
                 </button>
                 <button
                   onClick={nextImage}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-2 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100 backdrop-blur-sm"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-2 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100 backdrop-blur-sm z-20"
                   aria-label="Next image"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,7 +104,7 @@ export default function ProjectGallery({ images }) {
 
             {/* Image Counter */}
             {images.length > 1 && (
-              <div className="absolute bottom-4 right-4 bg-black/40 text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm">
+              <div className="absolute bottom-4 right-4 bg-black/40 text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm z-20">
                 {activeImage + 1} / {images.length}
               </div>
             )}
