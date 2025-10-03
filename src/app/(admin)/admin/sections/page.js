@@ -35,19 +35,19 @@ export default function SectionsAdminPage() {
             </Card>
           </Link>
 
-          <div className="group">
-            <Card className="p-6 opacity-60 border-2 border-dashed border-neutral-300">
+          <Link href="/admin/about" className="group">
+            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group-hover:bg-neutral-50">
               <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-neutral-300 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-code text-neutral-500 text-lg"></i>
+                <div className="w-12 h-12 bg-black group-hover:bg-neutral-800 rounded-lg flex items-center justify-center">
+                  <i className="fas fa-code text-white group-hover:text-white text-lg"></i>
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-neutral-500 mb-1">About Section</h3>
-                  <p className="text-sm text-neutral-400">Coming soon - showcase your skills and experience</p>
+                  <h3 className="font-semibold text-black group-hover:text-black mb-1">About Section</h3>
+                  <p className="text-sm text-neutral-600 group-hover:text-neutral-700">Customize your bio, skills, and feature highlights</p>
                 </div>
               </div>
             </Card>
-          </div>
+          </Link>
 
           <div className="group">
             <Card className="p-6 opacity-60 border-2 border-dashed border-neutral-300">

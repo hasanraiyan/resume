@@ -32,7 +32,34 @@ const ICON_DATABASE = {
     { class: 'fab fa-microsoft', name: 'Microsoft', keywords: ['microsoft', 'tech', 'professional'] },
     { class: 'fab fa-slack', name: 'Slack', keywords: ['slack', 'work', 'communication'] },
     { class: 'fab fa-skype', name: 'Skype', keywords: ['skype', 'communication', 'video'] },
-    { class: 'fab fa-zoom', name: 'Zoom', keywords: ['zoom', 'meeting', 'video'] }
+    // { class: 'fab fa-zoom', name: 'Zoom', keywords: ['zoom', 'meeting', 'video'] }
+  ],
+  features: [
+    { class: 'fas fa-lightbulb', name: 'Lightbulb', keywords: ['lightbulb', 'idea', 'creative', 'innovation', 'think', 'brainstorm'] },
+    { class: 'fas fa-rocket', name: 'Rocket', keywords: ['rocket', 'fast', 'speed', 'performance', 'launch', 'blastoff'] },
+    { class: 'fas fa-mobile-alt', name: 'Mobile', keywords: ['mobile', 'responsive', 'phone', 'device', 'tablet'] },
+    { class: 'fas fa-code', name: 'Code', keywords: ['code', 'programming', 'development', 'clean'] },
+    { class: 'fas fa-star', name: 'Star', keywords: ['star', 'quality', 'excellence', 'rating', 'favorite'] },
+    { class: 'fas fa-award', name: 'Award', keywords: ['award', 'achievement', 'trophy', 'success'] },
+    { class: 'fas fa-tools', name: 'Tools', keywords: ['tools', 'skills', 'toolbox', 'equipment'] },
+    { class: 'fas fa-palette', name: 'Palette', keywords: ['palette', 'design', 'creative', 'colors'] },
+    { class: 'fas fa-brain', name: 'Brain', keywords: ['brain', 'intelligence', 'smart', 'thinking'] },
+    { class: 'fas fa-chart-line', name: 'Chart', keywords: ['chart', 'analytics', 'growth', 'statistics'] },
+    { class: 'fas fa-shield-alt', name: 'Shield', keywords: ['shield', 'security', 'protection', 'reliable'] },
+    { class: 'fas fa-users', name: 'Users', keywords: ['users', 'collaboration', 'team', 'people'] },
+    { class: 'fas fa-cog', name: 'Settings', keywords: ['cog', 'settings', 'gear', 'configuration'] },
+    { class: 'fas fa-bolt', name: 'Lightning', keywords: ['bolt', 'lightning', 'power', 'energy', 'fast'] },
+    { class: 'fas fa-diamond', name: 'Diamond', keywords: ['diamond', 'premium', 'quality', 'luxury'] },
+    { class: 'fas fa-heart', name: 'Heart', keywords: ['heart', 'passion', 'love', 'care'] },
+    { class: 'fas fa-eye', name: 'Eye', keywords: ['eye', 'vision', 'focus', 'attention'] },
+    { class: 'fas fa-bullseye', name: 'Target', keywords: ['target', 'bullseye', 'goal', 'objective', 'aim'] },
+    { class: 'fas fa-wifi', name: 'Network', keywords: ['wifi', 'network', 'connection', 'connectivity'] },
+    { class: 'fas fa-database', name: 'Database', keywords: ['database', 'data', 'storage', 'server'] },
+    { class: 'fas fa-cloud', name: 'Cloud', keywords: ['cloud', 'hosting', 'server', 'online'] },
+    { class: 'fas fa-robot', name: 'Robot', keywords: ['robot', 'ai', 'automation', 'technology'] },
+    { class: 'fas fa-magic', name: 'Magic', keywords: ['magic', 'wizard', 'sparkle', 'amazing'] },
+    { class: 'fas fa-gem', name: 'Gem', keywords: ['gem', 'jewel', 'precious', 'valuable'] },
+    { class: 'fas fa-crown', name: 'Crown', keywords: ['crown', 'king', 'premium', 'elite'] }
   ],
   general: [
     { class: 'fas fa-envelope', name: 'Email', keywords: ['email', 'contact', 'mail'] },
@@ -174,6 +201,7 @@ export default function IconPicker({
                 { key: 'all', label: 'All' },
                 { key: 'social', label: 'Social' },
                 { key: 'professional', label: 'Professional' },
+                { key: 'features', label: 'Features' },
                 { key: 'general', label: 'General' }
               ].map(category => (
                 <button
