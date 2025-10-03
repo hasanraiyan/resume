@@ -96,7 +96,7 @@ const HeroSectionSchema = new mongoose.Schema({
       url: {
         type: String,
         required: true,
-        default: 'https://api.dicebear.com/7.x/personas/svg?seed=Creative'
+        default: null
       },
       alt: {
         type: String,

@@ -32,7 +32,7 @@ export async function POST(request) {
       socialLinks: body.socialLinks || [],
       profile: body.profile || {
         image: { 
-          url: 'https://api.dicebear.com/7.x/personas/svg?seed=Creative',
+          url: '',
           alt: 'Portrait'
         },
         badge: { value: '5+', label: 'Years Experience' }

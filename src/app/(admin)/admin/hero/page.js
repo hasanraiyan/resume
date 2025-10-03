@@ -110,34 +110,6 @@ export default function HeroAdminPage() {
     }
   }, [])
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Ctrl/Cmd + S to save
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault()
-        if (!saving) {
-          handleSave()
-        }
-      }
-      
-      // Ctrl/Cmd + P to toggle preview
-      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-        e.preventDefault()
-        togglePreview()
-      }
-      
-      // Escape to close preview
-      if (e.key === 'Escape' && showPreview) {
-        setShowPreview(false)
-        setPreviewData(null)
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [saving, showPreview, handleSave, togglePreview])
-
   const togglePreview = useCallback(() => {
     setShowPreview(!showPreview)
     if (!showPreview) {
@@ -189,6 +161,34 @@ export default function HeroAdminPage() {
       setMessage({ type: 'info', text: 'Changes reverted to last saved version' })
     }
   }, [heroData])
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ctrl/Cmd + S to save
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault()
+        if (!saving) {
+          handleSave()
+        }
+      }
+      
+      // Ctrl/Cmd + P to toggle preview
+      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        e.preventDefault()
+        togglePreview()
+      }
+      
+      // Escape to close preview
+      if (e.key === 'Escape' && showPreview) {
+        setShowPreview(false)
+        setPreviewData(null)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [saving, showPreview, handleSave, togglePreview])
 
   const handleInputChange = (path, value) => {
     setFormData(prev => {
@@ -489,7 +489,7 @@ export default function HeroAdminPage() {
                     value={formData.profile.image.url}
                     onChange={(e) => handleInputChange('profile.image.url', e.target.value)}
                     className="w-full p-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                    placeholder="https://api.dicebear.com/7.x/personas/svg?seed=Creative"
+                    placeholder=""
                   />
                 </div>
                 <div>

@@ -67,7 +67,7 @@ const defaultHeroData = {
   
   profile: {
     image: {
-      url: "https://api.dicebear.com/7.x/personas/svg?seed=Creative",
+      url: "",
       alt: "Portrait"
     },
     badge: {
@@ -147,6 +147,7 @@ export default function Hero() {
   // Update hero data when fetched data changes
   useEffect(() => {
     if (fetchedHeroData) {
+      setHeroData(fetchedHeroData)
     }
   }, [fetchedHeroData])
 
