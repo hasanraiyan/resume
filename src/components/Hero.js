@@ -81,8 +81,8 @@ const defaultHeroData = {
 // Hero Skeleton Component
 function HeroSkeleton() {
   return (
-    <section id="home" className="min-h-screen flex items-center pt-16 sm:pt-20">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-12 w-full py-12 sm:py-16">
+    <section id="home" className="min-h-screen flex items-center pt-16 sm:pt-20 w-full">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-12 sm:py-16">
         <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
 
           {/* Left Column - Content Skeleton */}
@@ -219,8 +219,8 @@ export default function Hero() {
   }
 
   return (
-    <section id="home" className="min-h-screen flex items-center pt-16 sm:pt-20">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-12 w-full py-12 sm:py-16">
+    <section id="home" className="min-h-screen flex items-center pt-16 sm:pt-20 w-full">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-12 sm:py-16">
         <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
           
           {/* Left Column - Content */}
