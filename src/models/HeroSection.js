@@ -95,8 +95,8 @@ const HeroSectionSchema = new mongoose.Schema({
     image: {
       url: {
         type: String,
-        required: true,
-        default: null
+        required: false,
+        default: ''
       },
       alt: {
         type: String,
