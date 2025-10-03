@@ -60,6 +60,7 @@ export async function updateContactStatus(id, status) {
     }
 
     revalidatePath('/admin/contacts');
+    revalidatePath('/admin/dashboard');
     return { success: true, message: 'Contact status updated successfully.' };
 
   } catch (error) {
@@ -79,6 +80,7 @@ export async function deleteContact(id) {
     }
 
     revalidatePath('/admin/contacts');
+    revalidatePath('/admin/dashboard');
     return { success: true, message: 'Contact deleted successfully.' };
 
   } catch (error) {
