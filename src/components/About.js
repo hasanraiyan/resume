@@ -44,36 +44,53 @@ const About = () => {
   }, [])
 
   useEffect(() => {
+    // Only animate when we have data and are not loading
+    if (loading || !aboutData) return
+
     gsap.registerPlugin(ScrollTrigger)
 
     // Small delay to ensure DOM is ready
     const timer = setTimeout(() => {
-      const container = document.querySelector('#about')
-      if (container) {
-        const gridContainer = container.querySelector('.grid.lg\\:grid-cols-2')
-        if (gridContainer && gridContainer.children.length > 0) {
-          // Reset any existing transforms
-          gsap.set(gridContainer.children, { opacity: 1, y: 0 })
+      try {
+        const container = document.querySelector('#about')
+        if (container) {
+          const gridContainer = container.querySelector('.grid.lg\\:grid-cols-2')
+          if (gridContainer && gridContainer.children.length > 0) {
+            // Reset any existing transforms
+            gsap.set(gridContainer.children, { opacity: 1, y: 0 })
 
-          gsap.from(gridContainer.children, {
-            opacity: 0,
-            y: 50,
-            duration: 1,
-            stagger: 0.2,
-            scrollTrigger: {
-              trigger: '#about',
-              start: 'top 80%',
-              end: 'bottom 20%',
-              toggleActions: 'play none none reverse',
-              refreshPriority: -1,
-            },
-          })
+            gsap.from(gridContainer.children, {
+              opacity: 0,
+              y: 50,
+              duration: 1,
+              stagger: 0.2,
+              scrollTrigger: {
+                trigger: '#about',
+                start: 'top 80%',
+                end: 'bottom 20%',
+                toggleActions: 'play none none reverse',
+                refreshPriority: -1,
+              },
+            })
+          }
         }
+      } catch (error) {
+        console.warn('GSAP animation error in About:', error)
       }
     }, 100)
 
     return () => {
       clearTimeout(timer)
+      // Clean up GSAP animations
+      try {
+        ScrollTrigger.getAll().forEach(trigger => {
+          if (trigger.trigger === '#about') {
+            trigger.kill()
+          }
+        })
+      } catch (error) {
+        console.warn('GSAP cleanup error:', error)
+      }
     }
   }, [loading, aboutData])
 

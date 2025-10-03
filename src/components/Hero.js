@@ -147,41 +147,54 @@ export default function Hero() {
   // Update hero data when fetched data changes
   useEffect(() => {
     if (fetchedHeroData) {
-      setHeroData(fetchedHeroData)
     }
   }, [fetchedHeroData])
 
   // GSAP Animation - Always run this effect, but only animate when not loading
   useEffect(() => {
-    if (loading) return // Don't animate until data is loaded
+    if (loading) return
 
     gsap.registerPlugin(ScrollTrigger)
 
     // Small delay to ensure DOM is ready
     const timer = setTimeout(() => {
-      const elements = document.querySelectorAll('#home .max-w-6xl > div > div')
-      if (elements.length > 0) {
-        // Reset any existing transforms
-        gsap.set(elements, { opacity: 1, y: 0 })
-
-        gsap.from(elements, {
-          opacity: 0,
-          y: 50,
-          duration: 1,
-          stagger: 0.2,
-          scrollTrigger: {
-            trigger: '#home',
-            start: 'top 80%',
-            end: 'bottom 20%',
-            toggleActions: 'play none none reverse',
-            refreshPriority: -1,
-          },
-        })
+      try {
+        const elements = document.querySelectorAll('#home .max-w-6xl > div > div')
+        if (elements.length > 0) {
+          // Reset any existing transforms
+          gsap.set(elements, { opacity: 1, y: 0 })
+          
+          gsap.from(elements, {
+            opacity: 0,
+            y: 50,
+            duration: 1,
+            stagger: 0.2,
+            scrollTrigger: {
+              trigger: '#home',
+              start: 'top 80%',
+              end: 'bottom 20%',
+              toggleActions: 'play none none reverse',
+              refreshPriority: -1,
+            },
+          })
+        }
+      } catch (error) {
+        console.warn('GSAP animation error in Hero:', error)
       }
     }, 100)
 
     return () => {
       clearTimeout(timer)
+      // Clean up GSAP animations
+      try {
+        ScrollTrigger.getAll().forEach(trigger => {
+          if (trigger.trigger === '#home') {
+            trigger.kill()
+          }
+        })
+      } catch (error) {
+        console.warn('GSAP cleanup error:', error)
+      }
     }
   }, [loading])
 
