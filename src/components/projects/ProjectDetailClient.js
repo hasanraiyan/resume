@@ -8,7 +8,7 @@ import ProjectGallery from './ProjectGallery'
 import RelatedProjects from './RelatedProjects'
 
 export default function ProjectDetailClient({ project, relatedProjects }) {
-  // ... useEffect hook remains the same
+
 
   return (
     <main className="pt-20 sm:pt-24">
@@ -84,8 +84,23 @@ export default function ProjectDetailClient({ project, relatedProjects }) {
               </div>
             </div>
           )}
-
-          {/* ... rest of the component remains the same ... */}
+          
+          {/* Alternative: If using tags array instead of technologies */}
+          {(!project.technologies || project.technologies.length === 0) && project.tags && project.tags.length > 0 && (
+            <div className="mb-12 sm:mb-16">
+              <h3 className="text-2xl sm:text-3xl font-bold mb-8 text-center">Technology Stack</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+                {project.tags.map((tag, index) => (
+                  <div key={index} className="text-center group">
+                    <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow duration-300 hover:border-gray-300">
+                      <h4 className="font-semibold text-gray-900 mb-1">{tag.name}</h4>
+                      <p className="text-sm text-gray-500 capitalize">{tag.category || 'Technology'}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </Section>
       <RelatedProjects projects={relatedProjects} />
