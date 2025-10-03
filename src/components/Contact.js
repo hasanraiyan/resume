@@ -50,6 +50,16 @@ const contactData = {
           { value: 'branding', label: 'Branding' },
           { value: 'ui-ux', label: 'UI/UX Design' },
           { value: 'consulting', label: 'Consulting' },
+          { value: 'ecommerce', label: 'E-commerce' },
+          { value: 'cms-development', label: 'CMS Development' },
+          { value: 'seo-optimization', label: 'SEO Optimization' },
+          { value: 'api-integration', label: 'API Integration' },
+          { value: 'database-design', label: 'Database Design' },
+          { value: 'maintenance', label: 'Website Maintenance' },
+          { value: 'redesign', label: 'Website Redesign' },
+          { value: 'landing-page', label: 'Landing Page' },
+          { value: 'portfolio', label: 'Portfolio Website' },
+          { value: 'blog', label: 'Blog/CMS' },
           { value: 'other', label: 'Other' }
         ],
         defaultValue: 'web-design'
