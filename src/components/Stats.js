@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { SkeletonLoader } from './Skeleton'
 
 // ========================================
 // 📦 DYNAMIC DATA (Backend-Ready)
@@ -73,15 +74,7 @@ export default function Stats() {
   }, [loading, statsData])
 
   if (loading || !statsData) {
-    return (
-      <section className="stats-section py-12 sm:py-16 md:py-20 bg-black text-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-12">
-          <div className="flex items-center justify-center h-32">
-            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        </div>
-      </section>
-    )
+    return <SkeletonLoader type="stats" />
   }
 
   return (

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { Section, Card, Button } from '@/components/ui'
+import { SkeletonLoader, SkeletonItem } from './Skeleton'
 
 // ========================================
 //  DYNAMIC DATA (Backend-Ready)
@@ -83,8 +84,30 @@ const About = () => {
         title="About Me"
         className="py-16 sm:py-20 md:py-24"
       >
-        <div className="flex items-center justify-center h-32">
-          <div className="w-6 h-6 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+        <div className="grid lg:grid-cols-2 gap-10 sm:gap-12 md:gap-16 items-center">
+          {/* Left Column - Bio Skeleton */}
+          <div className="space-y-4 sm:space-y-5">
+            <SkeletonLoader type="text" count={3} />
+            <div className="mt-8 sm:mt-10">
+              <SkeletonLoader type="card" className="w-40 h-12" />
+            </div>
+          </div>
+
+          {/* Right Column - Features Grid Skeleton */}
+          <div className="grid grid-cols-2 gap-4 sm:gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} variant="elevated" className="p-4 sm:p-6">
+                <div className="text-2xl sm:text-3xl mb-2 sm:mb-3">
+                  <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+                </div>
+                <div className="space-y-2">
+                  <SkeletonItem height="h-5" width="w-3/4" />
+                  <SkeletonItem height="h-3" width="w-full" />
+                  <SkeletonItem height="h-3" width="w-2/3" />
+                </div>
+              </Card>
+            ))}
+          </div>
         </div>
       </Section>
     )
