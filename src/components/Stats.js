@@ -43,33 +43,50 @@ export default function Stats() {
   }, [])
 
   useEffect(() => {
+    // Only animate when we have data and are not loading
+    if (loading || !statsData) return
+
     gsap.registerPlugin(ScrollTrigger)
 
     // Small delay to ensure DOM is ready
     const timer = setTimeout(() => {
-      const container = document.querySelector('.stats-section .max-w-6xl')
-      if (container && container.children.length > 0) {
-        // Reset any existing transforms
-        gsap.set(container.children, { opacity: 1, y: 0 })
+      try {
+        const container = document.querySelector('.stats-section .max-w-6xl')
+        if (container && container.children.length > 0) {
+          // Reset any existing transforms
+          gsap.set(container.children, { opacity: 1, y: 0 })
 
-        gsap.from(container.children, {
-          opacity: 0,
-          y: 50,
-          duration: 1,
-          stagger: 0.2,
-          scrollTrigger: {
-            trigger: '.stats-section',
-            start: 'top 80%',
-            end: 'bottom 20%',
-            toggleActions: 'play none none reverse',
-            refreshPriority: -1,
-          },
-        })
+          gsap.from(container.children, {
+            opacity: 0,
+            y: 50,
+            duration: 1,
+            stagger: 0.2,
+            scrollTrigger: {
+              trigger: '.stats-section',
+              start: 'top 80%',
+              end: 'bottom 20%',
+              toggleActions: 'play none none reverse',
+              refreshPriority: -1,
+            },
+          })
+        }
+      } catch (error) {
+        console.warn('GSAP animation error in Stats:', error)
       }
     }, 100)
 
     return () => {
       clearTimeout(timer)
+      // Clean up GSAP animations
+      try {
+        ScrollTrigger.getAll().forEach(trigger => {
+          if (trigger.trigger === '.stats-section') {
+            trigger.kill()
+          }
+        })
+      } catch (error) {
+        console.warn('GSAP cleanup error:', error)
+      }
     }
   }, [loading, statsData])
 

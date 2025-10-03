@@ -94,6 +94,7 @@ export default function CustomDropdownMinimal({
           type="button"
           onClick={() => setIsOpen(!isOpen)}
           className="w-full border-b-2 border-gray-300 pb-3 focus:border-black focus:outline-none transition text-sm sm:text-base bg-transparent text-left flex justify-between items-center group"
+          suppressHydrationWarning={true}
         >
           <span className="text-black">
             {selectedOption?.label || 'Select'}

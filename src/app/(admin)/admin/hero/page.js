@@ -136,9 +136,9 @@ export default function HeroAdminPage() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [saving, showPreview])
+  }, [saving, showPreview, handleSave, togglePreview])
 
-  const togglePreview = () => {
+  const togglePreview = useCallback(() => {
     setShowPreview(!showPreview)
     if (!showPreview) {
       // Generate initial preview when enabling
@@ -146,7 +146,49 @@ export default function HeroAdminPage() {
     } else {
       setPreviewData(null)
     }
-  }
+  }, [showPreview, formData, generatePreview])
+
+  const handleSave = useCallback(async () => {
+    setSaving(true)
+    setMessage({ type: '', text: '' })
+
+    try {
+      const response = await fetch('/api/hero', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setMessage({ type: 'success', text: 'Hero section updated successfully!' })
+        setHeroData(result.data)
+
+        // Trigger real-time update for the main hero component
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('heroDataUpdated'))
+        }
+      } else {
+        setMessage({ type: 'error', text: result.error || 'Failed to update hero section' })
+      }
+    } catch (error) {
+      console.error('Error saving hero data:', error)
+      setMessage({ type: 'error', text: 'Failed to save changes' })
+    } finally {
+      setSaving(false)
+    }
+  }, [formData])
+
+  const handleReset = useCallback(() => {
+    if (heroData) {
+      setFormData(heroData)
+      setPreviewData(null)
+      setMessage({ type: 'info', text: 'Changes reverted to last saved version' })
+    }
+  }, [heroData])
 
   const handleInputChange = (path, value) => {
     setFormData(prev => {
@@ -226,48 +268,6 @@ export default function HeroAdminPage() {
       
       return newData
     })
-  }
-
-  const handleSave = async () => {
-    setSaving(true)
-    setMessage({ type: '', text: '' })
-
-    try {
-      const response = await fetch('/api/hero', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
-
-      const result = await response.json()
-
-      if (result.success) {
-        setMessage({ type: 'success', text: 'Hero section updated successfully!' })
-        setHeroData(result.data)
-        
-        // Trigger real-time update for the main hero component
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('heroDataUpdated'))
-        }
-      } else {
-        setMessage({ type: 'error', text: result.error || 'Failed to update hero section' })
-      }
-    } catch (error) {
-      console.error('Error saving hero data:', error)
-      setMessage({ type: 'error', text: 'Failed to save changes' })
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleReset = () => {
-    if (heroData) {
-      setFormData(heroData)
-      setPreviewData(null)
-      setMessage({ type: 'info', text: 'Changes reverted to last saved version' })
-    }
   }
 
   if (status === 'loading' || loading) {

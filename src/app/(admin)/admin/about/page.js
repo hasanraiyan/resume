@@ -129,9 +129,9 @@ export default function AboutAdminPage() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [saving, showPreview])
+  }, [saving, showPreview, handleSave, togglePreview])
 
-  const togglePreview = () => {
+  const togglePreview = useCallback(() => {
     setShowPreview(!showPreview)
     if (!showPreview) {
       // Generate initial preview when enabling
@@ -139,7 +139,49 @@ export default function AboutAdminPage() {
     } else {
       setPreviewData(null)
     }
-  }
+  }, [showPreview, formData, generatePreview])
+
+  const handleSave = useCallback(async () => {
+    setSaving(true)
+    setMessage({ type: '', text: '' })
+
+    try {
+      const response = await fetch('/api/about', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setMessage({ type: 'success', text: 'About section updated successfully!' })
+        setAboutData(result.data)
+
+        // Trigger real-time update for the main about component
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('aboutDataUpdated'))
+        }
+      } else {
+        setMessage({ type: 'error', text: result.error || 'Failed to update about section' })
+      }
+    } catch (error) {
+      console.error('Error saving about data:', error)
+      setMessage({ type: 'error', text: 'Failed to save changes' })
+    } finally {
+      setSaving(false)
+    }
+  }, [formData])
+
+  const handleReset = useCallback(() => {
+    if (aboutData) {
+      setFormData(aboutData)
+      setPreviewData(null)
+      setMessage({ type: 'info', text: 'Changes reverted to last saved version' })
+    }
+  }, [aboutData])
 
   const handleInputChange = (path, value) => {
     setFormData(prev => {
@@ -229,7 +271,7 @@ export default function AboutAdminPage() {
       const newData = {
         ...prev,
         features: prev.features.map((feature, i) =>
-          i === index ? { ...feature, [field]: value } : feature
+          i === index ? { ...feature, [field]: value } : { ...feature }
         )
       }
 
@@ -242,65 +284,6 @@ export default function AboutAdminPage() {
 
       return newData
     })
-  }
-
-  const handleSave = async () => {
-    setSaving(true)
-    setMessage({ type: '', text: '' })
-
-    try {
-      const response = await fetch('/api/about', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
-
-      const result = await response.json()
-
-      if (result.success) {
-        setMessage({ type: 'success', text: 'About section updated successfully!' })
-        setAboutData(result.data)
-
-        // Trigger real-time update for the main about component
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('aboutDataUpdated'))
-        }
-      } else {
-        setMessage({ type: 'error', text: result.error || 'Failed to update about section' })
-      }
-    } catch (error) {
-      console.error('Error saving about data:', error)
-      setMessage({ type: 'error', text: 'Failed to save changes' })
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleReset = () => {
-    if (aboutData) {
-      setFormData(aboutData)
-      setPreviewData(null)
-      setMessage({ type: 'info', text: 'Changes reverted to last saved version' })
-    }
-  }
-
-  if (status === 'loading' || loading) {
-    return (
-      <AdminPageWrapper title="About Section">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-neutral-600">Loading about section...</p>
-          </div>
-        </div>
-      </AdminPageWrapper>
-    )
-  }
-
-  if (!session || session.user.role !== 'admin') {
-    return null
   }
 
   return (

@@ -1,23 +1,21 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 
 export default function ProjectGallery({ images }) {
   const [activeImage, setActiveImage] = useState(0)
   const [thumbnailStart, setThumbnailStart] = useState(0)
   const thumbnailRef = useRef(null)
-  
+
   const THUMBNAILS_TO_SHOW = 6 // Show 6 thumbnails at once
 
-  if (!images || images.length === 0) return null
-
-  const nextImage = () => {
+  const nextImage = useCallback(() => {
     setActiveImage((prev) => (prev + 1) % images.length)
-  }
+  }, [images.length])
 
-  const prevImage = () => {
+  const prevImage = useCallback(() => {
     setActiveImage((prev) => (prev - 1 + images.length) % images.length)
-  }
+  }, [images.length])
 
   const nextThumbnails = () => {
     if (thumbnailStart + THUMBNAILS_TO_SHOW < images.length) {
@@ -48,7 +46,9 @@ export default function ProjectGallery({ images }) {
     }
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [])
+  }, [nextImage, prevImage])
+
+  if (!images || images.length === 0) return null
 
   const visibleThumbnails = images.slice(thumbnailStart, thumbnailStart + THUMBNAILS_TO_SHOW)
 
