@@ -288,9 +288,9 @@ export default function HeroAdminPage() {
 
   return (
     <AdminPageWrapper title="Hero Section">
-      <div className="max-w-7xl">
+      <div className="max-w-7xl mx-auto">
         {/* Controls Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
           <div className="flex items-center gap-4">
             <button
               onClick={togglePreview}
@@ -310,7 +310,7 @@ export default function HeroAdminPage() {
             )}
           </div>
           
-          <div className="flex items-center gap-2 text-xs text-neutral-500">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-500">
             <span>Shortcuts:</span>
             <code className="px-2 py-1 bg-neutral-100 rounded">Ctrl+S</code>
             <span>Save</span>
@@ -336,9 +336,10 @@ export default function HeroAdminPage() {
           </div>
         )}
 
-        <div className={`grid gap-8 ${showPreview ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
+        {/* Form Sections - Two Column Grid */}
+        <div className="grid gap-8 lg:grid-cols-2 mb-8">
           {/* Left Column - Form */}
-          <div className={`space-y-8 ${showPreview ? 'lg:col-span-1' : 'lg:col-span-1'}`}>
+          <div className="space-y-6">
             
             {/* Badge Section */}
             <div className="bg-white p-6 rounded-lg border border-neutral-200">
@@ -473,8 +474,8 @@ export default function HeroAdminPage() {
 
           </div>
 
-          {/* Middle Column - More Sections */}
-          <div className={`space-y-8 ${showPreview ? 'lg:col-span-1' : 'lg:col-span-1'}`}>
+          {/* Right Column - More Sections */}
+          <div className="space-y-6">
             
             {/* Profile Section */}
             <div className="bg-white p-6 rounded-lg border border-neutral-200">
@@ -533,19 +534,21 @@ export default function HeroAdminPage() {
                   onClick={addSocialLink}
                   className="px-4 py-2 bg-black text-white rounded-lg hover:bg-neutral-800 transition-colors text-sm"
                 >
+                  <i className="fas fa-plus mr-2"></i>
                   Add Link
                 </button>
               </div>
               
               <div className="space-y-4">
                 {formData.socialLinks.map((link, index) => (
-                  <div key={index} className="p-4 border border-neutral-200 rounded-lg">
+                  <div key={index} className="p-4 border border-neutral-200 rounded-lg bg-neutral-50">
                     <div className="flex items-center justify-between mb-3">
                       <span className="font-medium text-sm">Link {index + 1}</span>
                       <button
                         onClick={() => removeSocialLink(index)}
                         className="text-red-600 hover:text-red-800 text-sm"
                       >
+                        <i className="fas fa-trash mr-1"></i>
                         Remove
                       </button>
                     </div>
@@ -556,7 +559,7 @@ export default function HeroAdminPage() {
                           type="text"
                           value={link.name}
                           onChange={(e) => handleSocialLinkChange(index, 'name', e.target.value)}
-                          className="w-full p-2 border border-neutral-300 rounded text-sm"
+                          className="w-full p-2 border border-neutral-300 rounded text-sm bg-white"
                           placeholder="e.g., Dribbble, GitHub, LinkedIn"
                         />
                       </div>
@@ -566,7 +569,7 @@ export default function HeroAdminPage() {
                           type="url"
                           value={link.url}
                           onChange={(e) => handleSocialLinkChange(index, 'url', e.target.value)}
-                          className="w-full p-2 border border-neutral-300 rounded text-sm"
+                          className="w-full p-2 border border-neutral-300 rounded text-sm bg-white"
                           placeholder="https://dribbble.com/username"
                         />
                       </div>
@@ -591,45 +594,99 @@ export default function HeroAdminPage() {
             </div>
 
           </div>
-
-          {/* Right Column - Preview Panel */}
-          {showPreview && (
-            <div className="lg:col-span-1 space-y-6">
-              <div className="sticky top-8">
-                {/* Current Version */}
-                <div className="mb-6">
-                  <HeroPreview heroData={heroData} isPreview={false} />
-                </div>
-
-                {/* Live Preview */}
-                {previewLoading ? (
-                  <div className="bg-white rounded-lg border border-neutral-200 p-8">
-                    <div className="text-center">
-                      <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                      <p className="text-sm text-neutral-600">Updating preview...</p>
-                    </div>
-                  </div>
-                ) : previewData && (
-                  <HeroPreview heroData={previewData} isPreview={true} />
-                )}
-              </div>
-            </div>
-          )}
         </div>
 
+        {/* Preview Panel - Full Width Below Form */}
+        {showPreview && (
+          <div className="mb-8">
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg border-2 border-blue-200">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-2xl font-bold text-neutral-900 mb-1">Live Preview</h3>
+                  <p className="text-sm text-neutral-600">See your changes in real-time before saving</p>
+                </div>
+                <button
+                  onClick={() => setShowPreview(false)}
+                  className="px-4 py-2 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors"
+                >
+                  <i className="fas fa-times mr-2"></i>
+                  Close Preview
+                </button>
+              </div>
+
+              {previewLoading ? (
+                <div className="bg-white rounded-lg border-2 border-dashed border-blue-300 p-12">
+                  <div className="text-center">
+                    <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                    <p className="text-sm text-neutral-600">Updating preview...</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Current (Saved) Version */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                        SAVED VERSION
+                      </span>
+                      <span className="text-sm text-neutral-600">Currently live on your site</span>
+                    </div>
+                    <HeroPreview heroData={heroData} isPreview={false} />
+                  </div>
+
+                  {/* Divider */}
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 border-t-2 border-dashed border-neutral-300"></div>
+                    <span className="text-sm font-medium text-neutral-500">
+                      <i className="fas fa-arrow-down mr-2"></i>
+                      COMPARE WITH
+                      <i className="fas fa-arrow-down ml-2"></i>
+                    </span>
+                    <div className="flex-1 border-t-2 border-dashed border-neutral-300"></div>
+                  </div>
+
+                  {/* Preview (Unsaved) Version */}
+                  {previewData && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
+                          PREVIEW (UNSAVED)
+                        </span>
+                        <span className="text-sm text-neutral-600">Your changes - click "Save Changes" to publish</span>
+                      </div>
+                      <HeroPreview heroData={previewData} isPreview={true} />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Action Buttons */}
-        <div className="flex gap-4 mt-8 pt-6 border-t border-neutral-200">
+        <div className="flex flex-wrap gap-4 pt-6 border-t border-neutral-200">
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-6 py-3 bg-black text-white rounded-lg hover:bg-neutral-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-3 bg-black text-white rounded-lg hover:bg-neutral-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
           >
-            {saving ? 'Saving...' : 'Save Changes'}
+            {saving ? (
+              <>
+                <i className="fas fa-spinner fa-spin mr-2"></i>
+                Saving...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-save mr-2"></i>
+                Save Changes
+              </>
+            )}
           </button>
           <button
             onClick={handleReset}
-            className="px-6 py-3 border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors"
+            className="px-6 py-3 border-2 border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors font-medium"
           >
+            <i className="fas fa-undo mr-2"></i>
             Reset Changes
           </button>
         </div>

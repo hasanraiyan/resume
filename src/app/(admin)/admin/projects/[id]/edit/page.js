@@ -25,13 +25,22 @@ export default function EditProjectPage({ params }) {
   // Handle params (which might be a Promise in Next.js 15)
   useEffect(() => {
     const getParams = async () => {
-      const resolvedParams = await params;
-      setProjectId(resolvedParams.id);
+      try {
+        const resolvedParams = await Promise.resolve(params);
+        if (resolvedParams && resolvedParams.id) {
+          setProjectId(resolvedParams.id);
+        }
+      } catch (error) {
+        console.error('Error resolving params:', error);
+        router.push('/admin/projects');
+      }
     };
     getParams();
-  }, [params]);
+  }, [params, router]);
 
   useEffect(() => {
+    if (!projectId) return;
+    
     const fetchProject = async () => {
       try {
         console.log('Fetching project with ID:', projectId);

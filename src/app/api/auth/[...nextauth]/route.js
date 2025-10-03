@@ -15,11 +15,29 @@ export const authOptions = {
         const adminUsername = process.env.ADMIN_USERNAME;
         const adminPassword = process.env.ADMIN_PASSWORD;
 
-        if (credentials.username === adminUsername && credentials.password === adminPassword) {
-          return { id: "1", name: "Admin", email: "admin@example.com", role: "admin" };
-        } else {
-          return null;
+        // Debug logging (remove in production)
+        console.log('Auth attempt:', {
+          providedUsername: credentials?.username,
+          expectedUsername: adminUsername,
+          hasPassword: !!credentials?.password,
+          hasExpectedPassword: !!adminPassword
+        });
+
+        if (
+          credentials?.username && 
+          credentials?.password && 
+          credentials.username === adminUsername && 
+          credentials.password === adminPassword
+        ) {
+          return { 
+            id: "1", 
+            name: "Admin", 
+            email: "admin@example.com", 
+            role: "admin" 
+          };
         }
+        
+        return null;
       },
     }),
   ],
@@ -27,18 +45,31 @@ export const authOptions = {
     strategy: 'jwt',
   },
   pages: {
-    signIn: '/admin/login',
+    signIn: '/login',
   },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role;
+        token.isAdmin = user.role === 'admin';
       }
       return token;
     },
     async session({ session, token }) {
       session.user.role = token.role;
+      session.user.isAdmin = token.isAdmin;
       return session;
+    },
+    async signIn({ user, account, profile }) {
+      // Allow sign in if user is returned from authorize function
+      return !!user;
+    },
+    async redirect({ url, baseUrl }) {
+      // Allows relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      // Allows callback URLs on the same origin
+      else if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
     },
   },
   secret: process.env.NEXTAUTH_SECRET,

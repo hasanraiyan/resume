@@ -14,7 +14,7 @@ function AdminLayoutContent({ children }) {
 
   useEffect(() => {
     if (status === 'loading') return; // Still loading
-    if (!session) router.push('/admin/login'); // Not logged in
+    if (!session) router.push('/login'); // Not logged in
   }, [session, status, router]);
 
   if (status === 'loading') {
@@ -84,7 +84,7 @@ function AdminLayoutContent({ children }) {
                     {session?.user?.name || 'Admin'}
                   </span>
                   <Button 
-                    onClick={() => signOut({ callbackUrl: '/admin/login' })}
+                    onClick={() => signOut({ callbackUrl: '/login' })}
                     variant="ghost" 
                     size="small"
                     className="text-neutral-600 hover:text-black"
