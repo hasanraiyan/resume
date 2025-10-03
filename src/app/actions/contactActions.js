@@ -38,7 +38,16 @@ export async function getAllContacts() {
 
   try {
     const contacts = await Contact.find({}).sort({ createdAt: -1 }).lean();
-    return { success: true, contacts };
+
+    const serializedContacts = contacts.map((contact) => ({
+      ...contact,
+      _id: contact._id?.toString(),
+      id: contact._id?.toString(),
+      createdAt: contact.createdAt ? contact.createdAt.toISOString() : null,
+      updatedAt: contact.updatedAt ? contact.updatedAt.toISOString() : null,
+    }));
+
+    return { success: true, contacts: serializedContacts };
   } catch (error) {
     console.error('Get Contacts Error:', error);
     return { success: false, contacts: [] };

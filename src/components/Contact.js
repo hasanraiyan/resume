@@ -196,15 +196,22 @@ export default function Contact() {
       
       case 'dropdown':
         return (
-          <CustomDropdownMinimal
-            label={field.label}
-            options={field.options}
-            value={formData[field.name]}
-            onChange={handleChange}
-            name={field.name}
-            required={field.required}
-            placeholder={field.placeholder}
-          />
+          <>
+            <CustomDropdownMinimal
+              label={field.label}
+              options={field.options}
+              value={formData[field.name]}
+              onChange={handleChange}
+              name={field.name}
+              required={field.required}
+              placeholder={field.placeholder}
+            />
+            <input
+              type="hidden"
+              name={field.name}
+              value={formData[field.name]}
+            />
+          </>
         )
       
       default: // text, email, etc.
