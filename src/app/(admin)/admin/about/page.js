@@ -103,34 +103,6 @@ export default function AboutAdminPage() {
     }
   }, [showPreview, formData, loading, generatePreview])
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Ctrl/Cmd + S to save
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault()
-        if (!saving) {
-          handleSave()
-        }
-      }
-
-      // Ctrl/Cmd + P to toggle preview
-      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-        e.preventDefault()
-        togglePreview()
-      }
-
-      // Escape to close preview
-      if (e.key === 'Escape' && showPreview) {
-        setShowPreview(false)
-        setPreviewData(null)
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [saving, showPreview, handleSave, togglePreview])
-
   const togglePreview = useCallback(() => {
     setShowPreview(!showPreview)
     if (!showPreview) {
@@ -174,6 +146,34 @@ export default function AboutAdminPage() {
       setSaving(false)
     }
   }, [formData])
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ctrl/Cmd + S to save
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault()
+        if (!saving) {
+          handleSave()
+        }
+      }
+
+      // Ctrl/Cmd + P to toggle preview
+      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        e.preventDefault()
+        togglePreview()
+      }
+
+      // Escape to close preview
+      if (e.key === 'Escape' && showPreview) {
+        setShowPreview(false)
+        setPreviewData(null)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [saving, showPreview, handleSave, togglePreview])
 
   const handleReset = useCallback(() => {
     if (aboutData) {

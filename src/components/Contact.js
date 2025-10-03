@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useForm, ValidationError } from '@formspree/react'
-import { Section, Button, Input } from '@/components/ui'
+import { Section, Input } from '@/components/ui'
 import CustomDropdownMinimal from './CustomDropdown'
+import ActionButton from '@/components/admin/ActionButton'
 // ========================================
 // 📦 DYNAMIC DATA (Backend-Ready)
 // ========================================
@@ -288,14 +289,13 @@ export default function Contact() {
 
             {/* Submit Button */}
             <div className="text-center pt-6 sm:pt-7">
-              <Button
-                type="submit"
+              <ActionButton
+                isSaving={state.submitting}
+                text={contactData.form.submitButton.text}
+                savingText={contactData.form.submitButton.loadingText}
                 variant="primary"
-                disabled={state.submitting}
                 className="w-full sm:w-auto px-10 sm:px-14 py-4 sm:py-5"
-              >
-                {state.submitting ? contactData.form.submitButton.loadingText : contactData.form.submitButton.text}
-              </Button>
+              />
             </div>
 
           </form>
