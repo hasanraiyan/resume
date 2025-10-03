@@ -113,9 +113,9 @@ export default function ProjectDetailClient({ project, relatedProjects }) {
           <p className="text-lg sm:text-xl text-gray-600 mb-8 sm:mb-10">
             Let's create something amazing for your business
           </p>
-          <Button 
-            href="/contact" 
-            variant="primary" 
+          <Button
+            href="/#contact"
+            variant="primary"
             className="inline-flex items-center bg-black hover:bg-gray-800 text-white px-8 py-4 text-lg font-semibold"
           >
             Get In Touch
