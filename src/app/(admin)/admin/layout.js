@@ -55,8 +55,8 @@ function AdminLayoutContent({ children }) {
                   <Link href="/admin/dashboard" className="px-4 py-2 text-sm font-medium text-neutral-600 hover:text-black hover:bg-neutral-100 rounded transition-colors">
                     Dashboard
                   </Link>
-                  <Link href="/admin/hero" className="px-4 py-2 text-sm font-medium text-neutral-600 hover:text-black hover:bg-neutral-100 rounded transition-colors">
-                    Hero Section
+                  <Link href="/admin/sections" className="px-4 py-2 text-sm font-medium text-neutral-600 hover:text-black hover:bg-neutral-100 rounded transition-colors">
+                    Manage Sections
                   </Link>
                   <Link href="/admin/projects" className="px-4 py-2 text-sm font-medium text-neutral-600 hover:text-black hover:bg-neutral-100 rounded transition-colors">
                     Projects
