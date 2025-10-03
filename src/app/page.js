@@ -7,7 +7,7 @@ import Work from '@/components/Work'
 import Stats from '@/components/Stats'
 import Contact from '@/components/Contact'
 import Footer from '@/components/Footer'
-import HomePageClient from '@/components/HomePageClient'
+import HomepageLoaderManager from '@/components/HomepageLoaderManager'
 import dbConnect from '@/lib/dbConnect'
 import Project from '@/models/Project'
 import { serializeProjects } from '@/lib/serialize'
@@ -22,18 +22,16 @@ export default async function Home() {
   const featuredProjects = serializeProjects(featuredProjectsData)
 
   return (
-    <>
-      <HomePageClient>
-        <CustomCursor />
-        <Navbar />
-        <Hero />
-        <Marquee />
-        <About />
-        <Work featuredProjects={featuredProjects} />
-        <Stats />
-        <Contact />
-        <Footer />
-      </HomePageClient>
-    </>
+    <HomepageLoaderManager>
+      <CustomCursor />
+      <Navbar />
+      <Hero />
+      <Marquee />
+      <About />
+      <Work featuredProjects={featuredProjects} />
+      <Stats />
+      <Contact />
+      <Footer />
+    </HomepageLoaderManager>
   )
 }

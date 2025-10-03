@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { Section, Card, Button } from '@/components/ui'
+import { useLoadingStatus } from '@/context/LoadingContext'
 import { SkeletonLoader, SkeletonItem } from './Skeleton'
 
 // ========================================
@@ -12,8 +13,12 @@ import { SkeletonLoader, SkeletonItem } from './Skeleton'
 const About = () => {
   const [aboutData, setAboutData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const { registerComponent, markComponentAsLoaded } = useLoadingStatus()
 
   useEffect(() => {
+    // Register this component as "loading" when it mounts
+    registerComponent('About');
+
     const fetchAboutData = async () => {
       try {
         const response = await fetch('/api/about')
@@ -26,6 +31,8 @@ const About = () => {
         console.error('Error fetching about data:', error)
       } finally {
         setLoading(false)
+        // CRUCIAL: Mark as loaded regardless of success or failure
+        markComponentAsLoaded('About');
       }
     }
 
@@ -41,7 +48,7 @@ const About = () => {
     return () => {
       window.removeEventListener('aboutDataUpdated', handleAboutDataUpdate)
     }
-  }, [])
+  }, [registerComponent, markComponentAsLoaded])
 
   useEffect(() => {
     // Only animate when we have data and are not loading

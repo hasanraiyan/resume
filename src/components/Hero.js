@@ -5,6 +5,7 @@ import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { Button, Badge } from '@/components/ui'
 import { useHeroData } from '@/hooks/useHeroData'
+import { useLoadingStatus } from '@/context/LoadingContext'
 import { SkeletonLoader, SkeletonItem } from './Skeleton'
 
 // ========================================
@@ -143,6 +144,19 @@ function HeroSkeleton() {
 export default function Hero() {
   const { heroData: fetchedHeroData, loading, error } = useHeroData()
   const [heroData, setHeroData] = useState(defaultHeroData)
+  const { registerComponent, markComponentAsLoaded } = useLoadingStatus()
+
+  useEffect(() => {
+    // Register this component as "loading" when it mounts
+    registerComponent('Hero');
+  }, [registerComponent]);
+
+  useEffect(() => {
+    // When the loading state from useHeroData is resolved, mark as loaded
+    if (!loading) {
+      markComponentAsLoaded('Hero');
+    }
+  }, [loading, markComponentAsLoaded]);
 
   // Update hero data when fetched data changes
   useEffect(() => {
