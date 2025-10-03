@@ -5,6 +5,7 @@ import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { Button, Badge } from '@/components/ui'
 import { useHeroData } from '@/hooks/useHeroData'
+import { SkeletonLoader, SkeletonItem } from './Skeleton'
 
 // ========================================
 // 📦 FALLBACK DATA (Default values)
@@ -76,6 +77,66 @@ const defaultHeroData = {
   }
 }
 
+// Hero Skeleton Component
+function HeroSkeleton() {
+  return (
+    <section id="home" className="min-h-screen flex items-center pt-16 sm:pt-20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-12 w-full py-12 sm:py-16">
+        <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
+
+          {/* Left Column - Content Skeleton */}
+          <div className="order-2 lg:order-1">
+            {/* Badge Skeleton */}
+            <div className="mb-4 sm:mb-5">
+              <SkeletonItem height="h-7" width="w-32" className="rounded-full" />
+            </div>
+
+            {/* Main Heading Skeleton */}
+            <div className="mb-4 sm:mb-5 space-y-2">
+              <SkeletonItem height="h-12 sm:h-14 md:h-16 lg:h-20" width="w-full" />
+              <SkeletonItem height="h-12 sm:h-14 md:h-16 lg:h-20" width="w-3/4" className="bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-clip-text" />
+              <SkeletonItem height="h-12 sm:h-14 md:h-16 lg:h-20" width="w-2/3" />
+            </div>
+
+            {/* Introduction Skeleton */}
+            <div className="mb-8 sm:mb-10 space-y-3">
+              <SkeletonItem height="h-4" width="w-full" />
+              <SkeletonItem height="h-4" width="w-5/6" />
+              <SkeletonItem height="h-4" width="w-4/5" />
+            </div>
+
+            {/* CTA Buttons Skeleton */}
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 mb-8">
+              <SkeletonItem height="h-12" width="w-32" className="rounded-lg" />
+              <SkeletonItem height="h-12" width="w-28" className="rounded-lg" />
+            </div>
+
+            {/* Social Links Skeleton */}
+            <div className="flex gap-6 sm:gap-7 justify-center sm:justify-start">
+              {[1, 2, 3, 4].map((i) => (
+                <SkeletonItem key={i} height="h-5 w-5" className="rounded-full" />
+              ))}
+            </div>
+          </div>
+
+          {/* Right Column - Profile Image Skeleton */}
+          <div className="relative order-1 lg:order-2 max-w-sm mx-auto lg:max-w-none">
+            {/* Profile Image Skeleton */}
+            <div className="aspect-square bg-gray-200 rounded-full animate-pulse"></div>
+
+            {/* Experience Badge Skeleton */}
+            <div className="absolute -bottom-4 sm:-bottom-7 -right-4 sm:-right-7 bg-white p-4 sm:p-6 shadow-2xl rounded-lg">
+              <SkeletonItem height="h-8 sm:h-10" width="w-12" className="mb-1" />
+              <SkeletonItem height="h-3 sm:h-4" width="w-20" />
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  )
+}
+
 // ========================================
 // 🎨 COMPONENT
 // ========================================
@@ -90,7 +151,7 @@ export default function Hero() {
     }
   }, [fetchedHeroData])
 
-  // GSAP Animation
+  // GSAP Animation - Always run this effect, but only animate when not loading
   useEffect(() => {
     if (loading) return // Don't animate until data is loaded
 
@@ -102,7 +163,7 @@ export default function Hero() {
       if (elements.length > 0) {
         // Reset any existing transforms
         gsap.set(elements, { opacity: 1, y: 0 })
-        
+
         gsap.from(elements, {
           opacity: 0,
           y: 50,
@@ -123,6 +184,11 @@ export default function Hero() {
       clearTimeout(timer)
     }
   }, [loading])
+
+  // Show skeleton while loading
+  if (loading) {
+    return <HeroSkeleton />
+  }
 
   return (
     <section id="home" className="min-h-screen flex items-center pt-16 sm:pt-20">

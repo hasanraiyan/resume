@@ -44,6 +44,7 @@ export default function Button({
         className={classes} 
         target="_blank"
         rel="noopener noreferrer"
+        suppressHydrationWarning={true}
         {...props}
       >
         {children}
@@ -54,7 +55,7 @@ export default function Button({
   // Internal link (Next.js Link)
   if (href) {
     return (
-      <Link href={href} className={classes} {...props}>
+      <Link href={href} className={classes} suppressHydrationWarning={true} {...props}>
         {children}
       </Link>
     )
@@ -62,7 +63,7 @@ export default function Button({
 
   // Regular button
   return (
-    <button onClick={onClick} className={classes} {...props}>
+    <button onClick={onClick} className={classes} suppressHydrationWarning={true} {...props}>
       {children}
     </button>
   )

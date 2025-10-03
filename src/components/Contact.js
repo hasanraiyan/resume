@@ -190,6 +190,7 @@ export default function Contact() {
               required={field.required}
               placeholder={field.placeholder}
               className="w-full border-b-2 border-gray-300 pb-3 focus:border-black focus:outline-none transition text-sm sm:text-base bg-transparent hover-target resize-none"
+              suppressHydrationWarning={true}
             />
             <ValidationError 
               prefix={field.label} 

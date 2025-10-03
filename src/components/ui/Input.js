@@ -41,6 +41,7 @@ export default function Input({
         placeholder={placeholder}
         required={required}
         className={cn(componentStyles.forms.input, className)}
+        suppressHydrationWarning={true}
         {...props}
       />
     </div>
