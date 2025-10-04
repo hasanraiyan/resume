@@ -70,7 +70,7 @@ const contactData = {
         name: 'message',
         label: 'YOUR MESSAGE',
         type: 'textarea',
-        placeholder: '',
+        placeholder: 'Tell me about your project...',
         required: true,
         rows: 5,
         gridColumn: 'full'
