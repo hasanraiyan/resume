@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { gsap } from 'gsap'
 import { Button } from '@/components/ui'
 import { useSiteContext } from '@/context/SiteContext' // Import the context hook
@@ -10,6 +11,7 @@ import { useSiteContext } from '@/context/SiteContext' // Import the context hoo
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const pathname = usePathname()
+  const { data: session } = useSession()
   const { initials, heroData } = useSiteContext() // Use context to get dynamic data
 
   // --- Data for the Navbar ---
@@ -25,6 +27,10 @@ export default function Navbar() {
     { id: 3, label: "Work", href: "/#work" },
     { id: 4, label: "Projects", href: "/projects" }
   ];
+
+  if (session?.user?.isAdmin) {
+    navigationLinks.push({ id: 5, label: "Dashboard", href: "/admin/analytics" });
+  }
   
   const cta = {
     text: "Let's Talk",
@@ -35,7 +41,7 @@ export default function Navbar() {
   const mobileMenu = {
     menuItems: [
       ...navigationLinks,
-      { id: 5, label: "Contact", href: "/#contact" }
+      { id: navigationLinks.length + 1, label: "Contact", href: "/#contact" }
     ],
     cta: cta,
     socialLinks: heroData?.socialLinks || [] // Use social links from context
