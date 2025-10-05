@@ -9,7 +9,9 @@ export default function SearchOverlay({ isOpen, onClose }) {
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef(null);
+  const resultsRef = useRef(null);
   const debounceTimer = useRef(null);
 
   // Focus input when overlay opens
@@ -19,19 +21,48 @@ export default function SearchOverlay({ isOpen, onClose }) {
     }
   }, [isOpen]);
 
-  // Handle escape key
+  // Handle keyboard navigation
   useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape') {
-        onClose();
+    const handleKeyDown = (e) => {
+      if (!isOpen) return;
+
+      switch (e.key) {
+        case 'Escape':
+          onClose();
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          setSelectedIndex(prev =>
+            prev < results.length - 1 ? prev + 1 : 0
+          );
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setSelectedIndex(prev => prev > 0 ? prev - 1 : results.length - 1);
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (selectedIndex >= 0 && selectedIndex < results.length) {
+            // Navigate to selected result
+            const selectedResult = results[selectedIndex];
+            const href = selectedResult.type === 'project'
+              ? `/projects/${selectedResult.slug}`
+              : `/blog/${selectedResult.slug}`;
+            window.location.href = href;
+            onClose();
+          }
+          break;
       }
     };
 
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      return () => document.removeEventListener('keydown', handleEscape);
-    }
-  }, [isOpen, onClose]);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose, results, selectedIndex]);
+
+  // Reset selected index when results change
+  useEffect(() => {
+    setSelectedIndex(-1);
+  }, [results]);
 
   // Debounced search - properly implemented to avoid triggering on every keystroke
   useEffect(() => {
@@ -143,13 +174,35 @@ export default function SearchOverlay({ isOpen, onClose }) {
               {error}
             </div>
           ) : results.length === 0 ? (
-            <div className="text-center text-gray-500 py-8">
-              No results found for "{query}"
+            <div className="text-center py-8">
+              <div className="text-gray-500 mb-4">
+                No results found for "{query}"
+              </div>
+              <Link
+                href="/projects"
+                onClick={onClose}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Browse All Projects
+                <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
             </div>
           ) : (
             <div className="space-y-4">
-              {results.map((result) => (
-                <SearchResultItem key={`${result.type}-${result.id}`} result={result} onNavigate={onClose} />
+              {results.map((result, index) => (
+                <div
+                  key={`${result.type}-${result.id}`}
+                  ref={index === selectedIndex ? resultsRef : null}
+                >
+                  <SearchResultItem
+                    result={result}
+                    onNavigate={onClose}
+                    searchQuery={query}
+                    isSelected={index === selectedIndex}
+                  />
+                </div>
               ))}
             </div>
           )}

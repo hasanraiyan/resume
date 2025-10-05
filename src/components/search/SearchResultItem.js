@@ -1,6 +1,22 @@
 import Link from 'next/link';
 
-export default function SearchResultItem({ result, onNavigate }) {
+// Utility function to highlight search terms
+function highlightSearchTerm(text, searchQuery) {
+  if (!searchQuery || !text) return text;
+
+  const regex = new RegExp(`(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  const parts = text.split(regex);
+
+  return parts.map((part, index) =>
+    regex.test(part) ? (
+      <mark key={index} className="bg-yellow-200 px-1 rounded">
+        {part}
+      </mark>
+    ) : part
+  );
+}
+
+export default function SearchResultItem({ result, onNavigate, searchQuery, isSelected = false }) {
   const getTypeColor = (type) => {
     return type === 'project' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800';
   };
@@ -13,13 +29,17 @@ export default function SearchResultItem({ result, onNavigate }) {
     <Link
       href={getHref(result)}
       onClick={onNavigate}
-      className="block p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+      className={`block p-4 border rounded-lg transition-colors ${
+        isSelected
+          ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-200'
+          : 'hover:bg-gray-50 border-gray-200'
+      }`}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <h3 className="font-semibold text-gray-900 hover:text-blue-600">
-              {result.title}
+              {highlightSearchTerm(result.title, searchQuery)}
             </h3>
             <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(result.type)}`}>
               {result.type === 'project' ? 'Project' : 'Article'}
@@ -28,12 +48,12 @@ export default function SearchResultItem({ result, onNavigate }) {
 
           {result.category && (
             <p className="text-sm text-gray-600 mb-2">
-              Category: {result.category}
+              Category: {highlightSearchTerm(result.category, searchQuery)}
             </p>
           )}
 
           <p className="text-gray-700 text-sm line-clamp-2">
-            {result.excerpt}
+            {highlightSearchTerm(result.excerpt, searchQuery)}
           </p>
 
           {result.tags && result.tags.length > 0 && (
@@ -43,7 +63,7 @@ export default function SearchResultItem({ result, onNavigate }) {
                   key={index}
                   className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded"
                 >
-                  {typeof tag === 'string' ? tag : tag.name}
+                  {highlightSearchTerm(typeof tag === 'string' ? tag : tag.name, searchQuery)}
                 </span>
               ))}
               {result.tags.length > 3 && (
