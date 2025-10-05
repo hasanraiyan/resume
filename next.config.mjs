@@ -1,7 +1,36 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['images.unsplash.com', 'picsum.photos','plus.unsplash.com','api.dicebear.com', 'raw.githubusercontent.com','img.utdstc.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'picsum.photos',
+      },
+      {
+        protocol: 'https',
+        hostname: 'plus.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'api.dicebear.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'raw.githubusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.utdstc.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'image.pollinations.ai'
+      }
+    ],
   },
 };
 
