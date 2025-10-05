@@ -67,8 +67,11 @@ export const authOptions = {
     },
     async session({ session, token }) {
       try {
-        session.user.role = token.role;
-        session.user.isAdmin = token.isAdmin;
+        if (token && session.user) {
+          session.user.id = token.id;
+          session.user.role = token.role;
+          session.user.isAdmin = token.isAdmin;
+        }
         return session;
       } catch (error) {
         console.error('Session callback error:', error);
