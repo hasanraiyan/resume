@@ -11,15 +11,19 @@ import HomepageLoaderManager from '@/components/HomepageLoaderManager'
 import dbConnect from '@/lib/dbConnect'
 import Project from '@/models/Project'
 import { serializeProjects } from '@/lib/serialize'
+import { getLatestArticles } from '@/app/actions/articleActions'
 
 export default async function Home() {
   await dbConnect()
-  
+
   // Fetch featured projects from MongoDB
   const featuredProjectsData = await Project.find({ featured: true }).sort({ createdAt: -1 }).lean()
-  
+
   // Serialize all ObjectIds recursively for client components
   const featuredProjects = serializeProjects(featuredProjectsData)
+
+  // Fetch latest articles
+  const { success: articlesSuccess, articles: latestArticles } = await getLatestArticles(3)
 
   return (
     <HomepageLoaderManager>

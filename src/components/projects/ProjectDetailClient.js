@@ -6,6 +6,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { Section, Button, Badge } from '@/components/ui'
 import ProjectGallery from './ProjectGallery'
 import RelatedProjects from './RelatedProjects'
+import MarkdownRenderer from '@/components/ui/MarkdownRenderer'
 
 export default function ProjectDetailClient({ project, relatedProjects }) {
 
@@ -50,8 +51,8 @@ export default function ProjectDetailClient({ project, relatedProjects }) {
           <div className="grid lg:grid-cols-3 gap-8 sm:gap-12 mb-12 sm:mb-16">
             <div className="lg:col-span-2">
               <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Project Overview</h2>
-              <div className="prose max-w-none text-gray-700 leading-relaxed space-y-4">
-                {project.fullDescription?.split('\n').map((p, i) => p.trim() && <p key={i}>{p.trim()}</p>)}
+              <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+                <MarkdownRenderer content={project.fullDescription || ''} />
               </div>
             </div>
             <div className="lg:col-span-1">
@@ -69,8 +70,22 @@ export default function ProjectDetailClient({ project, relatedProjects }) {
           
           {(project.details?.challenge || project.details?.solution) && (
             <div className="grid md:grid-cols-2 gap-8 sm:gap-12 mb-12 sm:mb-16">
-              {project.details.challenge && <div><h3 className="text-xl sm:text-2xl font-bold mb-4">The Challenge</h3><p className="text-gray-700 leading-relaxed">{project.details.challenge}</p></div>}
-              {project.details.solution && <div><h3 className="text-xl sm:text-2xl font-bold mb-4">The Solution</h3><p className="text-gray-700 leading-relaxed">{project.details.solution}</p></div>}
+              {project.details.challenge && (
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-bold mb-4">The Challenge</h3>
+                  <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+                    <MarkdownRenderer content={project.details.challenge} />
+                  </div>
+                </div>
+              )}
+              {project.details.solution && (
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-bold mb-4">The Solution</h3>
+                  <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+                    <MarkdownRenderer content={project.details.solution} />
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

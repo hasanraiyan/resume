@@ -23,7 +23,8 @@ export default function Navbar() {
     { id: 1, label: "Home", href: "/" },
     { id: 2, label: "About", href: "/#about" },
     { id: 3, label: "Work", href: "/#work" },
-    { id: 4, label: "Projects", href: "/projects" }
+    { id: 4, label: "Projects", href: "/projects" },
+    { id: 5, label: "Blog", href: "/blog" }
   ];
   
   const cta = {
@@ -35,7 +36,7 @@ export default function Navbar() {
   const mobileMenu = {
     menuItems: [
       ...navigationLinks,
-      { id: 5, label: "Contact", href: "/#contact" }
+      { id: 6, label: "Contact", href: "/#contact" }
     ],
     cta: cta,
     socialLinks: heroData?.socialLinks || [] // Use social links from context

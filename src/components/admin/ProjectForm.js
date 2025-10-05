@@ -11,6 +11,7 @@ import ImageManager from './ImageManager';
 import TagManager from './TagManager';
 import FormSection from './FormSection';
 import ResultsManager from './ResultsManager'; // <-- IMPORT THE NEW COMPONENT
+import RichTextEditor from './RichTextEditor';
 
 const defaultProject = {
   title: '',
@@ -91,6 +92,25 @@ export default function ProjectForm({
     }
   };
 
+  const handleEditorChange = (fieldName, value) => {
+    const [section, field] = fieldName.split('.');
+
+    if (field) { // Handle nested state (details)
+      setFormData(prev => ({
+        ...prev,
+        [section]: {
+          ...prev[section],
+          [field]: value
+        }
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [fieldName]: value
+      }));
+    }
+  };
+
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -166,9 +186,9 @@ export default function ProjectForm({
                 <div className="space-y-6">
                     <div><label className="block text-sm font-semibold text-black mb-2 uppercase tracking-wider">Tagline *</label><input name="tagline" type="text" required value={formData.tagline} onChange={handleChange} className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:outline-none focus:border-black" /></div>
                     <div><label className="block text-sm font-semibold text-black mb-2 uppercase tracking-wider">Short Description *</label><textarea name="description" rows={3} required value={formData.description} onChange={handleChange} className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:outline-none focus:border-black resize-y" /></div>
-                    <div><label className="block text-sm font-semibold text-black mb-2 uppercase tracking-wider">Full Description *</label><textarea name="fullDescription" rows={6} required value={formData.fullDescription} onChange={handleChange} className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:outline-none focus:border-black resize-y" /></div>
-                    <div><label className="block text-sm font-semibold text-black mb-2 uppercase tracking-wider">The Challenge</label><textarea name="details.challenge" rows={3} value={formData.details.challenge} onChange={handleChange} className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:outline-none focus:border-black resize-y" /></div>
-                    <div><label className="block text-sm font-semibold text-black mb-2 uppercase tracking-wider">The Solution</label><textarea name="details.solution" rows={3} value={formData.details.solution} onChange={handleChange} className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:outline-none focus:border-black resize-y" /></div>
+                    <div><RichTextEditor label="Full Description *" value={formData.fullDescription} onChange={(value) => handleEditorChange('fullDescription', value)} /></div>
+                    <div><RichTextEditor label="The Challenge" value={formData.details.challenge} onChange={(value) => handleEditorChange('details.challenge', value)} /></div>
+                    <div><RichTextEditor label="The Solution" value={formData.details.solution} onChange={(value) => handleEditorChange('details.solution', value)} /></div>
                 </div>
             </FormSection>
             

@@ -91,19 +91,19 @@ export default function SectionsAdminPage() {
             </Card>
           </div>
 
-          <div className="group">
-            <Card className="p-6 opacity-60 border-2 border-dashed border-neutral-300">
+          <Link href="/admin/articles" className="group">
+            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group-hover:bg-neutral-50">
               <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-neutral-300 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-newspaper text-neutral-500 text-lg"></i>
+                <div className="w-12 h-12 bg-black group-hover:bg-neutral-800 rounded-lg flex items-center justify-center">
+                  <i className="fas fa-newspaper text-white group-hover:text-white text-lg"></i>
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-neutral-500 mb-1">Blog/News</h3>
-                  <p className="text-sm text-neutral-400">Coming soon - share insights and updates</p>
+                  <h3 className="font-semibold text-black group-hover:text-black mb-1">Blog/News</h3>
+                  <p className="text-sm text-neutral-600 group-hover:text-neutral-700">Create and manage your blog articles and news posts</p>
                 </div>
               </div>
             </Card>
-          </div>
+          </Link>
 
         </div>
       </div>
