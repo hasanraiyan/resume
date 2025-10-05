@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 import IconPicker from '@/components/admin/IconPicker';
 import ActionButton from '@/components/admin/ActionButton';
+import CustomDropdown from '@/components/CustomDropdown';
 
 export default function ChatbotSettingsPage() {
   const { data: session, status } = useSession();
@@ -239,15 +240,16 @@ export default function ChatbotSettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">Status</label>
-                  <select
+                  <CustomDropdown
+                    label="Status"
+                    name="isActive"
                     value={formData.isActive ? 'active' : 'inactive'}
                     onChange={(e) => handleInputChange('isActive', e.target.value === 'active')}
-                    className="w-full p-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
+                    options={[
+                      { value: 'active', label: 'Active' },
+                      { value: 'inactive', label: 'Inactive' }
+                    ]}
+                  />
                 </div>
               </div>
             </div>
