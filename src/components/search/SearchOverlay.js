@@ -3,16 +3,19 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import SearchResultItem from './SearchResultItem';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 export default function SearchOverlay({ isOpen, onClose }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
+  const [groupedResults, setGroupedResults] = useState({ projects: [], articles: [] });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef(null);
   const resultsRef = useRef(null);
   const debounceTimer = useRef(null);
+  const { trackEvent } = useAnalytics();
 
   // Focus input when overlay opens
   useEffect(() => {
@@ -64,6 +67,20 @@ export default function SearchOverlay({ isOpen, onClose }) {
     setSelectedIndex(-1);
   }, [results]);
 
+  // Group results by type when results change
+  useEffect(() => {
+    const grouped = results.reduce((acc, result) => {
+      if (result.type === 'project') {
+        acc.projects.push(result);
+      } else if (result.type === 'article') {
+        acc.articles.push(result);
+      }
+      return acc;
+    }, { projects: [], articles: [] });
+
+    setGroupedResults(grouped);
+  }, [results]);
+
   // Debounced search - properly implemented to avoid triggering on every keystroke
   useEffect(() => {
     return () => {
@@ -103,6 +120,14 @@ export default function SearchOverlay({ isOpen, onClose }) {
 
         const data = await response.json();
         setResults(data.results || []);
+
+        // Track search analytics
+        trackEvent('search_performed', {
+          searchTerm: query,
+          resultCount: data.results?.length || 0,
+          projectCount: data.results?.filter(r => r.type === 'project').length || 0,
+          articleCount: data.results?.filter(r => r.type === 'article').length || 0
+        });
       } catch (err) {
         setError('Failed to search. Please try again.');
         console.error('Search error:', err);
@@ -190,20 +215,62 @@ export default function SearchOverlay({ isOpen, onClose }) {
               </Link>
             </div>
           ) : (
-            <div className="space-y-4">
-              {results.map((result, index) => (
-                <div
-                  key={`${result.type}-${result.id}`}
-                  ref={index === selectedIndex ? resultsRef : null}
-                >
-                  <SearchResultItem
-                    result={result}
-                    onNavigate={onClose}
-                    searchQuery={query}
-                    isSelected={index === selectedIndex}
-                  />
+            <div className="space-y-6">
+              {/* Projects Section */}
+              {groupedResults.projects.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                    Projects ({groupedResults.projects.length})
+                  </h4>
+                  <div className="space-y-3">
+                    {groupedResults.projects.map((result, index) => {
+                      const globalIndex = results.findIndex(r => r.id === result.id && r.type === result.type);
+                      return (
+                        <div
+                          key={`project-${result.id}`}
+                          ref={globalIndex === selectedIndex ? resultsRef : null}
+                        >
+                          <SearchResultItem
+                            result={result}
+                            onNavigate={onClose}
+                            searchQuery={query}
+                            isSelected={globalIndex === selectedIndex}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              ))}
+              )}
+
+              {/* Articles Section */}
+              {groupedResults.articles.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                    Articles ({groupedResults.articles.length})
+                  </h4>
+                  <div className="space-y-3">
+                    {groupedResults.articles.map((result, index) => {
+                      const globalIndex = results.findIndex(r => r.id === result.id && r.type === result.type);
+                      return (
+                        <div
+                          key={`article-${result.id}`}
+                          ref={globalIndex === selectedIndex ? resultsRef : null}
+                        >
+                          <SearchResultItem
+                            result={result}
+                            onNavigate={onClose}
+                            searchQuery={query}
+                            isSelected={globalIndex === selectedIndex}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

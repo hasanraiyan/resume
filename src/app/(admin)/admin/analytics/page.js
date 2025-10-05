@@ -214,6 +214,7 @@ export default function AnalyticsDashboard() {
             { id: 'overview', label: 'Overview' },
             { id: 'pageviews', label: 'Page Views' },
             { id: 'sessions', label: 'Sessions' },
+            { id: 'search', label: 'Search Analytics' },
             { id: 'events', label: 'Recent Events' }
           ].map((tab) => (
             <button
@@ -446,6 +447,110 @@ export default function AnalyticsDashboard() {
             </div>
           )}
         </Card>
+      )}
+
+      {/* Search Analytics Tab */}
+      {activeTab === 'search' && analyticsData && (
+        <div className="space-y-6">
+          {/* Search Summary Cards */}
+          {analyticsData.searchSummary && analyticsData.searchSummary.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-neutral-600 uppercase tracking-wider font-['Space_Grotesk']">
+                      Total Searches
+                    </p>
+                    <p className="text-3xl font-bold text-black mt-2 font-['Playfair_Display']">
+                      {formatNumber(analyticsData.searchSummary[0].totalSearches || 0)}
+                    </p>
+                    <p className="text-sm text-neutral-500 font-['Space_Grotesk']">All time</p>
+                  </div>
+                  <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-search text-white"></i>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-neutral-600 uppercase tracking-wider font-['Space_Grotesk']">
+                      Avg Results
+                    </p>
+                    <p className="text-3xl font-bold text-black mt-2 font-['Playfair_Display']">
+                      {formatNumber(analyticsData.searchSummary[0].avgResultsPerSearch || 0)}
+                    </p>
+                    <p className="text-sm text-neutral-500 font-['Space_Grotesk']">Per search</p>
+                  </div>
+                  <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-list text-white"></i>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-neutral-600 uppercase tracking-wider font-['Space_Grotesk']">
+                      Zero Results
+                    </p>
+                    <p className="text-3xl font-bold text-black mt-2 font-['Playfair_Display']">
+                      {formatNumber(analyticsData.searchSummary[0].zeroResultSearches || 0)}
+                    </p>
+                    <p className="text-sm text-neutral-500 font-['Space_Grotesk']">Failed searches</p>
+                  </div>
+                  <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-exclamation-triangle text-white"></i>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* Top Search Terms */}
+          <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+            <h3 className="text-lg font-semibold mb-4 font-['Playfair_Display']">Top Search Terms</h3>
+            {(!analyticsData.searchAnalytics || analyticsData.searchAnalytics.length === 0) ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-neutral-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <i className="fas fa-search text-neutral-400 text-xl"></i>
+                </div>
+                <h4 className="text-lg font-medium text-neutral-600 mb-2">No Search Data</h4>
+                <p className="text-neutral-500 mb-4">
+                  No search analytics are available yet.
+                </p>
+                <p className="text-sm text-neutral-400">
+                  Search data will appear here once users start using the search feature.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {analyticsData.searchAnalytics?.slice(0, 25).map((search, index) => (
+                  <div key={search.searchTerm} className="flex justify-between items-center py-3 border-b border-neutral-200 last:border-b-0">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-sm font-medium text-neutral-400 w-8 font-['Space_Grotesk']">#{index + 1}</span>
+                      <div>
+                        <div className="font-medium font-['Space_Grotesk']">"{search.searchTerm}"</div>
+                        <div className="text-xs text-neutral-500 font-['Space_Grotesk']">
+                          Last searched: {new Date(search.lastSearched).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex space-x-6 text-sm">
+                      <span className="text-neutral-600 font-['Space_Grotesk']">{formatNumber(search.count)} searches</span>
+                      <span className="text-neutral-500 font-['Space_Grotesk']">{formatNumber(search.avgResults)} avg results</span>
+                      <div className="flex space-x-2">
+                        <span className="text-blue-600 font-['Space_Grotesk']">{formatNumber(search.totalProjects)} projects</span>
+                        <span className="text-green-600 font-['Space_Grotesk']">{formatNumber(search.totalArticles)} articles</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
       )}
 
       {/* Events Tab */}

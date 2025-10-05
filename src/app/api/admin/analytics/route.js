@@ -64,6 +64,70 @@ export async function GET(request) {
         console.log('Session stats result:', data.sessions);
         break;
 
+      case 'search':
+        console.log('Fetching search analytics for:', { startDate, endDate });
+        // Aggregate search analytics
+        const searchMatch = {
+          eventName: 'search_performed',
+          ...(startDate && endDate && {
+            timestamp: {
+              $gte: new Date(startDate),
+              $lte: new Date(endDate)
+            }
+          })
+        };
+
+        data.searchAnalytics = await Analytics.aggregate([
+          { $match: searchMatch },
+          {
+            $group: {
+              _id: '$properties.searchTerm',
+              count: { $sum: 1 },
+              avgResults: { $avg: '$properties.resultCount' },
+              totalProjects: { $sum: '$properties.projectCount' },
+              totalArticles: { $sum: '$properties.articleCount' },
+              lastSearched: { $max: '$timestamp' }
+            }
+          },
+          {
+            $project: {
+              searchTerm: '$_id',
+              count: 1,
+              avgResults: { $round: ['$avgResults', 1] },
+              totalProjects: 1,
+              totalArticles: 1,
+              lastSearched: 1,
+              _id: 0
+            }
+          },
+          { $sort: { count: -1 } },
+          { $limit: 50 }
+        ]);
+
+        // Get search summary stats
+        data.searchSummary = await Analytics.aggregate([
+          { $match: searchMatch },
+          {
+            $group: {
+              _id: null,
+              totalSearches: { $sum: 1 },
+              avgResultsPerSearch: { $avg: '$properties.resultCount' },
+              zeroResultSearches: {
+                $sum: { $cond: [{ $eq: ['$properties.resultCount', 0] }, 1, 0] }
+              }
+            }
+          },
+          {
+            $project: {
+              totalSearches: 1,
+              avgResultsPerSearch: { $round: ['$avgResultsPerSearch', 1] },
+              zeroResultSearches: 1,
+              _id: 0
+            }
+          }
+        ]);
+        break;
+
       case 'events':
         // Get recent events with pagination
         const page = parseInt(searchParams.get('page') || '1');
