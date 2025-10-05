@@ -20,7 +20,7 @@ export function ArticleForm({ article, onSave }) {
     coverImage: article?.coverImage || '',
     content: article?.content || '',
     status: article?.status || 'draft',
-    tags: article?.tags?.join(', ') || '',
+    tags: Array.isArray(article?.tags) ? article.tags.join(', ') : (article?.tags || ''),
   });
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -39,12 +39,17 @@ export function ArticleForm({ article, onSave }) {
     }
   };
 
-  const handleSubmit = (e, action) => {
+  const handleSubmit = (e, action, overrideStatus = null) => {
     e.preventDefault();
 
     const submitData = new FormData();
+    // Use overrideStatus if provided (for publish/draft actions), otherwise use current formData status
+    const currentStatus = overrideStatus || formData.status;
+
     Object.entries(formData).forEach(([key, value]) => {
-      if (key === 'tags') {
+      if (key === 'status') {
+        submitData.append(key, currentStatus);
+      } else if (key === 'tags') {
         // Convert comma-separated string to array
         const tagsArray = value.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
         submitData.append(key, JSON.stringify(tagsArray));
@@ -67,28 +72,34 @@ export function ArticleForm({ article, onSave }) {
         setSuccessMessage(result.message);
         setShowSuccess(true);
       } else if (result?.success !== false) {
-        setSuccessMessage(action === 'delete' ? 'Article deleted successfully!' : 'Article saved successfully!');
+        const actionMessages = {
+          'delete': 'Article deleted successfully!',
+          'publish': 'Article published successfully!',
+          'save': 'Article saved successfully!'
+        };
+        setSuccessMessage(actionMessages[action] || 'Article saved successfully!');
         setShowSuccess(true);
+
+        // Update local form state to reflect the published status
+        if (action === 'publish') {
+          setFormData(prev => ({ ...prev, status: 'published' }));
+        }
       }
     });
   };
 
   const handleSaveDraft = (e) => {
+    e.preventDefault();
     setCurrentAction('save');
     setFormData(prev => ({ ...prev, status: 'draft' }));
-    setTimeout(() => {
-      handleSubmit(e, 'save');
-      setCurrentAction(null);
-    }, 100);
+    handleSubmit(e, 'save', 'draft');
   };
 
   const handlePublish = (e) => {
+    e.preventDefault();
     setCurrentAction('publish');
     setFormData(prev => ({ ...prev, status: 'published' }));
-    setTimeout(() => {
-      handleSubmit(e, 'publish');
-      setCurrentAction(null);
-    }, 100);
+    handleSubmit(e, 'publish', 'published');
   };
 
   return (
@@ -211,9 +222,9 @@ export function ArticleForm({ article, onSave }) {
               savingText="Deleting..."
               variant="danger"
               onClick={(e) => {
+                e.preventDefault();
                 setCurrentAction('delete');
                 handleSubmit(e, 'delete');
-                setCurrentAction(null);
               }}
               disabled={isPending}
             />

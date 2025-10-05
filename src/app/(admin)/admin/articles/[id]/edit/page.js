@@ -33,20 +33,6 @@ export default async function EditArticlePage({ params }) {
     notFound();
   }
 
-  // Serialize the article to remove ObjectId and other non-serializable properties
-  const serializedArticle = {
-    _id: article._id.toString(),
-    title: article.title,
-    slug: article.slug,
-    excerpt: article.excerpt,
-    coverImage: article.coverImage,
-    content: article.content,
-    status: article.status,
-    tags: article.tags,
-    createdAt: article.createdAt,
-    updatedAt: article.updatedAt,
-  };
-
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -54,7 +40,7 @@ export default async function EditArticlePage({ params }) {
         <p className="text-gray-600">Update your blog article</p>
       </div>
 
-      <ArticleForm article={serializedArticle} />
+      <ArticleForm article={article} />
     </div>
   );
 }
