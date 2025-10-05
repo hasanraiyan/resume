@@ -51,7 +51,7 @@ export async function POST(request) {
 
         try {
           const completion = await openai.chat.completions.create({
-            model: process.env.OPENAI_MODEL_NAME,
+            model: context.chatbotSettings.modelName || process.env.OPENAI_MODEL_NAME,
             messages: messages,
             max_tokens: 500,
             temperature: 0.7,
@@ -81,9 +81,14 @@ export async function POST(request) {
               sessionId: sessionId || 'unknown_session',
               properties: {
                 chatbotName: context.chatbotSettings.aiName,
+                modelName: context.chatbotSettings.modelName || process.env.OPENAI_MODEL_NAME,
                 userQuestion: userMessage,
                 conversationLength: chatHistory.length + 1, // Total number of user turns
-                isCallToAction: isCallToActionTriggered
+                isCallToAction: isCallToActionTriggered,
+                hasPageContext: pageContext.length > 0,
+                pageContextLength: pageContext.length,
+                chatHistoryLength: chatHistory.length,
+                timestamp: new Date().toISOString()
               },
             });
 

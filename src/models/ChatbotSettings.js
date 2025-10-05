@@ -43,6 +43,11 @@ const ChatbotSettingsSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  modelName: {
+    type: String,
+    required: true,
+    default: process.env.OPENAI_MODEL_NAME || 'openai-large'
   }
 }, {
   timestamps: true

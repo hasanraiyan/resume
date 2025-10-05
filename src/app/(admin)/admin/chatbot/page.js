@@ -15,6 +15,7 @@ export default function ChatbotSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [availableModels, setAvailableModels] = useState([]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -24,7 +25,8 @@ export default function ChatbotSettingsPage() {
     servicesOffered: '',
     callToAction: '',
     rules: [''],
-    isActive: true
+    isActive: true,
+    modelName: 'openai-large'
   });
 
   // Redirect if not admin
@@ -56,6 +58,25 @@ export default function ChatbotSettingsPage() {
   useEffect(() => {
     if (session?.user?.role === 'admin') {
       fetchSettings();
+    }
+  }, [session]);
+
+  // Fetch available models
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        const response = await fetch('/api/admin/chatbot/models');
+        if (response.ok) {
+          const models = await response.json();
+          setAvailableModels(models);
+        }
+      } catch (error) {
+        console.error('Error fetching available models:', error);
+      }
+    };
+
+    if (session?.user?.role === 'admin') {
+      fetchModels();
     }
   }, [session]);
 
@@ -249,6 +270,15 @@ export default function ChatbotSettingsPage() {
                       { value: 'active', label: 'Active' },
                       { value: 'inactive', label: 'Inactive' }
                     ]}
+                  />
+                </div>
+                <div>
+                  <CustomDropdown
+                    label="AI Model"
+                    name="modelName"
+                    value={formData.modelName}
+                    onChange={(e) => handleInputChange('modelName', e.target.value)}
+                    options={availableModels.map(model => ({ value: model, label: model }))}
                   />
                 </div>
               </div>

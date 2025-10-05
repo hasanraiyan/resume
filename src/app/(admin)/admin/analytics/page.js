@@ -214,6 +214,7 @@ export default function AnalyticsDashboard() {
             { id: 'overview', label: 'Overview' },
             { id: 'pageviews', label: 'Page Views' },
             { id: 'sessions', label: 'Sessions' },
+            { id: 'chatbot', label: 'Chatbot Analytics' },
             { id: 'search', label: 'Search Analytics' },
             { id: 'events', label: 'Recent Events' }
           ].map((tab) => (
@@ -634,6 +635,242 @@ export default function AnalyticsDashboard() {
               </div>
             )}
           </Card>
+        </div>
+      )}
+
+      {/* Chatbot Analytics Tab */}
+      {activeTab === 'chatbot' && analyticsData && (
+        <div className="space-y-6">
+          {/* Chatbot Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-neutral-600 uppercase tracking-wider font-['Space_Grotesk']">
+                    Total Interactions
+                  </p>
+                  <p className="text-3xl font-bold text-black mt-2 font-['Playfair_Display']">
+                    {formatNumber(analyticsData.chatbotAnalytics?.totalInteractions || 0)}
+                  </p>
+                  <p className="text-sm text-neutral-500 font-['Space_Grotesk']">All time</p>
+                </div>
+                <div className="w-12 h-12 bg-slate-800 rounded-lg flex items-center justify-center">
+                  <i className="fas fa-comments text-white"></i>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-neutral-600 uppercase tracking-wider font-['Space_Grotesk']">
+                    Avg Conversation Length
+                  </p>
+                  <p className="text-3xl font-bold text-black mt-2 font-['Playfair_Display']">
+                    {analyticsData.chatbotAnalytics?.avgConversationLength ?
+                      formatNumber(analyticsData.chatbotAnalytics.avgConversationLength.toFixed(1)) : '0'
+                    }
+                  </p>
+                  <p className="text-sm text-neutral-500 font-['Space_Grotesk']">Messages per chat</p>
+                </div>
+                <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <i className="fas fa-exchange-alt text-white"></i>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-neutral-600 uppercase tracking-wider font-['Space_Grotesk']">
+                    Context Usage
+                  </p>
+                  <p className="text-3xl font-bold text-black mt-2 font-['Playfair_Display']">
+                    {analyticsData.chatbotAnalytics?.contextUsage ?
+                      formatNumber((analyticsData.chatbotAnalytics.contextUsage * 100).toFixed(1)) : '0'
+                    }%
+                  </p>
+                  <p className="text-sm text-neutral-500 font-['Space_Grotesk']">Chats with page context</p>
+                </div>
+                <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
+                  <i className="fas fa-file-alt text-white"></i>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-neutral-600 uppercase tracking-wider font-['Space_Grotesk']">
+                    Models Used
+                  </p>
+                  <p className="text-3xl font-bold text-black mt-2 font-['Playfair_Display']">
+                    {analyticsData.chatbotAnalytics?.modelsUsed?.length || 0}
+                  </p>
+                  <p className="text-sm text-neutral-500 font-['Space_Grotesk']">Different AI models</p>
+                </div>
+                <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center">
+                  <i className="fas fa-robot text-white"></i>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Model Performance Comparison */}
+          {analyticsData.chatbotAnalytics?.modelPerformance && analyticsData.chatbotAnalytics.modelPerformance.length > 0 && (
+            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+              <h3 className="text-lg font-semibold mb-4 font-['Playfair_Display']">Model Performance Comparison</h3>
+              <div className="space-y-4">
+                {analyticsData.chatbotAnalytics.modelPerformance.map((model, index) => (
+                  <div key={model.modelName} className="p-4 border border-neutral-200 rounded-lg">
+                    <div className="flex justify-between items-center mb-3">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-sm font-medium text-neutral-400 w-8 font-['Space_Grotesk']">#{index + 1}</span>
+                        <div>
+                          <div className="font-semibold font-['Space_Grotesk']">{model.modelName}</div>
+                          <div className="text-sm text-neutral-500 font-['Space_Grotesk']">
+                            {formatNumber(model.totalInteractions)} interactions
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-black font-['Playfair_Display']">
+                          {formatNumber(model.conversionRate.toFixed(1))}%
+                        </div>
+                        <div className="text-sm text-neutral-500 font-['Space_Grotesk']">conversion rate</div>
+                      </div>
+                    </div>
+                    <div className="w-full bg-neutral-200 rounded-full h-2">
+                      <div
+                        className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min(model.conversionRate, 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Recent Chatbot Interactions */}
+          <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+            <h3 className="text-lg font-semibold mb-4 font-['Playfair_Display']">Recent Chatbot Interactions</h3>
+            {(!analyticsData.chatbotInteractions || analyticsData.chatbotInteractions.length === 0) ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-neutral-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <i className="fas fa-comments text-neutral-400 text-xl"></i>
+                </div>
+                <h4 className="text-lg font-medium text-neutral-600 mb-2">No Chatbot Data</h4>
+                <p className="text-neutral-500 mb-4">
+                  No chatbot interactions have been recorded yet.
+                </p>
+                <p className="text-sm text-neutral-400">
+                  Chatbot interaction data will appear here once users start chatting with your AI assistant.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {analyticsData.chatbotInteractions?.slice(0, 20).map((interaction, index) => (
+                  <div key={index} className="p-4 border border-neutral-200 rounded-lg bg-neutral-50">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center space-x-3">
+                        <Badge variant="tag" className="bg-slate-100 text-slate-800 border-slate-200">
+                          {interaction.modelName}
+                        </Badge>
+                        <span className="font-medium font-['Space_Grotesk'] text-sm">{interaction.path}</span>
+                      </div>
+                      <div className="text-right text-sm">
+                        <div className="text-neutral-600 font-['Space_Grotesk']">
+                          {new Date(interaction.timestamp).toLocaleString()}
+                        </div>
+                        <div className="text-neutral-500 font-['Space_Grotesk']">
+                          Session: {interaction.sessionId?.substring(0, 8)}...
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-neutral-900 font-['Space_Grotesk']">User:</div>
+                          <div className="text-sm text-neutral-700 font-['Space_Grotesk'] bg-white p-2 rounded border">
+                            {interaction.userQuestion}
+                          </div>
+                        </div>
+                      </div>
+
+                      {interaction.isCallToAction && (
+                        <div className="flex items-center space-x-3">
+                          <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+                          <div className="flex-1">
+                            <Badge variant="tag" className="bg-green-100 text-green-800 border-green-200 text-xs">
+                              Call to Action Triggered
+                            </Badge>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-center space-x-4 text-xs text-neutral-500 font-['Space_Grotesk']">
+                        <span>Conversation length: {interaction.conversationLength} messages</span>
+                        {interaction.hasPageContext && (
+                          <span className="flex items-center">
+                            <i className="fas fa-file-alt mr-1"></i>
+                            Page context used
+                          </span>
+                        )}
+                        <span>Chat history: {interaction.chatHistoryLength} previous messages</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          {/* Context Effectiveness */}
+          {analyticsData.chatbotAnalytics?.contextStats && (
+            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+              <h3 className="text-lg font-semibold mb-4 font-['Playfair_Display']">Context Effectiveness Analysis</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-medium mb-3 font-['Space_Grotesk']">Context Usage Breakdown</h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-neutral-600 font-['Space_Grotesk']">Chats with context</span>
+                      <span className="font-semibold font-['Space_Grotesk']">
+                        {formatNumber(analyticsData.chatbotAnalytics.contextStats.withContext)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-neutral-600 font-['Space_Grotesk']">Chats without context</span>
+                      <span className="font-semibold font-['Space_Grotesk']">
+                        {formatNumber(analyticsData.chatbotAnalytics.contextStats.withoutContext)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium mb-3 font-['Space_Grotesk']">Performance Impact</h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-neutral-600 font-['Space_Grotesk']">Context conversion rate</span>
+                      <span className="font-semibold text-green-600 font-['Space_Grotesk']">
+                        {formatNumber(analyticsData.chatbotAnalytics.contextStats.contextConversionRate.toFixed(1))}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-neutral-600 font-['Space_Grotesk']">No-context conversion rate</span>
+                      <span className="font-semibold text-blue-600 font-['Space_Grotesk']">
+                        {formatNumber(analyticsData.chatbotAnalytics.contextStats.noContextConversionRate.toFixed(1))}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
         </div>
       )}
 
