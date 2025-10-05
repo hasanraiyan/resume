@@ -16,6 +16,14 @@ const ArticleSchema = new mongoose.Schema({
   publishedAt: { type: Date },
 }, { timestamps: true });
 
+// Create text index for full-text search
+ArticleSchema.index({
+  title: 'text',
+  excerpt: 'text',
+  content: 'text',
+  tags: 'text'
+});
+
 // Set publishedAt when status changes to published
 ArticleSchema.pre('save', function(next) {
   if (this.isModified('status') && this.status === 'published' && !this.publishedAt) {

@@ -41,4 +41,14 @@ const ProjectSchema = new mongoose.Schema({
   }],
 }, { timestamps: true });
 
+// Create text index for full-text search
+ProjectSchema.index({
+  title: 'text',
+  tagline: 'text',
+  description: 'text',
+  fullDescription: 'text',
+  category: 'text',
+  'tags.name': 'text'
+});
+
 export default mongoose.models.Project || mongoose.model('Project', ProjectSchema);

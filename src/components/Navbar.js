@@ -6,9 +6,11 @@ import { usePathname } from 'next/navigation'
 import { gsap } from 'gsap'
 import { Button } from '@/components/ui'
 import { useSiteContext } from '@/context/SiteContext' // Import the context hook
+import SearchOverlay from '@/components/search/SearchOverlay'
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
   const pathname = usePathname()
   const { initials, heroData } = useSiteContext() // Use context to get dynamic data
 
@@ -130,7 +132,7 @@ export default function Navbar() {
                   key={link.id}
                   href={link.href}
                   className={`text-sm lg:text-base font-medium underline-animate transition hover-target ${
-                    (link.href === '/' && pathname === '/') || 
+                    (link.href === '/' && pathname === '/') ||
                     (link.href !== '/' && pathname.startsWith(link.href))
                       ? 'text-black font-semibold'
                       : 'text-gray-800 hover:text-gray-600'
@@ -139,7 +141,18 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
-              
+
+              {/* Search Button */}
+              <button
+                onClick={() => setIsSearchOpen(true)}
+                className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+                aria-label="Search"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+
               {/* CTA Button */}
               <Button
                 href={cta.href}
@@ -210,7 +223,7 @@ export default function Navbar() {
                   href={item.href}
                   onClick={() => setIsMenuOpen(false)}
                   className={`text-2xl font-bold transition py-4 border-b border-gray-100 ${
-                    (item.href === '/' && pathname === '/') || 
+                    (item.href === '/' && pathname === '/') ||
                     (item.href !== '/' && pathname.startsWith(item.href))
                       ? 'text-black'
                       : 'text-gray-800 hover:text-gray-600'
@@ -219,6 +232,17 @@ export default function Navbar() {
                   {item.label}
                 </Link>
               ))}
+
+              {/* Search Button in Mobile Menu */}
+              <button
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  setIsSearchOpen(true);
+                }}
+                className="text-left text-2xl font-bold transition py-4 border-b border-gray-100 text-gray-800 hover:text-gray-600"
+              >
+                Search
+              </button>
             </nav>
 
             {/* CTA Button */}
@@ -252,6 +276,12 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+
+      {/* Search Overlay */}
+      <SearchOverlay
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+      />
     </>
   )
 }
