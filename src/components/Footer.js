@@ -35,8 +35,8 @@ export default function Footer() {
             {logo.text}
           </Link>
           
-          {/* Social Links */}
-          <div className="flex flex-wrap justify-center gap-6 sm:gap-7">
+          {/* Social Links & Admin */}
+          <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-7">
             {socialLinks.map((social) => (
               <a
                 // Use MongoDB's _id if available, otherwise fall back to id or name
@@ -50,6 +50,15 @@ export default function Footer() {
                 {social.name}
               </a>
             ))}
+
+            {/* Admin Login Link */}
+            <Link
+              href="/login"
+              className="text-gray-500 hover:text-gray-700 transition hover-target text-xs uppercase tracking-wider font-medium"
+              aria-label="Admin Login"
+            >
+              Admin Login
+            </Link>
           </div>
           
           {/* Copyright */}
