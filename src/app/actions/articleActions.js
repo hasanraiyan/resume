@@ -4,6 +4,7 @@ import dbConnect from '@/lib/dbConnect';
 import Article from '@/models/Article';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { serializeForClient } from '@/lib/serialize';
 
 function processFormData(formData) {
   return {
@@ -92,7 +93,9 @@ export async function getAllArticles() {
 
   try {
     const articles = await Article.find({}).sort({ createdAt: -1 }).lean();
-    return { success: true, articles };
+    // Serialize articles to handle MongoDB ObjectIds for client components
+    const serializedArticles = articles.map(article => serializeForClient(article));
+    return { success: true, articles: serializedArticles };
   } catch (error) {
     console.error('Get Articles Error:', error);
     return { success: false, articles: [] };
@@ -107,7 +110,9 @@ export async function getArticleBySlug(slug) {
     if (!article) {
       return { success: false, article: null };
     }
-    return { success: true, article };
+    // Serialize article to handle MongoDB ObjectIds for client components
+    const serializedArticle = serializeForClient(article);
+    return { success: true, article: serializedArticle };
   } catch (error) {
     console.error('Get Article Error:', error);
     return { success: false, article: null };
@@ -121,7 +126,9 @@ export async function getAllPublishedArticles() {
     const articles = await Article.find({ status: 'published' })
       .sort({ publishedAt: -1 })
       .lean();
-    return { success: true, articles };
+    // Serialize articles to handle MongoDB ObjectIds for client components
+    const serializedArticles = articles.map(article => serializeForClient(article));
+    return { success: true, articles: serializedArticles };
   } catch (error) {
     console.error('Get Published Articles Error:', error);
     return { success: false, articles: [] };
@@ -136,7 +143,9 @@ export async function getLatestArticles(limit = 3) {
       .sort({ publishedAt: -1 })
       .limit(limit)
       .lean();
-    return { success: true, articles };
+    // Serialize articles to handle MongoDB ObjectIds for client components
+    const serializedArticles = articles.map(article => serializeForClient(article));
+    return { success: true, articles: serializedArticles };
   } catch (error) {
     console.error('Get Latest Articles Error:', error);
     return { success: false, articles: [] };
