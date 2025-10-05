@@ -1,3 +1,5 @@
+// src/components/blog/BlogPageClient.js
+
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -12,39 +14,31 @@ export default function BlogPageClient({ articles }) {
 
   // Cleanup on component mount to ensure fresh state
   useEffect(() => {
-    // Kill any existing ScrollTriggers from other pages
     ScrollTrigger.getAll().forEach(trigger => trigger.kill())
     ScrollTrigger.refresh()
   }, [])
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
-
-    // Clean up previous ScrollTriggers
     ScrollTrigger.getAll().forEach(trigger => trigger.kill())
 
-    // Small delay to ensure DOM is ready
     const timer = setTimeout(() => {
-      const grid = document.querySelector('.articles-grid')
-      if (grid && grid.children.length > 0) {
-        // Reset any existing transforms
-        gsap.set(grid.children, { opacity: 1, y: 0 })
-
-        gsap.from(grid.children, {
+      const list = document.querySelector('.articles-list')
+      if (list && list.children.length > 0) {
+        gsap.set(list.children, { opacity: 1, y: 0 })
+        gsap.from(list.children, {
           opacity: 0,
           y: 50,
           duration: 0.8,
           stagger: 0.1,
           scrollTrigger: {
-            trigger: grid,
-            start: 'top 80%',
+            trigger: list,
+            start: 'top 85%',
             toggleActions: 'play none none reverse',
             refreshPriority: -1,
           },
         })
       }
-
-      // Refresh ScrollTrigger to recalculate positions
       ScrollTrigger.refresh()
     }, 100)
 
@@ -91,13 +85,11 @@ export default function BlogPageClient({ articles }) {
 
   return (
     <>
-      {/* Filters */}
       <BlogFilters
         onFilterChange={handleFilterChange}
         onSearch={handleSearch}
       />
 
-      {/* Articles Grid */}
       {isLoading ? (
         <div className="text-center py-20">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-black"></div>
@@ -111,17 +103,14 @@ export default function BlogPageClient({ articles }) {
         </div>
       ) : (
         <>
-          {/* Articles Grid */}
           <div
             key={filteredArticles.length}
-            className="articles-grid grid sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10 lg:gap-12"
+            className="articles-list max-w-4xl mx-auto space-y-12 sm:space-y-16"
           >
             {filteredArticles.map((article) => (
               <BlogCard key={article._id} article={article} />
             ))}
           </div>
-
-          {/* Article Count */}
           <div className="text-center mt-12 sm:mt-16 text-sm text-gray-600">
             Showing <span className="font-semibold">{filteredArticles.length}</span> of <span className="font-semibold">{articles.length}</span> articles
           </div>

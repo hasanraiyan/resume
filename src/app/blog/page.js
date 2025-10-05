@@ -1,3 +1,5 @@
+// src/app/blog/page.js
+
 import { getAllPublishedArticles } from '@/app/actions/articleActions';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -33,7 +35,7 @@ export default async function BlogPage() {
 
       <main className="pt-20 sm:pt-24 min-h-screen">
         <Section
-          title="Blog"
+          title="From the Blog"
           description="Thoughts, insights, and tutorials on web development, design, and technology."
           centered={true}
           className="py-12 sm:py-16 md:py-20"

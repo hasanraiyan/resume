@@ -1,34 +1,27 @@
+// src/app/blog/[slug]/page.js
+
 import { getAllPublishedArticles } from '@/app/actions/articleActions';
 import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 import { notFound } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import CustomCursor from '@/components/CustomCursor';
-import { Section } from '@/components/ui';
+import { Section, Badge, Button } from '@/components/ui';
+import Image from 'next/image';
 
 export async function generateStaticParams() {
   const { success, articles } = await getAllPublishedArticles();
-
-  if (!success) {
-    return [];
-  }
-
-  return articles.map((article) => ({
-    slug: article.slug,
-  }));
+  if (!success) return [];
+  return articles.map((article) => ({ slug: article.slug }));
 }
 
 export async function generateMetadata({ params }) {
-  // Await params in Next.js 15
   const { slug } = await params;
-
   const { success, articles } = await getAllPublishedArticles();
   const article = articles.find(a => a.slug === slug);
 
   if (!success || !article) {
-    return {
-      title: 'Article Not Found',
-    };
+    return { title: 'Article Not Found' };
   }
 
   return {
@@ -38,9 +31,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function ArticlePage({ params }) {
-  // Await params in Next.js 15
   const { slug } = await params;
-
   const { success, articles } = await getAllPublishedArticles();
   const article = articles.find(a => a.slug === slug);
 
@@ -48,87 +39,73 @@ export default async function ArticlePage({ params }) {
     notFound();
   }
 
+  const formattedDate = (dateString) => {
+    if (!dateString || isNaN(new Date(dateString).getTime())) return '';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const publishDate = formattedDate(article.publishedAt) || formattedDate(article.createdAt);
+
   return (
     <>
       <CustomCursor />
       <Navbar />
 
-      <main className="pt-20 sm:pt-24 min-h-screen">
-        <Section className="py-12 sm:py-16 md:py-20">
-          <article className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              {article.coverImage && (
-                <div className="aspect-video overflow-hidden">
-                  <img
-                    src={article.coverImage}
-                    alt={article.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-
-              <div className="p-8 lg:p-12">
-                <header className="mb-8">
-                  <div className="flex items-center justify-between mb-4">
-                    <time className="text-sm text-gray-500">
-                      {article.publishedAt && !isNaN(new Date(article.publishedAt).getTime())
-                        ? new Date(article.publishedAt).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })
-                        : new Date(article.createdAt).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })
-                      }
-                    </time>
-                  </div>
-
-                  <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-                    {article.title}
-                  </h1>
-
-                  {article.tags && article.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-6">
-                      {article.tags.map((tag, index) => (
-                        <span
-                          key={index}
-                          className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  <p className="text-xl text-gray-600 leading-relaxed">
-                    {article.excerpt}
-                  </p>
-                </header>
-
-                <div className="prose prose-lg max-w-none">
-                  <MarkdownRenderer content={article.content} />
-                </div>
-
-                <footer className="mt-12 pt-8 border-t border-gray-200">
-                  <div className="text-sm text-gray-500">
-                    Published on {article.publishedAt && !isNaN(new Date(article.publishedAt).getTime())
-                      ? new Date(article.publishedAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })
-                      : new Date(article.createdAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })
-                    }
-                  </div>
-                </footer>
+      <main className="pt-20 sm:pt-24 min-h-screen bg-gray-50">
+        <Section className="py-12 sm:py-16 md:py-20 bg-white " containerClassName="max-w-4xl">
+          <article>
+            {/* --- ARTICLE HEADER --- */}
+            <header className="mb-8 md:mb-12">
+              <div className="mb-6">
+                <Button href="/blog" variant="ghost" className="inline-flex items-center text-sm">
+                  <i className="fas fa-arrow-left mr-2"></i> Back to All Articles
+                </Button>
               </div>
+
+              <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4 font-['Playfair_Display'] leading-tight">
+                {article.title}
+              </h1>
+
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-gray-500 mb-6">
+                <time dateTime={article.publishedAt || article.createdAt}>
+                  Published on {publishDate}
+                </time>
+                {article.tags && article.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {article.tags.map((tag, index) => (
+                      <Badge key={index} variant="tag" className="bg-blue-50 text-blue-700 font-medium">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </header>
+
+            {/* --- COVER IMAGE --- */}
+            {article.coverImage && (
+              <div className="relative aspect-video overflow-hidden rounded-lg bg-gray-100 mb-8 md:mb-12 shadow-inner">
+                <Image
+                  src={article.coverImage}
+                  alt={article.title}
+                  fill
+                  className="w-full h-full object-cover"
+                  priority
+                />
+              </div>
+            )}
+
+            {/* --- ARTICLE CONTENT --- */}
+            <div className="prose prose-lg max-w-none">
+              {/* Render excerpt as an intro */}
+              <p className="text-lg text-gray-600 leading-relaxed border-l-4 border-gray-200 pl-4 italic">
+                {article.excerpt}
+              </p>
+              <MarkdownRenderer content={article.content} />
             </div>
           </article>
         </Section>

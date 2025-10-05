@@ -14,13 +14,9 @@ export default function BlogFilters({ onFilterChange, onSearch }) {
     { id: 'all', name: 'All Articles' },
     { id: 'technology', name: 'Technology' },
     { id: 'ai', name: 'AI' },
-    { id: 'artificial intelligence', name: 'Artificial Intelligence' },
-    { id: 'history', name: 'History' },
-    { id: 'expert systems', name: 'Expert Systems' },
     { id: 'virtual assistants', name: 'Virtual Assistants' },
     { id: 'machine learning', name: 'Machine Learning' },
     { id: 'automation', name: 'Automation' },
-    { id: 'software agents', name: 'Software Agents' }
   ]
 
   const handleTagClick = (tagId) => {

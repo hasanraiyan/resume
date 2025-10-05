@@ -1,113 +1,70 @@
+
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { Badge } from '@/components/ui'
 
 /**
- * Blog Card Component - Matches ProjectCard design
+ * Blog Card Component - Redesigned for a vertical list view (Medium-inspired)
  */
 export default function BlogCard({ article }) {
-  const [imageLoaded, setImageLoaded] = useState(false)
-  const [imageError, setImageError] = useState(false)
+  const formattedDate = (dateString) => {
+    if (!dateString || isNaN(new Date(dateString).getTime())) return '';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
 
-  const handleImageLoad = () => {
-    setImageLoaded(true)
-  }
-
-  const handleImageError = (e) => {
-    setImageError(true)
-  }
+  const publishDate = formattedDate(article.publishedAt) || formattedDate(article.createdAt);
 
   return (
-    <Link
-      href={`/blog/${article.slug}`}
-      className="group block hover-target"
-    >
-      {/* Article Image - Fixed aspect ratio */}
-      <div className="relative overflow-hidden rounded-lg mb-4 sm:mb-5 image-reveal">
-        <div className="aspect-[4/3] bg-gray-200 flex items-center justify-center">
-          {!imageError ? (
-            <Image
-              src={article.coverImage || '/placeholder-image.jpg'}
-              alt={article.title}
-              fill
-              className={`w-full h-full object-cover transition-all duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-              loading="lazy"
-              onLoad={handleImageLoad}
-              onError={handleImageError}
-              unoptimized={true}
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full text-gray-400">
-              <i className="fas fa-newspaper text-4xl"></i>
-            </div>
-          )}
-
-          {/* Loading state */}
-          {!imageLoaded && !imageError && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-200 z-10">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-400"></div>
-            </div>
-          )}
-        </div>
-
-        {/* Overlay on hover */}
-        <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-all duration-300"></div>
-      </div>
-
-      {/* Article Info */}
-      <div>
-        {/* Date */}
-        <div className="text-xs font-semibold tracking-widest mb-2 text-gray-600 uppercase">
-          {article.publishedAt && !isNaN(new Date(article.publishedAt).getTime())
-            ? new Date(article.publishedAt).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })
-            : new Date(article.createdAt).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })
-          }
-        </div>
-
-        {/* Title */}
-        <h3 className="text-xl sm:text-2xl font-bold mb-3 group-hover:text-gray-600 transition">
-          {article.title}
-        </h3>
-
-        {/* Excerpt - 2 lines max */}
-        <p className="text-sm sm:text-base text-gray-700 mb-4 leading-relaxed overflow-hidden"
-           style={{
-             display: '-webkit-box',
-             WebkitLineClamp: 2,
-             WebkitBoxOrient: 'vertical'
-           }}>
-          {article.excerpt}
-        </p>
-
-        {/* Tags - Show only 3 */}
-        {article.tags && article.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {article.tags.slice(0, 3).map((tag, index) => (
-              <span
-                key={index}
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-              >
-                {tag}
-              </span>
-            ))}
-            {article.tags.length > 3 && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                +{article.tags.length - 3}
-              </span>
+    <article>
+      <Link href={`/blog/${article.slug}`} className="group block hover-target">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 sm:gap-8 items-start">
+          {/* Main Content */}
+          <div className="sm:col-span-3">
+            <time className="text-xs font-semibold tracking-widest text-gray-500 uppercase" dateTime={article.publishedAt || article.createdAt}>
+              {publishDate}
+            </time>
+            <h3 className="text-2xl sm:text-3xl font-bold my-3 text-black group-hover:text-gray-700 transition font-['Playfair_Display']">
+              {article.title}
+            </h3>
+            <p className="text-base text-gray-600 mb-4 leading-relaxed line-clamp-3">
+              {article.excerpt}
+            </p>
+            {/* Tags */}
+            {article.tags && article.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {article.tags.slice(0, 3).map((tag, index) => (
+                  <Badge key={index} variant="tag" className="bg-blue-50 text-blue-700">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
             )}
           </div>
-        )}
-      </div>
-    </Link>
+
+          {/* Image */}
+          <div className="sm:col-span-1">
+            <div className="aspect-square relative overflow-hidden rounded-lg bg-gray-100 image-reveal">
+              <Image
+                src={article.coverImage || '/placeholder-image.jpg'}
+                alt={article.title}
+                fill
+                className="w-full h-full object-cover"
+                loading="lazy"
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100 -z-10">
+                <i className="fas fa-newspaper text-3xl text-gray-300"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Link>
+    </article>
   )
 }
