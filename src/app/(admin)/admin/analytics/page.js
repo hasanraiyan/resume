@@ -428,7 +428,7 @@ export default function AnalyticsDashboard() {
                       event.eventType === 'pageview'
                         ? 'bg-green-100 text-green-800 border-green-200'
                         : event.eventType === 'chatbot_interaction'
-                        ? 'bg-purple-100 text-purple-800 border-purple-200'
+                        ? 'bg-slate-100 text-slate-800 border-slate-200'
                         : 'bg-blue-100 text-blue-800 border-blue-200'
                     }`}>
                       {event.eventType}
