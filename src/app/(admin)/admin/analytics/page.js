@@ -236,7 +236,7 @@ export default function AnalyticsDashboard() {
       {activeTab === 'overview' && analyticsData && (
         <div className="space-y-8">
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
               <div className="flex items-center justify-between">
                 <div>
@@ -307,6 +307,23 @@ export default function AnalyticsDashboard() {
                 </div>
               </div>
             </Card>
+
+            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-neutral-600 uppercase tracking-wider font-['Space_Grotesk']">
+                    Chatbot Interactions
+                  </p>
+                  <p className="text-3xl font-bold text-black mt-2 font-['Playfair_Display']">
+                    {formatNumber(analyticsData.chatbotAnalytics?.totalInteractions || 0)}
+                  </p>
+                  <p className="text-sm text-neutral-500 font-['Space_Grotesk']">Last 30 days</p>
+                </div>
+                <div className="w-12 h-12 bg-slate-800 rounded-lg flex items-center justify-center">
+                  <i className="fas fa-comments text-white"></i>
+                </div>
+              </div>
+            </Card>
           </div>
 
           {/* Chart */}
@@ -335,6 +352,71 @@ export default function AnalyticsDashboard() {
             </div>
           </Card>
 
+          {/* Chatbot Analytics Cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Top Questions */}
+            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+              <h3 className="text-lg font-semibold mb-4 font-['Playfair_Display']">Most Frequent Questions</h3>
+              {(!analyticsData.chatbotAnalytics?.topQuestions || analyticsData.chatbotAnalytics.topQuestions.length === 0) ? (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 bg-neutral-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <i className="fas fa-question-circle text-neutral-400"></i>
+                  </div>
+                  <p className="text-neutral-500 text-sm">No chatbot interactions yet</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {analyticsData.chatbotAnalytics.topQuestions.slice(0, 5).map((item, index) => (
+                    <div key={item.question} className="flex justify-between items-center py-2 border-b border-neutral-200 last:border-b-0">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-sm font-medium text-neutral-400 w-6 font-['Space_Grotesk']">#{index + 1}</span>
+                        <span className="font-medium font-['Space_Grotesk'] text-sm">{item.question}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-neutral-600 font-['Space_Grotesk'] text-sm">{formatNumber(item.count)} times</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+
+            {/* CTA Performance */}
+            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+              <h3 className="text-lg font-semibold mb-4 font-['Playfair_Display']">AI Conversion Rate</h3>
+              {(!analyticsData.chatbotAnalytics?.ctaPerformance || analyticsData.chatbotAnalytics.ctaPerformance.total === 0) ? (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 bg-neutral-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <i className="fas fa-percentage text-neutral-400"></i>
+                  </div>
+                  <p className="text-neutral-500 text-sm">No conversion data yet</p>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <div className="mb-4">
+                    <p className="text-4xl font-bold text-black mb-2 font-['Playfair_Display']">
+                      {formatNumber(((analyticsData.chatbotAnalytics.ctaPerformance.ctaCount / analyticsData.chatbotAnalytics.ctaPerformance.total) * 100).toFixed(1))}%
+                    </p>
+                    <p className="text-neutral-600 text-sm font-['Space_Grotesk']">
+                      {formatNumber(analyticsData.chatbotAnalytics.ctaPerformance.ctaCount)} of {formatNumber(analyticsData.chatbotAnalytics.ctaPerformance.total)} conversations
+                    </p>
+                    <p className="text-neutral-500 text-xs mt-1 font-['Space_Grotesk']">
+                      Led to your call-to-action
+                    </p>
+                  </div>
+                  <div className="w-full bg-neutral-200 rounded-full h-2">
+                    <div
+                      className="bg-gradient-to-r from-slate-700 to-slate-800 h-2 rounded-full transition-all duration-500"
+                      style={{
+                        width: `${Math.min((analyticsData.chatbotAnalytics.ctaPerformance.ctaCount / analyticsData.chatbotAnalytics.ctaPerformance.total) * 100, 100)}%`
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+            </Card>
+          </div>
+
           {/* Recent Events */}
           <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
             <h3 className="text-lg font-semibold mb-4 font-['Playfair_Display']">Recent Events</h3>
@@ -345,6 +427,8 @@ export default function AnalyticsDashboard() {
                     <Badge variant="tag" className={`${
                       event.eventType === 'pageview'
                         ? 'bg-green-100 text-green-800 border-green-200'
+                        : event.eventType === 'chatbot_interaction'
+                        ? 'bg-purple-100 text-purple-800 border-purple-200'
                         : 'bg-blue-100 text-blue-800 border-blue-200'
                     }`}>
                       {event.eventType}

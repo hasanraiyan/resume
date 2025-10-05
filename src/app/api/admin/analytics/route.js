@@ -204,6 +204,42 @@ export async function GET(request) {
           { $sort: { date: 1 } }
         ]);
 
+        // Chatbot analytics aggregation
+        const chatbotStatsPromise = Analytics.aggregate([
+          {
+            $match: {
+              eventType: 'chatbot_interaction',
+              timestamp: { $gte: thirtyDaysAgo, $lte: now }
+            }
+          },
+          {
+            $facet: {
+              "totalInteractions": [
+                { $count: "count" }
+              ],
+              "topQuestions": [
+                { $group: { _id: "$properties.userQuestion", count: { $sum: 1 } } },
+                { $sort: { count: -1 } },
+                { $limit: 5 },
+                { $project: { question: "$_id", count: 1, _id: 0 } }
+              ],
+              "ctaPerformance": [
+                { $group: { _id: null, total: { $sum: 1 }, ctaCount: { $sum: { $cond: ["$properties.isCallToAction", 1, 0] } } } }
+              ]
+            }
+          }
+        ]);
+
+        // Wait for all promises including chatbot stats
+        const [chatbotResults] = await Promise.all([chatbotStatsPromise]);
+
+        // Structure chatbot analytics data
+        data.chatbotAnalytics = {
+          totalInteractions: chatbotResults[0]?.totalInteractions[0]?.count || 0,
+          topQuestions: chatbotResults[0]?.topQuestions || [],
+          ctaPerformance: chatbotResults[0]?.ctaPerformance[0] || { total: 0, ctaCount: 0 }
+        };
+
         break;
     }
 

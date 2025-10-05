@@ -6,7 +6,7 @@ const AnalyticsSchema = new mongoose.Schema({
   eventType: {
     type: String,
     required: true,
-    enum: ['pageview', 'custom', 'click', 'form_submit', 'download'],
+    enum: ['pageview', 'custom', 'click', 'form_submit', 'download', 'chatbot_interaction'],
     index: true
   },
 

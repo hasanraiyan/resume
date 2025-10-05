@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { buildDynamicContext } from '../../../lib/ai/context-builder';
+import Analytics from '../../../lib/models/Analytics';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -10,7 +11,7 @@ const openai = new OpenAI({
 
 export async function POST(request) {
   try {
-    const { userMessage, chatHistory = [], pageContext = '' } = await request.json();
+    const { userMessage, chatHistory = [], pageContext = '', sessionId, path } = await request.json();
 
     if (!userMessage) {
       return NextResponse.json(
@@ -46,6 +47,8 @@ export async function POST(request) {
     // Create streaming response
     const stream = new ReadableStream({
       async start(controller) {
+        let assistantMessage = { content: '' };
+
         try {
           const completion = await openai.chat.completions.create({
             model: process.env.OPENAI_MODEL_NAME,
@@ -58,11 +61,40 @@ export async function POST(request) {
           for await (const chunk of completion) {
             const content = chunk.choices[0]?.delta?.content || '';
             if (content) {
+              assistantMessage.content += content;
               controller.enqueue(new TextEncoder().encode(content));
             }
           }
 
           controller.close();
+
+          // --- START: NEW ANALYTICS LOGIC ---
+          // We do this after the stream is closed to ensure the interaction was successful.
+          try {
+            const finalAssistantResponse = assistantMessage.content;
+            const isCallToActionTriggered = finalAssistantResponse.includes(context.chatbotSettings.callToAction);
+
+            const analyticsEvent = new Analytics({
+              eventType: 'chatbot_interaction',
+              eventName: 'chatbot_message_sent',
+              path: path || '/chat',
+              sessionId: sessionId || 'unknown_session',
+              properties: {
+                chatbotName: context.chatbotSettings.aiName,
+                userQuestion: userMessage,
+                conversationLength: chatHistory.length + 1, // Total number of user turns
+                isCallToAction: isCallToActionTriggered
+              },
+            });
+
+            await analyticsEvent.save();
+            console.log('Chatbot analytics event saved successfully');
+          } catch (analyticsError) {
+            console.error('Error saving chatbot analytics:', analyticsError);
+            // Don't fail the request if analytics fails
+          }
+          // --- END: NEW ANALYTICS LOGIC ---
+
         } catch (error) {
           console.error('OpenAI API error:', error);
           controller.error(error);

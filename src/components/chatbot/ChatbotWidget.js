@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '../ui';
 import { MessageCircle, X, Send, Trash2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import getAnalytics from '@/lib/analytics';
 
 export default function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -178,6 +179,9 @@ export default function ChatbotWidget() {
     setIsLoading(true);
 
     try {
+      // Get analytics instance for session tracking
+      const analytics = getAnalytics();
+
       // Prepare chat history for API
       const chatHistory = messages
         .filter(msg => msg.role !== 'system')
@@ -192,7 +196,9 @@ export default function ChatbotWidget() {
         body: JSON.stringify({
           userMessage: userMessage.content,
           chatHistory,
-          pageContext
+          pageContext,
+          sessionId: analytics.sessionId,
+          path: window.location.pathname
         }),
       });
 
