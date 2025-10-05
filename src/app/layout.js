@@ -3,6 +3,7 @@ import './globals.css';
 import SessionProvider from '@/components/SessionProvider';
 import AnalyticsProvider from '@/components/AnalyticsProvider';
 import { SiteProvider } from '@/context/SiteContext';
+import ChatbotWidget from '@/components/chatbot/ChatbotWidget';
 import dbConnect from '@/lib/dbConnect';
 import HeroSection from '@/models/HeroSection';
 import { serializeForClient } from '@/lib/serialize';
@@ -54,6 +55,7 @@ export default async function RootLayout({ children }) {
           <SessionProvider>
             <SiteProvider value={{ heroData: serializedHeroData, initials }}>
               {children}
+              <ChatbotWidget />
             </SiteProvider>
           </SessionProvider>
         </AnalyticsProvider>
