@@ -35,16 +35,23 @@ export default function SearchOverlay({ isOpen, onClose }) {
 
   // Debounced search - properly implemented to avoid triggering on every keystroke
   useEffect(() => {
-    // Use a ref to store the latest query for the search function
-    const searchQuery = query;
+    return () => {
+      // Cleanup timer on unmount
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
+  }, []);
 
+  // Separate effect for search logic that runs when query changes
+  useEffect(() => {
     // Clear previous timer on every query change
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
     }
 
     // Don't search if query is too short
-    if (searchQuery.length < 3) {
+    if (query.length < 3) {
       setResults([]);
       setIsLoading(false);
       setError(null);
@@ -54,10 +61,10 @@ export default function SearchOverlay({ isOpen, onClose }) {
     setIsLoading(true);
     setError(null);
 
-    // Set new timer - the search will use the query value from when timer was set
+    // Set new timer with 300ms delay
     debounceTimer.current = setTimeout(async () => {
       try {
-        const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
+        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
 
         if (!response.ok) {
           throw new Error('Search failed');

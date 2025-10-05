@@ -163,30 +163,44 @@ export default function Navbar() {
               </Button>
             </div>
 
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden z-50 relative w-10 h-10 flex items-center justify-center focus:outline-none"
-              aria-label="Toggle menu"
-            >
-              <div className="w-6 h-5 flex flex-col justify-between">
-                <span
-                  className={`w-full h-0.5 bg-black transition-all duration-300 ease-out ${
-                    isMenuOpen ? 'rotate-45 translate-y-2' : ''
-                  }`}
-                ></span>
-                <span
-                  className={`w-full h-0.5 bg-black transition-all duration-300 ease-out ${
-                    isMenuOpen ? 'opacity-0' : 'opacity-100'
-                  }`}
-                ></span>
-                <span
-                  className={`w-full h-0.5 bg-black transition-all duration-300 ease-out ${
-                    isMenuOpen ? '-rotate-45 -translate-y-2' : ''
-                  }`}
-                ></span>
-              </div>
-            </button>
+            {/* Mobile Menu and Search Buttons Container */}
+            <div className="flex items-center space-x-3 md:hidden">
+              {/* Search Button - Mobile */}
+              <button
+                onClick={() => setIsSearchOpen(true)}
+                className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+                aria-label="Search"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="z-50 relative w-10 h-10 flex items-center justify-center focus:outline-none"
+                aria-label="Toggle menu"
+              >
+                <div className="w-6 h-5 flex flex-col justify-between">
+                  <span
+                    className={`w-full h-0.5 bg-black transition-all duration-300 ease-out ${
+                      isMenuOpen ? 'rotate-45 translate-y-2' : ''
+                    }`}
+                  ></span>
+                  <span
+                    className={`w-full h-0.5 bg-black transition-all duration-300 ease-out ${
+                      isMenuOpen ? 'opacity-0' : 'opacity-100'
+                    }`}
+                  ></span>
+                  <span
+                    className={`w-full h-0.5 bg-black transition-all duration-300 ease-out ${
+                      isMenuOpen ? '-rotate-45 -translate-y-2' : ''
+                    }`}
+                  ></span>
+                </div>
+              </button>
+            </div>
           </div>
         </div>
       </nav>
