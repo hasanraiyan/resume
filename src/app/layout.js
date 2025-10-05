@@ -2,6 +2,7 @@ import { Space_Grotesk, Playfair_Display } from 'next/font/google';
 import './globals.css';
 import SessionProvider from '@/components/SessionProvider';
 import { SiteProvider } from '@/context/SiteContext';
+import { AnalyticsProvider } from '@/context/AnalyticsProvider';
 import dbConnect from '@/lib/dbConnect';
 import HeroSection from '@/models/HeroSection';
 import { serializeForClient } from '@/lib/serialize';
@@ -51,7 +52,9 @@ export default async function RootLayout({ children }) {
       <body className="bg-gray-50">
         <SessionProvider>
           <SiteProvider value={{ heroData: serializedHeroData, initials }}>
-            {children}
+            <AnalyticsProvider>
+              {children}
+            </AnalyticsProvider>
           </SiteProvider>
         </SessionProvider>
       </body>
