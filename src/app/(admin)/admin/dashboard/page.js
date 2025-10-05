@@ -160,7 +160,6 @@ export default async function AdminDashboard() {
               </div>
             </Card>
           </Link>
-
         </div>
       </div>
     </div>
