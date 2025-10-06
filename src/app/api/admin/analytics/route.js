@@ -316,15 +316,7 @@ export async function GET(request) {
           interactionsWithTools: chatbotResults[0]?.interactionsWithTools[0]?.count || 0
         };
 
-        // Structure proactive engagement data
-        data.proactiveEngagement = {
-          totalProactiveMessages: proactiveResults[0]?.totalProactiveMessages[0]?.count || 0,
-          totalResponses: proactiveResults[0]?.totalResponses[0]?.count || 0,
-          responseRate: proactiveResults[0]?.totalProactiveMessages[0]?.count > 0
-            ? ((proactiveResults[0]?.totalResponses[0]?.count || 0) / proactiveResults[0]?.totalProactiveMessages[0]?.count) * 100
-            : 0,
-          topTriggers: proactiveResults[0]?.topTriggers || []
-        };
+
 
         break;
     }
