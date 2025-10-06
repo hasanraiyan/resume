@@ -225,19 +225,105 @@ export async function GET(request) {
               ],
               "ctaPerformance": [
                 { $group: { _id: null, total: { $sum: 1 }, ctaCount: { $sum: { $cond: ["$properties.isCallToAction", 1, 0] } } } }
+              ],
+              "toolUsage": [
+                {
+                  $match: {
+                    "properties.toolsCount": { $gt: 0 }
+                  }
+                },
+                {
+                  $unwind: "$properties.toolsUsed"
+                },
+                {
+                  $group: {
+                    _id: "$properties.toolsUsed.name",
+                    count: { $sum: 1 },
+                    successRate: {
+                      $avg: {
+                        $cond: [
+                          { $eq: [{ $ifNull: ["$properties.toolResults.hasError", false] }, false] },
+                          1,
+                          0
+                        ]
+                      }
+                    }
+                  }
+                },
+                {
+                  $project: {
+                    toolName: "$_id",
+                    count: 1,
+                    successRate: { $multiply: ["$successRate", 100] },
+                    _id: 0
+                  }
+                },
+                { $sort: { count: -1 } }
+              ],
+              "interactionsWithTools": [
+                {
+                  $match: {
+                    "properties.toolsCount": { $gt: 0 }
+                  }
+                },
+                { $count: "count" }
+              ]
+            }
+          }
+        ]);
+
+        // Proactive engagement analytics
+        const proactiveStatsPromise = Analytics.aggregate([
+          {
+            $match: {
+              eventName: { $in: ['proactive_message_sent', 'user_responded_to_proactive'] },
+              timestamp: { $gte: thirtyDaysAgo, $lte: now }
+            }
+          },
+          {
+            $facet: {
+              "totalProactiveMessages": [
+                { $match: { eventName: 'proactive_message_sent' } },
+                { $count: "count" }
+              ],
+              "totalResponses": [
+                { $match: { eventName: 'user_responded_to_proactive' } },
+                { $count: "count" }
+              ],
+              "topTriggers": [
+                { $match: { eventName: 'proactive_message_sent' } },
+                { $group: { _id: "$properties.trigger_name", count: { $sum: 1 } } },
+                { $sort: { count: -1 } },
+                { $limit: 5 },
+                { $project: { triggerName: "$_id", count: 1, _id: 0 } }
               ]
             }
           }
         ]);
 
         // Wait for all promises including chatbot stats
-        const [chatbotResults] = await Promise.all([chatbotStatsPromise]);
+        const [chatbotResults, proactiveResults] = await Promise.all([
+          chatbotStatsPromise,
+          proactiveStatsPromise
+        ]);
 
         // Structure chatbot analytics data
         data.chatbotAnalytics = {
           totalInteractions: chatbotResults[0]?.totalInteractions[0]?.count || 0,
           topQuestions: chatbotResults[0]?.topQuestions || [],
-          ctaPerformance: chatbotResults[0]?.ctaPerformance[0] || { total: 0, ctaCount: 0 }
+          ctaPerformance: chatbotResults[0]?.ctaPerformance[0] || { total: 0, ctaCount: 0 },
+          toolUsage: chatbotResults[0]?.toolUsage || [],
+          interactionsWithTools: chatbotResults[0]?.interactionsWithTools[0]?.count || 0
+        };
+
+        // Structure proactive engagement data
+        data.proactiveEngagement = {
+          totalProactiveMessages: proactiveResults[0]?.totalProactiveMessages[0]?.count || 0,
+          totalResponses: proactiveResults[0]?.totalResponses[0]?.count || 0,
+          responseRate: proactiveResults[0]?.totalProactiveMessages[0]?.count > 0
+            ? ((proactiveResults[0]?.totalResponses[0]?.count || 0) / proactiveResults[0]?.totalProactiveMessages[0]?.count) * 100
+            : 0,
+          topTriggers: proactiveResults[0]?.topTriggers || []
         };
 
         break;

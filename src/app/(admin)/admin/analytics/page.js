@@ -418,6 +418,110 @@ export default function AnalyticsDashboard() {
             </Card>
           </div>
 
+          {/* Proactive Engagement & Tool Usage Analytics */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Proactive Engagement Card */}
+            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+              <h3 className="text-lg font-semibold mb-4 font-['Playfair_Display']">Proactive Engagement</h3>
+              {(!analyticsData.proactiveEngagement || analyticsData.proactiveEngagement.totalProactiveMessages === 0) ? (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 bg-neutral-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <i className="fas fa-robot text-neutral-400"></i>
+                  </div>
+                  <p className="text-neutral-500 text-sm">No proactive messages sent yet</p>
+                </div>
+              ) : (
+                <div>
+                  <div className="text-center mb-4">
+                    <p className="text-4xl font-bold text-black mb-2 font-['Playfair_Display']">
+                      {formatNumber(Math.round(analyticsData.proactiveEngagement.responseRate))}%
+                    </p>
+                    <p className="text-neutral-600 text-sm font-['Space_Grotesk']">
+                      {formatNumber(analyticsData.proactiveEngagement.totalResponses)} of {formatNumber(analyticsData.proactiveEngagement.totalProactiveMessages)} proactive messages
+                    </p>
+                    <p className="text-neutral-500 text-xs mt-1 font-['Space_Grotesk']">
+                      Received user responses
+                    </p>
+                  </div>
+                  <div className="w-full bg-neutral-200 rounded-full h-2 mb-4">
+                    <div
+                      className="bg-gradient-to-r from-purple-500 to-purple-700 h-2 rounded-full transition-all duration-500"
+                      style={{
+                        width: `${Math.min(analyticsData.proactiveEngagement.responseRate, 100)}%`
+                      }}
+                    ></div>
+                  </div>
+                  {analyticsData.proactiveEngagement.topTriggers && analyticsData.proactiveEngagement.topTriggers.length > 0 && (
+                    <div className="space-y-2 mt-4">
+                      <p className="text-xs font-medium text-neutral-600 uppercase tracking-wider font-['Space_Grotesk']">
+                        Top Triggers
+                      </p>
+                      {analyticsData.proactiveEngagement.topTriggers.slice(0, 3).map((trigger, index) => (
+                        <div key={index} className="flex justify-between items-center py-1 text-sm">
+                          <span className="font-['Space_Grotesk'] text-neutral-700">{trigger.triggerName || 'Unknown'}</span>
+                          <span className="text-neutral-500 font-['Space_Grotesk']">{formatNumber(trigger.count)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </Card>
+
+            {/* Tool Usage Card */}
+            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+              <h3 className="text-lg font-semibold mb-4 font-['Playfair_Display']">AI Tool Usage</h3>
+              {(!analyticsData.chatbotAnalytics?.toolUsage || analyticsData.chatbotAnalytics.toolUsage.length === 0) ? (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 bg-neutral-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <i className="fas fa-wrench text-neutral-400"></i>
+                  </div>
+                  <p className="text-neutral-500 text-sm">No tools used yet</p>
+                </div>
+              ) : (
+                <div>
+                  <div className="text-center mb-4">
+                    <p className="text-4xl font-bold text-black mb-2 font-['Playfair_Display']">
+                      {formatNumber(analyticsData.chatbotAnalytics.interactionsWithTools)}
+                    </p>
+                    <p className="text-neutral-600 text-sm font-['Space_Grotesk']">
+                      Interactions using tools
+                    </p>
+                    <p className="text-neutral-500 text-xs mt-1 font-['Space_Grotesk']">
+                      {formatNumber(Math.round((analyticsData.chatbotAnalytics.interactionsWithTools / analyticsData.chatbotAnalytics.totalInteractions) * 100))}% of all conversations
+                    </p>
+                  </div>
+                  <div className="space-y-3 mt-4">
+                    <p className="text-xs font-medium text-neutral-600 uppercase tracking-wider font-['Space_Grotesk']">
+                      Tool Usage Breakdown
+                    </p>
+                    {analyticsData.chatbotAnalytics.toolUsage.map((tool, index) => (
+                      <div key={index} className="border-b border-neutral-200 last:border-b-0 pb-2">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="font-medium font-['Space_Grotesk'] text-sm">{tool.toolName}</span>
+                          <span className="text-neutral-600 font-['Space_Grotesk'] text-sm">{formatNumber(tool.count)} calls</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 bg-neutral-200 rounded-full h-1.5">
+                            <div
+                              className="bg-gradient-to-r from-emerald-500 to-emerald-600 h-1.5 rounded-full"
+                              style={{
+                                width: `${Math.round(tool.successRate)}%`
+                              }}
+                            ></div>
+                          </div>
+                          <span className="text-xs text-neutral-500 font-['Space_Grotesk']">
+                            {Math.round(tool.successRate)}% success
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Card>
+          </div>
+
           {/* Recent Events */}
           <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
             <h3 className="text-lg font-semibold mb-4 font-['Playfair_Display']">Recent Events</h3>

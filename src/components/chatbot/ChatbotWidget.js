@@ -5,14 +5,16 @@ import { Button } from '../ui';
 import { MessageCircle, X, Send, Trash2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import getAnalytics from '@/lib/analytics';
+import useProactiveTriggers from '@/hooks/useProactiveTriggers';
 
 export default function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [pageContext, setPageContext] = useState('');
   const [chatbotSettings, setChatbotSettings] = useState(null);
+  const [proactiveTriggersEnabled, setProactiveTriggersEnabled] = useState(true);
+  const [hasProactiveNotification, setHasProactiveNotification] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -71,95 +73,67 @@ export default function ChatbotWidget() {
     fetchChatbotSettings();
   }, []);
 
-  // Scrape page context when component mounts or page changes
-  useEffect(() => {
-    scrapePageContext();
-
-    // Listen for page navigation (for SPA)
-    const handleLocationChange = () => {
-      setTimeout(scrapePageContext, 100);
-    };
-
-    // More comprehensive page change detection
-    const handlePageChange = () => {
-      setTimeout(scrapePageContext, 150);
-    };
-
-    // Listen for various navigation events
-    window.addEventListener('popstate', handlePageChange);
-    window.addEventListener('pushstate', handlePageChange);
-    window.addEventListener('replacestate', handlePageChange);
-
-    // Use MutationObserver to detect dynamic content changes
-    const observer = new MutationObserver((mutations) => {
-      const contentChanged = mutations.some(mutation =>
-        mutation.type === 'childList' &&
-        mutation.target === document.body
+  // Handle proactive engagement triggers
+  const handleProactiveTrigger = (message) => {
+    if (!isOpen && chatbotSettings) {
+      // Check if this exact message already exists (prevent duplicates)
+      const messageExists = messages.some(
+        msg => msg.content === message && msg.isProactive === true
       );
-
-      if (contentChanged) {
-        // Debounce context updates
-        clearTimeout(window.contextUpdateTimer);
-        window.contextUpdateTimer = setTimeout(scrapePageContext, 300);
+      
+      if (messageExists) {
+        console.log('⚠️ Duplicate proactive message prevented');
+        return;
       }
-    });
+      
+      // Don't auto-open - just add notification badge and queue message
+      setHasProactiveNotification(true);
+      
+      // Add the proactive message to queue
+      const proactiveMessage = {
+        id: Date.now(),
+        role: 'assistant',
+        content: message,
+        timestamp: new Date(),
+        isProactive: true
+      };
 
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
+      setMessages(prev => [...prev, proactiveMessage]);
 
-    // Also check for URL changes periodically (fallback)
-    const urlCheckInterval = setInterval(() => {
-      const currentPath = window.location.pathname;
-      if (currentPath !== window.lastCheckedPath) {
-        window.lastCheckedPath = currentPath;
-        setTimeout(scrapePageContext, 200);
-      }
-    }, 1000);
-
-    return () => {
-      window.removeEventListener('popstate', handlePageChange);
-      window.removeEventListener('pushstate', handlePageChange);
-      window.removeEventListener('replacestate', handlePageChange);
-      observer.disconnect();
-      clearInterval(urlCheckInterval);
-      clearTimeout(window.contextUpdateTimer);
-    };
-  }, []);
-
-  const scrapePageContext = () => {
-    try {
-      // Get main content from the page
-      const mainContent = document.querySelector('main') ||
-                         document.querySelector('.main-content') ||
-                         document.querySelector('#main') ||
-                         document.querySelector('article') ||
-                         document.body;
-
-      if (mainContent) {
-        // Extract text content, limiting length
-        const textContent = mainContent.textContent || mainContent.innerText || '';
-        const cleanedContent = textContent
-          .replace(/\s+/g, ' ')
-          .trim()
-          .substring(0, 2000); // Limit context size
-
-        setPageContext(cleanedContent);
-
-        // Also try to get page title and description
-        const title = document.querySelector('title')?.textContent || '';
-        const description = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
-
-        if (title || description) {
-          setPageContext(prev => `${title} ${description} ${prev}`);
+      // Track that a proactive message was sent
+      const analytics = getAnalytics();
+      analytics?.trackCustomEvent(
+        'proactive_message_sent',
+        window.location.pathname,
+        {
+          message: message.substring(0, 100)
         }
-      }
-    } catch (error) {
-      console.error('Error scraping page context:', error);
-      setPageContext('');
+      );
     }
   };
+
+  // When user opens chat, clear notification
+  const handleOpenChat = () => {
+    setIsOpen(true);
+    setHasProactiveNotification(false);
+    
+    // Track if they opened from a notification
+    if (hasProactiveNotification) {
+      const analytics = getAnalytics();
+      analytics?.trackCustomEvent(
+        'proactive_notification_clicked',
+        window.location.pathname,
+        {}
+      );
+    }
+  };
+
+  // Setup proactive triggers
+  useProactiveTriggers({
+    onTrigger: handleProactiveTrigger,
+    isOpen,
+    isEnabled: proactiveTriggersEnabled
+  });
 
   const sendMessage = async (e) => {
     e.preventDefault();
@@ -173,6 +147,10 @@ export default function ChatbotWidget() {
       timestamp: new Date()
     };
 
+    // Check if this is a response to a proactive message
+    const lastMessage = messages[messages.length - 1];
+    const isRespondingToProactive = lastMessage?.isProactive === true;
+
     // Add user message to chat
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
@@ -181,6 +159,18 @@ export default function ChatbotWidget() {
     try {
       // Get analytics instance for session tracking
       const analytics = getAnalytics();
+
+      // Track if user responded to a proactive message
+      if (isRespondingToProactive) {
+        analytics?.trackCustomEvent(
+          'user_responded_to_proactive',
+          window.location.pathname,
+          {
+            proactive_message: lastMessage.content.substring(0, 100),
+            user_response: userMessage.content.substring(0, 100)
+          }
+        );
+      }
 
       // Prepare chat history for API
       const chatHistory = messages
@@ -196,7 +186,6 @@ export default function ChatbotWidget() {
         body: JSON.stringify({
           userMessage: userMessage.content,
           chatHistory,
-          pageContext,
           sessionId: analytics.sessionId,
           path: window.location.pathname
         }),
@@ -280,13 +269,25 @@ export default function ChatbotWidget() {
     return (
       <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
         <button
-          onClick={() => setIsOpen(true)}
+          onClick={handleOpenChat}
           className="group relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-black to-neutral-900 hover:from-neutral-900 hover:to-black text-white shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center justify-center border border-white/20 backdrop-blur-sm"
           aria-label="Open chat"
         >
           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 relative z-10" />
-          <div className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>
+          
+          {/* Notification Badge - Only show when proactive message is waiting */}
+          {hasProactiveNotification && (
+            <>
+              <div className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-green-500 rounded-full border-2 border-white animate-pulse z-20"></div>
+              <div className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-green-500 rounded-full border-2 border-white opacity-75 animate-ping z-10"></div>
+            </>
+          )}
+          
+          {/* Default online indicator - Always show */}
+          {!hasProactiveNotification && (
+            <div className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white"></div>
+          )}
         </button>
       </div>
     );
@@ -295,7 +296,7 @@ export default function ChatbotWidget() {
   return (
     <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 animate-in slide-in-from-bottom-4 duration-300">
       {/* Chat Window */}
-      <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-[calc(100vw-2rem)] sm:w-96 h-[32rem] sm:h-[32rem] flex flex-col border border-white/20 shadow-black/10">
+      <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-[calc(100vw-2rem)] sm:w-96 h-[36rem] sm:h-[40rem] flex flex-col border border-white/20 shadow-black/10">
         {/* Header */}
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-neutral-200/50 bg-gradient-to-r from-neutral-50/80 to-white/80 rounded-t-2xl">
           <div className="flex items-center space-x-2 sm:space-x-3">
