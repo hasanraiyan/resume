@@ -266,6 +266,10 @@ export default function ChatbotWidget() {
     }
   };
 
+  const handleOpenChat = () => {
+    setIsOpen(true);
+  };
+
   if (!isOpen) {
     return (
       <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
@@ -317,7 +321,7 @@ export default function ChatbotWidget() {
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}
             >
               <div
-                className={`max-w-[85%] sm:max-w-xs px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-sm ${
+                className={`max-w-full sm:max-w-xs px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-sm ${
                   message.role === 'user'
                     ? 'bg-gradient-to-br from-black to-neutral-900 text-white shadow-black/20'
                     : 'bg-white/80 backdrop-blur-sm text-neutral-900 shadow-neutral-200/50 border border-neutral-200/50'
@@ -344,7 +348,7 @@ export default function ChatbotWidget() {
 
           {isLoading && (
             <div className="flex justify-start animate-in slide-in-from-bottom-2 duration-300">
-              <div className="bg-white/80 backdrop-blur-sm px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-neutral-200/50 border border-neutral-200/50 max-w-[85%] sm:max-w-xs">
+              <div className="bg-white/80 backdrop-blur-sm px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-neutral-200/50 border border-neutral-200/50 max-w-full sm:max-w-xs">
                 <div className="flex items-center space-x-2">
                   <div className="flex space-x-1">
                     <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"></div>
@@ -360,7 +364,6 @@ export default function ChatbotWidget() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* ✨ [UI FIX] - START: Suggested Prompts Section */}
         {/* Prompts are now always visible, except when the AI is responding. */}
         {!isLoading && (
           <div className="px-3 sm:px-4 pt-2 border-t border-neutral-200/50 bg-white/80 backdrop-blur-sm">
@@ -377,7 +380,7 @@ export default function ChatbotWidget() {
             </div>
           </div>
         )}
-        {/* ✨ [UI FIX] - END */}
+       
 
         {/* Input */}
         {/* ✨ [UI FIX] - The input section now has simplified styling to work with the persistent prompts. */}
