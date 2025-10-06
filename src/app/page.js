@@ -33,7 +33,12 @@ export default async function Home() {
       <Marquee />
       <About />
       <Work featuredProjects={featuredProjects} />
-      <Stats />
+      {/* Fix for CSS layout issue causing large right-side margin */}
+      {/* overflow: 'hidden' clips any content extending beyond boundaries */}
+      {/* width: '100%' ensures container takes full width of parent */}
+      <div style={{ overflow: 'hidden', width: '100%' }}>
+        <Stats />
+      </div>
       <Contact />
       <Footer />
     </HomepageLoaderManager>
