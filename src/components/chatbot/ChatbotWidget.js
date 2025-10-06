@@ -80,7 +80,7 @@ export default function ChatbotWidget() {
       const messageExists = messages.some(
         msg => msg.content === message && msg.isProactive === true
       );
-      
+
       if (messageExists) {
         console.log('⚠️ Duplicate proactive message prevented');
         return;
@@ -116,7 +116,7 @@ export default function ChatbotWidget() {
   const handleOpenChat = () => {
     setIsOpen(true);
     setHasProactiveNotification(false);
-    
+
     // Track if they opened from a notification
     if (hasProactiveNotification) {
       const analytics = getAnalytics();
@@ -246,6 +246,83 @@ export default function ChatbotWidget() {
     }
   };
 
+  const handlePromptClick = async (promptText) => {
+    if (isLoading) return;
+
+    const userMessage = {
+      id: Date.now(),
+      role: 'user',
+      content: promptText,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setIsLoading(true);
+
+    try {
+      const analytics = getAnalytics();
+      const chatHistory = messages
+        .filter(msg => msg.role !== 'system')
+        .map(({ role, content }) => ({ role, content }));
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userMessage: userMessage.content,
+          chatHistory,
+          sessionId: analytics.sessionId,
+          path: window.location.pathname
+        }),
+      });
+
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantMessage = {
+        id: Date.now() + 1,
+        role: 'assistant',
+        content: '',
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          assistantMessage.content += chunk;
+          setMessages(prev => prev.map(msg =>
+            msg.id === assistantMessage.id ? { ...msg, content: assistantMessage.content } : msg
+          ));
+        }
+      } finally {
+        reader.releaseLock();
+      }
+    } catch (error) {
+      console.error('Error sending prompt message:', error);
+      const errorMessage = {
+        id: Date.now() + 1,
+        role: 'assistant',
+        content: 'Sorry, I\'m having trouble. Please try again.',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const suggestedPrompts = [
+    { text: "Tell me about Raiyan's projects" },
+    { text: "What's his tech stack?" },
+    { text: "How can I get in touch?" },
+    { text: "Show me his latest blog post" },
+  ];
+
   const clearChat = () => {
     if (chatbotSettings) {
       const welcomeMessage = `Hi! I'm ${chatbotSettings.aiName}, Raiyan's AI assistant. I can help you learn about his projects and experience. What would you like to know?`;
@@ -268,14 +345,10 @@ export default function ChatbotWidget() {
   if (!isOpen) {
     return (
       <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
-        <button
-          onClick={handleOpenChat}
-          className="group relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-black to-neutral-900 hover:from-neutral-900 hover:to-black text-white shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center justify-center border border-white/20 backdrop-blur-sm"
-          aria-label="Open chat"
-        >
+        <button onClick={handleOpenChat} className="group relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-black to-neutral-900 hover:from-neutral-900 hover:to-black text-white shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center justify-center border border-white/20 backdrop-blur-sm" aria-label="Open chat" >
           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 relative z-10" />
-          
+
           {/* Notification Badge - Only show when proactive message is waiting */}
           {hasProactiveNotification && (
             <>
@@ -310,10 +383,7 @@ export default function ChatbotWidget() {
             </div>
           </div>
           <div className="flex items-center space-x-1 sm:space-x-2">
-            <button
-              onClick={clearChat}
-              className="px-2 py-1 sm:px-3 sm:py-1.5 text-xs font-medium text-neutral-600 hover:text-neutral-900 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-all duration-200 flex items-center gap-1"
-            >
+            <button onClick={clearChat} className="px-2 py-1 sm:px-3 sm:py-1.5 text-xs font-medium text-neutral-600 hover:text-neutral-900 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-all duration-200 flex items-center gap-1" >
               <Trash2 className="w-3 h-3" />
               <span className="hidden sm:inline">Clear</span>
             </button>
@@ -378,9 +448,29 @@ export default function ChatbotWidget() {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* ✨ [UI FIX] - START: Suggested Prompts Section */}
+        {/* Prompts are now always visible, except when the AI is responding. */}
+        {!isLoading && (
+          <div className="px-3 sm:px-4 pt-2 border-t border-neutral-200/50 bg-white/80 backdrop-blur-sm">
+            <div className="flex items-center gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {suggestedPrompts.map((prompt, index) => (
+                <button
+                  key={index}
+                  onClick={() => handlePromptClick(prompt.text)}
+                  className="px-3 py-1.5 bg-white hover:bg-neutral-100 border border-neutral-200/80 rounded-full text-xs text-neutral-700 font-medium whitespace-nowrap flex-shrink-0 transition-colors duration-200"
+                >
+                  {prompt.text}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* ✨ [UI FIX] - END */}
+
         {/* Input */}
-        <div className="p-3 sm:p-4 border-t border-neutral-200/50 bg-white/80 backdrop-blur-sm rounded-b-2xl">
-          <form onSubmit={sendMessage} className="flex items-center gap-2">
+        {/* ✨ [UI FIX] - The input section now has simplified styling to work with the persistent prompts. */}
+        <div className={`p-3 sm:p-4 bg-white/80 backdrop-blur-sm rounded-b-2xl ${isLoading ? 'border-t border-neutral-200/50' : ''}`}>
+           <form onSubmit={sendMessage} className="flex items-center gap-2">
             <input
               ref={inputRef}
               type="text"
