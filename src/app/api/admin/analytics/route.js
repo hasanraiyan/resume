@@ -61,7 +61,7 @@ export async function GET(request) {
           startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
           endDate ? new Date(endDate) : new Date()
         );
-        console.log('Session stats result:', data.sessions);
+        console.log('Session stats result:', data.sessions?.length || 0, 'sessions found');
         break;
 
       case 'search':

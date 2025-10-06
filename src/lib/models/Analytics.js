@@ -138,8 +138,25 @@ AnalyticsSchema.statics.getSessionStats = async function(startDate, endDate) {
           ]
         },
         pages: { $size: '$paths' },
+        firstSeen: {
+          $cond: {
+            if: '$firstSeen',
+            then: '$firstSeen',
+            else: '$$NOW'
+          }
+        },
+        lastSeen: {
+          $cond: {
+            if: '$lastSeen',
+            then: '$lastSeen',
+            else: '$$NOW'
+          }
+        },
         _id: 0
       }
+    },
+    {
+      $sort: { lastSeen: -1 }
     }
   ]);
 };

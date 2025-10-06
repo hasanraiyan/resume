@@ -94,6 +94,28 @@ export default function AnalyticsDashboard() {
     return `${minutes}m ${remainingSeconds}s`;
   };
 
+  const formatDate = (dateValue) => {
+    if (!dateValue) return 'N/A';
+    try {
+      // Handle different date formats
+      let date;
+      if (typeof dateValue === 'string') {
+        date = new Date(dateValue);
+      } else if (dateValue instanceof Date) {
+        date = dateValue;
+      } else {
+        // Try to convert to string first
+        date = new Date(String(dateValue));
+      }
+
+      if (isNaN(date.getTime())) return 'N/A';
+      return date.toLocaleDateString();
+    } catch (e) {
+      console.error('Date formatting error:', e, 'for value:', dateValue);
+      return 'N/A';
+    }
+  };
+
   // Chart data preparation
   const chartData = {
     labels: analyticsData?.dailyPageviews?.map(day => new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })) || [],
@@ -544,7 +566,7 @@ export default function AnalyticsDashboard() {
                   <div className="flex space-x-6 text-sm">
                     <span className="text-neutral-600 font-['Space_Grotesk']">{session.events} events</span>
                     <span className="text-neutral-500 font-['Space_Grotesk']">
-                      {new Date(session.firstSeen).toLocaleDateString()} - {new Date(session.lastSeen).toLocaleDateString()}
+                      {formatDate(session.firstSeen)} - {formatDate(session.lastSeen)}
                     </span>
                   </div>
                 </div>
