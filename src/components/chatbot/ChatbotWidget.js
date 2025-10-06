@@ -278,76 +278,76 @@ export default function ChatbotWidget() {
 
   if (!isOpen) {
     return (
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
         <button
           onClick={() => setIsOpen(true)}
-          className="group relative w-16 h-16 rounded-full bg-gradient-to-br from-black to-neutral-900 hover:from-neutral-900 hover:to-black text-white shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center justify-center border border-white/20 backdrop-blur-sm"
+          className="group relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-black to-neutral-900 hover:from-neutral-900 hover:to-black text-white shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center justify-center border border-white/20 backdrop-blur-sm"
           aria-label="Open chat"
         >
           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <MessageCircle className="w-7 h-7 relative z-10" />
-          <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>
+          <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 relative z-10" />
+          <div className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>
         </button>
       </div>
     );
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-4 duration-300">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 animate-in slide-in-from-bottom-4 duration-300">
       {/* Chat Window */}
-      <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-96 h-[32rem] flex flex-col border border-white/20 shadow-black/10">
+      <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-[calc(100vw-2rem)] sm:w-96 h-[32rem] sm:h-[32rem] flex flex-col border border-white/20 shadow-black/10">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-neutral-200/50 bg-gradient-to-r from-neutral-50/80 to-white/80 rounded-t-2xl">
-          <div className="flex items-center space-x-3">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-neutral-200/50 bg-gradient-to-r from-neutral-50/80 to-white/80 rounded-t-2xl">
+          <div className="flex items-center space-x-2 sm:space-x-3">
             <div className="relative">
               <div className="w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
               <div className="absolute inset-0 w-3 h-3 bg-green-500 rounded-full animate-ping opacity-20"></div>
             </div>
             <div>
-              <h3 className="font-semibold text-neutral-900 text-lg">{chatbotSettings?.aiName || 'Kiro'}</h3>
-              <p className="text-xs text-neutral-500 -mt-1">AI Assistant</p>
+              <h3 className="font-semibold text-neutral-900 text-base sm:text-lg">{chatbotSettings?.aiName || 'Kiro'}</h3>
+              <p className="text-xs text-neutral-500 -mt-1 hidden sm:block">AI Assistant</p>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 sm:space-x-2">
             <button
               onClick={clearChat}
-              className="px-3 py-1.5 text-xs font-medium text-neutral-600 hover:text-neutral-900 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-all duration-200 flex items-center gap-1"
+              className="px-2 py-1 sm:px-3 sm:py-1.5 text-xs font-medium text-neutral-600 hover:text-neutral-900 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-all duration-200 flex items-center gap-1"
             >
               <Trash2 className="w-3 h-3" />
-              Clear
+              <span className="hidden sm:inline">Clear</span>
             </button>
             <button
               onClick={() => setIsOpen(false)}
               className="p-2 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 rounded-lg transition-all duration-200"
               aria-label="Close chat"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-white/50 to-neutral-50/50">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-white/50 to-neutral-50/50">
           {messages.map((message) => (
             <div
               key={message.id}
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}
             >
               <div
-                className={`max-w-xs px-4 py-3 rounded-2xl shadow-sm ${
+                className={`max-w-[85%] sm:max-w-xs px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-sm ${
                   message.role === 'user'
                     ? 'bg-gradient-to-br from-black to-neutral-900 text-white shadow-black/20'
                     : 'bg-white/80 backdrop-blur-sm text-neutral-900 shadow-neutral-200/50 border border-neutral-200/50'
                 }`}
               >
                 {message.role === 'assistant' ? (
-                  <div className="text-sm leading-relaxed prose prose-sm max-w-none prose-p:my-2 prose-headings:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-0">
+                  <div className="text-sm leading-relaxed prose prose-sm max-w-none prose-p:my-1 sm:prose-p:my-2 prose-headings:my-1 sm:prose-headings:my-2 prose-ul:my-1 sm:prose-ul:my-2 prose-ol:my-1 sm:prose-ol:my-2 prose-li:my-0">
                     <ReactMarkdown>{message.content}</ReactMarkdown>
                   </div>
                 ) : (
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
                 )}
-                <p className={`text-xs mt-2 ${
+                <p className={`text-xs mt-1 sm:mt-2 ${
                   message.role === 'user' ? 'text-neutral-300' : 'text-neutral-500'
                 }`}>
                   {message.timestamp.toLocaleTimeString([], {
@@ -361,7 +361,7 @@ export default function ChatbotWidget() {
 
           {isLoading && (
             <div className="flex justify-start animate-in slide-in-from-bottom-2 duration-300">
-              <div className="bg-white/80 backdrop-blur-sm px-4 py-3 rounded-2xl shadow-neutral-200/50 border border-neutral-200/50">
+              <div className="bg-white/80 backdrop-blur-sm px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-neutral-200/50 border border-neutral-200/50 max-w-[85%] sm:max-w-xs">
                 <div className="flex items-center space-x-2">
                   <div className="flex space-x-1">
                     <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"></div>
@@ -378,7 +378,7 @@ export default function ChatbotWidget() {
         </div>
 
         {/* Input */}
-        <div className="p-4 border-t border-neutral-200/50 bg-white/80 backdrop-blur-sm rounded-b-2xl">
+        <div className="p-3 sm:p-4 border-t border-neutral-200/50 bg-white/80 backdrop-blur-sm rounded-b-2xl">
           <form onSubmit={sendMessage} className="flex items-center gap-2">
             <input
               ref={inputRef}
@@ -386,18 +386,18 @@ export default function ChatbotWidget() {
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               placeholder="Type your message..."
-              className="flex-1 px-4 py-3 border border-neutral-200/60 rounded-xl focus:outline-none focus:border-black focus:ring-1 focus:ring-black bg-white transition-all duration-200 placeholder:text-neutral-400 text-neutral-900"
+              className="flex-1 px-3 sm:px-4 py-3 sm:py-3 border border-neutral-200/60 rounded-xl focus:outline-none focus:border-black focus:ring-1 focus:ring-black bg-white transition-all duration-200 placeholder:text-neutral-400 text-neutral-900 text-sm sm:text-base"
               disabled={isLoading}
             />
             <button
               type="submit"
               disabled={isLoading || !inputMessage.trim()}
-              className="bg-gradient-to-br from-black to-neutral-900 hover:from-neutral-800 hover:to-black text-white p-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
+              className="bg-gradient-to-br from-black to-neutral-900 hover:from-neutral-800 hover:to-black text-white p-2 sm:p-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg flex-shrink-0"
             >
               {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
               ) : (
-                <Send className="w-5 h-5" />
+                <Send className="w-4 h-4 sm:w-5 sm:h-5" />
               )}
             </button>
           </form>

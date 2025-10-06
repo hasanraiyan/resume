@@ -85,8 +85,8 @@ export default function ProjectCard({ project }) {
         
         {/* Tech Tags - Show only 3 */}
         <div className="flex flex-wrap gap-2">
-          {project.tags.slice(0, 3).map((tag) => (
-            <Badge key={tag.id} variant="tag">
+          {project.tags.slice(0, 3).map((tag, index) => (
+            <Badge key={`${project.id}-${tag.id}-${index}`} variant="tag">
               {tag.name}
             </Badge>
           ))}
