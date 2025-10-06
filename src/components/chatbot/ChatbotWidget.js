@@ -5,7 +5,6 @@ import { Button } from '../ui';
 import { MessageCircle, X, Send, Trash2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import getAnalytics from '@/lib/analytics';
-import useProactiveTriggers from '@/hooks/useProactiveTriggers';
 
 export default function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,8 +12,6 @@ export default function ChatbotWidget() {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [chatbotSettings, setChatbotSettings] = useState(null);
-  const [proactiveTriggersEnabled, setProactiveTriggersEnabled] = useState(true);
-  const [hasProactiveNotification, setHasProactiveNotification] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -73,67 +70,8 @@ export default function ChatbotWidget() {
     fetchChatbotSettings();
   }, []);
 
-  // Handle proactive engagement triggers
-  const handleProactiveTrigger = (message) => {
-    if (!isOpen && chatbotSettings) {
-      // Check if this exact message already exists (prevent duplicates)
-      const messageExists = messages.some(
-        msg => msg.content === message && msg.isProactive === true
-      );
 
-      if (messageExists) {
-        console.log('⚠️ Duplicate proactive message prevented');
-        return;
-      }
-      
-      // Don't auto-open - just add notification badge and queue message
-      setHasProactiveNotification(true);
-      
-      // Add the proactive message to queue
-      const proactiveMessage = {
-        id: Date.now(),
-        role: 'assistant',
-        content: message,
-        timestamp: new Date(),
-        isProactive: true
-      };
 
-      setMessages(prev => [...prev, proactiveMessage]);
-
-      // Track that a proactive message was sent
-      const analytics = getAnalytics();
-      analytics?.trackCustomEvent(
-        'proactive_message_sent',
-        window.location.pathname,
-        {
-          message: message.substring(0, 100)
-        }
-      );
-    }
-  };
-
-  // When user opens chat, clear notification
-  const handleOpenChat = () => {
-    setIsOpen(true);
-    setHasProactiveNotification(false);
-
-    // Track if they opened from a notification
-    if (hasProactiveNotification) {
-      const analytics = getAnalytics();
-      analytics?.trackCustomEvent(
-        'proactive_notification_clicked',
-        window.location.pathname,
-        {}
-      );
-    }
-  };
-
-  // Setup proactive triggers
-  useProactiveTriggers({
-    onTrigger: handleProactiveTrigger,
-    isOpen,
-    isEnabled: proactiveTriggersEnabled
-  });
 
   const sendMessage = async (e) => {
     e.preventDefault();
@@ -147,9 +85,6 @@ export default function ChatbotWidget() {
       timestamp: new Date()
     };
 
-    // Check if this is a response to a proactive message
-    const lastMessage = messages[messages.length - 1];
-    const isRespondingToProactive = lastMessage?.isProactive === true;
 
     // Add user message to chat
     setMessages(prev => [...prev, userMessage]);
@@ -160,17 +95,6 @@ export default function ChatbotWidget() {
       // Get analytics instance for session tracking
       const analytics = getAnalytics();
 
-      // Track if user responded to a proactive message
-      if (isRespondingToProactive) {
-        analytics?.trackCustomEvent(
-          'user_responded_to_proactive',
-          window.location.pathname,
-          {
-            proactive_message: lastMessage.content.substring(0, 100),
-            user_response: userMessage.content.substring(0, 100)
-          }
-        );
-      }
 
       // Prepare chat history for API
       const chatHistory = messages
@@ -349,18 +273,6 @@ export default function ChatbotWidget() {
           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 relative z-10" />
 
-          {/* Notification Badge - Only show when proactive message is waiting */}
-          {hasProactiveNotification && (
-            <>
-              <div className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-green-500 rounded-full border-2 border-white animate-pulse z-20"></div>
-              <div className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-green-500 rounded-full border-2 border-white opacity-75 animate-ping z-10"></div>
-            </>
-          )}
-          
-          {/* Default online indicator - Always show */}
-          {!hasProactiveNotification && (
-            <div className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white"></div>
-          )}
         </button>
       </div>
     );
