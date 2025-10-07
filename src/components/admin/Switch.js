@@ -1,8 +1,7 @@
 'use client';
 
 import * as SwitchPrimitives from '@radix-ui/react-switch';
-import { cn } from '@/lib/utils';
-
+import { cn } from '../ui';
 const Switch = ({ checked, onCheckedChange, label, description }) => (
   <div className="flex items-center justify-between">
     <div className="flex flex-col">
