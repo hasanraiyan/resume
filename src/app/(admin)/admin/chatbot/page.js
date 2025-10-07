@@ -7,6 +7,7 @@ import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 import IconPicker from '@/components/admin/IconPicker';
 import ActionButton from '@/components/admin/ActionButton';
 import CustomDropdown from '@/components/CustomDropdown';
+import Switch from '@/components/admin/Switch';
 
 export default function ChatbotSettingsPage() {
   const { data: session, status } = useSession();
@@ -261,15 +262,11 @@ export default function ChatbotSettingsPage() {
                   />
                 </div>
                 <div>
-                  <CustomDropdown
-                    label="Status"
-                    name="isActive"
-                    value={formData.isActive ? 'active' : 'inactive'}
-                    onChange={(e) => handleInputChange('isActive', e.target.value === 'active')}
-                    options={[
-                      { value: 'active', label: 'Active' },
-                      { value: 'inactive', label: 'Inactive' }
-                    ]}
+                  <Switch
+                    label="Chatbot Status"
+                    description="Enable or disable the chatbot on the website."
+                    checked={formData.isActive}
+                    onCheckedChange={(value) => handleInputChange('isActive', value)}
                   />
                 </div>
                 <div>

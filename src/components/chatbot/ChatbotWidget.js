@@ -36,34 +36,24 @@ export default function ChatbotWidget() {
           const settings = await response.json();
           setChatbotSettings(settings);
 
-          // Initialize with dynamic welcome message
-          const welcomeMessage = `Hi! I'm ${settings.aiName}, Raiyan's AI assistant. I can help you learn about his projects and experience. What would you like to know?`;
-          setMessages([{
-            id: 1,
-            role: 'assistant',
-            content: welcomeMessage,
-            timestamp: new Date()
-          }]);
+          if (settings.isActive) {
+            // Initialize with dynamic welcome message
+            const welcomeMessage = `Hi! I'm ${settings.aiName}, Raiyan's AI assistant. I can help you learn about his projects and experience. What would you like to know?`;
+            setMessages([{
+              id: 1,
+              role: 'assistant',
+              content: welcomeMessage,
+              timestamp: new Date()
+            }]);
+          }
+        } else {
+          // If the response is not OK, assume the chatbot should be disabled.
+          setChatbotSettings({ isActive: false });
         }
       } catch (error) {
         console.error('Error fetching chatbot settings:', error);
-        // Fallback to default settings
-        setChatbotSettings({
-          aiName: 'Kiro',
-          persona: 'You are Kiro, a professional and helpful AI assistant representing Raiyan.',
-          baseKnowledge: 'Raiyan is a skilled full-stack developer.',
-          servicesOffered: 'Full-stack web development, React applications, Node.js backends.',
-          callToAction: 'I\'d be happy to help you get in touch with Raiyan.',
-          rules: ['Always be professional and helpful'],
-          isActive: true
-        });
-
-        setMessages([{
-          id: 1,
-          role: 'assistant',
-          content: "Hi! I'm Kiro, Raiyan's AI assistant. I can help you learn about his projects and experience. What would you like to know?",
-          timestamp: new Date()
-        }]);
+        // On error, assume the chatbot should be disabled.
+        setChatbotSettings({ isActive: false });
       }
     };
 
@@ -269,6 +259,10 @@ export default function ChatbotWidget() {
   const handleOpenChat = () => {
     setIsOpen(true);
   };
+
+  if (!chatbotSettings || !chatbotSettings.isActive) {
+    return null;
+  }
 
   if (!isOpen) {
     return (
