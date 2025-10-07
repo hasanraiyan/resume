@@ -1,40 +1,39 @@
-'use client'
-import { useEffect } from 'react'
-import Link from 'next/link'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { Section, Button, Badge } from '@/components/ui'
+'use client';
+import { useEffect } from 'react';
+import Link from 'next/link';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { Section, Button, Badge } from '@/components/ui';
 // ========================================
 // 📦 DYNAMIC DATA (Backend-Ready)
 // ========================================
 const workData = {
   heading: {
-    title: "Featured Works",
-    description: "A curated selection of my best projects"
+    title: 'Featured Works',
+    description: 'A curated selection of my best projects',
   },
   cta: {
-    text: "View All Projects",
-    link: "/projects",
-    icon: "fas fa-arrow-right"
-  }
-}
+    text: 'View All Projects',
+    link: '/projects',
+    icon: 'fas fa-arrow-right',
+  },
+};
 
 // ========================================
 // 🎨 COMPONENT
 // ========================================
 export default function Work({ featuredProjects = [] }) {
-
   useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger)
+    gsap.registerPlugin(ScrollTrigger);
 
     // Small delay to ensure DOM is ready
     const timer = setTimeout(() => {
-      const container = document.querySelector('#work')
+      const container = document.querySelector('#work');
       if (container) {
-        const projectsContainer = container.querySelector('.space-y-12')
+        const projectsContainer = container.querySelector('.space-y-12');
         if (projectsContainer && projectsContainer.children.length > 0) {
           // Reset any existing transforms
-          gsap.set(projectsContainer.children, { opacity: 1, y: 0 })
+          gsap.set(projectsContainer.children, { opacity: 1, y: 0 });
 
           gsap.from(projectsContainer.children, {
             opacity: 0,
@@ -48,15 +47,15 @@ export default function Work({ featuredProjects = [] }) {
               toggleActions: 'play none none reverse',
               refreshPriority: -1,
             },
-          })
+          });
         }
       }
-    }, 100)
+    }, 100);
 
     return () => {
-      clearTimeout(timer)
-    }
-  }, [])
+      clearTimeout(timer);
+    };
+  }, []);
 
   return (
     <Section
@@ -66,7 +65,6 @@ export default function Work({ featuredProjects = [] }) {
       centered={true}
       className="py-16 sm:py-20 md:py-24 bg-white"
     >
-
       {/* Featured Projects List */}
       <div className="space-y-12 sm:space-y-16 md:space-y-20">
         {featuredProjects.map((project) => (
@@ -74,24 +72,19 @@ export default function Work({ featuredProjects = [] }) {
             key={project.id}
             className="grid lg:grid-cols-2 gap-8 sm:gap-10 md:gap-12 items-center"
           >
-
             {/* Project Image */}
             <div
-              className={`image-reveal rounded-lg overflow-hidden shadow-2xl hover-target ${parseInt(project.projectNumber) % 2 === 0 ? 'lg:order-2' : ''
-                }`}
+              className={`image-reveal rounded-lg overflow-hidden shadow-2xl hover-target ${
+                parseInt(project.projectNumber) % 2 === 0 ? 'lg:order-2' : ''
+              }`}
             >
               <Link href={`/projects/${project.slug}`}>
-                <img
-                  src={project.thumbnail}
-                  alt={project.title}
-                  className="w-full"
-                />
+                <img src={project.thumbnail} alt={project.title} className="w-full" />
               </Link>
             </div>
 
             {/* Project Content */}
             <div className={parseInt(project.projectNumber) % 2 === 0 ? 'lg:order-1' : ''}>
-
               {/* Category Badge */}
               <div className="text-xs font-semibold tracking-widest mb-2 sm:mb-3 text-gray-600">
                 {project.projectNumber} — {project.category}
@@ -99,10 +92,7 @@ export default function Work({ featuredProjects = [] }) {
 
               {/* Project Title */}
               <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-5">
-                <Link
-                  href={`/projects/${project.slug}`}
-                  className="hover:text-gray-600 transition"
-                >
+                <Link href={`/projects/${project.slug}`} className="hover:text-gray-600 transition">
                   {project.title}
                 </Link>
               </h3>
@@ -120,9 +110,7 @@ export default function Work({ featuredProjects = [] }) {
                   </Badge>
                 ))}
                 {project.tags && project.tags.length > 3 && (
-                  <Badge variant="tag">
-                    +{project.tags.length - 3} more
-                  </Badge>
+                  <Badge variant="tag">+{project.tags.length - 3} more</Badge>
                 )}
               </div>
 
@@ -135,7 +123,6 @@ export default function Work({ featuredProjects = [] }) {
                 View Case Study <i className="fas fa-arrow-right ml-2"></i>
               </Button>
             </div>
-
           </div>
         ))}
       </div>
@@ -151,5 +138,5 @@ export default function Work({ featuredProjects = [] }) {
         </Button>
       </div>
     </Section>
-  )
+  );
 }

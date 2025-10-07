@@ -1,13 +1,13 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
+import { useState } from 'react';
 
 /**
  * Blog Filters Component - Similar to ProjectFilters but for articles
  */
 export default function BlogFilters({ onFilterChange, onSearch }) {
-  const [activeTag, setActiveTag] = useState('all')
-  const [searchQuery, setSearchQuery] = useState('')
+  const [activeTag, setActiveTag] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Common blog tags - you can make this dynamic later
   const blogTags = [
@@ -17,22 +17,21 @@ export default function BlogFilters({ onFilterChange, onSearch }) {
     { id: 'virtual assistants', name: 'Virtual Assistants' },
     { id: 'machine learning', name: 'Machine Learning' },
     { id: 'automation', name: 'Automation' },
-  ]
+  ];
 
   const handleTagClick = (tagId) => {
-    setActiveTag(tagId)
-    onFilterChange(tagId)
-  }
+    setActiveTag(tagId);
+    onFilterChange(tagId);
+  };
 
   const handleSearchChange = (e) => {
-    const query = e.target.value
-    setSearchQuery(query)
-    onSearch(query)
-  }
+    const query = e.target.value;
+    setSearchQuery(query);
+    onSearch(query);
+  };
 
   return (
     <div className="mb-12 sm:mb-16">
-
       {/* Search Bar - Cleaner design */}
       <div className="mb-8 sm:mb-10">
         <div className="relative max-w-xl mx-auto">
@@ -64,5 +63,5 @@ export default function BlogFilters({ onFilterChange, onSearch }) {
         ))}
       </div>
     </div>
-  )
+  );
 }

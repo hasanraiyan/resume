@@ -1,9 +1,8 @@
+'use client';
 
-'use client'
-
-import Link from 'next/link'
-import Image from 'next/image'
-import { Badge } from '@/components/ui'
+import Link from 'next/link';
+import Image from 'next/image';
+import { Badge } from '@/components/ui';
 
 /**
  * Blog Card Component - Redesigned for a vertical list view (Medium-inspired)
@@ -14,7 +13,7 @@ export default function BlogCard({ article }) {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
@@ -26,7 +25,10 @@ export default function BlogCard({ article }) {
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 sm:gap-8 items-start">
           {/* Main Content */}
           <div className="sm:col-span-3">
-            <time className="text-xs font-semibold tracking-widest text-gray-500 uppercase" dateTime={article.publishedAt || article.createdAt}>
+            <time
+              className="text-xs font-semibold tracking-widest text-gray-500 uppercase"
+              dateTime={article.publishedAt || article.createdAt}
+            >
               {publishDate}
             </time>
             <h3 className="text-2xl sm:text-3xl font-bold my-3 text-black group-hover:text-gray-700 transition font-['Playfair_Display']">
@@ -56,7 +58,9 @@ export default function BlogCard({ article }) {
                 fill
                 className="w-full h-full object-cover"
                 loading="lazy"
-                onError={(e) => { e.target.style.display = 'none'; }}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
               />
               <div className="absolute inset-0 flex items-center justify-center bg-gray-100 -z-10">
                 <i className="fas fa-newspaper text-3xl text-gray-300"></i>
@@ -66,5 +70,5 @@ export default function BlogCard({ article }) {
         </div>
       </Link>
     </article>
-  )
+  );
 }

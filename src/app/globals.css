@@ -1,11 +1,12 @@
-@import "tailwindcss";
-
+@import 'tailwindcss';
 
 * {
   font-family: 'Space Grotesk', sans-serif;
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   font-family: 'Playfair Display', serif;
 }
 
@@ -15,7 +16,9 @@ body {
 
 /* Hide default cursor on devices that support hover */
 @media (pointer: fine) {
-  body, a, button {
+  body,
+  a,
+  button {
     cursor: none;
   }
 }
@@ -29,7 +32,10 @@ body {
   pointer-events: none;
   z-index: 9999;
   transform: translate(-50%, -50%);
-  transition: width 0.3s, height 0.3s, background-color 0.3s;
+  transition:
+    width 0.3s,
+    height 0.3s,
+    background-color 0.3s;
 }
 
 .cursor-follower {
@@ -90,8 +96,12 @@ body {
 }
 
 @keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 .image-reveal {

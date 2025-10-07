@@ -1,35 +1,35 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import ProjectCard from './ProjectCard'
-import ProjectFilters from './ProjectFilters'
+import { useState, useEffect } from 'react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import ProjectCard from './ProjectCard';
+import ProjectFilters from './ProjectFilters';
 
 export default function ProjectsPageClient({ projects }) {
-  const [filteredProjects, setFilteredProjects] = useState(projects)
-  const [isLoading, setIsLoading] = useState(false)
+  const [filteredProjects, setFilteredProjects] = useState(projects);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Cleanup on component mount to ensure fresh state
   useEffect(() => {
     // Kill any existing ScrollTriggers from other pages
-    ScrollTrigger.getAll().forEach(trigger => trigger.kill())
-    ScrollTrigger.refresh()
-  }, [])
+    ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+    ScrollTrigger.refresh();
+  }, []);
 
   useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger)
+    gsap.registerPlugin(ScrollTrigger);
 
     // Clean up previous ScrollTriggers
-    ScrollTrigger.getAll().forEach(trigger => trigger.kill())
+    ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
 
     // Small delay to ensure DOM is ready
     const timer = setTimeout(() => {
-      const grid = document.querySelector('.projects-grid')
+      const grid = document.querySelector('.projects-grid');
       if (grid && grid.children.length > 0) {
         // Reset any existing transforms
-        gsap.set(grid.children, { opacity: 1, y: 0 })
-        
+        gsap.set(grid.children, { opacity: 1, y: 0 });
+
         gsap.from(grid.children, {
           opacity: 0,
           y: 50,
@@ -41,59 +41,57 @@ export default function ProjectsPageClient({ projects }) {
             toggleActions: 'play none none reverse',
             refreshPriority: -1,
           },
-        })
+        });
       }
-      
+
       // Refresh ScrollTrigger to recalculate positions
-      ScrollTrigger.refresh()
-    }, 100)
+      ScrollTrigger.refresh();
+    }, 100);
 
     return () => {
-      clearTimeout(timer)
-      ScrollTrigger.getAll().forEach(trigger => trigger.kill())
-    }
-  }, [filteredProjects])
+      clearTimeout(timer);
+      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+    };
+  }, [filteredProjects]);
 
   const handleFilterChange = (category) => {
-    setIsLoading(true)
+    setIsLoading(true);
     setTimeout(() => {
-      let filtered = projects
+      let filtered = projects;
       if (category && category !== 'all') {
-        filtered = projects.filter(project => 
-          project.category.toLowerCase() === category.toLowerCase()
-        )
+        filtered = projects.filter(
+          (project) => project.category.toLowerCase() === category.toLowerCase()
+        );
       }
-      setFilteredProjects(filtered)
-      setIsLoading(false)
-    }, 300)
-  }
+      setFilteredProjects(filtered);
+      setIsLoading(false);
+    }, 300);
+  };
 
   const handleSearch = (query) => {
-    setIsLoading(true)
+    setIsLoading(true);
     setTimeout(() => {
       if (query.trim() === '') {
-        setFilteredProjects(projects)
+        setFilteredProjects(projects);
       } else {
-        const searchTerm = query.toLowerCase()
-        const results = projects.filter(project => 
-          project.title.toLowerCase().includes(searchTerm) ||
-          project.description.toLowerCase().includes(searchTerm) ||
-          project.category.toLowerCase().includes(searchTerm) ||
-          project.tags?.some(tag => tag.name.toLowerCase().includes(searchTerm))
-        )
-        setFilteredProjects(results)
+        const searchTerm = query.toLowerCase();
+        const results = projects.filter(
+          (project) =>
+            project.title.toLowerCase().includes(searchTerm) ||
+            project.description.toLowerCase().includes(searchTerm) ||
+            project.category.toLowerCase().includes(searchTerm) ||
+            project.tags?.some((tag) => tag.name.toLowerCase().includes(searchTerm))
+        );
+        setFilteredProjects(results);
       }
-      setIsLoading(false)
-    }, 300)
-  }
+      setIsLoading(false);
+    }, 300);
+  };
 
   return (
     <>
       {/* Filters */}
-      <ProjectFilters 
-        onFilterChange={handleFilterChange}
-        onSearch={handleSearch}
-      />
+      <ProjectFilters onFilterChange={handleFilterChange} onSearch={handleSearch} />
 
       {/* Projects Grid */}
       {isLoading ? (
@@ -110,8 +108,8 @@ export default function ProjectsPageClient({ projects }) {
       ) : (
         <>
           {/* Projects Grid */}
-          <div 
-            key={filteredProjects.length} 
+          <div
+            key={filteredProjects.length}
             className="projects-grid grid sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10 lg:gap-12"
           >
             {filteredProjects.map((project) => (
@@ -121,10 +119,11 @@ export default function ProjectsPageClient({ projects }) {
 
           {/* Project Count */}
           <div className="text-center mt-12 sm:mt-16 text-sm text-gray-600">
-            Showing <span className="font-semibold">{filteredProjects.length}</span> of <span className="font-semibold">{projects.length}</span> projects
+            Showing <span className="font-semibold">{filteredProjects.length}</span> of{' '}
+            <span className="font-semibold">{projects.length}</span> projects
           </div>
         </>
       )}
     </>
-  )
+  );
 }

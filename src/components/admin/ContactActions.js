@@ -1,51 +1,53 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { updateContactStatus, deleteContact } from '@/app/actions/contactActions'
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { updateContactStatus, deleteContact } from '@/app/actions/contactActions';
 
 export default function ContactActions({ contactId }) {
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleArchive = async () => {
-    if (isLoading) return
+    if (isLoading) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const result = await updateContactStatus(contactId, 'archived')
+      const result = await updateContactStatus(contactId, 'archived');
       if (result.success) {
-        router.refresh()
+        router.refresh();
       } else {
-        console.error('Failed to archive contact:', result.message)
+        console.error('Failed to archive contact:', result.message);
       }
     } catch (error) {
-      console.error('Error archiving contact:', error)
+      console.error('Error archiving contact:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleDelete = async () => {
-    if (isLoading) return
+    if (isLoading) return;
 
-    const confirmed = window.confirm('Are you sure you want to delete this contact message? This action cannot be undone.')
-    if (!confirmed) return
+    const confirmed = window.confirm(
+      'Are you sure you want to delete this contact message? This action cannot be undone.'
+    );
+    if (!confirmed) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const result = await deleteContact(contactId)
+      const result = await deleteContact(contactId);
       if (result.success) {
-        router.refresh()
+        router.refresh();
       } else {
-        console.error('Failed to delete contact:', result.message)
+        console.error('Failed to delete contact:', result.message);
       }
     } catch (error) {
-      console.error('Error deleting contact:', error)
+      console.error('Error deleting contact:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="flex space-x-2">
@@ -66,5 +68,5 @@ export default function ContactActions({ contactId }) {
         <i className="fas fa-trash"></i>
       </button>
     </div>
-  )
+  );
 }

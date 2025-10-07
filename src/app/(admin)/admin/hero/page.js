@@ -1,23 +1,23 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback } from 'react'
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import AdminPageWrapper from '@/components/admin/AdminPageWrapper'
-import HeroPreview from '@/components/admin/HeroPreview'
-import IconPicker from '@/components/admin/IconPicker'
+import { useState, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
+import HeroPreview from '@/components/admin/HeroPreview';
+import IconPicker from '@/components/admin/IconPicker';
 import ActionButton from '@/components/admin/ActionButton';
 
 export default function HeroAdminPage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
-  const [heroData, setHeroData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState({ type: '', text: '' })
-  const [showPreview, setShowPreview] = useState(false)
-  const [previewData, setPreviewData] = useState(null)
-  const [previewLoading, setPreviewLoading] = useState(false)
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [heroData, setHeroData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -26,103 +26,106 @@ export default function HeroAdminPage() {
     introduction: { text: '', name: '', role: '' },
     cta: {
       primary: { text: '', link: '' },
-      secondary: { text: '', link: '' }
+      secondary: { text: '', link: '' },
     },
     socialLinks: [],
     profile: {
       image: { url: '', alt: '' },
-      badge: { value: '', label: '' }
-    }
-  })
+      badge: { value: '', label: '' },
+    },
+  });
 
   // Redirect if not admin
   useEffect(() => {
-    if (status === 'loading') return
+    if (status === 'loading') return;
     if (!session || session.user.role !== 'admin') {
-      router.push('/admin/login')
+      router.push('/admin/login');
     }
-  }, [session, status, router])
+  }, [session, status, router]);
 
   const fetchHeroData = async () => {
     try {
-      const response = await fetch('/api/hero')
-      const result = await response.json()
-      
+      const response = await fetch('/api/hero');
+      const result = await response.json();
+
       if (result.success) {
-        setHeroData(result.data)
-        setFormData(result.data)
+        setHeroData(result.data);
+        setFormData(result.data);
       } else {
-        setMessage({ type: 'error', text: 'Failed to load hero data' })
+        setMessage({ type: 'error', text: 'Failed to load hero data' });
       }
     } catch (error) {
-      console.error('Error fetching hero data:', error)
-      setMessage({ type: 'error', text: 'Failed to load hero data' })
+      console.error('Error fetching hero data:', error);
+      setMessage({ type: 'error', text: 'Failed to load hero data' });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Generate preview data
-  const generatePreview = useCallback(async (data) => {
-    if (!showPreview) return
-    
-    try {
-      setPreviewLoading(true)
-      const response = await fetch('/api/hero/preview', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      })
+  const generatePreview = useCallback(
+    async (data) => {
+      if (!showPreview) return;
 
-      const result = await response.json()
-      if (result.success) {
-        setPreviewData(result.data)
+      try {
+        setPreviewLoading(true);
+        const response = await fetch('/api/hero/preview', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          setPreviewData(result.data);
+        }
+      } catch (error) {
+        console.error('Preview generation error:', error);
+      } finally {
+        setPreviewLoading(false);
       }
-    } catch (error) {
-      console.error('Preview generation error:', error)
-    } finally {
-      setPreviewLoading(false)
-    }
-  }, [showPreview])
+    },
+    [showPreview]
+  );
 
   // Fetch hero data
   useEffect(() => {
     if (session?.user?.role === 'admin') {
-      fetchHeroData()
+      fetchHeroData();
     }
-  }, [session])
+  }, [session]);
 
   // Initialize preview when form data is loaded and preview is enabled
   useEffect(() => {
     if (showPreview && formData && !loading) {
-      generatePreview(formData)
+      generatePreview(formData);
     }
-  }, [showPreview, formData, loading, generatePreview])
+  }, [showPreview, formData, loading, generatePreview]);
 
   // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       if (window.previewTimer) {
-        clearTimeout(window.previewTimer)
+        clearTimeout(window.previewTimer);
       }
-    }
-  }, [])
+    };
+  }, []);
 
   const togglePreview = useCallback(() => {
-    setShowPreview(!showPreview)
+    setShowPreview(!showPreview);
     if (!showPreview) {
       // Generate initial preview when enabling
-      generatePreview(formData)
+      generatePreview(formData);
     } else {
-      setPreviewData(null)
+      setPreviewData(null);
     }
-  }, [showPreview, formData, generatePreview])
+  }, [showPreview, formData, generatePreview]);
 
   const handleSave = useCallback(async () => {
-    setSaving(true)
-    setMessage({ type: '', text: '' })
+    setSaving(true);
+    setMessage({ type: '', text: '' });
 
     try {
       const response = await fetch('/api/hero', {
@@ -131,144 +134,147 @@ export default function HeroAdminPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
-      })
+      });
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (result.success) {
-        setMessage({ type: 'success', text: 'Hero section updated successfully!' })
-        setHeroData(result.data)
+        setMessage({ type: 'success', text: 'Hero section updated successfully!' });
+        setHeroData(result.data);
 
         // Trigger real-time update for the main hero component
         if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('heroDataUpdated'))
+          window.dispatchEvent(new CustomEvent('heroDataUpdated'));
         }
       } else {
-        setMessage({ type: 'error', text: result.error || 'Failed to update hero section' })
+        setMessage({ type: 'error', text: result.error || 'Failed to update hero section' });
       }
     } catch (error) {
-      console.error('Error saving hero data:', error)
-      setMessage({ type: 'error', text: 'Failed to save changes' })
+      console.error('Error saving hero data:', error);
+      setMessage({ type: 'error', text: 'Failed to save changes' });
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }, [formData])
+  }, [formData]);
 
   const handleReset = useCallback(() => {
     if (heroData) {
-      setFormData(heroData)
-      setPreviewData(null)
-      setMessage({ type: 'info', text: 'Changes reverted to last saved version' })
+      setFormData(heroData);
+      setPreviewData(null);
+      setMessage({ type: 'info', text: 'Changes reverted to last saved version' });
     }
-  }, [heroData])
+  }, [heroData]);
 
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Ctrl/Cmd + S to save
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault()
+        e.preventDefault();
         if (!saving) {
-          handleSave()
+          handleSave();
         }
       }
-      
+
       // Ctrl/Cmd + P to toggle preview
       if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-        e.preventDefault()
-        togglePreview()
+        e.preventDefault();
+        togglePreview();
       }
-      
+
       // Escape to close preview
       if (e.key === 'Escape' && showPreview) {
-        setShowPreview(false)
-        setPreviewData(null)
+        setShowPreview(false);
+        setPreviewData(null);
       }
-    }
+    };
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [saving, showPreview, handleSave, togglePreview])
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [saving, showPreview, handleSave, togglePreview]);
 
   const handleInputChange = (path, value) => {
-    setFormData(prev => {
-      const newData = { ...prev }
-      const keys = path.split('.')
-      let current = newData
-      
+    setFormData((prev) => {
+      const newData = { ...prev };
+      const keys = path.split('.');
+      let current = newData;
+
       for (let i = 0; i < keys.length - 1; i++) {
-        current = current[keys[i]]
+        current = current[keys[i]];
       }
-      
-      current[keys[keys.length - 1]] = value
-      
+
+      current[keys[keys.length - 1]] = value;
+
       // Generate preview with debouncing
       if (showPreview) {
-        clearTimeout(window.previewTimer)
+        clearTimeout(window.previewTimer);
         window.previewTimer = setTimeout(() => {
-          generatePreview(newData)
-        }, 500)
+          generatePreview(newData);
+        }, 500);
       }
-      
-      return newData
-    })
-  }
+
+      return newData;
+    });
+  };
 
   const handleSocialLinkChange = (index, field, value) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const newData = {
         ...prev,
-        socialLinks: prev.socialLinks.map((link, i) => 
+        socialLinks: prev.socialLinks.map((link, i) =>
           i === index ? { ...link, [field]: value } : link
-        )
-      }
-      
+        ),
+      };
+
       // Generate preview with debouncing
       if (showPreview) {
-        clearTimeout(window.previewTimer)
+        clearTimeout(window.previewTimer);
         window.previewTimer = setTimeout(() => {
-          generatePreview(newData)
-        }, 500)
+          generatePreview(newData);
+        }, 500);
       }
-      
-      return newData
-    })
-  }
+
+      return newData;
+    });
+  };
 
   const addSocialLink = () => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const newData = {
         ...prev,
-        socialLinks: [...prev.socialLinks, {
-          name: '',
-          url: '',
-          icon: '',
-          order: prev.socialLinks.length + 1
-        }]
-      }
-      
+        socialLinks: [
+          ...prev.socialLinks,
+          {
+            name: '',
+            url: '',
+            icon: '',
+            order: prev.socialLinks.length + 1,
+          },
+        ],
+      };
+
       if (showPreview) {
-        generatePreview(newData)
+        generatePreview(newData);
       }
-      
-      return newData
-    })
-  }
+
+      return newData;
+    });
+  };
 
   const removeSocialLink = (index) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const newData = {
         ...prev,
-        socialLinks: prev.socialLinks.filter((_, i) => i !== index)
-      }
-      
+        socialLinks: prev.socialLinks.filter((_, i) => i !== index),
+      };
+
       if (showPreview) {
-        generatePreview(newData)
+        generatePreview(newData);
       }
-      
-      return newData
-    })
-  }
+
+      return newData;
+    });
+  };
 
   if (status === 'loading' || loading) {
     return (
@@ -280,11 +286,11 @@ export default function HeroAdminPage() {
           </div>
         </div>
       </AdminPageWrapper>
-    )
+    );
   }
 
   if (!session || session.user.role !== 'admin') {
-    return null
+    return null;
   }
 
   return (
@@ -296,8 +302,8 @@ export default function HeroAdminPage() {
             <button
               onClick={togglePreview}
               className={`px-4 py-2 rounded-lg transition-colors ${
-                showPreview 
-                  ? 'bg-blue-600 text-white' 
+                showPreview
+                  ? 'bg-blue-600 text-white'
                   : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
               }`}
             >
@@ -305,12 +311,10 @@ export default function HeroAdminPage() {
               {showPreview ? 'Hide Preview' : 'Show Live Preview'}
             </button>
             {showPreview && (
-              <span className="text-sm text-neutral-600">
-                Preview updates as you type
-              </span>
+              <span className="text-sm text-neutral-600">Preview updates as you type</span>
             )}
           </div>
-          
+
           <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-500">
             <span>Shortcuts:</span>
             <code className="px-2 py-1 bg-neutral-100 rounded">Ctrl+S</code>
@@ -328,11 +332,15 @@ export default function HeroAdminPage() {
 
         {/* Success/Error Messages */}
         {message.text && (
-          <div className={`mb-6 p-4 rounded-lg ${
-            message.type === 'success' ? 'bg-green-50 text-green-800' :
-            message.type === 'error' ? 'bg-red-50 text-red-800' :
-            'bg-blue-50 text-blue-800'
-          }`}>
+          <div
+            className={`mb-6 p-4 rounded-lg ${
+              message.type === 'success'
+                ? 'bg-green-50 text-green-800'
+                : message.type === 'error'
+                  ? 'bg-red-50 text-red-800'
+                  : 'bg-blue-50 text-blue-800'
+            }`}
+          >
             {message.text}
           </div>
         )}
@@ -341,7 +349,6 @@ export default function HeroAdminPage() {
         <div className="grid gap-8 lg:grid-cols-2 mb-8">
           {/* Left Column - Form */}
           <div className="space-y-6">
-            
             {/* Badge Section */}
             <div className="bg-white p-6 rounded-lg border border-neutral-200">
               <h3 className="text-xl font-semibold mb-4">Badge</h3>
@@ -369,7 +376,9 @@ export default function HeroAdminPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">Line 2 (Outlined)</label>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Line 2 (Outlined)
+                  </label>
                   <input
                     type="text"
                     value={formData.heading.line2}
@@ -416,7 +425,9 @@ export default function HeroAdminPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">Description</label>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Description
+                  </label>
                   <textarea
                     value={formData.introduction.text}
                     onChange={(e) => handleInputChange('introduction.text', e.target.value)}
@@ -472,18 +483,18 @@ export default function HeroAdminPage() {
                 </div>
               </div>
             </div>
-
           </div>
 
           {/* Right Column - More Sections */}
           <div className="space-y-6">
-            
             {/* Profile Section */}
             <div className="bg-white p-6 rounded-lg border border-neutral-200">
               <h3 className="text-xl font-semibold mb-4">Profile</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">Image URL</label>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Image URL
+                  </label>
                   <input
                     type="url"
                     value={formData.profile.image.url}
@@ -493,7 +504,9 @@ export default function HeroAdminPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">Image Alt Text</label>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Image Alt Text
+                  </label>
                   <input
                     type="text"
                     value={formData.profile.image.alt}
@@ -504,7 +517,9 @@ export default function HeroAdminPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">Experience Value</label>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Experience Value
+                    </label>
                     <input
                       type="text"
                       value={formData.profile.badge.value}
@@ -514,7 +529,9 @@ export default function HeroAdminPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">Experience Label</label>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Experience Label
+                    </label>
                     <input
                       type="text"
                       value={formData.profile.badge.label}
@@ -539,10 +556,13 @@ export default function HeroAdminPage() {
                   Add Link
                 </button>
               </div>
-              
+
               <div className="space-y-4">
                 {formData.socialLinks.map((link, index) => (
-                  <div key={index} className="p-4 border border-neutral-200 rounded-lg bg-neutral-50">
+                  <div
+                    key={index}
+                    className="p-4 border border-neutral-200 rounded-lg bg-neutral-50"
+                  >
                     <div className="flex items-center justify-between mb-3">
                       <span className="font-medium text-sm">Link {index + 1}</span>
                       <button
@@ -555,7 +575,9 @@ export default function HeroAdminPage() {
                     </div>
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-xs font-medium text-neutral-700 mb-1">Platform Name</label>
+                        <label className="block text-xs font-medium text-neutral-700 mb-1">
+                          Platform Name
+                        </label>
                         <input
                           type="text"
                           value={link.name}
@@ -565,7 +587,9 @@ export default function HeroAdminPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-neutral-700 mb-1">URL</label>
+                        <label className="block text-xs font-medium text-neutral-700 mb-1">
+                          URL
+                        </label>
                         <input
                           type="url"
                           value={link.url}
@@ -575,17 +599,21 @@ export default function HeroAdminPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-neutral-700 mb-1">Icon</label>
+                        <label className="block text-xs font-medium text-neutral-700 mb-1">
+                          Icon
+                        </label>
                         <IconPicker
                           selectedIcon={link.icon}
-                          onIconSelect={(iconClass) => handleSocialLinkChange(index, 'icon', iconClass)}
+                          onIconSelect={(iconClass) =>
+                            handleSocialLinkChange(index, 'icon', iconClass)
+                          }
                           placeholder="Choose an icon..."
                         />
                       </div>
                     </div>
                   </div>
                 ))}
-                
+
                 {formData.socialLinks.length === 0 && (
                   <p className="text-neutral-500 text-sm text-center py-8">
                     No social links added yet. Click "Add Link" to get started.
@@ -593,7 +621,6 @@ export default function HeroAdminPage() {
                 )}
               </div>
             </div>
-
           </div>
         </div>
 
@@ -604,7 +631,9 @@ export default function HeroAdminPage() {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="text-2xl font-bold text-neutral-900 mb-1">Live Preview</h3>
-                  <p className="text-sm text-neutral-600">See your changes in real-time before saving</p>
+                  <p className="text-sm text-neutral-600">
+                    See your changes in real-time before saving
+                  </p>
                 </div>
                 <button
                   onClick={() => setShowPreview(false)}
@@ -653,7 +682,9 @@ export default function HeroAdminPage() {
                         <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
                           PREVIEW (UNSAVED)
                         </span>
-                        <span className="text-sm text-neutral-600">Your changes - click "Save Changes" to publish</span>
+                        <span className="text-sm text-neutral-600">
+                          Your changes - click "Save Changes" to publish
+                        </span>
                       </div>
                       <HeroPreview heroData={previewData} isPreview={true} />
                     </div>
@@ -666,10 +697,15 @@ export default function HeroAdminPage() {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-4 pt-6 border-t border-neutral-200">
-          <ActionButton isSaving={saving} onClick={handleSave} text="Save Changes" savingText="Saving..." />
+          <ActionButton
+            isSaving={saving}
+            onClick={handleSave}
+            text="Save Changes"
+            savingText="Saving..."
+          />
           <ActionButton onClick={handleReset} text="Reset Changes" variant="ghost" />
         </div>
       </div>
     </AdminPageWrapper>
-  )
+  );
 }

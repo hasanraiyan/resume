@@ -1,133 +1,134 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback } from 'react'
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import AdminPageWrapper from '@/components/admin/AdminPageWrapper'
-import IconPicker from '@/components/admin/IconPicker'
-import ActionButton from '@/components/admin/ActionButton'
+import { useState, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
+import IconPicker from '@/components/admin/IconPicker';
+import ActionButton from '@/components/admin/ActionButton';
 
 export default function StatsAdminPage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
-  const [statsData, setStatsData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState({ type: '', text: '' })
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [statsData, setStatsData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
 
   // Form state
   const [formData, setFormData] = useState({
     heading: {
       title: '',
-      description: ''
+      description: '',
     },
     stats: [
       { id: 1, number: '', label: '', icon: '', description: '' },
       { id: 2, number: '', label: '', icon: '', description: '' },
       { id: 3, number: '', label: '', icon: '', description: '' },
-      { id: 4, number: '', label: '', icon: '', description: '' }
+      { id: 4, number: '', label: '', icon: '', description: '' },
     ],
     animation: {
       countUp: true,
-      duration: 2000
-    }
-  })
+      duration: 2000,
+    },
+  });
 
   // Redirect if not admin
   useEffect(() => {
-    if (status === 'loading') return
+    if (status === 'loading') return;
     if (!session || session.user.role !== 'admin') {
-      router.push('/admin/login')
+      router.push('/admin/login');
     }
-  }, [session, status, router])
+  }, [session, status, router]);
 
   const fetchStatsData = async () => {
     try {
-      const response = await fetch('/api/stats')
-      const result = await response.json()
+      const response = await fetch('/api/stats');
+      const result = await response.json();
 
       if (result.success) {
-        setStatsData(result.data)
-        setFormData(result.data)
+        setStatsData(result.data);
+        setFormData(result.data);
       } else {
-        setMessage({ type: 'error', text: 'Failed to load stats data' })
+        setMessage({ type: 'error', text: 'Failed to load stats data' });
       }
     } catch (error) {
-      console.error('Error fetching stats data:', error)
-      setMessage({ type: 'error', text: 'Failed to load stats data' })
+      console.error('Error fetching stats data:', error);
+      setMessage({ type: 'error', text: 'Failed to load stats data' });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Fetch stats data
   useEffect(() => {
     if (session?.user?.role === 'admin') {
-      fetchStatsData()
+      fetchStatsData();
     }
-  }, [session])
+  }, [session]);
 
   const handleInputChange = (path, value) => {
-    setFormData(prev => {
-      const newData = { ...prev }
-      const keys = path.split('.')
-      let current = newData
+    setFormData((prev) => {
+      const newData = { ...prev };
+      const keys = path.split('.');
+      let current = newData;
 
       for (let i = 0; i < keys.length - 1; i++) {
-        current = current[keys[i]]
+        current = current[keys[i]];
       }
 
-      current[keys[keys.length - 1]] = value
+      current[keys[keys.length - 1]] = value;
 
-      return newData
-    })
-  }
+      return newData;
+    });
+  };
 
   const handleStatChange = (index, field, value) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const newData = {
         ...prev,
-        stats: prev.stats.map((stat, i) =>
-          i === index ? { ...stat, [field]: value } : stat
-        )
-      }
+        stats: prev.stats.map((stat, i) => (i === index ? { ...stat, [field]: value } : stat)),
+      };
 
-      return newData
-    })
-  }
+      return newData;
+    });
+  };
 
   const addStat = () => {
-    const newId = Math.max(...formData.stats.map(stat => stat.id)) + 1
-    setFormData(prev => {
+    const newId = Math.max(...formData.stats.map((stat) => stat.id)) + 1;
+    setFormData((prev) => {
       const newData = {
         ...prev,
-        stats: [...prev.stats, {
-          id: newId,
-          number: '',
-          label: '',
-          icon: '',
-          description: ''
-        }]
-      }
+        stats: [
+          ...prev.stats,
+          {
+            id: newId,
+            number: '',
+            label: '',
+            icon: '',
+            description: '',
+          },
+        ],
+      };
 
-      return newData
-    })
-  }
+      return newData;
+    });
+  };
 
   const removeStat = (index) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const newData = {
         ...prev,
-        stats: prev.stats.filter((_, i) => i !== index)
-      }
+        stats: prev.stats.filter((_, i) => i !== index),
+      };
 
-      return newData
-    })
-  }
+      return newData;
+    });
+  };
 
   const handleSave = async () => {
-    setSaving(true)
-    setMessage({ type: '', text: '' })
+    setSaving(true);
+    setMessage({ type: '', text: '' });
 
     try {
       const response = await fetch('/api/stats', {
@@ -136,35 +137,35 @@ export default function StatsAdminPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
-      })
+      });
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (result.success) {
-        setMessage({ type: 'success', text: 'Stats section updated successfully!' })
-        setStatsData(result.data)
+        setMessage({ type: 'success', text: 'Stats section updated successfully!' });
+        setStatsData(result.data);
 
         // Trigger real-time update for the main stats component
         if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('statsDataUpdated'))
+          window.dispatchEvent(new CustomEvent('statsDataUpdated'));
         }
       } else {
-        setMessage({ type: 'error', text: result.error || 'Failed to update stats section' })
+        setMessage({ type: 'error', text: result.error || 'Failed to update stats section' });
       }
     } catch (error) {
-      console.error('Error saving stats data:', error)
-      setMessage({ type: 'error', text: 'Failed to save changes' })
+      console.error('Error saving stats data:', error);
+      setMessage({ type: 'error', text: 'Failed to save changes' });
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const handleReset = () => {
     if (statsData) {
-      setFormData(statsData)
-      setMessage({ type: 'info', text: 'Changes reverted to last saved version' })
+      setFormData(statsData);
+      setMessage({ type: 'info', text: 'Changes reverted to last saved version' });
     }
-  }
+  };
 
   if (status === 'loading' || loading) {
     return (
@@ -176,31 +177,33 @@ export default function StatsAdminPage() {
           </div>
         </div>
       </AdminPageWrapper>
-    )
+    );
   }
 
   if (!session || session.user.role !== 'admin') {
-    return null
+    return null;
   }
 
   return (
     <AdminPageWrapper title="Stats Section">
       <div className="max-w-7xl mx-auto">
-
         {/* Success/Error Messages */}
         {message.text && (
-          <div className={`mb-6 p-4 rounded-lg ${
-            message.type === 'success' ? 'bg-green-50 text-green-800' :
-            message.type === 'error' ? 'bg-red-50 text-red-800' :
-            'bg-blue-50 text-blue-800'
-          }`}>
+          <div
+            className={`mb-6 p-4 rounded-lg ${
+              message.type === 'success'
+                ? 'bg-green-50 text-green-800'
+                : message.type === 'error'
+                  ? 'bg-red-50 text-red-800'
+                  : 'bg-blue-50 text-blue-800'
+            }`}
+          >
             {message.text}
           </div>
         )}
 
         {/* Form Sections */}
         <div className="space-y-8 mb-8">
-
           {/* Section Heading */}
           <div className="bg-white p-6 rounded-lg border border-neutral-200">
             <h3 className="text-xl font-semibold mb-4">Section Heading</h3>
@@ -216,7 +219,9 @@ export default function StatsAdminPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">Description</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Description
+                </label>
                 <input
                   type="text"
                   value={formData.heading.description}
@@ -243,7 +248,10 @@ export default function StatsAdminPage() {
 
             <div className="space-y-6">
               {formData.stats.map((stat, index) => (
-                <div key={stat.id} className="p-4 border border-neutral-200 rounded-lg bg-neutral-50">
+                <div
+                  key={stat.id}
+                  className="p-4 border border-neutral-200 rounded-lg bg-neutral-50"
+                >
                   <div className="flex items-center justify-between mb-3">
                     <span className="font-medium text-sm">Stat {index + 1}</span>
                     {formData.stats.length > 1 && (
@@ -258,7 +266,9 @@ export default function StatsAdminPage() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-neutral-700 mb-1">Number</label>
+                      <label className="block text-xs font-medium text-neutral-700 mb-1">
+                        Number
+                      </label>
                       <input
                         type="text"
                         value={stat.number}
@@ -268,7 +278,9 @@ export default function StatsAdminPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-neutral-700 mb-1">Label</label>
+                      <label className="block text-xs font-medium text-neutral-700 mb-1">
+                        Label
+                      </label>
                       <input
                         type="text"
                         value={stat.label}
@@ -278,7 +290,9 @@ export default function StatsAdminPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-neutral-700 mb-1">Icon</label>
+                      <label className="block text-xs font-medium text-neutral-700 mb-1">
+                        Icon
+                      </label>
                       <IconPicker
                         selectedIcon={stat.icon}
                         onIconSelect={(iconClass) => handleStatChange(index, 'icon', iconClass)}
@@ -286,7 +300,9 @@ export default function StatsAdminPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-neutral-700 mb-1">Description</label>
+                      <label className="block text-xs font-medium text-neutral-700 mb-1">
+                        Description
+                      </label>
                       <input
                         type="text"
                         value={stat.description}
@@ -318,11 +334,15 @@ export default function StatsAdminPage() {
                 </label>
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">Animation Duration (ms)</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Animation Duration (ms)
+                </label>
                 <input
                   type="number"
                   value={formData.animation.duration}
-                  onChange={(e) => handleInputChange('animation.duration', parseInt(e.target.value))}
+                  onChange={(e) =>
+                    handleInputChange('animation.duration', parseInt(e.target.value))
+                  }
                   className="w-full p-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                   placeholder="2000"
                   min="500"
@@ -331,15 +351,19 @@ export default function StatsAdminPage() {
               </div>
             </div>
           </div>
-
         </div>
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-4 pt-6 border-t border-neutral-200">
-          <ActionButton isSaving={saving} onClick={handleSave} text="Save Changes" savingText="Saving..." />
+          <ActionButton
+            isSaving={saving}
+            onClick={handleSave}
+            text="Save Changes"
+            savingText="Saving..."
+          />
           <ActionButton onClick={handleReset} text="Reset Changes" variant="ghost" />
         </div>
       </div>
     </AdminPageWrapper>
-  )
+  );
 }

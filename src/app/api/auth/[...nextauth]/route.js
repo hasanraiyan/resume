@@ -8,8 +8,8 @@ export const authOptions = {
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        username: { label: "Username", type: "text" },
-        password: { label: "Password", type: "password" }
+        username: { label: 'Username', type: 'text' },
+        password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
         try {
@@ -21,23 +21,23 @@ export const authOptions = {
             providedUsername: credentials?.username,
             expectedUsername: adminUsername,
             hasPassword: !!credentials?.password,
-            hasExpectedPassword: !!adminPassword
+            hasExpectedPassword: !!adminPassword,
           });
 
           if (
-            credentials?.username && 
-            credentials?.password && 
-            credentials.username === adminUsername && 
+            credentials?.username &&
+            credentials?.password &&
+            credentials.username === adminUsername &&
             credentials.password === adminPassword
           ) {
-            return { 
-              id: "1", 
-              name: "Admin", 
-              email: "admin@example.com", 
-              role: "admin" 
+            return {
+              id: '1',
+              name: 'Admin',
+              email: 'admin@example.com',
+              role: 'admin',
             };
           }
-          
+
           return null;
         } catch (error) {
           console.error('Authorization error:', error);
@@ -87,9 +87,9 @@ export const authOptions = {
     async redirect({ url, baseUrl }) {
       try {
         console.log('NextAuth redirect callback:', { url, baseUrl });
-        
+
         // Allows relative callback URLs
-        if (url.startsWith("/")) {
+        if (url.startsWith('/')) {
           const redirectUrl = `${baseUrl}${url}`;
           console.log('Redirecting to:', redirectUrl);
           return redirectUrl;
@@ -99,7 +99,7 @@ export const authOptions = {
           console.log('Redirecting to same origin:', url);
           return url;
         }
-        
+
         console.log('Falling back to baseUrl:', baseUrl);
         return baseUrl;
       } catch (error) {

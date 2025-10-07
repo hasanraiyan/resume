@@ -32,12 +32,15 @@ export default async function sitemap() {
   // Fetch published articles
   const { success: articlesSuccess, articles } = await getAllPublishedArticles();
 
-  const articleEntries = articlesSuccess && articles ? articles.map((article) => ({
-    url: `${baseUrl}/blog/${article.slug}`,
-    lastModified: new Date(article.publishedAt || article.createdAt),
-    changeFrequency: 'monthly',
-    priority: 0.7,
-  })) : [];
+  const articleEntries =
+    articlesSuccess && articles
+      ? articles.map((article) => ({
+          url: `${baseUrl}/blog/${article.slug}`,
+          lastModified: new Date(article.publishedAt || article.createdAt),
+          changeFrequency: 'monthly',
+          priority: 0.7,
+        }))
+      : [];
 
   // Fetch projects
   const projects = await Project.find({}).lean();

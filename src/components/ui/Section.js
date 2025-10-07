@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { cn } from '@/utils/classNames'
-import { componentStyles } from '@/styles/components'
+import { cn } from '@/utils/classNames';
+import { componentStyles } from '@/styles/components';
 
 /**
  * Reusable Section Component
@@ -28,20 +28,12 @@ export default function Section({
       <div className={cn(componentStyles.sections.container, containerClassName)}>
         {(title || description) && (
           <div className={centered ? componentStyles.sections.header : 'mb-12 sm:mb-16'}>
-            {title && (
-              <h2 className={componentStyles.sections.title}>
-                {title}
-              </h2>
-            )}
-            {description && (
-              <p className={componentStyles.sections.description}>
-                {description}
-              </p>
-            )}
+            {title && <h2 className={componentStyles.sections.title}>{title}</h2>}
+            {description && <p className={componentStyles.sections.description}>{description}</p>}
           </div>
         )}
         {children}
       </div>
     </section>
-  )
+  );
 }

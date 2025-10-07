@@ -39,12 +39,14 @@ export default function ChatbotWidget() {
           if (settings.isActive) {
             // Initialize with dynamic welcome message
             const welcomeMessage = `Hi! I'm ${settings.aiName}, Raiyan's AI assistant. I can help you learn about his projects and experience. What would you like to know?`;
-            setMessages([{
-              id: 1,
-              role: 'assistant',
-              content: welcomeMessage,
-              timestamp: new Date()
-            }]);
+            setMessages([
+              {
+                id: 1,
+                role: 'assistant',
+                content: welcomeMessage,
+                timestamp: new Date(),
+              },
+            ]);
           }
         } else {
           // If the response is not OK, assume the chatbot should be disabled.
@@ -60,9 +62,6 @@ export default function ChatbotWidget() {
     fetchChatbotSettings();
   }, []);
 
-
-
-
   const sendMessage = async (e) => {
     e.preventDefault();
 
@@ -72,12 +71,11 @@ export default function ChatbotWidget() {
       id: Date.now(),
       role: 'user',
       content: inputMessage.trim(),
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
-
     // Add user message to chat
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInputMessage('');
     setIsLoading(true);
 
@@ -85,10 +83,9 @@ export default function ChatbotWidget() {
       // Get analytics instance for session tracking
       const analytics = getAnalytics();
 
-
       // Prepare chat history for API
       const chatHistory = messages
-        .filter(msg => msg.role !== 'system')
+        .filter((msg) => msg.role !== 'system')
         .map(({ role, content }) => ({ role, content }));
 
       // Make API call
@@ -101,7 +98,7 @@ export default function ChatbotWidget() {
           userMessage: userMessage.content,
           chatHistory,
           sessionId: analytics.sessionId,
-          path: window.location.pathname
+          path: window.location.pathname,
         }),
       });
 
@@ -117,11 +114,11 @@ export default function ChatbotWidget() {
         id: Date.now() + 1,
         role: 'assistant',
         content: '',
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Add empty assistant message
-      setMessages(prev => [...prev, assistantMessage]);
+      setMessages((prev) => [...prev, assistantMessage]);
 
       try {
         while (true) {
@@ -133,16 +130,15 @@ export default function ChatbotWidget() {
           assistantMessage.content += chunk;
 
           // Update the message in real-time
-          setMessages(prev => prev.map(msg =>
-            msg.id === assistantMessage.id
-              ? { ...msg, content: assistantMessage.content }
-              : msg
-          ));
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantMessage.id ? { ...msg, content: assistantMessage.content } : msg
+            )
+          );
         }
       } finally {
         reader.releaseLock();
       }
-
     } catch (error) {
       console.error('Error sending message:', error);
 
@@ -150,11 +146,11 @@ export default function ChatbotWidget() {
       const errorMessage = {
         id: Date.now() + 1,
         role: 'assistant',
-        content: 'Sorry, I\'m having trouble responding right now. Please try again in a moment.',
-        timestamp: new Date()
+        content: "Sorry, I'm having trouble responding right now. Please try again in a moment.",
+        timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -167,16 +163,16 @@ export default function ChatbotWidget() {
       id: Date.now(),
       role: 'user',
       content: promptText,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
     try {
       const analytics = getAnalytics();
       const chatHistory = messages
-        .filter(msg => msg.role !== 'system')
+        .filter((msg) => msg.role !== 'system')
         .map(({ role, content }) => ({ role, content }));
 
       const response = await fetch('/api/chat', {
@@ -186,7 +182,7 @@ export default function ChatbotWidget() {
           userMessage: userMessage.content,
           chatHistory,
           sessionId: analytics.sessionId,
-          path: window.location.pathname
+          path: window.location.pathname,
         }),
       });
 
@@ -198,10 +194,10 @@ export default function ChatbotWidget() {
         id: Date.now() + 1,
         role: 'assistant',
         content: '',
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, assistantMessage]);
+      setMessages((prev) => [...prev, assistantMessage]);
 
       try {
         while (true) {
@@ -209,9 +205,11 @@ export default function ChatbotWidget() {
           if (done) break;
           const chunk = decoder.decode(value, { stream: true });
           assistantMessage.content += chunk;
-          setMessages(prev => prev.map(msg =>
-            msg.id === assistantMessage.id ? { ...msg, content: assistantMessage.content } : msg
-          ));
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantMessage.id ? { ...msg, content: assistantMessage.content } : msg
+            )
+          );
         }
       } finally {
         reader.releaseLock();
@@ -221,10 +219,10 @@ export default function ChatbotWidget() {
       const errorMessage = {
         id: Date.now() + 1,
         role: 'assistant',
-        content: 'Sorry, I\'m having trouble. Please try again.',
-        timestamp: new Date()
+        content: "Sorry, I'm having trouble. Please try again.",
+        timestamp: new Date(),
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -233,26 +231,31 @@ export default function ChatbotWidget() {
   const suggestedPrompts = [
     { text: "Tell me about Raiyan's projects" },
     { text: "What's his tech stack?" },
-    { text: "How can I get in touch?" },
-    { text: "Show me his latest blog post" },
+    { text: 'How can I get in touch?' },
+    { text: 'Show me his latest blog post' },
   ];
 
   const clearChat = () => {
     if (chatbotSettings) {
       const welcomeMessage = `Hi! I'm ${chatbotSettings.aiName}, Raiyan's AI assistant. I can help you learn about his projects and experience. What would you like to know?`;
-      setMessages([{
-        id: 1,
-        role: 'assistant',
-        content: welcomeMessage,
-        timestamp: new Date()
-      }]);
+      setMessages([
+        {
+          id: 1,
+          role: 'assistant',
+          content: welcomeMessage,
+          timestamp: new Date(),
+        },
+      ]);
     } else {
-      setMessages([{
-        id: 1,
-        role: 'assistant',
-        content: "Hi! I'm Kiro, Raiyan's AI assistant. I can help you learn about his projects and experience. What would you like to know?",
-        timestamp: new Date()
-      }]);
+      setMessages([
+        {
+          id: 1,
+          role: 'assistant',
+          content:
+            "Hi! I'm Kiro, Raiyan's AI assistant. I can help you learn about his projects and experience. What would you like to know?",
+          timestamp: new Date(),
+        },
+      ]);
     }
   };
 
@@ -267,10 +270,13 @@ export default function ChatbotWidget() {
   if (!isOpen) {
     return (
       <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
-        <button onClick={handleOpenChat} className="group relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-black to-neutral-900 hover:from-neutral-900 hover:to-black text-white shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center justify-center border border-white/20 backdrop-blur-sm" aria-label="Open chat" >
+        <button
+          onClick={handleOpenChat}
+          className="group relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-black to-neutral-900 hover:from-neutral-900 hover:to-black text-white shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center justify-center border border-white/20 backdrop-blur-sm"
+          aria-label="Open chat"
+        >
           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 relative z-10" />
-
         </button>
       </div>
     );
@@ -288,12 +294,17 @@ export default function ChatbotWidget() {
               <div className="absolute inset-0 w-3 h-3 bg-green-500 rounded-full animate-ping opacity-20"></div>
             </div>
             <div>
-              <h3 className="font-semibold text-neutral-900 text-base sm:text-lg">{chatbotSettings?.aiName || 'Kiro'}</h3>
+              <h3 className="font-semibold text-neutral-900 text-base sm:text-lg">
+                {chatbotSettings?.aiName || 'Kiro'}
+              </h3>
               <p className="text-xs text-neutral-500 -mt-1 hidden sm:block">AI Assistant</p>
             </div>
           </div>
           <div className="flex items-center space-x-1 sm:space-x-2">
-            <button onClick={clearChat} className="px-2 py-1 sm:px-3 sm:py-1.5 text-xs font-medium text-neutral-600 hover:text-neutral-900 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-all duration-200 flex items-center gap-1" >
+            <button
+              onClick={clearChat}
+              className="px-2 py-1 sm:px-3 sm:py-1.5 text-xs font-medium text-neutral-600 hover:text-neutral-900 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-all duration-200 flex items-center gap-1"
+            >
               <Trash2 className="w-3 h-3" />
               <span className="hidden sm:inline">Clear</span>
             </button>
@@ -328,12 +339,14 @@ export default function ChatbotWidget() {
                 ) : (
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
                 )}
-                <p className={`text-xs mt-1 sm:mt-2 ${
-                  message.role === 'user' ? 'text-neutral-300' : 'text-neutral-500'
-                }`}>
+                <p
+                  className={`text-xs mt-1 sm:mt-2 ${
+                    message.role === 'user' ? 'text-neutral-300' : 'text-neutral-500'
+                  }`}
+                >
                   {message.timestamp.toLocaleTimeString([], {
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
                   })}
                 </p>
               </div>
@@ -346,10 +359,18 @@ export default function ChatbotWidget() {
                 <div className="flex items-center space-x-2">
                   <div className="flex space-x-1">
                     <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div
+                      className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"
+                      style={{ animationDelay: '0.1s' }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"
+                      style={{ animationDelay: '0.2s' }}
+                    ></div>
                   </div>
-                  <span className="text-xs text-neutral-600">{chatbotSettings?.aiName || 'Kiro'} is typing...</span>
+                  <span className="text-xs text-neutral-600">
+                    {chatbotSettings?.aiName || 'Kiro'} is typing...
+                  </span>
                 </div>
               </div>
             </div>
@@ -374,12 +395,13 @@ export default function ChatbotWidget() {
             </div>
           </div>
         )}
-       
 
         {/* Input */}
         {/* ✨ [UI FIX] - The input section now has simplified styling to work with the persistent prompts. */}
-        <div className={`p-3 sm:p-4 bg-white/80 backdrop-blur-sm rounded-b-2xl ${isLoading ? 'border-t border-neutral-200/50' : ''}`}>
-           <form onSubmit={sendMessage} className="flex items-center gap-2">
+        <div
+          className={`p-3 sm:p-4 bg-white/80 backdrop-blur-sm rounded-b-2xl ${isLoading ? 'border-t border-neutral-200/50' : ''}`}
+        >
+          <form onSubmit={sendMessage} className="flex items-center gap-2">
             <input
               ref={inputRef}
               type="text"

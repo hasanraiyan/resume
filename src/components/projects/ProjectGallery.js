@@ -1,56 +1,56 @@
-'use client'
+'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react';
 
 export default function ProjectGallery({ images }) {
-  const [activeImage, setActiveImage] = useState(0)
-  const [thumbnailStart, setThumbnailStart] = useState(0)
-  const thumbnailRef = useRef(null)
+  const [activeImage, setActiveImage] = useState(0);
+  const [thumbnailStart, setThumbnailStart] = useState(0);
+  const thumbnailRef = useRef(null);
 
-  const THUMBNAILS_TO_SHOW = 6 // Show 6 thumbnails at once
+  const THUMBNAILS_TO_SHOW = 6; // Show 6 thumbnails at once
 
   const nextImage = useCallback(() => {
-    setActiveImage((prev) => (prev + 1) % images.length)
-  }, [images.length])
+    setActiveImage((prev) => (prev + 1) % images.length);
+  }, [images.length]);
 
   const prevImage = useCallback(() => {
-    setActiveImage((prev) => (prev - 1 + images.length) % images.length)
-  }, [images.length])
+    setActiveImage((prev) => (prev - 1 + images.length) % images.length);
+  }, [images.length]);
 
   const nextThumbnails = () => {
     if (thumbnailStart + THUMBNAILS_TO_SHOW < images.length) {
-      setThumbnailStart(prev => prev + 1)
+      setThumbnailStart((prev) => prev + 1);
     }
-  }
+  };
 
   const prevThumbnails = () => {
     if (thumbnailStart > 0) {
-      setThumbnailStart(prev => prev - 1)
+      setThumbnailStart((prev) => prev - 1);
     }
-  }
+  };
 
   // Auto-scroll thumbnails to keep active image visible
   useEffect(() => {
     if (activeImage < thumbnailStart) {
-      setThumbnailStart(activeImage)
+      setThumbnailStart(activeImage);
     } else if (activeImage >= thumbnailStart + THUMBNAILS_TO_SHOW) {
-      setThumbnailStart(activeImage - THUMBNAILS_TO_SHOW + 1)
+      setThumbnailStart(activeImage - THUMBNAILS_TO_SHOW + 1);
     }
-  }, [activeImage, thumbnailStart])
+  }, [activeImage, thumbnailStart]);
 
   // Keyboard navigation
   useEffect(() => {
     const handleKeyPress = (e) => {
-      if (e.key === 'ArrowLeft') prevImage()
-      if (e.key === 'ArrowRight') nextImage()
-    }
-    window.addEventListener('keydown', handleKeyPress)
-    return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [nextImage, prevImage])
+      if (e.key === 'ArrowLeft') prevImage();
+      if (e.key === 'ArrowRight') nextImage();
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [nextImage, prevImage]);
 
-  if (!images || images.length === 0) return null
+  if (!images || images.length === 0) return null;
 
-  const visibleThumbnails = images.slice(thumbnailStart, thumbnailStart + THUMBNAILS_TO_SHOW)
+  const visibleThumbnails = images.slice(thumbnailStart, thumbnailStart + THUMBNAILS_TO_SHOW);
 
   return (
     <div className="space-y-3">
@@ -87,7 +87,12 @@ export default function ProjectGallery({ images }) {
                   aria-label="Previous image"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
                   </svg>
                 </button>
                 <button
@@ -96,7 +101,12 @@ export default function ProjectGallery({ images }) {
                   aria-label="Next image"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
                   </svg>
                 </button>
               </>
@@ -109,7 +119,7 @@ export default function ProjectGallery({ images }) {
               </div>
             )}
           </div>
-          
+
           {images[activeImage].caption && (
             <div className="bg-gray-50 px-4 py-2">
               <p className="text-sm text-gray-600 text-center">{images[activeImage].caption}</p>
@@ -129,8 +139,18 @@ export default function ProjectGallery({ images }) {
                 className="flex-shrink-0 p-1 hover:bg-gray-100 rounded transition-colors"
                 aria-label="Previous thumbnails"
               >
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                <svg
+                  className="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
                 </svg>
               </button>
             )}
@@ -138,7 +158,7 @@ export default function ProjectGallery({ images }) {
             {/* thumbnails */}
             <div className="flex gap-2 overflow-hidden" ref={thumbnailRef}>
               {visibleThumbnails.map((image, index) => {
-                const actualIndex = thumbnailStart + index
+                const actualIndex = thumbnailStart + index;
                 return (
                   <button
                     key={image.url + actualIndex}
@@ -149,13 +169,13 @@ export default function ProjectGallery({ images }) {
                         : 'opacity-60 hover:opacity-100'
                     }`}
                   >
-                    <img 
-                      src={image.url} 
+                    <img
+                      src={image.url}
                       alt={image.alt}
                       className="absolute inset-0 w-full h-full object-cover"
                     />
                   </button>
-                )
+                );
               })}
             </div>
 
@@ -166,8 +186,18 @@ export default function ProjectGallery({ images }) {
                 className="flex-shrink-0 p-1 hover:bg-gray-100 rounded transition-colors"
                 aria-label="Next thumbnails"
               >
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <svg
+                  className="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </button>
             )}
@@ -176,21 +206,23 @@ export default function ProjectGallery({ images }) {
           {/* Thumbnail indicators */}
           {images.length > THUMBNAILS_TO_SHOW && (
             <div className="flex justify-center mt-2 gap-1">
-              {Array.from({ length: Math.ceil(images.length / THUMBNAILS_TO_SHOW) }).map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setThumbnailStart(index * THUMBNAILS_TO_SHOW)}
-                  className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                    Math.floor(thumbnailStart / THUMBNAILS_TO_SHOW) === index
-                      ? 'bg-black'
-                      : 'bg-gray-300 hover:bg-gray-400'
-                  }`}
-                />
-              ))}
+              {Array.from({ length: Math.ceil(images.length / THUMBNAILS_TO_SHOW) }).map(
+                (_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setThumbnailStart(index * THUMBNAILS_TO_SHOW)}
+                    className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                      Math.floor(thumbnailStart / THUMBNAILS_TO_SHOW) === index
+                        ? 'bg-black'
+                        : 'bg-gray-300 hover:bg-gray-400'
+                    }`}
+                  />
+                )
+              )}
             </div>
           )}
         </div>
       )}
     </div>
-  )
+  );
 }

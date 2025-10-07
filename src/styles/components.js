@@ -1,4 +1,4 @@
-import { designTokens } from './tokens'
+import { designTokens } from './tokens';
 
 // ========================================
 // 🎨 COMPONENT STYLES
@@ -16,7 +16,7 @@ export const componentStyles = {
       font-semibold transition-all duration-300
       focus:outline-none hover-target
     `,
-    
+
     // Primary button (black background)
     primary: `
       bg-black text-white
@@ -25,7 +25,7 @@ export const componentStyles = {
       text-sm sm:text-base
       magnetic-btn
     `,
-    
+
     // Secondary button (outlined)
     secondary: `
       border-2 border-black text-black
@@ -34,19 +34,19 @@ export const componentStyles = {
       text-sm sm:text-base
       magnetic-btn
     `,
-    
+
     // Ghost button (text only)
     ghost: `
       text-black hover:text-gray-600
       underline-animate
       text-sm sm:text-base font-semibold
     `,
-    
+
     // Small button
     small: `
       px-4 py-2 text-xs sm:text-sm
     `,
-    
+
     // Large button
     large: `
       px-10 sm:px-14 py-4 sm:py-5
@@ -62,16 +62,16 @@ export const componentStyles = {
       bg-white rounded-lg
       transition-shadow duration-300
     `,
-    
+
     elevated: `
       shadow-lg hover:shadow-2xl
     `,
-    
+
     bordered: `
       border-2 border-gray-200
       hover:border-black
     `,
-    
+
     interactive: `
       hover-target cursor-pointer
       transform transition-transform
@@ -90,13 +90,13 @@ export const componentStyles = {
       transition text-sm sm:text-base
       bg-transparent hover-target
     `,
-    
+
     // Label styles
     label: `
       block text-xs font-semibold mb-2
       tracking-wider uppercase
     `,
-    
+
     // Textarea
     textarea: `
       w-full border-b-2 border-gray-300 pb-3
@@ -104,7 +104,7 @@ export const componentStyles = {
       transition text-sm sm:text-base
       resize-none bg-transparent hover-target
     `,
-    
+
     // Select/Dropdown trigger
     select: `
       w-full border-b-2 border-gray-300 pb-3
@@ -123,14 +123,14 @@ export const componentStyles = {
       text-xs font-semibold tracking-widest
       text-gray-600 uppercase
     `,
-    
+
     // Technology tag
     tag: `
       px-3 py-1.5 bg-gray-100
       text-xs sm:text-sm font-semibold
       inline-block
     `,
-    
+
     // Number badge (like "01")
     number: `
       text-xs font-semibold tracking-wider
@@ -146,23 +146,23 @@ export const componentStyles = {
     wrapper: `
       py-16 sm:py-20 md:py-24
     `,
-    
+
     // Section container
     container: `
       max-w-6xl mx-auto px-4 sm:px-6 lg:px-12
     `,
-    
+
     // Section header (centered)
     header: `
       text-center mb-12 sm:mb-16
     `,
-    
+
     // Section title
     title: `
       text-3xl sm:text-4xl md:text-5xl font-bold
       mb-4 sm:mb-5
     `,
-    
+
     // Section description
     description: `
       text-base sm:text-lg text-gray-600
@@ -179,14 +179,14 @@ export const componentStyles = {
       bg-white bg-opacity-90 backdrop-blur-sm
       border-b border-gray-200
     `,
-    
+
     // Nav link
     link: `
       text-sm lg:text-base text-gray-800
       hover:text-gray-600 font-medium
       underline-animate transition hover-target
     `,
-    
+
     // Logo
     logo: `
       text-xl sm:text-2xl font-bold hover-target
@@ -203,18 +203,18 @@ export const componentStyles = {
       gap-8 sm:gap-10 md:gap-12
       items-center
     `,
-    
+
     // Feature grid (2x2)
     features: `
       grid grid-cols-2 gap-4 sm:gap-6
     `,
-    
+
     // Stats grid
     stats: `
       grid grid-cols-2 md:grid-cols-4
       gap-8 sm:gap-10 text-center
     `,
-    
+
     // Projects list
     projects: `
       space-y-12 sm:space-y-16 md:space-y-20
@@ -230,36 +230,36 @@ export const componentStyles = {
       text-4xl sm:text-5xl md:text-6xl lg:text-7xl
       font-bold leading-none
     `,
-    
+
     // Heading 2
     h2: `
       text-3xl sm:text-4xl md:text-5xl
       font-bold
     `,
-    
+
     // Heading 3
     h3: `
       text-2xl sm:text-3xl md:text-4xl
       font-bold
     `,
-    
+
     // Body large
     bodyLarge: `
       text-base sm:text-lg text-gray-600
       leading-relaxed
     `,
-    
+
     // Body regular
     body: `
       text-sm sm:text-base text-gray-700
       leading-relaxed
     `,
-    
+
     // Small text
     small: `
       text-xs sm:text-sm text-gray-600
     `,
-    
+
     // Stroke text (outline)
     stroke: `
       text-stroke
@@ -275,22 +275,22 @@ export const componentStyles = {
       image-reveal rounded-lg overflow-hidden
       shadow-2xl hover-target
     `,
-    
+
     // Underline animation
     underlineAnimate: `
       underline-animate
     `,
-    
+
     // Magnetic button
     magnetic: `
       magnetic-btn
     `,
-    
+
     // Hover target (for custom cursor)
     hoverTarget: `
       hover-target
     `,
   },
-}
+};
 
-export default componentStyles
+export default componentStyles;

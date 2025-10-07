@@ -27,21 +27,21 @@ export async function GET(request) {
     // 1. Fetch all searchable content from the database
     const [projectResults, articleResults] = await Promise.all([
       Project.find({}).select('slug title description category tags').lean(),
-      Article.find({ status: 'published' }).select('slug title excerpt tags').lean()
+      Article.find({ status: 'published' }).select('slug title excerpt tags').lean(),
     ]);
 
     // 2. Prepare the data for Fuse.js
     const searchableData = [
-      ...projectResults.map(project => ({
+      ...projectResults.map((project) => ({
         ...project,
         type: 'project',
       })),
-      ...articleResults.map(article => ({
+      ...articleResults.map((article) => ({
         ...article,
         type: 'article',
         // Use 'excerpt' as the 'description' for consistent searching
         description: article.excerpt,
-      }))
+      })),
     ];
 
     // 3. Configure and run Fuse.js search
@@ -55,14 +55,14 @@ export async function GET(request) {
         { name: 'category', weight: 0.4 },
         { name: 'description', weight: 0.3 }, // Description/excerpt is less important
         { name: 'excerpt', weight: 0.3 },
-      ]
+      ],
     };
 
     const fuse = new Fuse(searchableData, fuseOptions);
     const fuseResults = fuse.search(query);
 
     // 4. Format results for the frontend
-    const results = fuseResults.map(result => ({
+    const results = fuseResults.map((result) => ({
       id: result.item._id,
       title: result.item.title,
       slug: result.item.slug,
@@ -76,9 +76,6 @@ export async function GET(request) {
     return Response.json({ results });
   } catch (error) {
     console.error('Search error:', error);
-    return Response.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

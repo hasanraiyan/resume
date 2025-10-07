@@ -31,7 +31,10 @@ class AnalyticsTracker {
     console.log('=== SESSION DEBUG ===');
     console.log('Current time:', new Date(now).toISOString());
     console.log('Stored session ID:', storedSessionId);
-    console.log('Stored expiry:', storedExpiry ? new Date(parseInt(storedExpiry)).toISOString() : 'none');
+    console.log(
+      'Stored expiry:',
+      storedExpiry ? new Date(parseInt(storedExpiry)).toISOString() : 'none'
+    );
 
     // Check if existing session is still valid
     if (storedSessionId && storedExpiry && parseInt(storedExpiry) > now) {
@@ -44,7 +47,12 @@ class AnalyticsTracker {
     localStorage.setItem(SESSION_KEY, newSessionId);
     localStorage.setItem(SESSION_EXPIRY_KEY, (now + SESSION_DURATION).toString());
 
-    console.log('Created new session:', newSessionId, 'expires:', new Date(now + SESSION_DURATION).toISOString());
+    console.log(
+      'Created new session:',
+      newSessionId,
+      'expires:',
+      new Date(now + SESSION_DURATION).toISOString()
+    );
 
     return newSessionId;
   }
@@ -59,17 +67,35 @@ class AnalyticsTracker {
 
     const userAgent = navigator.userAgent.toLowerCase();
     const botPatterns = [
-      'bot', 'spider', 'crawler', 'scraper', 'monitoring', 'check',
-      'wget', 'curl', 'python-requests', 'go-http-client',
-      'java', 'okhttp', 'axios', 'node-fetch',
-      'facebookexternalhit', 'twitterbot', 'linkedinbot',
-      'whatsapp', 'telegrambot', 'discordbot'
+      'bot',
+      'spider',
+      'crawler',
+      'scraper',
+      'monitoring',
+      'check',
+      'wget',
+      'curl',
+      'python-requests',
+      'go-http-client',
+      'java',
+      'okhttp',
+      'axios',
+      'node-fetch',
+      'facebookexternalhit',
+      'twitterbot',
+      'linkedinbot',
+      'whatsapp',
+      'telegrambot',
+      'discordbot',
     ];
 
-    const isBotDetected = botPatterns.some(pattern => userAgent.includes(pattern));
+    const isBotDetected = botPatterns.some((pattern) => userAgent.includes(pattern));
     console.log('=== BOT DETECTION DEBUG ===');
     console.log('User agent:', userAgent);
-    console.log('Bot patterns found:', botPatterns.filter(pattern => userAgent.includes(pattern)));
+    console.log(
+      'Bot patterns found:',
+      botPatterns.filter((pattern) => userAgent.includes(pattern))
+    );
     console.log('Is bot detected:', isBotDetected);
 
     return isBotDetected;
@@ -83,7 +109,7 @@ class AnalyticsTracker {
     this.trackEvent('pageview', currentPath, {
       title: document.title,
       url: window.location.href,
-      referrer: document.referrer
+      referrer: document.referrer,
     });
   }
 
@@ -98,7 +124,7 @@ class AnalyticsTracker {
       userAgent: navigator.userAgent,
       referrer: document.referrer,
       properties,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     console.log('=== CLIENT ANALYTICS DEBUG ===');
@@ -177,7 +203,7 @@ class AnalyticsTracker {
 
     // Track programmatic navigation (for future compatibility)
     const originalPushState = history.pushState;
-    history.pushState = function(state, title, url) {
+    history.pushState = function (state, title, url) {
       originalPushState.apply(history, arguments);
       handlePushState();
     };
@@ -190,7 +216,7 @@ class AnalyticsTracker {
   trackCustomEvent(eventName, path, properties = {}) {
     this.trackEvent('custom', path, {
       eventName,
-      ...properties
+      ...properties,
     });
   }
 
@@ -200,12 +226,12 @@ class AnalyticsTracker {
       tag: element.tagName.toLowerCase(),
       id: element.id,
       className: element.className,
-      textContent: element.textContent?.substring(0, 100) // Truncate long text
+      textContent: element.textContent?.substring(0, 100), // Truncate long text
     };
 
     this.trackEvent('click', window.location.pathname, {
       element: elementInfo,
-      ...properties
+      ...properties,
     });
   }
 }

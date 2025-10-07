@@ -27,10 +27,7 @@ export default async function ArticlesPage() {
       {articles.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-gray-500 mb-4">No articles found.</div>
-          <Link
-            href="/admin/articles/new"
-            className="text-blue-600 hover:text-blue-800"
-          >
+          <Link href="/admin/articles/new" className="text-blue-600 hover:text-blue-800">
             Create your first article
           </Link>
         </div>
@@ -56,9 +53,7 @@ export default async function ArticlesPage() {
                           {article.status}
                         </span>
                       </div>
-                      <p className="mt-1 text-sm text-gray-600 truncate">
-                        {article.excerpt}
-                      </p>
+                      <p className="mt-1 text-sm text-gray-600 truncate">{article.excerpt}</p>
                       <p className="mt-1 text-xs text-gray-500">
                         Created: {new Date(article.createdAt).toLocaleDateString()}
                         {article.publishedAt && (

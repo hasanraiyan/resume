@@ -1,19 +1,19 @@
-import { notFound } from 'next/navigation'
-import Navbar from '@/components/Navbar'
-import Footer from '@/components/Footer'
-import CustomCursor from '@/components/CustomCursor'
-import ProjectDetailClient from '@/components/projects/ProjectDetailClient'
-import dbConnect from '@/lib/dbConnect'
-import Project from '@/models/Project'
+import { notFound } from 'next/navigation';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import CustomCursor from '@/components/CustomCursor';
+import ProjectDetailClient from '@/components/projects/ProjectDetailClient';
+import dbConnect from '@/lib/dbConnect';
+import Project from '@/models/Project';
 
 // Helper function to recursively convert MongoDB documents to plain objects
 function serializeMongoDocument(obj) {
   if (!obj) return obj;
-  
+
   if (Array.isArray(obj)) {
     return obj.map(serializeMongoDocument);
   }
-  
+
   if (typeof obj === 'object' && obj !== null) {
     const serialized = {};
     for (const key in obj) {
@@ -27,7 +27,7 @@ function serializeMongoDocument(obj) {
     }
     return serialized;
   }
-  
+
   return obj;
 }
 
@@ -36,47 +36,47 @@ function serializeMongoDocument(obj) {
 // Pre-render all project pages at build time
 // ========================================
 export async function generateStaticParams() {
-  await dbConnect()
-  const projects = await Project.find({}, 'slug').lean()
-  
+  await dbConnect();
+  const projects = await Project.find({}, 'slug').lean();
+
   return projects.map((project) => ({
     slug: project.slug,
-  }))
+  }));
 }
 
 // ========================================
 // 🎯 GENERATE METADATA (SEO)
 // ========================================
 export async function generateMetadata({ params }) {
-  await dbConnect()
-  const { slug } = await params
-  const project = await Project.findOne({ slug }).lean()
-  
+  await dbConnect();
+  const { slug } = await params;
+  const project = await Project.findOne({ slug }).lean();
+
   if (!project) {
     return {
       title: 'Project Not Found',
-    }
+    };
   }
 
   return {
     title: `${project.title} - Portfolio`,
     description: project.description,
-  }
+  };
 }
 
 // ========================================
 // 🎨 SERVER COMPONENT (Handles async params)
 // ========================================
 export default async function ProjectDetailPage({ params }) {
-  await dbConnect()
-  
+  await dbConnect();
+
   // Await params to unwrap the Promise
-  const { slug } = await params
-  const project = await Project.findOne({ slug }).lean()
-  
+  const { slug } = await params;
+  const project = await Project.findOne({ slug }).lean();
+
   // If project not found, show 404
   if (!project) {
-    notFound()
+    notFound();
   }
 
   // Serialize project data to remove MongoDB-specific objects
@@ -86,15 +86,15 @@ export default async function ProjectDetailPage({ params }) {
   });
 
   // Get related projects from the same category (limit to 3)
-  const relatedProjectsData = await Project.find({ 
-    category: project.category, 
-    _id: { $ne: project._id } 
+  const relatedProjectsData = await Project.find({
+    category: project.category,
+    _id: { $ne: project._id },
   })
-  .limit(3)
-  .lean()
+    .limit(3)
+    .lean();
 
   // Serialize related projects data
-  const relatedProjects = relatedProjectsData.map(p => 
+  const relatedProjects = relatedProjectsData.map((p) =>
     serializeMongoDocument({
       ...p,
       id: p._id.toString(),
@@ -105,14 +105,11 @@ export default async function ProjectDetailPage({ params }) {
     <>
       <CustomCursor />
       <Navbar />
-      
+
       {/* Pass data to Client Component for animations */}
-      <ProjectDetailClient 
-        project={projectData} 
-        relatedProjects={relatedProjects} 
-      />
+      <ProjectDetailClient project={projectData} relatedProjects={relatedProjects} />
 
       <Footer />
     </>
-  )
+  );
 }

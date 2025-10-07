@@ -27,9 +27,12 @@ export function usePageView(path = null) {
 export function useEvent() {
   const analytics = getAnalytics();
 
-  const trackEvent = useCallback((eventName, properties = {}) => {
-    analytics.trackCustomEvent(eventName, window.location.pathname, properties);
-  }, [analytics]);
+  const trackEvent = useCallback(
+    (eventName, properties = {}) => {
+      analytics.trackCustomEvent(eventName, window.location.pathname, properties);
+    },
+    [analytics]
+  );
 
   return trackEvent;
 }
@@ -46,10 +49,13 @@ export function useClick(options = {}) {
   const analytics = getAnalytics();
   const elementRef = useRef(null);
 
-  const trackClick = useCallback((event) => {
-    const target = event.target;
-    analytics.trackClick(target, properties);
-  }, [analytics, properties]);
+  const trackClick = useCallback(
+    (event) => {
+      const target = event.target;
+      analytics.trackClick(target, properties);
+    },
+    [analytics, properties]
+  );
 
   useEffect(() => {
     const element = elementRef.current;
@@ -92,7 +98,7 @@ export function useFormSubmit(formName, options = {}) {
       analytics.trackEvent('form_submit', window.location.pathname, {
         formName,
         formMethod: form.method || 'post',
-        ...properties
+        ...properties,
       });
     };
 
@@ -119,7 +125,7 @@ export function useDownload(downloadName, fileUrl) {
     analytics.trackEvent('download', window.location.pathname, {
       downloadName,
       fileUrl,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }, [analytics, downloadName, fileUrl]);
 
@@ -133,21 +139,30 @@ export function useDownload(downloadName, fileUrl) {
 export function useAnalytics() {
   const analytics = getAnalytics();
 
-  const trackPageView = useCallback((path = null) => {
-    if (path) {
-      analytics.trackPageView(path);
-    } else {
-      analytics.trackPageView();
-    }
-  }, [analytics]);
+  const trackPageView = useCallback(
+    (path = null) => {
+      if (path) {
+        analytics.trackPageView(path);
+      } else {
+        analytics.trackPageView();
+      }
+    },
+    [analytics]
+  );
 
-  const trackEvent = useCallback((eventName, properties = {}) => {
-    analytics.trackCustomEvent(eventName, window.location.pathname, properties);
-  }, [analytics]);
+  const trackEvent = useCallback(
+    (eventName, properties = {}) => {
+      analytics.trackCustomEvent(eventName, window.location.pathname, properties);
+    },
+    [analytics]
+  );
 
-  const trackClick = useCallback((element, properties = {}) => {
-    analytics.trackClick(element, properties);
-  }, [analytics]);
+  const trackClick = useCallback(
+    (element, properties = {}) => {
+      analytics.trackClick(element, properties);
+    },
+    [analytics]
+  );
 
   return {
     trackPageView,
@@ -155,7 +170,7 @@ export function useAnalytics() {
     trackClick,
     useClick,
     useFormSubmit,
-    useDownload
+    useDownload,
   };
 }
 

@@ -1,8 +1,8 @@
-'use client'
+'use client';
 
-import Link from 'next/link'
-import { cn } from '@/utils/classNames'
-import { componentStyles } from '@/styles/components'
+import Link from 'next/link';
+import { cn } from '@/utils/classNames';
+import { componentStyles } from '@/styles/components';
 
 /**
  * Reusable Button Component - Next.js Link Support
@@ -34,14 +34,14 @@ export default function Button({
     size !== 'base' && componentStyles.buttons[size],
     magnetic && 'magnetic-btn',
     className
-  )
+  );
 
   // External link (opens in new tab)
   if (href && external) {
     return (
-      <a 
-        href={href} 
-        className={classes} 
+      <a
+        href={href}
+        className={classes}
         target="_blank"
         rel="noopener noreferrer"
         suppressHydrationWarning={true}
@@ -49,7 +49,7 @@ export default function Button({
       >
         {children}
       </a>
-    )
+    );
   }
 
   // Internal link (Next.js Link)
@@ -58,7 +58,7 @@ export default function Button({
       <Link href={href} className={classes} suppressHydrationWarning={true} {...props}>
         {children}
       </Link>
-    )
+    );
   }
 
   // Regular button
@@ -66,5 +66,5 @@ export default function Button({
     <button onClick={onClick} className={classes} suppressHydrationWarning={true} {...props}>
       {children}
     </button>
-  )
+  );
 }

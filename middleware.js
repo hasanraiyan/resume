@@ -1,4 +1,4 @@
-import { withAuth } from "next-auth/middleware";
+import { withAuth } from 'next-auth/middleware';
 
 export default withAuth(
   function middleware(req) {
@@ -13,7 +13,7 @@ export default withAuth(
             pathname: req.nextUrl.pathname,
             hasToken: !!token,
             tokenRole: token?.role,
-            isAdmin: token?.role === 'admin'
+            isAdmin: token?.role === 'admin',
           });
           return token?.role === 'admin';
         }
@@ -24,5 +24,5 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ['/admin/((?!api|_next/static|_next/image|favicon.ico).*)']
+  matcher: ['/admin/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };

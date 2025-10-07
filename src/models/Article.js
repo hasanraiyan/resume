@@ -1,31 +1,34 @@
 import mongoose from 'mongoose';
 
-const ArticleSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  slug: { type: String, required: true, unique: true, index: true },
-  excerpt: { type: String, required: true },
-  coverImage: { type: String },
-  content: { type: String, required: true },
-  status: {
-    type: String,
-    enum: ['draft', 'published'],
-    default: 'draft',
-    index: true
+const ArticleSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true },
+    slug: { type: String, required: true, unique: true, index: true },
+    excerpt: { type: String, required: true },
+    coverImage: { type: String },
+    content: { type: String, required: true },
+    status: {
+      type: String,
+      enum: ['draft', 'published'],
+      default: 'draft',
+      index: true,
+    },
+    tags: [{ type: String }],
+    publishedAt: { type: Date },
   },
-  tags: [{ type: String }],
-  publishedAt: { type: Date },
-}, { timestamps: true });
+  { timestamps: true }
+);
 
 // Create text index for full-text search
 ArticleSchema.index({
   title: 'text',
   excerpt: 'text',
   content: 'text',
-  tags: 'text'
+  tags: 'text',
 });
 
 // Set publishedAt when status changes to published
-ArticleSchema.pre('save', function(next) {
+ArticleSchema.pre('save', function (next) {
   if (this.isModified('status') && this.status === 'published' && !this.publishedAt) {
     this.publishedAt = new Date();
   }

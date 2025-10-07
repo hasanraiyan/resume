@@ -26,10 +26,7 @@ export async function GET(request) {
   try {
     // Check if user is admin
     if (!(await isAdmin(request))) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Admin access required.' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized. Admin access required.' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -69,12 +66,13 @@ export async function GET(request) {
         // Aggregate search analytics
         const searchMatch = {
           eventName: 'search_performed',
-          ...(startDate && endDate && {
-            timestamp: {
-              $gte: new Date(startDate),
-              $lte: new Date(endDate)
-            }
-          })
+          ...(startDate &&
+            endDate && {
+              timestamp: {
+                $gte: new Date(startDate),
+                $lte: new Date(endDate),
+              },
+            }),
         };
 
         data.searchAnalytics = await Analytics.aggregate([
@@ -86,8 +84,8 @@ export async function GET(request) {
               avgResults: { $avg: '$properties.resultCount' },
               totalProjects: { $sum: '$properties.projectCount' },
               totalArticles: { $sum: '$properties.articleCount' },
-              lastSearched: { $max: '$timestamp' }
-            }
+              lastSearched: { $max: '$timestamp' },
+            },
           },
           {
             $project: {
@@ -97,11 +95,11 @@ export async function GET(request) {
               totalProjects: 1,
               totalArticles: 1,
               lastSearched: 1,
-              _id: 0
-            }
+              _id: 0,
+            },
           },
           { $sort: { count: -1 } },
-          { $limit: 50 }
+          { $limit: 50 },
         ]);
 
         // Get search summary stats
@@ -113,18 +111,18 @@ export async function GET(request) {
               totalSearches: { $sum: 1 },
               avgResultsPerSearch: { $avg: '$properties.resultCount' },
               zeroResultSearches: {
-                $sum: { $cond: [{ $eq: ['$properties.resultCount', 0] }, 1, 0] }
-              }
-            }
+                $sum: { $cond: [{ $eq: ['$properties.resultCount', 0] }, 1, 0] },
+              },
+            },
           },
           {
             $project: {
               totalSearches: 1,
               avgResultsPerSearch: { $round: ['$avgResultsPerSearch', 1] },
               zeroResultSearches: 1,
-              _id: 0
-            }
-          }
+              _id: 0,
+            },
+          },
         ]);
         break;
 
@@ -144,7 +142,7 @@ export async function GET(request) {
         data.pagination = {
           page,
           limit,
-          hasMore: data.events.length === limit
+          hasMore: data.events.length === limit,
         };
         break;
 
@@ -157,22 +155,19 @@ export async function GET(request) {
         // Total pageviews in last 30 days
         data.totalPageviews = await Analytics.countDocuments({
           eventType: 'pageview',
-          timestamp: { $gte: thirtyDaysAgo, $lte: now }
+          timestamp: { $gte: thirtyDaysAgo, $lte: now },
         });
 
         // Total unique sessions in last 30 days
         data.totalSessions = await Analytics.distinct('sessionId', {
-          timestamp: { $gte: thirtyDaysAgo, $lte: now }
-        }).then(sessions => sessions.length);
+          timestamp: { $gte: thirtyDaysAgo, $lte: now },
+        }).then((sessions) => sessions.length);
 
         // Top pages
         data.topPages = await Analytics.getPageviewStats(thirtyDaysAgo, now);
 
         // Recent events
-        data.recentEvents = await Analytics.find({})
-          .sort({ timestamp: -1 })
-          .limit(10)
-          .lean();
+        data.recentEvents = await Analytics.find({}).sort({ timestamp: -1 }).limit(10).lean();
 
         // Daily pageviews for the last 7 days
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -180,28 +175,28 @@ export async function GET(request) {
           {
             $match: {
               eventType: 'pageview',
-              timestamp: { $gte: sevenDaysAgo, $lte: now }
-            }
+              timestamp: { $gte: sevenDaysAgo, $lte: now },
+            },
           },
           {
             $group: {
               _id: {
                 $dateToString: {
                   format: '%Y-%m-%d',
-                  date: '$timestamp'
-                }
+                  date: '$timestamp',
+                },
               },
-              count: { $sum: 1 }
-            }
+              count: { $sum: 1 },
+            },
           },
           {
             $project: {
               date: '$_id',
               views: '$count',
-              _id: 0
-            }
+              _id: 0,
+            },
           },
-          { $sort: { date: 1 } }
+          { $sort: { date: 1 } },
         ]);
 
         // Chatbot analytics aggregation
@@ -209,67 +204,73 @@ export async function GET(request) {
           {
             $match: {
               eventType: 'chatbot_interaction',
-              timestamp: { $gte: thirtyDaysAgo, $lte: now }
-            }
+              timestamp: { $gte: thirtyDaysAgo, $lte: now },
+            },
           },
           {
             $facet: {
-              "totalInteractions": [
-                { $count: "count" }
-              ],
-              "topQuestions": [
-                { $group: { _id: "$properties.userQuestion", count: { $sum: 1 } } },
+              totalInteractions: [{ $count: 'count' }],
+              topQuestions: [
+                { $group: { _id: '$properties.userQuestion', count: { $sum: 1 } } },
                 { $sort: { count: -1 } },
                 { $limit: 5 },
-                { $project: { question: "$_id", count: 1, _id: 0 } }
+                { $project: { question: '$_id', count: 1, _id: 0 } },
               ],
-              "ctaPerformance": [
-                { $group: { _id: null, total: { $sum: 1 }, ctaCount: { $sum: { $cond: ["$properties.isCallToAction", 1, 0] } } } }
+              ctaPerformance: [
+                {
+                  $group: {
+                    _id: null,
+                    total: { $sum: 1 },
+                    ctaCount: { $sum: { $cond: ['$properties.isCallToAction', 1, 0] } },
+                  },
+                },
               ],
-              "toolUsage": [
+              toolUsage: [
                 {
                   $match: {
-                    "properties.toolsCount": { $gt: 0 }
-                  }
+                    'properties.toolsCount': { $gt: 0 },
+                  },
                 },
                 {
-                  $unwind: "$properties.toolsUsed"
+                  $unwind: '$properties.toolsUsed',
                 },
                 {
                   $group: {
-                    _id: "$properties.toolsUsed.name",
+                    _id: '$properties.toolsUsed.name',
                     count: { $sum: 1 },
                     successRate: {
                       $avg: {
                         $cond: [
-                          { $eq: [{ $ifNull: ["$properties.toolResults.hasError", false] }, false] },
+                          {
+                            $eq: [{ $ifNull: ['$properties.toolResults.hasError', false] }, false],
+                          },
                           1,
-                          0
-                        ]
-                      }
-                    }
-                  }
+                          0,
+                        ],
+                      },
+                    },
+                  },
                 },
                 {
                   $project: {
-                    toolName: "$_id",
+                    toolName: '$_id',
                     count: 1,
-                    successRate: { $multiply: ["$successRate", 100] },
-                    _id: 0
-                  }
+                    successRate: { $multiply: ['$successRate', 100] },
+                    _id: 0,
+                  },
                 },
-                { $sort: { count: -1 } }
+                { $sort: { count: -1 } },
               ],
-              "interactionsWithTools": [
+              interactionsWithTools: [
                 {
                   $match: {
-                    "properties.toolsCount": { $gt: 0 }
-                  }
+                    'properties.toolsCount': { $gt: 0 },
+                  },
                 },
-                { $count: "count" }
-              ]
-            }
-          }
+                { $count: 'count' },
+              ],
+            },
+          },
         ]);
 
         // Proactive engagement analytics
@@ -277,34 +278,34 @@ export async function GET(request) {
           {
             $match: {
               eventName: { $in: ['proactive_message_sent', 'user_responded_to_proactive'] },
-              timestamp: { $gte: thirtyDaysAgo, $lte: now }
-            }
+              timestamp: { $gte: thirtyDaysAgo, $lte: now },
+            },
           },
           {
             $facet: {
-              "totalProactiveMessages": [
+              totalProactiveMessages: [
                 { $match: { eventName: 'proactive_message_sent' } },
-                { $count: "count" }
+                { $count: 'count' },
               ],
-              "totalResponses": [
+              totalResponses: [
                 { $match: { eventName: 'user_responded_to_proactive' } },
-                { $count: "count" }
+                { $count: 'count' },
               ],
-              "topTriggers": [
+              topTriggers: [
                 { $match: { eventName: 'proactive_message_sent' } },
-                { $group: { _id: "$properties.trigger_name", count: { $sum: 1 } } },
+                { $group: { _id: '$properties.trigger_name', count: { $sum: 1 } } },
                 { $sort: { count: -1 } },
                 { $limit: 5 },
-                { $project: { triggerName: "$_id", count: 1, _id: 0 } }
-              ]
-            }
-          }
+                { $project: { triggerName: '$_id', count: 1, _id: 0 } },
+              ],
+            },
+          },
         ]);
 
         // Wait for all promises including chatbot stats
         const [chatbotResults, proactiveResults] = await Promise.all([
           chatbotStatsPromise,
-          proactiveStatsPromise
+          proactiveStatsPromise,
         ]);
 
         // Structure chatbot analytics data
@@ -313,10 +314,8 @@ export async function GET(request) {
           topQuestions: chatbotResults[0]?.topQuestions || [],
           ctaPerformance: chatbotResults[0]?.ctaPerformance[0] || { total: 0, ctaCount: 0 },
           toolUsage: chatbotResults[0]?.toolUsage || [],
-          interactionsWithTools: chatbotResults[0]?.interactionsWithTools[0]?.count || 0
+          interactionsWithTools: chatbotResults[0]?.interactionsWithTools[0]?.count || 0,
         };
-
-
 
         break;
     }
@@ -324,16 +323,12 @@ export async function GET(request) {
     return NextResponse.json({
       success: true,
       data,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
     console.error('Admin analytics API error:', error);
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -342,10 +337,7 @@ export async function POST(request) {
   try {
     // Check if user is admin
     if (!(await isAdmin(request))) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Admin access required.' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized. Admin access required.' }, { status: 401 });
     }
 
     const body = await request.json();
@@ -355,21 +347,17 @@ export async function POST(request) {
 
     const cutoffDate = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000);
     const result = await Analytics.deleteMany({
-      timestamp: { $lt: cutoffDate }
+      timestamp: { $lt: cutoffDate },
     });
 
     return NextResponse.json({
       success: true,
       message: `Deleted ${result.deletedCount} old analytics records`,
-      deletedCount: result.deletedCount
+      deletedCount: result.deletedCount,
     });
-
   } catch (error) {
     console.error('Analytics cleanup error:', error);
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

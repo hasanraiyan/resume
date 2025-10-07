@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { createContext, useContext, useState, useCallback } from 'react';
 
@@ -12,11 +12,11 @@ export function LoadingProvider({ children }) {
   const [loadingComponents, setLoadingComponents] = useState(new Set());
 
   const registerComponent = useCallback((name) => {
-    setLoadingComponents(prev => new Set(prev).add(name));
+    setLoadingComponents((prev) => new Set(prev).add(name));
   }, []);
 
   const markComponentAsLoaded = useCallback((name) => {
-    setLoadingComponents(prev => {
+    setLoadingComponents((prev) => {
       const newSet = new Set(prev);
       newSet.delete(name);
       return newSet;
@@ -29,11 +29,7 @@ export function LoadingProvider({ children }) {
     markComponentAsLoaded,
   };
 
-  return (
-    <LoadingContext.Provider value={value}>
-      {children}
-    </LoadingContext.Provider>
-  );
+  return <LoadingContext.Provider value={value}>{children}</LoadingContext.Provider>;
 }
 
 // Create the custom hook for easy consumption

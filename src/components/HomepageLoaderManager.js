@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { useState, useEffect } from 'react';
 import { gsap } from 'gsap';
@@ -25,25 +25,29 @@ function LoaderController({ children }) {
       const tl = gsap.timeline();
 
       tl.to('#loader-ui', {
-          opacity: 0,
-          duration: 0.5,
-          ease: 'power2.in',
-          delay: 0.2
-        })
-        .to("#homepage-content", {
-          opacity: 1,
-          duration: 0.5,
-          ease: 'power2.out'
-        }, "-=0.2")
+        opacity: 0,
+        duration: 0.5,
+        ease: 'power2.in',
+        delay: 0.2,
+      })
+        .to(
+          '#homepage-content',
+          {
+            opacity: 1,
+            duration: 0.5,
+            ease: 'power2.out',
+          },
+          '-=0.2'
+        )
         .to('#loader-ui', {
-            display: 'none'
+          display: 'none',
         });
     }
   }, [isReadyForExit]);
 
   // Initial setup
   useEffect(() => {
-    gsap.set("#homepage-content", { opacity: 0 });
+    gsap.set('#homepage-content', { opacity: 0 });
   }, []);
 
   return (
@@ -60,9 +64,7 @@ function LoaderController({ children }) {
 export default function HomepageLoaderManager({ children }) {
   return (
     <LoadingProvider>
-      <LoaderController>
-        {children}
-      </LoaderController>
+      <LoaderController>{children}</LoaderController>
     </LoadingProvider>
   );
 }

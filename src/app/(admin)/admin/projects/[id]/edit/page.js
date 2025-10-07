@@ -14,7 +14,7 @@ export default function EditProjectPage({ params }) {
 
   useEffect(() => {
     if (!params.id) return;
-    
+
     const fetchProject = async () => {
       try {
         const response = await fetch(`/api/projects/${params.id}`);
@@ -57,7 +57,7 @@ export default function EditProjectPage({ params }) {
   }
 
   return (
-    <ProjectForm 
+    <ProjectForm
       initialData={project}
       onSave={updateProject}
       onDelete={deleteProject}

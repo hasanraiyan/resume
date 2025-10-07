@@ -34,7 +34,7 @@ export async function createArticle(formData) {
     console.error('Create Article Error:', error);
     return {
       success: false,
-      message: error.code === 11000 ? 'Slug already exists.' : 'Failed to create article.'
+      message: error.code === 11000 ? 'Slug already exists.' : 'Failed to create article.',
     };
   }
 
@@ -46,11 +46,10 @@ export async function updateArticle(id, formData) {
 
   try {
     const articleData = processFormData(formData);
-    const updatedArticle = await Article.findByIdAndUpdate(
-      id,
-      articleData,
-      { new: true, runValidators: true }
-    );
+    const updatedArticle = await Article.findByIdAndUpdate(id, articleData, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!updatedArticle) {
       return { success: false, message: 'Article not found.' };
@@ -64,7 +63,7 @@ export async function updateArticle(id, formData) {
     console.error('Update Article Error:', error);
     return {
       success: false,
-      message: error.code === 11000 ? 'Slug already exists.' : 'Failed to update article.'
+      message: error.code === 11000 ? 'Slug already exists.' : 'Failed to update article.',
     };
   }
 
@@ -94,7 +93,7 @@ export async function getAllArticles() {
   try {
     const articles = await Article.find({}).sort({ createdAt: -1 }).lean();
     // Serialize articles to handle MongoDB ObjectIds for client components
-    const serializedArticles = articles.map(article => serializeForClient(article));
+    const serializedArticles = articles.map((article) => serializeForClient(article));
     return { success: true, articles: serializedArticles };
   } catch (error) {
     console.error('Get Articles Error:', error);
@@ -123,11 +122,9 @@ export async function getAllPublishedArticles() {
   await dbConnect();
 
   try {
-    const articles = await Article.find({ status: 'published' })
-      .sort({ publishedAt: -1 })
-      .lean();
+    const articles = await Article.find({ status: 'published' }).sort({ publishedAt: -1 }).lean();
     // Serialize articles to handle MongoDB ObjectIds for client components
-    const serializedArticles = articles.map(article => serializeForClient(article));
+    const serializedArticles = articles.map((article) => serializeForClient(article));
     return { success: true, articles: serializedArticles };
   } catch (error) {
     console.error('Get Published Articles Error:', error);
@@ -144,7 +141,7 @@ export async function getLatestArticles(limit = 3) {
       .limit(limit)
       .lean();
     // Serialize articles to handle MongoDB ObjectIds for client components
-    const serializedArticles = articles.map(article => serializeForClient(article));
+    const serializedArticles = articles.map((article) => serializeForClient(article));
     return { success: true, articles: serializedArticles };
   } catch (error) {
     console.error('Get Latest Articles Error:', error);

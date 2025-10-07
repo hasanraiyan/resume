@@ -18,7 +18,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const { success, articles } = await getAllPublishedArticles();
-  const article = articles.find(a => a.slug === slug);
+  const article = articles.find((a) => a.slug === slug);
 
   if (!success || !article) {
     return { title: 'Article Not Found' };
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }) {
 export default async function ArticlePage({ params }) {
   const { slug } = await params;
   const { success, articles } = await getAllPublishedArticles();
-  const article = articles.find(a => a.slug === slug);
+  const article = articles.find((a) => a.slug === slug);
 
   if (!success || !article) {
     notFound();
@@ -44,7 +44,7 @@ export default async function ArticlePage({ params }) {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
@@ -77,7 +77,11 @@ export default async function ArticlePage({ params }) {
                 {article.tags && article.tags.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {article.tags.map((tag, index) => (
-                      <Badge key={index} variant="tag" className="bg-blue-50 text-blue-700 font-medium">
+                      <Badge
+                        key={index}
+                        variant="tag"
+                        className="bg-blue-50 text-blue-700 font-medium"
+                      >
                         {tag}
                       </Badge>
                     ))}

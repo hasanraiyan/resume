@@ -19,12 +19,12 @@ export default async function EditArticlePage({ params }) {
         id: article._id,
         title: article.title,
         slug: article.slug,
-        matches: article._id === id
+        matches: article._id === id,
       });
     });
   }
 
-  const article = articles?.find(a => a._id === id || String(a._id) === String(id));
+  const article = articles?.find((a) => a._id === id || String(a._id) === String(id));
 
   console.log('EditArticlePage - found article:', article?.title || 'NOT FOUND');
 

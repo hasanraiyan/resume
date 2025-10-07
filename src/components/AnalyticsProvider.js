@@ -44,12 +44,8 @@ export default function AnalyticsProvider({ children }) {
   }, []);
 
   const value = {
-    analytics: getAnalytics()
+    analytics: getAnalytics(),
   };
 
-  return (
-    <AnalyticsContext.Provider value={value}>
-      {children}
-    </AnalyticsContext.Provider>
-  );
+  return <AnalyticsContext.Provider value={value}>{children}</AnalyticsContext.Provider>;
 }

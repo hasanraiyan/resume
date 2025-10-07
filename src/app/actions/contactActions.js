@@ -18,7 +18,7 @@ export async function createContactSubmission(formData) {
       ipAddress: formData.get('ipAddress') || null,
       userAgent: formData.get('userAgent') || null,
     };
-    
+
     const newContact = new Contact(contactData);
     await newContact.save();
 
@@ -26,7 +26,6 @@ export async function createContactSubmission(formData) {
     revalidatePath('/admin/contacts');
 
     return { success: true, message: 'Contact submission saved successfully.' };
-
   } catch (error) {
     console.error('Create Contact Error:', error);
     return { success: false, message: 'Failed to save contact submission.' };
@@ -59,8 +58,8 @@ export async function updateContactStatus(id, status) {
 
   try {
     const updatedContact = await Contact.findByIdAndUpdate(
-      id, 
-      { status }, 
+      id,
+      { status },
       { new: true, runValidators: true }
     );
 
@@ -71,7 +70,6 @@ export async function updateContactStatus(id, status) {
     revalidatePath('/admin/contacts');
     revalidatePath('/admin/dashboard');
     return { success: true, message: 'Contact status updated successfully.' };
-
   } catch (error) {
     console.error('Update Contact Status Error:', error);
     return { success: false, message: 'Failed to update contact status.' };
@@ -83,7 +81,7 @@ export async function deleteContact(id) {
 
   try {
     const deletedContact = await Contact.findByIdAndDelete(id);
-    
+
     if (!deletedContact) {
       return { success: false, message: 'Contact not found.' };
     }
@@ -91,7 +89,6 @@ export async function deleteContact(id) {
     revalidatePath('/admin/contacts');
     revalidatePath('/admin/dashboard');
     return { success: true, message: 'Contact deleted successfully.' };
-
   } catch (error) {
     console.error('Delete Contact Error:', error);
     return { success: false, message: 'Failed to delete contact.' };

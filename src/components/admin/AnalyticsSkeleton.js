@@ -40,9 +40,11 @@ export default function AnalyticsSkeleton() {
             <div className="flex justify-center space-x-2">
               {[...Array(7)].map((_, index) => (
                 <div key={index} className="flex flex-col items-center space-y-2">
-                  <div className={`bg-gradient-to-r from-neutral-200 via-neutral-100 to-neutral-200 rounded-t animate-pulse relative overflow-hidden ${
-                    index === 3 ? 'h-32 w-8' : 'h-16 w-8'
-                  }`}>
+                  <div
+                    className={`bg-gradient-to-r from-neutral-200 via-neutral-100 to-neutral-200 rounded-t animate-pulse relative overflow-hidden ${
+                      index === 3 ? 'h-32 w-8' : 'h-16 w-8'
+                    }`}
+                  >
                     <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white to-transparent animate-shimmer"></div>
                   </div>
                   <div className="h-3 bg-gradient-to-r from-neutral-200 via-neutral-100 to-neutral-200 rounded animate-pulse w-12 relative overflow-hidden">
@@ -65,7 +67,10 @@ export default function AnalyticsSkeleton() {
         </div>
         <div className="space-y-3">
           {[...Array(5)].map((_, index) => (
-            <div key={index} className="flex justify-between items-center py-2 border-b border-neutral-100 last:border-b-0">
+            <div
+              key={index}
+              className="flex justify-between items-center py-2 border-b border-neutral-100 last:border-b-0"
+            >
               <div className="flex items-center space-x-3">
                 <div className="h-4 bg-gradient-to-r from-neutral-200 via-neutral-100 to-neutral-200 rounded animate-pulse w-6 relative overflow-hidden">
                   <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white to-transparent animate-shimmer"></div>
@@ -94,7 +99,10 @@ export default function AnalyticsSkeleton() {
         </div>
         <div className="space-y-2">
           {[...Array(8)].map((_, index) => (
-            <div key={index} className="flex justify-between items-center py-2 text-sm border-b border-neutral-100 last:border-b-0">
+            <div
+              key={index}
+              className="flex justify-between items-center py-2 text-sm border-b border-neutral-100 last:border-b-0"
+            >
               <div className="flex items-center space-x-3">
                 <div className="h-5 bg-gradient-to-r from-neutral-200 via-neutral-100 to-neutral-200 rounded animate-pulse w-16 relative overflow-hidden">
                   <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white to-transparent animate-shimmer"></div>
