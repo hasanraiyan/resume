@@ -111,7 +111,12 @@ async function listAllProjects() {
       .sort({ createdAt: -1 })
       .lean();
     console.log(`[Chat API Tool] ✅ Retrieved ${projects.length} projects`);
-    return projects.map((p) => ({ title: p.title, slug: p.slug, description: p.description }));
+    return projects.map((p) => ({
+      title: p.title,
+      slug: p.slug,
+      description: p.description,
+      url: `/projects/${p.slug}`, // Portfolio page URL
+    }));
   } catch (error) {
     console.error('[Chat API Tool] ❌ Error in listAllProjects:', error);
     return { error: 'Failed to retrieve projects.' };
@@ -146,6 +151,9 @@ async function getProjectDetails(slug) {
       description: project.description,
       details: project.details,
       tags: project.tags?.map((t) => t.name || t) || [],
+      url: `/projects/${project.slug}`, // Portfolio page URL
+      liveUrl: project.links?.live || null, // Live demo URL
+      githubUrl: project.links?.github || null, // GitHub URL
     };
   } catch (error) {
     console.error('[Chat API Tool] ❌ Error in getProjectDetails:', error);
@@ -171,7 +179,12 @@ async function listAllArticles() {
       .sort({ publishedAt: -1 })
       .lean();
     console.log(`[Chat API Tool] ✅ Retrieved ${articles.length} published articles`);
-    return articles.map((a) => ({ title: a.title, slug: a.slug, excerpt: a.excerpt }));
+    return articles.map((a) => ({
+      title: a.title,
+      slug: a.slug,
+      excerpt: a.excerpt,
+      url: `/blog/${a.slug}`, // Blog post URL
+    }));
   } catch (error) {
     console.error('[Chat API Tool] ❌ Error in listAllArticles:', error);
     return { error: 'Failed to retrieve articles.' };
@@ -203,6 +216,7 @@ async function getArticleDetails(slug) {
       slug: article.slug,
       content: article.content,
       tags: article.tags,
+      url: `/blog/${article.slug}`, // Blog post URL
     };
   } catch (error) {
     console.error('[Chat API Tool] ❌ Error in getArticleDetails:', error);
@@ -281,22 +295,25 @@ async function executeToolCall(toolCall) {
  * @function getToolStatusMessage
  * @param {string} toolName - Name of the tool being executed
  * @param {Object} args - Arguments passed to the tool
+ * @param {number} iteration - Current iteration number (optional)
  * @returns {string} User-friendly status message
  */
-function getToolStatusMessage(toolName, args) {
+function getToolStatusMessage(toolName, args, iteration = null) {
+  const iterationSuffix = iteration > 1 ? ` (Step ${iteration})` : '';
+
   switch (toolName) {
     case 'listAllProjects':
-      return '🎨 Loading all projects...';
+      return `🎨 Loading all projects...${iterationSuffix}`;
     case 'getProjectDetails':
-      return `🔍 Getting details about the project...`;
+      return `🔍 Getting details about the project...${iterationSuffix}`;
     case 'listAllArticles':
-      return '📚 Fetching blog articles...';
+      return `📚 Fetching blog articles...${iterationSuffix}`;
     case 'getArticleDetails':
-      return `📖 Reading the article...`;
+      return `📖 Reading the article...${iterationSuffix}`;
     case 'searchPortfolio':
-      return `🔎 Searching for "${args.query}"...`;
+      return `🔎 Searching for "${args.query}"...${iterationSuffix}`;
     default:
-      return '🤔 Processing your request...';
+      return `🤔 Processing your request...${iterationSuffix}`;
   }
 }
 
@@ -350,38 +367,70 @@ export async function POST(request) {
     ];
     console.log('[Chat API] 📊 Total messages in conversation:', messages.length);
 
+    // Iterative tool calling with max iterations
+    const MAX_ITERATIONS = 3;
     let toolsUsed = [];
-    console.log('[Chat API] 🎯 Sending initial completion request to OpenAI...');
-    const initialCompletion = await openai.chat.completions.create({
-      model: actualModel,
-      messages: messages,
-      tools: tools,
-      tool_choice: 'auto',
-    });
+    let iteration = 0;
+    let shouldContinue = true;
 
-    const initialResponse = initialCompletion.choices[0].message;
-    console.log('[Chat API] 📥 Initial response received');
+    console.log(`[Chat API] 🔄 Starting iterative tool calling (max: ${MAX_ITERATIONS} rounds)...`);
 
-    if (initialResponse.tool_calls) {
-      console.log(`[Chat API] 🛠️ AI requested ${initialResponse.tool_calls.length} tool call(s)`);
-      messages.push(initialResponse);
-      for (const toolCall of initialResponse.tool_calls) {
-        const toolResult = await executeToolCall(toolCall);
-        console.log(`[Chat API] ✅ Tool ${toolCall.function.name} executed successfully`);
-        toolsUsed.push({
-          name: toolCall.function.name,
-          arguments: JSON.parse(toolCall.function.arguments),
-        });
-        messages.push({
-          role: 'tool',
-          tool_call_id: toolCall.id,
-          content: JSON.stringify(toolResult),
-        });
+    while (shouldContinue && iteration < MAX_ITERATIONS) {
+      iteration++;
+      console.log(
+        `[Chat API] 🎯 Iteration ${iteration}/${MAX_ITERATIONS}: Sending completion request...`
+      );
+
+      const completion = await openai.chat.completions.create({
+        model: actualModel,
+        messages: messages,
+        tools: tools,
+        tool_choice: 'auto',
+      });
+
+      const response = completion.choices[0].message;
+      console.log(`[Chat API] 📥 Iteration ${iteration} response received`);
+
+      if (response.tool_calls) {
+        console.log(
+          `[Chat API] 🛠️ Iteration ${iteration}: AI requested ${response.tool_calls.length} tool call(s)`
+        );
+        messages.push(response);
+
+        // Execute all tools in this iteration
+        for (const toolCall of response.tool_calls) {
+          const toolResult = await executeToolCall(toolCall);
+          console.log(`[Chat API] ✅ Tool ${toolCall.function.name} executed successfully`);
+
+          toolsUsed.push({
+            name: toolCall.function.name,
+            arguments: JSON.parse(toolCall.function.arguments),
+            iteration: iteration,
+          });
+
+          messages.push({
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: JSON.stringify(toolResult),
+          });
+        }
+
+        console.log(
+          `[Chat API] 🔄 Iteration ${iteration} complete, checking if AI needs more tools...`
+        );
+      } else {
+        console.log(`[Chat API] ✅ No tool calls in iteration ${iteration} - AI has enough info`);
+        shouldContinue = false;
       }
-      console.log('[Chat API] 🔄 All tool calls completed, proceeding with final response');
-    } else {
-      console.log('[Chat API] ℹ️ No tool calls requested by AI');
     }
+
+    if (iteration >= MAX_ITERATIONS && shouldContinue) {
+      console.log('[Chat API] ⚠️ Reached max iterations limit');
+    }
+
+    console.log(
+      `[Chat API] 🏁 Tool calling complete. Total iterations: ${iteration}, Total tools used: ${toolsUsed.length}`
+    );
 
     console.log('[Chat API] 🌊 Starting streaming response...');
     const stream = new ReadableStream({
@@ -392,7 +441,7 @@ export async function POST(request) {
           // Send tool status updates first if tools were used
           if (toolsUsed.length > 0) {
             for (const tool of toolsUsed) {
-              const statusMessage = getToolStatusMessage(tool.name, tool.arguments);
+              const statusMessage = getToolStatusMessage(tool.name, tool.arguments, tool.iteration);
               const statusData = JSON.stringify({ type: 'status', message: statusMessage }) + '\n';
               controller.enqueue(new TextEncoder().encode(statusData));
               console.log('[Chat API] 📢 Sent status:', statusMessage);
@@ -494,6 +543,35 @@ function buildSystemMessages(context, path) {
    - \`searchPortfolio(query)\`: Use this for any topic-based questions like "Do you have experience with Python?" or "Tell me about your e-commerce projects."
 
 CRITICAL: Do not make up information. If you don't know, use a tool.`,
+  });
+
+  messages.push({
+    role: 'system',
+    content: `LINK FORMATTING RULES (CRITICAL):
+
+ALWAYS include reference links when discussing projects or articles. The tools provide URLs - USE THEM!
+
+FORMAT:
+- Use markdown: [Project Title](url) 
+- Projects: Tools return "url" field (/projects/slug)
+- Live demos: Tools return "liveUrl" field (external URL)
+- GitHub: Tools return "githubUrl" field (external URL)
+- Articles: Tools return "url" field (/blog/slug)
+
+EXAMPLES:
+✅ "Check out the [E-commerce Platform](/projects/ecommerce-store) I built..."
+✅ "I have a [Next.js Portfolio](/projects/portfolio-website) project. [View Live Demo](https://demo.com) 🔗"
+✅ "Read my article on [React Performance](/blog/react-perf) for more details."
+✅ "Here's the [GitHub repository](https://github.com/user/repo) 💻"
+
+RULES:
+1. NEVER mention a project/article without including its link
+2. Always use the "url" field from tool results
+3. Add live demo and GitHub links when available
+4. Use emojis: 🔗 for live demos, 💻 for GitHub
+5. Place links naturally in your response
+
+CRITICAL: Users expect clickable links. Always provide them!`,
   });
 
   messages.push({

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '../ui';
-import { MessageCircle, X, Send, Trash2 } from 'lucide-react';
+import { MessageCircle, X, Send, Trash2, ExternalLink } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import getAnalytics from '@/lib/analytics';
 
@@ -358,6 +358,20 @@ export default function ChatbotWidget() {
     setIsOpen(true);
   };
 
+  // Track link clicks in analytics
+  const handleLinkClick = (e, href) => {
+    const analytics = getAnalytics();
+    analytics.trackCustomEvent('reference_link_clicked', window.location.pathname, {
+      linkUrl: href,
+      linkType: href.includes('/projects/')
+        ? 'project'
+        : href.includes('/blog/')
+          ? 'article'
+          : 'external',
+      chatbotSession: analytics.sessionId,
+    });
+  };
+
   if (!chatbotSettings || !chatbotSettings.isActive) {
     return null;
   }
@@ -428,8 +442,28 @@ export default function ChatbotWidget() {
                 }`}
               >
                 {message.role === 'assistant' ? (
-                  <div className="text-sm leading-relaxed prose prose-sm max-w-none prose-p:my-1 sm:prose-p:my-2 prose-headings:my-1 sm:prose-headings:my-2 prose-ul:my-1 sm:prose-ul:my-2 prose-ol:my-1 sm:prose-ol:my-2 prose-li:my-0">
-                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                  <div className="text-sm leading-relaxed prose prose-sm max-w-none prose-p:my-1 sm:prose-p:my-2 prose-headings:my-1 sm:prose-headings:my-2 prose-ul:my-1 sm:prose-ul:my-2 prose-ol:my-1 sm:prose-ol:my-2 prose-li:my-0 prose-a:no-underline">
+                    <ReactMarkdown
+                      components={{
+                        a: ({ node, ...props }) => (
+                          <a
+                            {...props}
+                            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium underline decoration-blue-600/30 hover:decoration-blue-800 underline-offset-2 transition-colors"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => handleLinkClick(e, props.href)}
+                          >
+                            {props.children}
+                            {props.href &&
+                              (props.href.startsWith('http') || props.href.startsWith('https')) && (
+                                <ExternalLink className="w-3 h-3 inline-block" />
+                              )}
+                          </a>
+                        ),
+                      }}
+                    >
+                      {message.content}
+                    </ReactMarkdown>
                   </div>
                 ) : (
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>

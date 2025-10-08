@@ -55,7 +55,7 @@ export async function performSearch(query) {
     const fuse = new Fuse(searchableData, fuseOptions);
     const fuseResults = fuse.search(query);
 
-    // 4. Format and return results
+    // 4. Format and return results with URLs
     const results = fuseResults.map((result) => ({
       id: result.item._id.toString(), // Ensure ID is a string
       title: result.item.title,
@@ -65,6 +65,10 @@ export async function performSearch(query) {
       score: 1 - result.score, // Invert score so higher is better
       category: result.item.category,
       tags: result.item.tags,
+      url:
+        result.item.type === 'project'
+          ? `/projects/${result.item.slug}`
+          : `/blog/${result.item.slug}`, // Add URL
     }));
 
     return results;
