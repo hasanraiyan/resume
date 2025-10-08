@@ -11,6 +11,7 @@ export default function ChatbotWidget() {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
   const [chatbotSettings, setChatbotSettings] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -117,8 +118,9 @@ export default function ChatbotWidget() {
         timestamp: new Date(),
       };
 
-      // Add empty assistant message
-      setMessages((prev) => [...prev, assistantMessage]);
+      // Don't add message until we have content - prevents empty message box
+      let messageAdded = false;
+      let buffer = '';
 
       try {
         while (true) {
@@ -127,16 +129,62 @@ export default function ChatbotWidget() {
           if (done) break;
 
           const chunk = decoder.decode(value, { stream: true });
-          assistantMessage.content += chunk;
+          buffer += chunk;
 
-          // Update the message in real-time
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === assistantMessage.id ? { ...msg, content: assistantMessage.content } : msg
-            )
-          );
+          // Process complete JSON lines
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+          for (const line of lines) {
+            if (!line.trim()) continue;
+
+            try {
+              const data = JSON.parse(line);
+
+              if (data.type === 'status') {
+                // Update status message only - don't add message yet
+                setStatusMessage(data.message);
+              } else if (data.type === 'content') {
+                // Clear status and add message on first content
+                setStatusMessage('');
+                assistantMessage.content += data.message;
+
+                if (!messageAdded) {
+                  // Add message on first content chunk
+                  setMessages((prev) => [...prev, assistantMessage]);
+                  messageAdded = true;
+                } else {
+                  // Update existing message
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      msg.id === assistantMessage.id
+                        ? { ...msg, content: assistantMessage.content }
+                        : msg
+                    )
+                  );
+                }
+              }
+            } catch (e) {
+              // If not JSON, treat as raw content (backward compatibility)
+              assistantMessage.content += line;
+
+              if (!messageAdded) {
+                setMessages((prev) => [...prev, assistantMessage]);
+                messageAdded = true;
+              } else {
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === assistantMessage.id
+                      ? { ...msg, content: assistantMessage.content }
+                      : msg
+                  )
+                );
+              }
+            }
+          }
         }
       } finally {
+        setStatusMessage('');
         reader.releaseLock();
       }
     } catch (error) {
@@ -197,21 +245,68 @@ export default function ChatbotWidget() {
         timestamp: new Date(),
       };
 
-      setMessages((prev) => [...prev, assistantMessage]);
+      // Don't add message until we have content
+      let messageAdded = false;
+      let buffer = '';
 
       try {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
+
           const chunk = decoder.decode(value, { stream: true });
-          assistantMessage.content += chunk;
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === assistantMessage.id ? { ...msg, content: assistantMessage.content } : msg
-            )
-          );
+          buffer += chunk;
+
+          // Process complete JSON lines
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (!line.trim()) continue;
+
+            try {
+              const data = JSON.parse(line);
+
+              if (data.type === 'status') {
+                setStatusMessage(data.message);
+              } else if (data.type === 'content') {
+                setStatusMessage('');
+                assistantMessage.content += data.message;
+
+                if (!messageAdded) {
+                  setMessages((prev) => [...prev, assistantMessage]);
+                  messageAdded = true;
+                } else {
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      msg.id === assistantMessage.id
+                        ? { ...msg, content: assistantMessage.content }
+                        : msg
+                    )
+                  );
+                }
+              }
+            } catch (e) {
+              // Backward compatibility
+              assistantMessage.content += line;
+
+              if (!messageAdded) {
+                setMessages((prev) => [...prev, assistantMessage]);
+                messageAdded = true;
+              } else {
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === assistantMessage.id
+                      ? { ...msg, content: assistantMessage.content }
+                      : msg
+                  )
+                );
+              }
+            }
+          }
         }
       } finally {
+        setStatusMessage('');
         reader.releaseLock();
       }
     } catch (error) {
@@ -369,7 +464,7 @@ export default function ChatbotWidget() {
                     ></div>
                   </div>
                   <span className="text-xs text-neutral-600">
-                    {chatbotSettings?.aiName || 'Kiro'} is typing...
+                    {statusMessage || `${chatbotSettings?.aiName || 'Kiro'} is typing...`}
                   </span>
                 </div>
               </div>

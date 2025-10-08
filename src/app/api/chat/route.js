@@ -103,14 +103,17 @@ const tools = [
  * @returns {Promise<{error: string}>} Error object if retrieval fails
  */
 async function listAllProjects() {
+  console.log('[Chat API Tool] 📋 Executing listAllProjects...');
   try {
     await dbConnect();
     const projects = await Project.find({})
       .select('title slug description')
       .sort({ createdAt: -1 })
       .lean();
+    console.log(`[Chat API Tool] ✅ Retrieved ${projects.length} projects`);
     return projects.map((p) => ({ title: p.title, slug: p.slug, description: p.description }));
   } catch (error) {
+    console.error('[Chat API Tool] ❌ Error in listAllProjects:', error);
     return { error: 'Failed to retrieve projects.' };
   }
 }
@@ -126,10 +129,15 @@ async function listAllProjects() {
  * @returns {Promise<{error: string}>} Error object if project not found or retrieval fails
  */
 async function getProjectDetails(slug) {
+  console.log(`[Chat API Tool] 🔍 Executing getProjectDetails for slug: "${slug}"`);
   try {
     await dbConnect();
     const project = await Project.findOne({ slug }).lean();
-    if (!project) return { error: 'Project not found' };
+    if (!project) {
+      console.log(`[Chat API Tool] ⚠️ Project not found: "${slug}"`);
+      return { error: 'Project not found' };
+    }
+    console.log(`[Chat API Tool] ✅ Retrieved project: "${project.title}"`);
     return {
       title: project.title,
       slug: project.slug,
@@ -140,6 +148,7 @@ async function getProjectDetails(slug) {
       tags: project.tags?.map((t) => t.name || t) || [],
     };
   } catch (error) {
+    console.error('[Chat API Tool] ❌ Error in getProjectDetails:', error);
     return { error: 'Failed to retrieve project details.' };
   }
 }
@@ -154,14 +163,17 @@ async function getProjectDetails(slug) {
  * @returns {Promise<{error: string}>} Error object if retrieval fails
  */
 async function listAllArticles() {
+  console.log('[Chat API Tool] 📰 Executing listAllArticles...');
   try {
     await dbConnect();
     const articles = await Article.find({ status: 'published' })
       .select('title slug excerpt')
       .sort({ publishedAt: -1 })
       .lean();
+    console.log(`[Chat API Tool] ✅ Retrieved ${articles.length} published articles`);
     return articles.map((a) => ({ title: a.title, slug: a.slug, excerpt: a.excerpt }));
   } catch (error) {
+    console.error('[Chat API Tool] ❌ Error in listAllArticles:', error);
     return { error: 'Failed to retrieve articles.' };
   }
 }
@@ -177,10 +189,15 @@ async function listAllArticles() {
  * @returns {Promise<{error: string}>} Error object if article not found or retrieval fails
  */
 async function getArticleDetails(slug) {
+  console.log(`[Chat API Tool] 🔍 Executing getArticleDetails for slug: "${slug}"`);
   try {
     await dbConnect();
     const article = await Article.findOne({ slug, status: 'published' }).lean();
-    if (!article) return { error: 'Article not found' };
+    if (!article) {
+      console.log(`[Chat API Tool] ⚠️ Article not found: "${slug}"`);
+      return { error: 'Article not found' };
+    }
+    console.log(`[Chat API Tool] ✅ Retrieved article: "${article.title}"`);
     return {
       title: article.title,
       slug: article.slug,
@@ -188,6 +205,7 @@ async function getArticleDetails(slug) {
       tags: article.tags,
     };
   } catch (error) {
+    console.error('[Chat API Tool] ❌ Error in getArticleDetails:', error);
     return { error: 'Failed to retrieve article details.' };
   }
 }
@@ -204,16 +222,19 @@ async function getArticleDetails(slug) {
  * @returns {Promise<{error: string}>} Error object if search fails
  */
 async function searchPortfolio(query) {
+  console.log(`[Chat API Tool] 🔎 Executing searchPortfolio with query: "${query}"`);
   try {
     // *** THIS NOW USES THE UNIFIED SEARCH FUNCTION ***
     const results = await performSearch(query);
     if (results.length === 0) {
+      console.log(`[Chat API Tool] ℹ️ No results found for: "${query}"`);
       return { message: `No results found for "${query}". Try different keywords.` };
     }
+    console.log(`[Chat API Tool] ✅ Found ${results.length} results for: "${query}"`);
     // The AI can handle the flat array with a 'type' property just fine.
     return results;
   } catch (error) {
-    console.error("Error in chatbot's searchPortfolio tool:", error);
+    console.error('[Chat API Tool] ❌ Error in searchPortfolio:', error);
     return { error: 'Search failed.' };
   }
 }
@@ -234,6 +255,8 @@ async function executeToolCall(toolCall) {
   const { name, arguments: args } = toolCall.function;
   const parsedArgs = JSON.parse(args);
 
+  console.log(`[Chat API] 🔧 Executing tool: ${name}`, parsedArgs);
+
   switch (name) {
     case 'listAllProjects':
       return await listAllProjects();
@@ -246,7 +269,34 @@ async function executeToolCall(toolCall) {
     case 'searchPortfolio':
       return await searchPortfolio(parsedArgs.query);
     default:
+      console.error(`[Chat API] ❌ Unknown tool requested: ${name}`);
       return { error: 'Unknown tool', toolName: name };
+  }
+}
+
+/**
+ * Maps tool names to user-friendly status messages.
+ * Returns dynamic status text based on the tool being executed.
+ *
+ * @function getToolStatusMessage
+ * @param {string} toolName - Name of the tool being executed
+ * @param {Object} args - Arguments passed to the tool
+ * @returns {string} User-friendly status message
+ */
+function getToolStatusMessage(toolName, args) {
+  switch (toolName) {
+    case 'listAllProjects':
+      return '🎨 Loading all projects...';
+    case 'getProjectDetails':
+      return `🔍 Getting details about the project...`;
+    case 'listAllArticles':
+      return '📚 Fetching blog articles...';
+    case 'getArticleDetails':
+      return `📖 Reading the article...`;
+    case 'searchPortfolio':
+      return `🔎 Searching for "${args.query}"...`;
+    default:
+      return '🤔 Processing your request...';
   }
 }
 
@@ -265,36 +315,59 @@ async function executeToolCall(toolCall) {
  * @returns {Promise<NextResponse>} Streaming response with AI-generated content or JSON error response
  */
 export async function POST(request) {
+  console.log('\n[Chat API] 🚀 ======== NEW CHAT REQUEST ======== ');
   try {
     const { userMessage, chatHistory = [], sessionId, path = '/' } = await request.json();
-    if (!userMessage)
+    console.log('[Chat API] 📨 User message:', userMessage);
+    console.log('[Chat API] 📍 Path:', path);
+    console.log('[Chat API] 🔑 Session ID:', sessionId);
+    console.log('[Chat API] 💬 Chat history length:', chatHistory.length);
+
+    if (!userMessage) {
+      console.error('[Chat API] ❌ No user message provided');
       return NextResponse.json({ error: 'User message is required' }, { status: 400 });
+    }
 
+    console.log('[Chat API] 🏗️ Building dynamic context...');
     const context = await buildDynamicContext();
-    if (!context.chatbotSettings.isActive)
-      return NextResponse.json({ error: 'Chatbot is currently disabled' }, { status: 503 });
+    const actualModel = context.chatbotSettings.modelName || process.env.OPENAI_MODEL_NAME;
+    console.log('[Chat API] ✅ Context built successfully');
+    console.log('[Chat API] 🤖 AI Name:', context.chatbotSettings.aiName);
+    console.log('[Chat API] ⚙️ Model:', actualModel);
+    console.log('[Chat API] 🔌 Chatbot active:', context.chatbotSettings.isActive);
 
+    if (!context.chatbotSettings.isActive) {
+      console.warn('[Chat API] ⚠️ Chatbot is disabled');
+      return NextResponse.json({ error: 'Chatbot is currently disabled' }, { status: 503 });
+    }
+
+    console.log('[Chat API] 📝 Building system messages...');
     const systemMessages = buildSystemMessages(context, path);
     const messages = [
       ...systemMessages,
       ...chatHistory.map((msg) => ({ role: msg.role, content: msg.content })),
       { role: 'user', content: userMessage },
     ];
+    console.log('[Chat API] 📊 Total messages in conversation:', messages.length);
 
     let toolsUsed = [];
+    console.log('[Chat API] 🎯 Sending initial completion request to OpenAI...');
     const initialCompletion = await openai.chat.completions.create({
-      model: context.chatbotSettings.modelName || process.env.OPENAI_MODEL_NAME,
+      model: actualModel,
       messages: messages,
       tools: tools,
       tool_choice: 'auto',
     });
 
     const initialResponse = initialCompletion.choices[0].message;
+    console.log('[Chat API] 📥 Initial response received');
 
     if (initialResponse.tool_calls) {
+      console.log(`[Chat API] 🛠️ AI requested ${initialResponse.tool_calls.length} tool call(s)`);
       messages.push(initialResponse);
       for (const toolCall of initialResponse.tool_calls) {
         const toolResult = await executeToolCall(toolCall);
+        console.log(`[Chat API] ✅ Tool ${toolCall.function.name} executed successfully`);
         toolsUsed.push({
           name: toolCall.function.name,
           arguments: JSON.parse(toolCall.function.arguments),
@@ -305,27 +378,50 @@ export async function POST(request) {
           content: JSON.stringify(toolResult),
         });
       }
+      console.log('[Chat API] 🔄 All tool calls completed, proceeding with final response');
+    } else {
+      console.log('[Chat API] ℹ️ No tool calls requested by AI');
     }
 
+    console.log('[Chat API] 🌊 Starting streaming response...');
     const stream = new ReadableStream({
       async start(controller) {
         let assistantMessage = { content: '' };
+        let chunkCount = 0;
         try {
+          // Send tool status updates first if tools were used
+          if (toolsUsed.length > 0) {
+            for (const tool of toolsUsed) {
+              const statusMessage = getToolStatusMessage(tool.name, tool.arguments);
+              const statusData = JSON.stringify({ type: 'status', message: statusMessage }) + '\n';
+              controller.enqueue(new TextEncoder().encode(statusData));
+              console.log('[Chat API] 📢 Sent status:', statusMessage);
+            }
+          }
           const completion = await openai.chat.completions.create({
-            model: context.chatbotSettings.modelName || process.env.OPENAI_MODEL_NAME,
+            model: actualModel,
             messages: messages,
             stream: true,
           });
+          console.log('[Chat API] 📡 Stream established, receiving chunks...');
 
           for await (const chunk of completion) {
             const content = chunk.choices[0]?.delta?.content || '';
             if (content) {
+              chunkCount++;
               assistantMessage.content += content;
-              controller.enqueue(new TextEncoder().encode(content));
+              // Send content chunks as JSON data packets
+              const contentData = JSON.stringify({ type: 'content', message: content }) + '\n';
+              controller.enqueue(new TextEncoder().encode(contentData));
             }
           }
+          console.log(`[Chat API] ✅ Stream completed. Total chunks: ${chunkCount}`);
+          console.log(
+            `[Chat API] 📝 Response length: ${assistantMessage.content.length} characters`
+          );
           controller.close();
           // Analytics logic remains the same
+          console.log('[Chat API] 💾 Saving analytics event...');
           const analyticsEvent = new Analytics({
             eventType: 'chatbot_interaction',
             path,
@@ -337,15 +433,20 @@ export async function POST(request) {
             },
           });
           await analyticsEvent.save();
+          console.log('[Chat API] ✅ Analytics saved successfully');
+          console.log('[Chat API] 🏁 ======== REQUEST COMPLETE ======== \n');
         } catch (error) {
+          console.error('[Chat API] ❌ Stream error:', error);
           controller.error(error);
         }
       },
     });
 
+    console.log('[Chat API] 📤 Returning stream response');
     return new NextResponse(stream, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   } catch (error) {
-    console.error('Chat API error:', error);
+    console.error('[Chat API] 💥 FATAL ERROR:', error);
+    console.error('[Chat API] Stack trace:', error.stack);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
