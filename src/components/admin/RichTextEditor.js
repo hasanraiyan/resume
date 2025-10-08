@@ -9,6 +9,28 @@ import { useMemo } from 'react';
 const SimpleMdeReact = dynamic(() => import('react-simplemde-editor'), { ssr: false });
 
 export default function RichTextEditor({ label, value, onChange }) {
+  // Handle both string and object content (for migration from Editor.js to markdown)
+  const stringValue = useMemo(() => {
+    if (typeof value === 'string') {
+      return value;
+    }
+    if (typeof value === 'object' && value !== null) {
+      // If it's an Editor.js object, try to extract text content
+      if (value.blocks && Array.isArray(value.blocks)) {
+        return value.blocks
+          .map((block) => {
+            if (block.type === 'paragraph' && block.data && block.data.text) {
+              return block.data.text;
+            }
+            return '';
+          })
+          .join('\n\n');
+      }
+      return '';
+    }
+    return '';
+  }, [value]);
+
   // Memoize options to prevent re-renders
   const editorOptions = useMemo(() => {
     return {
@@ -45,7 +67,7 @@ export default function RichTextEditor({ label, value, onChange }) {
         {label}
       </label>
       <div className="prose-styles-editor">
-        <SimpleMdeReact options={editorOptions} value={value} onChange={onChange} />
+        <SimpleMdeReact options={editorOptions} value={stringValue} onChange={onChange} />
       </div>
       <style jsx global>{`
         .prose-styles-editor .EasyMDEContainer .CodeMirror {
