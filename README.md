@@ -1,36 +1,405 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Portfolio Resume Website
 
-## Getting Started
+A modern, full-stack portfolio website built with Next.js 15, featuring an AI-powered chatbot, comprehensive analytics, content management system, and dynamic project showcase. This application demonstrates advanced web development practices with a focus on performance, user experience, and maintainability.
 
-First, run the development server:
+## 🚀 Features
+
+### Core Features
+
+- **Dynamic Portfolio Management**: Full CRUD operations for projects and articles with image galleries
+- **AI-Powered Chatbot**: Intelligent assistant using OpenAI with function calling and dynamic context
+- **Advanced Search**: Fuzzy search across projects and articles using Fuse.js
+- **Analytics System**: Privacy-focused analytics with session tracking and bot detection
+- **Admin Dashboard**: Comprehensive admin interface for content and settings management
+- **Responsive Design**: Mobile-first design with smooth animations using GSAP
+
+### Technical Highlights
+
+- **Next.js 15** with App Router and React Server Components
+- **MongoDB** with Mongoose for data persistence
+- **NextAuth.js** for authentication and authorization
+- **OpenAI Integration** for AI chatbot with streaming responses
+- **Real-time Updates** with custom hooks and event-driven architecture
+- **SEO Optimized** with dynamic sitemap generation
+
+## 📋 Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- **Node.js** (v18 or higher)
+- **npm**, **yarn**, **pnpm**, or **bun**
+- **MongoDB** (local instance or MongoDB Atlas account)
+- **OpenAI API Key** (for chatbot functionality)
+
+## 🛠️ Installation & Setup
+
+### 1. Clone the Repository
+
+```bash
+git clone <repository-url>
+cd resume
+```
+
+### 2. Install Dependencies
+
+```bash
+npm install
+# or
+yarn install
+# or
+pnpm install
+```
+
+### 3. Environment Configuration
+
+Create a `.env.local` file in the root directory with the following variables:
+
+```env
+# Database
+MONGODB_URI=mongodb://localhost:27017/portfolio
+# or for MongoDB Atlas:
+# MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/portfolio
+
+# NextAuth Configuration
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-secret-key-here
+
+# OpenAI API (for AI Chatbot)
+OPENAI_API_KEY=your-openai-api-key
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL_NAME=gpt-4-turbo-preview
+
+# Admin Credentials (First User)
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=your-secure-password
+```
+
+**Security Note**: Generate a strong secret for `NEXTAUTH_SECRET` using:
+
+```bash
+openssl rand -base64 32
+```
+
+### 4. Database Setup
+
+The application will automatically create necessary indexes on first run. To seed initial data (optional):
+
+```bash
+# Start MongoDB (if running locally)
+mongod
+
+# Run the development server (will auto-initialize DB)
+npm run dev
+```
+
+### 5. Start Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## 📁 Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+resume/
+├── src/
+│   ├── app/                    # Next.js App Router pages and API routes
+│   │   ├── api/               # API endpoints
+│   │   │   ├── chat/          # AI chatbot API
+│   │   │   ├── search/        # Search API
+│   │   │   ├── analytics/     # Analytics tracking
+│   │   │   ├── projects/      # Projects CRUD
+│   │   │   └── admin/         # Admin APIs
+│   │   ├── admin/             # Admin dashboard pages
+│   │   ├── projects/          # Project showcase pages
+│   │   ├── blog/              # Blog/article pages
+│   │   └── page.js            # Homepage
+│   ├── components/            # React components
+│   │   ├── ui/                # Reusable UI components
+│   │   ├── projects/          # Project-specific components
+│   │   └── search/            # Search components
+│   ├── lib/                   # Utility libraries
+│   │   ├── ai/                # AI context builder
+│   │   ├── search/            # Search functionality
+│   │   ├── analytics.js       # Analytics tracker
+│   │   ├── dbConnect.js       # MongoDB connection
+│   │   └── serialize.js       # Data serialization
+│   ├── models/                # MongoDB Mongoose models
+│   │   ├── Project.js         # Project schema
+│   │   ├── Article.js         # Article/blog schema
+│   │   ├── Analytics.js       # Analytics events schema
+│   │   ├── User.js            # User schema
+│   │   ├── HeroSection.js     # Homepage hero schema
+│   │   ├── AboutSection.js    # About section schema
+│   │   └── ChatbotSettings.js # AI chatbot config
+│   ├── hooks/                 # Custom React hooks
+│   │   ├── useAnalytics.js    # Analytics hooks
+│   │   └── useHeroData.js     # Hero data management
+│   ├── context/               # React Context providers
+│   │   ├── LoadingContext.js  # Loading state management
+│   │   └── SiteContext.js     # Site-wide data
+│   ├── styles/                # Global styles and design tokens
+│   └── utils/                 # Utility functions
+├── middleware.js              # Next.js middleware for auth
+└── package.json               # Dependencies and scripts
+```
 
-## Learn More
+## 🏗️ Architecture Overview
 
-To learn more about Next.js, take a look at the following resources:
+### Backend Architecture
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+#### Database Models
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Project**: Portfolio projects with galleries, tags, and metadata
+- **Article**: Blog posts with draft/published workflow
+- **Analytics**: Event tracking with automatic expiration (1 year)
+- **User**: Admin user accounts
+- **HeroSection**, **AboutSection**: Editable homepage content
+- **ChatbotSettings**: AI assistant configuration
 
-## Deploy on Vercel
+#### API Routes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `/api/chat` - AI chatbot with streaming responses
+- `/api/search` - Unified search across content
+- `/api/analytics` - Event tracking endpoint
+- `/api/projects` - CRUD operations for projects
+- `/api/admin/*` - Admin-only endpoints
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Frontend Architecture
+
+#### Key Components
+
+- **Hero**: Animated homepage hero section
+- **Work**: Project showcase with filtering
+- **ProjectGallery**: Image carousel with thumbnails
+- **SearchOverlay**: Full-screen search interface
+- **Chatbot**: AI assistant interface
+
+#### Custom Hooks
+
+- `useAnalytics`: Comprehensive analytics tracking
+- `useHeroData`: Real-time hero data management
+- `useLoadingStatus`: Coordinated loading states
+- `useSiteContext`: Global site data access
+
+#### State Management
+
+- React Context for global state
+- Server Components for data fetching
+- Client Components for interactivity
+
+## 🔧 Development
+
+### Available Scripts
+
+```bash
+# Development server with Turbopack
+npm run dev
+
+# Production build
+npm run build
+
+# Start production server
+npm start
+
+# Lint code
+npm run lint
+
+# Format code with Prettier
+npm run format
+
+# Check formatting
+npm run check-format
+```
+
+### Code Style
+
+This project uses:
+
+- **ESLint** for code linting
+- **Prettier** for code formatting
+- **Husky** for pre-commit hooks
+- **lint-staged** for staged file linting
+
+Code is automatically formatted on commit.
+
+### Adding Documentation
+
+All public functions, classes, and components must include JSDoc comments:
+
+```javascript
+/**
+ * Brief description of the function.
+ *
+ * @param {Type} paramName - Parameter description
+ * @returns {ReturnType} Return value description
+ */
+function example(paramName) {
+  // Implementation
+}
+```
+
+## 🎨 Key Technologies
+
+### Core Stack
+
+- **Next.js 15.5** - React framework with App Router
+- **React 19** - UI library
+- **MongoDB** - NoSQL database
+- **Mongoose** - MongoDB ODM
+- **Tailwind CSS 4** - Utility-first CSS
+
+### Features & Libraries
+
+- **NextAuth.js** - Authentication
+- **OpenAI SDK** - AI integration
+- **Fuse.js** - Fuzzy search
+- **GSAP** - Animations
+- **Chart.js** - Analytics visualizations
+- **React Markdown** - Markdown rendering
+- **Lucide React** - Icons
+
+## 🔒 Security
+
+### Authentication
+
+- NextAuth.js with MongoDB adapter
+- Role-based access control (Admin roles)
+- Protected admin routes via middleware
+
+### Data Protection
+
+- Environment variables for sensitive data
+- Password hashing (handled by NextAuth)
+- Input validation and sanitization
+- Bot detection in analytics
+
+### Best Practices
+
+- HTTPS required in production
+- Secure session management
+- MongoDB connection pooling
+- Content Security Policy headers
+
+## 📊 Analytics
+
+The built-in analytics system tracks:
+
+- **Page Views**: With session tracking
+- **Custom Events**: Click tracking, form submissions
+- **Chatbot Interactions**: AI usage statistics
+- **User Sessions**: Duration and page count
+- **Bot Filtering**: Automatic bot detection
+
+Analytics data automatically expires after 1 year.
+
+## 🤖 AI Chatbot
+
+The AI chatbot features:
+
+- **Function Calling**: Access to projects and articles
+- **Streaming Responses**: Real-time message generation
+- **Context Awareness**: Dynamic context from database
+- **Tool Usage**: Search, list, and detail retrieval
+- **Configurable Persona**: Customizable via admin panel
+
+### Available Tools
+
+1. `listAllProjects` - Get all projects
+2. `getProjectDetails` - Get specific project
+3. `listAllArticles` - Get all articles
+4. `getArticleDetails` - Get specific article
+5. `searchPortfolio` - Search content
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+
+1. Push code to GitHub/GitLab/Bitbucket
+2. Import project in Vercel
+3. Add environment variables
+4. Deploy
+
+### Other Platforms
+
+The application can be deployed to any Node.js hosting platform:
+
+- Railway
+- Render
+- DigitalOcean App Platform
+- AWS/GCP/Azure
+
+**Requirements**:
+
+- Node.js 18+ runtime
+- MongoDB database access
+- Environment variables configured
+
+## 📝 Configuration
+
+### Chatbot Settings
+
+Configure the AI assistant via the admin panel at `/admin/chatbot`:
+
+- AI Name and Persona
+- Base Knowledge
+- Services Offered
+- Call-to-Action message
+- Behavioral Rules
+- Model Selection
+
+### Content Management
+
+Manage content via the admin dashboard:
+
+- Projects: `/admin/projects`
+- Articles: `/admin/blog`
+- Hero Section: `/admin/hero`
+- About Section: `/admin/about`
+- Analytics: `/admin/analytics`
+
+## 🐛 Troubleshooting
+
+### Database Connection Issues
+
+- Verify MongoDB is running
+- Check `MONGODB_URI` in `.env.local`
+- Ensure network access (for Atlas)
+
+### OpenAI API Errors
+
+- Verify API key is correct
+- Check API quota and billing
+- Ensure model name is valid
+
+### Build Errors
+
+- Clear `.next` folder: `rm -rf .next`
+- Delete `node_modules` and reinstall
+- Check Node.js version compatibility
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add/update tests and documentation
+5. Submit a pull request
+
+## 📄 License
+
+This project is private and proprietary.
+
+## 👨‍💻 Author
+
+Built with ❤️ by a senior full-stack developer with 30 years of experience.
+
+## 🆘 Support
+
+For issues and questions:
+
+- Check documentation above
+- Review existing issues
+- Create a new issue with detailed description

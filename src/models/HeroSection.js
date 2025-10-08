@@ -1,5 +1,27 @@
+/**
+ * @fileoverview MongoDB model for hero section content.
+ * Stores homepage hero section data including heading, introduction,
+ * CTAs, social links, and profile information. Implements singleton pattern.
+ */
+
 import mongoose from 'mongoose';
 
+/**
+ * Mongoose schema for HeroSection model.
+ * Stores hero section content with badge, heading, introduction, CTAs, and profile.
+ * Ensures only one active hero section exists at a time.
+ *
+ * @typedef {Object} HeroSection
+ * @property {Object} badge - Badge text displayed above heading
+ * @property {Object} heading - Three-line heading configuration
+ * @property {Object} introduction - Introduction text with name and role
+ * @property {Object} cta - Primary and secondary call-to-action buttons
+ * @property {Array<Object>} socialLinks - Social media links with icons and ordering
+ * @property {Object} profile - Profile image and experience badge
+ * @property {boolean} isActive - Whether this hero section is active
+ * @property {Date} createdAt - Auto-generated creation timestamp
+ * @property {Date} updatedAt - Auto-generated update timestamp
+ */
 const HeroSectionSchema = new mongoose.Schema(
   {
     badge: {
@@ -132,7 +154,10 @@ const HeroSectionSchema = new mongoose.Schema(
   }
 );
 
-// Ensure only one active hero section at a time
+/**
+ * Pre-save hook to ensure only one active hero section exists.
+ * Deactivates all other hero sections when a new one is activated.
+ */
 HeroSectionSchema.pre('save', async function (next) {
   if (this.isActive) {
     await this.constructor.updateMany({ _id: { $ne: this._id } }, { isActive: false });
@@ -140,7 +165,14 @@ HeroSectionSchema.pre('save', async function (next) {
   next();
 });
 
-// Default data seeding method
+/**
+ * Seeds default hero section data if none exists.
+ * Creates a new hero section with default social links.
+ *
+ * @static
+ * @function seedDefault
+ * @returns {Promise<HeroSection>} The existing or newly created hero section
+ */
 HeroSectionSchema.statics.seedDefault = async function () {
   const existingHero = await this.findOne({ isActive: true });
 

@@ -1,5 +1,28 @@
+/**
+ * @fileoverview MongoDB model for AI chatbot configuration.
+ * Stores chatbot settings including AI persona, behavior rules, and activation status.
+ * Implements singleton pattern to ensure only one configuration exists.
+ */
+
 import mongoose from 'mongoose';
 
+/**
+ * Mongoose schema for ChatbotSettings model.
+ * Stores comprehensive chatbot configuration including AI name, persona, knowledge base,
+ * behavioral rules, and activation status. Singleton pattern ensures only one config exists.
+ *
+ * @typedef {Object} ChatbotSettings
+ * @property {string} aiName - Name of the AI assistant
+ * @property {string} persona - AI personality and role description
+ * @property {string} baseKnowledge - Base knowledge about the portfolio owner
+ * @property {string} servicesOffered - List of services offered
+ * @property {string} callToAction - CTA message to guide users to contact
+ * @property {Array<string>} rules - Behavioral rules for the AI
+ * @property {boolean} isActive - Whether chatbot is enabled
+ * @property {string} modelName - AI model identifier
+ * @property {Date} createdAt - Auto-generated creation timestamp
+ * @property {Date} updatedAt - Auto-generated update timestamp
+ */
 const ChatbotSettingsSchema = new mongoose.Schema(
   {
     aiName: {
@@ -60,7 +83,10 @@ const ChatbotSettingsSchema = new mongoose.Schema(
   }
 );
 
-// Ensure only one document exists (singleton pattern)
+/**
+ * Pre-save hook to enforce singleton pattern.
+ * Prevents creation of multiple chatbot settings documents.
+ */
 ChatbotSettingsSchema.pre('save', async function (next) {
   if (this.isNew) {
     const existing = await mongoose.models.ChatbotSettings.findOne({});

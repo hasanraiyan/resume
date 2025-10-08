@@ -1,3 +1,9 @@
+/**
+ * @fileoverview AI Context Builder for chatbot system.
+ * Fetches and aggregates data from various database sources to build
+ * dynamic context for the AI chatbot, including identity, projects, and articles.
+ */
+
 import dbConnect from '../dbConnect';
 import HeroSection from '../../models/HeroSection';
 import AboutSection from '../../models/AboutSection';
@@ -6,10 +12,13 @@ import Article from '../../models/Article';
 import ChatbotSettings from '../../models/ChatbotSettings';
 
 /**
- * Context Builder for AI Chatbot
- * Dynamically builds context from database content
+ * Retrieves core identity information from the hero section.
+ * Provides fallback defaults if database query fails.
+ *
+ * @async
+ * @function getCoreIdentity
+ * @returns {Promise<{name: string, role: string, introduction: string}>} Core identity object
  */
-
 export async function getCoreIdentity() {
   try {
     await dbConnect();
@@ -39,6 +48,13 @@ export async function getCoreIdentity() {
   }
 }
 
+/**
+ * Retrieves the about section summary/bio from the database.
+ *
+ * @async
+ * @function getAboutSummary
+ * @returns {Promise<string>} Bio/summary text or default fallback
+ */
 export async function getAboutSummary() {
   try {
     await dbConnect();
@@ -58,6 +74,14 @@ export async function getAboutSummary() {
   }
 }
 
+/**
+ * Generates an overview of all projects for AI context.
+ * Fetches up to 20 projects and creates a summary string.
+ *
+ * @async
+ * @function getProjectOverview
+ * @returns {Promise<string>} Formatted project overview text
+ */
 export async function getProjectOverview() {
   try {
     await dbConnect();
@@ -79,6 +103,14 @@ export async function getProjectOverview() {
   }
 }
 
+/**
+ * Generates an overview of all articles for AI context.
+ * Fetches up to 10 articles and creates a summary string.
+ *
+ * @async
+ * @function getArticleOverview
+ * @returns {Promise<string>} Formatted article overview text
+ */
 export async function getArticleOverview() {
   try {
     await dbConnect();
@@ -100,6 +132,14 @@ export async function getArticleOverview() {
   }
 }
 
+/**
+ * Retrieves chatbot configuration settings from the database.
+ * Includes AI name, persona, rules, and activation status.
+ *
+ * @async
+ * @function getChatbotSettings
+ * @returns {Promise<Object>} Chatbot settings object with defaults if not found
+ */
 export async function getChatbotSettings() {
   try {
     await dbConnect();
@@ -149,6 +189,15 @@ export async function getChatbotSettings() {
   }
 }
 
+/**
+ * Builds the complete dynamic context for the AI chatbot.
+ * Fetches all context components in parallel for optimal performance.
+ *
+ * @async
+ * @function buildDynamicContext
+ * @returns {Promise<Object>} Complete context object containing all chatbot data
+ * @throws {Error} If context building fails
+ */
 export async function buildDynamicContext() {
   try {
     // Fetch all context data in parallel

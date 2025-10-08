@@ -1,3 +1,9 @@
+/**
+ * @fileoverview MongoDB database connection utility with connection caching.
+ * Implements a singleton pattern to reuse database connections across
+ * serverless function invocations in Next.js.
+ */
+
 // src/lib/dbConnect.js
 import mongoose from 'mongoose';
 
@@ -13,6 +19,16 @@ if (!cached) {
   cached = global.mongoose = { conn: null, promise: null };
 }
 
+/**
+ * Establishes a connection to MongoDB using Mongoose.
+ * Caches the connection globally to avoid creating new connections on each request.
+ * This is especially important in serverless environments like Vercel.
+ *
+ * @async
+ * @function dbConnect
+ * @returns {Promise<typeof mongoose>} Mongoose connection instance
+ * @throws {Error} If MONGODB_URI is not defined
+ */
 async function dbConnect() {
   if (cached.conn) {
     return cached.conn;

@@ -1,5 +1,23 @@
+/**
+ * @fileoverview MongoDB model for about section content.
+ * Stores about section data including biography, resume link, and feature highlights.
+ */
+
 import mongoose from 'mongoose';
 
+/**
+ * Mongoose schema for AboutSection model.
+ * Stores about section content with bio paragraphs, resume link, and features.
+ *
+ * @typedef {Object} AboutSection
+ * @property {string} sectionTitle - Section heading text
+ * @property {Object} bio - Biography with array of paragraphs
+ * @property {Object} resume - Resume download button text and URL
+ * @property {Array<Object>} features - Feature highlights with icons and descriptions
+ * @property {boolean} isActive - Whether this about section is active
+ * @property {Date} createdAt - Auto-generated creation timestamp
+ * @property {Date} updatedAt - Auto-generated update timestamp
+ */
 const AboutSectionSchema = new mongoose.Schema(
   {
     sectionTitle: {
@@ -66,7 +84,14 @@ const AboutSectionSchema = new mongoose.Schema(
   }
 );
 
-// Seed default data
+/**
+ * Seeds default about section data.
+ * Creates a new about section with default biography and features.
+ *
+ * @static
+ * @function seedDefault
+ * @returns {Promise<AboutSection>} The newly created about section
+ */
 AboutSectionSchema.statics.seedDefault = async function () {
   const defaultData = {
     sectionTitle: 'About Me',

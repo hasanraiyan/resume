@@ -1,6 +1,17 @@
-// Helper function to recursively serialize MongoDB ObjectIds and other complex objects
-// for safe passing from Server Components to Client Components
+/**
+ * @fileoverview Serialization utilities for MongoDB objects.
+ * Converts complex MongoDB types (ObjectId, Date) to JSON-safe formats
+ * for passing data from Server Components to Client Components in Next.js.
+ */
 
+/**
+ * Recursively serializes MongoDB ObjectIds, Dates, and nested objects.
+ * Ensures data is safe for JSON serialization and client-side consumption.
+ *
+ * @function serializeForClient
+ * @param {*} obj - The object to serialize
+ * @returns {*} Serialized object with ObjectIds converted to strings and Dates to ISO strings
+ */
 export function serializeForClient(obj) {
   if (obj === null || obj === undefined) return obj;
 
@@ -42,7 +53,14 @@ export function serializeForClient(obj) {
   return obj;
 }
 
-// Convenience function for serializing project data specifically
+/**
+ * Serializes a single project object with explicit ID handling.
+ * Ensures both _id and id fields are properly converted to strings.
+ *
+ * @function serializeProject
+ * @param {Object} project - The project object to serialize
+ * @returns {Object|null} Serialized project or null if input is falsy
+ */
 export function serializeProject(project) {
   if (!project) return null;
 
@@ -53,7 +71,14 @@ export function serializeProject(project) {
   };
 }
 
-// Convenience function for serializing arrays of projects
+/**
+ * Serializes an array of project objects.
+ * Maps each project through the serializeProject function.
+ *
+ * @function serializeProjects
+ * @param {Array} projects - Array of project objects to serialize
+ * @returns {Array} Array of serialized projects, or empty array if input is invalid
+ */
 export function serializeProjects(projects) {
   if (!Array.isArray(projects)) return [];
 

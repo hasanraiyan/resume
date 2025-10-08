@@ -1,6 +1,31 @@
+/**
+ * @fileoverview MongoDB model for analytics events.
+ * Tracks user interactions, page views, and custom events with session management.
+ * Includes automatic data expiration and aggregation methods for reporting.
+ */
+
 // src/lib/models/Analytics.js
 import mongoose from 'mongoose';
 
+/**
+ * Mongoose schema for Analytics model.
+ * Stores various types of user events with metadata for analysis.
+ * Data automatically expires after 1 year.
+ *
+ * @typedef {Object} Analytics
+ * @property {string} eventType - Type of event (pageview, custom, click, form_submit, download, chatbot_interaction)
+ * @property {string} path - Page path or event identifier
+ * @property {string} eventName - Name for custom events
+ * @property {Object} properties - Additional event metadata
+ * @property {string} sessionId - Session identifier for grouping
+ * @property {string} userAgent - User agent string
+ * @property {string} referrer - Referrer URL
+ * @property {Date} timestamp - Event timestamp
+ * @property {string} ipHash - Hashed IP address for privacy
+ * @property {Object} deviceInfo - Device/browser information
+ * @property {Date} createdAt - Auto-generated creation timestamp
+ * @property {Date} updatedAt - Auto-generated update timestamp
+ */
 const AnalyticsSchema = new mongoose.Schema(
   {
     // Event type: 'pageview', 'custom', etc.
@@ -85,7 +110,16 @@ AnalyticsSchema.index({ timestamp: -1, eventType: 1 });
 AnalyticsSchema.index({ sessionId: 1, timestamp: -1 });
 AnalyticsSchema.index({ path: 1, timestamp: -1 });
 
-// Static method to aggregate pageviews by path
+/**
+ * Aggregates pageview statistics by path for a given date range.
+ * Returns views and unique visitors per path.
+ *
+ * @static
+ * @function getPageviewStats
+ * @param {Date} startDate - Start of date range
+ * @param {Date} endDate - End of date range
+ * @returns {Promise<Array<{path: string, views: number, uniqueVisitors: number}>>} Aggregated pageview statistics
+ */
 AnalyticsSchema.statics.getPageviewStats = async function (startDate, endDate) {
   return this.aggregate([
     {
@@ -113,7 +147,16 @@ AnalyticsSchema.statics.getPageviewStats = async function (startDate, endDate) {
   ]);
 };
 
-// Static method to get session stats
+/**
+ * Aggregates session statistics for a given date range.
+ * Returns session duration, event count, and pages visited per session.
+ *
+ * @static
+ * @function getSessionStats
+ * @param {Date} startDate - Start of date range
+ * @param {Date} endDate - End of date range
+ * @returns {Promise<Array<{sessionId: string, events: number, duration: number, pages: number, firstSeen: Date, lastSeen: Date}>>} Aggregated session statistics
+ */
 AnalyticsSchema.statics.getSessionStats = async function (startDate, endDate) {
   return this.aggregate([
     {

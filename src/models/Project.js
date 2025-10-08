@@ -1,6 +1,34 @@
+/**
+ * @fileoverview MongoDB model for portfolio projects.
+ * Defines the schema for project data including metadata, links, details,
+ * images, and tags. Includes text indexing for search functionality.
+ */
+
 // src/models/Project.js
 import mongoose from 'mongoose';
 
+/**
+ * Mongoose schema for Project model.
+ * Stores comprehensive project information including metadata, links,
+ * project details, image galleries, and categorized tags.
+ *
+ * @typedef {Object} Project
+ * @property {string} slug - Unique URL-friendly identifier
+ * @property {boolean} featured - Whether project is featured on homepage
+ * @property {string} projectNumber - Display number for ordering
+ * @property {string} category - Project category/type
+ * @property {string} title - Project title
+ * @property {string} tagline - Short tagline
+ * @property {string} description - Brief description
+ * @property {string} fullDescription - Detailed description
+ * @property {string} thumbnail - Thumbnail image URL
+ * @property {Object} links - External links (live, github, figma, demo)
+ * @property {Object} details - Project details (client, year, duration, role, challenge, solution, results)
+ * @property {Array<Object>} images - Gallery images with URL, alt text, and captions
+ * @property {Array<Object>} tags - Technology/skill tags with name and category
+ * @property {Date} createdAt - Auto-generated creation timestamp
+ * @property {Date} updatedAt - Auto-generated update timestamp
+ */
 const ProjectSchema = new mongoose.Schema(
   {
     slug: { type: String, required: true, unique: true },

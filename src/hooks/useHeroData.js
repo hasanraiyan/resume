@@ -1,8 +1,19 @@
+/**
+ * @fileoverview React hook for fetching and managing hero section data.
+ * Provides real-time updates and cache-busting for admin interface changes.
+ */
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 
-// Custom hook for managing hero data with real-time updates
+/**
+ * Custom hook for managing hero section data with real-time updates.
+ * Fetches hero data from API and listens for update events from admin interface.
+ *
+ * @function useHeroData
+ * @returns {{heroData: Object|null, loading: boolean, error: string|null, refreshData: Function}} Hero data state and control functions
+ */
 export function useHeroData() {
   const [heroData, setHeroData] = useState(null);
   const [loading, setLoading] = useState(true);
