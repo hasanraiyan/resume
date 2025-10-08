@@ -1,40 +1,37 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
-import { Badge } from '@/components/ui'
+import { useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Badge } from '@/components/ui';
 
 /**
  * Project Card Component - CLEAN & MINIMAL
  * Using Next.js Link for better performance
  */
 export default function ProjectCard({ project }) {
-  const [imageLoaded, setImageLoaded] = useState(false)
-  const [imageError, setImageError] = useState(false)
-  
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
   // Debug logging for image loading issues
   const handleImageLoad = () => {
-    console.log(`Image loaded successfully: ${project.title}`)
-    setImageLoaded(true)
-  }
-  
+    console.log(`Image loaded successfully: ${project.title}`);
+    setImageLoaded(true);
+  };
+
   const handleImageError = (e) => {
-    console.error(`Image failed to load for ${project.title}:`, e)
-    setImageError(true)
-  }
+    console.error(`Image failed to load for ${project.title}:`, e);
+    setImageError(true);
+  };
 
   return (
-    <Link 
-      href={`/projects/${project.slug}`}
-      className="group block hover-target"
-    >
+    <Link href={`/projects/${project.slug}`} className="group block hover-target">
       {/* Project Image - Fixed aspect ratio */}
       <div className="relative overflow-hidden rounded-lg mb-4 sm:mb-5 image-reveal">
         <div className="aspect-[4/3] bg-gray-200 flex items-center justify-center">
           {!imageError ? (
-            <Image 
-              src={project.thumbnail} 
+            <Image
+              src={project.thumbnail}
               alt={project.title}
               fill
               className={`w-full h-full object-cover transition-all duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
@@ -48,7 +45,7 @@ export default function ProjectCard({ project }) {
               <i className="fas fa-image text-4xl"></i>
             </div>
           )}
-          
+
           {/* Loading state - only show if image hasn't loaded yet */}
           {!imageLoaded && !imageError && (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-200 z-10">
@@ -56,7 +53,7 @@ export default function ProjectCard({ project }) {
             </div>
           )}
         </div>
-        
+
         {/* Overlay on hover */}
         <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-all duration-300"></div>
       </div>
@@ -67,22 +64,24 @@ export default function ProjectCard({ project }) {
         <div className="text-xs font-semibold tracking-widest mb-2 text-gray-600 uppercase">
           {project.category}
         </div>
-        
+
         {/* Title */}
         <h3 className="text-xl sm:text-2xl font-bold mb-3 group-hover:text-gray-600 transition">
           {project.title}
         </h3>
-        
+
         {/* Description - 2 lines max with custom truncation */}
-        <p className="text-sm sm:text-base text-gray-700 mb-4 leading-relaxed overflow-hidden" 
-           style={{ 
-             display: '-webkit-box',
-             WebkitLineClamp: 2,
-             WebkitBoxOrient: 'vertical'
-           }}>
+        <p
+          className="text-sm sm:text-base text-gray-700 mb-4 leading-relaxed overflow-hidden"
+          style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+          }}
+        >
           {project.description}
         </p>
-        
+
         {/* Tech Tags - Show only 3 */}
         <div className="flex flex-wrap gap-2">
           {project.tags.slice(0, 3).map((tag, index) => (
@@ -90,13 +89,9 @@ export default function ProjectCard({ project }) {
               {tag.name}
             </Badge>
           ))}
-          {project.tags.length > 3 && (
-            <Badge variant="tag">
-              +{project.tags.length - 3}
-            </Badge>
-          )}
+          {project.tags.length > 3 && <Badge variant="tag">+{project.tags.length - 3}</Badge>}
         </div>
       </div>
     </Link>
-  )
+  );
 }

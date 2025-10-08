@@ -17,11 +17,24 @@ export default function RichTextEditor({ label, value, onChange }) {
       // You can add more EasyMDE options here if needed
       // https://github.com/Ionaru/easy-markdown-editor#options-list
       toolbar: [
-        'bold', 'italic', 'heading', '|', 
-        'quote', 'unordered-list', 'ordered-list', '|', 
-        'link', 'image', 'code', 'table', '|', 
-        'preview', 'side-by-side', 'fullscreen', '|',
-        'guide'
+        'bold',
+        'italic',
+        'heading',
+        '|',
+        'quote',
+        'unordered-list',
+        'ordered-list',
+        '|',
+        'link',
+        'image',
+        'code',
+        'table',
+        '|',
+        'preview',
+        'side-by-side',
+        'fullscreen',
+        '|',
+        'guide',
       ],
     };
   }, []);

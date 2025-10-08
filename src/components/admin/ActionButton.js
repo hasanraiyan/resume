@@ -1,9 +1,16 @@
+'use client';
 
-'use client'
+import { Button } from '@/components/ui';
 
-import { Button } from '@/components/ui'
-
-export default function ActionButton({ isSaving, text, savingText, variant, onClick, disabled, ...props }) {
+export default function ActionButton({
+  isSaving,
+  text,
+  savingText,
+  variant,
+  onClick,
+  disabled,
+  ...props
+}) {
   return (
     <Button
       type={onClick ? 'button' : 'submit'}
@@ -21,5 +28,5 @@ export default function ActionButton({ isSaving, text, savingText, variant, onCl
         text
       )}
     </Button>
-  )
+  );
 }

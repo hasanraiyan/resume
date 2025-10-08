@@ -1,26 +1,26 @@
-import Navbar from '@/components/Navbar'
-import Footer from '@/components/Footer'
-import CustomCursor from '@/components/CustomCursor'
-import { Section } from '@/components/ui'
-import ProjectsPageClient from '@/components/projects/ProjectsPageClient'
-import dbConnect from '@/lib/dbConnect'
-import Project from '@/models/Project'
-import { serializeProjects } from '@/lib/serialize'
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import CustomCursor from '@/components/CustomCursor';
+import { Section } from '@/components/ui';
+import ProjectsPageClient from '@/components/projects/ProjectsPageClient';
+import dbConnect from '@/lib/dbConnect';
+import Project from '@/models/Project';
+import { serializeProjects } from '@/lib/serialize';
 
 export default async function ProjectsPage() {
-  await dbConnect()
-  
+  await dbConnect();
+
   // Fetch all projects from MongoDB, convert to plain objects
-  const allProjects = await Project.find({}).sort({ createdAt: -1 }).lean()
-  
+  const allProjects = await Project.find({}).sort({ createdAt: -1 }).lean();
+
   // Serialize all ObjectIds recursively for client components
-  const projects = serializeProjects(allProjects)
+  const projects = serializeProjects(allProjects);
 
   return (
     <>
       <CustomCursor />
       <Navbar />
-      
+
       <main className="pt-20 sm:pt-24 min-h-screen">
         <Section
           title="All Projects"
@@ -34,5 +34,5 @@ export default async function ProjectsPage() {
 
       <Footer />
     </>
-  )
+  );
 }

@@ -1,108 +1,141 @@
-import mongoose from 'mongoose'
+/**
+ * @fileoverview MongoDB model for about section content.
+ * Stores about section data including biography, resume link, and feature highlights.
+ */
 
-const AboutSectionSchema = new mongoose.Schema({
-  sectionTitle: {
-    type: String,
-    required: true,
-    default: 'About Me'
+import mongoose from 'mongoose';
+
+/**
+ * Mongoose schema for AboutSection model.
+ * Stores about section content with bio paragraphs, resume link, and features.
+ *
+ * @typedef {Object} AboutSection
+ * @property {string} sectionTitle - Section heading text
+ * @property {Object} bio - Biography with array of paragraphs
+ * @property {Object} resume - Resume download button text and URL
+ * @property {Array<Object>} features - Feature highlights with icons and descriptions
+ * @property {boolean} isActive - Whether this about section is active
+ * @property {Date} createdAt - Auto-generated creation timestamp
+ * @property {Date} updatedAt - Auto-generated update timestamp
+ */
+const AboutSectionSchema = new mongoose.Schema(
+  {
+    sectionTitle: {
+      type: String,
+      required: true,
+      default: 'About Me',
+    },
+
+    bio: {
+      paragraphs: [
+        {
+          type: String,
+          required: true,
+          default:
+            "I'm a passionate creative developer with a love for crafting exceptional digital experiences. My journey in design and development has been driven by curiosity and a constant desire to learn.",
+        },
+      ],
+    },
+
+    resume: {
+      text: {
+        type: String,
+        required: true,
+        default: 'Download Resume',
+      },
+      url: {
+        type: String,
+        required: true,
+        default: '#',
+      },
+    },
+
+    features: [
+      {
+        id: {
+          type: Number,
+          required: true,
+        },
+        icon: {
+          type: String,
+          required: true,
+          default: 'fas fa-lightbulb',
+        },
+        title: {
+          type: String,
+          required: true,
+          default: 'Creative',
+        },
+        description: {
+          type: String,
+          required: true,
+          default: 'Innovative solutions for complex problems',
+        },
+      },
+    ],
+
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
-
-  bio: {
-    paragraphs: [{
-      type: String,
-      required: true,
-      default: "I'm a passionate creative developer with a love for crafting exceptional digital experiences. My journey in design and development has been driven by curiosity and a constant desire to learn."
-    }]
-  },
-
-  resume: {
-    text: {
-      type: String,
-      required: true,
-      default: 'Download Resume'
-    },
-    url: {
-      type: String,
-      required: true,
-      default: '#'
-    }
-  },
-
-  features: [{
-    id: {
-      type: Number,
-      required: true
-    },
-    icon: {
-      type: String,
-      required: true,
-      default: 'fas fa-lightbulb'
-    },
-    title: {
-      type: String,
-      required: true,
-      default: 'Creative'
-    },
-    description: {
-      type: String,
-      required: true,
-      default: 'Innovative solutions for complex problems'
-    }
-  }],
-
-  isActive: {
-    type: Boolean,
-    default: true
+  {
+    timestamps: true,
   }
-}, {
-  timestamps: true
-})
+);
 
-// Seed default data
-AboutSectionSchema.statics.seedDefault = async function() {
+/**
+ * Seeds default about section data.
+ * Creates a new about section with default biography and features.
+ *
+ * @static
+ * @function seedDefault
+ * @returns {Promise<AboutSection>} The newly created about section
+ */
+AboutSectionSchema.statics.seedDefault = async function () {
   const defaultData = {
     sectionTitle: 'About Me',
     bio: {
       paragraphs: [
         "I'm a passionate creative developer with a love for crafting exceptional digital experiences. My journey in design and development has been driven by curiosity and a constant desire to learn.",
-        "With expertise spanning from concept to execution, I bring ideas to life through clean code, thoughtful design, and attention to detail that makes every project unique.",
-        "When I'm not coding, you'll find me exploring new design trends, experimenting with new technologies, or enjoying a good cup of coffee while sketching new ideas."
-      ]
+        'With expertise spanning from concept to execution, I bring ideas to life through clean code, thoughtful design, and attention to detail that makes every project unique.',
+        "When I'm not coding, you'll find me exploring new design trends, experimenting with new technologies, or enjoying a good cup of coffee while sketching new ideas.",
+      ],
     },
     resume: {
       text: 'Download Resume',
-      url: '#'
+      url: '#',
     },
     features: [
       {
         id: 1,
         icon: 'fas fa-lightbulb',
         title: 'Creative',
-        description: 'Innovative solutions for complex problems'
+        description: 'Innovative solutions for complex problems',
       },
       {
         id: 2,
         icon: 'fas fa-rocket',
         title: 'Fast',
-        description: 'Optimized performance and quick delivery'
+        description: 'Optimized performance and quick delivery',
       },
       {
         id: 3,
         icon: 'fas fa-mobile-alt',
         title: 'Responsive',
-        description: 'Works perfectly on all devices'
+        description: 'Works perfectly on all devices',
       },
       {
         id: 4,
         icon: 'fas fa-code',
         title: 'Clean Code',
-        description: 'Maintainable and scalable solutions'
-      }
+        description: 'Maintainable and scalable solutions',
+      },
     ],
-    isActive: true
-  }
+    isActive: true,
+  };
 
-  return await this.create(defaultData)
-}
+  return await this.create(defaultData);
+};
 
-export default mongoose.models.AboutSection || mongoose.model('AboutSection', AboutSectionSchema)
+export default mongoose.models.AboutSection || mongoose.model('AboutSection', AboutSectionSchema);

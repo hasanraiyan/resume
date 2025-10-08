@@ -1,66 +1,63 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { gsap } from 'gsap'
-import { Button } from '@/components/ui'
-import { useSiteContext } from '@/context/SiteContext' // Import the context hook
-import SearchOverlay from '@/components/search/SearchOverlay'
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { gsap } from 'gsap';
+import { Button } from '@/components/ui';
+import { useSiteContext } from '@/context/SiteContext'; // Import the context hook
+import SearchOverlay from '@/components/search/SearchOverlay';
 
 export default function Navbar() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const pathname = usePathname()
-  const { initials, heroData } = useSiteContext() // Use context to get dynamic data
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const pathname = usePathname();
+  const { initials, heroData } = useSiteContext(); // Use context to get dynamic data
 
   // --- Data for the Navbar ---
   // The logo is now dynamic, but the links are static structural elements.
   const logo = {
-    text: initials || "JD", // Use initials from context, with a fallback
-    link: "/"
+    text: initials || 'JD', // Use initials from context, with a fallback
+    link: '/',
   };
-  
+
   const navigationLinks = [
-    { id: 1, label: "Home", href: "/" },
-    { id: 2, label: "About", href: "/#about" },
-    { id: 3, label: "Work", href: "/#work" },
-    { id: 4, label: "Projects", href: "/projects" },
-    { id: 5, label: "Blog", href: "/blog" }
+    { id: 1, label: 'Home', href: '/' },
+    { id: 2, label: 'About', href: '/#about' },
+    { id: 3, label: 'Work', href: '/#work' },
+    { id: 4, label: 'Projects', href: '/projects' },
+    { id: 5, label: 'Blog', href: '/blog' },
   ];
-  
+
   const cta = {
     text: "Let's Talk",
-    href: "/#contact"
+    href: '/#contact',
   };
 
   // Mobile menu combines navigation and social links from heroData
   const mobileMenu = {
-    menuItems: [
-      ...navigationLinks,
-      { id: 6, label: "Contact", href: "/#contact" }
-    ],
+    menuItems: [...navigationLinks, { id: 6, label: 'Contact', href: '/#contact' }],
     cta: cta,
-    socialLinks: heroData?.socialLinks || [] // Use social links from context
+    socialLinks: heroData?.socialLinks || [], // Use social links from context
   };
 
   // useEffect for magnetic buttons and smooth scrolling
   useEffect(() => {
-    const magneticBtns = document.querySelectorAll('.magnetic-btn')
+    const magneticBtns = document.querySelectorAll('.magnetic-btn');
 
     magneticBtns.forEach((btn) => {
       const handleMouseMove = (e) => {
-        const rect = btn.getBoundingClientRect()
-        const x = e.clientX - rect.left - rect.width / 2
-        const y = e.clientY - rect.top - rect.height / 2
+        const rect = btn.getBoundingClientRect();
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
 
         gsap.to(btn, {
           x: x * 0.3,
           y: y * 0.3,
           duration: 0.4,
           ease: 'power2.out',
-        })
-      }
+        });
+      };
 
       const handleMouseLeave = () => {
         gsap.to(btn, {
@@ -68,60 +65,56 @@ export default function Navbar() {
           y: 0,
           duration: 0.6,
           ease: 'elastic.out(1, 0.3)',
-        })
-      }
+        });
+      };
 
-      btn.addEventListener('mousemove', handleMouseMove)
-      btn.addEventListener('mouseleave', handleMouseLeave)
-    })
+      btn.addEventListener('mousemove', handleMouseMove);
+      btn.addEventListener('mouseleave', handleMouseLeave);
+    });
 
     const handleHashClick = (e) => {
-      const href = e.currentTarget.getAttribute('href')
+      const href = e.currentTarget.getAttribute('href');
       if (href?.startsWith('/#')) {
         if (pathname === '/') {
-          e.preventDefault()
-          const id = href.replace('/#', '')
-          const element = document.getElementById(id)
+          e.preventDefault();
+          const id = href.replace('/#', '');
+          const element = document.getElementById(id);
           if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            setIsMenuOpen(false)
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setIsMenuOpen(false);
           }
-        } 
+        }
       }
-    }
+    };
 
-    const hashLinks = document.querySelectorAll('a[href^="/#"]')
+    const hashLinks = document.querySelectorAll('a[href^="/#"]');
     hashLinks.forEach((link) => {
-      link.addEventListener('click', handleHashClick)
-    })
+      link.addEventListener('click', handleHashClick);
+    });
 
     return () => {
       hashLinks.forEach((link) => {
-        link.removeEventListener('click', handleHashClick)
-      })
-    }
-  }, [pathname])
+        link.removeEventListener('click', handleHashClick);
+      });
+    };
+  }, [pathname]);
 
   // Prevent body scroll when menu is open
   useEffect(() => {
     if (isMenuOpen) {
-      document.body.style.overflow = 'hidden'
+      document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset'
+      document.body.style.overflow = 'unset';
     }
-  }, [isMenuOpen])
+  }, [isMenuOpen]);
 
   return (
     <>
       <nav className="fixed w-full z-50 top-0 bg-white bg-opacity-90 backdrop-blur-sm border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-12">
           <div className="flex items-center justify-between h-16 sm:h-20">
-            
             {/* Logo */}
-            <Link 
-              href={logo.link} 
-              className="text-xl sm:text-2xl font-bold hover-target z-50"
-            >
+            <Link href={logo.link} className="text-xl sm:text-2xl font-bold hover-target z-50">
               {logo.text}
             </Link>
 
@@ -149,7 +142,12 @@ export default function Navbar() {
                 aria-label="Search"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
                 </svg>
               </button>
 
@@ -172,7 +170,12 @@ export default function Navbar() {
                 aria-label="Search"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
                 </svg>
               </button>
 
@@ -208,9 +211,7 @@ export default function Navbar() {
       {/* Mobile Menu Overlay */}
       <div
         className={`md:hidden fixed inset-0 z-40 transition-all duration-500 ease-in-out ${
-          isMenuOpen
-            ? 'opacity-100 pointer-events-auto'
-            : 'opacity-0 pointer-events-none'
+          isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
       >
         {/* Backdrop */}
@@ -228,7 +229,6 @@ export default function Navbar() {
           }`}
         >
           <div className="flex flex-col h-full pt-24 pb-8 px-8">
-            
             {/* Menu Items */}
             <nav className="flex-1 flex flex-col justify-start space-y-2">
               {mobileMenu.menuItems.map((item) => (
@@ -292,10 +292,7 @@ export default function Navbar() {
       </div>
 
       {/* Search Overlay */}
-      <SearchOverlay
-        isOpen={isSearchOpen}
-        onClose={() => setIsSearchOpen(false)}
-      />
+      <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </>
-  )
+  );
 }

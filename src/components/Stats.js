@@ -1,60 +1,60 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { SkeletonLoader } from './Skeleton'
+import { useEffect, useState } from 'react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { SkeletonLoader } from './Skeleton';
 
 // ========================================
 // 📦 DYNAMIC DATA (Backend-Ready)
 // ========================================
 export default function Stats() {
-  const [statsData, setStatsData] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [statsData, setStatsData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStatsData = async () => {
       try {
-        const response = await fetch('/api/stats')
-        const result = await response.json()
+        const response = await fetch('/api/stats');
+        const result = await response.json();
 
         if (result.success) {
-          setStatsData(result.data)
+          setStatsData(result.data);
         }
       } catch (error) {
-        console.error('Error fetching stats data:', error)
+        console.error('Error fetching stats data:', error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchStatsData()
+    fetchStatsData();
 
     // Listen for real-time updates
     const handleStatsDataUpdate = () => {
-      fetchStatsData()
-    }
+      fetchStatsData();
+    };
 
-    window.addEventListener('statsDataUpdated', handleStatsDataUpdate)
+    window.addEventListener('statsDataUpdated', handleStatsDataUpdate);
 
     return () => {
-      window.removeEventListener('statsDataUpdated', handleStatsDataUpdate)
-    }
-  }, [])
+      window.removeEventListener('statsDataUpdated', handleStatsDataUpdate);
+    };
+  }, []);
 
   useEffect(() => {
     // Only animate when we have data and are not loading
-    if (loading || !statsData) return
+    if (loading || !statsData) return;
 
-    gsap.registerPlugin(ScrollTrigger)
+    gsap.registerPlugin(ScrollTrigger);
 
     // Small delay to ensure DOM is ready
     const timer = setTimeout(() => {
       try {
-        const container = document.querySelector('.stats-section .max-w-6xl')
+        const container = document.querySelector('.stats-section .max-w-6xl');
         if (container && container.children.length > 0) {
           // Reset any existing transforms
-          gsap.set(container.children, { opacity: 1, y: 0 })
+          gsap.set(container.children, { opacity: 1, y: 0 });
 
           gsap.from(container.children, {
             opacity: 0,
@@ -68,30 +68,30 @@ export default function Stats() {
               toggleActions: 'play none none reverse',
               refreshPriority: -1,
             },
-          })
+          });
         }
       } catch (error) {
-        console.warn('GSAP animation error in Stats:', error)
+        console.warn('GSAP animation error in Stats:', error);
       }
-    }, 100)
+    }, 100);
 
     return () => {
-      clearTimeout(timer)
+      clearTimeout(timer);
       // Clean up GSAP animations
       try {
-        ScrollTrigger.getAll().forEach(trigger => {
+        ScrollTrigger.getAll().forEach((trigger) => {
           if (trigger.trigger === '.stats-section') {
-            trigger.kill()
+            trigger.kill();
           }
-        })
+        });
       } catch (error) {
-        console.warn('GSAP cleanup error:', error)
+        console.warn('GSAP cleanup error:', error);
       }
-    }
-  }, [loading, statsData])
+    };
+  }, [loading, statsData]);
 
   if (loading || !statsData) {
-    return <SkeletonLoader type="stats" />
+    return <SkeletonLoader type="stats" />;
   }
 
   return (
@@ -104,7 +104,9 @@ export default function Stats() {
               <div className="flex items-center justify-center mb-2 sm:mb-3 space-x-3">
                 {/* Icon */}
                 {stat.icon && (
-                  <i className={`${stat.icon} text-2xl sm:text-3xl text-gray-300 group-hover:text-white transition-colors duration-300 flex-shrink-0`}></i>
+                  <i
+                    className={`${stat.icon} text-2xl sm:text-3xl text-gray-300 group-hover:text-white transition-colors duration-300 flex-shrink-0`}
+                  ></i>
                 )}
 
                 {/* Number */}
@@ -130,5 +132,5 @@ export default function Stats() {
         </div>
       </div>
     </section>
-  )
+  );
 }

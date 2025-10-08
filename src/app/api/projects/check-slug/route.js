@@ -15,19 +15,15 @@ export async function GET(request) {
 
     // Check if slug exists (case-insensitive)
     const existingProject = await Project.findOne({
-      slug: { $regex: `^${slug}$`, $options: 'i' }
+      slug: { $regex: `^${slug}$`, $options: 'i' },
     });
 
     return NextResponse.json({
       available: !existingProject,
-      slug: slug
+      slug: slug,
     });
-
   } catch (error) {
     console.error('Error checking slug availability:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

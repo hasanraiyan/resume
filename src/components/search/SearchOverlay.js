@@ -35,22 +35,21 @@ export default function SearchOverlay({ isOpen, onClose }) {
           break;
         case 'ArrowDown':
           e.preventDefault();
-          setSelectedIndex(prev =>
-            prev < results.length - 1 ? prev + 1 : 0
-          );
+          setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : 0));
           break;
         case 'ArrowUp':
           e.preventDefault();
-          setSelectedIndex(prev => prev > 0 ? prev - 1 : results.length - 1);
+          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
           break;
         case 'Enter':
           e.preventDefault();
           if (selectedIndex >= 0 && selectedIndex < results.length) {
             // Navigate to selected result
             const selectedResult = results[selectedIndex];
-            const href = selectedResult.type === 'project'
-              ? `/projects/${selectedResult.slug}`
-              : `/blog/${selectedResult.slug}`;
+            const href =
+              selectedResult.type === 'project'
+                ? `/projects/${selectedResult.slug}`
+                : `/blog/${selectedResult.slug}`;
             window.location.href = href;
             onClose();
           }
@@ -69,14 +68,17 @@ export default function SearchOverlay({ isOpen, onClose }) {
 
   // Group results by type when results change
   useEffect(() => {
-    const grouped = results.reduce((acc, result) => {
-      if (result.type === 'project') {
-        acc.projects.push(result);
-      } else if (result.type === 'article') {
-        acc.articles.push(result);
-      }
-      return acc;
-    }, { projects: [], articles: [] });
+    const grouped = results.reduce(
+      (acc, result) => {
+        if (result.type === 'project') {
+          acc.projects.push(result);
+        } else if (result.type === 'article') {
+          acc.articles.push(result);
+        }
+        return acc;
+      },
+      { projects: [], articles: [] }
+    );
 
     setGroupedResults(grouped);
   }, [results]);
@@ -125,8 +127,8 @@ export default function SearchOverlay({ isOpen, onClose }) {
         trackEvent('search_performed', {
           searchTerm: query,
           resultCount: data.results?.length || 0,
-          projectCount: data.results?.filter(r => r.type === 'project').length || 0,
-          articleCount: data.results?.filter(r => r.type === 'article').length || 0
+          projectCount: data.results?.filter((r) => r.type === 'project').length || 0,
+          articleCount: data.results?.filter((r) => r.type === 'article').length || 0,
         });
       } catch (err) {
         setError('Failed to search. Please try again.');
@@ -173,7 +175,12 @@ export default function SearchOverlay({ isOpen, onClose }) {
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -195,14 +202,10 @@ export default function SearchOverlay({ isOpen, onClose }) {
               ))}
             </div>
           ) : error ? (
-            <div className="text-center text-red-500 py-8">
-              {error}
-            </div>
+            <div className="text-center text-red-500 py-8">{error}</div>
           ) : results.length === 0 ? (
             <div className="text-center py-8">
-              <div className="text-gray-500 mb-4">
-                No results found for "{query}"
-              </div>
+              <div className="text-gray-500 mb-4">No results found for "{query}"</div>
               <Link
                 href="/projects"
                 onClick={onClose}
@@ -210,7 +213,12 @@ export default function SearchOverlay({ isOpen, onClose }) {
               >
                 Browse All Projects
                 <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </Link>
             </div>
@@ -225,7 +233,9 @@ export default function SearchOverlay({ isOpen, onClose }) {
                   </h4>
                   <div className="space-y-3">
                     {groupedResults.projects.map((result, index) => {
-                      const globalIndex = results.findIndex(r => r.id === result.id && r.type === result.type);
+                      const globalIndex = results.findIndex(
+                        (r) => r.id === result.id && r.type === result.type
+                      );
                       return (
                         <div
                           key={`project-${result.id}`}
@@ -253,7 +263,9 @@ export default function SearchOverlay({ isOpen, onClose }) {
                   </h4>
                   <div className="space-y-3">
                     {groupedResults.articles.map((result, index) => {
-                      const globalIndex = results.findIndex(r => r.id === result.id && r.type === result.type);
+                      const globalIndex = results.findIndex(
+                        (r) => r.id === result.id && r.type === result.type
+                      );
                       return (
                         <div
                           key={`article-${result.id}`}

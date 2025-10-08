@@ -27,7 +27,7 @@ export default function ChatbotSettingsPage() {
     callToAction: '',
     rules: [''],
     isActive: true,
-    modelName: 'openai-large'
+    modelName: 'openai-large',
   });
 
   // Redirect if not admin
@@ -139,7 +139,7 @@ export default function ChatbotSettingsPage() {
   }, [settings]);
 
   const handleInputChange = (path, value) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const newData = { ...prev };
       const keys = path.split('.');
       let current = newData;
@@ -154,12 +154,10 @@ export default function ChatbotSettingsPage() {
   };
 
   const handleRuleChange = (index, value) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const newData = {
         ...prev,
-        rules: prev.rules.map((rule, i) =>
-          i === index ? value : rule
-        )
+        rules: prev.rules.map((rule, i) => (i === index ? value : rule)),
       };
 
       return newData;
@@ -167,10 +165,10 @@ export default function ChatbotSettingsPage() {
   };
 
   const addRule = () => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const newData = {
         ...prev,
-        rules: [...prev.rules, '']
+        rules: [...prev.rules, ''],
       };
 
       return newData;
@@ -179,10 +177,10 @@ export default function ChatbotSettingsPage() {
 
   const removeRule = (index) => {
     if (formData.rules.length > 1) {
-      setFormData(prev => {
+      setFormData((prev) => {
         const newData = {
           ...prev,
-          rules: prev.rules.filter((_, i) => i !== index)
+          rules: prev.rules.filter((_, i) => i !== index),
         };
 
         return newData;
@@ -214,11 +212,13 @@ export default function ChatbotSettingsPage() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <h1 className="text-3xl font-bold text-black font-['Playfair_Display']">AI Assistant Configuration</h1>
+            <h1 className="text-3xl font-bold text-black font-['Playfair_Display']">
+              AI Assistant Configuration
+            </h1>
           </div>
           <p className="text-neutral-600">
-            Configure your AI assistant's personality, knowledge base, and behavior.
-            These settings control how the chatbot interacts with visitors on your portfolio.
+            Configure your AI assistant's personality, knowledge base, and behavior. These settings
+            control how the chatbot interacts with visitors on your portfolio.
           </p>
         </div>
 
@@ -233,11 +233,15 @@ export default function ChatbotSettingsPage() {
 
         {/* Success/Error Messages */}
         {message.text && (
-          <div className={`mb-6 p-4 rounded-lg ${
-            message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' :
-            message.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' :
-            'bg-neutral-50 text-neutral-800 border border-neutral-200'
-          }`}>
+          <div
+            className={`mb-6 p-4 rounded-lg ${
+              message.type === 'success'
+                ? 'bg-green-50 text-green-800 border border-green-200'
+                : message.type === 'error'
+                  ? 'bg-red-50 text-red-800 border border-red-200'
+                  : 'bg-neutral-50 text-neutral-800 border border-neutral-200'
+            }`}
+          >
             {message.text}
           </div>
         )}
@@ -246,7 +250,6 @@ export default function ChatbotSettingsPage() {
         <div className="grid gap-8 lg:grid-cols-2 mb-8">
           {/* Left Column - Basic Settings & Persona */}
           <div className="space-y-6">
-
             {/* Basic Settings */}
             <div className="bg-white p-6 rounded-lg border border-neutral-200">
               <h3 className="text-xl font-semibold mb-4 text-black">Basic Settings</h3>
@@ -275,7 +278,7 @@ export default function ChatbotSettingsPage() {
                     name="modelName"
                     value={formData.modelName}
                     onChange={(e) => handleInputChange('modelName', e.target.value)}
-                    options={availableModels.map(model => ({ value: model, label: model }))}
+                    options={availableModels.map((model) => ({ value: model, label: model }))}
                   />
                 </div>
               </div>
@@ -285,7 +288,9 @@ export default function ChatbotSettingsPage() {
             <div className="bg-white p-6 rounded-lg border border-neutral-200">
               <h3 className="text-xl font-semibold mb-4 text-black">AI Persona</h3>
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">Persona Description</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Persona Description
+                </label>
                 <textarea
                   value={formData.persona}
                   onChange={(e) => handleInputChange('persona', e.target.value)}
@@ -304,7 +309,9 @@ export default function ChatbotSettingsPage() {
               <h3 className="text-xl font-semibold mb-4 text-black">Knowledge Base</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">Base Knowledge</label>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Base Knowledge
+                  </label>
                   <textarea
                     value={formData.baseKnowledge}
                     onChange={(e) => handleInputChange('baseKnowledge', e.target.value)}
@@ -314,7 +321,9 @@ export default function ChatbotSettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">Services Offered</label>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Services Offered
+                  </label>
                   <textarea
                     value={formData.servicesOffered}
                     onChange={(e) => handleInputChange('servicesOffered', e.target.value)}
@@ -328,17 +337,17 @@ export default function ChatbotSettingsPage() {
                 </div>
               </div>
             </div>
-
           </div>
 
           {/* Right Column - Call to Action & Rules */}
           <div className="space-y-6">
-
             {/* Call to Action */}
             <div className="bg-white p-6 rounded-lg border border-neutral-200">
               <h3 className="text-xl font-semibold mb-4 text-black">Call to Action</h3>
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">Primary Call to Action</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Primary Call to Action
+                </label>
                 <textarea
                   value={formData.callToAction}
                   onChange={(e) => handleInputChange('callToAction', e.target.value)}
@@ -371,7 +380,10 @@ export default function ChatbotSettingsPage() {
 
               <div className="space-y-4">
                 {formData.rules.map((rule, index) => (
-                  <div key={index} className="relative p-4 border border-neutral-200 rounded-lg bg-neutral-50">
+                  <div
+                    key={index}
+                    className="relative p-4 border border-neutral-200 rounded-lg bg-neutral-50"
+                  >
                     <div className="flex items-center justify-between mb-3">
                       <span className="font-medium text-sm text-neutral-900">Rule {index + 1}</span>
                       {formData.rules.length > 1 && (
@@ -395,13 +407,17 @@ export default function ChatbotSettingsPage() {
                 ))}
               </div>
             </div>
-
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-4 pt-6 border-t border-neutral-200">
-          <ActionButton isSaving={saving} onClick={handleSave} text="Save Changes" savingText="Saving..." />
+          <ActionButton
+            isSaving={saving}
+            onClick={handleSave}
+            text="Save Changes"
+            savingText="Saving..."
+          />
           <ActionButton onClick={handleReset} text="Reset Changes" variant="ghost" />
         </div>
       </div>

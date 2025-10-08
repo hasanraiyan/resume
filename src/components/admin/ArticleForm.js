@@ -20,13 +20,13 @@ export function ArticleForm({ article, onSave }) {
     coverImage: article?.coverImage || '',
     content: article?.content || '',
     status: article?.status || 'draft',
-    tags: Array.isArray(article?.tags) ? article.tags.join(', ') : (article?.tags || ''),
+    tags: Array.isArray(article?.tags) ? article.tags.join(', ') : article?.tags || '',
   });
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
 
     // Auto-generate slug from title
     if (field === 'title' && !article) {
@@ -35,7 +35,7 @@ export function ArticleForm({ article, onSave }) {
         .replace(/[^\w\s-]/g, '')
         .replace(/\s+/g, '-')
         .trim();
-      setFormData(prev => ({ ...prev, slug }));
+      setFormData((prev) => ({ ...prev, slug }));
     }
   };
 
@@ -51,7 +51,10 @@ export function ArticleForm({ article, onSave }) {
         submitData.append(key, currentStatus);
       } else if (key === 'tags') {
         // Convert comma-separated string to array
-        const tagsArray = value.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+        const tagsArray = value
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter((tag) => tag.length > 0);
         submitData.append(key, JSON.stringify(tagsArray));
       } else {
         submitData.append(key, value);
@@ -73,16 +76,16 @@ export function ArticleForm({ article, onSave }) {
         setShowSuccess(true);
       } else if (result?.success !== false) {
         const actionMessages = {
-          'delete': 'Article deleted successfully!',
-          'publish': 'Article published successfully!',
-          'save': 'Article saved successfully!'
+          delete: 'Article deleted successfully!',
+          publish: 'Article published successfully!',
+          save: 'Article saved successfully!',
         };
         setSuccessMessage(actionMessages[action] || 'Article saved successfully!');
         setShowSuccess(true);
 
         // Update local form state to reflect the published status
         if (action === 'publish') {
-          setFormData(prev => ({ ...prev, status: 'published' }));
+          setFormData((prev) => ({ ...prev, status: 'published' }));
         }
       }
     });
@@ -91,24 +94,21 @@ export function ArticleForm({ article, onSave }) {
   const handleSaveDraft = (e) => {
     e.preventDefault();
     setCurrentAction('save');
-    setFormData(prev => ({ ...prev, status: 'draft' }));
+    setFormData((prev) => ({ ...prev, status: 'draft' }));
     handleSubmit(e, 'save', 'draft');
   };
 
   const handlePublish = (e) => {
     e.preventDefault();
     setCurrentAction('publish');
-    setFormData(prev => ({ ...prev, status: 'published' }));
+    setFormData((prev) => ({ ...prev, status: 'published' }));
     handleSubmit(e, 'publish', 'published');
   };
 
   return (
     <div className="max-w-4xl mx-auto p-6">
       {showSuccess && (
-        <SuccessToast
-          message={successMessage}
-          onClose={() => setShowSuccess(false)}
-        />
+        <SuccessToast message={successMessage} onClose={() => setShowSuccess(false)} />
       )}
 
       <form className="space-y-6">

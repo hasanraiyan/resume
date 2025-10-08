@@ -40,7 +40,6 @@ function AdminLayoutContent({ children }) {
         <header className="bg-white border-b-2 border-black">
           <div className="max-w-7xl mx-auto px-6 lg:px-8">
             <div className="flex justify-between items-center h-20">
-              
               {/* Logo/Brand */}
               <div className="flex items-center space-x-8">
                 <Link href="/admin/dashboard" className="flex items-center space-x-3">
@@ -49,46 +48,61 @@ function AdminLayoutContent({ children }) {
                   </div>
                   <h1 className="text-2xl font-bold text-black font-['Playfair_Display']">Admin</h1>
                 </Link>
-                
+
                 {/* Navigation */}
                 <nav className="hidden md:flex space-x-1">
-                  <Link href="/admin/dashboard" className="px-4 py-2 text-sm font-medium text-neutral-600 hover:text-black hover:bg-neutral-100 rounded transition-colors">
+                  <Link
+                    href="/admin/dashboard"
+                    className="px-4 py-2 text-sm font-medium text-neutral-600 hover:text-black hover:bg-neutral-100 rounded transition-colors"
+                  >
                     Dashboard
                   </Link>
-                  <Link href="/admin/sections" className="px-4 py-2 text-sm font-medium text-neutral-600 hover:text-black hover:bg-neutral-100 rounded transition-colors">
+                  <Link
+                    href="/admin/sections"
+                    className="px-4 py-2 text-sm font-medium text-neutral-600 hover:text-black hover:bg-neutral-100 rounded transition-colors"
+                  >
                     Manage Sections
                   </Link>
-                  <Link href="/admin/projects" className="px-4 py-2 text-sm font-medium text-neutral-600 hover:text-black hover:bg-neutral-100 rounded transition-colors">
+                  <Link
+                    href="/admin/projects"
+                    className="px-4 py-2 text-sm font-medium text-neutral-600 hover:text-black hover:bg-neutral-100 rounded transition-colors"
+                  >
                     Projects
                   </Link>
-                  <Link href="/admin/contacts" className="px-4 py-2 text-sm font-medium text-neutral-600 hover:text-black hover:bg-neutral-100 rounded transition-colors">
+                  <Link
+                    href="/admin/contacts"
+                    className="px-4 py-2 text-sm font-medium text-neutral-600 hover:text-black hover:bg-neutral-100 rounded transition-colors"
+                  >
                     Messages
                   </Link>
-                  <Link href="/admin/chatbot" className="px-4 py-2 text-sm font-medium text-neutral-600 hover:text-black hover:bg-neutral-100 rounded transition-colors">
+                  <Link
+                    href="/admin/chatbot"
+                    className="px-4 py-2 text-sm font-medium text-neutral-600 hover:text-black hover:bg-neutral-100 rounded transition-colors"
+                  >
                     Chatbot Settings
                   </Link>
                 </nav>
               </div>
-              
+
               {/* User Menu */}
               <div className="flex items-center space-x-4">
-                <Button 
-                  href="/" 
-                  variant="ghost" 
+                <Button
+                  href="/"
+                  variant="ghost"
                   size="small"
                   className="hidden sm:inline-flex text-xs"
                 >
                   <i className="fas fa-external-link-alt mr-2"></i>
                   View Site
                 </Button>
-                
+
                 <div className="flex items-center space-x-3">
                   <span className="text-sm text-neutral-600 hidden sm:block">
                     {session?.user?.name || 'Admin'}
                   </span>
-                  <Button 
+                  <Button
                     onClick={() => signOut({ callbackUrl: '/login' })}
-                    variant="ghost" 
+                    variant="ghost"
                     size="small"
                     className="text-neutral-600 hover:text-black"
                   >
@@ -101,9 +115,7 @@ function AdminLayoutContent({ children }) {
         </header>
 
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
-          {children}
-        </main>
+        <main className="max-w-7xl mx-auto px-6 lg:px-8 py-8">{children}</main>
       </div>
     </>
   );

@@ -1,74 +1,33 @@
-import dbConnect from '@/lib/dbConnect';
-import Project from '@/models/Project';
-import Article from '@/models/Article';
+/**
+ * @fileoverview Search API route for querying projects and articles.
+ * Provides a unified search endpoint that leverages fuzzy matching
+ * and intelligent ranking across all portfolio content.
+ */
+
+// src/app/api/search/route.js
+
+import { performSearch } from '@/lib/search/search';
+
+/**
+ * Handles GET requests to the search API endpoint.
+ * Accepts a query parameter 'q' and returns matching projects and articles.
+ *
+ * @async
+ * @function GET
+ * @param {Request} request - Next.js request object
+ * @returns {Promise<Response>} JSON response with search results or error
+ */
 export async function GET(request) {
   try {
-    await dbConnect();
-
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q');
 
-    // Validate query parameter
-    if (!query || query.length < 3) {
-      return Response.json({ results: [] });
-    }
-
-    // Execute parallel searches
-    const [projectResults, articleResults] = await Promise.all([
-      // Search projects
-      Project.find(
-        { $text: { $search: query } },
-        { score: { $meta: 'textScore' } }
-      )
-        .select('slug title description category tags')
-        .sort({ score: { $meta: 'textScore' } })
-        .limit(20),
-
-      // Search articles (only published ones)
-      Article.find(
-        {
-          $text: { $search: query },
-          status: 'published'
-        },
-        { score: { $meta: 'textScore' } }
-      )
-        .select('slug title excerpt tags')
-        .sort({ score: { $meta: 'textScore' } })
-        .limit(20)
-    ]);
-
-    // Transform results to unified format
-    const results = [
-      ...projectResults.map(project => ({
-        id: project._id,
-        title: project.title,
-        slug: project.slug,
-        excerpt: project.description,
-        type: 'project',
-        score: project.score,
-        category: project.category,
-        tags: project.tags
-      })),
-      ...articleResults.map(article => ({
-        id: article._id,
-        title: article.title,
-        slug: article.slug,
-        excerpt: article.excerpt,
-        type: 'article',
-        score: article.score,
-        tags: article.tags
-      }))
-    ];
-
-    // Sort by relevance score
-    results.sort((a, b) => b.score - a.score);
+    // Call the unified search function from our library
+    const results = await performSearch(query);
 
     return Response.json({ results });
   } catch (error) {
-    console.error('Search error:', error);
-    return Response.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error('Search API Route Error:', error);
+    return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

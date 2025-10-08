@@ -23,14 +23,11 @@ export async function GET() {
       callToAction: settings.callToAction,
       rules: settings.rules,
       isActive: settings.isActive,
-      modelName: settings.modelName
+      modelName: settings.modelName,
     });
   } catch (error) {
     console.error('Error fetching chatbot settings:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -48,19 +45,16 @@ export async function POST(request) {
       callToAction,
       rules,
       isActive,
-      modelName
+      modelName,
     } = body;
 
     // Validate required fields
     if (!aiName || !persona || !baseKnowledge || !servicesOffered || !callToAction) {
-      return NextResponse.json(
-        { error: 'All fields are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
     }
 
     // Filter out empty rules
-    const filteredRules = rules.filter(rule => rule.trim() !== '');
+    const filteredRules = rules.filter((rule) => rule.trim() !== '');
 
     // Find existing settings or create new one
     let settings = await ChatbotSettings.findOne({});
@@ -87,7 +81,7 @@ export async function POST(request) {
         callToAction,
         rules: filteredRules,
         isActive: isActive !== undefined ? isActive : true,
-        modelName: modelName || process.env.OPENAI_MODEL_NAME || 'openai-large'
+        modelName: modelName || process.env.OPENAI_MODEL_NAME || 'openai-large',
       });
 
       await settings.save();
@@ -103,14 +97,11 @@ export async function POST(request) {
         callToAction: settings.callToAction,
         rules: settings.rules,
         isActive: settings.isActive,
-        modelName: settings.modelName
-      }
+        modelName: settings.modelName,
+      },
     });
   } catch (error) {
     console.error('Error saving chatbot settings:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

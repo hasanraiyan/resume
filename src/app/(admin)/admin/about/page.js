@@ -1,121 +1,124 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback } from 'react'
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import AdminPageWrapper from '@/components/admin/AdminPageWrapper'
-import AboutPreview from '@/components/admin/AboutPreview'
-import IconPicker from '@/components/admin/IconPicker'
-import ActionButton from '@/components/admin/ActionButton'
+import { useState, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
+import AboutPreview from '@/components/admin/AboutPreview';
+import IconPicker from '@/components/admin/IconPicker';
+import ActionButton from '@/components/admin/ActionButton';
 
 export default function AboutAdminPage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
-  const [aboutData, setAboutData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState({ type: '', text: '' })
-  const [showPreview, setShowPreview] = useState(false)
-  const [previewData, setPreviewData] = useState(null)
-  const [previewLoading, setPreviewLoading] = useState(false)
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [aboutData, setAboutData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
     sectionTitle: '',
     bio: {
-      paragraphs: ['']
+      paragraphs: [''],
     },
     resume: {
       text: '',
-      url: ''
+      url: '',
     },
     features: [
       { id: 1, icon: '', title: '', description: '' },
       { id: 2, icon: '', title: '', description: '' },
       { id: 3, icon: '', title: '', description: '' },
-      { id: 4, icon: '', title: '', description: '' }
-    ]
-  })
+      { id: 4, icon: '', title: '', description: '' },
+    ],
+  });
 
   // Redirect if not admin
   useEffect(() => {
-    if (status === 'loading') return
+    if (status === 'loading') return;
     if (!session || session.user.role !== 'admin') {
-      router.push('/admin/login')
+      router.push('/admin/login');
     }
-  }, [session, status, router])
+  }, [session, status, router]);
 
   const fetchAboutData = async () => {
     try {
-      const response = await fetch('/api/about')
-      const result = await response.json()
+      const response = await fetch('/api/about');
+      const result = await response.json();
 
       if (result.success) {
-        setAboutData(result.data)
-        setFormData(result.data)
+        setAboutData(result.data);
+        setFormData(result.data);
       } else {
-        setMessage({ type: 'error', text: 'Failed to load about data' })
+        setMessage({ type: 'error', text: 'Failed to load about data' });
       }
     } catch (error) {
-      console.error('Error fetching about data:', error)
-      setMessage({ type: 'error', text: 'Failed to load about data' })
+      console.error('Error fetching about data:', error);
+      setMessage({ type: 'error', text: 'Failed to load about data' });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Generate preview data
-  const generatePreview = useCallback(async (data) => {
-    if (!showPreview) return
+  const generatePreview = useCallback(
+    async (data) => {
+      if (!showPreview) return;
 
-    try {
-      setPreviewLoading(true)
-      const response = await fetch('/api/about/preview', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      })
+      try {
+        setPreviewLoading(true);
+        const response = await fetch('/api/about/preview', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
 
-      const result = await response.json()
-      if (result.success) {
-        setPreviewData(result.data)
+        const result = await response.json();
+        if (result.success) {
+          setPreviewData(result.data);
+        }
+      } catch (error) {
+        console.error('Preview generation error:', error);
+      } finally {
+        setPreviewLoading(false);
       }
-    } catch (error) {
-      console.error('Preview generation error:', error)
-    } finally {
-      setPreviewLoading(false)
-    }
-  }, [showPreview])
+    },
+    [showPreview]
+  );
 
   // Fetch about data
   useEffect(() => {
     if (session?.user?.role === 'admin') {
-      fetchAboutData()
+      fetchAboutData();
     }
-  }, [session])
+  }, [session]);
 
   // Initialize preview when form data is loaded and preview is enabled
   useEffect(() => {
     if (showPreview && formData && !loading) {
-      generatePreview(formData)
+      generatePreview(formData);
     }
-  }, [showPreview, formData, loading, generatePreview])
+  }, [showPreview, formData, loading, generatePreview]);
 
   const togglePreview = useCallback(() => {
-    setShowPreview(!showPreview)
+    setShowPreview(!showPreview);
     if (!showPreview) {
       // Generate initial preview when enabling
-      generatePreview(formData)
+      generatePreview(formData);
     } else {
-      setPreviewData(null)
+      setPreviewData(null);
     }
-  }, [showPreview, formData, generatePreview])
+  }, [showPreview, formData, generatePreview]);
 
   const handleSave = useCallback(async () => {
-    setSaving(true)
-    setMessage({ type: '', text: '' })
+    setSaving(true);
+    setMessage({ type: '', text: '' });
 
     try {
       const response = await fetch('/api/about', {
@@ -124,167 +127,165 @@ export default function AboutAdminPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
-      })
+      });
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (result.success) {
-        setMessage({ type: 'success', text: 'About section updated successfully!' })
-        setAboutData(result.data)
+        setMessage({ type: 'success', text: 'About section updated successfully!' });
+        setAboutData(result.data);
 
         // Trigger real-time update for the main about component
         if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('aboutDataUpdated'))
+          window.dispatchEvent(new CustomEvent('aboutDataUpdated'));
         }
       } else {
-        setMessage({ type: 'error', text: result.error || 'Failed to update about section' })
+        setMessage({ type: 'error', text: result.error || 'Failed to update about section' });
       }
     } catch (error) {
-      console.error('Error saving about data:', error)
-      setMessage({ type: 'error', text: 'Failed to save changes' })
+      console.error('Error saving about data:', error);
+      setMessage({ type: 'error', text: 'Failed to save changes' });
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }, [formData])
+  }, [formData]);
 
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Ctrl/Cmd + S to save
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault()
+        e.preventDefault();
         if (!saving) {
-          handleSave()
+          handleSave();
         }
       }
 
       // Ctrl/Cmd + P to toggle preview
       if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-        e.preventDefault()
-        togglePreview()
+        e.preventDefault();
+        togglePreview();
       }
 
       // Escape to close preview
       if (e.key === 'Escape' && showPreview) {
-        setShowPreview(false)
-        setPreviewData(null)
+        setShowPreview(false);
+        setPreviewData(null);
       }
-    }
+    };
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [saving, showPreview, handleSave, togglePreview])
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [saving, showPreview, handleSave, togglePreview]);
 
   const handleReset = useCallback(() => {
     if (aboutData) {
-      setFormData(aboutData)
-      setPreviewData(null)
-      setMessage({ type: 'info', text: 'Changes reverted to last saved version' })
+      setFormData(aboutData);
+      setPreviewData(null);
+      setMessage({ type: 'info', text: 'Changes reverted to last saved version' });
     }
-  }, [aboutData])
+  }, [aboutData]);
 
   const handleInputChange = (path, value) => {
-    setFormData(prev => {
-      const newData = { ...prev }
-      const keys = path.split('.')
-      let current = newData
+    setFormData((prev) => {
+      const newData = { ...prev };
+      const keys = path.split('.');
+      let current = newData;
 
       for (let i = 0; i < keys.length - 1; i++) {
-        current = current[keys[i]]
+        current = current[keys[i]];
       }
 
-      current[keys[keys.length - 1]] = value
+      current[keys[keys.length - 1]] = value;
 
       // Generate preview with debouncing
       if (showPreview) {
-        clearTimeout(window.previewTimer)
+        clearTimeout(window.previewTimer);
         window.previewTimer = setTimeout(() => {
-          generatePreview(newData)
-        }, 500)
+          generatePreview(newData);
+        }, 500);
       }
 
-      return newData
-    })
-  }
+      return newData;
+    });
+  };
 
   const handleBioChange = (index, value) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const newData = {
         ...prev,
         bio: {
           ...prev.bio,
-          paragraphs: prev.bio.paragraphs.map((paragraph, i) =>
-            i === index ? value : paragraph
-          )
-        }
-      }
+          paragraphs: prev.bio.paragraphs.map((paragraph, i) => (i === index ? value : paragraph)),
+        },
+      };
 
       if (showPreview) {
-        clearTimeout(window.previewTimer)
+        clearTimeout(window.previewTimer);
         window.previewTimer = setTimeout(() => {
-          generatePreview(newData)
-        }, 500)
+          generatePreview(newData);
+        }, 500);
       }
 
-      return newData
-    })
-  }
+      return newData;
+    });
+  };
 
   const addBioParagraph = () => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const newData = {
         ...prev,
         bio: {
           ...prev.bio,
-          paragraphs: [...prev.bio.paragraphs, '']
-        }
-      }
+          paragraphs: [...prev.bio.paragraphs, ''],
+        },
+      };
 
       if (showPreview) {
-        generatePreview(newData)
+        generatePreview(newData);
       }
 
-      return newData
-    })
-  }
+      return newData;
+    });
+  };
 
   const removeBioParagraph = (index) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const newData = {
         ...prev,
         bio: {
           ...prev.bio,
-          paragraphs: prev.bio.paragraphs.filter((_, i) => i !== index)
-        }
-      }
+          paragraphs: prev.bio.paragraphs.filter((_, i) => i !== index),
+        },
+      };
 
       if (showPreview) {
-        generatePreview(newData)
+        generatePreview(newData);
       }
 
-      return newData
-    })
-  }
+      return newData;
+    });
+  };
 
   const handleFeatureChange = (index, field, value) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const newData = {
         ...prev,
         features: prev.features.map((feature, i) =>
           i === index ? { ...feature, [field]: value } : { ...feature }
-        )
-      }
+        ),
+      };
 
       if (showPreview) {
-        clearTimeout(window.previewTimer)
+        clearTimeout(window.previewTimer);
         window.previewTimer = setTimeout(() => {
-          generatePreview(newData)
-        }, 500)
+          generatePreview(newData);
+        }, 500);
       }
 
-      return newData
-    })
-  }
+      return newData;
+    });
+  };
 
   return (
     <AdminPageWrapper title="About Section">
@@ -304,9 +305,7 @@ export default function AboutAdminPage() {
               {showPreview ? 'Hide Preview' : 'Show Live Preview'}
             </button>
             {showPreview && (
-              <span className="text-sm text-neutral-600">
-                Preview updates as you type
-              </span>
+              <span className="text-sm text-neutral-600">Preview updates as you type</span>
             )}
           </div>
 
@@ -327,11 +326,15 @@ export default function AboutAdminPage() {
 
         {/* Success/Error Messages */}
         {message.text && (
-          <div className={`mb-6 p-4 rounded-lg ${
-            message.type === 'success' ? 'bg-green-50 text-green-800' :
-            message.type === 'error' ? 'bg-red-50 text-red-800' :
-            'bg-blue-50 text-blue-800'
-          }`}>
+          <div
+            className={`mb-6 p-4 rounded-lg ${
+              message.type === 'success'
+                ? 'bg-green-50 text-green-800'
+                : message.type === 'error'
+                  ? 'bg-red-50 text-red-800'
+                  : 'bg-blue-50 text-blue-800'
+            }`}
+          >
             {message.text}
           </div>
         )}
@@ -340,7 +343,6 @@ export default function AboutAdminPage() {
         <div className="grid gap-8 lg:grid-cols-2 mb-8">
           {/* Left Column - Form */}
           <div className="space-y-6">
-
             {/* Section Title */}
             <div className="bg-white p-6 rounded-lg border border-neutral-200">
               <h3 className="text-xl font-semibold mb-4">Section Title</h3>
@@ -400,7 +402,9 @@ export default function AboutAdminPage() {
               <h3 className="text-xl font-semibold mb-4">Resume/CV</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">Button Text</label>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Button Text
+                  </label>
                   <input
                     type="text"
                     value={formData.resume.text}
@@ -410,7 +414,9 @@ export default function AboutAdminPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">Resume URL</label>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Resume URL
+                  </label>
                   <input
                     type="url"
                     value={formData.resume.url}
@@ -421,32 +427,39 @@ export default function AboutAdminPage() {
                 </div>
               </div>
             </div>
-
           </div>
 
           {/* Right Column - Features */}
           <div className="space-y-6">
-
             {/* Features Section */}
             <div className="bg-white p-6 rounded-lg border border-neutral-200">
               <h3 className="text-xl font-semibold mb-4">Feature Cards</h3>
               <div className="space-y-6">
                 {formData.features.map((feature, index) => (
-                  <div key={feature.id} className="p-4 border border-neutral-200 rounded-lg bg-neutral-50">
+                  <div
+                    key={feature.id}
+                    className="p-4 border border-neutral-200 rounded-lg bg-neutral-50"
+                  >
                     <div className="mb-3">
                       <span className="font-medium text-sm">Feature {index + 1}</span>
                     </div>
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-xs font-medium text-neutral-700 mb-1">Icon</label>
+                        <label className="block text-xs font-medium text-neutral-700 mb-1">
+                          Icon
+                        </label>
                         <IconPicker
                           selectedIcon={feature.icon}
-                          onIconSelect={(iconClass) => handleFeatureChange(index, 'icon', iconClass)}
+                          onIconSelect={(iconClass) =>
+                            handleFeatureChange(index, 'icon', iconClass)
+                          }
                           placeholder="Choose an icon..."
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-neutral-700 mb-1">Title</label>
+                        <label className="block text-xs font-medium text-neutral-700 mb-1">
+                          Title
+                        </label>
                         <input
                           type="text"
                           value={feature.title}
@@ -456,11 +469,15 @@ export default function AboutAdminPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-neutral-700 mb-1">Description</label>
+                        <label className="block text-xs font-medium text-neutral-700 mb-1">
+                          Description
+                        </label>
                         <input
                           type="text"
                           value={feature.description}
-                          onChange={(e) => handleFeatureChange(index, 'description', e.target.value)}
+                          onChange={(e) =>
+                            handleFeatureChange(index, 'description', e.target.value)
+                          }
                           className="w-full p-2 border border-neutral-300 rounded text-sm bg-white"
                           placeholder="Innovative solutions for complex problems"
                         />
@@ -470,7 +487,6 @@ export default function AboutAdminPage() {
                 ))}
               </div>
             </div>
-
           </div>
         </div>
 
@@ -481,7 +497,9 @@ export default function AboutAdminPage() {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="text-2xl font-bold text-neutral-900 mb-1">Live Preview</h3>
-                  <p className="text-sm text-neutral-600">See your changes in real-time before saving</p>
+                  <p className="text-sm text-neutral-600">
+                    See your changes in real-time before saving
+                  </p>
                 </div>
                 <button
                   onClick={() => setShowPreview(false)}
@@ -530,7 +548,9 @@ export default function AboutAdminPage() {
                         <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
                           PREVIEW (UNSAVED)
                         </span>
-                        <span className="text-sm text-neutral-600">Your changes - click "Save Changes" to publish</span>
+                        <span className="text-sm text-neutral-600">
+                          Your changes - click "Save Changes" to publish
+                        </span>
                       </div>
                       <AboutPreview aboutData={previewData} isPreview={true} />
                     </div>
@@ -543,10 +563,15 @@ export default function AboutAdminPage() {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-4 pt-6 border-t border-neutral-200">
-          <ActionButton isSaving={saving} onClick={handleSave} text="Save Changes" savingText="Saving..." />
+          <ActionButton
+            isSaving={saving}
+            onClick={handleSave}
+            text="Save Changes"
+            savingText="Saving..."
+          />
           <ActionButton onClick={handleReset} text="Reset Changes" variant="ghost" />
         </div>
       </div>
     </AdminPageWrapper>
-  )
+  );
 }

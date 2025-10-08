@@ -12,7 +12,9 @@ function highlightSearchTerm(text, searchQuery) {
       <mark key={index} className="bg-yellow-200 px-1 rounded">
         {part}
       </mark>
-    ) : part
+    ) : (
+      part
+    )
   );
 }
 
@@ -41,7 +43,9 @@ export default function SearchResultItem({ result, onNavigate, searchQuery, isSe
             <h3 className="font-semibold text-gray-900 hover:text-blue-600">
               {highlightSearchTerm(result.title, searchQuery)}
             </h3>
-            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(result.type)}`}>
+            <span
+              className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(result.type)}`}
+            >
               {result.type === 'project' ? 'Project' : 'Article'}
             </span>
           </div>
@@ -59,10 +63,7 @@ export default function SearchResultItem({ result, onNavigate, searchQuery, isSe
           {result.tags && result.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
               {result.tags.slice(0, 3).map((tag, index) => (
-                <span
-                  key={index}
-                  className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded"
-                >
+                <span key={index} className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">
                   {highlightSearchTerm(typeof tag === 'string' ? tag : tag.name, searchQuery)}
                 </span>
               ))}

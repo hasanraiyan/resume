@@ -10,6 +10,7 @@ Single sentence describing the type system changes.
 Detailed type definitions, interfaces, enums, or data structures with complete specifications. The Service model will include fields for title, description, icon, and details array. The Service schema will use Mongoose with proper validation and text indexing for search functionality.
 
 **Service Model Schema:**
+
 ```javascript
 {
   title: { type: String, required: true },           // Service title (e.g., "Full-Stack Development")
@@ -23,6 +24,7 @@ Detailed type definitions, interfaces, enums, or data structures with complete s
 ```
 
 **Service API Types:**
+
 ```javascript
 // For admin forms and API responses
 interface ServiceFormData {
@@ -171,6 +173,7 @@ Single sentence describing testing approach.
 Test file requirements include unit tests for service API routes, integration tests for admin functionality, and manual testing of AI chatbot integration. Validation strategies include testing CRUD operations, form validation, search functionality, and AI tool responses.
 
 **Test Coverage:**
+
 - API route testing for all CRUD operations
 - Form validation and submission testing
 - AI chatbot tool integration testing

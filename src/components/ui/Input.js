@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { cn } from '@/utils/classNames'
-import { componentStyles } from '@/styles/components'
+import { cn } from '@/utils/classNames';
+import { componentStyles } from '@/styles/components';
 
 /**
  * Reusable Input Component
@@ -28,11 +28,7 @@ export default function Input({
 }) {
   return (
     <div>
-      {label && (
-        <label className={componentStyles.forms.label}>
-          {label}
-        </label>
-      )}
+      {label && <label className={componentStyles.forms.label}>{label}</label>}
       <input
         type={type}
         name={name}
@@ -45,5 +41,5 @@ export default function Input({
         {...props}
       />
     </div>
-  )
+  );
 }

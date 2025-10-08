@@ -1,3 +1,9 @@
+/**
+ * @fileoverview AI Context Builder for chatbot system.
+ * Fetches and aggregates data from various database sources to build
+ * dynamic context for the AI chatbot, including identity, projects, and articles.
+ */
+
 import dbConnect from '../dbConnect';
 import HeroSection from '../../models/HeroSection';
 import AboutSection from '../../models/AboutSection';
@@ -5,12 +11,14 @@ import Project from '../../models/Project';
 import Article from '../../models/Article';
 import ChatbotSettings from '../../models/ChatbotSettings';
 
-
 /**
- * Context Builder for AI Chatbot
- * Dynamically builds context from database content
+ * Retrieves core identity information from the hero section.
+ * Provides fallback defaults if database query fails.
+ *
+ * @async
+ * @function getCoreIdentity
+ * @returns {Promise<{name: string, role: string, introduction: string}>} Core identity object
  */
-
 export async function getCoreIdentity() {
   try {
     await dbConnect();
@@ -20,25 +28,33 @@ export async function getCoreIdentity() {
       return {
         name: 'Raiyan',
         role: 'Full-Stack Developer',
-        introduction: 'A skilled developer creating modern web applications.'
+        introduction: 'A skilled developer creating modern web applications.',
       };
     }
 
     return {
       name: heroSection.name || 'Raiyan',
       role: heroSection.role || 'Full-Stack Developer',
-      introduction: heroSection.introduction || 'A skilled developer creating modern web applications.'
+      introduction:
+        heroSection.introduction || 'A skilled developer creating modern web applications.',
     };
   } catch (error) {
     console.error('Error fetching core identity:', error);
     return {
       name: 'Raiyan',
       role: 'Full-Stack Developer',
-      introduction: 'A skilled developer creating modern web applications.'
+      introduction: 'A skilled developer creating modern web applications.',
     };
   }
 }
 
+/**
+ * Retrieves the about section summary/bio from the database.
+ *
+ * @async
+ * @function getAboutSummary
+ * @returns {Promise<string>} Bio/summary text or default fallback
+ */
 export async function getAboutSummary() {
   try {
     await dbConnect();
@@ -48,13 +64,24 @@ export async function getAboutSummary() {
       return 'Raiyan is a skilled full-stack developer with expertise in modern web technologies.';
     }
 
-    return aboutSection.bio || 'Raiyan is a skilled full-stack developer with expertise in modern web technologies.';
+    return (
+      aboutSection.bio ||
+      'Raiyan is a skilled full-stack developer with expertise in modern web technologies.'
+    );
   } catch (error) {
     console.error('Error fetching about summary:', error);
     return 'Raiyan is a skilled full-stack developer with expertise in modern web technologies.';
   }
 }
 
+/**
+ * Generates an overview of all projects for AI context.
+ * Fetches up to 20 projects and creates a summary string.
+ *
+ * @async
+ * @function getProjectOverview
+ * @returns {Promise<string>} Formatted project overview text
+ */
 export async function getProjectOverview() {
   try {
     await dbConnect();
@@ -65,7 +92,7 @@ export async function getProjectOverview() {
       return 'Raiyan has worked on various web development projects using modern technologies.';
     }
 
-    const projectSummaries = projects.map(project => {
+    const projectSummaries = projects.map((project) => {
       return `${project.title} - ${project.category} project${project.description ? ': ' + project.description.substring(0, 100) + '...' : ''}`;
     });
 
@@ -76,6 +103,14 @@ export async function getProjectOverview() {
   }
 }
 
+/**
+ * Generates an overview of all articles for AI context.
+ * Fetches up to 10 articles and creates a summary string.
+ *
+ * @async
+ * @function getArticleOverview
+ * @returns {Promise<string>} Formatted article overview text
+ */
 export async function getArticleOverview() {
   try {
     await dbConnect();
@@ -86,7 +121,7 @@ export async function getArticleOverview() {
       return 'Raiyan shares insights about web development and technology.';
     }
 
-    const articleSummaries = articles.map(article => {
+    const articleSummaries = articles.map((article) => {
       return `${article.title}${article.excerpt ? ': ' + article.excerpt.substring(0, 100) + '...' : ''}`;
     });
 
@@ -97,6 +132,14 @@ export async function getArticleOverview() {
   }
 }
 
+/**
+ * Retrieves chatbot configuration settings from the database.
+ * Includes AI name, persona, rules, and activation status.
+ *
+ * @async
+ * @function getChatbotSettings
+ * @returns {Promise<Object>} Chatbot settings object with defaults if not found
+ */
 export async function getChatbotSettings() {
   try {
     await dbConnect();
@@ -110,12 +153,12 @@ export async function getChatbotSettings() {
         persona: 'You are Kiro, a professional and helpful AI assistant representing Raiyan.',
         baseKnowledge: 'Raiyan is a skilled full-stack developer.',
         servicesOffered: 'Full-stack web development, React applications, Node.js backends.',
-        callToAction: 'I\'d be happy to help you get in touch with Raiyan.',
+        callToAction: "I'd be happy to help you get in touch with Raiyan.",
         rules: [
           'Always be professional and helpful',
-          'Guide users toward the contact form when appropriate'
+          'Guide users toward the contact form when appropriate',
         ],
-        isActive: true
+        isActive: true,
       };
     }
 
@@ -126,7 +169,7 @@ export async function getChatbotSettings() {
       servicesOffered: settings.servicesOffered,
       callToAction: settings.callToAction,
       rules: settings.rules,
-      isActive: settings.isActive
+      isActive: settings.isActive,
     };
   } catch (error) {
     console.error('Error fetching chatbot settings:', error);
@@ -136,33 +179,43 @@ export async function getChatbotSettings() {
       persona: 'You are Kiro, a professional and helpful AI assistant representing Raiyan.',
       baseKnowledge: 'Raiyan is a skilled full-stack developer.',
       servicesOffered: 'Full-stack web development, React applications, Node.js backends.',
-      callToAction: 'I\'d be happy to help you get in touch with Raiyan.',
+      callToAction: "I'd be happy to help you get in touch with Raiyan.",
       rules: [
         'Always be professional and helpful',
-        'Guide users toward the contact form when appropriate'
+        'Guide users toward the contact form when appropriate',
       ],
-      isActive: true
+      isActive: true,
     };
   }
 }
 
+/**
+ * Builds the complete dynamic context for the AI chatbot.
+ * Fetches all context components in parallel for optimal performance.
+ *
+ * @async
+ * @function buildDynamicContext
+ * @returns {Promise<Object>} Complete context object containing all chatbot data
+ * @throws {Error} If context building fails
+ */
 export async function buildDynamicContext() {
   try {
     // Fetch all context data in parallel
-    const [coreIdentity, aboutSummary, projectOverview, articleOverview, chatbotSettings] = await Promise.all([
-      getCoreIdentity(),
-      getAboutSummary(),
-      getProjectOverview(),
-      getArticleOverview(),
-      getChatbotSettings()
-    ]);
+    const [coreIdentity, aboutSummary, projectOverview, articleOverview, chatbotSettings] =
+      await Promise.all([
+        getCoreIdentity(),
+        getAboutSummary(),
+        getProjectOverview(),
+        getArticleOverview(),
+        getChatbotSettings(),
+      ]);
 
     return {
       coreIdentity,
       aboutSummary,
       projectOverview,
       articleOverview,
-      chatbotSettings
+      chatbotSettings,
     };
   } catch (error) {
     console.error('Error building dynamic context:', error);

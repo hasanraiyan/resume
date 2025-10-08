@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import ProjectCard from './ProjectCard'
-import { Section } from '@/components/ui'
+import ProjectCard from './ProjectCard';
+import { Section } from '@/components/ui';
 
 /**
  * Related Projects Component
  * Shows similar projects at bottom of detail page
  */
 export default function RelatedProjects({ projects }) {
-  if (!projects || projects.length === 0) return null
+  if (!projects || projects.length === 0) return null;
 
   return (
     <Section
@@ -23,5 +23,5 @@ export default function RelatedProjects({ projects }) {
         ))}
       </div>
     </Section>
-  )
+  );
 }

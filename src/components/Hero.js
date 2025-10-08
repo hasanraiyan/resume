@@ -1,82 +1,82 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { Button, Badge } from '@/components/ui'
-import { useHeroData } from '@/hooks/useHeroData'
-import { useLoadingStatus } from '@/context/LoadingContext'
-import { SkeletonLoader, SkeletonItem } from './Skeleton'
+import { useEffect, useState } from 'react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { Button, Badge } from '@/components/ui';
+import { useHeroData } from '@/hooks/useHeroData';
+import { useLoadingStatus } from '@/context/LoadingContext';
+import { SkeletonLoader, SkeletonItem } from './Skeleton';
 
 // ========================================
 // 📦 FALLBACK DATA (Default values)
 // ========================================
 const defaultHeroData = {
   badge: {
-    text: "CREATIVE DEVELOPER"
+    text: 'CREATIVE DEVELOPER',
   },
-  
+
   heading: {
-    line1: "Crafting",
-    line2: "Digital", // This has the stroke effect
-    line3: "Excellence"
+    line1: 'Crafting',
+    line2: 'Digital', // This has the stroke effect
+    line3: 'Excellence',
   },
-  
+
   introduction: {
     text: "I'm John Doe, a creative developer focused on building beautiful and functional digital experiences that make a difference.",
-    name: "John Doe", // Separate for easy replacement
-    role: "creative developer"
+    name: 'John Doe', // Separate for easy replacement
+    role: 'creative developer',
   },
-  
+
   cta: {
     primary: {
-      text: "View My Work",
-      link: "#work"
+      text: 'View My Work',
+      link: '#work',
     },
     secondary: {
-      text: "Contact Me",
-      link: "#contact"
-    }
+      text: 'Contact Me',
+      link: '#contact',
+    },
   },
-  
+
   socialLinks: [
     {
       id: 1,
-      name: "Dribbble",
-      url: "https://dribbble.com/yourusername", // Replace with actual URL
-      icon: "fab fa-dribbble"
+      name: 'Dribbble',
+      url: 'https://dribbble.com/yourusername', // Replace with actual URL
+      icon: 'fab fa-dribbble',
     },
     {
       id: 2,
-      name: "Behance",
-      url: "https://behance.net/yourusername",
-      icon: "fab fa-behance"
+      name: 'Behance',
+      url: 'https://behance.net/yourusername',
+      icon: 'fab fa-behance',
     },
     {
       id: 3,
-      name: "Instagram",
-      url: "https://instagram.com/yourusername",
-      icon: "fab fa-instagram"
+      name: 'Instagram',
+      url: 'https://instagram.com/yourusername',
+      icon: 'fab fa-instagram',
     },
     {
       id: 4,
-      name: "LinkedIn",
-      url: "https://linkedin.com/in/yourusername",
-      icon: "fab fa-linkedin"
-    }
+      name: 'LinkedIn',
+      url: 'https://linkedin.com/in/yourusername',
+      icon: 'fab fa-linkedin',
+    },
   ],
-  
+
   profile: {
     image: {
-      url: "",
-      alt: "Portrait"
+      url: '',
+      alt: 'Portrait',
     },
     badge: {
-      value: "5+",
-      label: "Years Experience"
-    }
-  }
-}
+      value: '5+',
+      label: 'Years Experience',
+    },
+  },
+};
 
 // Hero Skeleton Component
 function HeroSkeleton() {
@@ -84,7 +84,6 @@ function HeroSkeleton() {
     <section id="home" className="min-h-screen flex items-center pt-16 sm:pt-20 w-full">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-12 sm:py-16">
         <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
-
           {/* Left Column - Content Skeleton */}
           <div className="order-2 lg:order-1">
             {/* Badge Skeleton */}
@@ -95,7 +94,11 @@ function HeroSkeleton() {
             {/* Main Heading Skeleton */}
             <div className="mb-4 sm:mb-5 space-y-2">
               <SkeletonItem height="h-12 sm:h-14 md:h-16 lg:h-20" width="w-full" />
-              <SkeletonItem height="h-12 sm:h-14 md:h-16 lg:h-20" width="w-3/4" className="bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-clip-text" />
+              <SkeletonItem
+                height="h-12 sm:h-14 md:h-16 lg:h-20"
+                width="w-3/4"
+                className="bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-clip-text"
+              />
               <SkeletonItem height="h-12 sm:h-14 md:h-16 lg:h-20" width="w-2/3" />
             </div>
 
@@ -131,20 +134,19 @@ function HeroSkeleton() {
               <SkeletonItem height="h-3 sm:h-4" width="w-20" />
             </div>
           </div>
-
         </div>
       </div>
     </section>
-  )
+  );
 }
 
 // ========================================
 // 🎨 COMPONENT
 // ========================================
 export default function Hero() {
-  const { heroData: fetchedHeroData, loading, error } = useHeroData()
-  const [heroData, setHeroData] = useState(defaultHeroData)
-  const { registerComponent, markComponentAsLoaded } = useLoadingStatus()
+  const { heroData: fetchedHeroData, loading, error } = useHeroData();
+  const [heroData, setHeroData] = useState(defaultHeroData);
+  const { registerComponent, markComponentAsLoaded } = useLoadingStatus();
 
   useEffect(() => {
     // Register this component as "loading" when it mounts
@@ -161,24 +163,24 @@ export default function Hero() {
   // Update hero data when fetched data changes
   useEffect(() => {
     if (fetchedHeroData) {
-      setHeroData(fetchedHeroData)
+      setHeroData(fetchedHeroData);
     }
-  }, [fetchedHeroData])
+  }, [fetchedHeroData]);
 
   // GSAP Animation - Always run this effect, but only animate when not loading
   useEffect(() => {
-    if (loading) return
+    if (loading) return;
 
-    gsap.registerPlugin(ScrollTrigger)
+    gsap.registerPlugin(ScrollTrigger);
 
     // Small delay to ensure DOM is ready
     const timer = setTimeout(() => {
       try {
-        const elements = document.querySelectorAll('#home .max-w-6xl > div > div')
+        const elements = document.querySelectorAll('#home .max-w-6xl > div > div');
         if (elements.length > 0) {
           // Reset any existing transforms
-          gsap.set(elements, { opacity: 1, y: 0 })
-          
+          gsap.set(elements, { opacity: 1, y: 0 });
+
           gsap.from(elements, {
             opacity: 0,
             y: 50,
@@ -191,60 +193,56 @@ export default function Hero() {
               toggleActions: 'play none none reverse',
               refreshPriority: -1,
             },
-          })
+          });
         }
       } catch (error) {
-        console.warn('GSAP animation error in Hero:', error)
+        console.warn('GSAP animation error in Hero:', error);
       }
-    }, 100)
+    }, 100);
 
     return () => {
-      clearTimeout(timer)
+      clearTimeout(timer);
       // Clean up GSAP animations
       try {
-        ScrollTrigger.getAll().forEach(trigger => {
+        ScrollTrigger.getAll().forEach((trigger) => {
           if (trigger.trigger === '#home') {
-            trigger.kill()
+            trigger.kill();
           }
-        })
+        });
       } catch (error) {
-        console.warn('GSAP cleanup error:', error)
+        console.warn('GSAP cleanup error:', error);
       }
-    }
-  }, [loading])
+    };
+  }, [loading]);
 
   // Show skeleton while loading
   if (loading) {
-    return <HeroSkeleton />
+    return <HeroSkeleton />;
   }
 
   return (
     <section id="home" className="min-h-screen flex items-center pt-16 sm:pt-20 w-full">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-12 sm:py-16">
         <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
-          
           {/* Left Column - Content */}
           <div className="order-2 lg:order-1">
-            
             {/* Badge */}
             <div className="mb-4 sm:mb-5">
-              <Badge variant="category">
-                {heroData.badge.text}
-              </Badge>
+              <Badge variant="category">{heroData.badge.text}</Badge>
             </div>
-            
+
             {/* Main Heading */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-5 leading-none">
               {heroData.heading.line1}
               <span className="block text-stroke">{heroData.heading.line2}</span>
               {heroData.heading.line3}
             </h1>
-            
+
             {/* Introduction */}
             <p className="text-base sm:text-lg text-gray-600 mb-8 sm:mb-10 max-w-lg leading-relaxed">
               {heroData.introduction.text}
             </p>
-            
+
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-5">
               <Button
@@ -262,7 +260,7 @@ export default function Hero() {
                 {heroData.cta.secondary.text}
               </Button>
             </div>
-            
+
             {/* Social Links */}
             <div className="flex gap-6 sm:gap-7 mt-8 sm:mt-10 justify-center sm:justify-start">
               {heroData.socialLinks.map((social, index) => (
@@ -295,20 +293,15 @@ export default function Hero() {
                 </div>
               )}
             </div>
-            
+
             {/* Experience Badge */}
             <div className="absolute -bottom-4 sm:-bottom-7 -right-4 sm:-right-7 bg-white p-4 sm:p-6 shadow-2xl rounded-lg">
-              <div className="text-3xl sm:text-4xl font-bold">
-                {heroData.profile.badge.value}
-              </div>
-              <div className="text-gray-600 text-xs sm:text-sm">
-                {heroData.profile.badge.label}
-              </div>
+              <div className="text-3xl sm:text-4xl font-bold">{heroData.profile.badge.value}</div>
+              <div className="text-gray-600 text-xs sm:text-sm">{heroData.profile.badge.label}</div>
             </div>
           </div>
-
         </div>
       </div>
     </section>
-  )
+  );
 }

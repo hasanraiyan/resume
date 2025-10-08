@@ -1,6 +1,6 @@
 // src/lib/test-analytics.js
 import dbConnect from './dbConnect';
-import Analytics from './models/Analytics';
+import Analytics from '../models/Analytics';
 
 async function createTestAnalytics() {
   await dbConnect();
@@ -13,7 +13,7 @@ async function createTestAnalytics() {
       userAgent: 'Mozilla/5.0 (Test Browser)',
       referrer: '',
       properties: {},
-      timestamp: new Date(Date.now() - 1000 * 60 * 5) // 5 minutes ago
+      timestamp: new Date(Date.now() - 1000 * 60 * 5), // 5 minutes ago
     },
     {
       eventType: 'pageview',
@@ -22,7 +22,7 @@ async function createTestAnalytics() {
       userAgent: 'Mozilla/5.0 (Test Browser)',
       referrer: '/',
       properties: {},
-      timestamp: new Date(Date.now() - 1000 * 60 * 4) // 4 minutes ago
+      timestamp: new Date(Date.now() - 1000 * 60 * 4), // 4 minutes ago
     },
     {
       eventType: 'pageview',
@@ -31,7 +31,7 @@ async function createTestAnalytics() {
       userAgent: 'Mozilla/5.0 (Test Browser)',
       referrer: '',
       properties: {},
-      timestamp: new Date(Date.now() - 1000 * 60 * 10) // 10 minutes ago
+      timestamp: new Date(Date.now() - 1000 * 60 * 10), // 10 minutes ago
     },
     {
       eventType: 'custom',
@@ -40,8 +40,8 @@ async function createTestAnalytics() {
       userAgent: 'Mozilla/5.0 (Test Browser)',
       referrer: '/',
       properties: { eventName: 'project_click', projectId: '123' },
-      timestamp: new Date(Date.now() - 1000 * 60 * 9) // 9 minutes ago
-    }
+      timestamp: new Date(Date.now() - 1000 * 60 * 9), // 9 minutes ago
+    },
   ];
 
   try {

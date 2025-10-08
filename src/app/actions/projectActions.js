@@ -39,12 +39,12 @@ export async function createProject(formData) {
     revalidatePath('/');
   } catch (error) {
     console.error('Create Project Error:', error);
-    return { 
-      success: false, 
-      message: error.code === 11000 ? 'Slug already exists.' : 'Failed to create project.' 
+    return {
+      success: false,
+      message: error.code === 11000 ? 'Slug already exists.' : 'Failed to create project.',
     };
   }
-  
+
   redirect('/admin/projects');
 }
 
@@ -53,11 +53,10 @@ export async function updateProject(id, formData) {
 
   try {
     const projectData = processFormData(formData);
-    const updatedProject = await Project.findByIdAndUpdate(
-      id, 
-      projectData, 
-      { new: true, runValidators: true }
-    );
+    const updatedProject = await Project.findByIdAndUpdate(id, projectData, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!updatedProject) {
       return { success: false, message: 'Project not found.' };
@@ -69,12 +68,12 @@ export async function updateProject(id, formData) {
     revalidatePath('/');
   } catch (error) {
     console.error('Update Project Error:', error);
-    return { 
-      success: false, 
-      message: error.code === 11000 ? 'Slug already exists.' : 'Failed to update project.' 
+    return {
+      success: false,
+      message: error.code === 11000 ? 'Slug already exists.' : 'Failed to update project.',
     };
   }
-  
+
   // No redirect here to allow success message to show on edit page
 }
 

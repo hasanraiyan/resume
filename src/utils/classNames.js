@@ -6,11 +6,11 @@
 /**
  * Combines multiple class names into a single string
  * Filters out falsy values
- * @param  {...any} classes 
+ * @param  {...any} classes
  * @returns {string}
  */
 export function cn(...classes) {
-  return classes.filter(Boolean).join(' ')
+  return classes.filter(Boolean).join(' ');
 }
 
 /**
@@ -20,15 +20,15 @@ export function cn(...classes) {
  * @returns {string}
  */
 export function conditional(baseClasses, conditionalClasses = {}) {
-  const classes = [baseClasses]
-  
+  const classes = [baseClasses];
+
   Object.entries(conditionalClasses).forEach(([condition, className]) => {
     if (condition) {
-      classes.push(className)
+      classes.push(className);
     }
-  })
-  
-  return classes.filter(Boolean).join(' ')
+  });
+
+  return classes.filter(Boolean).join(' ');
 }
 
 /**
@@ -38,15 +38,15 @@ export function conditional(baseClasses, conditionalClasses = {}) {
  * @returns {string}
  */
 export function responsive(sizes, property) {
-  const classes = []
-  
-  if (sizes.mobile) classes.push(`${property}-${sizes.mobile}`)
-  if (sizes.sm) classes.push(`sm:${property}-${sizes.sm}`)
-  if (sizes.md) classes.push(`md:${property}-${sizes.md}`)
-  if (sizes.lg) classes.push(`lg:${property}-${sizes.lg}`)
-  if (sizes.xl) classes.push(`xl:${property}-${sizes.xl}`)
-  
-  return classes.join(' ')
+  const classes = [];
+
+  if (sizes.mobile) classes.push(`${property}-${sizes.mobile}`);
+  if (sizes.sm) classes.push(`sm:${property}-${sizes.sm}`);
+  if (sizes.md) classes.push(`md:${property}-${sizes.md}`);
+  if (sizes.lg) classes.push(`lg:${property}-${sizes.lg}`);
+  if (sizes.xl) classes.push(`xl:${property}-${sizes.xl}`);
+
+  return classes.join(' ');
 }
 
 /**
@@ -57,17 +57,17 @@ export function responsive(sizes, property) {
  */
 export function spacing(value, type = 'p') {
   if (typeof value === 'string' || typeof value === 'number') {
-    return `${type}-${value}`
+    return `${type}-${value}`;
   }
-  
-  return responsive(value, type)
+
+  return responsive(value, type);
 }
 
 const classNameUtils = {
   cn,
   conditional,
   responsive,
-  spacing
-}
+  spacing,
+};
 
-export default classNameUtils
+export default classNameUtils;

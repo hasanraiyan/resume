@@ -1,29 +1,28 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { projectsData } from '@/data/projects'
+import { useState } from 'react';
+import { projectsData } from '@/data/projects';
 
 /**
  * Project Filters Component - SIMPLIFIED
  */
 export default function ProjectFilters({ onFilterChange, onSearch }) {
-  const [activeCategory, setActiveCategory] = useState('all')
-  const [searchQuery, setSearchQuery] = useState('')
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleCategoryClick = (categoryId) => {
-    setActiveCategory(categoryId)
-    onFilterChange(categoryId)
-  }
+    setActiveCategory(categoryId);
+    onFilterChange(categoryId);
+  };
 
   const handleSearchChange = (e) => {
-    const query = e.target.value
-    setSearchQuery(query)
-    onSearch(query)
-  }
+    const query = e.target.value;
+    setSearchQuery(query);
+    onSearch(query);
+  };
 
   return (
     <div className="mb-12 sm:mb-16">
-      
       {/* Search Bar - Cleaner design */}
       <div className="mb-8 sm:mb-10">
         <div className="relative max-w-xl mx-auto">
@@ -55,5 +54,5 @@ export default function ProjectFilters({ onFilterChange, onSearch }) {
         ))}
       </div>
     </div>
-  )
+  );
 }

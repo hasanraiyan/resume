@@ -19,14 +19,15 @@ export default async function ProjectsListPage() {
         </Button>
       }
     >
-
       {projects.length === 0 ? (
         <div className="text-center py-20">
           <div className="w-16 h-16 bg-neutral-100 rounded-lg flex items-center justify-center mx-auto mb-6">
             <i className="fas fa-folder text-neutral-400 text-2xl"></i>
           </div>
           <h3 className="text-xl font-semibold text-black mb-2">No projects yet</h3>
-          <p className="text-neutral-600 mb-8">Get started by creating your first portfolio project.</p>
+          <p className="text-neutral-600 mb-8">
+            Get started by creating your first portfolio project.
+          </p>
           <Button href="/admin/projects/new" variant="primary">
             <i className="fas fa-plus mr-2"></i>
             Create First Project
@@ -35,8 +36,10 @@ export default async function ProjectsListPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map((project) => (
-            <Card key={project._id} className="overflow-hidden hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group">
-              
+            <Card
+              key={project._id}
+              className="overflow-hidden hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group"
+            >
               {/* Project Image */}
               <div className="aspect-video bg-neutral-100 relative overflow-hidden">
                 {project.thumbnail ? (
@@ -51,18 +54,21 @@ export default async function ProjectsListPage() {
                     <i className="fas fa-image text-neutral-400 text-2xl"></i>
                   </div>
                 )}
-                
+
                 {/* Status Badge */}
                 <div className="absolute top-3 left-3">
                   {project.featured && (
-                    <Badge variant="tag" className="bg-yellow-100 text-yellow-800 border border-yellow-200">
+                    <Badge
+                      variant="tag"
+                      className="bg-yellow-100 text-yellow-800 border border-yellow-200"
+                    >
                       <i className="fas fa-star mr-1"></i>
                       Featured
                     </Badge>
                   )}
                 </div>
               </div>
-              
+
               {/* Project Info */}
               <div className="p-6">
                 <div className="flex items-start justify-between mb-3">
@@ -75,16 +81,14 @@ export default async function ProjectsListPage() {
                     </h3>
                   </div>
                 </div>
-                
-                <p className="text-neutral-600 text-sm mb-4 line-clamp-2">
-                  {project.description}
-                </p>
-                
+
+                <p className="text-neutral-600 text-sm mb-4 line-clamp-2">{project.description}</p>
+
                 <div className="flex items-center justify-between">
                   <Badge variant="tag" className="bg-neutral-100 text-neutral-700">
                     {project.category}
                   </Badge>
-                  
+
                   <div className="flex space-x-2">
                     <Button
                       href={`/projects/${project.slug}`}
@@ -108,7 +112,6 @@ export default async function ProjectsListPage() {
           ))}
         </div>
       )}
-      
     </AdminPageWrapper>
   );
 }

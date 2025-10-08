@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import React from 'react'
+import React from 'react';
 
 // Skeleton shimmer animation styles
 const shimmerStyles = `
@@ -18,13 +18,11 @@ const shimmerStyles = `
     background-size: 200px 100%;
     animation: shimmer 1.5s infinite;
   }
-`
+`;
 
 // Individual skeleton item component
 export function SkeletonItem({ className = '', height = 'h-4', width = 'w-full' }) {
-  return (
-    <div className={`${className} ${height} ${width} skeleton-shimmer rounded`}></div>
-  )
+  return <div className={`${className} ${height} ${width} skeleton-shimmer rounded`}></div>;
 }
 
 // Stats skeleton loader
@@ -44,7 +42,10 @@ export function StatsSkeleton() {
 
                 {/* Number skeleton */}
                 <div className="mb-2 sm:mb-3">
-                  <SkeletonItem height="h-8 sm:h-10 md:h-12" className="w-16 sm:w-20 md:w-24 mx-auto" />
+                  <SkeletonItem
+                    height="h-8 sm:h-10 md:h-12"
+                    className="w-16 sm:w-20 md:w-24 mx-auto"
+                  />
                 </div>
 
                 {/* Label skeleton */}
@@ -55,7 +56,7 @@ export function StatsSkeleton() {
         </div>
       </section>
     </>
-  )
+  );
 }
 
 // Generic skeleton loader for different content types
@@ -63,7 +64,7 @@ export function SkeletonLoader({ type = 'default', count = 1, className = '' }) 
   const renderSkeleton = () => {
     switch (type) {
       case 'stats':
-        return <StatsSkeleton />
+        return <StatsSkeleton />;
 
       case 'card':
         return (
@@ -77,7 +78,7 @@ export function SkeletonLoader({ type = 'default', count = 1, className = '' }) 
               </div>
             </div>
           </div>
-        )
+        );
 
       case 'text':
         return (
@@ -86,7 +87,7 @@ export function SkeletonLoader({ type = 'default', count = 1, className = '' }) 
             <SkeletonItem height="h-4" width="w-5/6" />
             <SkeletonItem height="h-4" width="w-4/6" />
           </div>
-        )
+        );
 
       case 'list':
         return (
@@ -98,7 +99,7 @@ export function SkeletonLoader({ type = 'default', count = 1, className = '' }) 
               </div>
             ))}
           </div>
-        )
+        );
 
       default:
         return (
@@ -106,9 +107,9 @@ export function SkeletonLoader({ type = 'default', count = 1, className = '' }) 
             <SkeletonItem height="h-4" width="w-full" />
             <SkeletonItem height="h-4" width="w-3/4" />
           </div>
-        )
+        );
     }
-  }
+  };
 
   return (
     <>
@@ -119,14 +120,20 @@ export function SkeletonLoader({ type = 'default', count = 1, className = '' }) 
         ))}
       </div>
     </>
-  )
+  );
 }
 
 // Main skeleton component with shimmer animation
-export default function Skeleton({ children, isLoading, type = 'default', count = 1, className = '' }) {
+export default function Skeleton({
+  children,
+  isLoading,
+  type = 'default',
+  count = 1,
+  className = '',
+}) {
   if (isLoading) {
-    return <SkeletonLoader type={type} count={count} className={className} />
+    return <SkeletonLoader type={type} count={count} className={className} />;
   }
 
-  return <>{children}</>
+  return <>{children}</>;
 }

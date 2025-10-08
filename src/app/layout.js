@@ -14,17 +14,21 @@ const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700'],
   variable: '--font-space-grotesk',
-})
+});
 
 const playfairDisplay = Playfair_Display({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700', '800'],
   variable: '--font-playfair',
-})
+});
 
 // Helper to generate initials
 const getInitials = (name = '') => {
-  return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase();
 };
 
 export const metadata = {

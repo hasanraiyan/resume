@@ -3,41 +3,41 @@
 // ========================================
 const marqueeData = {
   services: [
-    { 
-      id: 1, 
-      text: "WEB DESIGN",
-      link: "#services/web-design", // Optional link
-      icon: "fas fa-palette" // Optional icon
+    {
+      id: 1,
+      text: 'WEB DESIGN',
+      link: '#services/web-design', // Optional link
+      icon: 'fas fa-palette', // Optional icon
     },
-    { 
-      id: 2, 
-      text: "DEVELOPMENT",
-      link: "#services/development",
-      icon: "fas fa-code"
+    {
+      id: 2,
+      text: 'DEVELOPMENT',
+      link: '#services/development',
+      icon: 'fas fa-code',
     },
-    { 
-      id: 3, 
-      text: "BRANDING",
-      link: "#services/branding",
-      icon: "fas fa-paint-brush"
+    {
+      id: 3,
+      text: 'BRANDING',
+      link: '#services/branding',
+      icon: 'fas fa-paint-brush',
     },
-    { 
-      id: 4, 
-      text: "UI/UX",
-      link: "#services/ui-ux",
-      icon: "fas fa-desktop"
-    }
+    {
+      id: 4,
+      text: 'UI/UX',
+      link: '#services/ui-ux',
+      icon: 'fas fa-desktop',
+    },
   ],
-  
-  separator: "•",
+
+  separator: '•',
   repeatCount: 2,
-  
+
   styling: {
-    textSize: "text-xl sm:text-2xl md:text-3xl",
-    fontWeight: "font-bold",
-    spacing: "mx-4 sm:mx-6 md:mx-7"
-  }
-}
+    textSize: 'text-xl sm:text-2xl md:text-3xl',
+    fontWeight: 'font-bold',
+    spacing: 'mx-4 sm:mx-6 md:mx-7',
+  },
+};
 
 // ========================================
 // 🎨 ENHANCED COMPONENT WITH CLICKABLE LINKS
@@ -59,11 +59,15 @@ export default function Marquee() {
                       {service.text}
                     </a>
                   ) : (
-                    <span className={`${marqueeData.styling.textSize} ${marqueeData.styling.fontWeight} ${marqueeData.styling.spacing}`}>
+                    <span
+                      className={`${marqueeData.styling.textSize} ${marqueeData.styling.fontWeight} ${marqueeData.styling.spacing}`}
+                    >
                       {service.text}
                     </span>
                   )}
-                  <span className={`${marqueeData.styling.textSize} ${marqueeData.styling.spacing}`}>
+                  <span
+                    className={`${marqueeData.styling.textSize} ${marqueeData.styling.spacing}`}
+                  >
                     {marqueeData.separator}
                   </span>
                 </span>
@@ -73,5 +77,5 @@ export default function Marquee() {
         </div>
       </div>
     </section>
-  )
+  );
 }

@@ -10,14 +10,11 @@ export async function GET() {
     const response = await openai.models.list();
 
     // Extract model IDs from the response
-    const models = response.data.map(model => model.id);
+    const models = response.data.map((model) => model.id);
 
     return Response.json(models);
   } catch (error) {
     console.error('Error fetching models:', error);
-    return Response.json(
-      { error: 'Failed to fetch available models' },
-      { status: 500 }
-    );
+    return Response.json({ error: 'Failed to fetch available models' }, { status: 500 });
   }
 }

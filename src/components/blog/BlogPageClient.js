@@ -1,31 +1,31 @@
 // src/components/blog/BlogPageClient.js
 
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import BlogCard from './BlogCard'
-import BlogFilters from './BlogFilters'
+import { useState, useEffect } from 'react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import BlogCard from './BlogCard';
+import BlogFilters from './BlogFilters';
 
 export default function BlogPageClient({ articles }) {
-  const [filteredArticles, setFilteredArticles] = useState(articles)
-  const [isLoading, setIsLoading] = useState(false)
+  const [filteredArticles, setFilteredArticles] = useState(articles);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Cleanup on component mount to ensure fresh state
   useEffect(() => {
-    ScrollTrigger.getAll().forEach(trigger => trigger.kill())
-    ScrollTrigger.refresh()
-  }, [])
+    ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+    ScrollTrigger.refresh();
+  }, []);
 
   useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger)
-    ScrollTrigger.getAll().forEach(trigger => trigger.kill())
+    gsap.registerPlugin(ScrollTrigger);
+    ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
 
     const timer = setTimeout(() => {
-      const list = document.querySelector('.articles-list')
+      const list = document.querySelector('.articles-list');
       if (list && list.children.length > 0) {
-        gsap.set(list.children, { opacity: 1, y: 0 })
+        gsap.set(list.children, { opacity: 1, y: 0 });
         gsap.from(list.children, {
           opacity: 0,
           y: 50,
@@ -37,58 +37,54 @@ export default function BlogPageClient({ articles }) {
             toggleActions: 'play none none reverse',
             refreshPriority: -1,
           },
-        })
+        });
       }
-      ScrollTrigger.refresh()
-    }, 100)
+      ScrollTrigger.refresh();
+    }, 100);
 
     return () => {
-      clearTimeout(timer)
-      ScrollTrigger.getAll().forEach(trigger => trigger.kill())
-    }
-  }, [filteredArticles])
+      clearTimeout(timer);
+      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+    };
+  }, [filteredArticles]);
 
   const handleFilterChange = (tag) => {
-    setIsLoading(true)
+    setIsLoading(true);
     setTimeout(() => {
-      let filtered = articles
+      let filtered = articles;
       if (tag && tag !== 'all') {
-        filtered = articles.filter(article =>
-          article.tags?.some(articleTag =>
-            articleTag.toLowerCase().includes(tag.toLowerCase())
-          )
-        )
+        filtered = articles.filter((article) =>
+          article.tags?.some((articleTag) => articleTag.toLowerCase().includes(tag.toLowerCase()))
+        );
       }
-      setFilteredArticles(filtered)
-      setIsLoading(false)
-    }, 300)
-  }
+      setFilteredArticles(filtered);
+      setIsLoading(false);
+    }, 300);
+  };
 
   const handleSearch = (query) => {
-    setIsLoading(true)
+    setIsLoading(true);
     setTimeout(() => {
       if (query.trim() === '') {
-        setFilteredArticles(articles)
+        setFilteredArticles(articles);
       } else {
-        const searchTerm = query.toLowerCase()
-        const results = articles.filter(article =>
-          article.title.toLowerCase().includes(searchTerm) ||
-          article.excerpt.toLowerCase().includes(searchTerm) ||
-          article.content.toLowerCase().includes(searchTerm) ||
-          article.tags?.some(tag => tag.toLowerCase().includes(searchTerm))
-        )
-        setFilteredArticles(results)
+        const searchTerm = query.toLowerCase();
+        const results = articles.filter(
+          (article) =>
+            article.title.toLowerCase().includes(searchTerm) ||
+            article.excerpt.toLowerCase().includes(searchTerm) ||
+            article.content.toLowerCase().includes(searchTerm) ||
+            article.tags?.some((tag) => tag.toLowerCase().includes(searchTerm))
+        );
+        setFilteredArticles(results);
       }
-      setIsLoading(false)
-    }, 300)
-  }
+      setIsLoading(false);
+    }, 300);
+  };
 
   return (
     <>
-      <BlogFilters
-        onFilterChange={handleFilterChange}
-        onSearch={handleSearch}
-      />
+      <BlogFilters onFilterChange={handleFilterChange} onSearch={handleSearch} />
 
       {isLoading ? (
         <div className="text-center py-20">
@@ -112,10 +108,11 @@ export default function BlogPageClient({ articles }) {
             ))}
           </div>
           <div className="text-center mt-12 sm:mt-16 text-sm text-gray-600">
-            Showing <span className="font-semibold">{filteredArticles.length}</span> of <span className="font-semibold">{articles.length}</span> articles
+            Showing <span className="font-semibold">{filteredArticles.length}</span> of{' '}
+            <span className="font-semibold">{articles.length}</span> articles
           </div>
         </>
       )}
     </>
-  )
+  );
 }

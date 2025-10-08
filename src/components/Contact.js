@@ -1,22 +1,22 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { Section, Input } from '@/components/ui'
-import CustomDropdownMinimal from './CustomDropdown'
-import ActionButton from '@/components/admin/ActionButton'
-import { createContactSubmission } from '@/app/actions/contactActions'
+import { useEffect, useState } from 'react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { Section, Input } from '@/components/ui';
+import CustomDropdownMinimal from './CustomDropdown';
+import ActionButton from '@/components/admin/ActionButton';
+import { createContactSubmission } from '@/app/actions/contactActions';
 // ========================================
 // 📦 DYNAMIC DATA (Backend-Ready)
 // ========================================
 const contactData = {
   heading: {
     title: "Let's Create",
-    subtitle: "Something Amazing",
-    description: "Have a project in mind? Let's talk about it."
+    subtitle: 'Something Amazing',
+    description: "Have a project in mind? Let's talk about it.",
   },
-  
+
   form: {
     fields: [
       {
@@ -26,7 +26,7 @@ const contactData = {
         type: 'text',
         placeholder: '',
         required: true,
-        gridColumn: 'half'
+        gridColumn: 'half',
       },
       {
         id: 'email',
@@ -35,7 +35,7 @@ const contactData = {
         type: 'email',
         placeholder: '',
         required: true,
-        gridColumn: 'half'
+        gridColumn: 'half',
       },
       {
         id: 'projectType',
@@ -61,9 +61,9 @@ const contactData = {
           { value: 'landing-page', label: 'Landing Page' },
           { value: 'portfolio', label: 'Portfolio Website' },
           { value: 'blog', label: 'Blog/CMS' },
-          { value: 'other', label: 'Other' }
+          { value: 'other', label: 'Other' },
         ],
-        defaultValue: 'web-design'
+        defaultValue: 'web-design',
       },
       {
         id: 'message',
@@ -73,49 +73,49 @@ const contactData = {
         placeholder: 'Tell me about your project...',
         required: true,
         rows: 5,
-        gridColumn: 'full'
-      }
+        gridColumn: 'full',
+      },
     ],
-    
+
     submitButton: {
       text: 'Send Message',
-      loadingText: 'Sending...'
-    }
+      loadingText: 'Sending...',
+    },
   },
-  
+
   apiEndpoint: '/api/contact',
-  
+
   messages: {
     success: 'Thank you! Your message has been sent successfully.',
-    error: 'Oops! Something went wrong. Please try again.'
-  }
-}
+    error: 'Oops! Something went wrong. Please try again.',
+  },
+};
 
 // ========================================
 // 🎨 COMPONENT
 // ========================================
 export default function Contact() {
   const initialFormData = contactData.form.fields.reduce((acc, field) => {
-    acc[field.name] = field.defaultValue || ''
-    return acc
-  }, {})
+    acc[field.name] = field.defaultValue || '';
+    return acc;
+  }, {});
 
-  const [formData, setFormData] = useState(initialFormData)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitResult, setSubmitResult] = useState(null)
+  const [formData, setFormData] = useState(initialFormData);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitResult, setSubmitResult] = useState(null);
 
   useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger)
+    gsap.registerPlugin(ScrollTrigger);
 
     // Small delay to ensure DOM is ready
     const timer = setTimeout(() => {
-      const container = document.querySelector('#contact')
+      const container = document.querySelector('#contact');
       if (container) {
-        const formContainer = container.querySelector('.max-w-3xl')
+        const formContainer = container.querySelector('.max-w-3xl');
         if (formContainer && formContainer.children.length > 0) {
           // Reset any existing transforms
-          gsap.set(formContainer.children, { opacity: 1, y: 0 })
-          
+          gsap.set(formContainer.children, { opacity: 1, y: 0 });
+
           gsap.from(formContainer.children, {
             opacity: 0,
             y: 50,
@@ -128,49 +128,49 @@ export default function Contact() {
               toggleActions: 'play none none reverse',
               refreshPriority: -1,
             },
-          })
+          });
         }
       }
-    }, 100)
+    }, 100);
 
     return () => {
-      clearTimeout(timer)
-    }
-  }, [])
+      clearTimeout(timer);
+    };
+  }, []);
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-    setSubmitResult(null)
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitResult(null);
 
     try {
       // Create FormData object from the form
-      const formDataObj = new FormData(e.target)
-      
+      const formDataObj = new FormData(e.target);
+
       // Call the server action directly
-      const result = await createContactSubmission(formDataObj)
+      const result = await createContactSubmission(formDataObj);
 
       if (result.success) {
-        setSubmitResult('success')
+        setSubmitResult('success');
         // Clear the form
-        setFormData(initialFormData)
+        setFormData(initialFormData);
       } else {
-        setSubmitResult('error')
+        setSubmitResult('error');
       }
     } catch (error) {
-      console.error('Error submitting form:', error)
-      setSubmitResult('error')
+      console.error('Error submitting form:', error);
+      setSubmitResult('error');
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
-    })
-  }
+    });
+  };
 
   // Render field based on type
   const renderField = (field) => {
@@ -178,9 +178,7 @@ export default function Contact() {
       case 'textarea':
         return (
           <div>
-            <label className="block text-xs font-semibold mb-2 tracking-wider">
-              {field.label}
-            </label>
+            <label className="block text-xs font-semibold mb-2 tracking-wider">{field.label}</label>
             <textarea
               name={field.name}
               value={formData[field.name]}
@@ -192,8 +190,8 @@ export default function Contact() {
               suppressHydrationWarning={true}
             />
           </div>
-        )
-      
+        );
+
       case 'dropdown':
         return (
           <>
@@ -206,14 +204,10 @@ export default function Contact() {
               required={field.required}
               placeholder={field.placeholder}
             />
-            <input
-              type="hidden"
-              name={field.name}
-              value={formData[field.name]}
-            />
+            <input type="hidden" name={field.name} value={formData[field.name]} />
           </>
-        )
-      
+        );
+
       default: // text, email, etc.
         return (
           <div>
@@ -226,15 +220,15 @@ export default function Contact() {
               required={field.required}
             />
           </div>
-        )
+        );
     }
-  }
+  };
 
   // Show success message if form was submitted successfully
   if (submitResult === 'success') {
     return (
-      <Section 
-        id="contact" 
+      <Section
+        id="contact"
         title={`${contactData.heading.title} ${contactData.heading.subtitle}`}
         description={contactData.heading.description}
         centered={true}
@@ -247,54 +241,47 @@ export default function Contact() {
           </div>
         </div>
       </Section>
-    )
+    );
   }
 
   return (
-    <Section 
-      id="contact" 
+    <Section
+      id="contact"
       title={`${contactData.heading.title} ${contactData.heading.subtitle}`}
       description={contactData.heading.description}
       centered={true}
       className="py-16 sm:py-20 md:py-24"
     >
-
-        {/* Form */}
-        <div className="max-w-3xl mx-auto">
-          <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-7">
-            
-            <div className="grid md:grid-cols-2 gap-6 sm:gap-7">
-              {contactData.form.fields
-                .filter(field => field.gridColumn === 'half')
-                .map((field) => (
-                  <div key={field.id}>
-                    {renderField(field)}
-                  </div>
-                ))}
-            </div>
-
-            {/* Full width fields */}
+      {/* Form */}
+      <div className="max-w-3xl mx-auto">
+        <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-7">
+          <div className="grid md:grid-cols-2 gap-6 sm:gap-7">
             {contactData.form.fields
-              .filter(field => field.gridColumn === 'full')
+              .filter((field) => field.gridColumn === 'half')
               .map((field) => (
-                <div key={field.id}>
-                  {renderField(field)}
-                </div>
+                <div key={field.id}>{renderField(field)}</div>
               ))}
+          </div>
 
-            {/* Submit Button */}
-            <div className="text-center pt-6 sm:pt-7">
-              <ActionButton
-                isSaving={isSubmitting}
-                text={contactData.form.submitButton.text}
-                savingText={contactData.form.submitButton.loadingText}
-                variant="primary"
-                className="w-full sm:w-auto px-10 sm:px-14 py-4 sm:py-5"
-              />
-            </div>
+          {/* Full width fields */}
+          {contactData.form.fields
+            .filter((field) => field.gridColumn === 'full')
+            .map((field) => (
+              <div key={field.id}>{renderField(field)}</div>
+            ))}
 
-          </form>
-        </div>
+          {/* Submit Button */}
+          <div className="text-center pt-6 sm:pt-7">
+            <ActionButton
+              isSaving={isSubmitting}
+              text={contactData.form.submitButton.text}
+              savingText={contactData.form.submitButton.loadingText}
+              variant="primary"
+              className="w-full sm:w-auto px-10 sm:px-14 py-4 sm:py-5"
+            />
+          </div>
+        </form>
+      </div>
     </Section>
-  )
+  );
 }

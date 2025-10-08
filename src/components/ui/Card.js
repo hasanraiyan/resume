@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { cn } from '@/utils/classNames'
-import { componentStyles } from '@/styles/components'
+import { cn } from '@/utils/classNames';
+import { componentStyles } from '@/styles/components';
 
 /**
  * Reusable Card Component
@@ -23,11 +23,11 @@ export default function Card({
     variant !== 'flat' && componentStyles.cards[variant],
     interactive && componentStyles.cards.interactive,
     className
-  )
+  );
 
   return (
     <div className={classes} {...props}>
       {children}
     </div>
-  )
+  );
 }

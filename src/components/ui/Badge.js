@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { cn } from '@/utils/classNames'
-import { componentStyles } from '@/styles/components'
+import { cn } from '@/utils/classNames';
+import { componentStyles } from '@/styles/components';
 
 /**
  * Reusable Badge Component
@@ -10,14 +10,6 @@ import { componentStyles } from '@/styles/components'
  * @param {string} props.className
  * @param {React.ReactNode} props.children
  */
-export default function Badge({
-  variant = 'tag',
-  className = '',
-  children,
-}) {
-  return (
-    <span className={cn(componentStyles.badges[variant], className)}>
-      {children}
-    </span>
-  )
+export default function Badge({ variant = 'tag', className = '', children }) {
+  return <span className={cn(componentStyles.badges[variant], className)}>{children}</span>;
 }
