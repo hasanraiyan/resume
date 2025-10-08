@@ -289,6 +289,96 @@ async function executeToolCall(toolCall) {
 }
 
 /**
+ * Calculates approximate character count of messages array.
+ * Used to prevent context size errors.
+ *
+ * @function calculateContextSize
+ * @param {Array} messages - Array of message objects
+ * @returns {number} Total character count
+ */
+function calculateContextSize(messages) {
+  return messages.reduce((total, msg) => {
+    const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
+    return total + content.length;
+  }, 0);
+}
+
+/**
+ * Prunes context to fit within character limit.
+ * Keeps system messages, current user message, and ONLY the latest tool results.
+ * Removes old tool calls from previous iterations.
+ *
+ * @function pruneContext
+ * @param {Array} messages - Array of message objects
+ * @param {number} maxChars - Maximum allowed characters
+ * @returns {Array} Pruned messages array
+ */
+function pruneContext(messages, maxChars) {
+  const currentSize = calculateContextSize(messages);
+
+  if (currentSize <= maxChars) {
+    return messages;
+  }
+
+  console.log(`[Chat API] ⚠️ Context too large: ${currentSize} chars, pruning to ${maxChars}...`);
+
+  // 1. Always keep system messages and current user message
+  const systemMessages = messages.filter((m) => m.role === 'system');
+  const userMessage = messages[messages.length - 1];
+
+  // 2. Get middle messages (everything between system and current user)
+  const middleMessages = messages.slice(systemMessages.length, -1);
+
+  // 3. Keep only the LATEST tool results - remove old iterations
+  const latestToolIndex = middleMessages.findLastIndex((m) => m.role === 'tool');
+  const latestAssistantIndex = middleMessages.findLastIndex((m) => m.role === 'assistant');
+
+  let recentMessages = [];
+
+  if (latestToolIndex !== -1) {
+    // Find the last assistant message with tool_calls and all subsequent messages
+    let startIndex = latestAssistantIndex;
+    // Go backwards to find the assistant message that triggered the latest tool
+    for (let i = latestAssistantIndex; i >= 0; i--) {
+      if (middleMessages[i].role === 'assistant' && middleMessages[i].tool_calls) {
+        startIndex = i;
+        break;
+      }
+    }
+
+    // Keep from that point onwards (latest tool interaction only)
+    recentMessages = middleMessages.slice(startIndex);
+    console.log(
+      `[Chat API] ✂️ Keeping only latest tool calls (removed ${startIndex} old messages)`
+    );
+  } else {
+    // No tool calls, keep recent messages working backwards
+    let accumulatedSize = calculateContextSize([...systemMessages, userMessage]);
+    for (let i = middleMessages.length - 1; i >= 0; i--) {
+      const msg = middleMessages[i];
+      const msgSize = (typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content))
+        .length;
+
+      if (accumulatedSize + msgSize < maxChars) {
+        recentMessages.unshift(msg);
+        accumulatedSize += msgSize;
+      } else {
+        break;
+      }
+    }
+  }
+
+  const prunedMessages = [...systemMessages, ...recentMessages, userMessage];
+  const finalSize = calculateContextSize(prunedMessages);
+
+  console.log(
+    `[Chat API] ✂️ Pruned from ${messages.length} to ${prunedMessages.length} messages (${currentSize} → ${finalSize} chars)`
+  );
+
+  return prunedMessages;
+}
+
+/**
  * Maps tool names to user-friendly status messages.
  * Returns dynamic status text based on the tool being executed.
  *
@@ -369,11 +459,16 @@ export async function POST(request) {
 
     // Iterative tool calling with max iterations
     const MAX_ITERATIONS = 3;
+    const MAX_CONTEXT_CHARS = 7500; // Safe buffer below 10k limit
+    const ENABLE_PRUNING = true; // Keep only latest tool results
     let toolsUsed = [];
     let iteration = 0;
     let shouldContinue = true;
 
     console.log(`[Chat API] 🔄 Starting iterative tool calling (max: ${MAX_ITERATIONS} rounds)...`);
+    console.log(
+      `[Chat API] ✂️ Pruning: ${ENABLE_PRUNING ? 'ENABLED' : 'DISABLED'} (max: ${MAX_CONTEXT_CHARS} chars)`
+    );
 
     while (shouldContinue && iteration < MAX_ITERATIONS) {
       iteration++;
@@ -381,9 +476,25 @@ export async function POST(request) {
         `[Chat API] 🎯 Iteration ${iteration}/${MAX_ITERATIONS}: Sending completion request...`
       );
 
+      // Calculate and log context size
+      const currentContextSize = calculateContextSize(messages);
+      console.log(
+        `[Chat API] 📏 Current context size: ${currentContextSize} chars (${messages.length} messages)`
+      );
+
+      // Prune context if needed before API call (only if enabled)
+      const prunedMessages = ENABLE_PRUNING ? pruneContext(messages, MAX_CONTEXT_CHARS) : messages;
+      const finalContextSize = calculateContextSize(prunedMessages);
+
+      if (ENABLE_PRUNING && currentContextSize !== finalContextSize) {
+        console.log(
+          `[Chat API] ✂️ After pruning: ${finalContextSize} chars (${prunedMessages.length} messages)`
+        );
+      }
+
       const completion = await openai.chat.completions.create({
         model: actualModel,
-        messages: messages,
+        messages: prunedMessages,
         tools: tools,
         tool_choice: 'auto',
       });
@@ -400,7 +511,10 @@ export async function POST(request) {
         // Execute all tools in this iteration
         for (const toolCall of response.tool_calls) {
           const toolResult = await executeToolCall(toolCall);
-          console.log(`[Chat API] ✅ Tool ${toolCall.function.name} executed successfully`);
+          const resultSize = JSON.stringify(toolResult).length;
+          console.log(
+            `[Chat API] ✅ Tool ${toolCall.function.name} executed successfully (result: ${resultSize} chars)`
+          );
 
           toolsUsed.push({
             name: toolCall.function.name,
@@ -408,11 +522,16 @@ export async function POST(request) {
             iteration: iteration,
           });
 
-          messages.push({
+          const toolMessage = {
             role: 'tool',
             tool_call_id: toolCall.id,
             content: JSON.stringify(toolResult),
-          });
+          };
+          messages.push(toolMessage);
+
+          console.log(
+            `[Chat API] 📈 Context grew by ${resultSize} chars (now ${calculateContextSize(messages)} chars)`
+          );
         }
 
         console.log(
@@ -428,11 +547,31 @@ export async function POST(request) {
       console.log('[Chat API] ⚠️ Reached max iterations limit');
     }
 
+    const totalContextSize = calculateContextSize(messages);
     console.log(
       `[Chat API] 🏁 Tool calling complete. Total iterations: ${iteration}, Total tools used: ${toolsUsed.length}`
     );
+    console.log(`[Chat API] 📊 CONTEXT GROWTH SUMMARY:
+      🔢 Total messages: ${messages.length}
+      📏 Total size: ${totalContextSize} chars
+      📈 Growth: ${totalContextSize - calculateContextSize(systemMessages)} chars added
+      ⚠️ Model limit: 10,000 chars
+      ${totalContextSize > 10000 ? '🔴 EXCEEDS LIMIT!' : '🟢 Within limit'}`);
 
     console.log('[Chat API] 🌊 Starting streaming response...');
+
+    // Prune context one final time before streaming (only if enabled)
+    const finalMessages = ENABLE_PRUNING ? pruneContext(messages, MAX_CONTEXT_CHARS) : messages;
+    const finalSize = calculateContextSize(finalMessages);
+    console.log(
+      `[Chat API] 📏 Final context size: ${finalSize} chars (${finalMessages.length} messages)`
+    );
+    console.log(`[Chat API] 📊 Context breakdown:
+      - System messages: ${messages.filter((m) => m.role === 'system').length}
+      - User messages: ${messages.filter((m) => m.role === 'user').length}
+      - Assistant messages: ${messages.filter((m) => m.role === 'assistant').length}
+      - Tool messages: ${messages.filter((m) => m.role === 'tool').length}`);
+
     const stream = new ReadableStream({
       async start(controller) {
         let assistantMessage = { content: '' };
@@ -449,7 +588,7 @@ export async function POST(request) {
           }
           const completion = await openai.chat.completions.create({
             model: actualModel,
-            messages: messages,
+            messages: finalMessages,
             stream: true,
           });
           console.log('[Chat API] 📡 Stream established, receiving chunks...');
@@ -529,20 +668,7 @@ function buildSystemMessages(context, path) {
 
   messages.push({
     role: 'system',
-    content: `TOOL USAGE GUIDE:
-
-1. FOR GENERAL LISTING (When a user wants to browse):
-   - \`listAllProjects()\`: Use when asked "What projects do you have?" or "Show me your work."
-   - \`listAllArticles()\`: Use when asked "What have you written?" or "Show me the blog."
-
-2. FOR SPECIFIC DETAILS (When a user asks about ONE item):
-   - \`getProjectDetails(slug)\`: Use this for a specific project.
-   - \`getArticleDetails(slug)\`: Use this to get the full text of a specific article.
-
-3. FOR KEYWORD SEARCHING (Most common use case):
-   - \`searchPortfolio(query)\`: Use this for any topic-based questions like "Do you have experience with Python?" or "Tell me about your e-commerce projects."
-
-CRITICAL: Do not make up information. If you don't know, use a tool.`,
+    content: `CRITICAL: Do not make up information. If you don't know, use a tool.`,
   });
 
   messages.push({
@@ -555,7 +681,7 @@ FORMAT:
 - Use markdown: [Project Title](url) 
 - Projects: Tools return "url" field (/projects/slug)
 - Live demos: Tools return "liveUrl" field (external URL)
-- GitHub: Tools return "githubUrl" field (external URL)
+- GitHub or figma or any other link: Tools return "githubUrl" field (external URL)
 - Articles: Tools return "url" field (/blog/slug)
 
 EXAMPLES:
