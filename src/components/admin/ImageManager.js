@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui';
+import CustomDropdownMinimal from '@/components/CustomDropdown';
 
 export default function ImageManager({ images, setImages }) {
   const [editingIndex, setEditingIndex] = useState(null);
@@ -59,17 +60,16 @@ export default function ImageManager({ images, setImages }) {
               {editingIndex === index && (
                 <div className="mt-4 pt-4 border-t border-neutral-200 space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold text-black mb-1 uppercase">
-                      Media Type *
-                    </label>
-                    <select
+                    <CustomDropdownMinimal
+                      label="MEDIA TYPE *"
+                      name={`images.${index}.type`}
+                      options={[
+                        { value: 'image', label: 'Image' },
+                        { value: 'video', label: 'YouTube Video' },
+                      ]}
                       value={mediaType}
-                      onChange={(e) => updateImage(index, 'type', e.target.value)}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm"
-                    >
-                      <option value="image">Image</option>
-                      <option value="video">YouTube Video</option>
-                    </select>
+                      onChange={({ target }) => updateImage(index, 'type', target.value)}
+                    />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-black mb-1 uppercase">
