@@ -61,6 +61,7 @@ const ProjectSchema = new mongoose.Schema(
     // but for simplicity, we can start with embedded arrays.
     images: [
       {
+        type: { type: String, enum: ['image', 'video'], default: 'image' },
         url: String,
         alt: String,
         caption: String,

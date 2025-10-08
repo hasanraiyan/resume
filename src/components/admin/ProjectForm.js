@@ -52,7 +52,14 @@ export default function ProjectForm({ initialData, onSave, onDelete, isEditing =
         ...defaultProject,
         ...initialData,
         images:
-          initialData.images?.length > 0 ? initialData.images : [{ url: '', alt: '', caption: '' }],
+          initialData.images?.length > 0
+            ? initialData.images.map((img) => ({
+                type: img.type || 'image',
+                url: img.url || '',
+                alt: img.alt || '',
+                caption: img.caption || '',
+              }))
+            : [{ type: 'image', url: '', alt: '', caption: '' }],
         tags: initialData.tags?.length > 0 ? initialData.tags : [{ name: '', category: '' }],
         links: { ...defaultProject.links, ...initialData.links },
       };
@@ -337,7 +344,9 @@ export default function ProjectForm({ initialData, onSave, onDelete, isEditing =
                   />
                 </div>
                 <div>
-                  <h4 className="text-md font-semibold text-black mb-2">Gallery Images</h4>
+                  <h4 className="text-md font-semibold text-black mb-2">
+                    Gallery Media (Images & Videos)
+                  </h4>
                   <ImageManager
                     images={formData.images}
                     setImages={(newImages) => setFormData((p) => ({ ...p, images: newImages }))}
