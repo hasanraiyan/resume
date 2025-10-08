@@ -1,6 +1,6 @@
 // src/lib/test-analytics.js
 import dbConnect from './dbConnect';
-import Analytics from './models/Analytics';
+import Analytics from '../models/Analytics';
 
 async function createTestAnalytics() {
   await dbConnect();

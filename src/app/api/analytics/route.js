@@ -1,7 +1,7 @@
 // src/app/api/analytics/route.js
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
-import Analytics from '@/lib/models/Analytics';
+import Analytics from '@/models/Analytics';
 
 // List of known bot user agents to filter out
 const BOT_USER_AGENTS = [

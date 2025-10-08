@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import dbConnect from '@/lib/dbConnect';
-import Analytics from '@/lib/models/Analytics';
+import Analytics from '@/models/Analytics';
 
 // Helper function to check if user is admin
 async function isAdmin(request) {

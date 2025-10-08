@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { buildDynamicContext } from '../../../lib/ai/context-builder';
-import Analytics from '../../../lib/models/Analytics';
+import Analytics from '../../../models/Analytics';
 import dbConnect from '@/lib/dbConnect';
 import Project from '@/models/Project';
 import Article from '@/models/Article';
