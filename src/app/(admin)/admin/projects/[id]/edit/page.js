@@ -1,23 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateProject, deleteProject } from '@/app/actions/projectActions';
 import ProjectForm from '@/components/admin/ProjectForm';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 
 export default function EditProjectPage({ params }) {
+  const unwrappedParams = use(params);
   const router = useRouter();
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!params.id) return;
+    if (!unwrappedParams.id) return;
 
     const fetchProject = async () => {
       try {
-        const response = await fetch(`/api/projects/${params.id}`);
+        const response = await fetch(`/api/projects/${unwrappedParams.id}`);
         if (!response.ok) {
           throw new Error('Failed to fetch project data.');
         }
@@ -32,7 +33,7 @@ export default function EditProjectPage({ params }) {
     };
 
     fetchProject();
-  }, [params.id]);
+  }, [unwrappedParams.id]);
 
   if (loading) {
     return (
