@@ -9,7 +9,6 @@ import Pagination from '@/components/admin/chatbot/Pagination';
 import SearchBar from '@/components/admin/chatbot/SearchBar';
 import PathFilter from '@/components/admin/chatbot/PathFilter';
 
-
 export default function ChatLogsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -72,11 +71,11 @@ export default function ChatLogsPage() {
 
   const updateURL = (page, search, path) => {
     const params = new URLSearchParams();
-    if(page > 1) params.set('page', page);
-    if(search) params.set('search', search);
-    if(path) params.set('path', path);
+    if (page > 1) params.set('page', page);
+    if (search) params.set('search', search);
+    if (path) params.set('path', path);
     router.push(`${pathname}?${params.toString()}`);
-  }
+  };
 
   const handlePageChange = (page) => {
     updateURL(page, searchQuery, pathFilter);
@@ -108,28 +107,38 @@ export default function ChatLogsPage() {
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-black font-['Playfair_Display']">Chat History</h1>
-          <p className="text-neutral-600">Review conversations between visitors and the AI assistant.</p>
+          <p className="text-neutral-600">
+            Review conversations between visitors and the AI assistant.
+          </p>
         </div>
 
         <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2">
-                <SearchBar onSearch={handleSearch} initialQuery={searchQuery} />
-            </div>
-            <div>
-                <PathFilter paths={distinctPaths} onFilter={handlePathFilter} currentPath={pathFilter} />
-            </div>
+          <div className="md:col-span-2">
+            <SearchBar onSearch={handleSearch} initialQuery={searchQuery} />
+          </div>
+          <div>
+            <PathFilter
+              paths={distinctPaths}
+              onFilter={handlePathFilter}
+              currentPath={pathFilter}
+            />
+          </div>
         </div>
 
         {loading ? (
-           <div className="flex items-center justify-center h-64">
-             <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-           </div>
+          <div className="flex items-center justify-center h-64">
+            <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+          </div>
         ) : error ? (
           <div className="text-red-500 bg-red-50 p-4 rounded-lg">{error}</div>
         ) : (
           <>
             <LogList logs={logs} />
-            <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
           </>
         )}
       </div>
