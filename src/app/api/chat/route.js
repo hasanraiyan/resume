@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { buildDynamicContext } from '@/lib/ai/context-builder';
 import Analytics from '@/models/Analytics';
+import ChatLog from '@/models/ChatLog'; // Import the new ChatLog model
 import dbConnect from '@/lib/dbConnect';
 import Project from '@/models/Project';
 import Article from '@/models/Article';
@@ -423,6 +424,7 @@ function getToolStatusMessage(toolName, args, iteration = null) {
  */
 export async function POST(request) {
   console.log('\n[Chat API] 🚀 ======== NEW CHAT REQUEST ======== ');
+  const startTime = Date.now(); // Start timer for execution time
   try {
     const { userMessage, chatHistory = [], sessionId, path = '/' } = await request.json();
     console.log('[Chat API] 📨 User message:', userMessage);
@@ -622,6 +624,21 @@ export async function POST(request) {
           });
           await analyticsEvent.save();
           console.log('[Chat API] ✅ Analytics saved successfully');
+
+          // Save the chat log to the database
+          console.log('[Chat API] 💾 Saving chat log...');
+          const executionTime = Date.now() - startTime;
+          const chatLog = new ChatLog({
+            sessionId,
+            path,
+            userMessage,
+            aiResponse: assistantMessage.content,
+            modelName: actualModel,
+            toolsUsed,
+            executionTime,
+          });
+          await chatLog.save();
+          console.log('[Chat API] ✅ Chat log saved successfully');
           console.log('[Chat API] 🏁 ======== REQUEST COMPLETE ======== \n');
         } catch (error) {
           console.error('[Chat API] ❌ Stream error:', error);
