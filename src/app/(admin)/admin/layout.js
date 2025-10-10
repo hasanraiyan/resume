@@ -81,6 +81,12 @@ function AdminLayoutContent({ children }) {
                   >
                     Chatbot Settings
                   </Link>
+                  <Link
+                    href="/admin/chatbot/logs"
+                    className="px-4 py-2 text-sm font-medium text-neutral-600 hover:text-black hover:bg-neutral-100 rounded transition-colors"
+                  >
+                    Chat Logs
+                  </Link>
                 </nav>
               </div>
 
