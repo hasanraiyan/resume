@@ -75,7 +75,7 @@ export default function TagManager({ tags, setTags }) {
                   <CustomDropdownMinimal
                     options={categoryOptions}
                     value={tag.category}
-                    onChange={(value) => updateTag(index, 'category', value)}
+                    onChange={(e) => updateTag(index, 'category', e.target.value)}
                     className="text-sm"
                   />
                 </div>

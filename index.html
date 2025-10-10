@@ -1,0 +1,1178 @@
+<!-- Particle Background -->
+<div id="particles-js" class="particle-bg"></div>
+
+<!-- Navigation -->
+<nav class="fixed w-full z-50 backdrop-blur-md border-b transition-all duration-300" 
+     style="background: var(--bg-glass); border-color: var(--border-color);">
+    <div class="container mx-auto px-6 py-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="hexagon w-10 h-10 bg-gradient-to-br from-neon-pink to-neon-cyan flex items-center justify-center pulse-glow">
+                    <i class="fas fa-atom text-white text-lg"></i>
+                </div>
+                <div>
+                    <div class="text-xl font-black righteous gradient-text">ChEMATHON</div>
+                    <div class="text-xs text-neon-yellow">2026 EDITION</div>
+                </div>
+            </div>
+            
+            <div class="hidden lg:flex items-center gap-6">
+                <a href="#home" class="hover:text-neon-pink transition font-semibold text-sm" style="color: var(--text-primary);">HOME</a>
+                <a href="#about" class="hover:text-neon-cyan transition font-semibold text-sm" style="color: var(--text-primary);">ABOUT</a>
+                <a href="#themes" class="hover:text-neon-yellow transition font-semibold text-sm" style="color: var(--text-primary);">THEMES</a>
+                <a href="#prizes" class="hover:text-neon-purple transition font-semibold text-sm" style="color: var(--text-primary);">PRIZES</a>
+                <a href="#timeline" class="hover:text-neon-pink transition font-semibold text-sm" style="color: var(--text-primary);">TIMELINE</a>
+                <a href="#gallery" class="hover:text-neon-cyan transition font-semibold text-sm" style="color: var(--text-primary);">GALLERY</a>
+                <a href="#faq" class="hover:text-neon-yellow transition font-semibold text-sm" style="color: var(--text-primary);">FAQ</a>
+                
+                <!-- Theme Toggle -->
+                <div class="theme-toggle" id="theme-toggle">
+                    <div class="theme-toggle-slider">
+                        <i class="fas fa-moon" id="theme-icon"></i>
+                    </div>
+                </div>
+
+                <button class="btn-explosive bg-gradient-to-r from-neon-pink to-neon-cyan px-6 py-2 rounded-full font-bold text-white hover:scale-105 transition text-sm">
+                    REGISTER NOW
+                </button>
+            </div>
+            
+            <button id="mobile-menu-btn" class="lg:hidden text-2xl text-neon-pink">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<!-- Mobile Menu -->
+<div id="mobile-menu" class="fixed inset-0 z-40 hidden lg:hidden transition-all duration-300" 
+     style="background: var(--bg-primary);">
+    <button id="mobile-close-btn" class="absolute top-6 right-6 text-3xl text-neon-pink">
+        <i class="fas fa-times"></i>
+    </button>
+    <div class="flex flex-col items-center justify-center h-full space-y-6">
+        <a href="#home" class="text-2xl font-bold hover:text-neon-pink transition mobile-link" style="color: var(--text-primary);">HOME</a>
+        <a href="#about" class="text-2xl font-bold hover:text-neon-cyan transition mobile-link" style="color: var(--text-primary);">ABOUT</a>
+        <a href="#themes" class="text-2xl font-bold hover:text-neon-yellow transition mobile-link" style="color: var(--text-primary);">THEMES</a>
+        <a href="#prizes" class="text-2xl font-bold hover:text-neon-purple transition mobile-link" style="color: var(--text-primary);">PRIZES</a>
+        <a href="#timeline" class="text-2xl font-bold hover:text-neon-pink transition mobile-link" style="color: var(--text-primary);">TIMELINE</a>
+        <a href="#gallery" class="text-2xl font-bold hover:text-neon-cyan transition mobile-link" style="color: var(--text-primary);">GALLERY</a>
+        <a href="#faq" class="text-2xl font-bold hover:text-neon-yellow transition mobile-link" style="color: var(--text-primary);">FAQ</a>
+        
+        <!-- Mobile Theme Toggle -->
+        <div class="theme-toggle" id="mobile-theme-toggle">
+            <div class="theme-toggle-slider">
+                <i class="fas fa-moon"></i>
+            </div>
+        </div>
+
+        <button class="bg-gradient-to-r from-neon-pink to-neon-cyan px-10 py-3 rounded-full font-black text-white text-lg">
+            REGISTER NOW
+        </button>
+    </div>
+</div>
+
+<!-- Hero Section -->
+<section id="home" class="min-h-screen flex items-center justify-center pt-20 relative overflow-hidden">
+    <div class="absolute top-20 left-10 w-40 h-40 bg-neon-pink opacity-20 rounded-full blur-3xl floating-element"></div>
+    <div class="absolute bottom-20 right-10 w-60 h-60 bg-neon-cyan opacity-20 rounded-full blur-3xl floating-element" style="animation-delay: 1s;"></div>
+    <div class="absolute top-1/2 left-1/2 w-80 h-80 bg-neon-yellow opacity-10 rounded-full blur-3xl floating-element" style="animation-delay: 2s;"></div>
+    
+    <div class="container mx-auto px-6 relative z-10">
+        <div class="text-center">
+            <div class="flex flex-wrap justify-center gap-3 mb-6 animate__animated animate__fadeInDown">
+                <span class="bg-gradient-to-r from-neon-pink to-red-500 px-4 py-1.5 rounded-full text-xs font-bold text-white">
+                    🔥 36 HOURS
+                </span>
+                <span class="bg-gradient-to-r from-neon-cyan to-blue-500 px-4 py-1.5 rounded-full text-xs font-bold text-white">
+                    💰 ₹2L+ PRIZES
+                </span>
+                <span class="bg-gradient-to-r from-neon-yellow to-yellow-500 px-4 py-1.5 rounded-full text-xs font-bold text-black">
+                    ⚡ HARDWARE HACK
+                </span>
+            </div>
+            
+            <h1 class="text-5xl md:text-7xl font-black mb-4 righteous animate__animated animate__zoomIn" style="color: var(--text-primary);">
+                <div class="wave-text">
+                    <span>C</span><span>h</span><span>E</span><span>M</span><span>A</span><span>T</span><span>H</span><span>O</span><span>N</span>
+                </div>
+                <div class="glitch gradient-text text-4xl md:text-6xl" data-text="2026">2026</div>
+            </h1>
+            
+            <div class="max-w-3xl mx-auto mb-8 animate__animated animate__fadeInUp">
+                <p class="text-xl md:text-3xl font-bold mb-2 text-neon-yellow">
+                    HACK THE FUTURE
+                </p>
+                <p class="text-base" style="color: var(--text-secondary);">
+                    Build Hardware Solutions • Save the Planet • Win Big
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-4 gap-3 max-w-3xl mx-auto mb-8 animate__animated animate__fadeInUp">
+                <div class="neon-box rounded-xl p-4 backdrop-blur" style="background: var(--card-bg);">
+                    <div id="days-counter" class="text-3xl md:text-4xl font-black text-neon-pink righteous">00</div>
+                    <div class="text-xs mt-1" style="color: var(--text-secondary);">DAYS</div>
+                    <div class="cyber-line mt-1"></div>
+                </div>
+                <div class="neon-box rounded-xl p-4 backdrop-blur" style="background: var(--card-bg);">
+                    <div id="hours-counter" class="text-3xl md:text-4xl font-black text-neon-cyan righteous">00</div>
+                    <div class="text-xs mt-1" style="color: var(--text-secondary);">HOURS</div>
+                    <div class="cyber-line mt-1"></div>
+                </div>
+                <div class="neon-box rounded-xl p-4 backdrop-blur" style="background: var(--card-bg);">
+                    <div id="minutes-counter" class="text-3xl md:text-4xl font-black text-neon-yellow righteous">00</div>
+                    <div class="text-xs mt-1" style="color: var(--text-secondary);">MINS</div>
+                    <div class="cyber-line mt-1"></div>
+                </div>
+                <div class="neon-box rounded-xl p-4 backdrop-blur" style="background: var(--card-bg);">
+                    <div id="seconds-counter" class="text-3xl md:text-4xl font-black text-neon-purple righteous">00</div>
+                    <div class="text-xs mt-1" style="color: var(--text-secondary);">SECS</div>
+                    <div class="cyber-line mt-1"></div>
+                </div>
+            </div>
+            
+            <div class="flex flex-col md:flex-row justify-center items-center gap-6 mb-8 text-sm">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-calendar-alt text-xl text-neon-pink"></i>
+                    <div class="text-left">
+                        <div class="text-xs" style="color: var(--text-secondary);">DATE</div>
+                        <div class="font-bold" style="color: var(--text-primary);">27 Feb - 1 Mar 2026</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-map-marker-alt text-xl text-neon-cyan"></i>
+                    <div class="text-left">
+                        <div class="text-xs" style="color: var(--text-secondary);">VENUE</div>
+                        <div class="font-bold" style="color: var(--text-primary);">KEC, Perundurai</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap justify-center gap-4">
+                <a href="#register" class="btn-explosive bg-gradient-to-r from-neon-pink via-red-500 to-neon-pink px-8 py-3 rounded-full font-black text-base hover:scale-110 transition-all shadow-2xl text-white">
+                    <i class="fas fa-rocket mr-2"></i> REGISTER NOW
+                </a>
+                <a href="#" class="neon-box text-neon-cyan px-8 py-3 rounded-full font-black text-base hover:scale-105 transition-all" style="background: var(--card-bg);">
+                    <i class="fas fa-download mr-2"></i> BROCHURE
+                </a>
+            </div>
+            
+            <div class="mt-12 animate-bounce">
+                <i class="fas fa-chevron-down text-2xl text-neon-yellow"></i>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Sponsors Strip -->
+<section class="py-6 border-y stripe-bg" style="border-color: var(--border-color);">
+    <div class="container mx-auto px-6">
+        <div class="flex items-center justify-center gap-8 flex-wrap">
+            <div class="text-neon-pink font-bold text-sm">POWERED BY</div>
+            <div class="flex items-center gap-8">
+                <div class="text-xl font-black" style="color: var(--text-primary);">BASF</div>
+                <div class="text-xl font-black" style="color: var(--text-primary);">ECO PROTECT</div>
+                <div class="text-xl font-black" style="color: var(--text-primary);">PRAGNA</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- About Section -->
+<section id="about" class="py-16 relative">
+    <div class="container mx-auto px-6">
+        <div class="text-center mb-12">
+            <h2 class="text-4xl md:text-5xl font-black righteous mb-3" style="color: var(--text-primary);">
+                WHAT IS <span class="gradient-text">ChEMATHON?</span>
+            </h2>
+            <div class="w-24 h-1 bg-gradient-to-r from-neon-pink to-neon-cyan mx-auto"></div>
+        </div>
+        
+        <div class="grid lg:grid-cols-2 gap-10 items-center max-w-6xl mx-auto">
+            <div class="order-2 lg:order-1">
+                <div class="relative">
+                    <div class="absolute -top-4 -left-4 w-full h-full border-2 rounded-xl" style="border-color: var(--border-color);"></div>
+                    <div class="absolute -bottom-4 -right-4 w-full h-full border-2 border-neon-cyan rounded-xl"></div>
+                    <div class="relative rounded-xl p-6 backdrop-blur" style="background: var(--card-bg);">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center p-4 bg-gradient-to-br from-neon-pink to-red-500 rounded-lg neon-box">
+                                <div class="text-3xl font-black righteous text-white">42</div>
+                                <div class="text-xs mt-1 font-bold text-white">TEAMS</div>
+                            </div>
+                            <div class="text-center p-4 bg-gradient-to-br from-neon-cyan to-blue-500 rounded-lg neon-box">
+                                <div class="text-3xl font-black righteous text-white">36</div>
+                                <div class="text-xs mt-1 font-bold text-white">HOURS</div>
+                            </div>
+                            <div class="text-center p-4 bg-gradient-to-br from-neon-yellow to-yellow-500 rounded-lg neon-box">
+                                <div class="text-3xl font-black righteous text-black">₹2L+</div>
+                                <div class="text-xs mt-1 font-bold text-black">PRIZES</div>
+                            </div>
+                            <div class="text-center p-4 bg-gradient-to-br from-neon-purple to-green-500 rounded-lg neon-box">
+                                <div class="text-3xl font-black righteous text-white">6</div>
+                                <div class="text-xs mt-1 font-bold text-white">SDG THEMES</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="order-1 lg:order-2 space-y-5">
+                <div class="flex items-start gap-3">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-neon-pink to-neon-cyan flex items-center justify-center flex-shrink-0 pulse-glow">
+                        <i class="fas fa-lightbulb text-lg text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold mb-1 text-neon-yellow">India's Premier Hardware Hackathon</h3>
+                        <p class="text-sm leading-relaxed" style="color: var(--text-secondary);">
+                            ChEMATHON 2026 is the second edition of India's most innovative hardware hackathon organized by IIChE Training Institute and Indian Chemical Society.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start gap-3">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-neon-cyan to-blue-500 flex items-center justify-center flex-shrink-0 pulse-glow">
+                        <i class="fas fa-globe text-lg text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold mb-1 text-neon-cyan">UN SDG Aligned</h3>
+                        <p class="text-sm leading-relaxed" style="color: var(--text-secondary);">
+                            Build real-world hardware solutions aligned with 6 UN Sustainable Development Goals - from clean water to climate action.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start gap-3">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-neon-yellow to-yellow-500 flex items-center justify-center flex-shrink-0 pulse-glow">
+                        <i class="fas fa-tools text-lg text-black"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold mb-1 text-neon-yellow">Hands-On Innovation</h3>
+                        <p class="text-sm leading-relaxed" style="color: var(--text-secondary);">
+                            No slides, no theory - just pure hardware innovation. Build working prototypes that solve real problems.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="border-l-4 pl-4 py-3 rounded-r-lg" style="background: var(--card-bg); border-color: var(--border-color);">
+                    <p class="text-base italic mb-1" style="color: var(--text-primary);">
+                        "Innovation is no longer a choice; it has become an imperative."
+                    </p>
+                    <p class="text-xs" style="color: var(--text-secondary);">— Shri Narendra Modi, Hon'ble Prime Minister of India</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SDG Themes Section -->
+<section id="themes" class="py-16 relative">
+    <div class="container mx-auto px-6">
+        <div class="text-center mb-12">
+            <h2 class="text-4xl md:text-5xl font-black righteous mb-3">
+                <span style="color: var(--text-primary);">CHOOSE YOUR </span><span class="gradient-text">BATTLE</span>
+            </h2>
+            <p class="text-lg" style="color: var(--text-secondary);">6 SDG Themes • 10 Problems Each</p>
+            <div class="w-24 h-1 bg-gradient-to-r from-neon-pink to-neon-cyan mx-auto mt-3"></div>
+        </div>
+        
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            <div class="card-3d neon-box sdg-gradient-1 rounded-2xl p-6 cursor-pointer group">
+                <div class="text-6xl mb-4 group-hover:scale-110 transition-transform">💧</div>
+                <div class="text-xs font-black mb-1 text-white">SDG 6</div>
+                <h3 class="text-2xl font-black mb-3 righteous text-white">CLEAN WATER</h3>
+                <p class="mb-4 text-white text-opacity-90 text-sm">
+                    Water purification • IoT monitoring • Desalination • Wastewater treatment
+                </p>
+                <button class="bg-white text-purple-900 px-5 py-2 rounded-full font-bold hover:scale-105 transition-transform text-sm">
+                    10 PROBLEMS <i class="fas fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+            
+            <div class="card-3d neon-box sdg-gradient-2 rounded-2xl p-6 cursor-pointer group">
+                <div class="text-6xl mb-4 group-hover:scale-110 transition-transform">⚡</div>
+                <div class="text-xs font-black mb-1 text-white">SDG 7</div>
+                <h3 class="text-2xl font-black mb-3 righteous text-white">CLEAN ENERGY</h3>
+                <p class="mb-4 text-white text-opacity-90 text-sm">
+                    Hydrogen generation • Waste-to-energy • Renewable storage • Bio-batteries
+                </p>
+                <button class="bg-white text-pink-900 px-5 py-2 rounded-full font-bold hover:scale-105 transition-transform text-sm">
+                    10 PROBLEMS <i class="fas fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+            
+            <div class="card-3d neon-box sdg-gradient-3 rounded-2xl p-6 cursor-pointer group">
+                <div class="text-6xl mb-4 group-hover:scale-110 transition-transform">🏭</div>
+                <div class="text-xs font-black mb-1 text-white">SDG 9</div>
+                <h3 class="text-2xl font-black mb-3 righteous text-white">INDUSTRY 4.0</h3>
+                <p class="mb-4 text-white text-opacity-90 text-sm">
+                    IoT monitoring • AI quality control • Safety devices • Smart systems
+                </p>
+                <button class="bg-white text-blue-900 px-5 py-2 rounded-full font-bold hover:scale-105 transition-transform text-sm">
+                    10 PROBLEMS <i class="fas fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+            
+            <div class="card-3d neon-box sdg-gradient-4 rounded-2xl p-6 cursor-pointer group">
+                <div class="text-6xl mb-4 group-hover:scale-110 transition-transform">🏙️</div>
+                <div class="text-xs font-black mb-1 text-white">SDG 11</div>
+                <h3 class="text-2xl font-black mb-3 righteous text-white">SMART CITIES</h3>
+                <p class="mb-4 text-white text-opacity-90 text-sm">
+                    Air purification • Waste management • Urban sustainability • Flood control
+                </p>
+                <button class="bg-white text-green-900 px-5 py-2 rounded-full font-bold hover:scale-105 transition-transform text-sm">
+                    10 PROBLEMS <i class="fas fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+            
+            <div class="card-3d neon-box sdg-gradient-5 rounded-2xl p-6 cursor-pointer group">
+                <div class="text-6xl mb-4 group-hover:scale-110 transition-transform">♻️</div>
+                <div class="text-xs font-black mb-1 text-white">SDG 12</div>
+                <h3 class="text-2xl font-black mb-3 righteous text-white">CIRCULAR ECONOMY</h3>
+                <p class="mb-4 text-white text-opacity-90 text-sm">
+                    Waste tracking • Plastic upcycling • E-waste recycling • Composting
+                </p>
+                <button class="bg-white text-pink-900 px-5 py-2 rounded-full font-bold hover:scale-105 transition-transform text-sm">
+                    10 PROBLEMS <i class="fas fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+            
+            <div class="card-3d neon-box sdg-gradient-6 rounded-2xl p-6 cursor-pointer group">
+                <div class="text-6xl mb-4 group-hover:scale-110 transition-transform">🌍</div>
+                <div class="text-xs font-black mb-1 text-white">SDG 13</div>
+                <h3 class="text-2xl font-black mb-3 righteous text-white">CLIMATE ACTION</h3>
+                <p class="mb-4 text-white text-opacity-90 text-sm">
+                    Carbon capture • Emission monitoring • CO2 utilization • Climate tools
+                </p>
+                <button class="bg-white text-purple-900 px-5 py-2 rounded-full font-bold hover:scale-105 transition-transform text-sm">
+                    10 PROBLEMS <i class="fas fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Prizes Section -->
+<section id="prizes" class="py-16 relative overflow-hidden">
+    <div class="absolute inset-0 stripe-bg opacity-50"></div>
+    
+    <div class="container mx-auto px-6 relative z-10">
+        <div class="text-center mb-12">
+            <h2 class="text-4xl md:text-5xl font-black righteous mb-3">
+                <span style="color: var(--text-primary);">WIN </span><span class="gradient-text">BIG</span>
+            </h2>
+            <p class="text-2xl font-bold text-neon-yellow">₹2,00,000+ Prize Pool</p>
+            <div class="w-24 h-1 bg-gradient-to-r from-neon-pink to-neon-cyan mx-auto mt-3"></div>
+        </div>
+        
+        <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-10">
+            <div class="neon-box bg-gradient-to-br from-gray-300 via-gray-200 to-gray-400 rounded-2xl p-6 text-center transform hover:scale-105 transition-all order-2 md:order-1">
+                <div class="text-6xl mb-3">🥈</div>
+                <h3 class="text-3xl font-black righteous text-black mb-1">SECOND</h3>
+                <div class="text-5xl font-black righteous text-black mb-3">₹50K</div>
+                <ul class="space-y-1 text-black font-bold text-sm">
+                    <li>✓ Cash Prize</li>
+                    <li>✓ Trophy & Certificate</li>
+                    <li>✓ Industry Connect</li>
+                </ul>
+            </div>
+
+            <div class="neon-box bg-gradient-to-br from-yellow-500 via-yellow-400 to-yellow-600 rounded-2xl p-6 text-center transform hover:scale-105 transition-all order-1 md:order-2 md:-mt-6">
+                <div class="text-7xl mb-3">🏆</div>
+                <h3 class="text-4xl font-black righteous text-black mb-1">FIRST</h3>
+                <div class="text-6xl font-black righteous text-black mb-3">₹1L</div>
+                <ul class="space-y-1 text-black font-bold text-sm">
+                    <li>✓ Cash Prize</li>
+                    <li>✓ Trophy & Certificate</li>
+                    <li>✓ Mentorship Program</li>
+                    <li>✓ Media Coverage</li>
+                </ul>
+            </div>
+            
+            <div class="neon-box bg-gradient-to-br from-orange-600 via-orange-400 to-orange-700 rounded-2xl p-6 text-center transform hover:scale-105 transition-all order-3">
+                <div class="text-6xl mb-3">🥉</div>
+                <h3 class="text-3xl font-black righteous text-white mb-1">THIRD</h3>
+                <div class="text-5xl font-black righteous text-white mb-3">₹30K</div>
+                <ul class="space-y-1 text-white font-bold text-sm">
+                    <li>✓ Cash Prize</li>
+                    <li>✓ Trophy & Certificate</li>
+                    <li>✓ Goodies Pack</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="text-center">
+            <div class="inline-block rounded-xl p-6 border-2 border-neon-cyan" style="background: var(--card-bg);">
+                <h4 class="text-xl font-bold mb-4 text-neon-cyan">ALL FINALISTS GET</h4>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                        <i class="fas fa-certificate text-3xl text-neon-pink mb-1"></i>
+                        <p class="font-semibold text-sm" style="color: var(--text-primary);">Certificates</p>
+                    </div>
+                    <div>
+                        <i class="fas fa-gift text-3xl text-neon-yellow mb-1"></i>
+                        <p class="font-semibold text-sm" style="color: var(--text-primary);">Swag Kit</p>
+                    </div>
+                    <div>
+                        <i class="fas fa-utensils text-3xl text-neon-cyan mb-1"></i>
+                        <p class="font-semibold text-sm" style="color: var(--text-primary);">Free Meals</p>
+                    </div>
+                    <div>
+                        <i class="fas fa-bed text-3xl text-neon-purple mb-1"></i>
+                        <p class="font-semibold text-sm" style="color: var(--text-primary);">Accommodation</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Timeline Section -->
+<section id="timeline" class="py-16">
+    <div class="container mx-auto px-6">
+        <div class="text-center mb-12">
+            <h2 class="text-4xl md:text-5xl font-black righteous mb-3">
+                <span style="color: var(--text-primary);">THE </span><span class="gradient-text">JOURNEY</span>
+            </h2>
+            <div class="w-24 h-1 bg-gradient-to-r from-neon-pink to-neon-cyan mx-auto"></div>
+        </div>
+        
+        <div class="max-w-4xl mx-auto relative">
+            <div class="absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full hidden md:block" style="background: linear-gradient(to bottom, var(--border-color), transparent);"></div>
+            
+            <div class="space-y-10">
+                <div class="flex items-center gap-6">
+                    <div class="flex-1 text-right hidden md:block">
+                        <div class="neon-box rounded-xl p-4 inline-block" style="background: var(--card-bg);">
+                            <h3 class="text-lg font-bold mb-1 text-neon-pink">IDEA SUBMISSION</h3>
+                            <p class="text-sm" style="color: var(--text-secondary);">Submit your innovative solution ideas</p>
+                        </div>
+                    </div>
+                    <div class="timeline-dot flex-shrink-0"></div>
+                    <div class="flex-1">
+                        <div class="text-2xl font-black righteous text-neon-pink">01 JAN 2026</div>
+                        <div class="md:hidden mt-1">
+                            <h3 class="text-base font-bold mb-0.5 text-neon-pink">IDEA SUBMISSION</h3>
+                            <p class="text-xs" style="color: var(--text-secondary);">Submit your innovative solution ideas</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-6">
+                    <div class="flex-1 text-right">
+                        <div class="text-2xl font-black righteous text-neon-cyan">20 JAN 2026</div>
+                    </div>
+                    <div class="timeline-dot flex-shrink-0"></div>
+                    <div class="flex-1 hidden md:block">
+                        <div class="neon-box rounded-xl p-4" style="background: var(--card-bg);">
+                            <h3 class="text-lg font-bold mb-1 text-neon-cyan">DEADLINE</h3>
+                            <p class="text-sm" style="color: var(--text-secondary);">Last date for idea submissions</p>
+                        </div>
+                    </div>
+                    <div class="flex-1 md:hidden">
+                        <h3 class="text-base font-bold mb-0.5 text-neon-cyan">DEADLINE</h3>
+                        <p class="text-xs" style="color: var(--text-secondary);">Last date for idea submissions</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-6">
+                    <div class="flex-1 text-right hidden md:block">
+                        <div class="neon-box rounded-xl p-4 inline-block" style="background: var(--card-bg);">
+                            <h3 class="text-lg font-bold mb-1 text-neon-yellow">ONLINE PRELIMS</h3>
+                            <p class="text-sm" style="color: var(--text-secondary);">Virtual pitching round</p>
+                        </div>
+                    </div>
+                    <div class="timeline-dot flex-shrink-0"></div>
+                    <div class="flex-1">
+                        <div class="text-2xl font-black righteous text-neon-yellow">25 JAN 2026</div>
+                        <div class="md:hidden mt-1">
+                            <h3 class="text-base font-bold mb-0.5 text-neon-yellow">ONLINE PRELIMS</h3>
+                            <p class="text-xs" style="color: var(--text-secondary);">Virtual pitching round</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-6">
+                    <div class="flex-1 text-right">
+                        <div class="text-2xl font-black righteous text-neon-purple">30 JAN 2026</div>
+                    </div>
+                    <div class="timeline-dot flex-shrink-0"></div>
+                    <div class="flex-1 hidden md:block">
+                        <div class="neon-box rounded-xl p-4" style="background: var(--card-bg);">
+                            <h3 class="text-lg font-bold mb-1 text-neon-purple">FINALISTS ANNOUNCED</h3>
+                            <p class="text-sm" style="color: var(--text-secondary);">42 teams selected for finale</p>
+                        </div>
+                    </div>
+                    <div class="flex-1 md:hidden">
+                        <h3 class="text-base font-bold mb-0.5 text-neon-purple">FINALISTS ANNOUNCED</h3>
+                        <p class="text-xs" style="color: var(--text-secondary);">42 teams selected for finale</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-6">
+                    <div class="flex-1 text-right hidden md:block">
+                        <div class="neon-box bg-gradient-to-r from-neon-pink to-neon-cyan p-6 inline-block rounded-xl">
+                            <h3 class="text-2xl font-black mb-1 righteous text-white">GRAND FINALE!</h3>
+                            <p class="font-bold text-sm text-white">36 hours of hardcore hacking at KEC</p>
+                        </div>
+                    </div>
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-neon-pink to-neon-cyan flex items-center justify-center flex-shrink-0 pulse-glow">
+                        <i class="fas fa-trophy text-lg text-white"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-3xl font-black righteous gradient-text">27 FEB - 1 MAR</div>
+                        <div class="md:hidden mt-1">
+                            <h3 class="text-base font-bold mb-0.5 gradient-text">GRAND FINALE!</h3>
+                            <p class="text-xs" style="color: var(--text-secondary);">36 hours of hardcore hacking at KEC</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Gallery Section -->
+<section id="gallery" class="py-16 relative overflow-hidden">
+    <div class="absolute inset-0">
+        <div class="absolute top-0 right-0 w-96 h-96 bg-neon-cyan opacity-20 blur-3xl rounded-full"></div>
+        <div class="absolute bottom-0 left-0 w-96 h-96 bg-neon-pink opacity-20 blur-3xl rounded-full"></div>
+    </div>
+    
+    <div class="container mx-auto px-6 relative z-10">
+        <div class="text-center mb-12">
+            <h2 class="text-4xl md:text-5xl font-black righteous mb-3">
+                <span style="color: var(--text-primary);">OUR </span><span class="gradient-text">GALLERY</span>
+            </h2>
+            <p class="text-lg" style="color: var(--text-secondary);">ChEMATHON 2025 Highlights</p>
+            <div class="w-24 h-1 bg-gradient-to-r from-neon-pink to-neon-cyan mx-auto mt-3"></div>
+        </div>
+
+        <div class="swiper gallerySwiper max-w-7xl mx-auto">
+            <div class="swiper-wrapper pb-12">
+                <div class="swiper-slide">
+                    <div class="neon-box rounded-2xl overflow-hidden aspect-video relative group" style="background: var(--card-bg);">
+                        <img src="images/gallery1.jpeg" alt="ChEMATHON 2025 - Event 1" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-70"></div>
+                        <div class="absolute bottom-0 left-0 right-0 p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                            <h3 class="text-lg font-bold text-white mb-1">Opening Ceremony</h3>
+                            <p class="text-xs text-gray-300">ChEMATHON 2025 Kickoff</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="swiper-slide">
+                    <div class="neon-box rounded-2xl overflow-hidden aspect-video relative group" style="background: var(--card-bg);">
+                        <img src="images/gallery2.jpeg" alt="ChEMATHON 2025 - Event 2" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-70"></div>
+                        <div class="absolute bottom-0 left-0 right-0 p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                            <h3 class="text-lg font-bold text-white mb-1">Team Collaboration</h3>
+                            <p class="text-xs text-gray-300">Building Tomorrow's Solutions</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="swiper-slide">
+                    <div class="neon-box rounded-2xl overflow-hidden aspect-video relative group" style="background: var(--card-bg);">
+                        <img src="images/gallery3.jpeg" alt="ChEMATHON 2025 - Event 3" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-70"></div>
+                        <div class="absolute bottom-0 left-0 right-0 p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                            <h3 class="text-lg font-bold text-white mb-1">Hardware Innovation</h3>
+                            <p class="text-xs text-gray-300">Prototyping in Action</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="swiper-slide">
+                    <div class="neon-box rounded-2xl overflow-hidden aspect-video relative group" style="background: var(--card-bg);">   <div class="swiper-slide">
+                        <div class="neon-box rounded-2xl overflow-hidden aspect-video relative group" style="background: var(--card-bg);">
+                            <img src="images/gallery4.jpeg" alt="ChEMATHON 2025 - Event 4" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-70"></div>
+                            <div class="absolute bottom-0 left-0 right-0 p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                                <h3 class="text-lg font-bold text-white mb-1">Expert Mentorship</h3>
+                                <p class="text-xs text-gray-300">Learning from the Best</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="swiper-slide">
+                        <div class="neon-box rounded-2xl overflow-hidden aspect-video relative group" style="background: var(--card-bg);">
+                            <img src="images/gallery5.jpeg" alt="ChEMATHON 2025 - Event 5" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-70"></div>
+                            <div class="absolute bottom-0 left-0 right-0 p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                                <h3 class="text-lg font-bold text-white mb-1">Night Coding</h3>
+                                <p class="text-xs text-gray-300">36 Hours of Innovation</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="swiper-slide">
+                        <div class="neon-box rounded-2xl overflow-hidden aspect-video relative group" style="background: var(--card-bg);">
+                            <img src="images/gallery6.jpeg" alt="ChEMATHON 2025 - Event 6" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-70"></div>
+                            <div class="absolute bottom-0 left-0 right-0 p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                                <h3 class="text-lg font-bold text-white mb-1">Project Presentation</h3>
+                                <p class="text-xs text-gray-300">Showcase Time</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="swiper-slide">
+                        <div class="neon-box rounded-2xl overflow-hidden aspect-video relative group" style="background: var(--card-bg);">
+                            <img src="images/gallery7.jpeg" alt="ChEMATHON 2025 - Event 7" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-70"></div>
+                            <div class="absolute bottom-0 left-0 right-0 p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                                <h3 class="text-lg font-bold text-white mb-1">Judging Panel</h3>
+                                <p class="text-xs text-gray-300">Expert Evaluation</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="swiper-slide">
+                        <div class="neon-box rounded-2xl overflow-hidden aspect-video relative group" style="background: var(--card-bg);">
+                            <img src="images/gallery8.jpeg" alt="ChEMATHON 2025 - Event 8" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-70"></div>
+                            <div class="absolute bottom-0 left-0 right-0 p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                                <h3 class="text-lg font-bold text-white mb-1">Award Ceremony</h3>
+                                <p class="text-xs text-gray-300">Celebrating Winners</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="swiper-slide">
+                        <div class="neon-box rounded-2xl overflow-hidden aspect-video relative group" style="background: var(--card-bg);">
+                            <img src="images/gallery9.jpeg" alt="ChEMATHON 2025 - Event 9" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-70"></div>
+                            <div class="absolute bottom-0 left-0 right-0 p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                                <h3 class="text-lg font-bold text-white mb-1">Networking</h3>
+                                <p class="text-xs text-gray-300">Building Connections</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="swiper-slide">
+                        <div class="neon-box rounded-2xl overflow-hidden aspect-video relative group" style="background: var(--card-bg);">
+                            <img src="images/gallery10.jpeg" alt="ChEMATHON 2025 - Event 10" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-70"></div>
+                            <div class="absolute bottom-0 left-0 right-0 p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                                <h3 class="text-lg font-bold text-white mb-1">Team Spirit</h3>
+                                <p class="text-xs text-gray-300">Collaboration & Fun</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="swiper-slide">
+                        <div class="neon-box rounded-2xl overflow-hidden aspect-video relative group" style="background: var(--card-bg);">
+                            <img src="images/gallery11.jpeg" alt="ChEMATHON 2025 - Event 11" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-70"></div>
+                            <div class="absolute bottom-0 left-0 right-0 p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                                <h3 class="text-lg font-bold text-white mb-1">Innovation Lab</h3>
+                                <p class="text-xs text-gray-300">Hands-On Development</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="swiper-slide">
+                        <div class="neon-box rounded-2xl overflow-hidden aspect-video relative group" style="background: var(--card-bg);">
+                            <img src="images/galleryfinal.jpeg" alt="ChEMATHON 2025 - Grand Finale" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-70"></div>
+                            <div class="absolute bottom-0 left-0 right-0 p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                                <h3 class="text-lg font-bold text-white mb-1">Grand Finale</h3>
+                                <p class="text-xs text-gray-300">ChEMATHON 2025 Success</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="swiper-button-next">
+                    <div class="neon-box backdrop-blur w-12 h-12 rounded-full flex items-center justify-center text-neon-cyan hover:scale-110 transition-transform" style="background: var(--card-bg);">
+                        <i class="fas fa-chevron-right text-lg"></i>
+                    </div>
+                </div>
+                <div class="swiper-button-prev">
+                    <div class="neon-box backdrop-blur w-12 h-12 rounded-full flex items-center justify-center text-neon-pink hover:scale-110 transition-transform" style="background: var(--card-bg);">
+                        <i class="fas fa-chevron-left text-lg"></i>
+                    </div>
+                </div>
+                
+                <div class="swiper-pagination"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Registration Section -->
+    <section id="register" class="py-16 relative overflow-hidden">
+        <div class="absolute inset-0">
+            <div class="absolute top-0 left-0 w-96 h-96 bg-neon-pink opacity-20 blur-3xl rounded-full"></div>
+            <div class="absolute bottom-0 right-0 w-96 h-96 bg-neon-cyan opacity-20 blur-3xl rounded-full"></div>
+        </div>
+        
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl md:text-5xl font-black righteous mb-3">
+                    <span style="color: var(--text-primary);">JOIN THE </span><span class="gradient-text">REVOLUTION</span>
+                </h2>
+                <div class="w-24 h-1 bg-gradient-to-r from-neon-pink to-neon-cyan mx-auto"></div>
+            </div>
+            
+            <div class="grid lg:grid-cols-2 gap-10 max-w-6xl mx-auto">
+                <div class="space-y-5">
+                    <div class="neon-box rounded-xl p-6" style="background: var(--card-bg);">
+                        <h3 class="text-2xl font-black mb-5 righteous">
+                            <i class="fas fa-users text-neon-pink mr-2"></i> TEAM RULES
+                        </h3>
+                        <ul class="space-y-3">
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check-circle text-xl text-neon-cyan mt-0.5"></i>
+                                <div>
+                                    <strong class="text-neon-yellow text-sm">4-5 Members</strong>
+                                    <p class="text-xs" style="color: var(--text-secondary);">Including 1 mentor</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check-circle text-xl text-neon-cyan mt-0.5"></i>
+                                <div>
+                                    <strong class="text-neon-yellow text-sm">1 Female Mandatory</strong>
+                                    <p class="text-xs" style="color: var(--text-secondary);">Diversity is our strength</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check-circle text-xl text-neon-cyan mt-0.5"></i>
+                                <div>
+                                    <strong class="text-neon-yellow text-sm">UG/PG/Research Scholars</strong>
+                                    <p class="text-xs" style="color: var(--text-secondary);">All welcome</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-times-circle text-xl text-neon-pink mt-0.5"></i>
+                                <div>
+                                    <strong class="text-neon-yellow text-sm">No Spot Registration</strong>
+                                    <p class="text-xs" style="color: var(--text-secondary);">Register online only</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="neon-box bg-gradient-to-br from-neon-pink via-neon-purple to-neon-cyan rounded-xl p-6">
+                        <h3 class="text-2xl font-black mb-4 righteous text-white">WHAT YOU GET</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="text-center">
+                                <i class="fas fa-box-open text-3xl mb-1 text-white"></i>
+                                <p class="font-bold text-sm text-white">Swag Kit</p>
+                            </div>
+                            <div class="text-center">
+                                <i class="fas fa-utensils text-3xl mb-1 text-white"></i>
+                                <p class="font-bold text-sm text-white">All Meals</p>
+                            </div>
+                            <div class="text-center">
+                                <i class="fas fa-bed text-3xl mb-1 text-white"></i>
+                                <p class="font-bold text-sm text-white">Stay</p>
+                            </div>
+                            <div class="text-center">
+                                <i class="fas fa-certificate text-3xl mb-1 text-white"></i>
+                                <p class="font-bold text-sm text-white">Certificate</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="neon-box rounded-xl p-6 mb-6" style="background: var(--card-bg);">
+                        <h3 class="text-2xl font-black mb-5 righteous">
+                            <i class="fas fa-rupee-sign text-neon-yellow mr-2"></i> FEES
+                        </h3>
+                        
+                        <table class="w-full mb-5">
+                            <thead>
+                                <tr class="border-b-2 border-neon-pink">
+                                    <th class="text-left py-3 font-black text-sm" style="color: var(--text-primary);">Category</th>
+                                    <th class="text-left py-3 font-black text-sm" style="color: var(--text-primary);">IIChE</th>
+                                    <th class="text-left py-3 font-black text-sm" style="color: var(--text-primary);">Non-Member</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b" style="border-color: var(--text-secondary);">
+                                    <td class="py-3 text-sm" style="color: var(--text-primary);">UG/PG</td>
+                                    <td class="py-3 text-neon-yellow font-black text-lg">₹750</td>
+                                    <td class="py-3 text-neon-yellow font-black text-lg">₹1,000</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 text-sm" style="color: var(--text-primary);">Research Scholar</td>
+                                    <td class="py-3 text-neon-cyan font-black text-lg">₹1,000</td>
+                                    <td class="py-3 text-neon-cyan font-black text-lg">₹1,500</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <div class="bg-neon-pink bg-opacity-20 border-2 border-neon-pink rounded-lg p-3 mb-5">
+                            <p class="text-xs" style="color: var(--text-primary);">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Fee includes everything: Kit, Meals, Stay & Certificate
+                            </p>
+                        </div>
+                        
+                        <a href="#" class="btn-explosive block w-full bg-gradient-to-r from-neon-pink via-neon-purple to-neon-cyan text-center py-4 rounded-full font-black text-base hover:scale-105 transition-all shadow-2xl text-white">
+                            <i class="fas fa-rocket mr-2"></i> REGISTER YOUR TEAM NOW
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="py-16">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl md:text-5xl font-black righteous mb-3">
+                    <span class="gradient-text">FAQ</span>
+                </h2>
+                <p class="text-lg" style="color: var(--text-secondary);">Got Questions? We Got Answers!</p>
+                <div class="w-24 h-1 bg-gradient-to-r from-neon-pink to-neon-cyan mx-auto mt-3"></div>
+            </div>
+            
+            <div class="max-w-4xl mx-auto space-y-3">
+                <details class="neon-box rounded-xl p-5 group cursor-pointer" style="background: var(--card-bg);">
+                    <summary class="font-bold text-base flex justify-between items-center" style="color: var(--text-primary);">
+                        <span>🤔 Can I participate solo?</span>
+                        <i class="fas fa-chevron-down group-open:rotate-180 transition-transform text-neon-pink"></i>
+                    </summary>
+                    <p class="mt-3 pt-3 border-t text-sm" style="color: var(--text-secondary); border-color: var(--text-secondary);">
+                        Nope! ChEMATHON is all about teamwork. Form a squad of 4-5 members (including 1 mentor and 1 female member) and dominate together! 💪
+                    </p>
+                </details>
+                
+                <details class="neon-box rounded-xl p-5 group cursor-pointer" style="background: var(--card-bg);">
+                    <summary class="font-bold text-base flex justify-between items-center" style="color: var(--text-primary);">
+                        <span>🔍 Don't have a team?</span>
+                        <i class="fas fa-chevron-down group-open:rotate-180 transition-transform text-neon-cyan"></i>
+                    </summary>
+                    <p class="mt-3 pt-3 border-t text-sm" style="color: var(--text-secondary); border-color: var(--text-secondary);">
+                        No worries! We'll organize a team formation session. Register individually and we'll help you find your dream team! 🤝
+                    </p>
+                </details>
+                
+                <details class="neon-box rounded-xl p-5 group cursor-pointer" style="background: var(--card-bg);">
+                    <summary class="font-bold text-base flex justify-between items-center" style="color: var(--text-primary);">
+                        <span>🏨 Where will I stay?</span>
+                        <i class="fas fa-chevron-down group-open:rotate-180 transition-transform text-neon-yellow"></i>
+                    </summary>
+                    <p class="mt-3 pt-3 border-t text-sm" style="color: var(--text-secondary); border-color: var(--text-secondary);">
+                        All finalists get free accommodation at KEC campus for the entire 36-hour hackathon. Sleep? Who needs it! 😴
+                    </p>
+                </details>
+                
+                <details class="neon-box rounded-xl p-5 group cursor-pointer" style="background: var(--card-bg);">
+                    <summary class="font-bold text-base flex justify-between items-center" style="color: var(--text-primary);">
+                        <span>🍕 What about food?</span>
+                        <i class="fas fa-chevron-down group-open:rotate-180 transition-transform text-neon-purple"></i>
+                    </summary>
+                    <p class="mt-3 pt-3 border-t text-sm" style="color: var(--text-secondary); border-color: var(--text-secondary);">
+                        All meals are on us! Breakfast, lunch, dinner, and unlimited coffee to keep you coding! ☕🍕
+                    </p>
+                </details>
+                
+                <details class="neon-box rounded-xl p-5 group cursor-pointer" style="background: var(--card-bg);">
+                    <summary class="font-bold text-base flex justify-between items-center" style="color: var(--text-primary);">
+                        <span>🛠️ What hardware/tools are provided?</span>
+                        <i class="fas fa-chevron-down group-open:rotate-180 transition-transform text-neon-pink"></i>
+                    </summary>
+                    <p class="mt-3 pt-3 border-t text-sm" style="color: var(--text-secondary); border-color: var(--text-secondary);">
+                        Basic prototyping materials will be available. Bring your laptops and any specialized gear your project needs. Better safe than sorry! 🔧
+                    </p>
+                </details>
+                
+                <details class="neon-box rounded-xl p-5 group cursor-pointer" style="background: var(--card-bg);">
+                    <summary class="font-bold text-base flex justify-between items-center" style="color: var(--text-primary);">
+                        <span>🎯 Can we mix SDG themes?</span>
+                        <i class="fas fa-chevron-down group-open:rotate-180 transition-transform text-neon-cyan"></i>
+                    </summary>
+                    <p class="mt-3 pt-3 border-t text-sm" style="color: var(--text-secondary); border-color: var(--text-secondary);">
+                        Pick ONE primary SDG theme, but feel free to sprinkle in elements from other SDGs if they make your solution even more awesome! 🌟
+                    </p>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-16 relative overflow-hidden">
+        <div class="absolute inset-0 stripe-bg opacity-30"></div>
+        
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl md:text-5xl font-black righteous mb-3">
+                    <span class="gradient-text">CONTACT US</span>
+                </h2>
+                <div class="w-24 h-1 bg-gradient-to-r from-neon-pink to-neon-cyan mx-auto"></div>
+            </div>
+            
+            <div class="grid lg:grid-cols-2 gap-10 max-w-6xl mx-auto">
+                <div class="neon-box rounded-xl p-6" style="background: var(--card-bg);">
+                    <h3 class="text-2xl font-black mb-5 righteous gradient-text">GET IN TOUCH</h3>
+                    
+                    <div class="space-y-5 mb-6">
+                        <div>
+                            <h4 class="font-bold text-neon-yellow mb-2 text-sm">📍 Address</h4>
+                            <p class="text-xs" style="color: var(--text-secondary);">Organizing Secretary</p>
+                            <p class="text-xs" style="color: var(--text-secondary);">IIChE-ChEMATHON 2026</p>
+                            <p class="text-xs" style="color: var(--text-secondary);">Department of Chemical Engineering</p>
+                            <p class="text-xs" style="color: var(--text-secondary);">Kongu Engineering College</p>
+                            <p class="text-xs" style="color: var(--text-secondary);">Perundurai, Erode - 638060</p>
+                            <p class="text-xs" style="color: var(--text-secondary);">Tamil Nadu, India</p>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-bold text-neon-cyan mb-2 text-sm">📞 Contact</h4>
+                            <a href="tel:+919842823432" class="flex items-center gap-2 hover:text-neon-pink transition mb-1 text-sm" style="color: var(--text-primary);">
+                                <i class="fas fa-phone w-5"></i>
+                                <span>+91-9842823432</span>
+                            </a>
+                            <a href="tel:+919750383957" class="flex items-center gap-2 hover:text-neon-pink transition mb-1 text-sm" style="color: var(--text-primary);">
+                                <i class="fas fa-phone w-5"></i>
+                                <span>+91-9750383957</span>
+                            </a>
+                            <a href="mailto:chemathon2026@kongu.edu" class="flex items-center gap-2 hover:text-neon-cyan transition text-sm" style="color: var(--text-primary);">
+                                <i class="fas fa-envelope w-5"></i>
+                                <span>chemathon2026@kongu.edu</span>
+                            </a>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-bold text-neon-purple mb-2 text-sm">🌐 Follow Us</h4>
+                            <div class="flex gap-3">
+                                <a href="#" class="w-10 h-10 rounded-full bg-gradient-to-br from-neon-pink to-red-500 flex items-center justify-center hover:scale-110 transition">
+                                    <i class="fab fa-facebook-f text-sm text-white"></i>
+                                </a>
+                                <a href="#" class="w-10 h-10 rounded-full bg-gradient-to-br from-neon-cyan to-blue-500 flex items-center justify-center hover:scale-110 transition">
+                                    <i class="fab fa-twitter text-sm text-white"></i>
+                                </a>
+                                <a href="#" class="w-10 h-10 rounded-full bg-gradient-to-br from-neon-yellow to-yellow-500 flex items-center justify-center hover:scale-110 transition">
+                                    <i class="fab fa-instagram text-sm text-black"></i>
+                                </a>
+                                <a href="#" class="w-10 h-10 rounded-full bg-gradient-to-br from-neon-purple to-purple-500 flex items-center justify-center hover:scale-110 transition">
+                                    <i class="fab fa-linkedin-in text-sm text-white"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="neon-box rounded-xl p-2 overflow-hidden" style="background: var(--card-bg);">
+                    <iframe 
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1193.301292434001!2d77.60650500877561!3d11.272611141769897!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba96d787153ee27%3A0x71bd1b7928ab4e35!2sDepartment%20of%20Chemical%20Engineering%2C%20KEC!5e1!3m2!1sen!2sin!4v1733844541408!5m2!1sen!2sin" 
+                        class="w-full h-full rounded-lg min-h-[400px]" 
+                        allowfullscreen="" 
+                        loading="lazy">
+                    </iframe>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-10 border-t" style="border-color: var(--border-color);">
+        <div class="container mx-auto px-6">
+            <div class="grid md:grid-cols-3 gap-6 mb-6">
+                <div>
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="hexagon w-10 h-10 bg-gradient-to-br from-neon-pink to-neon-cyan flex items-center justify-center">
+                            <i class="fas fa-atom text-white text-lg"></i>
+                        </div>
+                        <div class="text-xl font-black righteous gradient-text">ChEMATHON 2026</div>
+                    </div>
+                    <p class="text-sm" style="color: var(--text-secondary);">
+                        Hack the Future. Build Hardware. Save the Planet.
+                    </p>
+                </div>
+                
+                <div>
+                    <h4 class="font-bold mb-3 text-neon-yellow text-sm">Quick Links</h4>
+                    <ul class="space-y-1 text-sm" style="color: var(--text-secondary);">
+                        <li><a href="#about" class="hover:text-neon-pink transition">About</a></li>
+                        <li><a href="#themes" class="hover:text-neon-cyan transition">Themes</a></li>
+                        <li><a href="#prizes" class="hover:text-neon-yellow transition">Prizes</a></li>
+                        <li><a href="#register" class="hover:text-neon-purple transition">Register</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-bold mb-3 text-neon-cyan text-sm">Organized By</h4>
+                    <p class="text-xs" style="color: var(--text-secondary);">
+                        Indian Institute of Chemical Engineers (IIChE)<br>
+                        KEC Student Chapter & Erode Regional Centre<br>
+                        <span class="text-neon-purple">In association with</span><br>
+                        Indian Chemical Society (ICS)
+                    </p>
+                </div>
+            </div>
+            
+            <div class="border-t pt-6 text-center" style="border-color: var(--text-secondary);">
+                <p class="text-xs" style="color: var(--text-secondary);">&copy; 2026 ChEMATHON. All rights reserved.</p>
+                <p class="text-neon-pink text-xs mt-1">Designed with 💖 & ⚡ by KEC Web Team</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Swiper JS -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+    <!-- Scripts -->
+    <script>
+        // Theme Toggle Functionality
+        const html = document.documentElement;
+        const themeToggle = document.getElementById('theme-toggle');
+        const mobileThemeToggle = document.getElementById('mobile-theme-toggle');
+        
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        html.setAttribute('data-theme', savedTheme);
+        updateThemeIcon(savedTheme);
+
+        function toggleTheme() {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+            updateParticles(newTheme);
+        }
+
+        function updateThemeIcon(theme) {
+            const icons = document.querySelectorAll('#theme-toggle .theme-toggle-slider i, #mobile-theme-toggle .theme-toggle-slider i');
+            icons.forEach(icon => {
+                icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            });
+        }
+
+        function updateParticles(theme) {
+            const particleColor = theme === 'dark' ? '#FF6B6B' : '#667eea';
+            const particleOpacity = theme === 'dark' ? 0.5 : 0.8;
+            const lineColor = theme === 'dark' ? '#FF6B6B' : '#667eea';
+            const lineOpacity = theme === 'dark' ? 0.2 : 0.4;
+
+            particlesJS('particles-js', {
+                particles: {
+                    number: { value: 60, density: { enable: true, value_area: 800 } },
+                    color: { value: [particleColor, '#4ECDC4', '#FFE66D'] },
+                    shape: { type: 'circle' },
+                    opacity: { value: particleOpacity, random: true },
+                    size: { value: 3, random: true },
+                    line_linked: {
+                        enable: true,
+                        distance: 150,
+                        color: lineColor,
+                        opacity: lineOpacity,
+                        width: 1
+                    },
+                    move: { enable: true, speed: 2, direction: 'none', random: true, out_mode: 'out' }
+                },
+                interactivity: {
+                    detect_on: 'canvas',
+                    events: {
+                        onhover: { enable: true, mode: 'repulse' },
+                        onclick: { enable: true, mode: 'push' }
+                    }
+                }
+            });
+        }
+
+        themeToggle.addEventListener('click', toggleTheme);
+        mobileThemeToggle.addEventListener('click', toggleTheme);
+
+        // Initialize particles on page load
+        updateParticles(savedTheme);
+
+        // Mobile Menu
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileCloseBtn = document.getElementById('mobile-close-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const mobileLinks = document.querySelectorAll('.mobile-link');
+
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.remove('hidden');
+        });
+
+        mobileCloseBtn.addEventListener('click', () => {
+            mobileMenu.classList.add('hidden');
+        });
+
+        mobileLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+            });
+        });
+
+        // Countdown Timer
+        const countdownDate = new Date('Feb 27, 2026 09:00:00').getTime();
+
+        const updateCountdown = () => {
+            const now = new Date().getTime();
+            const distance = countdownDate - now;
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById('days-counter').innerText = String(days).padStart(2, '0');
+            document.getElementById('hours-counter').innerText = String(hours).padStart(2, '0');
+            document.getElementById('minutes-counter').innerText = String(minutes).padStart(2, '0');
+            document.getElementById('seconds-counter').innerText = String(seconds).padStart(2, '0');
+
+            if (distance < 0) {
+                clearInterval(countdownInterval);
+                 document.getElementById('days-counter').innerText = '00';
+                 document.getElementById('hours-counter').innerText = '00';
+                 document.getElementById('minutes-counter').innerText = '00';
+                 document.getElementById('seconds-counter').innerText = '00';
+            }
+        };
+
+        const countdownInterval = setInterval(updateCountdown, 1000);
+        updateCountdown();
+
+        // Gallery Swiper
+        const gallerySwiper = new Swiper('.gallerySwiper', {
+            effect: 'coverflow',
+            grabCursor: true,
+            centeredSlides: true,
+            slidesPerView: 'auto',
+            loop: true,
+            spaceBetween: 30,
+            coverflowEffect: {
+                rotate: 20,
+                stretch: 0,
+                depth: 150,
+                modifier: 1.5,
+                slideShadows: true,
+            },
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true,
+                dynamicBullets: true,
+            },
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+            autoplay: {
+                delay: 3500,
+                disableOnInteraction: false,
+                pauseOnMouseEnter: true,
+            },
+            speed: 800,
+        });
+
+        // Smooth Scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
