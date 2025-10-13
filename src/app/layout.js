@@ -7,6 +7,7 @@ import ChatbotWidget from '@/components/chatbot/ChatbotWidget';
 import dbConnect from '@/lib/dbConnect';
 import HeroSection from '@/models/HeroSection';
 import { serializeForClient } from '@/lib/serialize';
+import { Toaster } from 'react-hot-toast';
 
 // (Font definitions remain the same)
 
@@ -58,6 +59,7 @@ export default async function RootLayout({ children }) {
         <AnalyticsProvider>
           <SessionProvider>
             <SiteProvider value={{ heroData: serializedHeroData, initials }}>
+              <Toaster />
               {children}
               <ChatbotWidget />
             </SiteProvider>

@@ -7,6 +7,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import CustomCursor from '@/components/CustomCursor';
 import { Section, Badge, Button } from '@/components/ui';
+import CopyButton from '@/components/ui/CopyButton';
 import Image from 'next/image';
 
 export async function generateStaticParams() {
@@ -50,6 +51,10 @@ export default async function ArticlePage({ params }) {
 
   const publishDate = formattedDate(article.publishedAt) || formattedDate(article.createdAt);
 
+  const markdownToCopy = `# ${article.title}\n\n**Published on:** ${publishDate}\n\n**Tags:** ${
+    article.tags?.join(', ') || 'None'
+  }\n\n---\n\n${article.content}`;
+
   return (
     <>
       <CustomCursor />
@@ -66,9 +71,12 @@ export default async function ArticlePage({ params }) {
                 </Button>
               </div>
 
-              <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4 font-['Playfair_Display'] leading-tight">
-                {article.title}
-              </h1>
+              <div className="flex justify-between items-start gap-4">
+                <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4 font-['Playfair_Display'] leading-tight">
+                  {article.title}
+                </h1>
+                <CopyButton textToCopy={markdownToCopy} />
+              </div>
 
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-gray-500 mb-6">
                 <time dateTime={article.publishedAt || article.createdAt}>
