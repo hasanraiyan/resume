@@ -126,6 +126,15 @@ export async function GET(request) {
         ]);
         break;
 
+      case 'user_flow':
+        console.log('Fetching user flow data for:', { startDate, endDate });
+        data.userFlow = await getUserFlowData(
+          startDate ? new Date(startDate) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Default to 7 days
+          endDate ? new Date(endDate) : new Date()
+        );
+        console.log('User flow data generated:', data.userFlow);
+        break;
+
       case 'events':
         // Get recent events with pagination
         const page = parseInt(searchParams.get('page') || '1');
@@ -330,6 +339,121 @@ export async function GET(request) {
 
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
+}
+
+/**
+ * Generalizes a URL path to group dynamic segments.
+ * @param {string} path The specific URL path.
+ * @returns {string} The generalized path.
+ */
+function generalizePath(path) {
+  if (path.startsWith('/admin/projects/') && path.endsWith('/edit')) {
+    return '/admin/projects/[id]/edit';
+  }
+  if (path.startsWith('/admin/articles/') && path.endsWith('/edit')) {
+    return '/admin/articles/[id]/edit';
+  }
+  if (path.startsWith('/projects/')) {
+    // Avoid generalizing the main /projects page itself
+    return path === '/projects' ? path : '/projects/[slug]';
+  }
+  if (path.startsWith('/blog/')) {
+    return path === '/blog' ? path : '/blog/[slug]';
+  }
+  // Add more rules as your app grows
+  return path;
+}
+
+/**
+ * Aggregates analytics events to generate user flow data (nodes and links).
+ * @param {Date} startDate - The start date for the analysis.
+ * @param {Date} endDate - The end date for the analysis.
+ * @returns {Promise<{nodes: Array, links: Array}>}
+ */
+async function getUserFlowData(startDate, endDate) {
+  // Step 1: Aggregate ordered paths for each session
+  const userJourneys = await Analytics.aggregate([
+    {
+      $match: {
+        eventType: 'pageview',
+        timestamp: { $gte: startDate, $lte: endDate },
+      },
+    },
+    {
+      $sort: { sessionId: 1, timestamp: 1 }, // Crucial for correct path ordering
+    },
+    {
+      $group: {
+        _id: '$sessionId',
+        path: { $push: '$path' },
+      },
+    },
+  ]);
+
+  // Step 2: Process journeys into path transitions WITH GENERALIZATION
+  const transitions = new Map();
+  userJourneys.forEach((session) => {
+    // Apply generalization to the entire path array first
+    const generalizedPath = session.path.map(generalizePath);
+
+    if (generalizedPath.length > 0) {
+      const startKey = `(start)|${generalizedPath[0]}`;
+      transitions.set(startKey, (transitions.get(startKey) || 0) + 1);
+    }
+
+    for (let i = 0; i < generalizedPath.length - 1; i++) {
+      const from = generalizedPath[i];
+      const to = generalizedPath[i + 1];
+      if (from === to) continue;
+
+      const key = `${from}|${to}`;
+      transitions.set(key, (transitions.get(key) || 0) + 1);
+    }
+
+    if (generalizedPath.length > 0) {
+      const lastPath = generalizedPath[generalizedPath.length - 1];
+      const endKey = `${lastPath}|(end)`;
+      transitions.set(endKey, (transitions.get(endKey) || 0) + 1);
+    }
+  });
+
+  // Step 3: Format data for the Sankey diagram (no changes here)
+  // ...
+
+  // Step 4: Intelligent Pruning - Keep only the most significant flows
+  const allLinks = Array.from(transitions, ([key, count]) => {
+    const [from, to] = key.split('|');
+    return { from, to, flow: count };
+  });
+
+  // Sort by flow count and take the top N (e.g., 30)
+  const MAX_LINKS = 30;
+  const significantLinks = allLinks.sort((a, b) => b.flow - a.flow).slice(0, MAX_LINKS);
+
+  // Re-build nodes from only the significant links to remove orphans
+  const finalNodes = new Set();
+  significantLinks.forEach((link) => {
+    finalNodes.add(link.from);
+    finalNodes.add(link.to);
+  });
+
+  // NEW: Calculate Top Journeys
+  const journeyCounts = new Map();
+  userJourneys.forEach((session) => {
+    // Limit journey length for readability (e.g., first 5 steps)
+    const journey = session.path.map(generalizePath).slice(0, 5).join(' → ');
+    journeyCounts.set(journey, (journeyCounts.get(journey) || 0) + 1);
+  });
+
+  const topJourneys = Array.from(journeyCounts, ([path, count]) => ({ path, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10); // Get top 10
+
+  return {
+    nodes: Array.from(finalNodes),
+    links: significantLinks,
+    topJourneys: topJourneys, // <-- Add this
+  };
 }
 
 // POST /api/admin/analytics/cleanup - Clean up old analytics data (admin only)

@@ -31,6 +31,8 @@ ChartJS.register(
   LineElement
 );
 
+import UserFlowVisualization from '@/components/admin/analytics/UserFlowVisualization';
+
 export default function AnalyticsDashboard() {
   const { data: session } = useSession();
   const trackEvent = useAnalytics();
@@ -234,6 +236,7 @@ export default function AnalyticsDashboard() {
       <TabNavigation
         tabs={[
           { id: 'overview', label: 'Overview', icon: 'chart-line' },
+          { id: 'user_flow', label: 'User Flow', icon: 'route' },
           { id: 'pageviews', label: 'Page Views', icon: 'eye' },
           { id: 'sessions', label: 'Sessions', icon: 'users' },
           { id: 'chatbot', label: 'Chatbot', icon: 'comments' },
@@ -525,6 +528,11 @@ export default function AnalyticsDashboard() {
             </div>
           </Card>
         </div>
+      )}
+
+      {/* User Flow Tab */}
+      {activeTab === 'user_flow' && analyticsData && (
+        <UserFlowVisualization data={analyticsData.userFlow} />
       )}
 
       {/* Pageviews Tab */}
