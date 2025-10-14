@@ -12,9 +12,10 @@ import { createContactSubmission } from '@/app/actions/contactActions';
 // ========================================
 const contactData = {
   heading: {
-    title: "Let's Create",
+    title: "Let's Build.",
     subtitle: 'Something Amazing',
-    description: "Have a project in mind? Let's talk about it.",
+    description:
+      'Turning complex requirements into elegant, functional software. Let’s start your next project.',
   },
 
   form: {
