@@ -23,7 +23,7 @@ export default function ProjectPreviewCard({ project }) {
             <i className="fas fa-image text-4xl"></i>
           </div>
         )}
-        {project.isForSale && <ForSaleBadge className="top-2 right-2" />}
+        {project.isForSale && <ForSaleBadge className="top-3 right-3" />}
       </div>
 
       <div>

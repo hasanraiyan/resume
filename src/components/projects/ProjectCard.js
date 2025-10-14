@@ -55,7 +55,7 @@ export default function ProjectCard({ project }) {
         </div>
 
         {/* For Sale Badge */}
-        {project.isForSale && <ForSaleBadge className="top-2 right-2" />}
+        {project.isForSale && <ForSaleBadge className="top-3 right-3" />}
 
         {/* Overlay on hover */}
         <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-all duration-300"></div>

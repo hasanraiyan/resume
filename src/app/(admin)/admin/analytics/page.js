@@ -611,7 +611,7 @@ export default function AnalyticsDashboard() {
                       #{index + 1}
                     </span>
                     <div>
-                      <div className="font-medium font-mono text-sm font-['Space_Grotesk']">
+                      <div className="font-medium text-sm font-['Space_Grotesk']">
                         {session.sessionId.substring(0, 16)}...
                       </div>
                       <div className="text-xs text-neutral-500 font-['Space_Grotesk']">

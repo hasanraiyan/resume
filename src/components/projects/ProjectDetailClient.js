@@ -22,12 +22,17 @@ export default function ProjectDetailClient({ project, relatedProjects }) {
             <div className="text-xs font-semibold tracking-widest mb-3 sm:mb-4 text-gray-600">
               {project.projectNumber} — {project.category}
             </div>
-            <div className="flex items-center justify-center gap-3 mb-4 sm:mb-6">
+            <div className="mb-4 sm:mb-6 relative inline-block">
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold">
                 {project.title}
               </h1>
-              {project.isForSale && <ForSaleBadge size="lg" />}
+              {project.isForSale && (
+                <span className="absolute -top-2 right-0">
+                  <ForSaleBadge size="md" />
+                </span>
+              )}
             </div>
+
             <p className="text-lg sm:text-xl text-gray-600 mb-6 sm:mb-8">{project.tagline}</p>
             {/* FIX: Limit the number of tags displayed in the header */}
             <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6 sm:mb-8">

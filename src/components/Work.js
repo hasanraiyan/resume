@@ -82,7 +82,7 @@ export default function Work({ featuredProjects = [] }) {
                 <img src={project.thumbnail} alt={project.title} className="w-full" />
               </Link>
               {/* For Sale Badge */}
-              {project.isForSale && <ForSaleBadge className="top-4 right-4" />}
+              {project.isForSale && <ForSaleBadge className="top-3 right-3" />}
             </div>
 
             {/* Project Content */}

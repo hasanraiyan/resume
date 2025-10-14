@@ -19,7 +19,10 @@ export default function ForSaleBadge({ className = '', size = 'md' }) {
 
   return (
     <div className={`absolute z-10 ${className}`}>
-      <Badge variant="success" className={`bg-green-600 text-white font-bold ${sizeClasses[size]}`}>
+      <Badge
+        variant="success"
+        className={`bg-green-600 text-white font-bold text-nowrap ${sizeClasses[size]}`}
+      >
         FOR SALE
       </Badge>
     </div>
