@@ -67,7 +67,7 @@ export default function Work({ featuredProjects = [] }) {
     >
       {/* Featured Projects List */}
       <div className="space-y-12 sm:space-y-16 md:space-y-20">
-        {featuredProjects.map((project) => (
+        {featuredProjects.map((project, index) => (
           <div
             key={project.id}
             className="grid lg:grid-cols-2 gap-8 sm:gap-10 md:gap-12 items-center"
@@ -75,7 +75,7 @@ export default function Work({ featuredProjects = [] }) {
             {/* Project Image */}
             <div
               className={`image-reveal rounded-lg overflow-hidden shadow-2xl hover-target ${
-                parseInt(project.projectNumber) % 2 === 0 ? 'lg:order-2' : ''
+                index % 2 === 0 ? '' : 'lg:order-2'
               }`}
             >
               <Link href={`/projects/${project.slug}`}>
@@ -84,7 +84,7 @@ export default function Work({ featuredProjects = [] }) {
             </div>
 
             {/* Project Content */}
-            <div className={parseInt(project.projectNumber) % 2 === 0 ? 'lg:order-1' : ''}>
+            <div className={index % 2 === 0 ? '' : 'lg:order-1'}>
               {/* Category Badge */}
               <div className="text-xs font-semibold tracking-widest mb-2 sm:mb-3 text-gray-600">
                 {project.projectNumber} — {project.category}
