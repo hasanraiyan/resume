@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Section, Button, Badge } from '@/components/ui';
+import { Section, Button, Badge, ForSaleBadge } from '@/components/ui';
 import ProjectGallery from './ProjectGallery';
 import RelatedProjects from './RelatedProjects';
 import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
@@ -22,9 +22,12 @@ export default function ProjectDetailClient({ project, relatedProjects }) {
             <div className="text-xs font-semibold tracking-widest mb-3 sm:mb-4 text-gray-600">
               {project.projectNumber} — {project.category}
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6">
-              {project.title}
-            </h1>
+            <div className="flex items-center justify-center gap-3 mb-4 sm:mb-6">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold">
+                {project.title}
+              </h1>
+              {project.isForSale && <ForSaleBadge size="lg" />}
+            </div>
             <p className="text-lg sm:text-xl text-gray-600 mb-6 sm:mb-8">{project.tagline}</p>
             {/* FIX: Limit the number of tags displayed in the header */}
             <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6 sm:mb-8">

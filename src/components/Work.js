@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Section, Button, Badge } from '@/components/ui';
+import { Section, Button, Badge, ForSaleBadge } from '@/components/ui';
 // ========================================
 // 📦 DYNAMIC DATA (Backend-Ready)
 // ========================================
@@ -74,13 +74,15 @@ export default function Work({ featuredProjects = [] }) {
           >
             {/* Project Image */}
             <div
-              className={`image-reveal rounded-lg overflow-hidden shadow-2xl hover-target ${
+              className={`image-reveal rounded-lg overflow-hidden shadow-2xl hover-target relative ${
                 index % 2 === 0 ? '' : 'lg:order-2'
               }`}
             >
               <Link href={`/projects/${project.slug}`}>
                 <img src={project.thumbnail} alt={project.title} className="w-full" />
               </Link>
+              {/* For Sale Badge */}
+              {project.isForSale && <ForSaleBadge className="top-4 right-4" />}
             </div>
 
             {/* Project Content */}

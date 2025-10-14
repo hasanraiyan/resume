@@ -8,6 +8,7 @@ export { default as Card } from './Card';
 export { default as Input } from './Input';
 export { default as Section } from './Section';
 export { default as Badge } from './Badge';
+export { default as ForSaleBadge } from './ForSaleBadge';
 export { default as TabNavigation } from './TabNavigation';
 
 // Export design tokens and component styles

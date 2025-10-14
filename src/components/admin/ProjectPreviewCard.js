@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Badge } from '@/components/ui';
+import { Badge, ForSaleBadge } from '@/components/ui';
 
 export default function ProjectPreviewCard({ project }) {
   const { title, category, description, tags, thumbnail } = project;
@@ -23,13 +23,7 @@ export default function ProjectPreviewCard({ project }) {
             <i className="fas fa-image text-4xl"></i>
           </div>
         )}
-        {project.isForSale && (
-          <div className="absolute top-2 right-2">
-            <Badge variant="success" className="bg-green-600 text-white text-xs font-bold">
-              FOR SALE
-            </Badge>
-          </div>
-        )}
+        {project.isForSale && <ForSaleBadge className="top-2 right-2" />}
       </div>
 
       <div>

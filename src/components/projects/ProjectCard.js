@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Badge } from '@/components/ui';
+import { Badge, ForSaleBadge } from '@/components/ui';
 
 /**
  * Project Card Component - CLEAN & MINIMAL
@@ -55,13 +55,7 @@ export default function ProjectCard({ project }) {
         </div>
 
         {/* For Sale Badge */}
-        {project.isForSale && (
-          <div className="absolute top-2 right-2 z-20">
-            <Badge variant="success" className="bg-green-600 text-white text-xs font-bold">
-              FOR SALE
-            </Badge>
-          </div>
-        )}
+        {project.isForSale && <ForSaleBadge className="top-2 right-2" />}
 
         {/* Overlay on hover */}
         <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-all duration-300"></div>
