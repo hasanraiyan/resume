@@ -30,6 +30,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'image.pollinations.ai',
       },
+      {
+        protocol: 'https',
+        hostname: 'i.pravatar.cc'
+      }
     ],
   },
 };

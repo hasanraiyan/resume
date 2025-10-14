@@ -16,6 +16,7 @@ import { Bar, Line } from 'react-chartjs-2';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 import { Button, Card, Badge } from '@/components/ui';
+import TabNavigation from '@/components/ui/TabNavigation';
 import AnalyticsSkeleton from '@/components/admin/AnalyticsSkeleton';
 
 // Register Chart.js components
@@ -230,30 +231,21 @@ export default function AnalyticsDashboard() {
       }
     >
       {/* Tabs */}
-      <div className="mb-8">
-        <nav className="flex space-x-8">
-          {[
-            { id: 'overview', label: 'Overview' },
-            { id: 'pageviews', label: 'Page Views' },
-            { id: 'sessions', label: 'Sessions' },
-            { id: 'chatbot', label: 'Chatbot Analytics' },
-            { id: 'search', label: 'Search Analytics' },
-            { id: 'events', label: 'Recent Events' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm font-['Space_Grotesk'] ${
-                activeTab === tab.id
-                  ? 'border-black text-black'
-                  : 'border-transparent text-neutral-500 hover:text-neutral-700'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-      </div>
+      <TabNavigation
+        tabs={[
+          { id: 'overview', label: 'Overview', icon: 'chart-line' },
+          { id: 'pageviews', label: 'Page Views', icon: 'eye' },
+          { id: 'sessions', label: 'Sessions', icon: 'users' },
+          { id: 'chatbot', label: 'Chatbot', icon: 'comments' },
+          { id: 'search', label: 'Search', icon: 'search' },
+          { id: 'events', label: 'Events', icon: 'calendar' },
+        ]}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        sticky={false}
+        fullWidth={true}
+        className="-mt-8 mb-8"
+      />
 
       {/* Overview Tab */}
       {activeTab === 'overview' && analyticsData && (
