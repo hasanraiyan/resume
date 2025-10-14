@@ -23,9 +23,10 @@ const defaultProject = {
   description: '',
   fullDescription: '',
   featured: false,
+  isForSale: false,
   images: [],
   tags: [],
-  links: { live: '', github: '', figma: '' },
+  links: { live: '', github: '', figma: '', sales: '' },
   details: {
     client: '',
     year: '',
@@ -386,6 +387,14 @@ export default function ProjectForm({ initialData, onSave, onDelete, isEditing =
                       onChange={handleChange}
                       className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg"
                     />
+                    <input
+                      name="links.sales"
+                      type="url"
+                      placeholder="Sales/Marketplace URL (e.g., Gumroad, ThemeForest)"
+                      value={formData.links.sales || ''}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg"
+                    />
                   </div>
                 </div>
               </div>
@@ -476,6 +485,24 @@ export default function ProjectForm({ initialData, onSave, onDelete, isEditing =
                       Featured Project
                     </label>
                     <p className="text-sm text-neutral-600">Show on homepage.</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3 p-3 bg-neutral-50 rounded-lg">
+                  <input
+                    name="isForSale"
+                    type="checkbox"
+                    checked={formData.isForSale || false}
+                    onChange={handleChange}
+                    className="w-5 h-5 text-black border-2 border-neutral-300 rounded focus:ring-black"
+                    id="isForSale"
+                  />
+                  <div>
+                    <label htmlFor="isForSale" className="font-semibold text-black cursor-pointer">
+                      Available for Sale
+                    </label>
+                    <p className="text-sm text-neutral-600">
+                      Displays a 'For Sale' badge and purchase link.
+                    </p>
                   </div>
                 </div>
                 <ActionButton

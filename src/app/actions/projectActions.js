@@ -18,6 +18,7 @@ function processFormData(formData) {
     description: formData.get('description'),
     fullDescription: formData.get('fullDescription'),
     thumbnail: formData.get('thumbnail'),
+    isForSale: formData.get('isForSale') === 'true',
     // Parse the JSON string fields
     images: JSON.parse(formData.get('images') || '[]'),
     tags: JSON.parse(formData.get('tags') || '[]'),

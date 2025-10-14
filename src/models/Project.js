@@ -33,6 +33,7 @@ const ProjectSchema = new mongoose.Schema(
   {
     slug: { type: String, required: true, unique: true },
     featured: { type: Boolean, default: false },
+    isForSale: { type: Boolean, default: false },
     projectNumber: { type: String, required: true },
     category: { type: String, required: true },
     title: { type: String, required: true },
@@ -46,6 +47,7 @@ const ProjectSchema = new mongoose.Schema(
       github: String,
       figma: String,
       demo: String,
+      sales: String,
     },
     // Project details for detailed view
     details: {

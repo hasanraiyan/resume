@@ -35,6 +35,16 @@ export default function ProjectDetailClient({ project, relatedProjects }) {
               ))}
             </div>
             <div className="flex flex-wrap justify-center gap-4">
+              {project.isForSale && project.links?.sales && (
+                <Button
+                  href={project.links.sales}
+                  external={true}
+                  variant="primary"
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <i className="fas fa-shopping-cart mr-2"></i> Purchase Project
+                </Button>
+              )}
               {project.links?.live && (
                 <Button href={project.links.live} external={true} variant="primary">
                   <i className="fas fa-external-link-alt mr-2"></i> View Live Site
