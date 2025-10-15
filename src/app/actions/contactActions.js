@@ -1,4 +1,8 @@
-// src/app/actions/contactActions.js
+/**
+ * @fileoverview Contact form actions for handling contact submissions, Telegram notifications, and contact management.
+ * Provides server-side functions for creating, retrieving, updating, and deleting contact submissions.
+ */
+
 'use server';
 
 import dbConnect from '@/lib/dbConnect';
@@ -7,7 +11,17 @@ import TelegramSettings from '@/models/TelegramSettings';
 import { decrypt } from '@/lib/crypto';
 import { revalidatePath } from 'next/cache';
 
-// Helper function to send notification
+/**
+ * Sends a Telegram notification for new contact submissions.
+ * Uses encrypted bot token and chat ID from TelegramSettings to send formatted message.
+ * Logs errors but doesn't throw them to avoid breaking form submission flow.
+ *
+ * @param {Object} contactData - Contact form data containing name, email, projectType, and message
+ * @param {string} contactData.name - Name of the person submitting the form
+ * @param {string} contactData.email - Email address of the submitter
+ * @param {string} contactData.projectType - Type of project inquiry
+ * @param {string} contactData.message - Message content from the form
+ */
 async function sendTelegramNotification(contactData) {
   try {
     const settings = await TelegramSettings.findOne({ isEnabled: true }).lean();
@@ -51,6 +65,13 @@ ${contactData.message.replace(/([_*\[\]()~`>#+\-=|{}.!])/g, '\\$1')}
   }
 }
 
+/**
+ * Creates a new contact submission in the database and sends a Telegram notification.
+ * Handles form data processing, database storage, cache revalidation, and notification sending.
+ *
+ * @param {FormData} formData - Form data containing name, email, projectType, message, and optional IP/user agent data
+ * @returns {Object} Success or error object with message
+ */
 export async function createContactSubmission(formData) {
   await dbConnect();
 
@@ -81,6 +102,13 @@ export async function createContactSubmission(formData) {
   }
 }
 
+/**
+ * Retrieves all contact submissions from the database, sorted by creation date in descending order.
+ * Used in admin interfaces for displaying and managing contact submissions.
+ * Serializes MongoDB ObjectIds and dates for client-side compatibility.
+ *
+ * @returns {Object} Object containing success status and array of serialized contact submissions, or error object
+ */
 export async function getAllContacts() {
   await dbConnect();
 
@@ -102,6 +130,15 @@ export async function getAllContacts() {
   }
 }
 
+/**
+ * Updates the status of a contact submission in the database.
+ * Used for marking contacts as read, responded, or archived in the admin interface.
+ * Triggers cache revalidation for admin pages to reflect the status change.
+ *
+ * @param {string} id - The MongoDB ObjectId of the contact to update
+ * @param {string} status - The new status to assign to the contact
+ * @returns {Object} Success or error object with message
+ */
 export async function updateContactStatus(id, status) {
   await dbConnect();
 
@@ -125,6 +162,14 @@ export async function updateContactStatus(id, status) {
   }
 }
 
+/**
+ * Deletes a contact submission from the database by its ID.
+ * Used for removing unwanted or spam contact submissions from the admin interface.
+ * Triggers cache revalidation for admin pages to reflect the deletion.
+ *
+ * @param {string} id - The MongoDB ObjectId of the contact to delete
+ * @returns {Object} Success or error object with message
+ */
 export async function deleteContact(id) {
   await dbConnect();
 

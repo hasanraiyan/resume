@@ -6,6 +6,12 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { serializeForClient } from '@/lib/serialize';
 
+/**
+ * Processes form data from article creation/update forms into a structured object.
+ *
+ * @param {FormData} formData - The form data object containing article fields
+ * @returns {Object} Processed article data object with title, slug, excerpt, coverImage, content, status, and tags
+ */
 function processFormData(formData) {
   return {
     title: formData.get('title'),
@@ -18,6 +24,13 @@ function processFormData(formData) {
   };
 }
 
+/**
+ * Creates a new article in the database with the provided form data.
+ * Handles database connection, article creation, cache revalidation, and redirects to articles admin page.
+ *
+ * @param {FormData} formData - Form data containing article information (title, slug, excerpt, coverImage, content, status, tags)
+ * @returns {Object} Error object if creation fails, otherwise redirects to admin articles page
+ */
 export async function createArticle(formData) {
   await dbConnect();
 
@@ -41,6 +54,15 @@ export async function createArticle(formData) {
   redirect('/admin/articles');
 }
 
+/**
+ * Updates an existing article in the database with the provided form data.
+ * Handles database connection, article update, cache revalidation, and returns appropriate response.
+ * Does not redirect to allow success message to show on edit page.
+ *
+ * @param {string} id - The MongoDB ObjectId of the article to update
+ * @param {FormData} formData - Form data containing updated article information
+ * @returns {Object} Success or error object with message
+ */
 export async function updateArticle(id, formData) {
   await dbConnect();
 
@@ -70,6 +92,13 @@ export async function updateArticle(id, formData) {
   // No redirect here to allow success message to show on edit page
 }
 
+/**
+ * Deletes an article from the database by its ID.
+ * Handles database connection, article deletion, cache revalidation, and redirects to articles admin page.
+ *
+ * @param {string} id - The MongoDB ObjectId of the article to delete
+ * @returns {Object} Error object if deletion fails, otherwise redirects to admin articles page
+ */
 export async function deleteArticle(id) {
   await dbConnect();
   try {
@@ -87,6 +116,12 @@ export async function deleteArticle(id) {
   redirect('/admin/articles');
 }
 
+/**
+ * Retrieves all articles from the database, sorted by creation date in descending order.
+ * Used primarily in admin interfaces for listing and managing all articles.
+ *
+ * @returns {Object} Object containing success status and array of serialized articles, or error object
+ */
 export async function getAllArticles() {
   await dbConnect();
 
@@ -101,6 +136,13 @@ export async function getAllArticles() {
   }
 }
 
+/**
+ * Retrieves a single article from the database by its slug.
+ * Used for displaying individual blog posts and article pages.
+ *
+ * @param {string} slug - The unique slug identifier for the article
+ * @returns {Object} Object containing success status and serialized article data, or error object with null article
+ */
 export async function getArticleBySlug(slug) {
   await dbConnect();
 
@@ -118,6 +160,12 @@ export async function getArticleBySlug(slug) {
   }
 }
 
+/**
+ * Retrieves all published articles from the database, sorted by publication date in descending order.
+ * Used for displaying published blog posts on the public blog page.
+ *
+ * @returns {Object} Object containing success status and array of serialized published articles, or error object
+ */
 export async function getAllPublishedArticles() {
   await dbConnect();
 
@@ -132,6 +180,13 @@ export async function getAllPublishedArticles() {
   }
 }
 
+/**
+ * Retrieves the latest published articles from the database, limited by the specified number.
+ * Used for displaying recent articles on homepage, sidebars, or other components that need recent content.
+ *
+ * @param {number} limit - Maximum number of articles to retrieve (default: 3)
+ * @returns {Object} Object containing success status and array of serialized latest articles, or error object
+ */
 export async function getLatestArticles(limit = 3) {
   await dbConnect();
 
