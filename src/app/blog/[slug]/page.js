@@ -150,7 +150,7 @@ export default async function ArticlePage({ params }) {
                 <NewsletterForm
                   source="blog"
                   placeholder="Enter your email for more great content"
-                  buttonText="Subscribe & Continue Reading"
+                  buttonText="Subscribe Now"
                   className="newsletter-blog-form"
                 />
               </div>
