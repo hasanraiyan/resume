@@ -39,6 +39,7 @@ function AdminLayoutContent({ children }) {
     { name: 'Projects', href: '/admin/projects', icon: 'fas fa-folder' },
     { name: 'Services', href: '/admin/services', icon: 'fas fa-tools' },
     { name: 'Articles', href: '/admin/articles', icon: 'fas fa-newspaper' },
+    { name: 'Subscribers', href: '/admin/subscribers', icon: 'fas fa-users' },
     { name: 'Messages', href: '/admin/contacts', icon: 'fas fa-envelope' },
     { name: 'Analytics', href: '/admin/analytics', icon: 'fas fa-chart-line' },
     { name: 'Chatbot Settings', href: '/admin/chatbot', icon: 'fas fa-robot' },

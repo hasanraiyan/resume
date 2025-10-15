@@ -1,10 +1,16 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useSiteContext } from '@/context/SiteContext'; // Import the context hook
+import NewsletterForm from './NewsletterForm';
 
 export default function Footer() {
+  const pathname = usePathname();
   const { heroData, initials } = useSiteContext(); // Use context to get dynamic data
+
+  // Check if we're on a blog page
+  const isBlogPage = pathname?.startsWith('/blog');
 
   // --- Dynamically build footer data ---
   const logo = {
@@ -24,6 +30,24 @@ export default function Footer() {
   return (
     <footer className="py-8 sm:py-10 border-t-2 border-gray-200">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-12">
+        {/* Newsletter Subscription Section - Hide on blog pages */}
+        {!isBlogPage && (
+          <div className="mb-12 pb-8 border-b border-gray-200">
+            <div className="max-w-md mx-auto text-center">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Stay Updated</h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Subscribe to our newsletter for the latest projects, articles, and insights.
+              </p>
+              <NewsletterForm
+                source="footer"
+                placeholder="Enter your email address"
+                buttonText="Subscribe"
+                className="newsletter-footer-form"
+              />
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
           {/* Logo */}
           <Link href={logo.link} className="text-xl sm:text-2xl font-bold hover-target">

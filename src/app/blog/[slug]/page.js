@@ -10,6 +10,7 @@ import { Section, Badge, Button } from '@/components/ui';
 import Image from 'next/image';
 import SocialShare from '@/components/SocialShare';
 import LikeButton from '@/components/LikeButton';
+import NewsletterForm from '@/components/NewsletterForm';
 
 export async function generateStaticParams() {
   const { success, articles } = await getAllPublishedArticles();
@@ -136,6 +137,23 @@ export default async function ArticlePage({ params }) {
                 {article.excerpt}
               </p>
               <MarkdownRenderer content={article.content} />
+            </div>
+
+            {/* Newsletter Subscription CTA */}
+            <div className="mt-12 pt-8 border-t border-gray-200">
+              <div className="max-w-2xl mx-auto text-center">
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">Enjoyed this article?</h3>
+                <p className="text-gray-600 mb-8">
+                  Subscribe to our newsletter for more insights, projects, and updates delivered to
+                  your inbox.
+                </p>
+                <NewsletterForm
+                  source="blog"
+                  placeholder="Enter your email for more great content"
+                  buttonText="Subscribe & Continue Reading"
+                  className="newsletter-blog-form"
+                />
+              </div>
             </div>
           </article>
         </Section>
