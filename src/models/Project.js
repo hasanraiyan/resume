@@ -87,6 +87,8 @@ import mongoose from 'mongoose';
  * @property {ProjectDetails} details - Detailed project information for case studies
  * @property {ProjectImage[]} images - Array of gallery images with metadata
  * @property {ProjectTag[]} tags - Array of technology/skill tags with categories
+ * @property {number} likes - Number of likes received (default: 0)
+ * @property {number} claps - Number of claps received (default: 0)
  * @property {Date} createdAt - Auto-generated creation timestamp
  * @property {Date} updatedAt - Auto-generated update timestamp
  */
@@ -170,6 +172,8 @@ const ProjectSchema = new mongoose.Schema(
         category: String,
       },
     ],
+    likes: { type: Number, default: 0 },
+    claps: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

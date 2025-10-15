@@ -8,6 +8,8 @@ import Footer from '@/components/Footer';
 import CustomCursor from '@/components/CustomCursor';
 import { Section, Badge, Button } from '@/components/ui';
 import Image from 'next/image';
+import SocialShare from '@/components/SocialShare';
+import LikeButton from '@/components/LikeButton';
 
 export async function generateStaticParams() {
   const { success, articles } = await getAllPublishedArticles();
@@ -87,6 +89,25 @@ export default async function ArticlePage({ params }) {
                     ))}
                   </div>
                 )}
+              </div>
+
+              {/* Social Sharing and Engagement */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+                <SocialShare title={article.title} slug={article.slug} excerpt={article.excerpt} />
+                <div className="flex items-center gap-3">
+                  <LikeButton
+                    type="article"
+                    slug={article.slug}
+                    engagementType="like"
+                    initialCount={article.likes || 0}
+                  />
+                  <LikeButton
+                    type="article"
+                    slug={article.slug}
+                    engagementType="clap"
+                    initialCount={article.claps || 0}
+                  />
+                </div>
               </div>
             </header>
 

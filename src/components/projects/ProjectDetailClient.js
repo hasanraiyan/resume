@@ -7,6 +7,7 @@ import { Section, Button, Badge, ForSaleBadge } from '@/components/ui';
 import ProjectGallery from './ProjectGallery';
 import RelatedProjects from './RelatedProjects';
 import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
+import LikeButton from '@/components/LikeButton';
 
 export default function ProjectDetailClient({ project, relatedProjects }) {
   return (
@@ -42,6 +43,23 @@ export default function ProjectDetailClient({ project, relatedProjects }) {
                 </Badge>
               ))}
             </div>
+
+            {/* Project Engagement */}
+            <div className="flex justify-center items-center gap-4 mb-6 sm:mb-8">
+              <LikeButton
+                type="project"
+                slug={project.slug}
+                engagementType="like"
+                initialCount={project.likes || 0}
+              />
+              <LikeButton
+                type="project"
+                slug={project.slug}
+                engagementType="clap"
+                initialCount={project.claps || 0}
+              />
+            </div>
+
             <div className="flex flex-wrap justify-center gap-4">
               {project.isForSale && project.links?.sales && (
                 <Button

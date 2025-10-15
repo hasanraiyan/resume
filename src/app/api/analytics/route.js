@@ -190,12 +190,6 @@ function hashIP(ip) {
 export async function POST(request) {
   try {
     const body = await request.json();
-
-    // Debug logging - log the entire request body
-    console.log('=== ANALYTICS DEBUG ===');
-    console.log('Full request body:', JSON.stringify(body, null, 2));
-    console.log('Request headers:', Object.fromEntries(request.headers.entries()));
-
     // Handle both single event objects and arrays of events
     const events = Array.isArray(body) ? body : [body];
 
@@ -207,15 +201,6 @@ export async function POST(request) {
 
       // Validate required fields
       const { eventType, path, sessionId, userAgent, referrer, properties = {} } = event;
-
-      console.log(`Event ${i + 1} extracted fields:`, {
-        eventType,
-        path,
-        sessionId,
-        userAgent: userAgent ? userAgent.substring(0, 100) + '...' : 'undefined',
-        referrer,
-        properties,
-      });
 
       if (!eventType || !path || !sessionId) {
         console.log(`Event ${i + 1} validation failed - missing required fields:`, {
@@ -295,12 +280,8 @@ export async function POST(request) {
         analyticsData.eventName = properties.eventName;
       }
 
-      console.log(`Event ${i + 1} analytics data to save:`, JSON.stringify(analyticsData, null, 2));
-
       const analytics = new Analytics(analyticsData);
       await analytics.save();
-
-      console.log(`Event ${i + 1} saved successfully`);
     }
 
     return NextResponse.json({

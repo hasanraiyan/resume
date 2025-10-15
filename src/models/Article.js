@@ -41,6 +41,8 @@ import mongoose from 'mongoose';
  * @property {string} content - Full article content (markdown/HTML)
  * @property {string} status - Publication status (draft or published)
  * @property {Array<string>} tags - Article tags for categorization
+ * @property {number} likes - Number of likes received (default: 0)
+ * @property {number} claps - Number of claps received (default: 0)
  * @property {Date} publishedAt - Publication date (auto-set on publish)
  * @property {Date} createdAt - Auto-generated creation timestamp
  * @property {Date} updatedAt - Auto-generated update timestamp
@@ -59,6 +61,8 @@ const ArticleSchema = new mongoose.Schema(
       index: true,
     },
     tags: [{ type: String }],
+    likes: { type: Number, default: 0 },
+    claps: { type: Number, default: 0 },
     publishedAt: { type: Date },
   },
   { timestamps: true }
