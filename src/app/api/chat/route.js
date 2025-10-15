@@ -112,12 +112,19 @@ async function listAllProjects() {
       .sort({ createdAt: -1 })
       .lean();
     console.log(`[Chat API Tool] ✅ Retrieved ${projects.length} projects`);
-    return projects.map((p) => ({
-      title: p.title,
-      slug: p.slug,
-      description: p.description,
-      url: `/projects/${p.slug}`, // Portfolio page URL
-    }));
+
+    if (projects.length === 0) {
+      return 'No projects found in the database.';
+    }
+
+    // Convert to markdown format for better AI understanding
+    const markdownList = projects
+      .map((project, index) => {
+        return `${index + 1}. **[${project.title}](/${project.slug})** - ${project.description}`;
+      })
+      .join('\n');
+
+    return `Here are all available projects:\n\n${markdownList}\n\nUse the getProjectDetails tool with a specific slug to get more information about any project.`;
   } catch (error) {
     console.error('[Chat API Tool] ❌ Error in listAllProjects:', error);
     return { error: 'Failed to retrieve projects.' };
@@ -144,18 +151,17 @@ async function getProjectDetails(slug) {
       return { error: 'Project not found' };
     }
     console.log(`[Chat API Tool] ✅ Retrieved project: "${project.title}"`);
-    return {
-      title: project.title,
-      slug: project.slug,
-      category: project.category,
-      tagline: project.tagline,
-      description: project.description,
-      details: project.details,
-      tags: project.tags?.map((t) => t.name || t) || [],
-      url: `/projects/${project.slug}`, // Portfolio page URL
-      liveUrl: project.links?.live || null, // Live demo URL
-      githubUrl: project.links?.github || null, // GitHub URL
-    };
+
+    // Convert to markdown format for better AI understanding
+    const tags = project.tags?.map((t) => t.name || t).join(', ') || 'No tags';
+    const liveUrl = project.links?.live ? `[View Live Demo](${project.links.live}) 🔗` : '';
+    const githubUrl = project.links?.github
+      ? `[GitHub Repository](${project.links.github}) 💻`
+      : '';
+
+    const links = [liveUrl, githubUrl].filter(Boolean).join(' | ');
+
+    return `**${project.title}**\n\n**Category:** ${project.category || 'Not specified'}\n**Tagline:** ${project.tagline || 'No tagline'}\n\n**Description:**\n${project.description}\n\n**Details:**\n${project.details || 'No additional details'}\n\n**Tags:** ${tags}\n\n**Links:** ${links || 'No external links'}\n\n**[View Project →](/${project.slug})**`;
   } catch (error) {
     console.error('[Chat API Tool] ❌ Error in getProjectDetails:', error);
     return { error: 'Failed to retrieve project details.' };
@@ -180,12 +186,19 @@ async function listAllArticles() {
       .sort({ publishedAt: -1 })
       .lean();
     console.log(`[Chat API Tool] ✅ Retrieved ${articles.length} published articles`);
-    return articles.map((a) => ({
-      title: a.title,
-      slug: a.slug,
-      excerpt: a.excerpt,
-      url: `/blog/${a.slug}`, // Blog post URL
-    }));
+
+    if (articles.length === 0) {
+      return 'No published articles found.';
+    }
+
+    // Convert to markdown format for better AI understanding
+    const markdownList = articles
+      .map((article, index) => {
+        return `${index + 1}. **[${article.title}](/${article.slug})** - ${article.excerpt || 'No excerpt available'}`;
+      })
+      .join('\n');
+
+    return `Here are all published articles:\n\n${markdownList}\n\nUse the getArticleDetails tool with a specific slug to read any article.`;
   } catch (error) {
     console.error('[Chat API Tool] ❌ Error in listAllArticles:', error);
     return { error: 'Failed to retrieve articles.' };
@@ -212,13 +225,11 @@ async function getArticleDetails(slug) {
       return { error: 'Article not found' };
     }
     console.log(`[Chat API Tool] ✅ Retrieved article: "${article.title}"`);
-    return {
-      title: article.title,
-      slug: article.slug,
-      content: article.content,
-      tags: article.tags,
-      url: `/blog/${article.slug}`, // Blog post URL
-    };
+
+    // Convert to markdown format for better AI understanding
+    const tags = article.tags?.join(', ') || 'No tags';
+
+    return `**${article.title}**\n\n${article.content}\n\n**Tags:** ${tags}\n\n**[Read Full Article →](/${article.slug})**`;
   } catch (error) {
     console.error('[Chat API Tool] ❌ Error in getArticleDetails:', error);
     return { error: 'Failed to retrieve article details.' };
@@ -246,8 +257,17 @@ async function searchPortfolio(query) {
       return { message: `No results found for "${query}". Try different keywords.` };
     }
     console.log(`[Chat API Tool] ✅ Found ${results.length} results for: "${query}"`);
-    // The AI can handle the flat array with a 'type' property just fine.
-    return results;
+
+    // Convert to markdown format for better AI understanding
+    const markdownResults = results
+      .map((item, index) => {
+        const type = item.type === 'project' ? 'Project' : 'Article';
+        const url = item.type === 'project' ? `/${item.slug}` : `/${item.slug}`;
+        return `${index + 1}. **${type}: [${item.title}](${url})** - ${item.description || item.excerpt || 'No description available'}`;
+      })
+      .join('\n');
+
+    return `Search results for "${query}":\n\n${markdownResults}\n\nUse getProjectDetails or getArticleDetails tools for more specific information.`;
   } catch (error) {
     console.error('[Chat API Tool] ❌ Error in searchPortfolio:', error);
     return { error: 'Search failed.' };
@@ -492,7 +512,7 @@ export async function POST(request) {
 
     // Iterative tool calling with max iterations
     const MAX_ITERATIONS = 3;
-    const MAX_CONTEXT_CHARS = 7500; // Safe buffer below 10k limit
+    const MAX_CONTEXT_CHARS = 50000; // Increased limit for larger contexts
     const ENABLE_PRUNING = true; // Keep only latest tool results
     let toolsUsed = [];
     let iteration = 0;
@@ -549,10 +569,31 @@ export async function POST(request) {
             `[Chat API] ✅ Tool ${toolCall.function.name} executed successfully (result: ${resultSize} chars)`
           );
 
+          // Limit tool result size for database storage (truncate if too large)
+          const MAX_TOOL_RESULT_SIZE = 5000; // characters
+          const resultString = JSON.stringify(toolResult);
+          const isTruncated = resultString.length > MAX_TOOL_RESULT_SIZE;
+
+          if (isTruncated) {
+            console.log(
+              `[Chat API] ⚠️ Tool result truncated: ${resultString.length} → ${MAX_TOOL_RESULT_SIZE} chars`
+            );
+          }
+
+          const truncatedResult = isTruncated
+            ? {
+                ...toolResult,
+                _truncated: true,
+                _originalSize: resultString.length,
+                _preview: resultString.substring(0, 1000) + '...',
+              }
+            : toolResult;
+
           toolsUsed.push({
             name: toolCall.function.name,
             arguments: JSON.parse(toolCall.function.arguments),
             iteration: iteration,
+            result: truncatedResult,
           });
 
           const toolMessage = {
@@ -587,9 +628,7 @@ export async function POST(request) {
     console.log(`[Chat API] 📊 CONTEXT GROWTH SUMMARY:
       🔢 Total messages: ${messages.length}
       📏 Total size: ${totalContextSize} chars
-      📈 Growth: ${totalContextSize - calculateContextSize(systemMessages)} chars added
-      ⚠️ Model limit: 10,000 chars
-      ${totalContextSize > 10000 ? '🔴 EXCEEDS LIMIT!' : '🟢 Within limit'}`);
+      📈 Growth: ${totalContextSize - calculateContextSize(systemMessages)} chars added`);
 
     console.log('[Chat API] 🌊 Starting streaming response...');
 
@@ -759,6 +798,20 @@ RULES:
 5. Place links naturally in your response
 
 CRITICAL: Users expect clickable links. Always provide them!`,
+  });
+
+  messages.push({
+    role: 'system',
+    content: `TOOL RESPONSE FORMAT:
+Tools now return human-readable markdown instead of JSON objects. This helps reduce hallucinations and makes responses more natural.
+
+- listAllProjects: Returns numbered list with markdown links
+- listAllArticles: Returns numbered list with markdown links
+- getProjectDetails: Returns formatted project info with links
+- getArticleDetails: Returns formatted article content with links
+- searchPortfolio: Returns mixed results with type indicators and links
+
+Always use the markdown format provided by tools directly in your responses.`,
   });
 
   messages.push({

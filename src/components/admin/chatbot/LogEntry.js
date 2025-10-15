@@ -20,9 +20,29 @@ const ToolUsage = ({ tool }) => (
       <Code size={14} className="mr-2" />
       Tool: {tool.name} (Iteration {tool.iteration})
     </p>
-    <pre className="text-xs bg-neutral-100 p-2 rounded-md mt-1 overflow-auto">
-      {JSON.stringify(tool.arguments, null, 2)}
-    </pre>
+    <div className="mt-2 space-y-2">
+      <div>
+        <p className="text-xs font-medium text-neutral-600 mb-1">Arguments:</p>
+        <pre className="text-xs bg-neutral-100 p-2 rounded-md overflow-auto">
+          {JSON.stringify(tool.arguments, null, 2)}
+        </pre>
+      </div>
+      {tool.result && (
+        <div>
+          <p className="text-xs font-medium text-neutral-600 mb-1">
+            Result:
+            {tool.result._truncated && (
+              <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">
+                Truncated ({tool.result._originalSize} chars → 5KB limit)
+              </span>
+            )}
+          </p>
+          <pre className="text-xs bg-green-50 border border-green-200 p-2 rounded-md overflow-auto max-h-48">
+            {JSON.stringify(tool.result, null, 2)}
+          </pre>
+        </div>
+      )}
+    </div>
   </div>
 );
 

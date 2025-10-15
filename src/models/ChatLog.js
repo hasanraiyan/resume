@@ -28,12 +28,24 @@
  *     {
  *       name: 'listAllProjects',
  *       arguments: {},
- *       iteration: 1
+ *       iteration: 1,
+ *       result: [ // ← Now includes actual tool results
+ *         {
+ *           title: "E-commerce Platform",
+ *           slug: "ecommerce-store",
+ *           description: "Full-stack e-commerce..."
+ *         }
+ *       ]
  *     },
  *     {
  *       name: 'getProjectDetails',
  *       arguments: { slug: 'ecommerce-platform' },
- *       iteration: 2
+ *       iteration: 2,
+ *       result: {
+ *         title: "E-commerce Platform",
+ *         description: "Complete e-commerce solution...",
+ *         tags: ["React", "Node.js"]
+ *       }
  *     }
  *   ],
  *   executionTime: 1250 // milliseconds
@@ -66,14 +78,15 @@
 import mongoose from 'mongoose';
 
 /**
- * Embedded schema for tracking tool usage within chat interactions.
- * Records which tools were called, their arguments, and in which iteration
- * they were used during the conversation flow.
+ * Main schema for ChatLog model.
+ * Stores comprehensive chat interaction data for analysis, debugging,
+ * and performance monitoring of the AI chatbot system.
  *
  * @typedef {Object} ToolUsage
  * @property {string} name - Name of the tool that was executed
  * @property {Object} arguments - Arguments passed to the tool function
  * @property {number} iteration - Which iteration of the conversation this tool was used in
+ * @property {Object} [result] - The actual result returned by the tool (for analysis/debugging)
  */
 
 /**
@@ -106,6 +119,10 @@ const toolUsageSchema = new mongoose.Schema(
     iteration: {
       type: Number,
       required: true,
+    },
+    result: {
+      type: mongoose.Schema.Types.Mixed, // Can store any type of data (objects, arrays, etc.)
+      default: null,
     },
   },
   { _id: false }
