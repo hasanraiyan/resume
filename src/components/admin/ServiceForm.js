@@ -23,6 +23,9 @@ export default function ServiceForm({ initialData, onSave, onDelete, isEditing =
   const [message, setMessage] = useState({ type: '', text: '' });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  // Define serviceData as alias for formData to avoid undefined errors
+  const serviceData = formData;
+
   useEffect(() => {
     if (initialData) {
       setFormData({
@@ -53,8 +56,12 @@ export default function ServiceForm({ initialData, onSave, onDelete, isEditing =
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    console.log('🔍 [SERVICE FORM] Starting submission, formData:', formData);
+    console.log('📋 [SERVICE FORM] serviceData (alias for formData):', serviceData);
+
     if (!formData.title.trim() || !formData.description.trim() || !formData.icon) {
       setMessage({ type: 'error', text: 'Please fill in all required fields.' });
+      console.warn('⚠️ [SERVICE FORM] Validation failed - missing fields');
       return;
     }
 
@@ -63,6 +70,7 @@ export default function ServiceForm({ initialData, onSave, onDelete, isEditing =
 
     try {
       const formDataToSend = new FormData();
+      console.log('📤 [SERVICE FORM] Preparing FormData for submission');
 
       Object.keys(formData).forEach((key) => {
         if (typeof formData[key] === 'boolean') {
@@ -72,21 +80,25 @@ export default function ServiceForm({ initialData, onSave, onDelete, isEditing =
         }
       });
 
+      console.log('🚀 [SERVICE FORM] Calling updateService/createService');
       const result = isEditing ? await onSave(id, formDataToSend) : await onSave(formDataToSend);
 
       if (result?.error) {
         setMessage({ type: 'error', text: result.error });
+        console.error('❌ [SERVICE FORM] Submission error:', result.error);
       } else {
         setMessage({
           type: 'success',
           text: `Service ${isEditing ? 'updated' : 'created'} successfully!`,
         });
+        console.log('✅ [SERVICE FORM] Submission successful');
         setTimeout(() => {
           router.push('/admin/services');
         }, 1500);
       }
     } catch (error) {
       setMessage({ type: 'error', text: 'An unexpected error occurred.' });
+      console.error('💥 [SERVICE FORM] Unexpected error:', error);
     } finally {
       setSaving(false);
     }

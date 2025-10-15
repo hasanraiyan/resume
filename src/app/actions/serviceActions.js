@@ -21,9 +21,14 @@ export async function createService(formData) {
   try {
     await dbConnect();
 
+    // Convert FormData to plain object for processing
+    const serviceData = Object.fromEntries(formData.entries());
+    console.log('🔍 [CREATE SERVICE] Form data received:', serviceData);
+
     // Additional safety: ensure no slug field exists in the data
     const cleanServiceData = { ...serviceData };
     delete cleanServiceData.slug;
+    console.log('🧹 [CREATE SERVICE] Cleaned data:', cleanServiceData);
 
     const newService = new Service({
       ...cleanServiceData,
@@ -31,9 +36,11 @@ export async function createService(formData) {
     });
 
     await newService.save();
+    console.log('✅ [CREATE SERVICE] Service created successfully');
 
     return { success: true };
   } catch (error) {
+    console.error('❌ [CREATE SERVICE] Error:', error);
     return { error: error.message || 'Failed to create service' };
   }
 }
@@ -87,17 +94,24 @@ export async function updateService(id, formData) {
   try {
     await dbConnect();
 
+    // Convert FormData to plain object for processing
+    const serviceData = Object.fromEntries(formData.entries());
+    console.log('🔍 [UPDATE SERVICE] Form data received for ID:', id, serviceData);
+
     // Additional safety: ensure no slug field exists in the data
     const cleanServiceData = { ...serviceData };
     delete cleanServiceData.slug;
+    console.log('🧹 [UPDATE SERVICE] Cleaned data:', cleanServiceData);
 
     await Service.findByIdAndUpdate(id, {
       ...cleanServiceData,
       isActive: cleanServiceData.isActive === 'on',
     });
+    console.log('✅ [UPDATE SERVICE] Service updated successfully for ID:', id);
 
     return { success: true };
   } catch (error) {
+    console.error('❌ [UPDATE SERVICE] Error for ID:', id, error);
     return { error: error.message || 'Failed to update service' };
   }
 }

@@ -526,7 +526,6 @@ export default function ChatbotWidget() {
         )}
 
         {/* Input */}
-        {/* ✨ [UI FIX] - The input section now has simplified styling to work with the persistent prompts. */}
         <div
           className={`p-3 sm:p-4 bg-white/80 backdrop-blur-sm rounded-b-2xl ${isLoading ? 'border-t border-neutral-200/50' : ''}`}
         >
