@@ -210,7 +210,9 @@ export default async function AdminDashboard() {
                   <h3 className="font-semibold text-black group-hover:text-white mb-1">
                     Contact Notifications
                   </h3>
-                  <p className="text-sm text-neutral-600 group-hover:text-neutral-300">alerts</p>
+                  <p className="text-sm text-neutral-600 group-hover:text-neutral-300">
+                    Alerts configuration
+                  </p>
                 </div>
               </div>
             </Card>
