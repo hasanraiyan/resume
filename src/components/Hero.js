@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Hero section component for homepage.
+ * Displays main heading, introduction, call-to-action buttons, social links,
+ * and profile image with GSAP animations and real-time data updates.
+ */
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -8,9 +14,12 @@ import { useHeroData } from '@/hooks/useHeroData';
 import { useLoadingStatus } from '@/context/LoadingContext';
 import { SkeletonLoader, SkeletonItem } from './Skeleton';
 
-// ========================================
-// 📦 FALLBACK DATA (Default values)
-// ========================================
+/**
+ * Default hero data structure used as fallback when API data is unavailable.
+ * Provides complete default configuration for all hero section elements.
+ *
+ * @constant {Object}
+ */
 const defaultHeroData = {
   badge: {
     text: 'CREATIVE DEVELOPER',
@@ -78,7 +87,33 @@ const defaultHeroData = {
   },
 };
 
-// Hero Skeleton Component
+/**
+ * Skeleton loading component for the Hero section.
+ * Displays animated placeholder content while hero data is being fetched.
+ * Maintains the same layout structure as the actual hero component.
+ *
+ * @component
+ * @returns {JSX.Element} Skeleton loading UI with animated placeholders
+ *
+ * @example
+ * ```jsx
+ * // Used automatically during loading state
+ * if (loading) {
+ *   return <HeroSkeleton />;
+ * }
+ * ```
+ *
+ * @skeleton
+ * - Badge placeholder with rounded styling
+ * - Three-line heading skeleton with stroke effect simulation
+ * - Introduction text lines with varying widths
+ * - CTA button placeholders
+ * - Social link icon placeholders
+ * - Profile image circle with pulse animation
+ * - Experience badge skeleton
+ *
+ * @responsive Maintains responsive layout during loading state
+ */
 function HeroSkeleton() {
   return (
     <section id="home" className="min-h-screen flex items-center pt-16 sm:pt-20 w-full">
@@ -140,9 +175,71 @@ function HeroSkeleton() {
   );
 }
 
-// ========================================
-// 🎨 COMPONENT
-// ========================================
+/**
+ * Main Hero component for the homepage.
+ * Displays the primary landing section with animated heading, introduction,
+ * call-to-action buttons, social links, and profile image.
+ *
+ * @component
+ * @returns {JSX.Element} Hero section with full-screen layout and animations
+ *
+ * @example
+ * ```jsx
+ * // Standard usage in homepage layout
+ * <Hero />
+ *
+ * // In Next.js page component
+ * export default function HomePage() {
+ *   return (
+ *     <main>
+ *       <Hero />
+ *       <About />
+ *       <Work />
+ *       <Contact />
+ *     </main>
+ *   );
+ * }
+ * ```
+ *
+ * @features
+ * - Dynamic content loading from `/api/hero`
+ * - Fallback to default data if API fails
+ * - GSAP scroll-triggered animations with stagger effects
+ * - Real-time updates via custom events from admin interface
+ * - Responsive two-column layout (content left, image right)
+ * - Loading states with skeleton placeholders
+ * - Social media links with hover effects
+ * - Profile image with experience badge overlay
+ * - Text stroke effect on middle heading line
+ *
+ * @animations
+ * - Staggered fade-in animations for content sections
+ * - Scroll-triggered entrance effects
+ * - Automatic GSAP cleanup on unmount
+ * - Image reveal effects on hover
+ *
+ * @responsiveness
+ * - Mobile: Single column with image first, content second
+ * - Desktop: Two-column layout (content left, image right)
+ * - Responsive typography scaling (text-4xl to text-7xl)
+ * - Adaptive spacing and button layouts
+ * - Mobile-optimized social links positioning
+ *
+ * @dependencies
+ * - React hooks (useState, useEffect)
+ * - GSAP for animations and ScrollTrigger
+ * - Custom hooks (useHeroData)
+ * - Context providers (LoadingContext)
+ * - UI components (Button, Badge)
+ * - Skeleton components for loading states
+ *
+ * @dataflow
+ * 1. Component mounts and registers with LoadingContext
+ * 2. useHeroData hook fetches data from `/api/hero`
+ * 3. Data updates trigger re-render with new content
+ * 4. GSAP animations initialize after loading completes
+ * 5. Real-time updates via 'heroDataUpdated' events
+ */
 export default function Hero() {
   const { heroData: fetchedHeroData, loading, error } = useHeroData();
   const [heroData, setHeroData] = useState(defaultHeroData);

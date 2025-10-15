@@ -56,13 +56,13 @@
 
 ### Main Components
 
-- [ ] src/components/About.js
+- [x] src/components/About.js
 - [ ] src/components/AnalyticsProvider.js
 - [ ] src/components/Contact.js
 - [ ] src/components/CustomCursor.js
 - [ ] src/components/CustomDropdown.js
 - [ ] src/components/Footer.js
-- [ ] src/components/Hero.js
+- [x] src/components/Hero.js
 - [ ] src/components/HomePageClient.js
 - [ ] src/components/HomepageLoaderManager.js
 - [ ] src/components/LoaderUI.js

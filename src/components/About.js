@@ -1,3 +1,9 @@
+/**
+ * @fileoverview About section component for homepage.
+ * Displays biography, resume download, and feature highlights with animations.
+ * Fetches data from API and supports real-time updates from admin interface.
+ */
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -7,9 +13,51 @@ import { Section, Card, Button } from '@/components/ui';
 import { useLoadingStatus } from '@/context/LoadingContext';
 import { SkeletonLoader, SkeletonItem } from './Skeleton';
 
-// ========================================
-//  DYNAMIC DATA (Backend-Ready)
-// ========================================
+/**
+ * About section component that displays personal information, biography, and feature highlights.
+ * Features GSAP animations, real-time data updates, and responsive design.
+ *
+ * @component
+ * @example
+ * ```jsx
+ * // Basic usage in homepage
+ * <About />
+ *
+ * // In layout with other sections
+ * <main>
+ *   <Hero />
+ *   <About />
+ *   <Work />
+ *   <Contact />
+ * </main>
+ * ```
+ *
+ * @features
+ * - Dynamic content loading from `/api/about`
+ * - GSAP scroll-triggered animations
+ * - Real-time updates via custom events
+ * - Responsive grid layout (1 column mobile, 2 columns desktop)
+ * - Loading states with skeleton placeholders
+ * - Resume download functionality
+ * - Feature highlights with icons and descriptions
+ *
+ * @animations
+ * - Staggered fade-in animations for feature cards
+ * - Scroll-triggered entrance effects
+ * - Automatic cleanup on component unmount
+ *
+ * @responsiveness
+ * - Mobile: Single column layout
+ * - Desktop: Two-column layout (bio left, features right)
+ * - Responsive spacing and typography
+ *
+ * @dependencies
+ * - React hooks (useState, useEffect)
+ * - GSAP for animations
+ * - LoadingContext for coordinated loading states
+ * - UI components (Section, Card, Button)
+ * - Skeleton components for loading states
+ */
 const About = () => {
   const [aboutData, setAboutData] = useState(null);
   const [loading, setLoading] = useState(true);
