@@ -58,6 +58,23 @@ export default function SectionsAdminPage() {
             </Card>
           </Link>
 
+          <Link href="/admin/services" className="group">
+            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group-hover:bg-neutral-50">
+              <div className="flex items-start space-x-4">
+                <div className="w-12 h-12 bg-black group-hover:bg-neutral-800 rounded-lg flex items-center justify-center">
+                  <i className="fas fa-cogs text-white group-hover:text-white text-lg"></i>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-black group-hover:text-black mb-1">
+                    Services Section
+                  </h3>
+                  <p className="text-sm text-neutral-600 group-hover:text-neutral-700">
+                    Manage your service offerings, pricing, and descriptions
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </Link>
           <Link href="/admin/stats" className="group">
             <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group-hover:bg-neutral-50">
               <div className="flex items-start space-x-4">
@@ -75,7 +92,6 @@ export default function SectionsAdminPage() {
               </div>
             </Card>
           </Link>
-
           <div className="group">
             <Card className="p-6 opacity-60 border-2 border-dashed border-neutral-300">
               <div className="flex items-start space-x-4">
