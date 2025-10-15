@@ -1,7 +1,42 @@
 // src/lib/test-analytics.js
+
+/**
+ * @fileoverview Test data generation script for analytics system.
+ * Creates sample analytics events and tests aggregation functionality.
+ * Used for development, testing, and demonstration purposes.
+ */
+
 import dbConnect from './dbConnect';
 import Analytics from '../models/Analytics';
 
+/**
+ * Creates test analytics data and validates aggregation functionality.
+ * Generates sample pageview and custom events across multiple sessions
+ * to test analytics reporting and aggregation methods.
+ *
+ * @async
+ * @function createTestAnalytics
+ * @returns {Promise<void>} Exits process with success (0) or error (1) code
+ *
+ * @example
+ * ```bash
+ * # Run test data generation
+ * node src/lib/test-analytics.js
+ *
+ * # Or in package.json scripts
+ * "scripts": {
+ *   "test-analytics": "node src/lib/test-analytics.js"
+ * }
+ * ```
+ *
+ * @testdata Creates 4 test events:
+ * - 2 pageview events in session_1 (homepage → projects page)
+ * - 1 pageview event in session_2 (homepage)
+ * - 1 custom event in session_2 (project_click)
+ *
+ * @validation Tests Analytics.getSessionStats() aggregation method
+ * @exit Codes: 0 for success, 1 for error
+ */
 async function createTestAnalytics() {
   await dbConnect();
 

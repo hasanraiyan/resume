@@ -10,26 +10,26 @@
 
 ### /api routes
 
-- [ ] src/app/api/about/route.js
+- [x] src/app/api/about/route.js
 - [ ] src/app/api/admin/analytics/route.js
 - [ ] src/app/api/admin/chatbot/route.js
 - [ ] src/app/api/admin/comments/route.js
 - [ ] src/app/api/admin/telegram-settings/route.js
-- [ ] src/app/api/analytics/route.js
+- [x] src/app/api/analytics/route.js
 - [ ] src/app/api/auth/[...nextauth]/route.js
 - [ ] src/app/api/chat/route.js
 - [ ] src/app/api/comments/[id]/route.js
 - [ ] src/app/api/contact-section/route.js
-- [ ] src/app/api/contacts/route.js
-- [ ] src/app/api/hero/route.js
+- [x] src/app/api/contacts/route.js
+- [x] src/app/api/hero/route.js
 - [ ] src/app/api/marquee/route.js
-- [ ] src/app/api/projects/route.js
+- [x] src/app/api/projects/route.js
 - [ ] src/app/api/projects/[slug]/route.js
 - [ ] src/app/api/projects/check-slug/route.js
-- [ ] src/app/api/search/route.js
+- [x] src/app/api/search/route.js
 - [ ] src/app/api/services/route.js
 - [ ] src/app/api/services/check-slug/route.js
-- [ ] src/app/api/stats/route.js
+- [x] src/app/api/stats/route.js
 - [ ] src/app/api/sitemap.xml/route.js
 
 ## Action Functions Documentation
@@ -40,17 +40,17 @@
 
 ## Model Documentation
 
-- [ ] src/models/AboutSection.js
-- [ ] src/models/Analytics.js
+- [x] src/models/AboutSection.js
+- [x] src/models/Analytics.js
 - [x] src/models/Article.js
-- [ ] src/models/ChatbotSettings.js
-- [ ] src/models/ChatLog.js
-- [ ] src/models/Contact.js
-- [ ] src/models/HeroSection.js
-- [ ] src/models/Project.js
-- [ ] src/models/StatsSection.js
-- [ ] src/models/TelegramSettings.js
-- [ ] src/models/User.js
+- [x] src/models/ChatbotSettings.js
+- [x] src/models/ChatLog.js
+- [x] src/models/Contact.js
+- [x] src/models/HeroSection.js
+- [x] src/models/Project.js
+- [x] src/models/StatsSection.js
+- [x] src/models/TelegramSettings.js
+- [x] src/models/User.js
 
 ## Component Documentation
 
@@ -142,7 +142,7 @@
 - [x] src/lib/crypto.js
 - [x] src/lib/dbConnect.js
 - [x] src/lib/serialize.js
-- [ ] src/lib/test-analytics.js
+- [x] src/lib/test-analytics.js
 - [x] src/lib/ai/context-builder.js
 - [x] src/lib/search/search.js
 

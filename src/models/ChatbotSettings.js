@@ -2,6 +2,45 @@
  * @fileoverview MongoDB model for AI chatbot configuration.
  * Stores chatbot settings including AI persona, behavior rules, and activation status.
  * Implements singleton pattern to ensure only one configuration exists.
+ *
+ * This model manages the AI chatbot system configuration with:
+ * - AI assistant name and personality definition
+ * - Comprehensive behavioral rules and guidelines
+ * - Base knowledge about the portfolio owner
+ * - Services offered and call-to-action messaging
+ * - Model selection and activation status
+ * - Singleton pattern ensuring single configuration instance
+ * - Pre-save hooks preventing duplicate configurations
+ *
+ * @example
+ * ```js
+ * import ChatbotSettings from '@/models/ChatbotSettings';
+ * import dbConnect from '@/lib/dbConnect';
+ *
+ * // Get the current chatbot configuration
+ * const settings = await ChatbotSettings.findOne({});
+ *
+ * // Update AI persona
+ * settings.persona = 'You are an expert AI assistant specializing in web development...';
+ * settings.aiName = 'WebDev Assistant';
+ * await settings.save();
+ *
+ * // Add new behavioral rule
+ * settings.rules.push('Always provide code examples when discussing technical topics');
+ * await settings.save();
+ *
+ * // Update services offered
+ * settings.servicesOffered = 'React Development\nVue.js Applications\nNode.js APIs\nDatabase Design';
+ * await settings.save();
+ *
+ * // Toggle chatbot activation
+ * settings.isActive = false; // Disable chatbot
+ * await settings.save();
+ *
+ * // Change AI model
+ * settings.modelName = 'gpt-4-turbo-preview';
+ * await settings.save();
+ * ```
  */
 
 import mongoose from 'mongoose';
@@ -12,14 +51,14 @@ import mongoose from 'mongoose';
  * behavioral rules, and activation status. Singleton pattern ensures only one config exists.
  *
  * @typedef {Object} ChatbotSettings
- * @property {string} aiName - Name of the AI assistant
- * @property {string} persona - AI personality and role description
- * @property {string} baseKnowledge - Base knowledge about the portfolio owner
- * @property {string} servicesOffered - List of services offered
- * @property {string} callToAction - CTA message to guide users to contact
- * @property {Array<string>} rules - Behavioral rules for the AI
- * @property {boolean} isActive - Whether chatbot is enabled
- * @property {string} modelName - AI model identifier
+ * @property {string} aiName - Name/identifier of the AI assistant (default: 'Kiro')
+ * @property {string} persona - Detailed AI personality and role description for consistent behavior
+ * @property {string} baseKnowledge - Core knowledge about the portfolio owner/developer
+ * @property {string} servicesOffered - List of services and capabilities offered
+ * @property {string} callToAction - Standard CTA message to guide users toward contact
+ * @property {string[]} rules - Array of behavioral rules and guidelines for the AI
+ * @property {boolean} [isActive=true] - Whether the chatbot system is currently active
+ * @property {string} modelName - AI model identifier for API requests (default: process.env.OPENAI_MODEL_NAME)
  * @property {Date} createdAt - Auto-generated creation timestamp
  * @property {Date} updatedAt - Auto-generated update timestamp
  */
@@ -84,8 +123,38 @@ const ChatbotSettingsSchema = new mongoose.Schema(
 );
 
 /**
- * Pre-save hook to enforce singleton pattern.
- * Prevents creation of multiple chatbot settings documents.
+ * Pre-save middleware hook that enforces singleton pattern for chatbot settings.
+ * Prevents creation of multiple ChatbotSettings documents by automatically
+ * updating the existing configuration instead of creating duplicates.
+ *
+ * This hook ensures data consistency by maintaining only one chatbot
+ * configuration document in the database. When attempting to save a new
+ * configuration, it updates the existing one instead.
+ *
+ * @async
+ * @function pre-save-hook
+ * @this ChatbotSettings - The chatbot settings document being saved
+ * @param {Function} next - Callback function to continue or error the save operation
+ *
+ * @example
+ * ```js
+ * // This will update existing settings instead of creating new ones
+ * const newSettings = new ChatbotSettings({
+ *   aiName: 'New Assistant',
+ *   persona: 'Updated persona...'
+ * });
+ *
+ * try {
+ *   await newSettings.save(); // Updates existing document
+ * } catch (error) {
+ *   console.log('Settings already exist, using findOneAndUpdate instead');
+ * }
+ *
+ * // Proper way to update existing settings
+ * const existing = await ChatbotSettings.findOne({});
+ * existing.aiName = 'Updated Name';
+ * await existing.save(); // Works normally
+ * ```
  */
 ChatbotSettingsSchema.pre('save', async function (next) {
   if (this.isNew) {
