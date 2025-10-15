@@ -8,6 +8,7 @@ import ProjectGallery from './ProjectGallery';
 import RelatedProjects from './RelatedProjects';
 import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 import LikeButton from '@/components/LikeButton';
+import SocialShare from '@/components/SocialShare';
 
 export default function ProjectDetailClient({ project, relatedProjects }) {
   return (
@@ -44,20 +45,28 @@ export default function ProjectDetailClient({ project, relatedProjects }) {
               ))}
             </div>
 
-            {/* Project Engagement */}
-            <div className="flex justify-center items-center gap-4 mb-6 sm:mb-8">
-              <LikeButton
-                type="project"
+            {/* Project Engagement and Social Sharing */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-center gap-4 mb-6 sm:mb-8">
+              <SocialShare
+                title={project.title}
                 slug={project.slug}
-                engagementType="like"
-                initialCount={project.likes || 0}
-              />
-              <LikeButton
+                excerpt={project.tagline}
                 type="project"
-                slug={project.slug}
-                engagementType="clap"
-                initialCount={project.claps || 0}
               />
+              <div className="flex items-center gap-3">
+                <LikeButton
+                  type="project"
+                  slug={project.slug}
+                  engagementType="like"
+                  initialCount={project.likes || 0}
+                />
+                <LikeButton
+                  type="project"
+                  slug={project.slug}
+                  engagementType="clap"
+                  initialCount={project.claps || 0}
+                />
+              </div>
             </div>
 
             <div className="flex flex-wrap justify-center gap-4">

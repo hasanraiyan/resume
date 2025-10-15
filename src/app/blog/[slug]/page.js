@@ -93,7 +93,12 @@ export default async function ArticlePage({ params }) {
 
               {/* Social Sharing and Engagement */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
-                <SocialShare title={article.title} slug={article.slug} excerpt={article.excerpt} />
+                <SocialShare
+                  title={article.title}
+                  slug={article.slug}
+                  excerpt={article.excerpt}
+                  type="article"
+                />
                 <div className="flex items-center gap-3">
                   <LikeButton
                     type="article"

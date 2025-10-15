@@ -34,6 +34,18 @@ const getInitials = (name = '') => {
 export const metadata = {
   title: 'Portfolio - Minimalist Creative',
   description: 'Creative Developer Portfolio',
+  openGraph: {
+    title: 'Portfolio - Minimalist Creative',
+    description: 'Creative Developer Portfolio',
+    type: 'website',
+    locale: 'en_US',
+    siteName: 'Portfolio',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Portfolio - Minimalist Creative',
+    description: 'Creative Developer Portfolio',
+  },
 };
 
 export default async function RootLayout({ children }) {
