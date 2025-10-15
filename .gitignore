@@ -41,3 +41,8 @@ yarn-error.log*
 next-env.d.ts
 main.py
 digest.md
+# gemini-cli settings
+.gemini/
+
+# GitHub App credentials
+gha-creds-*.json

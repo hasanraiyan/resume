@@ -299,7 +299,11 @@ async function executeToolCall(toolCall) {
  */
 function calculateContextSize(messages) {
   return messages.reduce((total, msg) => {
-    const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
+    const content = msg.content
+      ? typeof msg.content === 'string'
+        ? msg.content
+        : JSON.stringify(msg.content)
+      : '';
     return total + content.length;
   }, 0);
 }
@@ -357,8 +361,13 @@ function pruneContext(messages, maxChars) {
     let accumulatedSize = calculateContextSize([...systemMessages, userMessage]);
     for (let i = middleMessages.length - 1; i >= 0; i--) {
       const msg = middleMessages[i];
-      const msgSize = (typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content))
-        .length;
+      const msgSize = (
+        msg.content
+          ? typeof msg.content === 'string'
+            ? msg.content
+            : JSON.stringify(msg.content)
+          : ''
+      ).length;
 
       if (accumulatedSize + msgSize < maxChars) {
         recentMessages.unshift(msg);
@@ -438,17 +447,39 @@ export async function POST(request) {
     }
 
     console.log('[Chat API] 🏗️ Building dynamic context...');
-    const context = await buildDynamicContext();
-    const actualModel = context.chatbotSettings.modelName || process.env.OPENAI_MODEL_NAME;
-    console.log('[Chat API] ✅ Context built successfully');
-    console.log('[Chat API] 🤖 AI Name:', context.chatbotSettings.aiName);
-    console.log('[Chat API] ⚙️ Model:', actualModel);
-    console.log('[Chat API] 🔌 Chatbot active:', context.chatbotSettings.isActive);
+    let context;
+    try {
+      context = await buildDynamicContext();
+      console.log('[Chat API] ✅ Context built successfully');
+      console.log('[Chat API] 🤖 AI Name:', context.chatbotSettings?.aiName || 'Using defaults');
+      console.log(
+        '[Chat API] ⚙️ Model:',
+        context.chatbotSettings?.modelName || process.env.OPENAI_MODEL_NAME
+      );
+      console.log('[Chat API] 🔌 Chatbot active:', context.chatbotSettings?.isActive !== false);
+    } catch (error) {
+      console.error('[Chat API] ❌ Error building context:', error);
+      // Use fallback context
+      context = {
+        chatbotSettings: {
+          aiName: 'Kiro',
+          persona: 'You are Kiro, a professional and helpful AI assistant representing Raiyan.',
+          callToAction: "I'd be happy to help you get in touch with Raiyan.",
+          rules: ['Always be professional and helpful'],
+          isActive: true,
+          modelName: process.env.OPENAI_MODEL_NAME || 'gpt-3.5-turbo',
+        },
+      };
+      console.log('[Chat API] 🔄 Using fallback context due to error');
+    }
 
-    if (!context.chatbotSettings.isActive) {
+    if (context.chatbotSettings?.isActive === false) {
       console.warn('[Chat API] ⚠️ Chatbot is disabled');
       return NextResponse.json({ error: 'Chatbot is currently disabled' }, { status: 503 });
     }
+
+    const actualModel =
+      context.chatbotSettings?.modelName || process.env.OPENAI_MODEL_NAME || 'gpt-3.5-turbo';
 
     console.log('[Chat API] 📝 Building system messages...');
     const systemMessages = buildSystemMessages(context, path);
@@ -675,12 +706,25 @@ export async function POST(request) {
  * @returns {Array<{role: string, content: string}>} Array of system message objects
  */
 function buildSystemMessages(context, path) {
-  const { chatbotSettings } = context;
+  const { chatbotSettings } = context || {};
+
+  // Fallback defaults if chatbotSettings is missing
+  const defaultSettings = {
+    aiName: 'Kiro',
+    persona: 'You are Kiro, a professional and helpful AI assistant representing Raiyan.',
+    callToAction: "I'd be happy to help you get in touch with Raiyan.",
+    rules: [
+      'Always be professional and helpful',
+      'Guide users toward the contact form when appropriate',
+    ],
+  };
+
+  const settings = chatbotSettings || defaultSettings;
   const messages = [];
 
   messages.push({
     role: 'system',
-    content: `You are ${chatbotSettings.aiName}. ${chatbotSettings.persona}. Your knowledge of projects and articles is limited; you must use tools to get information.`,
+    content: `You are ${settings.aiName}. ${settings.persona}. Your knowledge of projects and articles is limited; you must use tools to get information.`,
   });
 
   messages.push({
@@ -695,7 +739,7 @@ function buildSystemMessages(context, path) {
 ALWAYS include reference links when discussing projects or articles. The tools provide URLs - USE THEM!
 
 FORMAT:
-- Use markdown: [Project Title](url) 
+- Use markdown: [Project Title](url)
 - Projects: Tools return "url" field (/projects/slug)
 - Live demos: Tools return "liveUrl" field (external URL)
 - GitHub or figma or any other link: Tools return "githubUrl" field (external URL)
@@ -719,8 +763,8 @@ CRITICAL: Users expect clickable links. Always provide them!`,
 
   messages.push({
     role: 'system',
-    content: `GOAL: Convert visitors to clients by guiding them to the contact form using: "${chatbotSettings.callToAction}"
-RULES: ${chatbotSettings.rules.join('. ')}`,
+    content: `GOAL: Convert visitors to clients by guiding them to the contact form using: "${settings.callToAction}"
+RULES: ${settings.rules?.join('. ') || defaultSettings.rules.join('. ')}`,
   });
 
   messages.push({
