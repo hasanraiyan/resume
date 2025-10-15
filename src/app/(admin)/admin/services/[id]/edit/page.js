@@ -1,0 +1,84 @@
+'use client';
+
+import { useState, useEffect, use } from 'react';
+import { useRouter } from 'next/navigation';
+import { updateService, deleteService } from '@/app/actions/serviceActions';
+import ServiceForm from '@/components/admin/ServiceForm';
+import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
+
+export default function EditServicePage({ params }) {
+  const unwrappedParams = use(params);
+  const router = useRouter();
+  const [service, setService] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  console.log('📋 [SERVICE EDIT PAGE] Component initialized for service ID:', unwrappedParams.id);
+
+  useEffect(() => {
+    if (!unwrappedParams.id) {
+      console.log('⚠️ [SERVICE EDIT PAGE] No service ID provided');
+      return;
+    }
+
+    console.log('🔍 [SERVICE EDIT PAGE] Fetching service data for ID:', unwrappedParams.id);
+    const fetchService = async () => {
+      try {
+        console.log('🌐 [SERVICE EDIT PAGE] Making API call to fetch service...');
+        const response = await fetch(`/api/services/${unwrappedParams.id}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch service data.');
+        }
+        const data = await response.json();
+        console.log('📥 [SERVICE EDIT PAGE] Service data received:', data.service?.title);
+        setService(data.service);
+      } catch (err) {
+        console.error('❌ [SERVICE EDIT PAGE] Error fetching service:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+        console.log('🏁 [SERVICE EDIT PAGE] Service fetch operation completed');
+      }
+    };
+
+    fetchService();
+  }, [unwrappedParams.id]);
+
+  if (loading) {
+    console.log('⏳ [SERVICE EDIT PAGE] Loading state - showing loading UI');
+    return (
+      <AdminPageWrapper title="Edit Service">
+        <div className="text-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-black border-t-transparent mx-auto"></div>
+          <p className="mt-4 text-neutral-600">Loading service...</p>
+        </div>
+      </AdminPageWrapper>
+    );
+  }
+
+  if (error || !service) {
+    console.log('❌ [SERVICE EDIT PAGE] Error or no service found:', {
+      error,
+      hasService: !!service,
+    });
+    return (
+      <AdminPageWrapper title="Error">
+        <div className="text-center py-20">
+          <h3 className="text-xl font-semibold text-black mb-2">Could not load service</h3>
+          <p className="text-neutral-600 mb-8">{error || 'The service may have been deleted.'}</p>
+        </div>
+      </AdminPageWrapper>
+    );
+  }
+
+  console.log('✅ [SERVICE EDIT PAGE] Rendering service form for:', service.title);
+  return (
+    <ServiceForm
+      initialData={service}
+      onSave={updateService}
+      onDelete={deleteService}
+      isEditing={true}
+      id={unwrappedParams.id}
+    />
+  );
+}

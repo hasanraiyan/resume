@@ -70,6 +70,12 @@ function AdminLayoutContent({ children }) {
                     Projects
                   </Link>
                   <Link
+                    href="/admin/services"
+                    className="px-4 py-2 text-sm font-medium text-neutral-600 hover:text-black hover:bg-neutral-100 rounded transition-colors"
+                  >
+                    Services
+                  </Link>
+                  <Link
                     href="/admin/contacts"
                     className="px-4 py-2 text-sm font-medium text-neutral-600 hover:text-black hover:bg-neutral-100 rounded transition-colors"
                   >

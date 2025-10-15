@@ -167,6 +167,143 @@ const ICON_DATABASE = {
     { class: 'fas fa-gem', name: 'Gem', keywords: ['gem', 'jewel', 'precious', 'valuable'] },
     { class: 'fas fa-crown', name: 'Crown', keywords: ['crown', 'king', 'premium', 'elite'] },
   ],
+  technologies: [
+    {
+      class: 'fab fa-js-square',
+      name: 'JavaScript',
+      keywords: ['javascript', 'js', 'programming', 'web', 'frontend', 'library'],
+    },
+    {
+      class: 'fab fa-python',
+      name: 'Python',
+      keywords: ['python', 'programming', 'backend', 'data', 'machine learning', 'library'],
+    },
+    {
+      class: 'fab fa-react',
+      name: 'React',
+      keywords: ['react', 'javascript', 'frontend', 'framework', 'ui', 'component'],
+    },
+    {
+      class: 'fas fa-atom',
+      name: 'React Native',
+      keywords: ['react native', 'react', 'mobile', 'app', 'framework', 'cross platform'],
+    },
+    {
+      class: 'fab fa-node-js',
+      name: 'Node.js',
+      keywords: ['nodejs', 'node', 'javascript', 'backend', 'runtime', 'server'],
+    },
+    {
+      class: 'fas fa-server',
+      name: 'Express.js',
+      keywords: ['express', 'nodejs', 'backend', 'framework', 'web', 'api'],
+    },
+    {
+      class: 'fas fa-database',
+      name: 'MongoDB',
+      keywords: ['mongodb', 'database', 'nosql', 'document', 'data'],
+    },
+    {
+      class: 'fab fa-aws',
+      name: 'AWS',
+      keywords: ['aws', 'amazon', 'cloud', 'hosting', 'infrastructure'],
+    },
+    {
+      class: 'fab fa-docker',
+      name: 'Docker',
+      keywords: ['docker', 'container', 'devops', 'deployment'],
+    },
+    {
+      class: 'fab fa-git-alt',
+      name: 'Git',
+      keywords: ['git', 'version control', 'source control', 'collaboration'],
+    },
+    {
+      class: 'fab fa-npm',
+      name: 'npm',
+      keywords: ['npm', 'package manager', 'nodejs', 'dependencies'],
+    },
+    {
+      class: 'fas fa-code-branch',
+      name: 'TypeScript',
+      keywords: ['typescript', 'ts', 'javascript', 'types', 'superset'],
+    },
+    {
+      class: 'fab fa-vuejs',
+      name: 'Vue.js',
+      keywords: ['vue', 'vuejs', 'javascript', 'frontend', 'framework'],
+    },
+    {
+      class: 'fab fa-angular',
+      name: 'Angular',
+      keywords: ['angular', 'javascript', 'frontend', 'framework', 'google'],
+    },
+    {
+      class: 'fab fa-laravel',
+      name: 'Laravel',
+      keywords: ['laravel', 'php', 'backend', 'framework', 'web'],
+    },
+    {
+      class: 'fab fa-php',
+      name: 'PHP',
+      keywords: ['php', 'programming', 'backend', 'web'],
+    },
+    {
+      class: 'fab fa-wordpress',
+      name: 'WordPress',
+      keywords: ['wordpress', 'cms', 'php', 'blog', 'website'],
+    },
+    {
+      class: 'fab fa-shopify',
+      name: 'Shopify',
+      keywords: ['shopify', 'ecommerce', 'platform', 'store'],
+    },
+    {
+      class: 'fab fa-figma',
+      name: 'Figma',
+      keywords: ['figma', 'design', 'ui', 'ux', 'prototyping'],
+    },
+    {
+      class: 'fab fa-adobe',
+      name: 'Adobe XD',
+      keywords: ['adobe xd', 'design', 'ui', 'ux', 'prototyping'],
+    },
+    {
+      class: 'fab fa-sketch',
+      name: 'Sketch',
+      keywords: ['sketch', 'design', 'ui', 'ux', 'mac'],
+    },
+    {
+      class: 'fas fa-mobile-alt',
+      name: 'Expo',
+      keywords: ['expo', 'react native', 'mobile', 'development', 'framework'],
+    },
+    {
+      class: 'fab fa-apple',
+      name: 'Swift',
+      keywords: ['swift', 'ios', 'apple', 'mobile', 'programming'],
+    },
+    {
+      class: 'fab fa-android',
+      name: 'Kotlin',
+      keywords: ['kotlin', 'android', 'mobile', 'programming', 'java'],
+    },
+    {
+      class: 'fas fa-terminal',
+      name: 'Terminal',
+      keywords: ['terminal', 'command line', 'cli', 'shell', 'bash'],
+    },
+    {
+      class: 'fas fa-code',
+      name: 'VS Code',
+      keywords: ['vscode', 'visual studio code', 'editor', 'ide', 'development'],
+    },
+    {
+      class: 'fab fa-chrome',
+      name: 'Chrome DevTools',
+      keywords: ['chrome', 'devtools', 'debugging', 'browser', 'development'],
+    },
+  ],
   general: [
     { class: 'fas fa-envelope', name: 'Email', keywords: ['email', 'contact', 'mail'] },
     { class: 'fas fa-phone', name: 'Phone', keywords: ['phone', 'contact', 'call'] },
@@ -357,6 +494,7 @@ export default function IconPicker({
                   { key: 'all', label: 'All' },
                   { key: 'social', label: 'Social' },
                   { key: 'professional', label: 'Professional' },
+                  { key: 'technologies', label: 'Technologies' },
                   { key: 'features', label: 'Features' },
                   { key: 'general', label: 'General' },
                 ].map((category) => (

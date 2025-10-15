@@ -7,11 +7,13 @@ import Work from '@/components/Work';
 import Stats from '@/components/Stats';
 import Contact from '@/components/Contact';
 import Footer from '@/components/Footer';
+import Services from '@/components/Services';
 import HomepageLoaderManager from '@/components/HomepageLoaderManager';
 import dbConnect from '@/lib/dbConnect';
 import Project from '@/models/Project';
 import { serializeProjects } from '@/lib/serialize';
 import { getLatestArticles } from '@/app/actions/articleActions';
+import { getActiveServices } from '@/app/actions/serviceActions';
 
 export default async function Home() {
   await dbConnect();
@@ -27,6 +29,9 @@ export default async function Home() {
   // Fetch latest articles
   const { success: articlesSuccess, articles: latestArticles } = await getLatestArticles(3);
 
+  // Fetch active services
+  const services = await getActiveServices();
+
   return (
     <HomepageLoaderManager>
       <CustomCursor />
@@ -34,6 +39,7 @@ export default async function Home() {
       <Hero />
       <Marquee />
       <About />
+      <Services services={services} />
       <Work featuredProjects={featuredProjects} />
       {/* Fix for CSS layout issue causing large right-side margin */}
       {/* overflow: 'hidden' clips any content extending beyond boundaries */}
