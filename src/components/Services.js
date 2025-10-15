@@ -59,7 +59,7 @@ export default function Services({ services }) {
               <i className={service.icon}></i>
             </div>
             <h3 className="text-xl font-bold mb-2">{service.title}</h3>
-            <p className="text-neutral-600">{service.description}</p>
+            <p className="text-neutral-600 text-justify">{service.description}</p>
           </Card>
         ))}
       </div>

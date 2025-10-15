@@ -100,7 +100,7 @@ export default function Work({ featuredProjects = [] }) {
               </h3>
 
               {/* Project Description */}
-              <p className="text-sm sm:text-base text-gray-700 mb-5 sm:mb-7 leading-relaxed">
+              <p className="text-sm sm:text-base text-gray-700 mb-5 sm:mb-7 text-justify leading-relaxed">
                 {project.description}
               </p>
 

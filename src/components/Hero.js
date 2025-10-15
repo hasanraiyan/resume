@@ -336,7 +336,7 @@ export default function Hero() {
             </h1>
 
             {/* Introduction */}
-            <p className="text-base sm:text-lg text-gray-600 mb-8 sm:mb-10 max-w-lg leading-relaxed">
+            <p className="text-base sm:text-lg text-gray-600 mb-8 sm:mb-10 max-w-lg text-justify leading-relaxed">
               {heroData.introduction.text}
             </p>
 

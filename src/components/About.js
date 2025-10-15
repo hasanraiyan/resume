@@ -186,7 +186,7 @@ const About = () => {
       <div className="grid lg:grid-cols-2 gap-10 sm:gap-12 md:gap-16 items-center">
         {/* Left Column - Bio */}
         <div>
-          <div className="space-y-4 sm:space-y-5 text-sm sm:text-base text-gray-700 leading-relaxed">
+          <div className="space-y-4 sm:space-y-5 text-sm sm:text-base text-gray-700 text-justify leading-relaxed">
             {aboutData.bio?.paragraphs?.map((paragraph, index) => (
               <p key={index}>{paragraph}</p>
             ))}
