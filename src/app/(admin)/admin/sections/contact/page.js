@@ -68,7 +68,54 @@ export default function ContactSettingsPage() {
   };
 
   if (loading) {
-    return <AdminPageWrapper title="Contact Notifications">Loading...</AdminPageWrapper>;
+    return (
+      <AdminPageWrapper title="Contact Notifications">
+        <div className="space-y-8">
+          {/* Skeleton for message area */}
+          <div className="h-16 bg-neutral-100 rounded-lg animate-pulse"></div>
+
+          {/* Skeleton for form sections */}
+          <div className="space-y-6">
+            {/* Skeleton for section title and description */}
+            <div className="space-y-2">
+              <div className="h-6 bg-neutral-200 rounded w-1/3 animate-pulse"></div>
+              <div className="h-4 bg-neutral-100 rounded w-2/3 animate-pulse"></div>
+            </div>
+
+            {/* Skeleton for form fields */}
+            <div className="space-y-6">
+              {/* Switch skeleton */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="h-4 bg-neutral-200 rounded w-1/4 animate-pulse"></div>
+                  <div className="h-3 bg-neutral-100 rounded w-1/2 animate-pulse"></div>
+                </div>
+                <div className="w-12 h-6 bg-neutral-200 rounded-full animate-pulse"></div>
+              </div>
+
+              {/* Input field skeletons */}
+              <div className="space-y-2">
+                <div className="h-4 bg-neutral-200 rounded w-1/4 animate-pulse"></div>
+                <div className="h-12 bg-neutral-100 rounded-lg animate-pulse"></div>
+                <div className="h-3 bg-neutral-100 rounded w-1/3 animate-pulse"></div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="h-4 bg-neutral-200 rounded w-1/4 animate-pulse"></div>
+                <div className="h-12 bg-neutral-100 rounded-lg animate-pulse"></div>
+                <div className="h-3 bg-neutral-100 rounded w-1/3 animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Skeleton for action buttons */}
+          <div className="flex gap-4 pt-6 border-t border-neutral-200">
+            <div className="h-10 bg-neutral-200 rounded w-24 animate-pulse"></div>
+            <div className="h-10 bg-neutral-100 rounded w-40 animate-pulse"></div>
+          </div>
+        </div>
+      </AdminPageWrapper>
+    );
   }
 
   return (
