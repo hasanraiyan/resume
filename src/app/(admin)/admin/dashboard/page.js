@@ -211,7 +211,7 @@ export default async function AdminDashboard() {
                     Contact Notifications
                   </h3>
                   <p className="text-sm text-neutral-600 group-hover:text-neutral-300">
-                    Configure Telegram alerts for new contact form submissions
+                    Configure Telegram alerts
                   </p>
                 </div>
               </div>
