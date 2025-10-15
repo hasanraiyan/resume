@@ -8,33 +8,6 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 export default function Services({ services }) {
   const cardsRef = useRef(null);
 
-  useEffect(() => {
-    if (!services || services.length === 0) return;
-
-    gsap.registerPlugin(ScrollTrigger);
-
-    // Get all .service-card inside the container after DOM updates
-    const cards = cardsRef.current.querySelectorAll('.service-card');
-
-    gsap.from(cards, {
-      opacity: 0,
-      y: 50,
-      duration: 0.8,
-      stagger: 0.2,
-      scrollTrigger: {
-        trigger: '#services-section',
-        start: 'top 80%',
-        toggleActions: 'play none none reverse',
-      },
-    });
-
-    // Cleanup GSAP/ScrollTrigger on unmount
-    return () => {
-      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
-      gsap.killTweensOf(cards);
-    };
-  }, [services]); // update animations if services change
-
   if (!services || services.length === 0) {
     return null;
   }
