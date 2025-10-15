@@ -174,7 +174,7 @@ export default function SubscribersClient({ initialSubscribers, initialStats }) 
   };
 
   return (
-    <div className="">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -232,10 +232,10 @@ export default function SubscribersClient({ initialSubscribers, initialStats }) 
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex flex-col sm:flex-row gap-6">
+      <div className="bg-white rounded-lg shadow p-4">
+        <div className="flex flex-col sm:flex-row gap-4">
           {/* Search */}
-          <div className="flex-1">
+          <div className="flex-1 mt-3">
             <div className="relative">
               <FontAwesomeIcon
                 icon={faSearch}
