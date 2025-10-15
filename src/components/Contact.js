@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { InlineWidget } from 'react-calendly';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -105,6 +105,11 @@ export default function Contact() {
   const [formData, setFormData] = useState(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState(null);
+  const [calendlyPrefill, setCalendlyPrefill] = useState({
+    name: initialFormData.name || '',
+    email: initialFormData.email || '',
+  });
+  const calendlyPrefillTimeout = useRef(null);
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -153,6 +158,14 @@ export default function Contact() {
       const result = await createContactSubmission(formDataObj);
 
       if (result.success) {
+        const submittedName = formDataObj.get('name') || '';
+        const submittedEmail = formDataObj.get('email') || '';
+
+        setCalendlyPrefill({
+          name: submittedName,
+          email: submittedEmail,
+        });
+
         setSubmitResult('success');
         // Clear the form
         setFormData(initialFormData);
@@ -168,11 +181,35 @@ export default function Contact() {
   };
 
   const handleChange = (e) => {
-    setFormData({
+    const { name, value } = e.target;
+    const updatedFormData = {
       ...formData,
-      [e.target.name]: e.target.value,
-    });
+      [name]: value,
+    };
+
+    setFormData(updatedFormData);
+
+    if (name === 'name' || name === 'email') {
+      if (calendlyPrefillTimeout.current) {
+        clearTimeout(calendlyPrefillTimeout.current);
+      }
+
+      calendlyPrefillTimeout.current = setTimeout(() => {
+        setCalendlyPrefill({
+          name: updatedFormData.name || '',
+          email: updatedFormData.email || '',
+        });
+      }, 350);
+    }
   };
+
+  useEffect(() => {
+    return () => {
+      if (calendlyPrefillTimeout.current) {
+        clearTimeout(calendlyPrefillTimeout.current);
+      }
+    };
+  }, []);
 
   // Render field based on type
   const renderField = (field) => {
@@ -240,6 +277,21 @@ export default function Contact() {
           <div className="p-8 bg-gray-50 border-2 border-black rounded-lg">
             <h3 className="text-lg font-semibold text-black mb-2">Message Sent Successfully!</h3>
             <p className="text-gray-600 mb-4">{contactData.messages.success}</p>
+            <div className="mt-4">
+              <div className="relative w-full overflow-hidden rounded-lg border border-gray-200">
+                <InlineWidget
+                  url="https://calendly.com/raiyanhasan2006/30min"
+                  styles={{
+                    height: '720px',
+                    width: '100%',
+                  }}
+                  prefill={{
+                    name: calendlyPrefill.name,
+                    email: calendlyPrefill.email,
+                  }}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </Section>
@@ -272,18 +324,14 @@ export default function Contact() {
               <div key={field.id}>{renderField(field)}</div>
             ))}
 
-          {/* Calendly Widget */}
+          {/* Calendly CTA */}
           <div className="mt-8">
-            <h3 className="text-lg font-semibold mb-4 text-center">Or Schedule a Call Directly</h3>
-            <div className="calendly-container relative w-full min-h-[1000px] overflow-hidden rounded-lg border border-gray-200">
-              <InlineWidget
-                url="https://calendly.com/raiyanhasan2006/30min"
-                styles={{
-                  height: '1000px',
-                  width: '100%',
-                  minWidth: '320px',
-                }}
-              />
+            <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
+              <h3 className="text-lg font-semibold text-black mb-2">Plan the follow-up call</h3>
+              <p className="text-sm text-gray-600">
+                Send your project details first. Right after you submit, you'll unlock my scheduling
+                calendar to choose a time that suits you.
+              </p>
             </div>
           </div>
 
