@@ -105,13 +105,6 @@ export default function ChatLogsPage() {
   return (
     <AdminPageWrapper title="Chat Interaction Logs">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-black font-['Playfair_Display']">Chat History</h1>
-          <p className="text-neutral-600">
-            Review conversations between visitors and the AI assistant.
-          </p>
-        </div>
-
         <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2">
             <SearchBar onSearch={handleSearch} initialQuery={searchQuery} />
