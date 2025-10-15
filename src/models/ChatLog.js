@@ -24,6 +24,11 @@
  *   userMessage: 'Tell me about your React projects',
  *   aiResponse: 'I have several React projects including an e-commerce platform...',
  *   modelName: 'gpt-4-turbo-preview',
+ *   conversationContext: [ // ← Complete messages sent to AI
+ *     { role: 'system', content: 'You are Kiro...' },
+ *     { role: 'user', content: 'Tell me about projects' },
+ *     { role: 'tool', content: 'Here are all available projects...' }
+ *   ],
  *   toolsUsed: [
  *     {
  *       name: 'listAllProjects',
@@ -100,6 +105,7 @@ import mongoose from 'mongoose';
  * @property {string} userMessage - The user's input message/question
  * @property {string} aiResponse - The AI assistant's complete response
  * @property {string} modelName - AI model used for generating the response
+ * @property {Object[]} [conversationContext=[]] - Complete array of messages sent to AI (for debugging)
  * @property {ToolUsage[]} [toolsUsed=[]] - Array of tools called during this interaction
  * @property {number} [executionTime] - Total execution time in milliseconds
  * @property {Date} createdAt - Auto-generated timestamp of when the chat occurred
@@ -155,6 +161,10 @@ const ChatLogSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+    },
+    conversationContext: {
+      type: Array, // Array of message objects sent to AI
+      default: [],
     },
     toolsUsed: {
       type: [toolUsageSchema],

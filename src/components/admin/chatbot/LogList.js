@@ -12,6 +12,15 @@ export default function LogList({ logs }) {
     );
   }
 
+  // Debug: Check if conversationContext exists in logs
+  console.log(`[LogList] 📋 Rendering ${logs.length} logs`);
+  console.log(
+    `[LogList] 🔍 First log has conversationContext: ${logs[0]?.conversationContext ? 'YES' : 'NO'}`
+  );
+  if (logs[0]?.conversationContext) {
+    console.log(`[LogList] 📊 First log context messages: ${logs[0].conversationContext.length}`);
+  }
+
   return (
     <div className="space-y-4">
       {logs.map((log) => (

@@ -644,6 +644,33 @@ export async function POST(request) {
       - Assistant messages: ${messages.filter((m) => m.role === 'assistant').length}
       - Tool messages: ${messages.filter((m) => m.role === 'tool').length}`);
 
+    // Create complete conversation context for debugging (includes all system messages)
+    // Only include current conversation turn, not previous assistant messages from chat history
+    const currentConversationTurn = [
+      ...systemMessages, // Always include original system messages
+      ...chatHistory.filter((msg) => msg.role !== 'assistant'), // Include chat history but exclude previous assistant messages
+      { role: 'user', content: userMessage }, // Current user message
+    ];
+
+    console.log(`[Chat API] 🔍 DEBUG - currentConversationTurn construction:`);
+    console.log(`[Chat API]   - systemMessages: ${systemMessages.length} messages`);
+    console.log(
+      `[Chat API]   - filtered chatHistory: ${chatHistory.filter((msg) => msg.role !== 'assistant').length} messages`
+    );
+    console.log(
+      `[Chat API]   - currentConversationTurn: ${currentConversationTurn.length} messages`
+    );
+
+    // Validate that we have a proper conversation context
+    if (currentConversationTurn.length === 0) {
+      console.error(`[Chat API] ❌ currentConversationTurn is empty!`);
+      console.error(`[Chat API]   - systemMessages:`, systemMessages);
+      console.error(
+        `[Chat API]   - filtered chatHistory:`,
+        chatHistory.filter((msg) => msg.role !== 'assistant')
+      );
+    }
+
     const stream = new ReadableStream({
       async start(controller) {
         let assistantMessage = { content: '' };
@@ -679,6 +706,14 @@ export async function POST(request) {
           console.log(
             `[Chat API] 📝 Response length: ${assistantMessage.content.length} characters`
           );
+
+          // Only save chat log if there's an actual AI response
+          if (!assistantMessage.content || assistantMessage.content.trim().length === 0) {
+            console.log('[Chat API] ⚠️ No AI response generated, skipping chat log save');
+            controller.close();
+            return;
+          }
+
           controller.close();
           // Analytics logic remains the same
           console.log('[Chat API] 💾 Saving analytics event...');
@@ -695,8 +730,53 @@ export async function POST(request) {
           await analyticsEvent.save();
           console.log('[Chat API] ✅ Analytics saved successfully');
 
+          // Limit conversation context size for database storage
+          const MAX_CONTEXT_SIZE = 50000; // Increased limit for larger contexts
+          const contextString = JSON.stringify(currentConversationTurn);
+          const shouldTruncateContext = contextString.length > MAX_CONTEXT_SIZE;
+
+          console.log(
+            `[Chat API] 🔍 DEBUG - completeConversationContext length: ${currentConversationTurn.length}`
+          );
+          console.log(`[Chat API] 🔍 DEBUG - systemMessages length: ${systemMessages.length}`);
+          console.log(`[Chat API] 🔍 DEBUG - messages length: ${messages.length}`);
+          console.log(`[Chat API] 🔍 DEBUG - contextString length: ${contextString.length}`);
+          console.log(`[Chat API] 🔍 DEBUG - shouldTruncateContext: ${shouldTruncateContext}`);
+
+          if (shouldTruncateContext) {
+            console.log(
+              `[Chat API] ⚠️ Conversation context truncated: ${contextString.length} → ${MAX_CONTEXT_SIZE} chars`
+            );
+          }
+
+          const finalContextForDB = shouldTruncateContext
+            ? [
+                {
+                  role: 'system',
+                  content: `Conversation context truncated for storage. Original size: ${contextString.length} chars. Contains ${currentConversationTurn.length} messages. System messages preserved for debugging.`,
+                },
+                ...currentConversationTurn.filter((m) => m.role === 'system'),
+              ]
+            : currentConversationTurn;
+
+          console.log(
+            `[Chat API] 🔍 DEBUG - finalContextForDB length: ${finalContextForDB.length}`
+          );
+          console.log(
+            `[Chat API] 🔍 DEBUG - finalContextForDB first item role: ${finalContextForDB[0]?.role}`
+          );
+          console.log(
+            `[Chat API] 🔍 DEBUG - finalContextForDB first item preview: ${finalContextForDB[0]?.content?.substring(0, 100)}...`
+          );
+
           // Save the chat log to the database
           console.log('[Chat API] 💾 Saving chat log...');
+          console.log(
+            `[Chat API] 📊 Conversation context size: ${JSON.stringify(finalContextForDB).length} chars`
+          );
+          console.log(`[Chat API] 🔢 Messages in context: ${finalContextForDB.length}`);
+          console.log(`[Chat API] 🛠️ Tools used: ${toolsUsed.length}`);
+
           const executionTime = Date.now() - startTime;
           const chatLog = new ChatLog({
             sessionId,
@@ -704,11 +784,58 @@ export async function POST(request) {
             userMessage,
             aiResponse: assistantMessage.content,
             modelName: actualModel,
+            conversationContext: finalContextForDB,
             toolsUsed,
             executionTime,
           });
-          await chatLog.save();
-          console.log('[Chat API] ✅ Chat log saved successfully');
+
+          console.log('[Chat API] 💾 ChatLog object before save:');
+          console.log(`[Chat API] 📋 sessionId: ${chatLog.sessionId}`);
+          console.log(
+            `[Chat API] 📋 conversationContext length: ${chatLog.conversationContext?.length || 0}`
+          );
+          console.log(
+            `[Chat API] 📋 conversationContext type: ${Array.isArray(chatLog.conversationContext) ? 'Array' : typeof chatLog.conversationContext}`
+          );
+          console.log(`[Chat API] 📋 toolsUsed length: ${chatLog.toolsUsed?.length || 0}`);
+
+          try {
+            const savedLog = await chatLog.save();
+            console.log(
+              `[Chat API] ✅ Chat log saved successfully (includes ${shouldTruncateContext ? 'truncated ' : ''}conversation context)`
+            );
+            console.log(`[Chat API] 💾 Saved log ID: ${savedLog._id}`);
+            console.log(
+              `[Chat API] 📋 Saved conversation context length: ${savedLog.conversationContext?.length || 0}`
+            );
+            console.log(
+              `[Chat API] 📋 Saved conversation context type: ${Array.isArray(savedLog.conversationContext) ? 'Array' : typeof savedLog.conversationContext}`
+            );
+            console.log(`[Chat API] 📋 Saved toolsUsed length: ${savedLog.toolsUsed?.length || 0}`);
+
+            // Verify the field was actually saved
+            if (savedLog.conversationContext && savedLog.conversationContext.length > 0) {
+              console.log(
+                `[Chat API] ✅ Conversation context saved successfully: ${savedLog.conversationContext.length} messages`
+              );
+              console.log(
+                `[Chat API] 📋 First message role: ${savedLog.conversationContext[0]?.role}`
+              );
+              console.log(
+                `[Chat API] 📋 First message preview: ${savedLog.conversationContext[0]?.content?.substring(0, 100)}...`
+              );
+            } else {
+              console.log(`[Chat API] ❌ Conversation context not saved properly!`);
+            }
+
+            console.log(
+              `[Chat API] 📋 Conversation context preview: ${JSON.stringify(finalContextForDB.slice(0, 2)).substring(0, 100000000)}...`
+            );
+          } catch (saveError) {
+            console.error(`[Chat API] ❌ Error saving chat log:`, saveError);
+            console.error(`[Chat API] 📋 ChatLog object:`, JSON.stringify(chatLog, null, 2));
+            throw saveError;
+          }
           console.log('[Chat API] 🏁 ======== REQUEST COMPLETE ======== \n');
         } catch (error) {
           console.error('[Chat API] ❌ Stream error:', error);

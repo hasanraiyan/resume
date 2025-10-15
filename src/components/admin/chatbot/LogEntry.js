@@ -51,6 +51,25 @@ export default function LogEntry({ log }) {
 
   const timeAgo = formatDistanceToNow(new Date(log.createdAt), { addSuffix: true });
 
+  // Debug: Check conversationContext in individual log
+  console.log(
+    `[LogEntry] 🔍 Log ${log._id} has conversationContext: ${log.conversationContext ? 'YES' : 'NO'}`
+  );
+  if (log.conversationContext) {
+    console.log(`[LogEntry] 📊 Log ${log._id} context messages: ${log.conversationContext.length}`);
+    console.log(
+      `[LogEntry] 📋 Log ${log._id} context type: ${Array.isArray(log.conversationContext) ? 'Array' : typeof log.conversationContext}`
+    );
+    if (log.conversationContext.length > 0) {
+      console.log(`[LogEntry] 📋 First message role: ${log.conversationContext[0]?.role || 'N/A'}`);
+      console.log(
+        `[LogEntry] 📋 First message preview: ${log.conversationContext[0]?.content?.substring(0, 100) || 'N/A'}...`
+      );
+    }
+  } else {
+    console.log(`[LogEntry] ⚠️ Log ${log._id} missing conversationContext field`);
+  }
+
   return (
     <div className="bg-white p-5 rounded-lg border border-neutral-200 shadow-sm transition-shadow hover:shadow-md">
       <div className="flex justify-between items-start">
@@ -120,6 +139,50 @@ export default function LogEntry({ log }) {
                   <ToolUsage key={index} tool={tool} />
                 ))}
               </div>
+            </div>
+          )}
+          {log.conversationContext && log.conversationContext.length > 0 && (
+            <div className="mt-4">
+              <h5 className="font-semibold text-md text-neutral-900 mb-2">
+                Conversation Context Sent to AI
+              </h5>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {log.conversationContext.map((message, index) => (
+                  <div
+                    key={index}
+                    className={`p-3 rounded-md border ${
+                      message.role === 'system'
+                        ? 'bg-blue-50 border-blue-200'
+                        : message.role === 'user'
+                          ? 'bg-green-50 border-green-200'
+                          : message.role === 'assistant'
+                            ? 'bg-purple-50 border-purple-200'
+                            : 'bg-gray-50 border-gray-200'
+                    }`}
+                  >
+                    <p className="text-xs font-medium text-neutral-600 mb-1">
+                      {message.role === 'system' && '🤖 System'}
+                      {message.role === 'user' && '👤 User'}
+                      {message.role === 'assistant' && '🧠 Assistant'}
+                      {message.role === 'tool' && '🔧 Tool'}
+                    </p>
+                    <div className="text-sm text-neutral-800 whitespace-pre-wrap">
+                      {message.content}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Show message if conversation context is missing (for older logs) */}
+          {(!log.conversationContext || log.conversationContext.length === 0) && (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+              <p className="text-sm text-yellow-800">
+                <strong>Note:</strong> This log was created before conversation context tracking was
+                implemented. Conversation context shows all messages sent to the AI for debugging
+                purposes.
+              </p>
             </div>
           )}
         </div>

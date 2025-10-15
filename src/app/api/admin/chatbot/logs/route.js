@@ -36,9 +36,51 @@ export async function GET(request) {
     }
 
     const logs = await ChatLog.find(query)
+      .select(
+        'sessionId path userMessage aiResponse modelName conversationContext toolsUsed executionTime createdAt'
+      )
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
+
+    console.log(`[Admin Logs API] 📋 Retrieved ${logs.length} logs`);
+    console.log(
+      `[Admin Logs API] 🔍 First log has conversationContext: ${logs[0]?.conversationContext ? 'YES' : 'NO'}`
+    );
+    if (logs[0]?.conversationContext) {
+      console.log(
+        `[Admin Logs API] 📊 First log context size: ${JSON.stringify(logs[0].conversationContext).length} chars`
+      );
+      console.log(
+        `[Admin Logs API] 🔢 First log context messages: ${logs[0].conversationContext.length}`
+      );
+      console.log(
+        `[Admin Logs API] 📋 First log context type: ${Array.isArray(logs[0].conversationContext) ? 'Array' : typeof logs[0].conversationContext}`
+      );
+      console.log(
+        `[Admin Logs API] 📋 First message role: ${logs[0].conversationContext[0]?.role || 'N/A'}`
+      );
+      console.log(
+        `[Admin Logs API] 📋 First message preview: ${logs[0].conversationContext[0]?.content?.substring(0, 100) || 'N/A'}...`
+      );
+    } else {
+      console.log(`[Admin Logs API] ⚠️ First log missing conversationContext field`);
+      console.log(
+        `[Admin Logs API] 📋 Available fields in first log: ${Object.keys(logs[0] || {}).join(', ')}`
+      );
+    }
+
+    // Log all logs for debugging
+    logs.forEach((log, index) => {
+      console.log(`[Admin Logs API] 📋 Log ${index + 1} (${log._id}):`);
+      console.log(
+        `[Admin Logs API]   - conversationContext: ${log.conversationContext ? 'YES' : 'NO'}`
+      );
+      console.log(`[Admin Logs API]   - toolsUsed: ${log.toolsUsed ? 'YES' : 'NO'}`);
+      if (log.conversationContext) {
+        console.log(`[Admin Logs API]   - context messages: ${log.conversationContext.length}`);
+      }
+    });
 
     const totalLogs = await ChatLog.countDocuments(query);
 
