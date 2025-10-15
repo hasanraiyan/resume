@@ -50,11 +50,11 @@ export async function POST(request) {
       console.log('Email already subscribed:', email);
       return NextResponse.json(
         {
-          success: false,
-          error: 'This email is already subscribed to our newsletter',
+          success: true,
+          message: 'You are already subscribed to our newsletter!',
           alreadySubscribed: true,
         },
-        { status: 409 }
+        { status: 200 }
       );
     }
 
@@ -102,11 +102,11 @@ export async function POST(request) {
     if (error.code === 11000) {
       return NextResponse.json(
         {
-          success: false,
-          error: 'This email is already subscribed to our newsletter',
+          success: true,
+          message: 'You are already subscribed to our newsletter!',
           alreadySubscribed: true,
         },
-        { status: 409 }
+        { status: 200 }
       );
     }
 

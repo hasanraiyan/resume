@@ -93,6 +93,11 @@ export default function NewsletterForm({
         setMessage(data.message || 'Successfully subscribed to our newsletter!');
         setFormData({ email: '', name: '' }); // Clear form
         onSuccess?.(data);
+      } else if (response.ok && data.alreadySubscribed) {
+        // Handle already subscribed case as success but don't clear form
+        setStatus('success');
+        setMessage(data.message || 'You are already subscribed to our newsletter!');
+        onSuccess?.(data);
       } else {
         setStatus('error');
         setMessage(data.error || 'Failed to subscribe. Please try again.');
