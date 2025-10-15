@@ -2,15 +2,53 @@
  * @fileoverview Serialization utilities for MongoDB objects.
  * Converts complex MongoDB types (ObjectId, Date) to JSON-safe formats
  * for passing data from Server Components to Client Components in Next.js.
+ *
+ * These utilities are crucial for Next.js applications using MongoDB, as they handle
+ * the conversion of MongoDB-specific types that cannot be directly serialized to JSON.
+ * This ensures seamless data flow between server and client components.
+ *
+ * @example
+ * ```js
+ * import { serializeProject, serializeProjects } from '@/lib/serialize';
+ *
+ * // Serialize single project
+ * const project = await Project.findOne({ slug: 'my-project' });
+ * const serializedProject = serializeProject(project);
+ *
+ * // Serialize multiple projects
+ * const projects = await Project.find({});
+ * const serializedProjects = serializeProjects(projects);
+ * ```
  */
 
 /**
  * Recursively serializes MongoDB ObjectIds, Dates, and nested objects.
  * Ensures data is safe for JSON serialization and client-side consumption.
  *
+ * This function handles the conversion of MongoDB-specific types that are not
+ * natively serializable to JSON. It recursively processes objects and arrays,
+ * converting ObjectIds to strings and Dates to ISO strings while preserving
+ * the original structure.
+ *
  * @function serializeForClient
- * @param {*} obj - The object to serialize
+ * @param {*} obj - The object to serialize (can be any type)
  * @returns {*} Serialized object with ObjectIds converted to strings and Dates to ISO strings
+ *
+ * @example
+ * ```js
+ * // Serialize a simple object
+ * const data = { _id: ObjectId('507f1f77bcf86cd799439011'), name: 'Test' };
+ * const serialized = serializeForClient(data);
+ * // Result: { _id: '507f1f77bcf86cd799439011', name: 'Test' }
+ *
+ * // Serialize nested objects
+ * const complexData = {
+ *   project: { _id: ObjectId(), createdAt: new Date() },
+ *   tags: ['tag1', 'tag2']
+ * };
+ * const serialized = serializeForClient(complexData);
+ * // ObjectIds and Dates are converted to strings
+ * ```
  */
 export function serializeForClient(obj) {
   if (obj === null || obj === undefined) return obj;

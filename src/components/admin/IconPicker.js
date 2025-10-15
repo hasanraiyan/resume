@@ -2,6 +2,24 @@
 
 import { useState, useEffect, useRef } from 'react';
 
+/**
+ * @fileoverview IconPicker - A comprehensive icon selection component for admin interfaces.
+ *
+ * Provides a searchable, categorized interface for selecting icons from a predefined database.
+ * Features include real-time search, category filtering, and visual icon preview with tooltips.
+ * Supports FontAwesome icons across social, professional, features, and general categories.
+ *
+ * @component
+ * @example
+ * ```jsx
+ * <IconPicker
+ *   selectedIcon="fas fa-star"
+ *   onIconSelect={(iconClass) => setSelectedIcon(iconClass)}
+ *   placeholder="Choose an icon..."
+ * />
+ * ```
+ */
+
 // Comprehensive icon database with categories and search keywords
 const ICON_DATABASE = {
   social: [
@@ -186,6 +204,47 @@ const scrollbarStyles = `
   }
 `;
 
+/**
+ * IconPicker Component Props
+ * @typedef {Object} IconPickerProps
+ * @property {string} [selectedIcon=''] - The currently selected icon class (e.g., 'fas fa-star')
+ * @property {Function} onIconSelect - Callback function called when an icon is selected
+ * @property {string} [placeholder='Select an icon...'] - Placeholder text shown when no icon is selected
+ * @property {string} [className=''] - Additional CSS classes to apply to the component
+ */
+
+/**
+ * IconPicker - A comprehensive icon selection component for admin interfaces.
+ *
+ * Provides a searchable, categorized interface for selecting icons from a predefined database.
+ * Features include real-time search, category filtering, and visual icon preview with tooltips.
+ * Supports FontAwesome icons across social, professional, features, and general categories.
+ *
+ * @param {IconPickerProps} props - The component props
+ * @param {string} props.selectedIcon - The currently selected icon class (e.g., 'fas fa-star')
+ * @param {Function} props.onIconSelect - Callback function called when an icon is selected. Receives the icon class as parameter.
+ * @param {string} [props.placeholder='Select an icon...'] - Placeholder text shown when no icon is selected
+ * @param {string} [props.className=''] - Additional CSS classes to apply to the component
+ * @returns {JSX.Element} The IconPicker component
+ *
+ * @example
+ * ```jsx
+ * // Basic usage
+ * <IconPicker
+ *   selectedIcon="fas fa-star"
+ *   onIconSelect={(iconClass) => setSelectedIcon(iconClass)}
+ *   placeholder="Choose an icon..."
+ * />
+ *
+ * // With custom styling
+ * <IconPicker
+ *   selectedIcon=""
+ *   onIconSelect={handleIconSelect}
+ *   placeholder="Select a social media icon..."
+ *   className="w-64"
+ * />
+ * ```
+ */
 export default function IconPicker({
   selectedIcon = '',
   onIconSelect,

@@ -2,6 +2,21 @@
  * @fileoverview AI Context Builder for chatbot system.
  * Fetches and aggregates data from various database sources to build
  * dynamic context for the AI chatbot, including identity, projects, and articles.
+ *
+ * This module is crucial for providing the AI chatbot with up-to-date information
+ * about the portfolio owner, their projects, articles, and chatbot configuration.
+ * All context data is fetched dynamically from the database to ensure the AI
+ * always has current information.
+ *
+ * @example
+ * ```js
+ * import { buildDynamicContext } from '@/lib/ai/context-builder';
+ *
+ * // Build complete context for chatbot
+ * const context = await buildDynamicContext();
+ * console.log(context.coreIdentity.name); // Portfolio owner's name
+ * console.log(context.chatbotSettings.aiName); // AI assistant name
+ * ```
  */
 
 import dbConnect from '../dbConnect';

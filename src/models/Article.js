@@ -2,6 +2,29 @@
  * @fileoverview MongoDB model for blog articles.
  * Defines the schema for article/blog post data with status management,
  * automatic publishing date setting, and text search indexing.
+ *
+ * This model supports a complete blog/article workflow with draft and published
+ * states, automatic publication date setting, and full-text search capabilities.
+ * Essential for content management systems and blog functionality.
+ *
+ * @example
+ * ```js
+ * import Article from '@/models/Article';
+ *
+ * // Create a new draft article
+ * const article = new Article({
+ *   title: 'My Blog Post',
+ *   slug: 'my-blog-post',
+ *   excerpt: 'A brief summary...',
+ *   content: 'Full article content...',
+ *   tags: ['javascript', 'web-development']
+ * });
+ * await article.save();
+ *
+ * // Publish the article
+ * article.status = 'published';
+ * await article.save(); // publishedAt will be set automatically
+ * ```
  */
 
 import mongoose from 'mongoose';
