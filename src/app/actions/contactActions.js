@@ -3,7 +3,53 @@
 
 import dbConnect from '@/lib/dbConnect';
 import Contact from '@/models/Contact';
+import TelegramSettings from '@/models/TelegramSettings';
+import { decrypt } from '@/lib/crypto';
 import { revalidatePath } from 'next/cache';
+
+// Helper function to send notification
+async function sendTelegramNotification(contactData) {
+  try {
+    const settings = await TelegramSettings.findOne({ isEnabled: true }).lean();
+    if (!settings || !settings.botToken || !settings.chatId) {
+      return;
+    }
+
+    const botToken = decrypt(settings.botToken);
+    if (!botToken) {
+      console.error('Failed to decrypt bot token.');
+      return;
+    }
+
+    // Format the message using Telegram's MarkdownV2 syntax
+    const message = `
+*New Contact Message* 📩
+
+*Name:* ${contactData.name.replace(/([_*\[\]()~`>#+\-=|{}.!])/g, '\\$1')}
+*Email:* ${contactData.email.replace(/([_*\[\]()~`>#+\-=|{}.!])/g, '\\$1')}
+*Project Type:* \`${contactData.projectType}\`
+
+*Message:*
+${contactData.message.replace(/([_*\[\]()~`>#+\-=|{}.!])/g, '\\$1')}
+    `.trim();
+
+    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: settings.chatId,
+        text: message,
+        parse_mode: 'MarkdownV2',
+      }),
+    });
+  } catch (error) {
+    // IMPORTANT: Log the error, but don't throw it.
+    // The form submission should still succeed even if the notification fails.
+    console.error('Failed to send Telegram notification:', error);
+  }
+}
 
 export async function createContactSubmission(formData) {
   await dbConnect();
@@ -24,6 +70,9 @@ export async function createContactSubmission(formData) {
 
     // Refresh admin pages
     revalidatePath('/admin/contacts');
+
+    // ** NEW: Send Telegram notification **
+    await sendTelegramNotification(contactData);
 
     return { success: true, message: 'Contact submission saved successfully.' };
   } catch (error) {
