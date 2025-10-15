@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { InlineWidget } from 'react-calendly';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Section, Input } from '@/components/ui';
@@ -238,7 +239,7 @@ export default function Contact() {
         <div className="max-w-3xl mx-auto text-center">
           <div className="p-8 bg-gray-50 border-2 border-black rounded-lg">
             <h3 className="text-lg font-semibold text-black mb-2">Message Sent Successfully!</h3>
-            <p className="text-gray-600">{contactData.messages.success}</p>
+            <p className="text-gray-600 mb-4">{contactData.messages.success}</p>
           </div>
         </div>
       </Section>
@@ -270,6 +271,21 @@ export default function Contact() {
             .map((field) => (
               <div key={field.id}>{renderField(field)}</div>
             ))}
+
+          {/* Calendly Widget */}
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold mb-4 text-center">Or Schedule a Call Directly</h3>
+            <div className="calendly-container relative w-full min-h-[1000px] overflow-hidden rounded-lg border border-gray-200">
+              <InlineWidget
+                url="https://calendly.com/raiyanhasan2006/30min"
+                styles={{
+                  height: '1000px',
+                  width: '100%',
+                  minWidth: '320px',
+                }}
+              />
+            </div>
+          </div>
 
           {/* Submit Button */}
           <div className="text-center pt-6 sm:pt-7">
