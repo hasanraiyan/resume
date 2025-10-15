@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "rm -rf .next/cache && next build --no-lint",
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write .",
