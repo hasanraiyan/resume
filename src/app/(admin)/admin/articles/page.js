@@ -1,4 +1,6 @@
 import { getAllArticles } from '@/app/actions/articleActions';
+import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
+import { Button, Card, Badge } from '@/components/ui';
 import Link from 'next/link';
 
 export default async function ArticlesPage() {
@@ -13,69 +15,73 @@ export default async function ArticlesPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Articles</h1>
-        <Link
-          href="/admin/articles/new"
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-        >
-          New Article
-        </Link>
-      </div>
-
-      {articles.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-gray-500 mb-4">No articles found.</div>
-          <Link href="/admin/articles/new" className="text-blue-600 hover:text-blue-800">
-            Create your first article
-          </Link>
-        </div>
-      ) : (
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
-          <ul className="divide-y divide-gray-200">
-            {articles.map((article) => (
-              <li key={article._id}>
-                <div className="px-4 py-4 sm:px-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center">
-                        <p className="text-sm font-medium text-blue-600 truncate">
-                          {article.title}
-                        </p>
-                        <span
-                          className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            article.status === 'published'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}
-                        >
-                          {article.status}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-sm text-gray-600 truncate">{article.excerpt}</p>
-                      <p className="mt-1 text-xs text-gray-500">
-                        Created: {new Date(article.createdAt).toLocaleDateString()}
-                        {article.publishedAt && (
-                          <> • Published: {new Date(article.publishedAt).toLocaleDateString()}</>
-                        )}
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <Link
-                        href={`/admin/articles/${article._id}/edit`}
-                        className="text-blue-600 hover:text-blue-900 text-sm font-medium"
-                      >
-                        Edit
-                      </Link>
-                    </div>
-                  </div>
+    <AdminPageWrapper
+      title="Articles"
+      description="Create and manage your blog articles and news posts."
+      actionButton={
+        <Button href="/admin/articles/new" variant="primary">
+          <i className="fas fa-plus mr-2"></i> New Article
+        </Button>
+      }
+    >
+      <div className="space-y-4">
+        {articles.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="w-16 h-16 bg-neutral-100 rounded-lg flex items-center justify-center mx-auto mb-6">
+              <i className="fas fa-newspaper text-neutral-400 text-2xl"></i>
+            </div>
+            <h3 className="text-xl font-semibold text-black mb-2">No articles yet</h3>
+            <p className="text-neutral-600 mb-8">
+              Get started by creating your first article or blog post.
+            </p>
+            <Button href="/admin/articles/new" variant="primary">
+              <i className="fas fa-plus mr-2"></i>
+              Create First Article
+            </Button>
+          </div>
+        ) : (
+          articles.map((article) => (
+            <Card key={article._id} className="p-4 flex justify-between items-center">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-neutral-100 rounded-lg flex items-center justify-center">
+                  <i className="fas fa-newspaper text-neutral-600 text-lg"></i>
                 </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
+                <div>
+                  <div className="flex items-center space-x-2 mb-1">
+                    <p className="font-bold">{article.title}</p>
+                    <Badge
+                      variant={article.status === 'published' ? 'success' : 'secondary'}
+                      className={
+                        article.status === 'published'
+                          ? 'bg-green-100 p-2 text-green-800'
+                          : 'p-2 bg-gray-100 text-gray-800'
+                      }
+                    >
+                      {article.status}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-neutral-600">
+                    {article.excerpt.length > 80
+                      ? `${article.excerpt.substring(0, 80)}...`
+                      : article.excerpt}
+                  </p>
+                  <p className="text-xs text-neutral-500 mt-1">
+                    Created: {new Date(article.createdAt).toLocaleDateString()}
+                    {article.publishedAt && (
+                      <> • Published: {new Date(article.publishedAt).toLocaleDateString()}</>
+                    )}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <Button href={`/admin/articles/${article._id}/edit`} variant="ghost" size="small">
+                  Edit
+                </Button>
+              </div>
+            </Card>
+          ))
+        )}
+      </div>
+    </AdminPageWrapper>
   );
 }
