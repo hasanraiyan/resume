@@ -8,6 +8,7 @@ import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import SuccessToast from '@/components/admin/SuccessToast';
 import ActionButton from '@/components/admin/ActionButton';
+import MediaLibraryModal from './MediaLibraryModal';
 
 export function ArticleForm({ article, onSave }) {
   const router = useRouter();
@@ -24,6 +25,7 @@ export function ArticleForm({ article, onSave }) {
   });
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -37,6 +39,12 @@ export function ArticleForm({ article, onSave }) {
         .trim();
       setFormData((prev) => ({ ...prev, slug }));
     }
+  };
+
+  const handleMediaSelect = (asset) => {
+    console.log('Selected asset from media library:', asset);
+    setFormData((prev) => ({ ...prev, coverImage: asset.secure_url }));
+    setIsMediaModalOpen(false);
   };
 
   const handleSubmit = (e, action, overrideStatus = null) => {
@@ -162,13 +170,36 @@ export function ArticleForm({ article, onSave }) {
             <label htmlFor="coverImage" className="block text-sm font-medium text-gray-700 mb-2">
               Cover Image URL
             </label>
-            <Input
-              id="coverImage"
-              type="url"
-              value={formData.coverImage}
-              onChange={(e) => handleInputChange('coverImage', e.target.value)}
-              placeholder="https://example.com/image.jpg"
-            />
+            <div className="flex gap-2">
+              <Input
+                id="coverImage"
+                type="url"
+                value={formData.coverImage}
+                onChange={(e) => handleInputChange('coverImage', e.target.value)}
+                placeholder="https://example.com/image.jpg or select from media library"
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                onClick={() => setIsMediaModalOpen(true)}
+                className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                <i className="fas fa-images mr-1"></i>
+                Media
+              </Button>
+            </div>
+            {formData.coverImage && (
+              <div className="mt-2">
+                <img
+                  src={formData.coverImage}
+                  alt="Cover preview"
+                  className="w-32 h-20 object-cover rounded border"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           <div>
@@ -231,6 +262,13 @@ export function ArticleForm({ article, onSave }) {
           )}
         </div>
       </form>
+
+      {/* Media Library Modal */}
+      <MediaLibraryModal
+        isOpen={isMediaModalOpen}
+        onClose={() => setIsMediaModalOpen(false)}
+        onSelect={handleMediaSelect}
+      />
     </div>
   );
 }

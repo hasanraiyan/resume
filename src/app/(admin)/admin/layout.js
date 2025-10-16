@@ -36,6 +36,7 @@ function AdminLayoutContent({ children }) {
   const navigation = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: 'fas fa-tachometer-alt' },
     { name: 'Manage Sections', href: '/admin/sections', icon: 'fas fa-cog' },
+    { name: 'Media Library', href: '/admin/media', icon: 'fas fa-images' },
     { name: 'Projects', href: '/admin/projects', icon: 'fas fa-folder' },
     { name: 'Services', href: '/admin/services', icon: 'fas fa-tools' },
     { name: 'Articles', href: '/admin/articles', icon: 'fas fa-newspaper' },
@@ -88,7 +89,7 @@ function AdminLayoutContent({ children }) {
         {/* Overlay for mobile */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+            className="fixed inset-0  z-40 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           ></div>
         )}

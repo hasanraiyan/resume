@@ -2,10 +2,13 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui';
-import CustomDropdownMinimal from '@/components/CustomDropdown';
+import CustomDropdownMinimal from '../CustomDropdown';
+import MediaLibraryModal from './MediaLibraryModal';
 
 export default function ImageManager({ images, setImages }) {
   const [editingIndex, setEditingIndex] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTargetIndex, setModalTargetIndex] = useState(null);
 
   const addImage = () => {
     setImages([...images, { type: 'image', url: '', alt: '', caption: '' }]);
@@ -23,8 +26,28 @@ export default function ImageManager({ images, setImages }) {
     setImages(newImages);
   };
 
+  const openMediaLibrary = (index) => {
+    setModalTargetIndex(index);
+    setIsModalOpen(true);
+  };
+
+  const handleAssetSelect = (asset) => {
+    if (modalTargetIndex !== null) {
+      updateImage(modalTargetIndex, 'url', asset.secure_url);
+      updateImage(modalTargetIndex, 'alt', asset.filename); // Auto-fill alt text
+    }
+    setIsModalOpen(false);
+    setModalTargetIndex(null);
+  };
+
   return (
     <div className="space-y-4">
+      <MediaLibraryModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSelect={handleAssetSelect}
+      />
+
       <div className="space-y-2">
         {images.map((image, index) => {
           const mediaType = image.type || 'image';
@@ -75,17 +98,29 @@ export default function ImageManager({ images, setImages }) {
                     <label className="block text-xs font-semibold text-black mb-1 uppercase">
                       {isVideo ? 'YouTube Video URL *' : 'Image URL *'}
                     </label>
-                    <input
-                      type="url"
-                      value={image.url}
-                      onChange={(e) => updateImage(index, 'url', e.target.value)}
-                      placeholder={
-                        isVideo
-                          ? 'https://www.youtube.com/watch?v=...'
-                          : 'https://example.com/image.jpg'
-                      }
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm"
-                    />
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="url"
+                        value={image.url}
+                        onChange={(e) => updateImage(index, 'url', e.target.value)}
+                        placeholder={
+                          isVideo
+                            ? 'https://www.youtube.com/watch?v=...'
+                            : 'https://example.com/image.jpg'
+                        }
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm"
+                      />
+                      {!isVideo && (
+                        <Button
+                          type="button"
+                          onClick={() => openMediaLibrary(index)}
+                          variant="secondary"
+                          size="small"
+                        >
+                          Library
+                        </Button>
+                      )}
+                    </div>
                     {isVideo && (
                       <p className="text-xs text-neutral-600 mt-1">
                         Supports: youtube.com/watch?v=ID or youtu.be/ID
