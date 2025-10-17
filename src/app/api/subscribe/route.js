@@ -4,8 +4,20 @@ import Subscriber from '@/models/Subscriber';
 import { rateLimit } from '@/lib/rateLimit';
 
 /**
- * POST /api/subscribe - Subscribe to newsletter
- * Handles newsletter subscription requests with validation and duplicate prevention
+ * @fileoverview Newsletter Subscription API route for managing email subscriptions.
+ * Provides endpoints for subscribing to newsletters, checking subscription status,
+ * and preventing duplicate subscriptions with rate limiting and validation.
+ *
+ * @description This API endpoint handles:
+ * - Newsletter subscription with email validation and duplicate prevention
+ * - Subscription status checking for existing subscribers
+ * - Rate limiting to prevent spam and abuse
+ * - IP tracking and metadata collection for analytics
+ * - Integration hooks for email service providers (Mailchimp ready)
+ * - Comprehensive error handling and user feedback
+ *
+ * Features include email format validation, case-insensitive duplicate checking,
+ * source tracking for analytics, and graceful handling of race conditions.
  */
 export async function POST(request) {
   try {

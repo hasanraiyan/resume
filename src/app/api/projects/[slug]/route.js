@@ -1,3 +1,18 @@
+/**
+ * @fileoverview Individual Project API route for CRUD operations on specific projects.
+ * Handles fetching, updating, and deleting individual projects by slug or MongoDB ObjectId.
+ * Supports both slug-based and ID-based project identification for maximum flexibility.
+ *
+ * @description This API endpoint provides:
+ * - GET: Retrieve individual project details by slug or ID
+ * - PUT: Update project information (admin only)
+ * - DELETE: Remove projects from the database (admin only)
+ *
+ * The endpoint intelligently handles both slug-based URLs (e.g., /projects/my-project)
+ * and MongoDB ObjectId-based URLs for admin operations, providing flexible
+ * project identification and comprehensive error handling.
+ */
+
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Project from '@/models/Project';

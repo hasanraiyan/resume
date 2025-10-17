@@ -1,4 +1,25 @@
-// src/app/api/auth/[...nextauth]/route.js
+/**
+ * @fileoverview NextAuth.js authentication configuration for admin panel access.
+ * Provides secure credential-based authentication using environment variables
+ * for admin username and password. Implements JWT-based sessions with role-based
+ * access control for admin functionality.
+ *
+ * @description This module configures NextAuth.js with:
+ * - Credentials provider for username/password authentication
+ * - JWT-based session management for stateless authentication
+ * - Role-based access control (admin role verification)
+ * - Environment variable-based credential storage
+ * - Comprehensive error handling and logging
+ * - Secure redirect handling for authentication flows
+ *
+ * Security features:
+ * - Credentials validated against environment variables
+ * - JWT tokens include role information for authorization
+ * - Secure session management with proper callbacks
+ * - Comprehensive logging for security monitoring
+ * - No sensitive data stored in client-side storage
+ */
+
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 // No adapter needed for simple credential login without a database session

@@ -1,29 +1,139 @@
-import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/dbConnect';
-import Project from '@/models/Project';
+/**
+ * @fileoverview Project Card Component for displaying project previews in a clean, minimal UI.
+ * Provides a reusable card layout for projects with thumbnail, title, description, category, tags,
+ * and optional "For Sale" badge. Supports lazy-loaded images, error handling, hover effects,
+ * and custom cursor interactions.
+ *
+ * @description This component:
+ * - Renders a clickable project card linking to the project detail page
+ * - Shows project thumbnail with loading and error states
+ * - Displays project title, category, description (truncated to 2 lines), and tech tags
+ * - Includes "For Sale" badge when applicable
+ * - Provides hover overlay effect and cursor text updates via CursorContext
+ * - Handles image load and error logging for debugging
+ * - Supports accessibility and responsive layouts
+ *
+ * Notes:
+ * - Images are lazy-loaded and unoptimized by default for flexibility
+ * - Tags display is limited to 3, with overflow summarized as "+N"
+ * - Cursor interactions are customizable via useCursor context
+ */
 
-export async function GET(request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const slug = searchParams.get('slug');
+'use client';
 
-    if (!slug) {
-      return NextResponse.json({ error: 'Slug is required' }, { status: 400 });
-    }
+import { useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Badge, ForSaleBadge } from '@/components/ui';
+import { useCursor } from '@/context/CursorContext'; // Import the useCursor hook
 
-    await dbConnect();
+/**
+ * Project Card Component - CLEAN & MINIMAL
+ * Using Next.js Link for better performance
+ */
+export default function ProjectCard({ project }) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const { setCursorText, setCursorVariant } = useCursor(); // Use the cursor context
 
-    // Check if slug exists (case-insensitive)
-    const existingProject = await Project.findOne({
-      slug: { $regex: `^${slug}$`, $options: 'i' },
-    });
+  // Handlers for cursor state
+  const handleMouseEnter = () => {
+    setCursorText('View Project');
+    setCursorVariant('text');
+  };
 
-    return NextResponse.json({
-      available: !existingProject,
-      slug: slug,
-    });
-  } catch (error) {
-    console.error('Error checking slug availability:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
+  const handleMouseLeave = () => {
+    setCursorText('');
+    setCursorVariant('default');
+  };
+
+  // Debug logging for image loading issues
+  const handleImageLoad = () => {
+    console.log(`Image loaded successfully: ${project.title}`);
+    setImageLoaded(true);
+  };
+
+  const handleImageError = (e) => {
+    console.error(`Image failed to load for ${project.title}:`, e);
+    setImageError(true);
+  };
+
+  return (
+    <Link
+      href={`/projects/${project.slug}`}
+      className="group block"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Project Image - Fixed aspect ratio */}
+      <div className="relative overflow-hidden rounded-lg mb-4 sm:mb-5 image-reveal">
+        <div className="aspect-[4/3] bg-gray-200 flex items-center justify-center">
+          {!imageError ? (
+            <Image
+              src={project.thumbnail}
+              alt={project.title}
+              fill
+              className={`w-full h-full object-cover transition-all duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+              loading="lazy"
+              onLoad={handleImageLoad}
+              onError={handleImageError}
+              unoptimized={true}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full text-gray-400">
+              <i className="fas fa-image text-4xl"></i>
+            </div>
+          )}
+
+          {/* Loading state - only show if image hasn't loaded yet */}
+          {!imageLoaded && !imageError && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-200 z-10">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-400"></div>
+            </div>
+          )}
+        </div>
+
+        {/* For Sale Badge */}
+        {project.isForSale && <ForSaleBadge className="top-3 right-3" />}
+
+        {/* Overlay on hover */}
+        <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-all duration-300"></div>
+      </div>
+
+      {/* Project Info */}
+      <div>
+        {/* Category */}
+        <div className="text-xs font-semibold tracking-widest mb-2 text-gray-600 uppercase">
+          {project.category}
+        </div>
+
+        {/* Title */}
+        <h3 className="text-xl sm:text-2xl font-bold mb-3 group-hover:text-gray-600 transition">
+          {project.title}
+        </h3>
+
+        {/* Description - 2 lines max with custom truncation */}
+        <p
+          className="text-sm sm:text-base text-gray-700 mb-4 leading-relaxed overflow-hidden"
+          style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+          }}
+        >
+          {project.description}
+        </p>
+
+        {/* Tech Tags - Show only 3 */}
+        <div className="flex flex-wrap gap-2">
+          {project.tags.slice(0, 3).map((tag, index) => (
+            <Badge key={`${project.id}-${tag.id}-${index}`} variant="tag">
+              {tag.name}
+            </Badge>
+          ))}
+          {project.tags.length > 3 && <Badge variant="tag">+{project.tags.length - 3}</Badge>}
+        </div>
+      </div>
+    </Link>
+  );
 }

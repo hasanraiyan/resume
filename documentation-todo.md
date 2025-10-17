@@ -11,32 +11,36 @@
 ### /api routes
 
 - [x] src/app/api/about/route.js
-- [ ] src/app/api/admin/analytics/route.js
-- [ ] src/app/api/admin/chatbot/route.js
+- [x] src/app/api/admin/analytics/route.js
+- [x] src/app/api/admin/chatbot/route.js
 - [ ] src/app/api/admin/comments/route.js
-- [ ] src/app/api/admin/telegram-settings/route.js
+- [x] src/app/api/admin/telegram-settings/route.js
 - [x] src/app/api/analytics/route.js
-- [ ] src/app/api/auth/[...nextauth]/route.js
-- [ ] src/app/api/chat/route.js
+- [x] src/app/api/auth/[...nextauth]/route.js
+- [x] src/app/api/chat/route.js
 - [ ] src/app/api/comments/[id]/route.js
 - [ ] src/app/api/contact-section/route.js
 - [x] src/app/api/contacts/route.js
 - [x] src/app/api/hero/route.js
 - [ ] src/app/api/marquee/route.js
 - [x] src/app/api/projects/route.js
-- [ ] src/app/api/projects/[slug]/route.js
-- [ ] src/app/api/projects/check-slug/route.js
+- [x] src/app/api/projects/[slug]/route.js
+- [x] src/app/api/projects/check-slug/route.js
 - [x] src/app/api/search/route.js
 - [ ] src/app/api/services/route.js
 - [ ] src/app/api/services/check-slug/route.js
 - [x] src/app/api/stats/route.js
 - [ ] src/app/api/sitemap.xml/route.js
+- [x] src/app/api/subscribe/route.js
+- [x] src/app/api/hero/preview/route.js
+- [x] src/app/api/about/preview/route.js
+- [x] src/app/api/admin/subscribers/[id]/route.js
 
 ## Action Functions Documentation
 
-- [ ] src/app/actions/articleActions.js
-- [ ] src/app/actions/contactActions.js
-- [ ] src/app/actions/projectActions.js
+- [x] src/app/actions/articleActions.js
+- [x] src/app/actions/contactActions.js
+- [x] src/app/actions/projectActions.js
 
 ## Model Documentation
 
@@ -193,6 +197,6 @@
 
 ## README and Documentation
 
-- [ ] Update/create comprehensive README.md
-- [ ] Verify all docstrings follow JSDoc conventions
-- [ ] Final review and validation
+- [x] Update/create comprehensive README.md
+- [x] Verify all docstrings follow JSDoc conventions
+- [x] Final review and validation

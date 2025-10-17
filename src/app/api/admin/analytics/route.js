@@ -1,11 +1,39 @@
-// src/app/api/admin/analytics/route.js
+/**
+ * @fileoverview Admin Analytics API route for managing and retrieving analytics data.
+ * This module provides comprehensive analytics functionality for administrators,
+ * including pageview stats, session data, search analytics, user flow visualization,
+ * and data cleanup capabilities.
+ *
+ * @description This API endpoint offers:
+ * - Overview analytics with pageviews, sessions, and top pages
+ * - Detailed pageview and session statistics with date filtering
+ * - Search analytics including popular terms and performance metrics
+ * - User flow visualization data for understanding navigation patterns
+ * - Event logging and recent activity tracking
+ * - Chatbot interaction analytics and tool usage statistics
+ * - Proactive engagement analytics for user interaction tracking
+ * - Data cleanup functionality for removing old records
+ *
+ * All endpoints require admin authentication and provide JSON responses
+ * with detailed analytics data for dashboard visualization.
+ */
+
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import dbConnect from '@/lib/dbConnect';
 import Analytics from '@/models/Analytics';
 
-// Helper function to check if user is admin
+/**
+ * Verifies if the current user has admin privileges.
+ * Checks the user's session for authentication and admin role.
+ *
+ * @async
+ * @function isAdmin
+ * @param {Request} request - The Next.js request object containing session information
+ * @returns {Promise<boolean>} True if the user is authenticated and has admin role, false otherwise
+ * @throws {Error} Logs error to console but returns false for any authentication failures
+ */
 async function isAdmin(request) {
   try {
     const session = await getServerSession(authOptions);
@@ -22,6 +50,37 @@ async function isAdmin(request) {
 }
 
 // GET /api/admin/analytics - Get analytics data (admin only)
+
+/**
+ * Handles GET requests for analytics data with admin authentication.
+ * Provides comprehensive analytics information based on query parameters.
+ *
+ * @async
+ * @function GET
+ * @param {Request} request - Next.js request object
+ * @param {URL} request.url - Request URL for extracting query parameters
+ * @returns {Promise<NextResponse>} JSON response with analytics data or error message
+ *
+ * @description Supports multiple analytics data types:
+ * - overview: General stats including pageviews, sessions, top pages, and chatbot analytics
+ * - pageviews: Detailed pageview statistics with date filtering
+ * - sessions: Session-based analytics and user behavior data
+ * - search: Search term analytics and performance metrics
+ * - user_flow: User journey visualization data for Sankey diagrams
+ * - events: Recent analytics events with pagination support
+ *
+ * @example
+ * // Get overview analytics
+ * GET /api/admin/analytics?type=overview
+ *
+ * @example
+ * // Get pageviews for specific date range
+ * GET /api/admin/analytics?type=pageviews&startDate=2024-01-01&endDate=2024-01-31
+ *
+ * @example
+ * // Get paginated events
+ * GET /api/admin/analytics?type=events&page=2&limit=25
+ */
 export async function GET(request) {
   try {
     // Check if user is admin
@@ -342,9 +401,25 @@ export async function GET(request) {
 }
 
 /**
- * Generalizes a URL path to group dynamic segments.
- * @param {string} path The specific URL path.
- * @returns {string} The generalized path.
+ * Generalizes a URL path to group dynamic segments for analytics aggregation.
+ * Converts specific dynamic paths (like /projects/123) into generic patterns
+ * (like /projects/[slug]) to enable meaningful user flow analysis.
+ *
+ * @function generalizePath
+ * @param {string} path - The specific URL path to generalize
+ * @returns {string} The generalized path with dynamic segments replaced by placeholders
+ *
+ * @example
+ * // Returns: '/projects/[slug]'
+ * generalizePath('/projects/my-awesome-project');
+ *
+ * @example
+ * // Returns: '/projects' (unchanged - main listing page)
+ * generalizePath('/projects');
+ *
+ * @example
+ * // Returns: '/admin/projects/[id]/edit'
+ * generalizePath('/admin/projects/123/edit');
  */
 function generalizePath(path) {
   if (path.startsWith('/admin/projects/') && path.endsWith('/edit')) {
@@ -365,10 +440,33 @@ function generalizePath(path) {
 }
 
 /**
- * Aggregates analytics events to generate user flow data (nodes and links).
- * @param {Date} startDate - The start date for the analysis.
- * @param {Date} endDate - The end date for the analysis.
- * @returns {Promise<{nodes: Array, links: Array}>}
+ * Aggregates analytics events to generate user flow data for visualization.
+ * Processes pageview events to create Sankey diagram data showing user navigation patterns.
+ * Groups similar paths and calculates transition frequencies between pages.
+ *
+ * @async
+ * @function getUserFlowData
+ * @param {Date} startDate - The start date for the analysis period
+ * @param {Date} endDate - The end date for the analysis period
+ * @returns {Promise<{nodes: Array<string>, links: Array<{from: string, to: string, flow: number}>, topJourneys: Array<{path: string, count: number}>}>}
+ * Object containing:
+ * - nodes: Array of unique page paths (both specific and generalized)
+ * - links: Array of transitions between pages with flow counts
+ * - topJourneys: Array of most common user journey patterns
+ *
+ * @description This function performs several steps:
+ * 1. Aggregates ordered page paths for each user session
+ * 2. Generalizes dynamic paths (e.g., /projects/abc → /projects/[slug])
+ * 3. Calculates transition frequencies between pages
+ * 4. Prunes insignificant flows to keep only top transitions
+ * 5. Identifies top user journey patterns
+ *
+ * @example
+ * const flowData = await getUserFlowData(
+ *   new Date('2024-01-01'),
+ *   new Date('2024-01-31')
+ * );
+ * // Returns: { nodes: ['/', '/projects', '/projects/[slug]'], links: [...], topJourneys: [...] }
  */
 async function getUserFlowData(startDate, endDate) {
   // Step 1: Aggregate ordered paths for each session
@@ -457,6 +555,38 @@ async function getUserFlowData(startDate, endDate) {
 }
 
 // POST /api/admin/analytics/cleanup - Clean up old analytics data (admin only)
+
+/**
+ * Handles POST requests for cleaning up old analytics data.
+ * Removes analytics records older than the specified number of days.
+ * Requires admin authentication for security.
+ *
+ * @async
+ * @function POST
+ * @param {Request} request - Next.js request object
+ * @returns {Promise<NextResponse>} JSON response with cleanup results or error message
+ *
+ * @description This endpoint allows administrators to:
+ * - Remove old analytics data to manage database size
+ * - Specify custom retention period in days
+ * - Get detailed feedback on cleanup operation results
+ * - Maintain database performance by removing historical data
+ *
+ * @example
+ * // Clean up data older than 1 year (default)
+ * POST /api/admin/analytics/cleanup
+ * Body: {}
+ *
+ * @example
+ * // Clean up data older than 6 months
+ * POST /api/admin/analytics/cleanup
+ * Body: { "olderThanDays": 180 }
+ *
+ * @example
+ * // Clean up data older than 2 years
+ * POST /api/admin/analytics/cleanup
+ * Body: { "olderThanDays": 730 }
+ */
 export async function POST(request) {
   try {
     // Check if user is admin

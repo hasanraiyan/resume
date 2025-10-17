@@ -3,6 +3,7 @@ import './globals.css';
 import SessionProvider from '@/components/SessionProvider';
 import AnalyticsProvider from '@/components/AnalyticsProvider';
 import { SiteProvider } from '@/context/SiteContext';
+import { CursorProvider } from '@/context/CursorContext'; // Import CursorProvider
 import ChatbotWidget from '@/components/chatbot/ChatbotWidget';
 import dbConnect from '@/lib/dbConnect';
 import HeroSection from '@/models/HeroSection';
@@ -68,12 +69,16 @@ export default async function RootLayout({ children }) {
       </head>
       <body className="bg-gray-50">
         <AnalyticsProvider>
-          <SessionProvider>
-            <SiteProvider value={{ heroData: serializedHeroData, initials }}>
-              {children}
-              <ChatbotWidget />
-            </SiteProvider>
-          </SessionProvider>
+          <CursorProvider>
+            {' '}
+            {/* Wrap with CursorProvider */}
+            <SessionProvider>
+              <SiteProvider value={{ heroData: serializedHeroData, initials }}>
+                {children}
+                <ChatbotWidget />
+              </SiteProvider>
+            </SessionProvider>
+          </CursorProvider>
         </AnalyticsProvider>
       </body>
     </html>

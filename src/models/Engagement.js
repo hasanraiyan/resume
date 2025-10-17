@@ -51,7 +51,6 @@ const EngagementSchema = new mongoose.Schema(
     expiresAt: {
       type: Date,
       required: true,
-      index: true,
       default: () => new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
     },
   },

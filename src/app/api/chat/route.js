@@ -2,6 +2,17 @@
  * @fileoverview Chat API route for handling AI-powered chatbot interactions.
  * This module provides conversational AI capabilities with function calling
  * to access portfolio data (projects and articles) dynamically.
+ *
+ * @description This API endpoint processes user messages through an AI chatbot that can:
+ * - List and retrieve project details using database queries
+ * - List and retrieve article content from the blog
+ * - Perform intelligent searches across portfolio content
+ * - Maintain conversation context and chat history
+ * - Track analytics for chatbot interactions
+ * - Stream responses back to the client in real-time
+ *
+ * The chatbot uses OpenAI's API with function calling to dynamically access
+ * portfolio data and provide contextual responses based on the current page.
  */
 
 import { NextResponse } from 'next/server';

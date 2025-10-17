@@ -1,3 +1,20 @@
+/**
+ * @fileoverview About Section Preview API route for real-time preview functionality.
+ * Provides a safe preview endpoint that generates about section data without
+ * saving to the database, allowing administrators to see changes in real-time
+ * before committing them to the live site.
+ *
+ * @description This API endpoint allows administrators to:
+ * - Generate preview data for about section changes
+ * - Validate about section structure and content
+ * - Test UI updates without affecting live content
+ * - Provide immediate feedback for admin interface changes
+ * - Preview biography text, features, and resume information
+ *
+ * The preview functionality is completely safe as it doesn't modify
+ * any database content and only returns the processed preview data.
+ */
+
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';

@@ -1,3 +1,20 @@
+/**
+ * @fileoverview Admin Subscribers API route for managing newsletter subscribers.
+ * Provides endpoints for retrieving, updating, and deleting subscriber records
+ * with pagination, filtering, and search capabilities for admin dashboard management.
+ *
+ * @description This API endpoint allows administrators to:
+ * - Retrieve paginated lists of subscribers with filtering options
+ * - Search subscribers by email or name
+ * - Filter by subscription status and source
+ * - Update subscriber active/inactive status
+ * - Delete subscriber records
+ * - Track subscription and unsubscription timestamps
+ *
+ * All operations support proper error handling and data validation
+ * for reliable admin panel functionality.
+ */
+
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Subscriber from '@/models/Subscriber';

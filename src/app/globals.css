@@ -33,9 +33,19 @@ body {
   z-index: 9999;
   transform: translate(-50%, -50%);
   transition:
-    width 0.3s,
-    height 0.3s,
-    background-color 0.3s;
+    background-color 0.3s,
+    border-color 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cursor-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #000;
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 
 .cursor-follower {
@@ -49,11 +59,7 @@ body {
   transform: translate(-50%, -50%);
 }
 
-.cursor.hover {
-  width: 60px;
-  height: 60px;
-  background: rgba(0, 0, 0, 0.1);
-}
+/* REMOVED .cursor.hover - GSAP now handles this dynamically */
 
 /* Shimmer animation for skeleton loading */
 @keyframes shimmer {

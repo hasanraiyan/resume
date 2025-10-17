@@ -106,12 +106,18 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 resume/
 ├── src/
 │   ├── app/                    # Next.js App Router pages and API routes
-│   │   ├── api/               # API endpoints
-│   │   │   ├── chat/          # AI chatbot API
-│   │   │   ├── search/        # Search API
-│   │   │   ├── analytics/     # Analytics tracking
-│   │   │   ├── projects/      # Projects CRUD
-│   │   │   └── admin/         # Admin APIs
+│   │   ├── api/               # API endpoints (fully documented)
+│   │   │   ├── chat/          # AI chatbot API with streaming
+│   │   │   ├── search/        # Unified search API
+│   │   │   ├── analytics/     # Analytics tracking & admin dashboard
+│   │   │   ├── projects/      # Projects CRUD with slug validation
+│   │   │   ├── auth/          # NextAuth.js authentication
+│   │   │   ├── admin/         # Admin-only APIs (analytics, chatbot, telegram)
+│   │   │   ├── subscribe/     # Newsletter subscription API
+│   │   │   ├── stats/         # Statistics section API
+│   │   │   ├── hero/          # Hero section management
+│   │   │   ├── about/         # About section management
+│   │   │   └── contacts/      # Contact form submissions
 │   │   ├── admin/             # Admin dashboard pages
 │   │   ├── projects/          # Project showcase pages
 │   │   ├── blog/              # Blog/article pages
@@ -119,21 +125,29 @@ resume/
 │   ├── components/            # React components
 │   │   ├── ui/                # Reusable UI components
 │   │   ├── projects/          # Project-specific components
-│   │   └── search/            # Search components
+│   │   ├── search/            # Search components
+│   │   └── admin/             # Admin panel components
 │   ├── lib/                   # Utility libraries
-│   │   ├── ai/                # AI context builder
-│   │   ├── search/            # Search functionality
+│   │   ├── ai/                # AI context builder & tools
+│   │   ├── search/            # Search functionality (Fuse.js)
 │   │   ├── analytics.js       # Analytics tracker
 │   │   ├── dbConnect.js       # MongoDB connection
-│   │   └── serialize.js       # Data serialization
+│   │   ├── serialize.js       # Data serialization
+│   │   ├── crypto.js          # Encryption utilities
+│   │   └── rateLimit.js       # Rate limiting for APIs
 │   ├── models/                # MongoDB Mongoose models
-│   │   ├── Project.js         # Project schema
+│   │   ├── Project.js         # Project schema with galleries
 │   │   ├── Article.js         # Article/blog schema
 │   │   ├── Analytics.js       # Analytics events schema
 │   │   ├── User.js            # User schema
 │   │   ├── HeroSection.js     # Homepage hero schema
 │   │   ├── AboutSection.js    # About section schema
-│   │   └── ChatbotSettings.js # AI chatbot config
+│   │   ├── StatsSection.js    # Statistics section schema
+│   │   ├── ChatbotSettings.js # AI chatbot configuration
+│   │   ├── ChatLog.js         # Chat conversation logs
+│   │   ├── Contact.js         # Contact form submissions
+│   │   ├── Subscriber.js      # Newsletter subscribers
+│   │   └── TelegramSettings.js # Telegram bot integration
 │   ├── hooks/                 # Custom React hooks
 │   │   ├── useAnalytics.js    # Analytics hooks
 │   │   └── useHeroData.js     # Hero data management
