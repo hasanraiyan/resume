@@ -5,7 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { Section } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { Mic, MicOff, Video, VideoOff, PhoneOff } from 'lucide-react';
-import io from 'socket.io-client'; // <-- Import the client
+import io from 'socket.io-client';
+import VideoPlayer from '@/components/ui/VideoPlayer';
 
 // A simple, temporary unique ID generator
 const generateParticipantId = () => `anon-${Math.random().toString(36).substring(2, 9)}`;
@@ -20,12 +21,10 @@ export default function VideoCallRoomPage() {
 
   const [participantId] = useState(generateParticipantId());
   const socketRef = useRef(null);
-  const localStreamRef = useRef(null);
   const peerConnectionsRef = useRef(new Map());
-  const localVideoRef = useRef(null);
-  const remoteVideoRefs = useRef(new Map());
 
-  const [remoteStreams, setRemoteStreams] = useState(new Map());
+  const [localStream, setLocalStream] = useState(null);
+  const [remoteStreams, setRemoteStreams] = useState([]);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
 
@@ -61,12 +60,18 @@ export default function VideoCallRoomPage() {
 
       pc.ontrack = (event) => {
         console.log(`Received remote track from ${peerId}`);
-        setRemoteStreams((prev) => new Map(prev).set(peerId, event.streams[0]));
+        setRemoteStreams((prev) => {
+          // Avoid adding duplicate streams
+          if (prev.find((p) => p.peerId === peerId)) {
+            return prev;
+          }
+          return [...prev, { peerId, stream: event.streams[0] }];
+        });
       };
 
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach((track) => {
-          pc.addTrack(track, localStreamRef.current);
+      if (localStream) {
+        localStream.getTracks().forEach((track) => {
+          pc.addTrack(track, localStream);
         });
       }
 
@@ -138,18 +143,16 @@ export default function VideoCallRoomPage() {
         peerConnectionsRef.current.get(peerId).close();
         peerConnectionsRef.current.delete(peerId);
       }
-      setRemoteStreams((prev) => {
-        const newStreams = new Map(prev);
-        newStreams.delete(peerId);
-        return newStreams;
-      });
+      setRemoteStreams((prev) => prev.filter((p) => p.peerId !== peerId));
     });
 
     // Cleanup on component unmount
     return () => {
       console.log('Cleaning up video call component...');
       socket.disconnect();
-      localStreamRef.current?.getTracks().forEach((track) => track.stop());
+      if (localStream) {
+        localStream.getTracks().forEach((track) => track.stop());
+      }
       peerConnectionsRef.current.forEach((pc) => pc.close());
     };
   }, [roomId, participantId, createPeerConnection, sendSignal]);
@@ -159,10 +162,7 @@ export default function VideoCallRoomPage() {
     const getMedia = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        localStreamRef.current = stream;
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
-        }
+        setLocalStream(stream);
         // If peer connections already exist, add tracks to them
         peerConnectionsRef.current.forEach((pc) => {
           stream.getTracks().forEach((track) => pc.addTrack(track, stream));
@@ -180,18 +180,9 @@ export default function VideoCallRoomPage() {
     router.push('/video-call');
   };
 
-  useEffect(() => {
-    remoteStreams.forEach((stream, peerId) => {
-      const videoEl = remoteVideoRefs.current.get(peerId);
-      if (videoEl && videoEl.srcObject !== stream) {
-        videoEl.srcObject = stream;
-      }
-    });
-  }, [remoteStreams]);
-
   const toggleAudio = () => {
-    if (localStreamRef.current) {
-      localStreamRef.current.getAudioTracks().forEach((track) => {
+    if (localStream) {
+      localStream.getAudioTracks().forEach((track) => {
         track.enabled = !track.enabled;
       });
       setIsMuted((prev) => !prev);
@@ -199,8 +190,8 @@ export default function VideoCallRoomPage() {
   };
 
   const toggleVideo = () => {
-    if (localStreamRef.current) {
-      localStreamRef.current.getVideoTracks().forEach((track) => {
+    if (localStream) {
+      localStream.getVideoTracks().forEach((track) => {
         track.enabled = !track.enabled;
       });
       setIsVideoOff((prev) => !prev);
@@ -218,27 +209,16 @@ export default function VideoCallRoomPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 auto-rows-fr">
           {/* Local Video */}
           <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-            <video
-              ref={localVideoRef}
-              autoPlay
-              muted
-              playsInline
-              className="w-full h-full object-cover"
-            />
+            <VideoPlayer stream={localStream} muted={true} />
             <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-sm px-2 py-1 rounded">
               You
             </div>
           </div>
 
           {/* Remote Videos */}
-          {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (
+          {remoteStreams.map(({ peerId, stream }) => (
             <div key={peerId} className="relative aspect-video bg-black rounded-lg overflow-hidden">
-              <video
-                ref={(el) => remoteVideoRefs.current.set(peerId, el)}
-                autoPlay
-                playsInline
-                className="w-full h-full object-cover"
-              />
+              <VideoPlayer key={stream.id} stream={stream} />
               <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-sm px-2 py-1 rounded">
                 Participant {peerId.substring(0, 5)}
               </div>
