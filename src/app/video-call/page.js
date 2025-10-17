@@ -6,38 +6,33 @@ import { Section } from '@/components/ui';
 import ActionButton from '@/components/admin/ActionButton';
 import toast from 'react-hot-toast';
 
+// Browser-compatible random ID generator
+const generateRoomId = () => {
+  return 'room-' + Math.random().toString(36).substring(2, 11);
+};
+
 export default function CreateVideoCallPage() {
   const [isCreating, setIsCreating] = useState(false);
   const router = useRouter();
 
-  const handleCreateRoom = async () => {
+  const handleCreateRoom = () => {
     setIsCreating(true);
-    const toastId = toast.loading('Creating a new room...');
+    toast.loading('Creating a new room...');
 
-    try {
-      const response = await fetch('/api/video-call/create', {
-        method: 'POST',
-      });
+    const newRoomId = generateRoomId();
 
-      if (!response.ok) {
-        throw new Error('Failed to create room');
-      }
-
-      const { roomId } = await response.json();
-      toast.success('Room created! Redirecting...', { id: toastId });
-      router.push(`/video-call/${roomId}`);
-    } catch (error) {
-      console.error('Error creating video call room:', error);
-      toast.error('Could not create a room. Please try again.', { id: toastId });
-      setIsCreating(false);
-    }
+    // A slight delay to allow the toast to be seen
+    setTimeout(() => {
+      toast.success('Room created! Redirecting...');
+      router.push(`/video-call/${newRoomId}`);
+    }, 500);
   };
 
   return (
     <Section
       id="create-video-call"
       title="Video Call Demo"
-      description="Create a new video call room to test the WebRTC implementation."
+      description="Click the button below to create a new video call room and get a shareable link."
       centered={true}
       className="py-24"
     >

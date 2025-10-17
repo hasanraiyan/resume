@@ -5,12 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import { Section } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { Mic, MicOff, Video, VideoOff, PhoneOff } from 'lucide-react';
-import ActionButton from '@/components/admin/ActionButton';
+import io from 'socket.io-client'; // <-- Import the client
 
-// A simple, temporary unique ID generator for anonymous users
+// A simple, temporary unique ID generator
 const generateParticipantId = () => `anon-${Math.random().toString(36).substring(2, 9)}`;
 
-// Using a public STUN server
 const iceServers = {
   iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
 };
@@ -18,40 +17,40 @@ const iceServers = {
 export default function VideoCallRoomPage() {
   const { roomId } = useParams();
   const router = useRouter();
-  const [participantId] = useState(generateParticipantId());
-  const [lastPoll, setLastPoll] = useState(new Date().toISOString());
 
+  const [participantId] = useState(generateParticipantId());
+  const socketRef = useRef(null);
   const localStreamRef = useRef(null);
   const peerConnectionsRef = useRef(new Map());
   const localVideoRef = useRef(null);
-  const remoteVideoRefs = useRef(new Map()); // Store refs to video elements
+  const remoteVideoRefs = useRef(new Map());
 
   const [remoteStreams, setRemoteStreams] = useState(new Map());
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
 
-  // Helper function to send signals
+  // Function to send signals via WebSocket
   const sendSignal = useCallback(
-    async (receiverId, type, payload) => {
-      try {
-        await fetch(`/api/video-call/${roomId}/signal`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ senderId: participantId, receiverId, type, payload }),
-        });
-      } catch (error) {
-        console.error('Error sending signal:', error);
-      }
+    (receiverId, type, data) => {
+      socketRef.current.emit('relay-signal', {
+        roomId,
+        senderId: participantId,
+        receiverId,
+        type,
+        data,
+      });
     },
     [roomId, participantId]
   );
 
+  // Function to create a peer connection
   const createPeerConnection = useCallback(
     (peerId) => {
       if (peerConnectionsRef.current.has(peerId)) {
         return peerConnectionsRef.current.get(peerId);
       }
 
+      console.log(`Creating peer connection for ${peerId}`);
       const pc = new RTCPeerConnection(iceServers);
 
       pc.onicecandidate = (event) => {
@@ -62,8 +61,7 @@ export default function VideoCallRoomPage() {
 
       pc.ontrack = (event) => {
         console.log(`Received remote track from ${peerId}`);
-        const stream = event.streams[0];
-        setRemoteStreams((prev) => new Map(prev).set(peerId, stream));
+        setRemoteStreams((prev) => new Map(prev).set(peerId, event.streams[0]));
       };
 
       if (localStreamRef.current) {
@@ -78,77 +76,83 @@ export default function VideoCallRoomPage() {
     [sendSignal]
   );
 
-  // Join room and handle offers
+  // Main useEffect for WebSocket connection and event handling
   useEffect(() => {
-    if (!localStreamRef.current) return;
+    // Connect to the signaling server
+    const socket = io(process.env.NEXT_PUBLIC_SIGNALING_SERVER_URL || 'http://localhost:4000');
+    socketRef.current = socket;
 
-    const joinRoom = async () => {
-      try {
-        const response = await fetch(`/api/video-call/${roomId}/join`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ participantId }),
-        });
-        const { otherParticipants } = await response.json();
+    // 1. Join the room once connected
+    socket.on('connect', () => {
+      console.log('Connected to signaling server with socket ID:', socket.id);
+      socket.emit('join-room', roomId, participantId);
+    });
 
-        console.log('Other participants:', otherParticipants);
+    // 2. Receive list of existing participants and create offers
+    socket.on('existing-participants', (participants) => {
+      console.log('Existing participants:', participants);
+      participants.forEach((peerId) => {
+        const pc = createPeerConnection(peerId);
+        pc.createOffer()
+          .then((offer) => pc.setLocalDescription(offer))
+          .then(() => {
+            sendSignal(peerId, 'offer', pc.localDescription);
+          });
+      });
+    });
 
-        // Create offer for each existing participant
-        otherParticipants.forEach(async (peerId) => {
-          const pc = createPeerConnection(peerId);
-          const offer = await pc.createOffer();
-          await pc.setLocalDescription(offer);
-          sendSignal(peerId, 'offer', offer);
-        });
-      } catch (error) {
-        console.error('Error joining room:', error);
-      }
-    };
+    // 3. A new user has joined, create a peer connection for them
+    socket.on('user-joined', (peerId) => {
+      console.log(`New user joined: ${peerId}. We will wait for their offer.`);
+      // The new user will send us an offer, which is handled by 'signal-received'
+      createPeerConnection(peerId);
+    });
 
-    joinRoom();
-  }, [roomId, participantId, createPeerConnection, sendSignal]);
+    // 4. Handle signals received from other users
+    socket.on('signal-received', async ({ senderId, type, data }) => {
+      console.log(`Signal received from ${senderId}:`, type);
+      const pc = createPeerConnection(senderId);
 
-  // Polling for signals
-  useEffect(() => {
-    const pollInterval = setInterval(async () => {
-      try {
-        const response = await fetch(
-          `/api/video-call/${roomId}/poll?participantId=${participantId}&since=${lastPoll}`
-        );
-        const { signals } = await response.json();
-        setLastPoll(new Date().toISOString());
-
-        signals.forEach(async (signal) => {
-          const { senderId, type, payload } = signal;
-          const pc = createPeerConnection(senderId);
-
-          switch (type) {
-            case 'offer':
-              await pc.setRemoteDescription(new RTCSessionDescription(payload));
-              const answer = await pc.createAnswer();
-              await pc.setLocalDescription(answer);
-              sendSignal(senderId, 'answer', answer);
-              break;
-            case 'answer':
-              await pc.setRemoteDescription(new RTCSessionDescription(payload));
-              break;
-            case 'candidate':
-              if (payload) {
-                // a null candidate can be sent
-                await pc.addIceCandidate(new RTCIceCandidate(payload));
-              }
-              break;
-            default:
-              break;
+      switch (type) {
+        case 'offer':
+          await pc.setRemoteDescription(new RTCSessionDescription(data));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          sendSignal(senderId, 'answer', answer);
+          break;
+        case 'answer':
+          await pc.setRemoteDescription(new RTCSessionDescription(data));
+          break;
+        case 'candidate':
+          if (data) {
+            await pc.addIceCandidate(new RTCIceCandidate(data));
           }
-        });
-      } catch (error) {
-        console.error('Error polling signals:', error);
+          break;
       }
-    }, 2000);
+    });
 
-    return () => clearInterval(pollInterval);
-  }, [roomId, participantId, lastPoll, createPeerConnection, sendSignal]);
+    // 5. A user has left, clean up their connection
+    socket.on('user-left', (peerId) => {
+      console.log(`User left: ${peerId}`);
+      if (peerConnectionsRef.current.has(peerId)) {
+        peerConnectionsRef.current.get(peerId).close();
+        peerConnectionsRef.current.delete(peerId);
+      }
+      setRemoteStreams((prev) => {
+        const newStreams = new Map(prev);
+        newStreams.delete(peerId);
+        return newStreams;
+      });
+    });
+
+    // Cleanup on component unmount
+    return () => {
+      console.log('Cleaning up video call component...');
+      socket.disconnect();
+      localStreamRef.current?.getTracks().forEach((track) => track.stop());
+      peerConnectionsRef.current.forEach((pc) => pc.close());
+    };
+  }, [roomId, participantId, createPeerConnection, sendSignal]);
 
   // Get user media
   useEffect(() => {
@@ -159,20 +163,23 @@ export default function VideoCallRoomPage() {
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = stream;
         }
+        // If peer connections already exist, add tracks to them
+        peerConnectionsRef.current.forEach((pc) => {
+          stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+        });
       } catch (error) {
         console.error('Error accessing media devices.', error);
         toast.error('Could not access camera or microphone.');
       }
     };
     getMedia();
-
-    return () => {
-      localStreamRef.current?.getTracks().forEach((track) => track.stop());
-      peerConnectionsRef.current.forEach((pc) => pc.close());
-    };
   }, []);
 
-  // Effect to attach remote streams to video elements
+  const leaveCall = () => {
+    socketRef.current.emit('leave-room');
+    router.push('/video-call');
+  };
+
   useEffect(() => {
     remoteStreams.forEach((stream, peerId) => {
       const videoEl = remoteVideoRefs.current.get(peerId);
@@ -198,13 +205,6 @@ export default function VideoCallRoomPage() {
       });
       setIsVideoOff((prev) => !prev);
     }
-  };
-
-  const leaveCall = () => {
-    localStreamRef.current?.getTracks().forEach((track) => track.stop());
-    peerConnectionsRef.current.forEach((pc) => pc.close());
-    peerConnectionsRef.current.clear();
-    router.push('/video-call');
   };
 
   return (
