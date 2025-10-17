@@ -33,18 +33,19 @@ const getInitials = (name = '') => {
     .toUpperCase();
 };
 
+export const viewport = {
+  themeColor: '#1f2937',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+};
+
 export const metadata = {
   title: 'Portfolio - Minimalist Creative',
   description: 'Creative Developer Portfolio',
   manifest: '/manifest.json',
-  themeColor: '#1f2937',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    viewportFit: 'cover',
-  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
