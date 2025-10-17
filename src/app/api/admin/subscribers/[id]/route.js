@@ -138,12 +138,13 @@ export async function PATCH(request, { params }) {
       );
     }
 
-    const updateData = { isActive };
+    const updateData = { isActive, updatedAt: new Date() }; // Add updatedAt timestamp
 
     if (!isActive) {
       updateData.unsubscribedAt = new Date();
     } else {
-      updateData.unsubscribedAt = undefined;
+      // When reactivating, clear the unsubscribedAt field
+      updateData.$unset = { unsubscribedAt: 1 };
     }
 
     const subscriber = await Subscriber.findByIdAndUpdate(id, updateData, { new: true });

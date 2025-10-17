@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Button, Card } from '@/components/ui';
 import {
   faDownload,
   faSearch,
@@ -13,9 +13,11 @@ import {
   faUserCheck,
   faUserClock,
 } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import CustomDropdownMinimal from '../CustomDropdown';
+
 /**
- * Subscribers management client component with enhanced UI
+ * Subscribers management client component with two-color design
  * @param {Object} props
  * @param {Array} props.initialSubscribers - Initial subscribers data
  * @param {Object} props.initialStats - Initial statistics
@@ -114,7 +116,7 @@ export default function SubscribersClient({ initialSubscribers, initialStats }) 
               ? {
                   ...sub,
                   isActive: updatedSubscriber.isActive,
-                  unsubscribedAt: updatedSubscriber.unsubscribedAt,
+                  unsubscribedAt: updatedSubscriber.unsubscribedAt || null,
                 }
               : sub
           )
@@ -174,79 +176,84 @@ export default function SubscribersClient({ initialSubscribers, initialStats }) 
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Newsletter Subscribers</h1>
-          <p className="text-gray-600 mt-1">
-            Manage your newsletter subscribers and view analytics
-          </p>
-        </div>
-        <button
-          onClick={handleExportCSV}
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <FontAwesomeIcon icon={faDownload} className="w-4 h-4 mr-2" />
-          Export CSV
-        </button>
+      <div className="border-b-2 border-neutral-200 pb-6">
+        <h1 className="text-4xl font-bold text-black font-['Playfair_Display'] mb-2">
+          Newsletter Subscribers
+        </h1>
+        <p className="text-neutral-600 text-lg">
+          Manage your newsletter subscribers and view analytics
+        </p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <FontAwesomeIcon icon={faUsers} className="w-6 h-6 text-blue-600" />
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-neutral-600 uppercase tracking-wider">
+                Total Subscribers
+              </p>
+              <p className="text-3xl font-bold text-black mt-2 font-['Playfair_Display']">
+                {stats.total}
+              </p>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Subscribers</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+            <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center group-hover:bg-neutral-800 transition-colors">
+              <FontAwesomeIcon icon={faUsers} className="text-white" />
             </div>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <FontAwesomeIcon icon={faUserCheck} className="w-6 h-6 text-green-600" />
+        <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-neutral-600 uppercase tracking-wider">
+                Active Subscribers
+              </p>
+              <p className="text-3xl font-bold text-black mt-2 font-['Playfair_Display']">
+                {stats.active}
+              </p>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Active Subscribers</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.active}</p>
+            <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center group-hover:bg-neutral-800 transition-colors">
+              <FontAwesomeIcon icon={faUserCheck} className="text-white" />
             </div>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-yellow-100 rounded-lg">
-              <FontAwesomeIcon icon={faUserClock} className="w-6 h-6 text-yellow-600" />
+        <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-neutral-600 uppercase tracking-wider">
+                This Week
+              </p>
+              <p className="text-3xl font-bold text-black mt-2 font-['Playfair_Display']">
+                {stats.recent}
+              </p>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">This Week</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.recent}</p>
+            <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center group-hover:bg-neutral-800 transition-colors">
+              <FontAwesomeIcon icon={faUserClock} className="text-white" />
             </div>
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <Card className="p-6 border-2 border-transparent hover:border-black transition-all duration-300">
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Search */}
-          <div className="flex-1 mt-3">
+          <div className="flex-1">
             <div className="relative">
               <FontAwesomeIcon
                 icon={faSearch}
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-4 h-4"
               />
               <input
                 type="text"
                 placeholder="Search subscribers by email or name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 border-2 border-neutral-200 rounded-lg focus:border-black focus:outline-none transition-colors bg-white"
               />
             </div>
           </div>
@@ -272,57 +279,69 @@ export default function SubscribersClient({ initialSubscribers, initialStats }) 
               onChange={(e) => setSourceFilter(e.target.value)}
             />
           </div>
+
+          {/* Export Button */}
+          <Button
+            onClick={handleExportCSV}
+            className="bg-black text-white hover:bg-neutral-800 transition-colors px-6 py-3"
+          >
+            <FontAwesomeIcon icon={faDownload} className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
         </div>
-      </div>
+      </Card>
 
       {/* Subscribers Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">
+      <Card className="border-2 border-transparent hover:border-black transition-all duration-300">
+        <div className="px-6 py-4 border-b border-neutral-200">
+          <h3 className="text-lg font-semibold text-black">
             Subscribers ({filteredSubscribers.length})
           </h3>
         </div>
 
         {filteredSubscribers.length === 0 ? (
-          <div className="p-6 text-center text-gray-500">
+          <div className="p-6 text-center text-neutral-500">
             No subscribers found matching your criteria.
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <table className="min-w-full">
+              <thead>
+                <tr className="border-b border-neutral-200">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-neutral-600 uppercase tracking-wider">
                     Subscriber
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-neutral-600 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-neutral-600 uppercase tracking-wider">
                     Source
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-neutral-600 uppercase tracking-wider">
                     Subscribed
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-right text-xs font-medium text-neutral-600 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white">
                 {filteredSubscribers.map((subscriber) => (
-                  <tr key={subscriber.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                  <tr
+                    key={subscriber.id}
+                    className="border-b border-neutral-100 hover:bg-neutral-50 transition-colors"
+                  >
+                    <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{subscriber.email}</div>
+                        <div className="text-sm font-medium text-black">{subscriber.email}</div>
                         {subscriber.name && (
-                          <div className="text-sm text-gray-500">{subscriber.name}</div>
+                          <div className="text-sm text-neutral-500">{subscriber.name}</div>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4">
                       <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
                           subscriber.isActive
                             ? 'bg-green-100 text-green-800'
                             : 'bg-red-100 text-red-800'
@@ -331,13 +350,13 @@ export default function SubscribersClient({ initialSubscribers, initialStats }) 
                         {subscriber.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
+                    <td className="px-6 py-4 text-sm text-neutral-600 capitalize">
                       {subscriber.source}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm text-neutral-600">
                       {formatDate(subscriber.subscribedAt)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-4 text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
                         <button
                           onClick={() => handleToggleStatus(subscriber.id, subscriber.isActive)}
@@ -372,7 +391,7 @@ export default function SubscribersClient({ initialSubscribers, initialStats }) 
             </table>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }
