@@ -98,7 +98,7 @@ export default function Stats() {
     <section className="stats-section py-12 sm:py-16 md:py-20 bg-black text-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-12">
         {/* Simple flexbox layout that centers everything perfectly */}
-        <div className="flex flex-wrap justify-center items-start gap-6 sm:gap-8">
+        <div className="flex justify-center items-start gap-6 sm:gap-8">
           {statsData.stats?.map((stat) => (
             <div key={stat.id} className="text-center group relative w-full max-w-[200px]">
               {/* Combined Icon + Number Row */}
