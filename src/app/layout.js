@@ -5,6 +5,7 @@ import AnalyticsProvider from '@/components/AnalyticsProvider';
 import { SiteProvider } from '@/context/SiteContext';
 import { CursorProvider } from '@/context/CursorContext'; // Import CursorProvider
 import ChatbotWidget from '@/components/chatbot/ChatbotWidget';
+import PWAManager from '@/components/PWAManager';
 import dbConnect from '@/lib/dbConnect';
 import HeroSection from '@/models/HeroSection';
 import { serializeForClient } from '@/lib/serialize';
@@ -35,6 +36,20 @@ const getInitials = (name = '') => {
 export const metadata = {
   title: 'Portfolio - Minimalist Creative',
   description: 'Creative Developer Portfolio',
+  manifest: '/manifest.json',
+  themeColor: '#1f2937',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+    viewportFit: 'cover',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Portfolio',
+  },
   openGraph: {
     title: 'Portfolio - Minimalist Creative',
     description: 'Creative Developer Portfolio',
@@ -46,6 +61,14 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'Portfolio - Minimalist Creative',
     description: 'Creative Developer Portfolio',
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'default',
+    'apple-mobile-web-app-title': 'Portfolio',
+    'msapplication-TileColor': '#1f2937',
+    'msapplication-config': '/browserconfig.xml',
   },
 };
 
@@ -76,6 +99,7 @@ export default async function RootLayout({ children }) {
               <SiteProvider value={{ heroData: serializedHeroData, initials }}>
                 {children}
                 <ChatbotWidget />
+                <PWAManager />
               </SiteProvider>
             </SessionProvider>
           </CursorProvider>
