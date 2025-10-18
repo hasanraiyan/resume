@@ -46,6 +46,18 @@ class AnalyticsTracker {
     if (user && user.role === 'admin') {
       this.userRole = 'admin';
       console.log('AnalyticsTracker: User identified as admin.');
+
+      // Retroactively update any existing events in the queue
+      // that were tracked before the session was loaded
+      this.eventQueue.forEach((event) => {
+        if (event.userRole === 'visitor') {
+          event.userRole = 'admin';
+          console.log(
+            'AnalyticsTracker: Retroactively updated event userRole to admin:',
+            event.path
+          );
+        }
+      });
     }
   }
 

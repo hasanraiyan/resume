@@ -326,10 +326,19 @@ export async function GET(request) {
                 {
                   $match: {
                     'properties.toolsCount': { $gt: 0 },
+                    'properties.toolsUsed': { $exists: true, $ne: null },
                   },
                 },
                 {
-                  $unwind: '$properties.toolsUsed',
+                  $unwind: {
+                    path: '$properties.toolsUsed',
+                    preserveNullAndEmptyArrays: false,
+                  },
+                },
+                {
+                  $match: {
+                    'properties.toolsUsed.name': { $exists: true, $ne: null },
+                  },
                 },
                 {
                   $group: {
@@ -339,7 +348,21 @@ export async function GET(request) {
                       $avg: {
                         $cond: [
                           {
-                            $eq: [{ $ifNull: ['$properties.toolResults.hasError', false] }, false],
+                            $and: [
+                              { $ne: ['$properties.toolsUsed', null] },
+                              { $ne: ['$properties.toolsUsed', undefined] },
+                              {
+                                $or: [
+                                  { $eq: ['$properties.toolsUsed.success', true] },
+                                  {
+                                    $eq: [
+                                      { $ifNull: ['$properties.toolResults.hasError', true] },
+                                      false,
+                                    ],
+                                  },
+                                ],
+                              },
+                            ],
                           },
                           1,
                           0,
@@ -362,6 +385,7 @@ export async function GET(request) {
                 {
                   $match: {
                     'properties.toolsCount': { $gt: 0 },
+                    'properties.toolsUsed': { $exists: true, $ne: null, $not: { $size: 0 } },
                   },
                 },
                 { $count: 'count' },
@@ -405,13 +429,21 @@ export async function GET(request) {
           proactiveStatsPromise,
         ]);
 
+        console.log('=== CHATBOT ANALYTICS DEBUG ===');
+        console.log('Chatbot results structure:', JSON.stringify(chatbotResults, null, 2));
+        console.log('Chatbot results length:', chatbotResults?.length);
+        if (chatbotResults?.[0]) {
+          console.log('First result keys:', Object.keys(chatbotResults[0]));
+          console.log('Tool usage data:', chatbotResults[0].toolUsage);
+        }
+
         // Structure chatbot analytics data
         data.chatbotAnalytics = {
-          totalInteractions: chatbotResults[0]?.totalInteractions[0]?.count || 0,
-          topQuestions: chatbotResults[0]?.topQuestions || [],
-          ctaPerformance: chatbotResults[0]?.ctaPerformance[0] || { total: 0, ctaCount: 0 },
-          toolUsage: chatbotResults[0]?.toolUsage || [],
-          interactionsWithTools: chatbotResults[0]?.interactionsWithTools[0]?.count || 0,
+          totalInteractions: chatbotResults?.[0]?.totalInteractions?.[0]?.count || 0,
+          topQuestions: chatbotResults?.[0]?.topQuestions || [],
+          ctaPerformance: chatbotResults?.[0]?.ctaPerformance?.[0] || { total: 0, ctaCount: 0 },
+          toolUsage: chatbotResults?.[0]?.toolUsage || [],
+          interactionsWithTools: chatbotResults?.[0]?.interactionsWithTools?.[0]?.count || 0,
         };
 
         break;

@@ -28,6 +28,11 @@ export default function AnalyticsProvider({ children }) {
     console.log('Analytics enabled:', analytics.isEnabled);
     console.log('Session ID:', analytics.sessionId);
 
+    // Set user role if session is already loaded
+    if (status !== 'loading' && session?.user) {
+      analytics.setUser(session.user);
+    }
+
     // Flush events when page is about to unload
     const handleBeforeUnload = () => {
       console.log('Page unloading, flushing analytics...');
@@ -44,7 +49,7 @@ export default function AnalyticsProvider({ children }) {
       const analytics = getAnalytics();
       analytics.flush();
     };
-  }, []);
+  }, []); // Only run once on mount
 
   useEffect(() => {
     // This effect runs whenever the session status changes
