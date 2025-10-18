@@ -220,16 +220,40 @@ export async function GET(request) {
         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
         const now = new Date();
 
-        // Total pageviews in last 30 days
-        data.totalPageviews = await Analytics.countDocuments({
-          eventType: 'pageview',
-          timestamp: { $gte: thirtyDaysAgo, $lte: now },
-        });
+        // --- Updated Pageviews and Sessions Aggregation ---
+        const [visitorPageviews, adminPageviews, visitorSessions, adminSessions] =
+          await Promise.all([
+            Analytics.countDocuments({
+              eventType: 'pageview',
+              timestamp: { $gte: thirtyDaysAgo, $lte: now },
+              userRole: 'visitor',
+            }),
+            Analytics.countDocuments({
+              eventType: 'pageview',
+              timestamp: { $gte: thirtyDaysAgo, $lte: now },
+              userRole: 'admin',
+            }),
+            Analytics.distinct('sessionId', {
+              timestamp: { $gte: thirtyDaysAgo, $lte: now },
+              userRole: 'visitor',
+            }),
+            Analytics.distinct('sessionId', {
+              timestamp: { $gte: thirtyDaysAgo, $lte: now },
+              userRole: 'admin',
+            }),
+          ]);
 
-        // Total unique sessions in last 30 days
-        data.totalSessions = await Analytics.distinct('sessionId', {
-          timestamp: { $gte: thirtyDaysAgo, $lte: now },
-        }).then((sessions) => sessions.length);
+        data.totalPageviews = {
+          total: visitorPageviews + adminPageviews,
+          visitor: visitorPageviews,
+          admin: adminPageviews,
+        };
+
+        data.totalSessions = {
+          total: visitorSessions.length + adminSessions.length,
+          visitor: visitorSessions.length,
+          admin: adminSessions.length,
+        };
 
         // Top pages
         data.topPages = await Analytics.getPageviewStats(thirtyDaysAgo, now);
@@ -249,22 +273,26 @@ export async function GET(request) {
           {
             $group: {
               _id: {
-                $dateToString: {
-                  format: '%Y-%m-%d',
-                  date: '$timestamp',
+                date: {
+                  $dateToString: {
+                    format: '%Y-%m-%d',
+                    date: '$timestamp',
+                  },
                 },
+                userRole: '$userRole',
               },
               count: { $sum: 1 },
             },
           },
           {
             $project: {
-              date: '$_id',
+              date: '$_id.date',
+              userRole: '$_id.userRole',
               views: '$count',
               _id: 0,
             },
           },
-          { $sort: { date: 1 } },
+          { $sort: { date: 1, userRole: 1 } },
         ]);
 
         // Chatbot analytics aggregation
@@ -272,6 +300,7 @@ export async function GET(request) {
           {
             $match: {
               eventType: 'chatbot_interaction',
+              userRole: 'visitor', // Only count visitor interactions for chatbot stats
               timestamp: { $gte: thirtyDaysAgo, $lte: now },
             },
           },

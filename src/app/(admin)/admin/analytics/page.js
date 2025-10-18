@@ -103,16 +103,36 @@ export default function AnalyticsDashboard() {
   };
 
   // Chart data for overview tab
+  const allDates = analyticsData?.dailyPageviews
+    ? [...new Set(analyticsData.dailyPageviews.map((d) => new Date(d.date).toLocaleDateString()))]
+    : [];
+
+  const visitorData = allDates.map((dateLabel) => {
+    const dayData = analyticsData.dailyPageviews.find(
+      (d) => new Date(d.date).toLocaleDateString() === dateLabel && d.userRole === 'visitor'
+    );
+    return dayData ? dayData.views : 0;
+  });
+
+  const adminData = allDates.map((dateLabel) => {
+    const dayData = analyticsData.dailyPageviews.find(
+      (d) => new Date(d.date).toLocaleDateString() === dateLabel && d.userRole === 'admin'
+    );
+    return dayData ? dayData.views : 0;
+  });
+
   const chartData = {
-    labels:
-      analyticsData?.dailyPageviews?.map((day) => new Date(day.date).toLocaleDateString()) || [],
+    labels: allDates,
     datasets: [
       {
-        label: 'Pageviews',
-        data: analyticsData?.dailyPageviews?.map((day) => day.views) || [],
+        label: 'Visitors',
+        data: visitorData,
         backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        borderColor: 'rgba(0, 0, 0, 1)',
-        borderWidth: 1,
+      },
+      {
+        label: 'Admin',
+        data: adminData,
+        backgroundColor: 'rgba(0, 0, 0, 0.3)',
       },
     ],
   };
@@ -142,6 +162,7 @@ export default function AnalyticsDashboard() {
     },
     scales: {
       y: {
+        stacked: true,
         beginAtZero: true,
         ticks: {
           font: {
@@ -154,6 +175,7 @@ export default function AnalyticsDashboard() {
         },
       },
       x: {
+        stacked: true,
         ticks: {
           font: {
             family: 'Space Grotesk',
@@ -232,10 +254,10 @@ export default function AnalyticsDashboard() {
                         Total Pageviews
                       </p>
                       <p className="text-3xl font-bold text-black mt-2 font-['Playfair_Display']">
-                        {formatNumber(analyticsData.totalPageviews || 0)}
+                        {formatNumber(analyticsData.totalPageviews?.visitor || 0)}
                       </p>
                       <p className="text-sm text-neutral-500 font-['Space_Grotesk']">
-                        Last 30 days
+                        Visitors ({formatNumber(analyticsData.totalPageviews?.admin || 0)} admin)
                       </p>
                     </div>
                     <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center">
@@ -251,10 +273,10 @@ export default function AnalyticsDashboard() {
                         Unique Sessions
                       </p>
                       <p className="text-3xl font-bold text-black mt-2 font-['Playfair_Display']">
-                        {formatNumber(analyticsData.totalSessions || 0)}
+                        {formatNumber(analyticsData.totalSessions?.visitor || 0)}
                       </p>
                       <p className="text-sm text-neutral-500 font-['Space_Grotesk']">
-                        Last 30 days
+                        Visitors ({formatNumber(analyticsData.totalSessions?.admin || 0)} admin)
                       </p>
                     </div>
                     <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center">

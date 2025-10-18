@@ -92,19 +92,19 @@ export default async function RootLayout({ children }) {
         />
       </head>
       <body className="bg-gray-50">
-        <AnalyticsProvider>
-          <CursorProvider>
-            {' '}
-            {/* Wrap with CursorProvider */}
-            <SessionProvider>
+        <SessionProvider>
+          <AnalyticsProvider>
+            <CursorProvider>
+              {' '}
+              {/* Wrap with CursorProvider */}
               <SiteProvider value={{ heroData: serializedHeroData, initials }}>
                 {children}
                 <ChatbotWidget />
                 <PWAManager />
               </SiteProvider>
-            </SessionProvider>
-          </CursorProvider>
-        </AnalyticsProvider>
+            </CursorProvider>
+          </AnalyticsProvider>
+        </SessionProvider>
       </body>
     </html>
   );

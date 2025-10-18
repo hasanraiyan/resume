@@ -26,12 +26,26 @@ class AnalyticsTracker {
     this.sessionId = this.getOrCreateSessionId();
     this.isEnabled = !this.isBot();
     this.eventQueue = [];
+    this.userRole = 'visitor'; // Default role
     this.flushInterval = null;
 
     if (this.isEnabled) {
       this.startAutoFlush();
       this.trackPageView();
       this.setupRouteChangeTracking();
+    }
+  }
+
+  /**
+   * Sets the user role for analytics tracking.
+   *
+   * @method setUser
+   * @param {object|null} user - The user object from the session
+   */
+  setUser(user) {
+    if (user && user.role === 'admin') {
+      this.userRole = 'admin';
+      console.log('AnalyticsTracker: User identified as admin.');
     }
   }
 
@@ -174,6 +188,7 @@ class AnalyticsTracker {
       userAgent: navigator.userAgent,
       referrer: document.referrer,
       properties,
+      userRole: this.userRole, // Add user role to every event
       timestamp: new Date().toISOString(),
     };
 

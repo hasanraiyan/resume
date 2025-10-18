@@ -14,7 +14,8 @@
     "lint": "eslint",
     "format": "prettier --write .",
     "check-format": "prettier --check .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "migrate-analytics": "node scripts/migrate-analytics-roles.js"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^7.1.0",
@@ -52,6 +53,7 @@
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.19",
+    "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
     "eslint-config-prettier": "^10.1.8",

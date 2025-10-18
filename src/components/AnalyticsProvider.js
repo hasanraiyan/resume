@@ -3,6 +3,7 @@
 
 import { createContext, useContext, useEffect } from 'react';
 import { getAnalytics } from '@/lib/analytics';
+import { useSession } from 'next-auth/react';
 
 const AnalyticsContext = createContext();
 
@@ -15,6 +16,8 @@ export function useAnalyticsContext() {
 }
 
 export default function AnalyticsProvider({ children }) {
+  const { data: session, status } = useSession();
+
   useEffect(() => {
     // Initialize analytics tracker
     console.log('=== ANALYTICS PROVIDER DEBUG ===');
@@ -42,6 +45,14 @@ export default function AnalyticsProvider({ children }) {
       analytics.flush();
     };
   }, []);
+
+  useEffect(() => {
+    // This effect runs whenever the session status changes
+    if (status !== 'loading') {
+      const analytics = getAnalytics();
+      analytics.setUser(session?.user);
+    }
+  }, [status, session]);
 
   const value = {
     analytics: getAnalytics(),

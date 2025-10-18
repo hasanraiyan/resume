@@ -200,7 +200,7 @@ export async function POST(request) {
       console.log(`Processing event ${i + 1}:`, JSON.stringify(event, null, 2));
 
       // Validate required fields
-      const { eventType, path, sessionId, userAgent, referrer, properties = {} } = event;
+      const { eventType, path, sessionId, userAgent, referrer, properties = {}, userRole } = event;
 
       if (!eventType || !path || !sessionId) {
         console.log(`Event ${i + 1} validation failed - missing required fields:`, {
@@ -272,6 +272,7 @@ export async function POST(request) {
         properties,
         ipHash: hashIP(clientIP),
         deviceInfo,
+        userRole, // Add user role to the database record
         timestamp: new Date(),
       };
 

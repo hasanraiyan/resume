@@ -172,6 +172,14 @@ const AnalyticsSchema = new mongoose.Schema(
       index: true,
     },
 
+    // User role for distinguishing admin traffic
+    userRole: {
+      type: String,
+      enum: ['admin', 'visitor'],
+      default: 'visitor',
+      index: true,
+    },
+
     // Device/browser information derived from user agent
     deviceInfo: {
       browser: String,
