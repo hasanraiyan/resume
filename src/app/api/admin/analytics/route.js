@@ -196,21 +196,21 @@ export async function GET(request) {
 
       case 'events':
         // Get recent events with pagination
-        const page = parseInt(searchParams.get('page') || '1');
-        const limit = parseInt(searchParams.get('limit') || '50');
-        console.log('Fetching events for page:', page, 'limit:', limit);
-        const skip = (page - 1) * limit;
+        const eventsPageParam = parseInt(searchParams.get('page') || '1');
+        const eventsLimitParam = parseInt(searchParams.get('limit') || '50');
+        console.log('Fetching events for page:', eventsPageParam, 'limit:', eventsLimitParam);
+        const eventsSkipParam = (eventsPageParam - 1) * eventsLimitParam;
 
         data.events = await Analytics.find({})
           .sort({ timestamp: -1 })
-          .skip(skip)
-          .limit(limit)
+          .skip(eventsSkipParam)
+          .limit(eventsLimitParam)
           .lean();
 
         data.pagination = {
-          page,
-          limit,
-          hasMore: data.events.length === limit,
+          page: eventsPageParam,
+          limit: eventsLimitParam,
+          hasMore: data.events.length === eventsLimitParam,
         };
         break;
 
@@ -258,8 +258,24 @@ export async function GET(request) {
         // Top pages
         data.topPages = await Analytics.getPageviewStats(thirtyDaysAgo, now);
 
-        // Recent events
+        // Recent events (for overview tab)
         data.recentEvents = await Analytics.find({}).sort({ timestamp: -1 }).limit(10).lean();
+
+        // Events with pagination (for events tab)
+        const eventsPage = 1;
+        const eventsLimit = 50;
+        const eventsSkip = (eventsPage - 1) * eventsLimit;
+        data.events = await Analytics.find({})
+          .sort({ timestamp: -1 })
+          .skip(eventsSkip)
+          .limit(eventsLimit)
+          .lean();
+
+        data.pagination = {
+          page: eventsPage,
+          limit: eventsLimit,
+          hasMore: data.events.length === eventsLimit,
+        };
 
         // Daily pageviews for the last 7 days
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);

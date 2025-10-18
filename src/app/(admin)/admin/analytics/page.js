@@ -872,7 +872,7 @@ export default function AnalyticsDashboard() {
                 Recent Events
               </h3>
               <div className="space-y-2">
-                {analyticsData.recentEvents?.slice(0, 50).map((event, index) => (
+                {analyticsData.events?.slice(0, 50).map((event, index) => (
                   <div
                     key={index}
                     className="flex justify-between items-center py-2 text-sm border-b border-neutral-100 last:border-b-0"
