@@ -16,7 +16,18 @@ export function useAnalyticsContext() {
 }
 
 export default function AnalyticsProvider({ children }) {
-  const { data: session, status } = useSession();
+  // Safely handle useSession - it might not be available if SessionProvider isn't in the component tree
+  let session = null;
+  let status = 'unauthenticated';
+
+  try {
+    const sessionData = useSession();
+    session = sessionData?.data;
+    status = sessionData?.status || 'unauthenticated';
+  } catch (error) {
+    // useSession failed - likely because we're not in a SessionProvider context
+    console.warn('AnalyticsProvider: useSession not available, running without session context');
+  }
 
   useEffect(() => {
     // Initialize analytics tracker
@@ -28,7 +39,7 @@ export default function AnalyticsProvider({ children }) {
     console.log('Analytics enabled:', analytics.isEnabled);
     console.log('Session ID:', analytics.sessionId);
 
-    // Set user role if session is already loaded
+    // Set user role if session is available and loaded
     if (status !== 'loading' && session?.user) {
       analytics.setUser(session.user);
     }
@@ -52,7 +63,7 @@ export default function AnalyticsProvider({ children }) {
   }, []); // Only run once on mount
 
   useEffect(() => {
-    // This effect runs whenever the session status changes
+    // This effect runs whenever the session status changes (if available)
     if (status !== 'loading') {
       const analytics = getAnalytics();
       analytics.setUser(session?.user);
