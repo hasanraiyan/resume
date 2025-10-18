@@ -6,6 +6,7 @@ import { deleteAsset } from '@/app/actions/mediaActions';
 import Image from 'next/image';
 import imageCompression from 'browser-image-compression';
 import CustomDropdown from '@/components/CustomDropdown';
+import ImageLightbox from '@/components/ui/ImageLightbox';
 
 // (This is a simplified version. You can add more features like search, filters, etc. later)
 export default function MediaLibraryClient({ initialAssets }) {
@@ -36,6 +37,10 @@ export default function MediaLibraryClient({ initialAssets }) {
     { value: 'wide', label: 'Wide (1280x720)' },
     { value: 'tall', label: 'Tall (720x1280)' },
   ];
+
+  // Lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const handleFileUpload = async (event) => {
     const file = event.target.files?.[0];
@@ -183,6 +188,25 @@ export default function MediaLibraryClient({ initialAssets }) {
     fetchModels();
   }, []);
 
+  // Lightbox functions
+  const openLightbox = (index) => {
+    setCurrentImageIndex(index);
+    setLightboxOpen(true);
+  };
+
+  const closeLightbox = () => {
+    setLightboxOpen(false);
+    setCurrentImageIndex(0);
+  };
+
+  const goToNextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % assets.length);
+  };
+
+  const goToPreviousImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + assets.length) % assets.length);
+  };
+
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       setGenerateError('Prompt is required');
@@ -320,14 +344,14 @@ export default function MediaLibraryClient({ initialAssets }) {
       )}
 
       {/* Gallery Section */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 auto-rows-max">
         {assets.length === 0 ? (
           <div className="col-span-full text-center py-8 text-gray-500">
             <i className="fas fa-image text-4xl mb-3"></i>
             <p>No assets uploaded yet. Upload some images to get started!</p>
           </div>
         ) : (
-          assets.map((asset) => {
+          assets.map((asset, index) => {
             console.log('Rendering asset:', {
               id: asset._id,
               filename: asset.filename,
@@ -339,10 +363,19 @@ export default function MediaLibraryClient({ initialAssets }) {
             return (
               <div
                 key={asset._id}
-                className="flex flex-col border rounded-lg overflow-hidden bg-white shadow-sm"
+                className="flex flex-col border rounded-lg overflow-hidden bg-white shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => openLightbox(index)}
               >
-                {/* Image Section - Square aspect ratio */}
-                <div className="aspect-square relative bg-gray-100">
+                {/* Image Section - Use actual aspect ratio */}
+                <div
+                  className="relative bg-gray-100 overflow-hidden"
+                  style={{
+                    aspectRatio:
+                      asset.width && asset.height ? `${asset.width}/${asset.height}` : '1/1',
+                    minHeight: '120px',
+                    maxHeight: '300px',
+                  }}
+                >
                   {/* Regular img tag for testing */}
                   <img
                     src={asset.secure_url}
@@ -415,7 +448,10 @@ export default function MediaLibraryClient({ initialAssets }) {
                     {/* Delete button */}
                     <button
                       // FIX 2: Simplified onClick to prevent double confirmation dialog.
-                      onClick={() => handleDelete(asset._id)}
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent lightbox from opening
+                        handleDelete(asset._id);
+                      }}
                       className="bg-red-500 hover:bg-red-600 text-white rounded-md px-2 py-1 text-xs font-medium transition-colors flex-shrink-0"
                       title="Delete image"
                     >
@@ -437,6 +473,15 @@ export default function MediaLibraryClient({ initialAssets }) {
           })
         )}
       </div>
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        asset={assets[currentImageIndex]}
+        isOpen={lightboxOpen}
+        onClose={closeLightbox}
+        onNext={goToNextImage}
+        onPrevious={goToPreviousImage}
+      />
     </div>
   );
 }
