@@ -7,12 +7,12 @@ export async function POST(request) {
 
   try {
     const body = await request.json();
-    const { prompt, preset, seed } = body;
+    const { prompt, preset, model, seed } = body;
 
-    console.log('Request body:', { prompt, preset, seed });
+    console.log('Request body:', { prompt, preset, model, seed });
 
     // Call the server action
-    const result = await generateMedia({ prompt, preset, seed });
+    const result = await generateMedia({ prompt, preset, model, seed });
 
     console.log('Generation result:', result);
 

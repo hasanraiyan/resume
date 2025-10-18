@@ -145,9 +145,9 @@ export async function uploadAsset(formData) {
   }
 }
 // --- ACTION 3: GENERATE MEDIA VIA POLLINATIONS ---
-export async function generateMedia({ prompt, preset = 'square', seed }) {
+export async function generateMedia({ prompt, preset = 'square', model = 'flux', seed }) {
   console.log('=== GENERATE MEDIA DEBUG ===');
-  console.log('generateMedia called with prompt:', prompt, 'preset:', preset);
+  console.log('generateMedia called with prompt:', prompt, 'preset:', preset, 'model:', model);
 
   if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
     console.log('Invalid prompt provided');
@@ -182,6 +182,8 @@ export async function generateMedia({ prompt, preset = 'square', seed }) {
     urlParams.append('nologo', 'true');
     // Add enhance parameter to true
     urlParams.append('enhance', 'true');
+    // Add model parameter
+    urlParams.append('model', model);
 
     const pollinationsUrl = `${baseUrl}/${encodeURIComponent(prompt.trim())}?${urlParams.toString()}`;
 

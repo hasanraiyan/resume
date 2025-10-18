@@ -1,7 +1,7 @@
 // src/components/admin/MediaLibraryClient.js
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { deleteAsset } from '@/app/actions/mediaActions';
 import Image from 'next/image';
 import imageCompression from 'browser-image-compression';
@@ -25,6 +25,8 @@ export default function MediaLibraryClient({ initialAssets }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState('');
   const [prompt, setPrompt] = useState('');
+  const [models, setModels] = useState([]);
+  const [selectedModel, setSelectedModel] = useState('flux');
   const [seed, setSeed] = useState('');
   const [preset, setPreset] = useState('square');
   const presetOptions = [
@@ -166,6 +168,21 @@ export default function MediaLibraryClient({ initialAssets }) {
     }
   };
 
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        const response = await fetch('/api/media/models');
+        const data = await response.json();
+        if (data.models) {
+          setModels(data.models);
+        }
+      } catch (error) {
+        console.error('Failed to fetch models:', error);
+      }
+    };
+    fetchModels();
+  }, []);
+
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       setGenerateError('Prompt is required');
@@ -184,6 +201,7 @@ export default function MediaLibraryClient({ initialAssets }) {
         body: JSON.stringify({
           prompt: prompt.trim(),
           preset,
+          model: selectedModel,
           seed: seed ? parseInt(seed) : undefined,
         }),
       });
@@ -248,7 +266,7 @@ export default function MediaLibraryClient({ initialAssets }) {
               disabled={isGenerating}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <CustomDropdown
                 label="Dimensions"
@@ -256,6 +274,18 @@ export default function MediaLibraryClient({ initialAssets }) {
                 value={preset}
                 onChange={(e) => setPreset(e.target.value)}
                 name="preset"
+              />
+            </div>
+            <div>
+              <CustomDropdown
+                label="Model"
+                options={models.map((model) => ({
+                  value: model,
+                  label: model.charAt(0).toUpperCase() + model.slice(1),
+                }))}
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                name="model"
               />
             </div>
             <div>
