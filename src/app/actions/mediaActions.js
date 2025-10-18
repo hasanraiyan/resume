@@ -144,8 +144,99 @@ export async function uploadAsset(formData) {
     return { success: false, error: errorMessage };
   }
 }
+// --- ACTION 3: GENERATE MEDIA VIA POLLINATIONS ---
+export async function generateMedia({ prompt, preset = 'square', seed }) {
+  console.log('=== GENERATE MEDIA DEBUG ===');
+  console.log('generateMedia called with prompt:', prompt, 'preset:', preset);
 
-// --- ACTION 2: DELETE AN ASSET ---
+  if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+    console.log('Invalid prompt provided');
+    return { success: false, error: 'Prompt is required and must be a non-empty string.' };
+  }
+
+  // Define dimension presets
+  const presets = {
+    square: { width: 1024, height: 1024 },
+    landscape: { width: 1280, height: 720 },
+    portrait: { width: 720, height: 1280 },
+    wide: { width: 1280, height: 720 },
+    tall: { width: 720, height: 1280 },
+  };
+
+  const dimensions = presets[preset] || presets.square;
+
+  try {
+    // Construct Pollinations URL with parameters
+    const baseUrl = 'https://pollinations.ai/p';
+    const urlParams = new URLSearchParams({
+      prompt: prompt.trim(),
+      width: dimensions.width.toString(),
+      height: dimensions.height.toString(),
+    });
+
+    if (seed !== undefined) {
+      urlParams.append('seed', seed.toString());
+    }
+
+    // Add nologo parameter to remove logos from generated images
+    urlParams.append('nologo', 'true');
+    // Add enhance parameter to true
+    urlParams.append('enhance', 'true');
+
+    const pollinationsUrl = `${baseUrl}/${encodeURIComponent(prompt.trim())}?${urlParams.toString()}`;
+
+    console.log('Pollinations URL constructed:', pollinationsUrl);
+
+    // Generate a unique public_id for the asset (using timestamp + random string)
+    const publicId = `pollinations_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+
+    // For Pollinations, we directly use the generated URL
+    const imageUrl = pollinationsUrl;
+    const secureUrl = pollinationsUrl; // Pollinations URLs are already secure
+
+    // Save to database
+    await dbConnect();
+    console.log('Database connected for media generation');
+
+    const newAsset = new MediaAsset({
+      public_id: publicId,
+      url: imageUrl,
+      secure_url: secureUrl,
+      filename: `generated_${prompt.slice(0, 50).replace(/[^a-zA-Z0-9]/g, '_')}.png`, // Generate filename from prompt
+      format: 'png', // Pollinations typically generates PNG
+      source: 'pollinations',
+      prompt: prompt.trim(),
+      // Note: For Pollinations, we don't have size/width/height readily available without fetching the image
+      // We can leave these as null or fetch them if needed in a future enhancement
+    });
+
+    console.log('Generated asset object:', newAsset);
+
+    await newAsset.save();
+    console.log('Generated asset saved to database');
+
+    revalidatePath('/admin/media'); // Refresh the media library page
+    console.log('Path revalidated');
+
+    return {
+      success: true,
+      asset: {
+        _id: newAsset._id,
+        public_id: newAsset.public_id,
+        url: newAsset.url,
+        secure_url: newAsset.secure_url,
+        filename: newAsset.filename,
+        format: newAsset.format,
+        source: newAsset.source,
+        prompt: newAsset.prompt,
+        createdAt: newAsset.createdAt,
+      },
+    };
+  } catch (error) {
+    console.error('Media generation error details:', error);
+    return { success: false, error: `Generation failed: ${error.message}` };
+  }
+}
 export async function deleteAsset(assetId) {
   console.log('=== DELETE ASSET DEBUG ===');
   console.log('deleteAsset called with assetId:', assetId);

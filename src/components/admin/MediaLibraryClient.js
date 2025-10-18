@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { deleteAsset } from '@/app/actions/mediaActions';
 import Image from 'next/image';
 import imageCompression from 'browser-image-compression';
+import CustomDropdown from '@/components/CustomDropdown';
 
 // (This is a simplified version. You can add more features like search, filters, etc. later)
 export default function MediaLibraryClient({ initialAssets }) {
@@ -18,10 +19,21 @@ export default function MediaLibraryClient({ initialAssets }) {
 
   const [assets, setAssets] = useState(initialAssets);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState('');
+  // FIX 1: Added missing 'isCompressing' state, which caused a crash on large file uploads.
   const [isCompressing, setIsCompressing] = useState(false);
-
-  console.log('Assets state initialized:', assets?.length || 0, 'assets');
+  const [uploadError, setUploadError] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState('');
+  const [prompt, setPrompt] = useState('');
+  const [seed, setSeed] = useState('');
+  const [preset, setPreset] = useState('square');
+  const presetOptions = [
+    { value: 'square', label: 'Square (1024x1024)' },
+    { value: 'landscape', label: 'Landscape (1280x720)' },
+    { value: 'portrait', label: 'Portrait (720x1280)' },
+    { value: 'wide', label: 'Wide (1280x720)' },
+    { value: 'tall', label: 'Tall (720x1280)' },
+  ];
 
   const handleFileUpload = async (event) => {
     const file = event.target.files?.[0];
@@ -154,6 +166,44 @@ export default function MediaLibraryClient({ initialAssets }) {
     }
   };
 
+  const handleGenerate = async () => {
+    if (!prompt.trim()) {
+      setGenerateError('Prompt is required');
+      return;
+    }
+
+    setIsGenerating(true);
+    setGenerateError('');
+
+    try {
+      const response = await fetch('/api/media/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: prompt.trim(),
+          preset,
+          seed: seed ? parseInt(seed) : undefined,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setAssets((prev) => [result.asset, ...prev]);
+        setPrompt('');
+        setSeed('');
+      } else {
+        setGenerateError(result.error || 'Generation failed');
+      }
+    } catch (error) {
+      setGenerateError('Network error. Please check your connection and try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   console.log('Rendering MediaLibraryClient with assets:', assets?.length || 0, 'assets');
   console.log('Assets data sample:', assets?.slice(0, 2));
 
@@ -183,10 +233,59 @@ export default function MediaLibraryClient({ initialAssets }) {
         />
       </div>
 
+      {/* Generate Media Section */}
+      <div className="p-4 border-2 border-dashed rounded-lg bg-blue-50">
+        <h3 className="text-lg font-semibold mb-3">Generate Media with AI</h3>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Prompt</label>
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Describe the image you want to generate..."
+              rows={3}
+              disabled={isGenerating}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <CustomDropdown
+                label="Dimensions"
+                options={presetOptions}
+                value={preset}
+                onChange={(e) => setPreset(e.target.value)}
+                name="preset"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Seed (Optional)
+              </label>
+              <input
+                type="number"
+                value={seed}
+                onChange={(e) => setSeed(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Random"
+                disabled={isGenerating}
+              />
+            </div>
+          </div>
+          <button
+            onClick={handleGenerate}
+            disabled={isGenerating || !prompt.trim()}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-2 px-4 rounded-lg transition-colors"
+          >
+            {isGenerating ? 'Generating...' : 'Generate Image'}
+          </button>
+        </div>
+      </div>
+
       {/* Error Message */}
-      {uploadError && (
+      {generateError && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-600 text-sm">{uploadError}</p>
+          <p className="text-red-600 text-sm">{generateError}</p>
         </div>
       )}
 
@@ -210,10 +309,10 @@ export default function MediaLibraryClient({ initialAssets }) {
             return (
               <div
                 key={asset._id}
-                className="relative group border rounded-lg overflow-hidden bg-gray-100"
+                className="flex flex-col border rounded-lg overflow-hidden bg-white shadow-sm"
               >
                 {/* Image Section - Square aspect ratio */}
-                <div className="aspect-square relative">
+                <div className="aspect-square relative bg-gray-100">
                   {/* Regular img tag for testing */}
                   <img
                     src={asset.secure_url}
@@ -234,7 +333,7 @@ export default function MediaLibraryClient({ initialAssets }) {
                     alt={asset.filename || 'Uploaded image'}
                     fill
                     className="object-cover transition-opacity duration-200"
-                    style={{ zIndex: 2, opacity: 0.8 }}
+                    style={{ zIndex: 2, opacity: 1 }}
                     sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
                     priority={false}
                     quality={75}
@@ -253,12 +352,26 @@ export default function MediaLibraryClient({ initialAssets }) {
                     }}
                   />
 
-                  {/* Loading placeholder */}
-                  <div className="absolute inset-0 bg-gray-200 animate-pulse"></div>
+                  {/* Source Badge */}
+                  {asset.source === 'pollinations' && (
+                    <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full z-10">
+                      AI Generated
+                    </div>
+                  )}
+
+                  {/* Prompt Tooltip for Generated Assets */}
+                  {asset.source === 'pollinations' && asset.prompt && (
+                    <div
+                      className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs p-2 rounded-b opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      title={asset.prompt}
+                    >
+                      <p className="truncate">{asset.prompt}</p>
+                    </div>
+                  )}
                 </div>
 
-                {/* Content Section - Always visible */}
-                <div className="p-3">
+                {/* FIX 3: Moved content section OUT of the image container to fix the layout. It's now a sibling. */}
+                <div className="p-3 border-t">
                   {/* Top row: Filename and Delete button */}
                   <div className="flex justify-between items-start mb-2">
                     {/* Filename */}
@@ -269,14 +382,10 @@ export default function MediaLibraryClient({ initialAssets }) {
                       {asset.filename}
                     </p>
 
-                    {/* Delete button - completely separate from image */}
+                    {/* Delete button */}
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (confirm(`Delete "${asset.filename}"? This action cannot be undone.`)) {
-                          handleDelete(asset._id);
-                        }
-                      }}
+                      // FIX 2: Simplified onClick to prevent double confirmation dialog.
+                      onClick={() => handleDelete(asset._id)}
                       className="bg-red-500 hover:bg-red-600 text-white rounded-md px-2 py-1 text-xs font-medium transition-colors flex-shrink-0"
                       title="Delete image"
                     >

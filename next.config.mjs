@@ -26,10 +26,16 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'img.utdstc.com',
       },
+
       {
         protocol: 'https',
         hostname: 'image.pollinations.ai',
       },
+      {
+        protocol: 'https',
+        hostname: 'pollinations.ai',
+      },
+
       {
         protocol: 'https',
         hostname: 'i.pravatar.cc'
