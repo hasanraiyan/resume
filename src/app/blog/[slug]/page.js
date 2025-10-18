@@ -58,7 +58,7 @@ export default async function ArticlePage({ params }) {
       <CustomCursor />
       <Navbar />
 
-      <main className="pt-20 sm:pt-24 min-h-screen bg-gray-50">
+      <main className=" min-h-screen bg-gray-50">
         <Section className="py-12 sm:py-16 md:py-20 bg-white " containerClassName="max-w-4xl">
           <article>
             {/* --- ARTICLE HEADER --- */}

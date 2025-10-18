@@ -15,7 +15,7 @@ export default async function BlogPage() {
       <>
         <CustomCursor />
         <Navbar />
-        <main className="pt-20 sm:pt-24 min-h-screen">
+        <main className=" min-h-screen">
           <Section
             title="Error"
             description="Failed to load articles. Please try again."
@@ -33,7 +33,7 @@ export default async function BlogPage() {
       <CustomCursor />
       <Navbar />
 
-      <main className="pt-20 sm:pt-24 min-h-screen">
+      <main className=" min-h-screen">
         <Section
           title="From the Blog"
           description="Thoughts, insights, and tutorials on web development, design, and technology."

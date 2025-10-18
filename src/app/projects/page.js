@@ -21,7 +21,7 @@ export default async function ProjectsPage() {
       <CustomCursor />
       <Navbar />
 
-      <main className="pt-20 sm:pt-24 min-h-screen">
+      <main className=" min-h-screen">
         <Section
           title="All Projects"
           description="Explore my complete portfolio of web and mobile applications"

@@ -12,7 +12,7 @@ import SocialShare from '@/components/SocialShare';
 
 export default function ProjectDetailClient({ project, relatedProjects }) {
   return (
-    <main className="pt-20 sm:pt-24">
+    <main className="">
       <Section className="py-8 sm:py-12 md:py-16 bg-white">
         <div className="max-w-4xl mx-auto project-detail-content">
           <div className="text-center">
