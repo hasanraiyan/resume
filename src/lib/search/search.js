@@ -84,6 +84,7 @@ const FUSE_OPTIONS = {
  * @async
  * @function performSearch
  * @param {string} query - The search query from the user (minimum 2 characters)
+ * @param {boolean} isAuthenticated - Whether the user is authenticated (default: false)
  * @returns {Promise<SearchResult[]>} Promise that resolves to an array of formatted search results
  *
  * @example
@@ -108,7 +109,7 @@ const FUSE_OPTIONS = {
  * }
  * ```
  */
-export async function performSearch(query) {
+export async function performSearch(query, isAuthenticated = false) {
   try {
     // Instantiate and check for profanity
     const filter = new Filter();
@@ -119,9 +120,14 @@ export async function performSearch(query) {
     await dbConnect();
 
     // 1. Fetch all searchable content from the database
+    const visibilityFilter = isAuthenticated
+      ? { $in: ['public', 'private', 'unlisted'] }
+      : 'public';
     const [projectResults, articleResults] = await Promise.all([
       Project.find({}).select('slug title description category tags').lean(),
-      Article.find({ status: 'published' }).select('slug title excerpt tags').lean(),
+      Article.find({ status: 'published', visibility: visibilityFilter })
+        .select('slug title excerpt tags visibility')
+        .lean(),
     ]);
 
     // 2. Prepare the data for Fuse.js

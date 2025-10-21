@@ -60,11 +60,19 @@ export default async function ArticlesPage() {
                       {article.status}
                     </Badge>
                     <Badge
-                      variant={article.visibility === 'private' ? 'warning' : 'info'}
+                      variant={
+                        article.visibility === 'private'
+                          ? 'warning'
+                          : article.visibility === 'unlisted'
+                            ? 'secondary'
+                            : 'info'
+                      }
                       className={
                         article.visibility === 'private'
                           ? 'bg-orange-100 p-2 text-orange-800'
-                          : 'bg-blue-100 p-2 text-blue-800'
+                          : article.visibility === 'unlisted'
+                            ? 'bg-gray-100 p-2 text-gray-800'
+                            : 'bg-blue-100 p-2 text-blue-800'
                       }
                     >
                       {article.visibility}

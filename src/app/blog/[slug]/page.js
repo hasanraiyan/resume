@@ -123,6 +123,14 @@ export default async function ArticlePage({ params }) {
               </div>
             </header>
 
+            {/* --- UNLISTED NOTICE --- */}
+            {article.visibility === 'unlisted' && (
+              <div className="mb-6 p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 text-center">
+                <i className="fas fa-link mr-2"></i>
+                This article is not listed publicly and can only be accessed via direct link.
+              </div>
+            )}
+
             {/* --- COVER IMAGE --- */}
             {article.coverImage && (
               <div className="relative aspect-video overflow-hidden rounded-lg bg-gray-100 mb-8 md:mb-12 shadow-inner">

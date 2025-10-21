@@ -139,7 +139,7 @@ export async function getAllArticles() {
 
 /**
  * Retrieves a single article from the database by its slug.
- * Checks visibility: authenticated users can access private articles, non-authenticated can only access public.
+ * Checks visibility: authenticated users can access private and unlisted articles, non-authenticated can access public and unlisted.
  * Used for displaying individual blog posts and article pages.
  *
  * @param {string} slug - The unique slug identifier for the article
@@ -150,12 +150,18 @@ export async function getArticleBySlug(slug, isAuthenticated = false) {
   await dbConnect();
 
   try {
-    const visibilityFilter = isAuthenticated ? { $in: ['public', 'private'] } : 'public';
-    const article = await Article.findOne({
-      slug,
-      status: 'published',
-      visibility: visibilityFilter,
-    }).lean();
+    const visibilityFilter = isAuthenticated
+      ? { $in: ['public', 'private', 'unlisted'] }
+      : { $in: ['public', 'unlisted'] };
+    const article = await Article.findOneAndUpdate(
+      {
+        slug,
+        status: 'published',
+        visibility: visibilityFilter,
+      },
+      { $inc: { views: 1 } },
+      { new: true }
+    ).lean();
     if (!article) {
       return { success: false, article: null };
     }
@@ -170,7 +176,7 @@ export async function getArticleBySlug(slug, isAuthenticated = false) {
 
 /**
  * Retrieves all published articles from the database, sorted by publication date in descending order.
- * Filters by visibility: authenticated users see public and private articles, non-authenticated see only public.
+ * Filters by visibility: authenticated users see public, private, and unlisted articles, non-authenticated see only public.
  * Used for displaying published blog posts on the public blog page.
  *
  * @param {boolean} isAuthenticated - Whether the user is authenticated (default: false)
@@ -180,7 +186,9 @@ export async function getAllPublishedArticles(isAuthenticated = false) {
   await dbConnect();
 
   try {
-    const visibilityFilter = isAuthenticated ? { $in: ['public', 'private'] } : 'public';
+    const visibilityFilter = isAuthenticated
+      ? { $in: ['public', 'private', 'unlisted'] }
+      : 'public';
     const articles = await Article.find({
       status: 'published',
       visibility: visibilityFilter,
@@ -198,7 +206,7 @@ export async function getAllPublishedArticles(isAuthenticated = false) {
 
 /**
  * Retrieves the latest published articles from the database, limited by the specified number.
- * Filters by visibility: authenticated users see public and private articles, non-authenticated see only public.
+ * Filters by visibility: authenticated users see public, private, and unlisted articles, non-authenticated see only public.
  * Used for displaying recent articles on homepage, sidebars, or other components that need recent content.
  *
  * @param {number} limit - Maximum number of articles to retrieve (default: 3)
@@ -209,7 +217,9 @@ export async function getLatestArticles(limit = 3, isAuthenticated = false) {
   await dbConnect();
 
   try {
-    const visibilityFilter = isAuthenticated ? { $in: ['public', 'private'] } : 'public';
+    const visibilityFilter = isAuthenticated
+      ? { $in: ['public', 'private', 'unlisted'] }
+      : 'public';
     const articles = await Article.find({
       status: 'published',
       visibility: visibilityFilter,

@@ -225,6 +225,7 @@ export function ArticleForm({ article, onSave }) {
               options={[
                 { value: 'public', label: 'Public - Anyone can view' },
                 { value: 'private', label: 'Private - Only authenticated users can view' },
+                { value: 'unlisted', label: 'Unlisted - Accessible via direct link only' },
               ]}
               value={formData.visibility}
               onChange={(e) => handleInputChange('visibility', e.target.value)}
