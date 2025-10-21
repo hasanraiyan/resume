@@ -797,6 +797,8 @@ export default function MediaLibraryClient({ initialAssets }) {
                       height: '180px', // Fixed height for all images
                     }}
                   >
+                    {/* Loading skeleton */}
+                    <div className="absolute inset-0 bg-gray-200 animate-pulse z-1"></div>
                     {/* Regular img tag for testing */}
                     <img
                       src={asset.secure_url}
@@ -804,9 +806,14 @@ export default function MediaLibraryClient({ initialAssets }) {
                       className="absolute inset-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
                       style={{ zIndex: 1 }}
                       data-asset-id={asset._id}
-                      onLoad={() =>
-                        console.log('Regular img loaded successfully:', asset.secure_url)
-                      }
+                      onLoad={() => {
+                        console.log('Regular img loaded successfully:', asset.secure_url);
+                        // Hide loading skeleton
+                        const skeleton = document
+                          .querySelector(`[data-asset-id="${asset._id}"]`)
+                          ?.parentElement?.querySelector('.animate-pulse');
+                        if (skeleton) skeleton.style.display = 'none';
+                      }}
                       onError={(e) => {
                         console.error('Regular img failed to load:', asset.secure_url);
                         e.target.style.display = 'none';
@@ -823,6 +830,7 @@ export default function MediaLibraryClient({ initialAssets }) {
                       sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
                       priority={false}
                       quality={75}
+                      loading="lazy"
                       onLoadStart={() =>
                         console.log('Next.js Image load started:', asset.secure_url)
                       }
@@ -831,6 +839,9 @@ export default function MediaLibraryClient({ initialAssets }) {
                         // Hide the regular img when Next.js image loads
                         const regularImg = document.querySelector(`[data-asset-id="${asset._id}"]`);
                         if (regularImg) regularImg.style.display = 'none';
+                        // Hide loading skeleton
+                        const skeleton = regularImg?.parentElement?.querySelector('.animate-pulse');
+                        if (skeleton) skeleton.style.display = 'none';
                       }}
                       onError={(e) => {
                         console.error('Next.js Image failed to load:', asset.secure_url);

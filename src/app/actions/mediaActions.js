@@ -257,6 +257,7 @@ export async function deleteAsset(assetId) {
             filename: asset.filename,
             url: asset.url,
             secure_url: asset.secure_url,
+            source: asset.source,
           }
         : 'NOT FOUND'
     );
@@ -266,76 +267,79 @@ export async function deleteAsset(assetId) {
       return { success: false, error: 'Asset not found in database.' };
     }
 
-    console.log('Attempting to delete from Cloudinary with public_id:', asset.public_id);
-    console.log('Cloudinary public_id format:', asset.public_id);
+    // Check if this is an AI-generated image (not stored in Cloudinary)
+    const isAIGenerated = asset.source === 'pollinations';
 
-    // Test Cloudinary configuration
-    try {
-      console.log('Testing Cloudinary configuration...');
-      const config = cloudinary.config();
-      console.log('Cloudinary config test:', {
-        cloud_name: config.cloud_name ? 'SET' : 'NOT SET',
-        api_key: config.api_key ? 'SET' : 'NOT SET',
-        api_secret: config.api_secret ? 'SET' : 'NOT SET',
-      });
-    } catch (configError) {
-      console.error('Cloudinary configuration test failed:', configError);
-    }
+    console.log('Asset source:', asset.source, '- AI Generated:', isAIGenerated);
 
-    // 1. Try to delete from Cloudinary first
     let cloudinaryDeleted = false;
-    try {
-      const cloudinaryResult = await cloudinary.uploader.destroy(asset.public_id);
-      console.log('Cloudinary deletion result:', cloudinaryResult);
 
-      // Check if Cloudinary deletion was successful
-      // Cloudinary can return: { result: 'ok' } or { result: 'not found' } or throw an error
-      if (cloudinaryResult) {
-        if (cloudinaryResult.result === 'ok') {
-          cloudinaryDeleted = true;
-          console.log('Cloudinary deletion successful');
-        } else if (cloudinaryResult.result === 'not found') {
-          console.warn('Asset not found in Cloudinary, but continuing with database deletion');
-          cloudinaryDeleted = true; // Consider it successful since it doesn't exist
-        } else {
-          console.warn('Cloudinary deletion returned unexpected result:', cloudinaryResult.result);
-        }
-      } else {
-        console.warn('Cloudinary deletion returned null/undefined result');
+    if (isAIGenerated) {
+      // AI-generated images are not stored in Cloudinary, so skip deletion
+      console.log('Skipping Cloudinary deletion for AI-generated image');
+      cloudinaryDeleted = true; // Consider it successful since there's nothing to delete
+    } else {
+      // Only attempt Cloudinary deletion for uploaded images
+      console.log('Attempting to delete from Cloudinary with public_id:', asset.public_id);
+
+      // Test Cloudinary configuration
+      try {
+        console.log('Testing Cloudinary configuration...');
+        const config = cloudinary.config();
+        console.log('Cloudinary config test:', {
+          cloud_name: config.cloud_name ? 'SET' : 'NOT SET',
+          api_key: config.api_key ? 'SET' : 'NOT SET',
+          api_secret: config.api_secret ? 'SET' : 'NOT SET',
+        });
+      } catch (configError) {
+        console.error('Cloudinary configuration test failed:', configError);
       }
-    } catch (cloudinaryError) {
-      console.error('Cloudinary deletion failed:', cloudinaryError);
-      console.error('Error details:', {
-        message: cloudinaryError.message,
-        code: cloudinaryError.http_code,
-        public_id: asset.public_id,
-      });
 
-      // Check if it's a "not found" error - this might mean it was already deleted
-      if (cloudinaryError.message && cloudinaryError.message.includes('not found')) {
-        console.log('Asset not found in Cloudinary - considering as successfully deleted');
-        cloudinaryDeleted = true;
-      } else {
-        // For other errors, log but continue with database deletion
-        console.warn(
-          'Cloudinary deletion failed, but continuing with database deletion for manual cleanup'
-        );
+      // 1. Try to delete from Cloudinary first
+      try {
+        const cloudinaryResult = await cloudinary.uploader.destroy(asset.public_id);
+        console.log('Cloudinary deletion result:', cloudinaryResult);
+
+        // Check if Cloudinary deletion was successful
+        // Cloudinary can return: { result: 'ok' } or { result: 'not found' } or throw an error
+        if (cloudinaryResult) {
+          if (cloudinaryResult.result === 'ok') {
+            cloudinaryDeleted = true;
+            console.log('Cloudinary deletion successful');
+          } else if (cloudinaryResult.result === 'not found') {
+            console.warn('Asset not found in Cloudinary, but continuing with database deletion');
+            cloudinaryDeleted = true; // Consider it successful since it doesn't exist
+          } else {
+            console.warn(
+              'Cloudinary deletion returned unexpected result:',
+              cloudinaryResult.result
+            );
+          }
+        } else {
+          console.warn('Cloudinary deletion returned null/undefined result');
+        }
+      } catch (cloudinaryError) {
+        console.error('Cloudinary deletion failed:', cloudinaryError);
+        console.error('Error details:', {
+          message: cloudinaryError.message,
+          code: cloudinaryError.http_code,
+          public_id: asset.public_id,
+        });
+
+        // Check if it's a "not found" error - this might mean it was already deleted
+        if (cloudinaryError.message && cloudinaryError.message.includes('not found')) {
+          console.log('Asset not found in Cloudinary - considering as successfully deleted');
+          cloudinaryDeleted = true;
+        } else {
+          // For other errors, log but continue with database deletion
+          console.warn(
+            'Cloudinary deletion failed, but continuing with database deletion for manual cleanup'
+          );
+        }
       }
     }
 
     console.log('Cloudinary deletion status:', cloudinaryDeleted ? 'SUCCESS' : 'FAILED');
-
-    // Additional verification: Try to check if the asset URL is still accessible
-    // This helps determine if the deletion actually worked
-    if (cloudinaryDeleted && asset.secure_url) {
-      try {
-        console.log('Verifying deletion by checking URL accessibility...');
-        // Note: This is just a basic check - Cloudinary might still serve deleted assets for a while
-        console.log('Asset URL for verification:', asset.secure_url);
-      } catch (verifyError) {
-        console.log('Could not verify deletion (expected for successful deletions)');
-      }
-    }
 
     // 2. Delete from MongoDB (always do this, even if Cloudinary failed)
     try {
