@@ -59,6 +59,16 @@ export default async function ArticlesPage() {
                     >
                       {article.status}
                     </Badge>
+                    <Badge
+                      variant={article.visibility === 'private' ? 'warning' : 'info'}
+                      className={
+                        article.visibility === 'private'
+                          ? 'bg-orange-100 p-2 text-orange-800'
+                          : 'bg-blue-100 p-2 text-blue-800'
+                      }
+                    >
+                      {article.visibility}
+                    </Badge>
                   </div>
                   <p className="text-sm text-neutral-600">
                     {article.excerpt.length > 80

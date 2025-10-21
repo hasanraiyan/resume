@@ -9,6 +9,7 @@ import Button from '@/components/ui/Button';
 import SuccessToast from '@/components/admin/SuccessToast';
 import ActionButton from '@/components/admin/ActionButton';
 import MediaLibraryModal from './MediaLibraryModal';
+import CustomDropdownMinimal from '@/components/CustomDropdown';
 
 export function ArticleForm({ article, onSave }) {
   const router = useRouter();
@@ -21,6 +22,7 @@ export function ArticleForm({ article, onSave }) {
     coverImage: article?.coverImage || '',
     content: article?.content || '',
     status: article?.status || 'draft',
+    visibility: article?.visibility || 'public',
     tags: Array.isArray(article?.tags) ? article.tags.join(', ') : article?.tags || '',
   });
   const [showSuccess, setShowSuccess] = useState(false);
@@ -214,6 +216,19 @@ export function ArticleForm({ article, onSave }) {
               value={formData.tags}
               onChange={(e) => handleInputChange('tags', e.target.value)}
               placeholder="react, javascript, web-development"
+            />
+          </div>
+
+          <div>
+            <CustomDropdownMinimal
+              label="Visibility"
+              options={[
+                { value: 'public', label: 'Public - Anyone can view' },
+                { value: 'private', label: 'Private - Only authenticated users can view' },
+              ]}
+              value={formData.visibility}
+              onChange={(e) => handleInputChange('visibility', e.target.value)}
+              name="visibility"
             />
           </div>
         </div>

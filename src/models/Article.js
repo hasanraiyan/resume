@@ -40,6 +40,7 @@ import mongoose from 'mongoose';
  * @property {string} coverImage - Cover image URL
  * @property {string} content - Full article content (markdown/HTML)
  * @property {string} status - Publication status (draft or published)
+ * @property {string} visibility - Article visibility (public or private, default: public)
  * @property {Array<string>} tags - Article tags for categorization
  * @property {number} likes - Number of likes received (default: 0)
  * @property {number} claps - Number of claps received (default: 0)
@@ -58,6 +59,12 @@ const ArticleSchema = new mongoose.Schema(
       type: String,
       enum: ['draft', 'published'],
       default: 'draft',
+      index: true,
+    },
+    visibility: {
+      type: String,
+      enum: ['public', 'private'],
+      default: 'public',
       index: true,
     },
     tags: [{ type: String }],

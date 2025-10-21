@@ -1,6 +1,8 @@
 // src/app/blog/[slug]/page.js
 
-import { getAllPublishedArticles } from '@/app/actions/articleActions';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { getAllPublishedArticles, getArticleBySlug } from '@/app/actions/articleActions';
 import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 import { notFound } from 'next/navigation';
 import Navbar from '@/components/Navbar';
@@ -13,14 +15,17 @@ import LikeButton from '@/components/LikeButton';
 import NewsletterForm from '@/components/NewsletterForm';
 
 export async function generateStaticParams() {
-  const { success, articles } = await getAllPublishedArticles();
+  // Generate params for all published articles (including private ones for authenticated access)
+  const { success, articles } = await getAllPublishedArticles(true);
   if (!success) return [];
   return articles.map((article) => ({ slug: article.slug }));
 }
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const { success, articles } = await getAllPublishedArticles();
+  const session = await getServerSession(authOptions);
+  const isAuthenticated = !!session?.user?.isAdmin;
+  const { success, articles } = await getAllPublishedArticles(isAuthenticated);
   const article = articles.find((a) => a.slug === slug);
 
   if (!success || !article) {
@@ -35,8 +40,9 @@ export async function generateMetadata({ params }) {
 
 export default async function ArticlePage({ params }) {
   const { slug } = await params;
-  const { success, articles } = await getAllPublishedArticles();
-  const article = articles.find((a) => a.slug === slug);
+  const session = await getServerSession(authOptions);
+  const isAuthenticated = !!session?.user?.isAdmin;
+  const { success, article } = await getArticleBySlug(slug, isAuthenticated);
 
   if (!success || !article) {
     notFound();

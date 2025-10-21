@@ -1,5 +1,7 @@
 // src/app/blog/page.js
 
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { getAllPublishedArticles } from '@/app/actions/articleActions';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -8,7 +10,9 @@ import { Section } from '@/components/ui';
 import BlogPageClient from '@/components/blog/BlogPageClient';
 
 export default async function BlogPage() {
-  const { success, articles } = await getAllPublishedArticles();
+  const session = await getServerSession(authOptions);
+  const isAuthenticated = !!session?.user?.isAdmin;
+  const { success, articles } = await getAllPublishedArticles(isAuthenticated);
 
   if (!success) {
     return (
