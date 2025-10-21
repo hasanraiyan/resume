@@ -34,17 +34,17 @@ function AdminLayoutContent({ children }) {
   }
 
   const navigation = [
+    { name: 'Analytics', href: '/admin/analytics', icon: 'fas fa-chart-line' },
+    { name: 'Articles', href: '/admin/articles', icon: 'fas fa-newspaper' },
+    { name: 'Chat Logs', href: '/admin/chatbot/logs', icon: 'fas fa-comments' },
+    { name: 'Chatbot Settings', href: '/admin/chatbot', icon: 'fas fa-robot' },
     { name: 'Dashboard', href: '/admin/dashboard', icon: 'fas fa-tachometer-alt' },
     { name: 'Manage Sections', href: '/admin/sections', icon: 'fas fa-cog' },
     { name: 'Media Library', href: '/admin/media', icon: 'fas fa-images' },
+    { name: 'Messages', href: '/admin/contacts', icon: 'fas fa-envelope' },
     { name: 'Projects', href: '/admin/projects', icon: 'fas fa-folder' },
     { name: 'Services', href: '/admin/services', icon: 'fas fa-tools' },
-    { name: 'Articles', href: '/admin/articles', icon: 'fas fa-newspaper' },
     { name: 'Subscribers', href: '/admin/subscribers', icon: 'fas fa-users' },
-    { name: 'Messages', href: '/admin/contacts', icon: 'fas fa-envelope' },
-    { name: 'Analytics', href: '/admin/analytics', icon: 'fas fa-chart-line' },
-    { name: 'Chatbot Settings', href: '/admin/chatbot', icon: 'fas fa-robot' },
-    { name: 'Chat Logs', href: '/admin/chatbot/logs', icon: 'fas fa-comments' },
   ];
 
   return (
