@@ -441,7 +441,7 @@ export default function MediaLibraryClient({ initialAssets }) {
   console.log('Assets data sample:', assets?.slice(0, 2));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Upload Section */}
       <div
         className={`p-6 border-2 border-dashed rounded-lg transition-all duration-200 ${
@@ -739,167 +739,148 @@ export default function MediaLibraryClient({ initialAssets }) {
           </div>
         </div>
       )}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 auto-rows-max">
-        {paginatedAssets.length === 0 ? (
-          <div className="col-span-full text-center py-8 text-gray-500">
-            <i className="fas fa-image text-4xl mb-3"></i>
-            <p>
-              {assets.length === 0
-                ? 'No assets uploaded yet. Upload some images to get started!'
-                : 'No assets match your current filters. Try adjusting your search or filters.'}
-            </p>
-          </div>
-        ) : (
-          paginatedAssets.map((asset, index) => {
-            console.log('Rendering asset:', {
-              id: asset._id,
-              filename: asset.filename,
-              secure_url: asset.secure_url,
-              format: asset.format,
-              size: asset.size,
-            });
+      <div className="w-full">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {paginatedAssets.length === 0 ? (
+            <div className="col-span-full text-center py-6 text-gray-500">
+              <i className="fas fa-image text-4xl mb-3"></i>
+              <p>
+                {assets.length === 0
+                  ? 'No assets uploaded yet. Upload some images to get started!'
+                  : 'No assets match your current filters. Try adjusting your search or filters.'}
+              </p>
+            </div>
+          ) : (
+            paginatedAssets.map((asset, index) => {
+              console.log('Rendering asset:', {
+                id: asset._id,
+                filename: asset.filename,
+                secure_url: asset.secure_url,
+                format: asset.format,
+                size: asset.size,
+              });
 
-            return (
-              <div
-                key={asset._id}
-                className="relative flex flex-col border rounded-lg overflow-hidden bg-white shadow-sm cursor-pointer hover:shadow-md transition-shadow group"
-                onClick={() => openLightbox(index)}
-              >
-                {/* Selection Checkbox Overlay */}
-                <div className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <label className="flex items-center gap-1 bg-white bg-opacity-90 rounded px-2 py-1 shadow-sm">
-                    <input
-                      type="checkbox"
-                      checked={selectedAssets.has(asset._id)}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        handleSelectAsset(asset._id, e.target.checked);
-                      }}
-                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                  </label>
-                </div>
-
-                {/* Selected Indicator */}
-                {selectedAssets.has(asset._id) && (
-                  <div className="absolute top-2 right-2 z-10">
-                    <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
-                      ✓
-                    </div>
-                  </div>
-                )}
-
-                {/* Image Section - Use actual aspect ratio */}
+              return (
                 <div
-                  className="relative bg-gray-100 overflow-hidden"
-                  style={{
-                    aspectRatio:
-                      asset.width && asset.height ? `${asset.width}/${asset.height}` : '1/1',
-                    minHeight: '120px',
-                    maxHeight: '300px',
-                  }}
+                  key={asset._id}
+                  className="relative flex flex-col border rounded-lg overflow-hidden bg-white shadow-sm cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group"
+                  onClick={() => openLightbox(index)}
                 >
-                  {/* Regular img tag for testing */}
-                  <img
-                    src={asset.secure_url}
-                    alt={asset.filename || 'Uploaded image'}
-                    className="absolute inset-0 w-full h-full object-cover transition-opacity duration-200"
-                    style={{ zIndex: 1 }}
-                    data-asset-id={asset._id}
-                    onLoad={() => console.log('Regular img loaded successfully:', asset.secure_url)}
-                    onError={(e) => {
-                      console.error('Regular img failed to load:', asset.secure_url);
-                      e.target.style.display = 'none';
-                    }}
-                  />
+                  {/* Selection Checkbox Overlay */}
+                  <div className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <label className="flex items-center gap-1 bg-white bg-opacity-90 rounded px-2 py-1 shadow-sm">
+                      <input
+                        type="checkbox"
+                        checked={selectedAssets.has(asset._id)}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          handleSelectAsset(asset._id, e.target.checked);
+                        }}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                    </label>
+                  </div>
 
-                  {/* Next.js Image as overlay for optimization */}
-                  <Image
-                    src={asset.secure_url}
-                    alt={asset.filename || 'Uploaded image'}
-                    fill
-                    className="object-cover transition-opacity duration-200"
-                    style={{ zIndex: 2, opacity: 1 }}
-                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
-                    priority={false}
-                    quality={75}
-                    onLoadStart={() => console.log('Next.js Image load started:', asset.secure_url)}
-                    onLoad={() => {
-                      console.log('Next.js Image loaded successfully:', asset.secure_url);
-                      // Hide the regular img when Next.js image loads
-                      const regularImg = document.querySelector(`[data-asset-id="${asset._id}"]`);
-                      if (regularImg) regularImg.style.display = 'none';
-                    }}
-                    onError={(e) => {
-                      console.error('Next.js Image failed to load:', asset.secure_url);
-                      // Show regular img if Next.js fails
-                      const regularImg = document.querySelector(`[data-asset-id="${asset._id}"]`);
-                      if (regularImg) regularImg.style.display = 'block';
-                    }}
-                  />
-
-                  {/* Source Badge */}
-                  {asset.source === 'pollinations' && (
-                    <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full z-10">
-                      AI Generated
+                  {/* Selected Indicator */}
+                  {selectedAssets.has(asset._id) && (
+                    <div className="absolute top-2 right-2 z-10">
+                      <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                        ✓
+                      </div>
                     </div>
                   )}
 
-                  {/* Prompt Tooltip for Generated Assets */}
-                  {asset.source === 'pollinations' && asset.prompt && (
-                    <div
-                      className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs p-2 rounded-b opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                      title={asset.prompt}
-                    >
-                      <p className="truncate">{asset.prompt}</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* FIX 3: Moved content section OUT of the image container to fix the layout. It's now a sibling. */}
-                <div className="p-3 border-t">
-                  {/* Top row: Filename and Delete button */}
-                  <div className="flex justify-between items-start mb-2">
-                    {/* Filename */}
-                    <p
-                      className="text-sm font-medium text-gray-900 truncate flex-1 mr-2"
-                      title={asset.filename}
-                    >
-                      {asset.filename}
-                    </p>
-
-                    {/* Delete button */}
-                    <button
-                      // FIX 2: Simplified onClick to prevent double confirmation dialog.
-                      onClick={(e) => {
-                        e.stopPropagation(); // Prevent lightbox from opening
-                        handleDelete(asset._id);
+                  {/* Image Section - Uniform height for clean grid layout */}
+                  <div
+                    className="relative bg-gray-100 overflow-hidden"
+                    style={{
+                      height: '180px', // Fixed height for all images
+                    }}
+                  >
+                    {/* Regular img tag for testing */}
+                    <img
+                      src={asset.secure_url}
+                      alt={asset.filename || 'Uploaded image'}
+                      className="absolute inset-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
+                      style={{ zIndex: 1 }}
+                      data-asset-id={asset._id}
+                      onLoad={() =>
+                        console.log('Regular img loaded successfully:', asset.secure_url)
+                      }
+                      onError={(e) => {
+                        console.error('Regular img failed to load:', asset.secure_url);
+                        e.target.style.display = 'none';
                       }}
-                      className="bg-red-500 hover:bg-red-600 text-white rounded-md px-2 py-1 text-xs font-medium transition-colors flex-shrink-0"
-                      title="Delete image"
-                    >
-                      <i className="fas fa-trash mr-1"></i>
-                      Delete
-                    </button>
-                  </div>
+                    />
 
-                  {/* File details */}
-                  <div className="flex justify-between items-center text-xs text-gray-500">
-                    <span>
-                      {asset.format?.toUpperCase()} • {Math.round(asset.size / 1024)}KB
-                    </span>
-                    <span>{new Date(asset.createdAt).toLocaleDateString()}</span>
+                    {/* Next.js Image as overlay for optimization */}
+                    <Image
+                      src={asset.secure_url}
+                      alt={asset.filename || 'Uploaded image'}
+                      fill
+                      className="object-cover transition-all duration-300 group-hover:scale-105"
+                      style={{ zIndex: 2, opacity: 1 }}
+                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
+                      priority={false}
+                      quality={75}
+                      onLoadStart={() =>
+                        console.log('Next.js Image load started:', asset.secure_url)
+                      }
+                      onLoad={() => {
+                        console.log('Next.js Image loaded successfully:', asset.secure_url);
+                        // Hide the regular img when Next.js image loads
+                        const regularImg = document.querySelector(`[data-asset-id="${asset._id}"]`);
+                        if (regularImg) regularImg.style.display = 'none';
+                      }}
+                      onError={(e) => {
+                        console.error('Next.js Image failed to load:', asset.secure_url);
+                        // Show regular img if Next.js fails
+                        const regularImg = document.querySelector(`[data-asset-id="${asset._id}"]`);
+                        if (regularImg) regularImg.style.display = 'block';
+                      }}
+                    />
+
+                    {/* Source Badge */}
+                    {asset.source === 'pollinations' && (
+                      <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full z-10">
+                        AI Generated
+                      </div>
+                    )}
+
+                    {/* Delete Button Overlay */}
+                    <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(asset._id);
+                        }}
+                        className="bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium transition-colors shadow-lg"
+                        title="Delete image"
+                      >
+                        <i className="fas fa-trash"></i>
+                      </button>
+                    </div>
+
+                    {/* Prompt Tooltip for Generated Assets */}
+                    {asset.source === 'pollinations' && asset.prompt && (
+                      <div
+                        className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs p-2 rounded-b opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        title={asset.prompt}
+                      >
+                        <p className="truncate">{asset.prompt}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            );
-          })
-        )}
+              );
+            })
+          )}
+        </div>
       </div>
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div className="mt-6 flex justify-center">
+        <div className="mt-4 flex justify-center">
           <div className="flex items-center gap-2">
             {/* Previous Button */}
             <button
