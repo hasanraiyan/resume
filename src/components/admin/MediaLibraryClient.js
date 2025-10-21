@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { deleteAsset } from '@/app/actions/mediaActions';
 import Image from 'next/image';
 import imageCompression from 'browser-image-compression';
-import CustomDropdownMinimal from '@/components/CustomDropdown';
+// CustomDropdown removed due to width issues
 import ImageLightbox from '@/components/ui/ImageLightbox';
 
 // (This is a simplified version. You can add more features like search, filters, etc. later)
@@ -505,25 +505,34 @@ export default function MediaLibraryClient({ initialAssets }) {
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <CustomDropdownMinimal
-                label="Dimensions"
-                options={presetOptions}
+              <label className="block text-sm font-medium text-gray-700 mb-1">Dimensions</label>
+              <select
                 value={preset}
                 onChange={(e) => setPreset(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                 name="preset"
-              />
+              >
+                {presetOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
-              <CustomDropdownMinimal
-                label="Model"
-                options={models.map((model) => ({
-                  value: model,
-                  label: model.charAt(0).toUpperCase() + model.slice(1),
-                }))}
+              <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
+              <select
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                 name="model"
-              />
+              >
+                {models.map((model) => (
+                  <option key={model} value={model}>
+                    {model.charAt(0).toUpperCase() + model.slice(1)}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -579,53 +588,50 @@ export default function MediaLibraryClient({ initialAssets }) {
             {/* Format Filter */}
             <div className="min-w-0">
               <label className="block text-sm font-medium text-gray-700 mb-2">Format</label>
-              <CustomDropdownMinimal
-                label=""
-                options={[
-                  { value: 'all', label: 'All Formats' },
-                  { value: 'jpg', label: 'JPEG' },
-                  { value: 'png', label: 'PNG' },
-                  { value: 'gif', label: 'GIF' },
-                  { value: 'webp', label: 'WebP' },
-                  { value: 'svg', label: 'SVG' },
-                ]}
+              <select
                 value={formatFilter}
                 onChange={(e) => setFormatFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                 name="formatFilter"
-              />
+              >
+                <option value="all">All Formats</option>
+                <option value="jpg">JPEG</option>
+                <option value="png">PNG</option>
+                <option value="gif">GIF</option>
+                <option value="webp">WebP</option>
+                <option value="svg">SVG</option>
+              </select>
             </div>
 
             {/* Source Filter */}
             <div className="min-w-0">
               <label className="block text-sm font-medium text-gray-700 mb-2">Source</label>
-              <CustomDropdownMinimal
-                label=""
-                options={[
-                  { value: 'all', label: 'All Sources' },
-                  { value: 'upload', label: 'Uploaded' },
-                  { value: 'pollinations', label: 'AI Generated' },
-                ]}
+              <select
                 value={sourceFilter}
                 onChange={(e) => setSourceFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                 name="sourceFilter"
-              />
+              >
+                <option value="all">All Sources</option>
+                <option value="upload">Uploaded</option>
+                <option value="pollinations">AI Generated</option>
+              </select>
             </div>
 
             {/* Sort Options */}
             <div className="min-w-0">
               <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-              <CustomDropdownMinimal
-                label=""
-                options={[
-                  { value: 'newest', label: 'Newest First' },
-                  { value: 'oldest', label: 'Oldest First' },
-                  { value: 'name', label: 'Name A-Z' },
-                  { value: 'size', label: 'Largest First' },
-                ]}
+              <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                 name="sortBy"
-              />
+              >
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="name">Name A-Z</option>
+                <option value="size">Largest First</option>
+              </select>
             </div>
           </div>
         </div>
