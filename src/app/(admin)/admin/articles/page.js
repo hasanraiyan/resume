@@ -40,64 +40,86 @@ export default async function ArticlesPage() {
             </Button>
           </div>
         ) : (
-          articles.map((article) => (
-            <Card key={article._id} className="p-4 flex justify-between items-center">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-neutral-100 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-newspaper text-neutral-600 text-lg"></i>
-                </div>
-                <div>
-                  <div className="flex items-center space-x-2 mb-1">
-                    <p className="font-bold">{article.title}</p>
-                    <Badge
-                      variant={article.status === 'published' ? 'success' : 'secondary'}
-                      className={
-                        article.status === 'published'
-                          ? 'bg-green-100 p-2 text-green-800'
-                          : 'p-2 bg-gray-100 text-gray-800'
-                      }
-                    >
-                      {article.status}
-                    </Badge>
-                    <Badge
-                      variant={
-                        article.visibility === 'private'
-                          ? 'warning'
-                          : article.visibility === 'unlisted'
-                            ? 'secondary'
-                            : 'info'
-                      }
-                      className={
-                        article.visibility === 'private'
-                          ? 'bg-orange-100 p-2 text-orange-800'
-                          : article.visibility === 'unlisted'
-                            ? 'bg-gray-100 p-2 text-gray-800'
-                            : 'bg-blue-100 p-2 text-blue-800'
-                      }
-                    >
-                      {article.visibility}
-                    </Badge>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {articles.map((article) => (
+              <Card
+                key={article._id}
+                className="overflow-hidden hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group"
+              >
+                {/* Article Header */}
+                <div className="p-6 pb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center group-hover:bg-black group-hover:text-white transition-colors">
+                      <i className="fas fa-newspaper text-lg"></i>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Badge
+                        variant={article.status === 'published' ? 'success' : 'secondary'}
+                        className={
+                          article.status === 'published'
+                            ? 'bg-green-100 text-green-800 border border-green-200'
+                            : 'bg-gray-100 text-gray-800 border border-gray-200'
+                        }
+                      >
+                        {article.status}
+                      </Badge>
+                      <Badge
+                        variant={
+                          article.visibility === 'private'
+                            ? 'warning'
+                            : article.visibility === 'unlisted'
+                              ? 'secondary'
+                              : 'info'
+                        }
+                        className={
+                          article.visibility === 'private'
+                            ? 'bg-orange-100 text-orange-800 border border-orange-200'
+                            : article.visibility === 'unlisted'
+                              ? 'bg-gray-100 text-gray-800 border border-gray-200'
+                              : 'bg-blue-100 text-blue-800 border border-blue-200'
+                        }
+                      >
+                        {article.visibility}
+                      </Badge>
+                    </div>
                   </div>
-                  <p className="text-sm text-neutral-600">
-                    {article.excerpt.length > 80
-                      ? `${article.excerpt.substring(0, 80)}...`
-                      : article.excerpt}
-                  </p>
-                  <p className="text-xs text-neutral-500 mt-1">
-                    Created: {new Date(article.createdAt).toLocaleDateString()}
-                    {article.publishedAt && (
-                      <> • Published: {new Date(article.publishedAt).toLocaleDateString()}</>
-                    )}
-                  </p>
+
+                  {/* Article Content */}
+                  <div className="mb-4">
+                    <h3 className="text-lg font-bold text-black mb-2 group-hover:text-neutral-700 transition-colors line-clamp-2">
+                      {article.title}
+                    </h3>
+                    <p className="text-neutral-600 text-sm line-clamp-3">{article.excerpt}</p>
+                  </div>
+
+                  {/* Article Meta */}
+                  <div className="flex items-center justify-between text-xs text-neutral-500">
+                    <div className="flex items-center space-x-3">
+                      <span className="flex items-center">
+                        <i className="fas fa-calendar-alt mr-1"></i>
+                        {new Date(article.createdAt).toLocaleDateString()}
+                      </span>
+                      {article.publishedAt && (
+                        <span className="flex items-center">
+                          <i className="fas fa-eye mr-1"></i>
+                          {new Date(article.publishedAt).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                    <Button
+                      href={`/admin/articles/${article._id}/edit`}
+                      variant="ghost"
+                      size="small"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <i className="fas fa-edit mr-1"></i>
+                      Edit
+                    </Button>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <Button href={`/admin/articles/${article._id}/edit`} variant="ghost" size="small">
-                  Edit
-                </Button>
-              </div>
-            </Card>
-          ))
+              </Card>
+            ))}
+          </div>
         )}
       </div>
     </AdminPageWrapper>

@@ -737,11 +737,21 @@ export default function MediaLibraryClient({ initialAssets }) {
           <button
             onClick={handleGenerate}
             disabled={isGenerating || !prompt.trim()}
-            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 text-white py-4 px-6 rounded-lg transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-xl disabled:cursor-not-allowed flex items-center justify-center gap-3"
+            className={`w-full py-4 px-6 rounded-lg transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-xl flex items-center justify-center gap-3 ${
+              isGenerating || !prompt.trim()
+                ? 'bg-gray-400 text-gray-200 cursor-not-allowed shadow-none'
+                : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white hover:shadow-xl'
+            }`}
           >
             {isGenerating ? (
               <>
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                <div
+                  className={`animate-spin rounded-full h-5 w-5 border-2 ${
+                    isGenerating || !prompt.trim()
+                      ? 'border-gray-300 border-t-gray-200'
+                      : 'border-white border-t-transparent'
+                  }`}
+                ></div>
                 Generating Your Image...
               </>
             ) : (

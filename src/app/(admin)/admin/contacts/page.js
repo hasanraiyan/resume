@@ -36,85 +36,91 @@ export default async function ContactsListPage() {
           <p className="text-neutral-600">Contact form submissions will appear here.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {contacts.map((contact) => (
             <Card
               key={contact._id}
-              className="p-6 hover:shadow-lg transition-shadow border-l-4 border-l-transparent hover:border-l-black"
+              className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group"
             >
-              <div className="flex items-start justify-between">
-                {/* Contact Info */}
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center">
-                      <span className="text-white font-semibold text-sm">
-                        {contact.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-black">{contact.name}</h3>
-                      <p className="text-sm text-neutral-600">{contact.email}</p>
-                    </div>
-                  </div>
-
-                  <div className="mb-4">
-                    <p className="text-neutral-800 leading-relaxed">"{contact.message}"</p>
-                  </div>
-
-                  <div className="flex items-center space-x-4 text-sm text-neutral-500">
-                    <span className="flex items-center">
-                      <i className="fas fa-calendar-alt mr-1"></i>
-                      {new Date(contact.createdAt).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
+              {/* Contact Header */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center group-hover:bg-neutral-800 transition-colors">
+                    <span className="text-white font-semibold">
+                      {contact.name.charAt(0).toUpperCase()}
                     </span>
-                    <span className="flex items-center">
-                      <i className="fas fa-clock mr-1"></i>
-                      {new Date(contact.createdAt).toLocaleTimeString('en-US', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-black group-hover:text-neutral-700 transition-colors">
+                      {contact.name}
+                    </h3>
+                    <p className="text-sm text-neutral-600">{contact.email}</p>
                   </div>
                 </div>
 
-                {/* Status & Actions */}
-                <div className="flex flex-col items-end space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="tag" className={`${getStatusColor(contact.status)} border-0`}>
-                      <i
-                        className={`mr-1 ${
-                          contact.status === 'new'
-                            ? 'fas fa-circle'
-                            : contact.status === 'read'
-                              ? 'fas fa-eye'
-                              : contact.status === 'replied'
-                                ? 'fas fa-check'
-                                : 'fas fa-archive'
-                        }`}
-                      ></i>
-                      {contact.status.charAt(0).toUpperCase() + contact.status.slice(1)}
-                    </Badge>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="tag" className={`${getStatusColor(contact.status)} border-0`}>
+                    <i
+                      className={`mr-1 ${
+                        contact.status === 'new'
+                          ? 'fas fa-circle'
+                          : contact.status === 'read'
+                            ? 'fas fa-eye'
+                            : contact.status === 'replied'
+                              ? 'fas fa-check'
+                              : 'fas fa-archive'
+                      }`}
+                    ></i>
+                    {contact.status.charAt(0).toUpperCase() + contact.status.slice(1)}
+                  </Badge>
 
-                    {contact.projectType && (
-                      <Badge variant="tag" className="bg-neutral-100 text-neutral-700">
-                        {contact.projectType.replace('-', ' ')}
-                      </Badge>
-                    )}
-                  </div>
-
-                  <div className="flex space-x-2">
-                    <a
-                      href={`mailto:${contact.email}`}
-                      className="text-neutral-600 hover:text-black transition-colors p-2"
-                      title="Send email"
+                  {contact.projectType && (
+                    <Badge
+                      variant="tag"
+                      className="bg-neutral-100 text-neutral-700 border border-neutral-200"
                     >
-                      <i className="fas fa-envelope"></i>
-                    </a>
-                    <ContactActions contactId={contact._id} />
-                  </div>
+                      {contact.projectType.replace('-', ' ')}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Contact Message */}
+              <div className="mb-4">
+                <p className="text-neutral-800 leading-relaxed bg-neutral-50 p-3 rounded-lg border-l-4 border-black">
+                  "{contact.message}"
+                </p>
+              </div>
+
+              {/* Contact Meta & Actions */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4 text-xs text-neutral-500">
+                  <span className="flex items-center">
+                    <i className="fas fa-calendar-alt mr-1"></i>
+                    {new Date(contact.createdAt).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </span>
+                  <span className="flex items-center">
+                    <i className="fas fa-clock mr-1"></i>
+                    {new Date(contact.createdAt).toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <a
+                    href={`mailto:${contact.email}`}
+                    className="text-neutral-600 hover:text-black transition-colors p-2 rounded-lg hover:bg-neutral-100"
+                    title="Send email"
+                  >
+                    <i className="fas fa-envelope"></i>
+                  </a>
+                  <ContactActions contactId={contact._id} />
                 </div>
               </div>
             </Card>
