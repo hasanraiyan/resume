@@ -38,7 +38,9 @@ export default function AnalyticsDashboard() {
   const { data: session } = useSession();
   const trackEvent = useAnalytics();
   const [analyticsData, setAnalyticsData] = useState(null);
+  const [cronData, setCronData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingCron, setLoadingCron] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [dateRange, setDateRange] = useState({
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -84,9 +86,36 @@ export default function AnalyticsDashboard() {
     }
   };
 
+  // Fetch cron job data
+  const fetchCronData = async () => {
+    try {
+      setLoadingCron(true);
+      console.log('Fetching cron job data');
+      const response = await fetch('/api/admin/cron');
+      const result = await response.json();
+
+      console.log('Cron API response:', result);
+
+      if (response.ok) {
+        setCronData(result);
+        console.log('Cron data set:', result);
+      } else {
+        console.error('Failed to fetch cron data:', result.error);
+      }
+    } catch (error) {
+      console.error('Cron fetch error:', error);
+    } finally {
+      setLoadingCron(false);
+    }
+  };
+
   useEffect(() => {
     fetchAnalytics(activeTab);
   }, [activeTab, dateRange]);
+
+  useEffect(() => {
+    fetchCronData();
+  }, []);
 
   const formatNumber = (num) => {
     return new Intl.NumberFormat().format(num);
@@ -231,6 +260,7 @@ export default function AnalyticsDashboard() {
           { id: 'chatbot', label: 'Chatbot', icon: 'comments' },
           { id: 'search', label: 'Search', icon: 'search' },
           { id: 'events', label: 'Events', icon: 'calendar' },
+          { id: 'cron', label: 'Cron Jobs', icon: 'clock' },
         ]}
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -904,6 +934,543 @@ export default function AnalyticsDashboard() {
                 ))}
               </div>
             </Card>
+          )}
+
+          {/* Cron Jobs Tab */}
+          {activeTab === 'cron' && (
+            <div className="space-y-6">
+              {/* Export Actions */}
+              <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-lg font-semibold font-['Playfair_Display']">
+                      Export Cron Data
+                    </h3>
+                    <p className="text-sm text-neutral-600 font-['Space_Grotesk'] mt-1">
+                      Download your cron job execution history for analysis or backup
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => {
+                        if (!cronData?.history) return;
+
+                        const csvData = [
+                          ['Date', 'Status', 'Duration (ms)', 'HTTP Status', 'Status Text'],
+                          ...cronData.history.map((h) => [
+                            new Date(h.date * 1000).toISOString(),
+                            h.status === 1 ? 'Success' : 'Failed',
+                            h.duration,
+                            h.httpStatus || 'N/A',
+                            h.statusText,
+                          ]),
+                        ];
+
+                        const csvContent = csvData.map((row) => row.join(',')).join('');
+                        const blob = new Blob([csvContent], { type: 'text/csv' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `cron-history-${new Date().toISOString().split('T')[0]}.csv`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }}
+                      variant="outline"
+                      className="flex items-center gap-2"
+                    >
+                      <i className="fas fa-download"></i>
+                      Export CSV
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        if (!cronData) return;
+
+                        const jsonData = {
+                          exportedAt: new Date().toISOString(),
+                          job: cronData.job,
+                          history: cronData.history,
+                          predictions: cronData.predictions,
+                        };
+
+                        const blob = new Blob([JSON.stringify(jsonData, null, 2)], {
+                          type: 'application/json',
+                        });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `cron-data-${new Date().toISOString().split('T')[0]}.json`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }}
+                      variant="outline"
+                      className="flex items-center gap-2"
+                    >
+                      <i className="fas fa-file-code"></i>
+                      Export JSON
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+              {/* Cron Job Overview Cards */}
+              {!loadingCron && cronData ? (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-neutral-600 uppercase tracking-wider font-['Space_Grotesk']">
+                          Current Status
+                        </p>
+                        <div className="flex items-center space-x-2 mt-2">
+                          <Badge
+                            variant="tag"
+                            className={`${
+                              cronData.job?.enabled
+                                ? 'bg-green-100 text-green-800 border-green-200'
+                                : 'bg-red-100 text-red-800 border-red-200'
+                            }`}
+                          >
+                            {cronData.job?.enabled ? 'Enabled' : 'Disabled'}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center">
+                        <i className="fas fa-clock text-white"></i>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-neutral-600 uppercase tracking-wider font-['Space_Grotesk']">
+                          Total Executions
+                        </p>
+                        <p className="text-3xl font-bold text-black mt-2 font-['Playfair_Display']">
+                          {cronData.history?.length || 0}
+                        </p>
+                        <p className="text-sm text-neutral-500 font-['Space_Grotesk']">
+                          In history
+                        </p>
+                      </div>
+                      <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <i className="fas fa-play-circle text-white"></i>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-neutral-600 uppercase tracking-wider font-['Space_Grotesk']">
+                          Success Rate
+                        </p>
+                        <p className="text-3xl font-bold text-black mt-2 font-['Playfair_Display']">
+                          {cronData.history?.length > 0
+                            ? Math.round(
+                                (cronData.history.filter((h) => h.status === 1).length /
+                                  cronData.history.length) *
+                                  100
+                              )
+                            : 0}
+                          %
+                        </p>
+                        <p className="text-sm text-neutral-500 font-['Space_Grotesk']">
+                          Last 20 runs
+                        </p>
+                      </div>
+                      <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
+                        <i className="fas fa-check-circle text-white"></i>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-neutral-600 uppercase tracking-wider font-['Space_Grotesk']">
+                          Uptime (Last 24h)
+                        </p>
+                        <p className="text-3xl font-bold text-black mt-2 font-['Playfair_Display']">
+                          {(() => {
+                            if (!cronData.history?.length) return '0%';
+
+                            // Calculate uptime for last 24 hours
+                            const last24h = Date.now() / 1000 - 24 * 60 * 60;
+                            const recentHistory = cronData.history.filter((h) => h.date >= last24h);
+
+                            if (recentHistory.length === 0) return 'N/A';
+
+                            const successCount = recentHistory.filter((h) => h.status === 1).length;
+                            const uptimePercent = Math.round(
+                              (successCount / recentHistory.length) * 100
+                            );
+
+                            return `${uptimePercent}%`;
+                          })()}
+                        </p>
+                        <p className="text-sm text-neutral-500 font-['Space_Grotesk']">
+                          Based on health checks
+                        </p>
+                      </div>
+                      <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
+                        <i className="fas fa-shield-alt text-white"></i>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-neutral-600 uppercase tracking-wider font-['Space_Grotesk']">
+                          Avg Response Time
+                        </p>
+                        <p className="text-3xl font-bold text-black mt-2 font-['Playfair_Display']">
+                          {cronData.history?.length > 0
+                            ? Math.round(
+                                cronData.history.reduce((sum, h) => sum + h.duration, 0) /
+                                  cronData.history.length
+                              )
+                            : 0}
+                          ms
+                        </p>
+                        <p className="text-sm text-neutral-500 font-['Space_Grotesk']">
+                          Last 20 runs
+                        </p>
+                      </div>
+                      <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center">
+                        <i className="fas fa-tachometer-alt text-white"></i>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  {[1, 2, 3, 4].map((i) => (
+                    <Card key={i} className="p-6 animate-pulse">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="h-4 bg-neutral-200 rounded mb-2"></div>
+                          <div className="h-8 bg-neutral-200 rounded mb-2"></div>
+                          <div className="h-3 bg-neutral-200 rounded"></div>
+                        </div>
+                        <div className="w-12 h-12 bg-neutral-200 rounded-lg"></div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {/* Cron Job Charts */}
+              {!loadingCron && cronData?.history && cronData.history.length > 0 && (
+                <>
+                  {/* Response Time Chart */}
+                  <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+                    <h3 className="text-lg font-semibold mb-4 font-['Playfair_Display']">
+                      Response Time Trend
+                    </h3>
+                    <div className="h-64">
+                      <Line
+                        data={{
+                          labels: cronData.history
+                            .slice(-10)
+                            .reverse()
+                            .map((h) =>
+                              new Date(h.date * 1000).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })
+                            ),
+                          datasets: [
+                            {
+                              label: 'Response Time (ms)',
+                              data: cronData.history
+                                .slice(-10)
+                                .reverse()
+                                .map((h) => h.duration),
+                              borderColor: 'rgb(0, 0, 0)',
+                              backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                              tension: 0.4,
+                              pointBackgroundColor: cronData.history
+                                .slice(-10)
+                                .reverse()
+                                .map((h) =>
+                                  h.status === 1 ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)'
+                                ),
+                              pointBorderColor: cronData.history
+                                .slice(-10)
+                                .reverse()
+                                .map((h) =>
+                                  h.status === 1 ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)'
+                                ),
+                            },
+                          ],
+                        }}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: { display: false },
+                            title: { display: false },
+                          },
+                          scales: {
+                            y: {
+                              beginAtZero: true,
+                              ticks: { font: { family: 'Space Grotesk', size: 11 } },
+                              grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                            },
+                            x: {
+                              ticks: { font: { family: 'Space Grotesk', size: 11 } },
+                              grid: { display: false },
+                            },
+                          },
+                          elements: {
+                            point: { radius: 4, hoverRadius: 6 },
+                          },
+                        }}
+                      />
+                    </div>
+                  </Card>
+
+                  {/* Success/Failure Chart */}
+                  <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+                    <h3 className="text-lg font-semibold mb-4 font-['Playfair_Display']">
+                      Execution Status Distribution
+                    </h3>
+                    <div className="h-64">
+                      <Bar
+                        data={{
+                          labels: ['Success', 'Failed'],
+                          datasets: [
+                            {
+                              label: 'Executions',
+                              data: [
+                                cronData.history.filter((h) => h.status === 1).length,
+                                cronData.history.filter((h) => h.status !== 1).length,
+                              ],
+                              backgroundColor: ['rgba(34, 197, 94, 0.8)', 'rgba(239, 68, 68, 0.8)'],
+                              borderColor: ['rgb(34, 197, 94)', 'rgb(239, 68, 68)'],
+                              borderWidth: 1,
+                            },
+                          ],
+                        }}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: { display: false },
+                            title: { display: false },
+                          },
+                          scales: {
+                            y: {
+                              beginAtZero: true,
+                              ticks: {
+                                font: { family: 'Space Grotesk', size: 11 },
+                                precision: 0,
+                              },
+                              grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                            },
+                            x: {
+                              ticks: { font: { family: 'Space Grotesk', size: 11 } },
+                              grid: { display: false },
+                            },
+                          },
+                          elements: {
+                            bar: { borderRadius: 4 },
+                          },
+                        }}
+                      />
+                    </div>
+                  </Card>
+
+                  {/* HTTP Status Chart */}
+                  {cronData.history.some((h) => h.httpStatus) && (
+                    <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+                      <h3 className="text-lg font-semibold mb-4 font-['Playfair_Display']">
+                        HTTP Status Codes
+                      </h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {Object.entries(
+                          cronData.history.reduce((acc, h) => {
+                            if (h.httpStatus) {
+                              acc[h.httpStatus] = (acc[h.httpStatus] || 0) + 1;
+                            }
+                            return acc;
+                          }, {})
+                        )
+                          .sort(([a], [b]) => a - b)
+                          .map(([status, count]) => (
+                            <div key={status} className="text-center p-4 bg-neutral-50 rounded-lg">
+                              <div
+                                className={`text-2xl font-bold font-['Playfair_Display'] ${
+                                  status >= 200 && status < 300
+                                    ? 'text-green-600'
+                                    : status >= 300 && status < 400
+                                      ? 'text-blue-600'
+                                      : status >= 400 && status < 500
+                                        ? 'text-yellow-600'
+                                        : 'text-red-600'
+                                }`}
+                              >
+                                {status}
+                              </div>
+                              <div className="text-sm text-neutral-600 font-['Space_Grotesk'] mt-1">
+                                {count} times
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </Card>
+                  )}
+
+                  {/* Incident Timeline */}
+                  <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+                    <h3 className="text-lg font-semibold mb-4 font-['Playfair_Display']">
+                      Incident Timeline (Last 24h)
+                    </h3>
+                    <div className="space-y-3">
+                      {(() => {
+                        if (!cronData.history?.length)
+                          return (
+                            <p className="text-neutral-500 text-center py-4">No data available</p>
+                          );
+
+                        const last24h = Date.now() / 1000 - 24 * 60 * 60;
+                        const recentHistory = cronData.history
+                          .filter((h) => h.date >= last24h)
+                          .sort((a, b) => b.date - a.date)
+                          .slice(0, 10); // Show last 10 executions
+
+                        if (recentHistory.length === 0) {
+                          return (
+                            <p className="text-neutral-500 text-center py-4">
+                              No executions in the last 24 hours
+                            </p>
+                          );
+                        }
+
+                        return recentHistory.map((execution, index) => (
+                          <div
+                            key={execution.identifier}
+                            className="flex items-center space-x-4 p-3 bg-neutral-50 rounded-lg"
+                          >
+                            <div
+                              className={`w-3 h-3 rounded-full ${
+                                execution.status === 1 ? 'bg-green-500' : 'bg-red-500'
+                              }`}
+                            ></div>
+                            <div className="flex-1">
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium font-['Space_Grotesk'] text-sm">
+                                  {execution.status === 1
+                                    ? 'Health Check OK'
+                                    : 'Health Check Failed'}
+                                </span>
+                                <span className="text-xs text-neutral-500 font-['Space_Grotesk']">
+                                  {new Date(execution.date * 1000).toLocaleString()}
+                                </span>
+                              </div>
+                              <div className="text-xs text-neutral-600 font-['Space_Grotesk'] mt-1">
+                                Response: {execution.duration}ms
+                                {execution.httpStatus && ` • HTTP ${execution.httpStatus}`}
+                              </div>
+                            </div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  </Card>
+                </>
+              )}
+
+              {/* Execution History */}
+              <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+                <h3 className="text-lg font-semibold mb-4 font-['Playfair_Display']">
+                  Execution History
+                </h3>
+                {!loadingCron && cronData?.history ? (
+                  <div className="space-y-3">
+                    {cronData.history.slice(0, 20).map((execution, index) => (
+                      <div
+                        key={execution.identifier}
+                        className="flex justify-between items-center py-3 border-b border-neutral-200 last:border-b-0"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <span className="text-sm font-medium text-neutral-400 w-8 font-['Space_Grotesk']">
+                            #{index + 1}
+                          </span>
+                          <div>
+                            <div className="font-medium font-['Space_Grotesk'] text-sm">
+                              {new Date(execution.date * 1000).toLocaleString()}
+                            </div>
+                            <div className="text-xs text-neutral-500 font-['Space_Grotesk']">
+                              Planned: {new Date(execution.datePlanned * 1000).toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex space-x-6 text-sm">
+                          <div className="text-center">
+                            <Badge
+                              variant="tag"
+                              className={`${
+                                execution.status === 1
+                                  ? 'bg-green-100 text-green-800 border-green-200'
+                                  : 'bg-red-100 text-red-800 border-red-200'
+                              }`}
+                            >
+                              {execution.statusText}
+                            </Badge>
+                            <div className="text-xs text-neutral-500 font-['Space_Grotesk'] mt-1">
+                              {execution.httpStatus ? `HTTP ${execution.httpStatus}` : ''}
+                            </div>
+                          </div>
+                          <span className="text-neutral-600 font-['Space_Grotesk']">
+                            {execution.duration}ms
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-12 h-12 bg-neutral-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                      <i className="fas fa-history text-neutral-400"></i>
+                    </div>
+                    <p className="text-neutral-500">Loading execution history...</p>
+                  </div>
+                )}
+              </Card>
+
+              {/* Upcoming Executions */}
+              <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black">
+                <h3 className="text-lg font-semibold mb-4 font-['Playfair_Display']">
+                  Upcoming Executions
+                </h3>
+                {!loadingCron && cronData?.predictions ? (
+                  <div className="space-y-2">
+                    {cronData.predictions.map((prediction, index) => (
+                      <div
+                        key={index}
+                        className="flex justify-between items-center py-2 text-sm border-b border-neutral-100 last:border-b-0"
+                      >
+                        <span className="font-medium font-['Space_Grotesk']">
+                          Execution #{index + 1}
+                        </span>
+                        <span className="text-neutral-600 font-['Space_Grotesk']">
+                          {new Date(prediction * 1000).toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-12 h-12 bg-neutral-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                      <i className="fas fa-calendar text-neutral-400"></i>
+                    </div>
+                    <p className="text-neutral-500">Loading upcoming executions...</p>
+                  </div>
+                )}
+              </Card>
+            </div>
           )}
         </>
       ) : (
