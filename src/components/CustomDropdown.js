@@ -21,6 +21,21 @@ const scrollbarStyles = `
   }
 `;
 
+/**
+ * Minimal custom dropdown component with smooth animations.
+ *
+ * This component provides a styled dropdown with GSAP animations for opening/closing,
+ * hover effects with an indicator bar, custom scrollbar styling, and proper accessibility.
+ * It supports a limited number of visible options with scrolling for better UX.
+ *
+ * @param {Object} props - Component props
+ * @param {string} props.label - Label text for the dropdown
+ * @param {Array} props.options - Array of option objects with value and label properties
+ * @param {string} props.value - Currently selected value
+ * @param {Function} props.onChange - Callback function called when selection changes
+ * @param {string} props.name - Name attribute for form integration
+ * @returns {JSX.Element} Dropdown component
+ */
 export default function CustomDropdownMinimal({ label, options, value, onChange, name }) {
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState(null);

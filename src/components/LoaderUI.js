@@ -1,5 +1,14 @@
 'use client';
 
+/**
+ * Loading screen UI component with animated dots.
+ *
+ * This component displays a clean, centered loading screen with the name "RAIYAN"
+ * and three animated pulsing dots. It provides visual feedback during page loading
+ * and transitions smoothly when the loading state completes.
+ *
+ * @returns {JSX.Element} Full-screen loading overlay with animated elements
+ */
 export default function LoaderUI() {
   return (
     <div id="loader-ui" className="fixed inset-0 z-50 bg-white flex items-center justify-center">

@@ -96,6 +96,17 @@ const contactData = {
 // ========================================
 // 🎨 COMPONENT
 // ========================================
+
+/**
+ * Contact form component with integrated Calendly scheduling.
+ *
+ * This component renders a contact form with multiple field types (text, email, dropdown, textarea),
+ * handles form submission, and provides a Calendly widget for scheduling after successful submission.
+ * It includes GSAP animations for scroll-triggered effects and integrates with the backend
+ * contact submission system.
+ *
+ * @returns {JSX.Element} Contact section with form or success message with Calendly
+ */
 export default function Contact() {
   const initialFormData = contactData.form.fields.reduce((acc, field) => {
     acc[field.name] = field.defaultValue || '';
@@ -211,7 +222,20 @@ export default function Contact() {
     };
   }, []);
 
-  // Render field based on type
+  /**
+   * Renders a form field based on its type configuration.
+   *
+   * @param {Object} field - Field configuration object
+   * @param {string} field.type - Type of field ('text', 'email', 'dropdown', 'textarea')
+   * @param {string} field.name - Field name attribute
+   * @param {string} field.label - Field label text
+   * @param {boolean} field.required - Whether field is required
+   * @param {string} field.placeholder - Placeholder text
+   * @param {number} field.rows - Number of rows for textarea
+   * @param {Array} field.options - Options for dropdown fields
+   * @param {string} field.gridColumn - Grid column span ('half' or 'full')
+   * @returns {JSX.Element} Rendered form field component
+   */
   const renderField = (field) => {
     switch (field.type) {
       case 'textarea':

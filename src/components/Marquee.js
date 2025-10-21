@@ -42,6 +42,17 @@ const marqueeData = {
 // ========================================
 // 🎨 ENHANCED COMPONENT WITH CLICKABLE LINKS
 // ========================================
+
+/**
+ * Scrolling marquee component displaying services with clickable links.
+ *
+ * This component creates a horizontally scrolling marquee that showcases
+ * available services (Web Design, Development, Branding, UI/UX) with optional
+ * clickable links. The marquee repeats the service list multiple times for
+ * continuous scrolling and includes separators between items.
+ *
+ * @returns {JSX.Element} Scrolling marquee section with service links
+ */
 export default function Marquee() {
   return (
     <section className="py-6 sm:py-8 md:py-10 bg-black text-white overflow-hidden">

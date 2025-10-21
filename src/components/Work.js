@@ -19,9 +19,17 @@ const workData = {
   },
 };
 
-// ========================================
-// 🎨 COMPONENT
-// ========================================
+/**
+ * Featured work/projects showcase component with alternating grid layout.
+ *
+ * Displays a curated selection of featured projects in an alternating grid layout
+ * with images, descriptions, technology tags, and call-to-action buttons. Includes
+ * GSAP scroll-triggered animations and support for "for sale" badges on projects.
+ *
+ * @param {Object} props - Component props
+ * @param {Array} props.featuredProjects - Array of project objects to display
+ * @returns {JSX.Element} Featured work section with project grid
+ */
 export default function Work({ featuredProjects = [] }) {
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);

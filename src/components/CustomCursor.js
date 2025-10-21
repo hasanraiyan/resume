@@ -4,6 +4,16 @@ import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { useCursor } from '@/context/CursorContext';
 
+/**
+ * Custom cursor component that provides animated cursor effects.
+ *
+ * This component creates a custom cursor with two elements: a fast-moving cursor
+ * and a slower follower. It responds to different cursor variants (default, text, link)
+ * from the cursor context, animating size, color, and displaying optional text.
+ * Uses GSAP for smooth animations and transitions.
+ *
+ * @returns {JSX.Element} Custom cursor elements
+ */
 export default function CustomCursor() {
   const cursorRef = useRef(null);
   const followerRef = useRef(null);

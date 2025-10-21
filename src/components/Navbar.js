@@ -8,6 +8,16 @@ import { Button } from '@/components/ui';
 import { useSiteContext } from '@/context/SiteContext'; // Import the context hook
 import SearchOverlay from '@/components/search/SearchOverlay';
 
+/**
+ * Responsive navigation bar with mobile menu, search, and magnetic button effects.
+ *
+ * This component provides a complete navigation system with desktop and mobile
+ * layouts, smooth scrolling for anchor links, search overlay integration, and
+ * interactive magnetic button animations. It uses dynamic data from the site
+ * context for logo initials and social links.
+ *
+ * @returns {JSX.Element} Navigation bar with search overlay and mobile menu
+ */
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);

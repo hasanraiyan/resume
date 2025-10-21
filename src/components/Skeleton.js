@@ -59,7 +59,18 @@ export function StatsSkeleton() {
   );
 }
 
-// Generic skeleton loader for different content types
+/**
+ * Generic skeleton loader component for various content types.
+ *
+ * Provides different skeleton layouts (stats, card, text, list, default)
+ * and supports rendering multiple instances.
+ *
+ * @param {Object} props - Component props
+ * @param {string} props.type - Skeleton type ('stats', 'card', 'text', 'list', 'default')
+ * @param {number} props.count - Number of skeleton items to render
+ * @param {string} props.className - Additional CSS classes
+ * @returns {JSX.Element} Skeleton loader with shimmer animation
+ */
 export function SkeletonLoader({ type = 'default', count = 1, className = '' }) {
   const renderSkeleton = () => {
     switch (type) {
@@ -123,7 +134,20 @@ export function SkeletonLoader({ type = 'default', count = 1, className = '' }) 
   );
 }
 
-// Main skeleton component with shimmer animation
+/**
+ * Main skeleton component that conditionally renders skeleton or content.
+ *
+ * Shows skeleton loader when loading, otherwise renders the actual content.
+ * Provides a clean API for loading states with animated placeholders.
+ *
+ * @param {Object} props - Component props
+ * @param {React.ReactNode} props.children - Content to render when not loading
+ * @param {boolean} props.isLoading - Whether to show skeleton loader
+ * @param {string} props.type - Skeleton type ('stats', 'card', 'text', 'list', 'default')
+ * @param {number} props.count - Number of skeleton items to render
+ * @param {string} props.className - Additional CSS classes
+ * @returns {JSX.Element} Skeleton loader or children based on loading state
+ */
 export default function Skeleton({
   children,
   isLoading,

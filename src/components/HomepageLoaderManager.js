@@ -5,7 +5,18 @@ import { gsap } from 'gsap';
 import { LoadingProvider, useLoadingStatus } from '@/context/LoadingContext';
 import LoaderUI from './LoaderUI';
 
-// The Controller component that listens to the context
+/**
+ * Internal component that manages the loading animation sequence and transitions.
+ *
+ * This component monitors the loading status context and orchestrates the smooth
+ * transition from the loading screen to the homepage content using GSAP animations.
+ * It waits for all registered loading components to complete before triggering
+ * the exit animation.
+ *
+ * @param {Object} props - Component props
+ * @param {React.ReactNode} props.children - Homepage content to render
+ * @returns {JSX.Element} Loader UI and homepage content with animation management
+ */
 function LoaderController({ children }) {
   const { loadingComponents } = useLoadingStatus();
   const [isReadyForExit, setIsReadyForExit] = useState(false);
@@ -60,7 +71,18 @@ function LoaderController({ children }) {
   );
 }
 
-// The main export wraps everything in the provider
+/**
+ * Homepage loader manager that coordinates loading states and smooth transitions.
+ *
+ * This component provides a complete loading management system for the homepage,
+ * wrapping content in a loading context provider and managing the transition
+ * from loading screen to content. It ensures all components report their loading
+ * status before revealing the homepage with smooth GSAP animations.
+ *
+ * @param {Object} props - Component props
+ * @param {React.ReactNode} props.children - Homepage content components
+ * @returns {JSX.Element} Loading provider with loader controller
+ */
 export default function HomepageLoaderManager({ children }) {
   return (
     <LoadingProvider>

@@ -5,9 +5,16 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SkeletonLoader } from './Skeleton';
 
-// ========================================
-// 📦 DYNAMIC DATA (Backend-Ready)
-// ========================================
+/**
+ * Statistics section component with animated counters and tooltips.
+ *
+ * Fetches statistics data from the backend API and displays them with
+ * GSAP scroll-triggered animations. Shows skeleton loading state while
+ * fetching data and includes hover effects with optional descriptions.
+ * Supports real-time updates via custom events.
+ *
+ * @returns {JSX.Element} Statistics section with animated counters or skeleton loader
+ */
 export default function Stats() {
   const [statsData, setStatsData] = useState(null);
   const [loading, setLoading] = useState(true);

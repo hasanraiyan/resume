@@ -2,6 +2,21 @@
 
 import { Button } from '@/components/ui';
 
+/**
+ * Admin page wrapper component providing consistent layout structure.
+ *
+ * Provides a standardized header layout for admin pages with title, description,
+ * and optional action button. Wraps page content with consistent spacing and
+ * visual hierarchy for admin interfaces.
+ *
+ * @param {Object} props - Component props
+ * @param {string} props.title - Page title displayed prominently
+ * @param {string} props.description - Optional page description text
+ * @param {JSX.Element} props.actionButton - Optional action button element
+ * @param {React.ReactNode} props.children - Page content to wrap
+ * @param {string} props.className - Additional CSS classes
+ * @returns {JSX.Element} Admin page layout wrapper
+ */
 export default function AdminPageWrapper({
   title,
   description,

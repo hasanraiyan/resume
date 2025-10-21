@@ -36,7 +36,7 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/hasanraiyan/resume.git
 cd resume
 ```
 
@@ -239,7 +239,16 @@ This project uses:
 
 Code is automatically formatted on commit.
 
-### Adding Documentation
+### Code Documentation
+
+This project maintains comprehensive documentation following JSDoc standards:
+
+- ✅ **API Routes**: All API endpoints are fully documented with request/response schemas
+- ✅ **Database Models**: All Mongoose models include detailed schema documentation and usage examples
+- ✅ **Action Functions**: Server actions have complete parameter and return type documentation
+- ✅ **Core Components**: Main UI components (Hero, About, Contact, etc.) are documented
+- 🚧 **Component Library**: Additional components are being documented systematically
+- ✅ **Utility Functions**: Helper functions include detailed docstrings
 
 All public functions, classes, and components must include JSDoc comments:
 
@@ -254,6 +263,8 @@ function example(paramName) {
   // Implementation
 }
 ```
+
+**Documentation Status**: See `documentation-todo.md` for current documentation progress and remaining tasks.
 
 ## 🎨 Key Technologies
 

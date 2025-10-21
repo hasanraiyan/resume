@@ -5,6 +5,16 @@ import { usePathname } from 'next/navigation';
 import { useSiteContext } from '@/context/SiteContext'; // Import the context hook
 import NewsletterForm from './NewsletterForm';
 
+/**
+ * Footer component with dynamic content, social links, and newsletter subscription.
+ *
+ * This component renders the site footer with dynamic data from the site context,
+ * including logo initials, social media links, and user name. It conditionally
+ * shows the newsletter subscription form on non-blog pages and provides navigation
+ * links and copyright information.
+ *
+ * @returns {JSX.Element} Footer section with social links and optional newsletter form
+ */
 export default function Footer() {
   const pathname = usePathname();
   const { heroData, initials } = useSiteContext(); // Use context to get dynamic data
