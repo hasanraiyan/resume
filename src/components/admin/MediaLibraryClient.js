@@ -161,9 +161,10 @@ export default function MediaLibraryClient({ initialAssets }) {
   // Bulk operations state
   const [selectedAssets, setSelectedAssets] = useState(new Set());
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(new Map()); // Map<fileName, progress>
 
   // Process a single file upload
-  const processFileUpload = async (file) => {
+  const processFileUpload = async (file, onProgress) => {
     console.log('=== FILE UPLOAD DEBUG ===');
     console.log('Original file:', {
       name: file.name,
@@ -223,13 +224,37 @@ export default function MediaLibraryClient({ initialAssets }) {
 
       console.log('FormData created, about to call upload API...');
 
-      // Use API route instead of Server Action for better large file handling
-      const response = await fetch('/api/media/upload', {
-        method: 'POST',
-        body: formData,
-      });
+      // Use XMLHttpRequest for progress tracking
+      const result = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
 
-      const result = await response.json();
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percentComplete = Math.round((event.loaded / event.total) * 100);
+            onProgress(percentComplete);
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const responseData = JSON.parse(xhr.responseText);
+              resolve(responseData);
+            } catch (error) {
+              reject(new Error('Invalid JSON response'));
+            }
+          } else {
+            reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
+          }
+        };
+
+        xhr.onerror = () => {
+          reject(new Error('Network error during upload'));
+        };
+
+        xhr.open('POST', '/api/media/upload');
+        xhr.send(formData);
+      });
 
       console.log('Upload API result:', result);
 
@@ -253,21 +278,43 @@ export default function MediaLibraryClient({ initialAssets }) {
     const fileList = Array.from(files);
     setIsUploading(true);
     setUploadError('');
+    setUploadProgress(new Map()); // Reset progress
+
+    // Initialize progress for each file
+    const initialProgress = new Map();
+    fileList.forEach((file) => {
+      initialProgress.set(file.name, 0);
+    });
+    setUploadProgress(initialProgress);
+
+    // Upload files in parallel
+    const uploadPromises = fileList.map(async (file) => {
+      const onProgress = (progress) => {
+        setUploadProgress((prev) => new Map(prev).set(file.name, progress));
+      };
+
+      try {
+        const result = await processFileUpload(file, onProgress);
+        return { file, success: true, asset: result.asset };
+      } catch (error) {
+        return { file, success: false, error: error.message };
+      }
+    });
+
+    const results = await Promise.allSettled(uploadPromises);
 
     let successCount = 0;
     let errorMessages = [];
 
-    // Process files sequentially
-    for (let i = 0; i < fileList.length; i++) {
-      const file = fileList[i];
-      try {
-        await processFileUpload(file);
+    results.forEach((result) => {
+      if (result.status === 'fulfilled' && result.value.success) {
         successCount++;
-      } catch (error) {
-        errorMessages.push(`${file.name}: ${error.message}`);
-        console.error(`Upload failed for ${file.name}:`, error);
+      } else if (result.status === 'fulfilled' && !result.value.success) {
+        errorMessages.push(`${result.value.file.name}: ${result.value.error}`);
+      } else {
+        errorMessages.push(`${result.value?.file?.name || 'Unknown file'}: ${result.reason}`);
       }
-    }
+    });
 
     // Show results
     if (successCount > 0) {
@@ -283,6 +330,7 @@ export default function MediaLibraryClient({ initialAssets }) {
     }
 
     setIsUploading(false);
+    setUploadProgress(new Map()); // Clear progress
   };
 
   // Handle file input change (legacy support)
@@ -597,6 +645,33 @@ export default function MediaLibraryClient({ initialAssets }) {
           multiple
         />
       </div>
+
+      {/* Upload Progress Section */}
+      {uploadProgress.size > 0 && (
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Upload Progress</h3>
+          <div className="space-y-3">
+            {Array.from(uploadProgress.entries()).map(([fileName, progress]) => (
+              <div key={fileName} className="flex items-center gap-3">
+                <div className="flex-1">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm text-gray-600 truncate" title={fileName}>
+                      {fileName}
+                    </span>
+                    <span className="text-sm text-gray-500">{progress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Enhanced Generate Media Section */}
       <div className="bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-dashed border-purple-200 rounded-xl overflow-hidden">
@@ -1094,7 +1169,7 @@ export default function MediaLibraryClient({ initialAssets }) {
                     {/* Prompt Tooltip for Generated Assets */}
                     {asset.source === 'pollinations' && asset.prompt && (
                       <div
-                        className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs p-2 rounded-b opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        className="absolute bottom-0 left-0 right-0 bg-black text-white text-xs p-2 rounded-bl-lg rounded-br-lg opacity-0 group-hover:opacity-100 transition-opacity z-10"
                         title={asset.prompt}
                       >
                         <p className="truncate">{asset.prompt}</p>
