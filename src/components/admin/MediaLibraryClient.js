@@ -31,12 +31,117 @@ export default function MediaLibraryClient({ initialAssets }) {
   const [selectedModel, setSelectedModel] = useState('flux');
   const [seed, setSeed] = useState('');
   const [preset, setPreset] = useState('square');
+  const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const presetOptions = [
     { value: 'square', label: 'Square (1024x1024)' },
     { value: 'landscape', label: 'Landscape (1280x720)' },
     { value: 'portrait', label: 'Portrait (720x1280)' },
     { value: 'wide', label: 'Wide (1280x720)' },
     { value: 'tall', label: 'Tall (720x1280)' },
+  ];
+
+  const promptTemplates = [
+    {
+      category: 'Photography',
+      templates: [
+        {
+          name: 'Portrait',
+          prompt:
+            'Professional portrait photography, studio lighting, sharp focus, photorealistic, 8k resolution',
+        },
+        {
+          name: 'Landscape',
+          prompt:
+            'Stunning landscape photography, golden hour, dramatic lighting, highly detailed, nature scenery',
+        },
+        {
+          name: 'Street',
+          prompt:
+            'Candid street photography, urban environment, people in motion, documentary style, natural lighting',
+        },
+        {
+          name: 'Product',
+          prompt:
+            'Commercial product photography, clean white background, professional lighting, high detail, commercial quality',
+        },
+      ],
+    },
+    {
+      category: 'Art & Illustration',
+      templates: [
+        {
+          name: 'Digital Art',
+          prompt:
+            'Digital artwork, vibrant colors, artistic composition, detailed illustration, modern art style',
+        },
+        {
+          name: 'Watercolor',
+          prompt:
+            'Beautiful watercolor painting, soft colors, artistic style, flowing brushstrokes, artistic composition',
+        },
+        {
+          name: 'Sketch',
+          prompt:
+            'Detailed pencil sketch, monochrome, artistic drawing, fine lines, professional illustration',
+        },
+        {
+          name: 'Anime',
+          prompt:
+            'Anime style illustration, vibrant colors, detailed character design, Japanese animation style',
+        },
+      ],
+    },
+    {
+      category: 'Design & Graphics',
+      templates: [
+        {
+          name: 'Logo',
+          prompt:
+            'Minimalist logo design, clean typography, professional branding, vector style, modern design',
+        },
+        {
+          name: 'Poster',
+          prompt:
+            'Vintage poster design, bold typography, artistic layout, retro style, graphic design',
+        },
+        {
+          name: 'Icon',
+          prompt:
+            'Flat design icon, minimal style, scalable vector, clean lines, professional iconography',
+        },
+        {
+          name: 'Banner',
+          prompt:
+            'Social media banner design, eye-catching, modern typography, vibrant colors, marketing design',
+        },
+      ],
+    },
+    {
+      category: 'Nature & Environment',
+      templates: [
+        {
+          name: 'Wildlife',
+          prompt:
+            'Wildlife photography, animal in natural habitat, sharp focus, nature documentary, high detail',
+        },
+        {
+          name: 'Ocean',
+          prompt:
+            'Ocean scene, underwater photography, marine life, coral reefs, crystal clear water, aquatic photography',
+        },
+        {
+          name: 'Mountain',
+          prompt:
+            'Mountain landscape, dramatic peaks, alpine scenery, panoramic view, nature photography',
+        },
+        {
+          name: 'Forest',
+          prompt:
+            'Forest landscape, woodland scenery, trees, natural lighting, peaceful atmosphere, nature photography',
+        },
+      ],
+    },
   ];
 
   // Lightbox state
@@ -398,6 +503,11 @@ export default function MediaLibraryClient({ initialAssets }) {
     setCurrentImageIndex((prev) => (prev - 1 + paginatedAssets.length) % paginatedAssets.length);
   };
 
+  const handleTemplateSelect = (templatePrompt) => {
+    setPrompt(templatePrompt);
+    setSelectedTemplate(templatePrompt);
+  };
+
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       setGenerateError('Prompt is required');
@@ -488,29 +598,87 @@ export default function MediaLibraryClient({ initialAssets }) {
         />
       </div>
 
-      {/* Generate Media Section */}
-      <div className="p-4 border-2 border-dashed rounded-lg bg-blue-50">
-        <h3 className="text-lg font-semibold mb-3">Generate Media with AI</h3>
-        <div className="space-y-3">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Prompt</label>
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Describe the image you want to generate..."
-              rows={3}
-              disabled={isGenerating}
-            />
+      {/* Enhanced Generate Media Section */}
+      <div className="bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-dashed border-purple-200 rounded-xl overflow-hidden">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                <i className="fas fa-magic text-white text-lg"></i>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">AI Image Generator</h3>
+                <p className="text-sm text-gray-600">
+                  Create stunning images with artificial intelligence
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="text-purple-600 hover:text-purple-700 text-sm font-medium flex items-center gap-1"
+            >
+              <i className={`fas fa-chevron-${showAdvanced ? 'up' : 'down'} text-xs`}></i>
+              {showAdvanced ? 'Less Options' : 'More Options'}
+            </button>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+
+          {/* Prompt Templates */}
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
+              Quick Start Templates
+            </label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+              {promptTemplates.map((category) => (
+                <div key={category.category} className="space-y-1">
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    {category.category}
+                  </div>
+                  {category.templates.map((template) => (
+                    <button
+                      key={template.name}
+                      onClick={() => handleTemplateSelect(template.prompt)}
+                      className="w-full text-left px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-colors duration-200"
+                      disabled={isGenerating}
+                    >
+                      {template.name}
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Main Prompt Input */}
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Describe Your Image
+            </label>
+            <div className="relative">
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none bg-white shadow-sm"
+                placeholder="A majestic lion standing on a mountain peak at sunset, photorealistic, dramatic lighting, 8k resolution..."
+                rows={4}
+                disabled={isGenerating}
+              />
+              {prompt && (
+                <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+                  {prompt.length} characters
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Basic Controls */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Dimensions</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Dimensions</label>
               <select
                 value={preset}
                 onChange={(e) => setPreset(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                name="preset"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white shadow-sm"
+                disabled={isGenerating}
               >
                 {presetOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -520,12 +688,12 @@ export default function MediaLibraryClient({ initialAssets }) {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">AI Model</label>
               <select
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                name="model"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white shadow-sm"
+                disabled={isGenerating}
               >
                 {models.map((model) => (
                   <option key={model} value={model}>
@@ -535,26 +703,67 @@ export default function MediaLibraryClient({ initialAssets }) {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Seed (Optional)
               </label>
               <input
                 type="number"
                 value={seed}
                 onChange={(e) => setSeed(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white shadow-sm"
                 placeholder="Random"
                 disabled={isGenerating}
               />
             </div>
           </div>
+
+          {/* Advanced Options (Collapsible) */}
+          {showAdvanced && (
+            <div className="border-t border-purple-200 pt-4 mb-6">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <i className="fas fa-cog text-purple-500"></i>
+                Advanced Options
+              </h4>
+              <div className="bg-white p-4 rounded-lg border border-purple-100">
+                <div className="text-sm text-gray-600 mb-2">
+                  <strong>Tip:</strong> Advanced options will be available in future updates,
+                  including style presets, quality settings, and negative prompts.
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Generate Button */}
           <button
             onClick={handleGenerate}
             disabled={isGenerating || !prompt.trim()}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-2 px-4 rounded-lg transition-colors"
+            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 text-white py-4 px-6 rounded-lg transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-xl disabled:cursor-not-allowed flex items-center justify-center gap-3"
           >
-            {isGenerating ? 'Generating...' : 'Generate Image'}
+            {isGenerating ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                Generating Your Image...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-sparkles"></i>
+                Generate Image
+              </>
+            )}
           </button>
+
+          {/* Generation Tips */}
+          {!isGenerating && (
+            <div className="mt-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <i className="fas fa-lightbulb text-purple-500 mt-0.5"></i>
+                <div className="text-sm text-purple-800">
+                  <strong>Pro Tips:</strong> Be specific in your prompts. Include style details,
+                  lighting, mood, and technical specifications for better results.
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
