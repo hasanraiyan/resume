@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { deleteAsset } from '@/app/actions/mediaActions';
 import Image from 'next/image';
 import imageCompression from 'browser-image-compression';
-import CustomDropdown from '@/components/CustomDropdown';
+import CustomDropdownMinimal from '@/components/CustomDropdown';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 
 // (This is a simplified version. You can add more features like search, filters, etc. later)
@@ -505,7 +505,7 @@ export default function MediaLibraryClient({ initialAssets }) {
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <CustomDropdown
+              <CustomDropdownMinimal
                 label="Dimensions"
                 options={presetOptions}
                 value={preset}
@@ -514,7 +514,7 @@ export default function MediaLibraryClient({ initialAssets }) {
               />
             </div>
             <div>
-              <CustomDropdown
+              <CustomDropdownMinimal
                 label="Model"
                 options={models.map((model) => ({
                   value: model,
@@ -579,7 +579,7 @@ export default function MediaLibraryClient({ initialAssets }) {
             {/* Format Filter */}
             <div className="min-w-0">
               <label className="block text-sm font-medium text-gray-700 mb-2">Format</label>
-              <CustomDropdown
+              <CustomDropdownMinimal
                 label=""
                 options={[
                   { value: 'all', label: 'All Formats' },
@@ -598,7 +598,7 @@ export default function MediaLibraryClient({ initialAssets }) {
             {/* Source Filter */}
             <div className="min-w-0">
               <label className="block text-sm font-medium text-gray-700 mb-2">Source</label>
-              <CustomDropdown
+              <CustomDropdownMinimal
                 label=""
                 options={[
                   { value: 'all', label: 'All Sources' },
@@ -614,7 +614,7 @@ export default function MediaLibraryClient({ initialAssets }) {
             {/* Sort Options */}
             <div className="min-w-0">
               <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-              <CustomDropdown
+              <CustomDropdownMinimal
                 label=""
                 options={[
                   { value: 'newest', label: 'Newest First' },
