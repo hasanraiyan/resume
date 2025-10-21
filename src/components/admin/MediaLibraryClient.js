@@ -23,6 +23,7 @@ export default function MediaLibraryClient({ initialAssets }) {
   // FIX 1: Added missing 'isCompressing' state, which caused a crash on large file uploads.
   const [isCompressing, setIsCompressing] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  const [isDragOver, setIsDragOver] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState('');
   const [prompt, setPrompt] = useState('');
@@ -42,10 +43,22 @@ export default function MediaLibraryClient({ initialAssets }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  const handleFileUpload = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  // Search and filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [formatFilter, setFormatFilter] = useState('all');
+  const [sourceFilter, setSourceFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(24);
+
+  // Bulk operations state
+  const [selectedAssets, setSelectedAssets] = useState(new Set());
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+
+  // Process a single file upload
+  const processFileUpload = async (file) => {
     console.log('=== FILE UPLOAD DEBUG ===');
     console.log('Original file:', {
       name: file.name,
@@ -57,14 +70,10 @@ export default function MediaLibraryClient({ initialAssets }) {
     // Basic client-side validation
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
-      setUploadError(
+      throw new Error(
         `File size too large. Maximum allowed size is 10MB. Your file is ${Math.round(file.size / (1024 * 1024))}MB.`
       );
-      return;
     }
-
-    setIsUploading(true);
-    setUploadError('');
 
     try {
       let fileToUpload = file;
@@ -123,18 +132,88 @@ export default function MediaLibraryClient({ initialAssets }) {
         console.log('Upload successful, new asset:', result.asset);
         setAssets((prev) => [result.asset, ...prev]);
         console.log('Assets updated, new count:', assets.length + 1);
-        // Reset file input
-        event.target.value = '';
+        return { success: true, asset: result.asset };
       } else {
-        setUploadError(result.error || 'Upload failed');
-        console.error('Upload failed:', result.error);
+        throw new Error(result.error || 'Upload failed');
       }
     } catch (error) {
       console.error('Upload error details:', error);
-      setUploadError('Network error. Please check your connection and try again.');
+      throw error;
+    }
+  };
+
+  const handleFileUpload = async (files) => {
+    if (!files || files.length === 0) return;
+
+    const fileList = Array.from(files);
+    setIsUploading(true);
+    setUploadError('');
+
+    let successCount = 0;
+    let errorMessages = [];
+
+    // Process files sequentially
+    for (let i = 0; i < fileList.length; i++) {
+      const file = fileList[i];
+      try {
+        await processFileUpload(file);
+        successCount++;
+      } catch (error) {
+        errorMessages.push(`${file.name}: ${error.message}`);
+        console.error(`Upload failed for ${file.name}:`, error);
+      }
+    }
+
+    // Show results
+    if (successCount > 0) {
+      if (errorMessages.length === 0) {
+        setUploadError(''); // Clear any previous errors
+      } else {
+        setUploadError(
+          `Uploaded ${successCount} file(s). Some failed: ${errorMessages.join(', ')}`
+        );
+      }
+    } else {
+      setUploadError(`All uploads failed: ${errorMessages.join(', ')}`);
     }
 
     setIsUploading(false);
+  };
+
+  // Handle file input change (legacy support)
+  const handleFileInputChange = (event) => {
+    const files = event.target.files;
+    if (files) {
+      handleFileUpload(files);
+      event.target.value = ''; // Reset input
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set drag over to false if we're leaving the drop zone entirely
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      handleFileUpload(files);
+    }
   };
 
   const handleDelete = async (assetId) => {
@@ -173,6 +252,68 @@ export default function MediaLibraryClient({ initialAssets }) {
     }
   };
 
+  // Bulk operations functions
+  const handleSelectAsset = (assetId, isSelected) => {
+    setSelectedAssets((prev) => {
+      const newSet = new Set(prev);
+      if (isSelected) {
+        newSet.add(assetId);
+      } else {
+        newSet.delete(assetId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = (isSelected) => {
+    if (isSelected) {
+      setSelectedAssets(new Set(paginatedAssets.map((asset) => asset._id)));
+    } else {
+      setSelectedAssets(new Set());
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedAssets.size === 0) return;
+
+    const confirmMessage = `Are you sure you want to delete ${selectedAssets.size} selected asset(s)? This action cannot be undone.`;
+    if (!confirm(confirmMessage)) return;
+
+    setBulkActionLoading(true);
+    let successCount = 0;
+    let errorMessages = [];
+
+    // Delete assets sequentially
+    for (const assetId of selectedAssets) {
+      try {
+        const result = await deleteAsset(assetId);
+        if (result.success) {
+          successCount++;
+          setAssets((prev) => prev.filter((asset) => asset._id !== assetId));
+          if (result.warning) {
+            errorMessages.push(`Warning for asset ${assetId}: ${result.warning}`);
+          }
+        } else {
+          errorMessages.push(`Failed to delete asset ${assetId}: ${result.error}`);
+        }
+      } catch (error) {
+        errorMessages.push(`Network error for asset ${assetId}: ${error.message}`);
+      }
+    }
+
+    setBulkActionLoading(false);
+    setSelectedAssets(new Set());
+
+    // Show results
+    if (successCount > 0) {
+      alert(
+        `Successfully deleted ${successCount} asset(s).${errorMessages.length > 0 ? '\n\nWarnings/Errors:\n' + errorMessages.join('\n') : ''}`
+      );
+    } else {
+      alert('All deletions failed:\n' + errorMessages.join('\n'));
+    }
+  };
+
   useEffect(() => {
     const fetchModels = async () => {
       try {
@@ -188,9 +329,59 @@ export default function MediaLibraryClient({ initialAssets }) {
     fetchModels();
   }, []);
 
+  // Filter and sort assets
+  const filteredAndSortedAssets = assets
+    .filter((asset) => {
+      // Search filter
+      const matchesSearch =
+        searchQuery === '' ||
+        asset.filename?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        asset.prompt?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      // Format filter
+      const matchesFormat =
+        formatFilter === 'all' || asset.format?.toLowerCase() === formatFilter.toLowerCase();
+
+      // Source filter
+      const matchesSource = sourceFilter === 'all' || asset.source === sourceFilter;
+
+      return matchesSearch && matchesFormat && matchesSource;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        case 'oldest':
+          return new Date(a.createdAt) - new Date(b.createdAt);
+        case 'name':
+          return (a.filename || '').localeCompare(b.filename || '');
+        case 'size':
+          return (b.size || 0) - (a.size || 0);
+        default:
+          return 0;
+      }
+    });
+
+  // Pagination calculations
+  const totalFilteredAssets = filteredAndSortedAssets.length;
+  const totalPages = Math.ceil(totalFilteredAssets / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedAssets = filteredAndSortedAssets.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, formatFilter, sourceFilter, sortBy]);
+
+  // Clear selections when page changes or assets change
+  useEffect(() => {
+    setSelectedAssets(new Set());
+  }, [currentPage, searchQuery, formatFilter, sourceFilter, sortBy]);
+
   // Lightbox functions
-  const openLightbox = (index) => {
-    setCurrentImageIndex(index);
+  const openLightbox = (filteredIndex) => {
+    setCurrentImageIndex(filteredIndex);
     setLightboxOpen(true);
   };
 
@@ -200,11 +391,11 @@ export default function MediaLibraryClient({ initialAssets }) {
   };
 
   const goToNextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % assets.length);
+    setCurrentImageIndex((prev) => (prev + 1) % paginatedAssets.length);
   };
 
   const goToPreviousImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + assets.length) % assets.length);
+    setCurrentImageIndex((prev) => (prev - 1 + paginatedAssets.length) % paginatedAssets.length);
   };
 
   const handleGenerate = async () => {
@@ -252,26 +443,48 @@ export default function MediaLibraryClient({ initialAssets }) {
   return (
     <div className="space-y-6">
       {/* Upload Section */}
-      <div className="p-4 border-2 border-dashed rounded-lg">
-        <label htmlFor="file-upload" className="cursor-pointer">
-          <p className="text-center text-gray-600">
-            {isUploading
-              ? isCompressing
-                ? 'Compressing...'
-                : 'Uploading...'
-              : 'Click here or drag a file to upload'}
-          </p>
-          <p className="text-xs text-gray-500 text-center mt-1">
-            Supports: JPEG, PNG, GIF, WebP, SVG (max 10MB)
-          </p>
+      <div
+        className={`p-6 border-2 border-dashed rounded-lg transition-all duration-200 ${
+          isDragOver
+            ? 'border-blue-400 bg-blue-50 scale-105'
+            : 'border-gray-300 hover:border-gray-400'
+        }`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <label htmlFor="file-upload" className="cursor-pointer block">
+          <div className="text-center">
+            <i
+              className={`fas fa-cloud-upload-alt text-3xl mb-3 ${
+                isDragOver ? 'text-blue-500' : 'text-gray-400'
+              }`}
+            ></i>
+            <p className={`text-lg font-medium ${isDragOver ? 'text-blue-700' : 'text-gray-600'}`}>
+              {isUploading
+                ? isCompressing
+                  ? 'Compressing files...'
+                  : 'Uploading files...'
+                : isDragOver
+                  ? 'Drop files here to upload'
+                  : 'Drag & drop files here, or click to browse'}
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              Supports: JPEG, PNG, GIF, WebP, SVG (max 10MB each)
+            </p>
+            {!isUploading && (
+              <p className="text-xs text-gray-400 mt-1">You can select multiple files at once</p>
+            )}
+          </div>
         </label>
         <input
           id="file-upload"
           type="file"
           className="hidden"
-          onChange={handleFileUpload}
+          onChange={handleFileInputChange}
           disabled={isUploading}
           accept="image/*"
+          multiple
         />
       </div>
 
@@ -343,15 +556,195 @@ export default function MediaLibraryClient({ initialAssets }) {
         </div>
       )}
 
+      {/* Search and Filter Section */}
+      <div className="bg-white p-4 rounded-lg border shadow-sm">
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Search Input */}
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Search Assets</label>
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by filename or AI prompt..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <i className="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+            </div>
+          </div>
+
+          {/* Filters Row */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Format Filter */}
+            <div className="min-w-0">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Format</label>
+              <CustomDropdown
+                label=""
+                options={[
+                  { value: 'all', label: 'All Formats' },
+                  { value: 'jpg', label: 'JPEG' },
+                  { value: 'png', label: 'PNG' },
+                  { value: 'gif', label: 'GIF' },
+                  { value: 'webp', label: 'WebP' },
+                  { value: 'svg', label: 'SVG' },
+                ]}
+                value={formatFilter}
+                onChange={(e) => setFormatFilter(e.target.value)}
+                name="formatFilter"
+              />
+            </div>
+
+            {/* Source Filter */}
+            <div className="min-w-0">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Source</label>
+              <CustomDropdown
+                label=""
+                options={[
+                  { value: 'all', label: 'All Sources' },
+                  { value: 'upload', label: 'Uploaded' },
+                  { value: 'pollinations', label: 'AI Generated' },
+                ]}
+                value={sourceFilter}
+                onChange={(e) => setSourceFilter(e.target.value)}
+                name="sourceFilter"
+              />
+            </div>
+
+            {/* Sort Options */}
+            <div className="min-w-0">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+              <CustomDropdown
+                label=""
+                options={[
+                  { value: 'newest', label: 'Newest First' },
+                  { value: 'oldest', label: 'Oldest First' },
+                  { value: 'name', label: 'Name A-Z' },
+                  { value: 'size', label: 'Largest First' },
+                ]}
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                name="sortBy"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Results Summary */}
+        <div className="mt-4 flex justify-between items-center text-sm text-gray-600">
+          <div>
+            Showing {startIndex + 1}-{Math.min(endIndex, totalFilteredAssets)} of{' '}
+            {totalFilteredAssets} assets
+            {totalFilteredAssets !== assets.length && ` (filtered from ${assets.length} total)`}
+          </div>
+          <div className="flex items-center gap-4">
+            {/* Items per page selector */}
+            <div className="flex items-center gap-2">
+              <span>Show:</span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="text-sm border border-gray-300 rounded px-2 py-1"
+              >
+                <option value={12}>12</option>
+                <option value={24}>24</option>
+                <option value={48}>48</option>
+                <option value={96}>96</option>
+              </select>
+            </div>
+            {(searchQuery || formatFilter !== 'all' || sourceFilter !== 'all') && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setFormatFilter('all');
+                  setSourceFilter('all');
+                  setSortBy('newest');
+                  setCurrentPage(1);
+                }}
+                className="text-blue-600 hover:text-blue-800 underline"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Bulk Actions Toolbar */}
+      {selectedAssets.size > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium text-blue-800">
+              {selectedAssets.size} asset{selectedAssets.size !== 1 ? 's' : ''} selected
+            </span>
+            <button
+              onClick={() => setSelectedAssets(new Set())}
+              className="text-sm text-blue-600 hover:text-blue-800 underline"
+            >
+              Clear selection
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleBulkDelete}
+              disabled={bulkActionLoading}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+            >
+              {bulkActionLoading ? (
+                <>
+                  <i className="fas fa-spinner fa-spin"></i>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-trash"></i>
+                  Delete Selected
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Gallery Section */}
+      {paginatedAssets.length > 0 && (
+        <div className="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={
+                  paginatedAssets.length > 0 &&
+                  paginatedAssets.every((asset) => selectedAssets.has(asset._id))
+                }
+                onChange={(e) => handleSelectAll(e.target.checked)}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-700">
+                Select All ({paginatedAssets.length} shown)
+              </span>
+            </label>
+          </div>
+          <div className="text-xs text-gray-500">
+            Click images to preview • Check boxes to select for bulk actions
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 auto-rows-max">
-        {assets.length === 0 ? (
+        {paginatedAssets.length === 0 ? (
           <div className="col-span-full text-center py-8 text-gray-500">
             <i className="fas fa-image text-4xl mb-3"></i>
-            <p>No assets uploaded yet. Upload some images to get started!</p>
+            <p>
+              {assets.length === 0
+                ? 'No assets uploaded yet. Upload some images to get started!'
+                : 'No assets match your current filters. Try adjusting your search or filters.'}
+            </p>
           </div>
         ) : (
-          assets.map((asset, index) => {
+          paginatedAssets.map((asset, index) => {
             console.log('Rendering asset:', {
               id: asset._id,
               filename: asset.filename,
@@ -363,9 +756,33 @@ export default function MediaLibraryClient({ initialAssets }) {
             return (
               <div
                 key={asset._id}
-                className="flex flex-col border rounded-lg overflow-hidden bg-white shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                className="relative flex flex-col border rounded-lg overflow-hidden bg-white shadow-sm cursor-pointer hover:shadow-md transition-shadow group"
                 onClick={() => openLightbox(index)}
               >
+                {/* Selection Checkbox Overlay */}
+                <div className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <label className="flex items-center gap-1 bg-white bg-opacity-90 rounded px-2 py-1 shadow-sm">
+                    <input
+                      type="checkbox"
+                      checked={selectedAssets.has(asset._id)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        handleSelectAsset(asset._id, e.target.checked);
+                      }}
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                  </label>
+                </div>
+
+                {/* Selected Indicator */}
+                {selectedAssets.has(asset._id) && (
+                  <div className="absolute top-2 right-2 z-10">
+                    <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                      ✓
+                    </div>
+                  </div>
+                )}
+
                 {/* Image Section - Use actual aspect ratio */}
                 <div
                   className="relative bg-gray-100 overflow-hidden"
@@ -474,9 +891,54 @@ export default function MediaLibraryClient({ initialAssets }) {
         )}
       </div>
 
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="mt-6 flex justify-center">
+          <div className="flex items-center gap-2">
+            {/* Previous Button */}
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-2 text-sm border border-gray-300 rounded-l-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <i className="fas fa-chevron-left"></i>
+            </button>
+
+            {/* Page Numbers */}
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+              if (pageNum > totalPages) return null;
+
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  className={`px-4 py-2 text-sm border border-gray-300 ${
+                    currentPage === pageNum
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'hover:bg-gray-50'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+
+            {/* Next Button */}
+            <button
+              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-2 text-sm border border-gray-300 rounded-r-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <i className="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Image Lightbox */}
       <ImageLightbox
-        asset={assets[currentImageIndex]}
+        asset={paginatedAssets[currentImageIndex]}
         isOpen={lightboxOpen}
         onClose={closeLightbox}
         onNext={goToNextImage}
