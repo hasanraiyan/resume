@@ -165,11 +165,46 @@ export async function POST(request) {
     const body = await request.json();
     const { name, email, projectType, message } = body;
 
+    // Basic input validation
+    if (!name || !email || !projectType || !message) {
+      return NextResponse.json(
+        { success: false, message: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid email format' },
+        { status: 400 }
+      );
+    }
+
+    const sanitize = (str) =>
+      str.replace(/[&<>"']/g, (match) => {
+        switch (match) {
+          case '&':
+            return '&amp;';
+          case '<':
+            return '&lt;';
+          case '>':
+            return '&gt;';
+          case '"':
+            return '&quot;';
+          case "'":
+            return '&#x27;';
+          default:
+            return match;
+        }
+      });
+
     const newContact = new Contact({
-      name,
+      name: sanitize(name),
       email,
-      projectType,
-      message,
+      projectType: sanitize(projectType),
+      message: sanitize(message),
       status: 'new',
     });
 
