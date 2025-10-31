@@ -75,6 +75,9 @@ export default async function ProjectsListPage() {
                         : 'bg-gray-100 text-gray-800 border border-gray-200'
                     }
                   >
+                    <i
+                      className={`fas ${project.status === 'published' ? 'fa-check-circle' : 'fa-clock'} mr-1`}
+                    ></i>
                     {project.status}
                   </Badge>
                   <Badge
@@ -93,6 +96,9 @@ export default async function ProjectsListPage() {
                           : 'bg-blue-100 text-blue-800 border border-blue-200'
                     }
                   >
+                    <i
+                      className={`fas ${project.visibility === 'private' ? 'fa-lock' : project.visibility === 'unlisted' ? 'fa-eye-slash' : 'fa-globe'} mr-1`}
+                    ></i>
                     {project.visibility}
                   </Badge>
                 </div>
