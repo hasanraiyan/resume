@@ -2,6 +2,7 @@ import { getAllArticles } from '@/app/actions/articleActions';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 import { Button, Card, Badge } from '@/components/ui';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default async function ArticlesPage() {
   const { success, articles } = await getAllArticles();
@@ -46,45 +47,56 @@ export default async function ArticlesPage() {
                 key={article._id}
                 className="overflow-hidden hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group"
               >
-                {/* Article Header */}
-                <div className="p-6 pb-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center group-hover:bg-black group-hover:text-white transition-colors">
-                      <i className="fas fa-newspaper text-lg"></i>
+                {/* Article Image */}
+                <div className="aspect-video bg-neutral-100 relative overflow-hidden">
+                  {article.coverImage ? (
+                    <Image
+                      src={article.coverImage}
+                      alt={article.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <i className="fas fa-image text-neutral-400 text-2xl"></i>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge
-                        variant="tag"
-                        className={
-                          article.status === 'published'
-                            ? 'bg-green-100 text-green-800 border border-green-200'
-                            : 'bg-gray-100 text-gray-800 border border-gray-200'
-                        }
-                      >
-                        <i
-                          className={`fas ${article.status === 'published' ? 'fa-check-circle' : 'fa-clock'} mr-1`}
-                        ></i>
-                        {article.status}
-                      </Badge>
-                      <Badge
-                        variant="tag"
-                        className={
-                          article.visibility === 'private'
-                            ? 'bg-orange-100 text-orange-800 border border-orange-200'
-                            : article.visibility === 'unlisted'
-                              ? 'bg-gray-100 text-gray-800 border border-gray-200'
-                              : 'bg-blue-100 text-blue-800 border border-blue-200'
-                        }
-                      >
-                        <i
-                          className={`fas ${article.visibility === 'private' ? 'fa-lock' : article.visibility === 'unlisted' ? 'fa-eye-slash' : 'fa-globe'} mr-1`}
-                        ></i>
-                        {article.visibility}
-                      </Badge>
-                    </div>
-                  </div>
+                  )}
 
-                  {/* Article Content */}
+                  {/* Status Badges */}
+                  <div className="absolute top-3 left-3 flex flex-col gap-2">
+                    <Badge
+                      variant="tag"
+                      className={
+                        article.status === 'published'
+                          ? 'bg-green-100 text-green-800 border border-green-200'
+                          : 'bg-gray-100 text-gray-800 border border-gray-200'
+                      }
+                    >
+                      <i
+                        className={`fas ${article.status === 'published' ? 'fa-check-circle' : 'fa-clock'} mr-1`}
+                      ></i>
+                      {article.status}
+                    </Badge>
+                    <Badge
+                      variant="tag"
+                      className={
+                        article.visibility === 'private'
+                          ? 'bg-orange-100 text-orange-800 border border-orange-200'
+                          : article.visibility === 'unlisted'
+                            ? 'bg-gray-100 text-gray-800 border border-gray-200'
+                            : 'bg-blue-100 text-blue-800 border border-blue-200'
+                      }
+                    >
+                      <i
+                        className={`fas ${article.visibility === 'private' ? 'fa-lock' : article.visibility === 'unlisted' ? 'fa-eye-slash' : 'fa-globe'} mr-1`}
+                      ></i>
+                      {article.visibility}
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Article Content */}
+                <div className="p-6 pb-4">
                   <div className="mb-4">
                     <h3 className="text-lg font-bold text-black mb-2 group-hover:text-neutral-700 transition-colors line-clamp-2">
                       {article.title}
