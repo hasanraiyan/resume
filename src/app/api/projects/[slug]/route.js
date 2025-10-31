@@ -16,6 +16,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Project from '@/models/Project';
+import Contributor from '@/models/Contributor';
 
 export async function GET(request, { params }) {
   try {
@@ -50,6 +51,7 @@ export async function GET(request, { params }) {
 
     // Sort contributors by order
     if (project.contributors) {
+      project.contributors = project.contributors.filter((c) => c.contributor);
       project.contributors.sort((a, b) => (a.order || 0) - (b.order || 0));
     }
 

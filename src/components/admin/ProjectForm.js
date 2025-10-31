@@ -74,8 +74,11 @@ export default function ProjectForm({ initialData, onSave, onDelete, isEditing =
       if (initialData.contributors) {
         setContributors(
           initialData.contributors.map((c, index) => ({
-            ...c,
+            // Ensure contributor is just the ID, and store full data for display
+            contributor: c.contributor?._id || c.contributor,
+            role: c.role,
             order: c.order || index,
+            _contributorData: c.contributor,
           }))
         );
       }
@@ -386,6 +389,16 @@ export default function ProjectForm({ initialData, onSave, onDelete, isEditing =
                     onChange={handleChange}
                     className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:outline-none focus:border-black"
                   />
+                  {formData.thumbnail && (
+                    <div className="mt-4">
+                      <img
+                        src={formData.thumbnail}
+                        alt="Thumbnail preview"
+                        className="rounded-lg max-w-full h-auto"
+                        style={{ maxHeight: '200px' }}
+                      />
+                    </div>
+                  )}
                 </div>
                 <div>
                   <h4 className="text-md font-semibold text-black mb-2">
