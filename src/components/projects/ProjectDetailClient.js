@@ -12,17 +12,17 @@ import SocialShare from '@/components/SocialShare';
 
 export default function ProjectDetailClient({ project, relatedProjects }) {
   // Transform contributors from the project data
+  // Note: item.contributor is just an ID string, not an object
+  // For now, we'll create a placeholder structure until proper population is implemented
   const contributors =
     project.contributors?.map((item) => ({
-      ...item.contributor,
+      _id: item.contributor, // The contributor ID
+      name: `Contributor ${item.contributor.substring(0, 8)}`, // Placeholder name
+      avatar: '/images/avatar-placeholder.png', // Placeholder avatar
       role: item.role, // Use the project-specific role
+      socialLinks: {}, // Empty social links for now
     })) || [];
 
-  // Debug logging for contributors
-  console.log('ProjectDetailClient - Project data:', project);
-  console.log('ProjectDetailClient - Raw contributors from project:', project.contributors);
-  console.log('ProjectDetailClient - Transformed contributors:', contributors);
-  console.log('ProjectDetailClient - Contributors length:', contributors.length);
   return (
     <main className="">
       <Section className="py-8 sm:py-12 md:py-16 bg-white">
@@ -217,16 +217,9 @@ export default function ProjectDetailClient({ project, relatedProjects }) {
             )}
 
           {/* Contributors Section */}
-          {(() => {
-            console.log('Rendering contributors section check:', contributors.length > 0);
-            return contributors.length > 0;
-          })() && (
+          {contributors.length > 0 && (
             <div className="mb-12 sm:mb-16">
               <h3 className="text-2xl sm:text-3xl font-bold mb-8 text-center">Contributors</h3>
-              {/* Debug: Show contributors data */}
-              <div style={{ display: 'none' }}>
-                <pre>{JSON.stringify(contributors, null, 2)}</pre>
-              </div>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {contributors.map((contributor, index) => (
                   <div
