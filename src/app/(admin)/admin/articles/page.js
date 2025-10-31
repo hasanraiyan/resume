@@ -106,15 +106,24 @@ export default async function ArticlesPage() {
                         </span>
                       )}
                     </div>
-                    <Button
-                      href={`/admin/articles/${article._id}/edit`}
-                      variant="ghost"
-                      size="small"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <i className="fas fa-edit mr-1"></i>
-                      Edit
-                    </Button>
+                    <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        href={`/blog/${article.slug}`}
+                        variant="ghost"
+                        size="small"
+                        external={true}
+                      >
+                        <i className="fas fa-external-link-alt"></i>
+                      </Button>
+                      <Button
+                        href={`/admin/articles/${article._id}/edit`}
+                        variant="ghost"
+                        size="small"
+                      >
+                        <i className="fas fa-edit mr-1"></i>
+                        Edit
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </Card>
