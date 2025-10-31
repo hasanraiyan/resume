@@ -38,7 +38,8 @@ import mongoose from 'mongoose';
  * @typedef {Object} Skill
  * @property {string} name - Skill name
  * @property {number} level - Proficiency level (0-100)
- * @property {string} [icon] - Optional FontAwesome icon class (e.g., 'fas fa-code')
+ * @property {string} [iconType] - Icon library type ('fa' for FontAwesome, 'lucide' for Lucide)
+ * @property {string} [icon] - Icon name/key for rendering
  * @property {number} displayOrder - Order for displaying skills (default: 0)
  * @property {boolean} isActive - Whether skill is active and visible (default: true)
  * @property {Date} createdAt - Auto-generated creation timestamp
@@ -49,7 +50,8 @@ const SkillSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     level: { type: Number, required: true, min: 0, max: 100 },
-    icon: { type: String, default: '' }, // Optional FontAwesome icon class
+    iconType: { type: String, default: 'fa', enum: ['fa', 'lucide'] }, // Icon library type
+    icon: { type: String, default: '' }, // Icon name/key
     displayOrder: { type: Number, default: 0, index: true },
     isActive: { type: Boolean, default: true, index: true },
   },

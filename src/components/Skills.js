@@ -52,9 +52,10 @@ function getSkillColor(level) {
  * @param {Object} props
  * @param {string} props.name - Skill name
  * @param {number} props.level - Proficiency level (0-100)
- * @param {string} props.color - Tailwind color class
+ * @param {string} [props.iconType] - Icon library type ('fa' or 'lucide')
+ * @param {string} [props.icon] - Icon name/key
  */
-function SkillBar({ name, level }) {
+function SkillBar({ name, level, iconType, icon }) {
   const barRef = useRef();
 
   useEffect(() => {
@@ -77,7 +78,10 @@ function SkillBar({ name, level }) {
   return (
     <div className="mb-4">
       <div className="flex justify-between mb-1">
-        <span className="text-sm font-medium text-gray-700">{name}</span>
+        <div className="flex items-center gap-2">
+          {icon && renderIcon(iconType, icon, 14)}
+          <span className="text-sm font-medium text-gray-700">{name}</span>
+        </div>
         <span className="text-sm text-gray-500">{level}%</span>
       </div>
       <div
@@ -194,7 +198,13 @@ export default function Skills() {
               <h3 className="text-xl font-semibold mb-6">Core Skills</h3>
               <div>
                 {skillsData.map((skill, index) => (
-                  <SkillBar key={skill._id || index} name={skill.name} level={skill.level} />
+                  <SkillBar
+                    key={skill._id || index}
+                    name={skill.name}
+                    level={skill.level}
+                    iconType={skill.iconType}
+                    icon={skill.icon}
+                  />
                 ))}
               </div>
             </div>

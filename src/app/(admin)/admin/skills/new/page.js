@@ -8,7 +8,8 @@ import Link from 'next/link';
 import { useState } from 'react';
 
 export default function NewSkillPage() {
-  const [selectedIcon, setSelectedIcon] = useState('');
+  const [iconType, setIconType] = useState('fa');
+  const [iconName, setIconName] = useState('');
 
   return (
     <AdminPageWrapper
@@ -31,16 +32,50 @@ export default function NewSkillPage() {
           </div>
 
           <div>
+            <label htmlFor="iconType" className="block text-sm font-medium text-neutral-700 mb-2">
+              Icon Type
+            </label>
+            <select
+              id="iconType"
+              name="iconType"
+              value={iconType}
+              onChange={(e) => {
+                setIconType(e.target.value);
+                setIconName('');
+              }}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="fa">FontAwesome</option>
+              <option value="lucide">Lucide</option>
+            </select>
+          </div>
+
+          <div>
             <label className="block text-sm font-medium text-neutral-700 mb-2">Skill Icon</label>
-            <IconPicker
-              selectedIcon={selectedIcon}
-              onIconSelect={setSelectedIcon}
-              placeholder="Choose an icon for this skill..."
-              className="w-full"
-            />
-            <input type="hidden" name="icon" value={selectedIcon} />
+            {iconType === 'fa' ? (
+              <IconPicker
+                selectedIcon={iconName}
+                onIconSelect={setIconName}
+                placeholder="Choose a FontAwesome icon..."
+                className="w-full"
+              />
+            ) : (
+              <Input
+                type="text"
+                id="iconName"
+                name="iconName"
+                value={iconName}
+                onChange={(e) => setIconName(e.target.value)}
+                placeholder="e.g., Code, Database, Zap"
+              />
+            )}
+            <input type="hidden" name="iconType" value={iconType} />
+            <input type="hidden" name="icon" value={iconName} />
             <p className="text-sm text-neutral-500 mt-1">
-              Optional: Choose an icon to represent this skill
+              Optional:{' '}
+              {iconType === 'fa'
+                ? 'Choose from FontAwesome icons'
+                : 'Use the Lucide icon component name (e.g., Code, Database, Zap)'}
             </p>
           </div>
 
