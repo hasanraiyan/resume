@@ -87,6 +87,7 @@ import mongoose from 'mongoose';
  * @property {ProjectDetails} details - Detailed project information for case studies
  * @property {ProjectImage[]} images - Array of gallery images with metadata
  * @property {ProjectTag[]} tags - Array of technology/skill tags with categories
+ * @property {ProjectContributor[]} contributors - Array of project contributors with roles
  * @property {number} likes - Number of likes received (default: 0)
  * @property {number} claps - Number of claps received (default: 0)
  * @property {Date} createdAt - Auto-generated creation timestamp
@@ -125,6 +126,13 @@ import mongoose from 'mongoose';
  * @typedef {Object} ProjectTag
  * @property {string} name - Tag name (e.g., "React", "Node.js")
  * @property {string} category - Tag category (e.g., "Frontend", "Backend", "Database")
+ */
+
+/**
+ * @typedef {Object} ProjectContributor
+ * @property {mongoose.Types.ObjectId} contributor - Reference to Contributor model
+ * @property {string} role - Contributor's role in this specific project
+ * @property {number} [order] - Display order (lower numbers appear first, default: 0)
  */
 const ProjectSchema = new mongoose.Schema(
   {
@@ -170,6 +178,13 @@ const ProjectSchema = new mongoose.Schema(
       {
         name: String,
         category: String,
+      },
+    ],
+    contributors: [
+      {
+        contributor: { type: mongoose.Schema.Types.ObjectId, ref: 'Contributor', required: true },
+        role: { type: String, required: true },
+        order: { type: Number, default: 0 },
       },
     ],
     likes: { type: Number, default: 0 },

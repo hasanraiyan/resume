@@ -11,33 +11,12 @@ import LikeButton from '@/components/LikeButton';
 import SocialShare from '@/components/SocialShare';
 
 export default function ProjectDetailClient({ project, relatedProjects }) {
-  const contributors = [
-    {
-      name: 'John Doe',
-      role: 'Lead Developer',
-      avatar: 'https://picsum.photos/seed/john/150/150',
-      portfolio: 'https://johndoe.dev',
-      linkedin: 'https://linkedin.com/in/johndoe',
-      github: 'https://github.com/johndoe',
-      twitter: 'https://twitter.com/johndoe',
-    },
-    {
-      name: 'Jane Smith',
-      role: 'UI/UX Designer',
-      avatar: 'https://picsum.photos/seed/jane/150/150',
-      portfolio: 'https://janesmith.design',
-      linkedin: 'https://linkedin.com/in/janesmith',
-      dribbble: 'https://dribbble.com/janesmith',
-      behance: 'https://behance.net/janesmith',
-    },
-    {
-      name: 'Bob Johnson',
-      role: 'Project Manager',
-      avatar: 'https://picsum.photos/seed/bob/150/150',
-      linkedin: 'https://linkedin.com/in/bobjohnson',
-      twitter: 'https://twitter.com/bobjohnson',
-    },
-  ];
+  // Transform contributors from the project data
+  const contributors =
+    project.contributors?.map((item) => ({
+      ...item.contributor,
+      role: item.role, // Use the project-specific role
+    })) || [];
   return (
     <main className="">
       <Section className="py-8 sm:py-12 md:py-16 bg-white">

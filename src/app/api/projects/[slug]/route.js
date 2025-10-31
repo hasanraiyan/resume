@@ -29,10 +29,10 @@ export async function GET(request, { params }) {
     // Check if it's a MongoDB ObjectId (24 hex characters) or a slug
     if (/^[0-9a-fA-F]{24}$/.test(slug)) {
       console.log('Searching by ObjectId:', slug);
-      project = await Project.findById(slug).lean();
+      project = await Project.findById(slug).populate('contributors.contributor').lean();
     } else {
       console.log('Searching by slug:', slug);
-      project = await Project.findOne({ slug }).lean();
+      project = await Project.findOne({ slug }).populate('contributors.contributor').lean();
     }
 
     console.log('Project found:', project ? 'Yes' : 'No');
@@ -46,6 +46,11 @@ export async function GET(request, { params }) {
         { success: false, message: 'Project not found', sampleProjects: allProjects },
         { status: 404 }
       );
+    }
+
+    // Sort contributors by order
+    if (project.contributors) {
+      project.contributors.sort((a, b) => (a.order || 0) - (b.order || 0));
     }
 
     // Convert MongoDB _id to string for JSON serialization
