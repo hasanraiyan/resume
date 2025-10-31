@@ -38,7 +38,7 @@ const nextConfig = {
 
       {
         protocol: 'https',
-        hostname: 'i.pravatar.cc'
+        hostname: 'i.pravatar.cc',
       },
       // Cloudinary domains for uploaded assets
       {
@@ -48,7 +48,7 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: '*.cloudinary.com',
-      }
+      },
     ],
   },
   // Increase server action body size limit for file uploads (experimental format)

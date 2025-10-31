@@ -33,6 +33,7 @@ function processFormData(formData) {
     // Parse the JSON string fields
     images: JSON.parse(formData.get('images') || '[]'),
     tags: JSON.parse(formData.get('tags') || '[]'),
+    contributors: JSON.parse(formData.get('contributors') || '[]'),
     links: JSON.parse(formData.get('links') || '{}'),
     details: JSON.parse(formData.get('details') || '{}'),
   };

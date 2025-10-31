@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import dbConnect from '@/lib/dbConnect';
 import Contributor from '@/models/Contributor';
 
@@ -19,7 +19,7 @@ import Contributor from '@/models/Contributor';
  * GET /api/admin/contributors
  * List all contributors with optional search and pagination
  */
-export async function GET(request: NextRequest) {
+export async function GET(request) {
   try {
     // Check authentication
     const session = await getServerSession(authOptions);
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
  * POST /api/admin/contributors
  * Create a new contributor
  */
-export async function POST(request: NextRequest) {
+export async function POST(request) {
   try {
     // Check authentication
     const session = await getServerSession(authOptions);

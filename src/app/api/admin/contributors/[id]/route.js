@@ -12,7 +12,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import dbConnect from '@/lib/dbConnect';
 import Contributor from '@/models/Contributor';
 import Project from '@/models/Project';
@@ -21,7 +21,7 @@ import Project from '@/models/Project';
  * GET /api/admin/contributors/[id]
  * Get a specific contributor by ID
  */
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request, { params }) {
   try {
     // Check authentication
     const session = await getServerSession(authOptions);
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
  * PUT /api/admin/contributors/[id]
  * Update a specific contributor
  */
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request, { params }) {
   try {
     // Check authentication
     const session = await getServerSession(authOptions);
@@ -101,7 +101,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
  * DELETE /api/admin/contributors/[id]
  * Delete a specific contributor
  */
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request, { params }) {
   try {
     // Check authentication
     const session = await getServerSession(authOptions);

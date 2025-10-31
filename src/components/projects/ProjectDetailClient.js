@@ -211,85 +211,87 @@ export default function ProjectDetailClient({ project, relatedProjects }) {
             )}
 
           {/* Contributors Section */}
-          <div className="mb-12 sm:mb-16">
-            <h3 className="text-2xl sm:text-3xl font-bold mb-8 text-center">Contributors</h3>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {contributors.map((contributor, index) => (
-                <div
-                  key={index}
-                  className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow duration-300"
-                >
-                  <div className="flex items-center mb-4">
-                    <img
-                      src={contributor.avatar}
-                      alt={contributor.name}
-                      className="w-12 h-12 rounded-full mr-4 object-cover"
-                    />
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{contributor.name}</h4>
-                      <p className="text-sm text-gray-500">{contributor.role}</p>
+          {contributors.length > 0 && (
+            <div className="mb-12 sm:mb-16">
+              <h3 className="text-2xl sm:text-3xl font-bold mb-8 text-center">Contributors</h3>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {contributors.map((contributor, index) => (
+                  <div
+                    key={index}
+                    className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow duration-300"
+                  >
+                    <div className="flex items-center mb-4">
+                      <img
+                        src={contributor.avatar}
+                        alt={contributor.name}
+                        className="w-12 h-12 rounded-full mr-4 object-cover"
+                      />
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{contributor.name}</h4>
+                        <p className="text-sm text-gray-500">{contributor.role}</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {contributor.portfolio && (
+                        <a
+                          href={contributor.portfolio}
+                          className="text-gray-600 hover:text-black"
+                          title="Portfolio"
+                        >
+                          <i className="fas fa-globe"></i>
+                        </a>
+                      )}
+                      {contributor.linkedin && (
+                        <a
+                          href={contributor.linkedin}
+                          className="text-gray-600 hover:text-black"
+                          title="LinkedIn"
+                        >
+                          <i className="fab fa-linkedin"></i>
+                        </a>
+                      )}
+                      {contributor.github && (
+                        <a
+                          href={contributor.github}
+                          className="text-gray-600 hover:text-black"
+                          title="GitHub"
+                        >
+                          <i className="fab fa-github"></i>
+                        </a>
+                      )}
+                      {contributor.twitter && (
+                        <a
+                          href={contributor.twitter}
+                          className="text-gray-600 hover:text-black"
+                          title="Twitter"
+                        >
+                          <i className="fab fa-twitter"></i>
+                        </a>
+                      )}
+                      {contributor.dribbble && (
+                        <a
+                          href={contributor.dribbble}
+                          className="text-gray-600 hover:text-black"
+                          title="Dribbble"
+                        >
+                          <i className="fab fa-dribbble"></i>
+                        </a>
+                      )}
+                      {contributor.behance && (
+                        <a
+                          href={contributor.behance}
+                          className="text-gray-600 hover:text-black"
+                          title="Behance"
+                        >
+                          <i className="fab fa-behance"></i>
+                        </a>
+                      )}
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {contributor.portfolio && (
-                      <a
-                        href={contributor.portfolio}
-                        className="text-gray-600 hover:text-black"
-                        title="Portfolio"
-                      >
-                        <i className="fas fa-globe"></i>
-                      </a>
-                    )}
-                    {contributor.linkedin && (
-                      <a
-                        href={contributor.linkedin}
-                        className="text-gray-600 hover:text-black"
-                        title="LinkedIn"
-                      >
-                        <i className="fab fa-linkedin"></i>
-                      </a>
-                    )}
-                    {contributor.github && (
-                      <a
-                        href={contributor.github}
-                        className="text-gray-600 hover:text-black"
-                        title="GitHub"
-                      >
-                        <i className="fab fa-github"></i>
-                      </a>
-                    )}
-                    {contributor.twitter && (
-                      <a
-                        href={contributor.twitter}
-                        className="text-gray-600 hover:text-black"
-                        title="Twitter"
-                      >
-                        <i className="fab fa-twitter"></i>
-                      </a>
-                    )}
-                    {contributor.dribbble && (
-                      <a
-                        href={contributor.dribbble}
-                        className="text-gray-600 hover:text-black"
-                        title="Dribbble"
-                      >
-                        <i className="fab fa-dribbble"></i>
-                      </a>
-                    )}
-                    {contributor.behance && (
-                      <a
-                        href={contributor.behance}
-                        className="text-gray-600 hover:text-black"
-                        title="Behance"
-                      >
-                        <i className="fab fa-behance"></i>
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </Section>
 

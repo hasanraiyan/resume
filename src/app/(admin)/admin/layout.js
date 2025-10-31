@@ -38,6 +38,7 @@ function AdminLayoutContent({ children }) {
     { name: 'Articles', href: '/admin/articles', icon: 'fas fa-newspaper' },
     { name: 'Chat Logs', href: '/admin/chatbot/logs', icon: 'fas fa-comments' },
     { name: 'Chatbot Settings', href: '/admin/chatbot', icon: 'fas fa-robot' },
+    { name: 'Contributors', href: '/admin/contributors', icon: 'fas fa-users' },
     { name: 'Dashboard', href: '/admin/dashboard', icon: 'fas fa-tachometer-alt' },
     { name: 'Manage Sections', href: '/admin/sections', icon: 'fas fa-cog' },
     { name: 'Media Library', href: '/admin/media', icon: 'fas fa-images' },

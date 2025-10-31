@@ -10,7 +10,8 @@ import ProjectPreviewCard from './ProjectPreviewCard';
 import ImageManager from './ImageManager';
 import TagManager from './TagManager';
 import FormSection from './FormSection';
-import ResultsManager from './ResultsManager'; // <-- IMPORT THE NEW COMPONENT
+import ResultsManager from './ResultsManager';
+import ContributorManager from './ContributorManager';
 import RichTextEditor from './RichTextEditor';
 
 const defaultProject = {
@@ -26,6 +27,7 @@ const defaultProject = {
   isForSale: false,
   images: [],
   tags: [],
+  contributors: [],
   links: { live: '', github: '', figma: '', sales: '' },
   details: {
     client: '',
@@ -41,6 +43,8 @@ const defaultProject = {
 export default function ProjectForm({ initialData, onSave, onDelete, isEditing = false }) {
   const router = useRouter();
   const [formData, setFormData] = useState(initialData || defaultProject);
+  const [contributors, setContributors] = useState([]);
+  const [allContributors, setAllContributors] = useState([]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -65,8 +69,35 @@ export default function ProjectForm({ initialData, onSave, onDelete, isEditing =
         links: { ...defaultProject.links, ...initialData.links },
       };
       setFormData(data);
+
+      // Initialize contributors from initialData
+      if (initialData.contributors) {
+        setContributors(
+          initialData.contributors.map((c, index) => ({
+            ...c,
+            order: c.order || index,
+          }))
+        );
+      }
     }
   }, [initialData]);
+
+  // Fetch all contributors on component mount
+  useEffect(() => {
+    const fetchContributors = async () => {
+      try {
+        const response = await fetch('/api/admin/contributors');
+        if (response.ok) {
+          const data = await response.json();
+          setAllContributors(data.contributors || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch contributors:', error);
+      }
+    };
+
+    fetchContributors();
+  }, []);
 
   const categoryOptions = [
     { value: 'e-commerce', label: 'E-Commerce' },
@@ -148,9 +179,21 @@ export default function ProjectForm({ initialData, onSave, onDelete, isEditing =
     submissionData.append('links', JSON.stringify(formData.links));
     submissionData.append('details', JSON.stringify(formData.details));
 
+    // Append contributors data
+    submissionData.append(
+      'contributors',
+      JSON.stringify(
+        contributors.map((c) => ({
+          contributor: c.contributor,
+          role: c.role,
+          order: c.order || 0,
+        }))
+      )
+    );
+
     // Append top-level fields
     for (const key in formData) {
-      if (!['images', 'tags', 'links', 'details'].includes(key)) {
+      if (!['images', 'tags', 'links', 'details', 'contributors'].includes(key)) {
         submissionData.append(key, formData[key]);
       }
     }
@@ -405,6 +448,13 @@ export default function ProjectForm({ initialData, onSave, onDelete, isEditing =
             <FormSection title="Live Preview" noBorder>
               <ProjectPreviewCard project={formData} />
             </FormSection>
+
+            {/* --- CONTRIBUTORS --- */}
+            <ContributorManager
+              contributors={contributors}
+              setContributors={setContributors}
+              allContributors={allContributors}
+            />
 
             {/* --- DETAILS & RESULTS --- */}
             <Card className="p-6">
