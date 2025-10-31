@@ -13,7 +13,7 @@ import { Database, Code, Server } from 'lucide-react';
 /** Helper to render icon */
 function renderIcon(iconType, icon, size = 16) {
   if (iconType === 'fa') {
-    return <FontAwesomeIcon icon={icon} />;
+    return <FontAwesomeIcon icon={icon} style={{ fontSize: size }} />;
   } else if (iconType === 'lucide') {
     const IconComponent = icon;
     return <IconComponent size={size} />;
@@ -21,7 +21,7 @@ function renderIcon(iconType, icon, size = 16) {
   return null;
 }
 
-/** Static skills data with proficiency levels */
+/** Static skills data with proficiency levels - using grayscale colors to match the black and white theme */
 const skillsData = [
   { name: 'JavaScript', level: 95, color: 'bg-gray-800' },
   { name: 'React', level: 90, color: 'bg-gray-700' },
@@ -33,14 +33,14 @@ const skillsData = [
 
 /** Static technology stack data */
 const technologies = [
-  'React',
-  'Next.js',
-  'Node.js',
-  'MongoDB',
-  'PostgreSQL',
-  'Docker',
-  'AWS',
-  'GraphQL',
+  { name: 'React', iconType: 'fa', icon: faReact },
+  { name: 'Next.js', iconType: 'lucide', icon: Server },
+  { name: 'Node.js', iconType: 'fa', icon: faNodeJs },
+  { name: 'MongoDB', iconType: 'fa', icon: faMdb },
+  { name: 'PostgreSQL', iconType: 'lucide', icon: Database },
+  { name: 'Docker', iconType: 'fa', icon: faDocker },
+  { name: 'AWS', iconType: 'fa', icon: faAws },
+  { name: 'GraphQL', iconType: 'lucide', icon: Code },
 ];
 
 /** Static certifications data */
@@ -101,14 +101,26 @@ function SkillBar({ name, level, color }) {
         <span className="text-sm font-medium text-gray-700">{name}</span>
         <span className="text-sm text-gray-500">{level}%</span>
       </div>
-      <div className="w-full bg-gray-200 rounded-full h-2.5">
-        <div ref={barRef} className={`h-2.5 rounded-full ${color}`} />
+      <div
+        className="w-full bg-gray-200 rounded-full h-2.5"
+        role="progressbar"
+        aria-valuenow={level}
+        aria-valuemin="0"
+        aria-valuemax="100"
+      >
+        <div
+          ref={barRef}
+          className="h-2.5 rounded-full bg-gradient-to-r from-gray-300 to-gray-800"
+        />
       </div>
     </div>
   );
 }
 
-/** Main Skills component */
+/**
+ * Skills component displaying core skills, technology stack, and certifications with animations.
+ * @returns {JSX.Element} The Skills section JSX element.
+ */
 export default function Skills() {
   const sectionRef = useRef();
 
@@ -156,14 +168,15 @@ export default function Skills() {
           {/* Technology Stack */}
           <div className="skill-section">
             <h3 className="text-xl font-semibold mb-6">Technology Stack</h3>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-3">
               {technologies.map((tech, index) => (
-                <span
+                <div
                   key={index}
-                  className="px-3 py-1 bg-white rounded-full text-sm font-medium border border-gray-200 hover:border-gray-400 transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 bg-white rounded-full text-sm font-medium border border-gray-200 hover:border-gray-400 transition-all duration-200 hover:shadow-sm"
                 >
-                  {tech}
-                </span>
+                  <div className="text-gray-700">{renderIcon(tech.iconType, tech.icon, 16)}</div>
+                  <span>{tech.name}</span>
+                </div>
               ))}
             </div>
           </div>
