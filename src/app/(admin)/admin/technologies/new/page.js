@@ -1,9 +1,13 @@
 import { createTechnology } from '@/app/actions/technologyActions';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 import { Button, Card, Input } from '@/components/ui';
+import IconPicker from '@/components/admin/IconPicker';
 import Link from 'next/link';
+import { useState } from 'react';
 
 export default function NewTechnologyPage() {
+  const [iconType, setIconType] = useState('fa');
+  const [iconName, setIconName] = useState('');
   return (
     <AdminPageWrapper
       title="Create New Technology"
@@ -31,10 +35,14 @@ export default function NewTechnologyPage() {
             <select
               id="iconType"
               name="iconType"
+              value={iconType}
+              onChange={(e) => {
+                setIconType(e.target.value);
+                setIconName('');
+              }}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               required
             >
-              <option value="">Select icon type</option>
               <option value="fa">FontAwesome</option>
               <option value="lucide">Lucide</option>
             </select>
@@ -42,17 +50,31 @@ export default function NewTechnologyPage() {
 
           <div>
             <label htmlFor="iconName" className="block text-sm font-medium text-neutral-700 mb-2">
-              Icon Name *
+              Icon {iconType === 'fa' ? 'Picker' : 'Name'} *
             </label>
-            <Input
-              type="text"
-              id="iconName"
-              name="iconName"
-              placeholder="e.g., faReact, Server, Database"
-              required
-            />
+            {iconType === 'fa' ? (
+              <IconPicker
+                selectedIcon={iconName}
+                onIconSelect={setIconName}
+                placeholder="Choose a FontAwesome icon..."
+                className="w-full"
+              />
+            ) : (
+              <Input
+                type="text"
+                id="iconName"
+                name="iconName"
+                value={iconName}
+                onChange={(e) => setIconName(e.target.value)}
+                placeholder="e.g., Server, Database, Code"
+                required
+              />
+            )}
+            <input type="hidden" name="iconName" value={iconName} />
             <p className="text-sm text-neutral-500 mt-1">
-              Use the icon component name (e.g., faReact for FontAwesome, Server for Lucide)
+              {iconType === 'fa'
+                ? 'Choose from FontAwesome icons'
+                : 'Use the Lucide icon component name (e.g., Server, Database, Code)'}
             </p>
           </div>
 
