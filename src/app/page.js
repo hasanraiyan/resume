@@ -3,11 +3,12 @@ import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Marquee from '@/components/Marquee';
 import About from '@/components/About';
+import Skills from '@/components/Skills';
+import Services from '@/components/Services';
 import Work from '@/components/Work';
 import Stats from '@/components/Stats';
 import Contact from '@/components/Contact';
 import Footer from '@/components/Footer';
-import Services from '@/components/Services';
 import HomepageLoaderManager from '@/components/HomepageLoaderManager';
 import dbConnect from '@/lib/dbConnect';
 import Project from '@/models/Project';
@@ -43,6 +44,7 @@ export default async function Home() {
       <Hero />
       <Marquee />
       <About />
+      <Skills />
       <Services services={services} />
       <Work featuredProjects={featuredProjects} />
       {/* Fix for CSS layout issue causing large right-side margin */}
