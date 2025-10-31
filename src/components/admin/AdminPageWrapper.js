@@ -1,7 +1,7 @@
 'use client';
 
 import { Button, Input } from '@/components/ui';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 /**
  * Admin page wrapper component providing consistent layout structure.
@@ -32,6 +32,7 @@ export default function AdminPageWrapper({
   onSearch,
 }) {
   const [searchTerm, setSearchTerm] = useState('');
+  const searchInputRef = useRef(null);
 
   const handleSearchChange = (value) => {
     setSearchTerm(value);
@@ -39,6 +40,19 @@ export default function AdminPageWrapper({
       onSearch(value);
     }
   };
+
+  // Keyboard shortcut for search (Cmd+K on Mac, Ctrl+K on Windows/Linux)
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (searchable && (event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [searchable]);
   return (
     <div className={`space-y-8 ${className}`}>
       {/* Page Header */}
@@ -55,25 +69,55 @@ export default function AdminPageWrapper({
         </div>
 
         {searchable && (
-          <div className="mt-4 max-w-md">
-            <div className="relative">
-              <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400"></i>
+          <div className="mt-6 max-w-lg">
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <i className="fas fa-search text-neutral-400 group-focus-within:text-black transition-colors duration-200 text-sm"></i>
+              </div>
               <Input
+                ref={searchInputRef}
                 type="text"
                 placeholder={searchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border-2 border-neutral-300 focus:border-black transition-colors"
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    handleSearchChange('');
+                  }
+                }}
+                className="pl-12 pr-12 py-3 w-full bg-white border-2 border-neutral-200 rounded-lg focus:border-black focus:ring-4 focus:ring-black/5 transition-all duration-200 text-neutral-700 placeholder-neutral-400 shadow-sm hover:shadow-md focus:shadow-lg text-sm"
               />
               {searchTerm && (
                 <button
                   onClick={() => handleSearchChange('')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-neutral-400 hover:text-red-500 transition-colors duration-200 group"
+                  title="Clear search"
                 >
-                  <i className="fas fa-times"></i>
+                  <i className="fas fa-times-circle text-base group-hover:scale-110 transition-transform duration-200"></i>
                 </button>
               )}
+              {!searchTerm && (
+                <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                  <kbd className="hidden sm:inline-flex items-center px-2 py-1 text-xs font-medium text-neutral-400 bg-neutral-100 border border-neutral-200 rounded shadow-sm">
+                    ⌘K
+                  </kbd>
+                </div>
+              )}
             </div>
+            {searchTerm && (
+              <div className="mt-3 text-xs text-neutral-500 flex items-center justify-between animate-in slide-in-from-top-1 duration-200">
+                <span className="flex items-center">
+                  <i className="fas fa-search mr-1.5 text-neutral-400"></i>
+                  Searching for: <strong className="text-neutral-700">"{searchTerm}"</strong>
+                </span>
+                <span className="text-neutral-400 flex items-center">
+                  <kbd className="inline-flex items-center px-1.5 py-0.5 text-xs font-medium bg-neutral-100 border border-neutral-200 rounded mr-1">
+                    ESC
+                  </kbd>
+                  to clear
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>
