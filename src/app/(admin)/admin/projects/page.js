@@ -1,18 +1,67 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { getAllProjects } from '@/app/actions/projectActions';
 import { Button, Card, Badge } from '@/components/ui';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 import { Badge as UIBadge } from '@/components/ui';
+import { useState, useEffect } from 'react';
 
-export default async function ProjectsListPage() {
-  const result = await getAllProjects();
-  const projects = result.projects || [];
+export default function ProjectsListPage() {
+  const [projects, setProjects] = useState([]);
+  const [filteredProjects, setFilteredProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      const { success, projects: fetchedProjects } = await getAllProjects();
+      if (success) {
+        setProjects(fetchedProjects);
+        setFilteredProjects(fetchedProjects);
+      }
+      setLoading(false);
+    };
+    fetchProjects();
+  }, []);
+
+  const handleSearch = (searchTerm) => {
+    if (!searchTerm.trim()) {
+      setFilteredProjects(projects);
+      return;
+    }
+
+    const filtered = projects.filter(
+      (project) =>
+        project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.tags?.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+    setFilteredProjects(filtered);
+  };
+
+  if (loading) {
+    return (
+      <AdminPageWrapper
+        title="Projects"
+        description="Manage your portfolio projects. Create, edit, and organize your work."
+      >
+        <div className="text-center py-20">
+          <div className="animate-spin w-8 h-8 border-2 border-black border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-neutral-600">Loading projects...</p>
+        </div>
+      </AdminPageWrapper>
+    );
+  }
 
   return (
     <AdminPageWrapper
       title="Projects"
       description="Manage your portfolio projects. Create, edit, and organize your work."
+      searchable={true}
+      searchPlaceholder="Search projects by title, description, category, or tags..."
+      onSearch={handleSearch}
       actionButton={
         <Button href="/admin/projects/new" variant="primary">
           <i className="fas fa-plus mr-2"></i>
@@ -34,9 +83,22 @@ export default async function ProjectsListPage() {
             Create First Project
           </Button>
         </div>
+      ) : filteredProjects.length === 0 && projects.length > 0 ? (
+        <div className="text-center py-20">
+          <div className="w-16 h-16 bg-neutral-100 rounded-lg flex items-center justify-center mx-auto mb-6">
+            <i className="fas fa-search text-neutral-400 text-2xl"></i>
+          </div>
+          <h3 className="text-xl font-semibold text-black mb-2">No projects found</h3>
+          <p className="text-neutral-600 mb-8">
+            Try adjusting your search terms or clear the search to see all projects.
+          </p>
+          <Button onClick={() => handleSearch('')} variant="secondary">
+            Clear Search
+          </Button>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => (
+          {filteredProjects.map((project) => (
             <Card
               key={project._id}
               className="overflow-hidden hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group"
