@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Card } from '@/components/ui';
@@ -10,63 +10,42 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faReact, faNodeJs, faDocker, faAws, faMdb } from '@fortawesome/free-brands-svg-icons';
 import { Database, Code, Server } from 'lucide-react';
 
+/** Icon mappings for dynamic rendering */
+const faIcons = {
+  faReact,
+  faNodeJs,
+  faDocker,
+  faAws,
+  faMdb,
+};
+
+const lucideIcons = {
+  Database,
+  Code,
+  Server,
+};
+
 /** Helper to render icon */
-function renderIcon(iconType, icon, size = 16) {
+function renderIcon(iconType, iconName, size = 16) {
   if (iconType === 'fa') {
-    return <FontAwesomeIcon icon={icon} style={{ fontSize: size }} />;
+    const icon = faIcons[iconName];
+    return icon ? <FontAwesomeIcon icon={icon} style={{ fontSize: size }} /> : null;
   } else if (iconType === 'lucide') {
-    const IconComponent = icon;
-    return <IconComponent size={size} />;
+    const IconComponent = lucideIcons[iconName];
+    return IconComponent ? <IconComponent size={size} /> : null;
   }
   return null;
 }
 
-/** Static skills data with proficiency levels - using grayscale colors to match the black and white theme */
-const skillsData = [
-  { name: 'JavaScript', level: 95, color: 'bg-gray-800' },
-  { name: 'React', level: 90, color: 'bg-gray-700' },
-  { name: 'Node.js', level: 85, color: 'bg-gray-600' },
-  { name: 'Python', level: 80, color: 'bg-gray-500' },
-  { name: 'TypeScript', level: 85, color: 'bg-gray-400' },
-  { name: 'CSS/HTML', level: 90, color: 'bg-gray-300' },
-];
-
-/** Static technology stack data */
-const technologies = [
-  { name: 'React', iconType: 'fa', icon: faReact },
-  { name: 'Next.js', iconType: 'lucide', icon: Server },
-  { name: 'Node.js', iconType: 'fa', icon: faNodeJs },
-  { name: 'MongoDB', iconType: 'fa', icon: faMdb },
-  { name: 'PostgreSQL', iconType: 'lucide', icon: Database },
-  { name: 'Docker', iconType: 'fa', icon: faDocker },
-  { name: 'AWS', iconType: 'fa', icon: faAws },
-  { name: 'GraphQL', iconType: 'lucide', icon: Code },
-];
-
-/** Static certifications data */
-const certifications = [
-  {
-    name: 'AWS Certified Solutions Architect',
-    issuer: 'Amazon Web Services',
-    date: '2023',
-    iconType: 'fa',
-    icon: faAws,
-  },
-  {
-    name: 'React Developer Certification',
-    issuer: 'Meta',
-    date: '2022',
-    iconType: 'fa',
-    icon: faReact,
-  },
-  {
-    name: 'Node.js Certified Developer',
-    issuer: 'Node.js Foundation',
-    date: '2021',
-    iconType: 'fa',
-    icon: faNodeJs,
-  },
-];
+/** Color mapping for skills based on level */
+function getSkillColor(level) {
+  if (level >= 90) return 'bg-gray-800';
+  if (level >= 80) return 'bg-gray-700';
+  if (level >= 70) return 'bg-gray-600';
+  if (level >= 60) return 'bg-gray-500';
+  if (level >= 50) return 'bg-gray-400';
+  return 'bg-gray-300';
+}
 
 /**
  * Skill bar component with animation
@@ -75,7 +54,7 @@ const certifications = [
  * @param {number} props.level - Proficiency level (0-100)
  * @param {string} props.color - Tailwind color class
  */
-function SkillBar({ name, level, color }) {
+function SkillBar({ name, level }) {
   const barRef = useRef();
 
   useEffect(() => {
@@ -123,25 +102,78 @@ function SkillBar({ name, level, color }) {
  */
 export default function Skills() {
   const sectionRef = useRef();
+  const [skillsData, setSkillsData] = useState([]);
+  const [technologies, setTechnologies] = useState([]);
+  const [certifications, setCertifications] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
+    const fetchData = async () => {
+      try {
+        const [skillsRes, techRes, certRes] = await Promise.all([
+          fetch('/api/skills'),
+          fetch('/api/technologies'),
+          fetch('/api/certifications'),
+        ]);
 
-    const section = sectionRef.current;
-    if (!section) return;
+        const skills = await skillsRes.json();
+        const tech = await techRes.json();
+        const cert = await certRes.json();
 
-    gsap.from(section.querySelectorAll('.skill-section'), {
-      opacity: 0,
-      y: 50,
-      duration: 1,
-      stagger: 0.2,
-      scrollTrigger: {
-        trigger: section,
-        start: 'top 80%',
-        toggleActions: 'play none none reverse',
-      },
-    });
+        setSkillsData(skills.map((skill) => ({ ...skill, color: getSkillColor(skill.level) })));
+        setTechnologies(tech);
+        setCertifications(cert);
+      } catch (error) {
+        console.error('Error fetching skills data:', error);
+        // Fallback to static data if API fails
+        setSkillsData([
+          { name: 'JavaScript', level: 95, color: getSkillColor(95) },
+          { name: 'React', level: 90, color: getSkillColor(90) },
+          { name: 'Node.js', level: 85, color: getSkillColor(85) },
+        ]);
+        setTechnologies([
+          { name: 'React', iconType: 'fa', iconName: 'faReact' },
+          { name: 'Next.js', iconType: 'lucide', iconName: 'Server' },
+          { name: 'Node.js', iconType: 'fa', iconName: 'faNodeJs' },
+        ]);
+        setCertifications([
+          {
+            name: 'AWS Certified',
+            issuer: 'AWS',
+            date: '2023',
+            iconType: 'fa',
+            iconName: 'faAws',
+            url: '#',
+          },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      gsap.registerPlugin(ScrollTrigger);
+
+      const section = sectionRef.current;
+      if (!section) return;
+
+      gsap.from(section.querySelectorAll('.skill-section'), {
+        opacity: 0,
+        y: 50,
+        duration: 1,
+        stagger: 0.2,
+        scrollTrigger: {
+          trigger: section,
+          start: 'top 80%',
+          toggleActions: 'play none none reverse',
+        },
+      });
+    }
+  }, [loading]);
 
   return (
     <section ref={sectionRef} id="skills" className="py-16 sm:py-20 bg-gray-50">
@@ -154,52 +186,64 @@ export default function Skills() {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8 sm:gap-12">
-          {/* Skills with progress bars */}
-          <div className="skill-section">
-            <h3 className="text-xl font-semibold mb-6">Core Skills</h3>
-            <div>
-              {skillsData.map((skill, index) => (
-                <SkillBar key={index} name={skill.name} level={skill.level} color={skill.color} />
-              ))}
+        <div className="space-y-12">
+          {/* Skills and Technology Stack in one row on xl */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-8">
+            {/* Skills with progress bars */}
+            <div className="skill-section">
+              <h3 className="text-xl font-semibold mb-6">Core Skills</h3>
+              <div>
+                {skillsData.map((skill, index) => (
+                  <SkillBar key={skill._id || index} name={skill.name} level={skill.level} />
+                ))}
+              </div>
+            </div>
+
+            {/* Technology Stack */}
+            <div className="skill-section">
+              <h3 className="text-xl font-semibold mb-6">Technology Stack</h3>
+              <div className="flex flex-wrap gap-3">
+                {technologies.map((tech, index) => (
+                  <div
+                    key={tech._id || index}
+                    className="flex items-center gap-2 px-3 py-2 bg-white rounded-full text-sm font-medium border border-gray-200 hover:border-gray-400 transition-all duration-200 hover:shadow-sm"
+                  >
+                    <div className="text-gray-700">
+                      {renderIcon(tech.iconType, tech.iconName, 16)}
+                    </div>
+                    <span>{tech.name}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Technology Stack */}
-          <div className="skill-section">
-            <h3 className="text-xl font-semibold mb-6">Technology Stack</h3>
-            <div className="flex flex-wrap gap-3">
-              {technologies.map((tech, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-2 px-3 py-2 bg-white rounded-full text-sm font-medium border border-gray-200 hover:border-gray-400 transition-all duration-200 hover:shadow-sm"
-                >
-                  <div className="text-gray-700">{renderIcon(tech.iconType, tech.icon, 16)}</div>
-                  <span>{tech.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Certifications */}
+          {/* Certifications on new line */}
           <div className="skill-section">
             <h3 className="text-xl font-semibold mb-6">Certifications</h3>
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               {certifications.map((cert, index) => (
-                <Card
-                  key={index}
-                  variant="bordered"
-                  className="p-4 hover:shadow-lg transition-shadow duration-300"
+                <a
+                  key={cert._id || index}
+                  href={cert.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block"
                 >
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="text-gray-900 text-lg">
-                      {renderIcon(cert.iconType, cert.icon)}
+                  <Card
+                    variant="bordered"
+                    className="p-4 hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="text-gray-900 text-lg">
+                        {renderIcon(cert.iconType, cert.iconName)}
+                      </div>
+                      <h4 className="font-medium text-gray-900">{cert.name}</h4>
                     </div>
-                    <h4 className="font-medium text-gray-900">{cert.name}</h4>
-                  </div>
-                  <p className="text-sm text-gray-600">{cert.issuer}</p>
-                  <p className="text-xs text-gray-500 mt-1">{cert.date}</p>
-                </Card>
+                    <p className="text-sm text-gray-600">{cert.issuer}</p>
+                    <p className="text-xs text-gray-500 mt-1">{cert.date}</p>
+                  </Card>
+                </a>
               ))}
             </div>
           </div>
