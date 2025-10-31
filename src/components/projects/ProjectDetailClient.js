@@ -12,15 +12,15 @@ import SocialShare from '@/components/SocialShare';
 
 export default function ProjectDetailClient({ project, relatedProjects }) {
   // Transform contributors from the project data
-  // Note: item.contributor is just an ID string, not an object
-  // For now, we'll create a placeholder structure until proper population is implemented
+  // Now that contributors are populated, use the actual contributor data
   const contributors =
     project.contributors?.map((item) => ({
-      _id: item.contributor, // The contributor ID
-      name: `Contributor ${item.contributor.substring(0, 8)}`, // Placeholder name
-      avatar: '/images/avatar-placeholder.png', // Placeholder avatar
+      _id: item.contributor._id,
+      name: item.contributor.name,
+      avatar: item.contributor.avatar || '/images/avatar-placeholder.png',
+      bio: item.contributor.bio,
       role: item.role, // Use the project-specific role
-      socialLinks: {}, // Empty social links for now
+      socialLinks: item.contributor.socialLinks || {},
     })) || [];
 
   // Debug logging for contributors

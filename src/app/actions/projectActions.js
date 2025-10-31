@@ -180,10 +180,19 @@ export async function getProjectBySlug(slug, isAuthenticated = false) {
       slug,
       status: 'published',
       visibility: visibilityFilter,
-    }).lean();
+    })
+      .populate('contributors.contributor')
+      .lean();
     if (!project) {
       return { success: false, project: null };
     }
+
+    // Sort contributors by order
+    if (project.contributors) {
+      project.contributors = project.contributors.filter((c) => c.contributor);
+      project.contributors.sort((a, b) => (a.order || 0) - (b.order || 0));
+    }
+
     const serializedProject = serializeProject(project);
     return { success: true, project: serializedProject };
   } catch (error) {
