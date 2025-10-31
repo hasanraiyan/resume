@@ -19,7 +19,11 @@ export default async function Home() {
   await dbConnect();
 
   // Fetch featured projects from MongoDB
-  const featuredProjectsData = await Project.find({ featured: true })
+  const featuredProjectsData = await Project.find({
+    featured: true,
+    visibility: 'public',
+    status: 'published',
+  })
     .sort({ createdAt: -1 })
     .lean();
 
