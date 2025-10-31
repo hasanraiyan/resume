@@ -63,6 +63,11 @@ export function serializeForClient(obj) {
     return obj.toISOString();
   }
 
+  // Handle Buffer objects
+  if (Buffer.isBuffer(obj)) {
+    return obj.toString('base64');
+  }
+
   if (Array.isArray(obj)) {
     return obj.map((item) => serializeForClient(item));
   }

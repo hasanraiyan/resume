@@ -1,3 +1,4 @@
+'use server';
 /**
  * @fileoverview API route for managing individual contributors in admin panel.
  * Provides CRUD operations for specific contributor profiles.

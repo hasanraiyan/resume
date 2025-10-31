@@ -5,31 +5,8 @@ import CustomCursor from '@/components/CustomCursor';
 import ProjectDetailClient from '@/components/projects/ProjectDetailClient';
 import dbConnect from '@/lib/dbConnect';
 import Project from '@/models/Project';
-
-// Helper function to recursively convert MongoDB documents to plain objects
-function serializeMongoDocument(obj) {
-  if (!obj) return obj;
-
-  if (Array.isArray(obj)) {
-    return obj.map(serializeMongoDocument);
-  }
-
-  if (typeof obj === 'object' && obj !== null) {
-    const serialized = {};
-    for (const key in obj) {
-      if (key === '_id' && obj[key]) {
-        serialized[key] = obj[key].toString();
-      } else if (typeof obj[key] === 'object') {
-        serialized[key] = serializeMongoDocument(obj[key]);
-      } else {
-        serialized[key] = obj[key];
-      }
-    }
-    return serialized;
-  }
-
-  return obj;
-}
+import Contributor from '@/models/Contributor';
+import { serializeProject, serializeProjects } from '@/lib/serialize';
 
 // ========================================
 //  GENERATE STATIC PARAMS (Optional but recommended)
@@ -72,7 +49,7 @@ export default async function ProjectDetailPage({ params }) {
 
   // Await params to unwrap the Promise
   const { slug } = await params;
-  const project = await Project.findOne({ slug }).lean();
+  const project = await Project.findOne({ slug }).populate('contributors.contributor').lean();
 
   // If project not found, show 404
   if (!project) {
@@ -80,26 +57,19 @@ export default async function ProjectDetailPage({ params }) {
   }
 
   // Serialize project data to remove MongoDB-specific objects
-  const projectData = serializeMongoDocument({
-    ...project,
-    id: project._id.toString(),
-  });
+  const projectData = serializeProject(project);
 
   // Get related projects from the same category (limit to 3)
   const relatedProjectsData = await Project.find({
     category: project.category,
     _id: { $ne: project._id },
   })
+    .populate('contributors.contributor')
     .limit(3)
     .lean();
 
   // Serialize related projects data
-  const relatedProjects = relatedProjectsData.map((p) =>
-    serializeMongoDocument({
-      ...p,
-      id: p._id.toString(),
-    })
-  );
+  const relatedProjects = serializeProjects(relatedProjectsData);
 
   return (
     <>

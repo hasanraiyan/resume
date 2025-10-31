@@ -232,54 +232,54 @@ export default function ProjectDetailClient({ project, relatedProjects }) {
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {contributor.portfolio && (
+                      {contributor.socialLinks?.portfolio && (
                         <a
-                          href={contributor.portfolio}
+                          href={contributor.socialLinks.portfolio}
                           className="text-gray-600 hover:text-black"
                           title="Portfolio"
                         >
                           <i className="fas fa-globe"></i>
                         </a>
                       )}
-                      {contributor.linkedin && (
+                      {contributor.socialLinks?.linkedin && (
                         <a
-                          href={contributor.linkedin}
+                          href={contributor.socialLinks.linkedin}
                           className="text-gray-600 hover:text-black"
                           title="LinkedIn"
                         >
                           <i className="fab fa-linkedin"></i>
                         </a>
                       )}
-                      {contributor.github && (
+                      {contributor.socialLinks?.github && (
                         <a
-                          href={contributor.github}
+                          href={contributor.socialLinks.github}
                           className="text-gray-600 hover:text-black"
                           title="GitHub"
                         >
                           <i className="fab fa-github"></i>
                         </a>
                       )}
-                      {contributor.twitter && (
+                      {contributor.socialLinks?.twitter && (
                         <a
-                          href={contributor.twitter}
+                          href={contributor.socialLinks.twitter}
                           className="text-gray-600 hover:text-black"
                           title="Twitter"
                         >
                           <i className="fab fa-twitter"></i>
                         </a>
                       )}
-                      {contributor.dribbble && (
+                      {contributor.socialLinks?.dribbble && (
                         <a
-                          href={contributor.dribbble}
+                          href={contributor.socialLinks.dribbble}
                           className="text-gray-600 hover:text-black"
                           title="Dribbble"
                         >
                           <i className="fab fa-dribbble"></i>
                         </a>
                       )}
-                      {contributor.behance && (
+                      {contributor.socialLinks?.behance && (
                         <a
-                          href={contributor.behance}
+                          href={contributor.socialLinks.behance}
                           className="text-gray-600 hover:text-black"
                           title="Behance"
                         >
