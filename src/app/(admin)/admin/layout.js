@@ -36,6 +36,7 @@ function AdminLayoutContent({ children }) {
   const navigation = [
     { name: 'Analytics', href: '/admin/analytics', icon: 'fas fa-chart-line' },
     { name: 'Articles', href: '/admin/articles', icon: 'fas fa-newspaper' },
+    { name: 'Certifications', href: '/admin/certifications', icon: 'fas fa-certificate' },
     { name: 'Chat Logs', href: '/admin/chatbot/logs', icon: 'fas fa-comments' },
     { name: 'Chatbot Settings', href: '/admin/chatbot', icon: 'fas fa-robot' },
     { name: 'Contributors', href: '/admin/contributors', icon: 'fas fa-users' },
@@ -45,7 +46,9 @@ function AdminLayoutContent({ children }) {
     { name: 'Messages', href: '/admin/contacts', icon: 'fas fa-envelope' },
     { name: 'Projects', href: '/admin/projects', icon: 'fas fa-folder' },
     { name: 'Services', href: '/admin/services', icon: 'fas fa-tools' },
+    { name: 'Skills', href: '/admin/skills', icon: 'fas fa-code' },
     { name: 'Subscribers', href: '/admin/subscribers', icon: 'fas fa-users' },
+    { name: 'Technologies', href: '/admin/technologies', icon: 'fas fa-cogs' },
   ];
 
   return (
