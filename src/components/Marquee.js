@@ -1,13 +1,16 @@
 // ========================================
-// 📦 ENHANCED DATA STRUCTURE
+// 📦 DYNAMIC DATA FETCHING
 // ========================================
-const marqueeData = {
+import { getActiveServices } from '@/app/actions/serviceActions';
+
+// Default fallback data in case no services are available
+const fallbackData = {
   services: [
     {
       id: 1,
       text: 'WEB DESIGN',
-      link: '#services/web-design', // Optional link
-      icon: 'fas fa-palette', // Optional icon
+      link: '#services/web-design',
+      icon: 'fas fa-palette',
     },
     {
       id: 2,
@@ -44,16 +47,36 @@ const marqueeData = {
 // ========================================
 
 /**
- * Scrolling marquee component displaying services with clickable links.
+ * Dynamic scrolling marquee component displaying services with clickable links.
  *
- * This component creates a horizontally scrolling marquee that showcases
- * available services (Web Design, Development, Branding, UI/UX) with optional
- * clickable links. The marquee repeats the service list multiple times for
- * continuous scrolling and includes separators between items.
+ * This component fetches active services from the database and creates a
+ * horizontally scrolling marquee. If no services are found, it falls back
+ * to default services. The marquee repeats the service list multiple times
+ * for continuous scrolling and includes separators between items.
  *
  * @returns {JSX.Element} Scrolling marquee section with service links
  */
-export default function Marquee() {
+export default async function Marquee() {
+  // Fetch active services from database
+  const services = await getActiveServices();
+
+  // Format services for marquee display
+  const marqueeServices =
+    services.length > 0
+      ? services.map((service) => ({
+          id: service._id,
+          text: service.title.toUpperCase(),
+          link: `#services/${service.title.toLowerCase().replace(/\s+/g, '-')}`,
+          icon: service.icon,
+        }))
+      : fallbackData.services;
+
+  const marqueeData = {
+    services: marqueeServices,
+    separator: '•',
+    repeatCount: 2,
+    styling: fallbackData.styling,
+  };
   return (
     <section className="py-6 sm:py-8 md:py-10 bg-black text-white overflow-hidden">
       <div className="marquee">
