@@ -1,3 +1,5 @@
+'use client';
+
 import { createTechnology } from '@/app/actions/technologyActions';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 import { Button, Card, Input } from '@/components/ui';

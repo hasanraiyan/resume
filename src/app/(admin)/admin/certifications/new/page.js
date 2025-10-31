@@ -1,3 +1,5 @@
+'use client';
+
 import { createCertification } from '@/app/actions/certificationActions';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 import { Button, Card, Input } from '@/components/ui';
