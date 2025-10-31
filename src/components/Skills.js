@@ -6,15 +6,29 @@ import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Card } from '@/components/ui';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faReact, faNodeJs, faDocker, faAws, faMdb } from '@fortawesome/free-brands-svg-icons';
+import { Database, Code, Server } from 'lucide-react';
+
+/** Helper to render icon */
+function renderIcon(iconType, icon, size = 16) {
+  if (iconType === 'fa') {
+    return <FontAwesomeIcon icon={icon} />;
+  } else if (iconType === 'lucide') {
+    const IconComponent = icon;
+    return <IconComponent size={size} />;
+  }
+  return null;
+}
 
 /** Static skills data with proficiency levels */
 const skillsData = [
-  { name: 'JavaScript', level: 95 },
-  { name: 'React', level: 90 },
-  { name: 'Node.js', level: 85 },
-  { name: 'Python', level: 80 },
-  { name: 'TypeScript', level: 85 },
-  { name: 'CSS/HTML', level: 90 },
+  { name: 'JavaScript', level: 95, color: 'bg-gray-800' },
+  { name: 'React', level: 90, color: 'bg-gray-700' },
+  { name: 'Node.js', level: 85, color: 'bg-gray-600' },
+  { name: 'Python', level: 80, color: 'bg-gray-500' },
+  { name: 'TypeScript', level: 85, color: 'bg-gray-400' },
+  { name: 'CSS/HTML', level: 90, color: 'bg-gray-300' },
 ];
 
 /** Static technology stack data */
@@ -31,9 +45,27 @@ const technologies = [
 
 /** Static certifications data */
 const certifications = [
-  { name: 'AWS Certified Solutions Architect', issuer: 'Amazon Web Services', date: '2023' },
-  { name: 'React Developer Certification', issuer: 'Meta', date: '2022' },
-  { name: 'Node.js Certified Developer', issuer: 'Node.js Foundation', date: '2021' },
+  {
+    name: 'AWS Certified Solutions Architect',
+    issuer: 'Amazon Web Services',
+    date: '2023',
+    iconType: 'fa',
+    icon: faAws,
+  },
+  {
+    name: 'React Developer Certification',
+    issuer: 'Meta',
+    date: '2022',
+    iconType: 'fa',
+    icon: faReact,
+  },
+  {
+    name: 'Node.js Certified Developer',
+    issuer: 'Node.js Foundation',
+    date: '2021',
+    iconType: 'fa',
+    icon: faNodeJs,
+  },
 ];
 
 /**
@@ -41,8 +73,9 @@ const certifications = [
  * @param {Object} props
  * @param {string} props.name - Skill name
  * @param {number} props.level - Proficiency level (0-100)
+ * @param {string} props.color - Tailwind color class
  */
-function SkillBar({ name, level }) {
+function SkillBar({ name, level, color }) {
   const barRef = useRef();
 
   useEffect(() => {
@@ -69,7 +102,7 @@ function SkillBar({ name, level }) {
         <span className="text-sm text-gray-500">{level}%</span>
       </div>
       <div className="w-full bg-gray-200 rounded-full h-2.5">
-        <div ref={barRef} className="bg-blue-600 h-2.5 rounded-full" />
+        <div ref={barRef} className={`h-2.5 rounded-full ${color}`} />
       </div>
     </div>
   );
@@ -115,7 +148,7 @@ export default function Skills() {
             <h3 className="text-xl font-semibold mb-6">Core Skills</h3>
             <div>
               {skillsData.map((skill, index) => (
-                <SkillBar key={index} name={skill.name} level={skill.level} />
+                <SkillBar key={index} name={skill.name} level={skill.level} color={skill.color} />
               ))}
             </div>
           </div>
@@ -127,7 +160,7 @@ export default function Skills() {
               {technologies.map((tech, index) => (
                 <span
                   key={index}
-                  className="px-3 py-1 bg-white rounded-full text-sm font-medium border border-gray-200 hover:border-blue-300 transition-colors"
+                  className="px-3 py-1 bg-white rounded-full text-sm font-medium border border-gray-200 hover:border-gray-400 transition-colors"
                 >
                   {tech}
                 </span>
@@ -140,8 +173,17 @@ export default function Skills() {
             <h3 className="text-xl font-semibold mb-6">Certifications</h3>
             <div className="space-y-4">
               {certifications.map((cert, index) => (
-                <Card key={index} variant="bordered" className="p-4">
-                  <h4 className="font-medium text-gray-900">{cert.name}</h4>
+                <Card
+                  key={index}
+                  variant="bordered"
+                  className="p-4 hover:shadow-lg transition-shadow duration-300"
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="text-gray-900 text-lg">
+                      {renderIcon(cert.iconType, cert.icon)}
+                    </div>
+                    <h4 className="font-medium text-gray-900">{cert.name}</h4>
+                  </div>
                   <p className="text-sm text-gray-600">{cert.issuer}</p>
                   <p className="text-xs text-gray-500 mt-1">{cert.date}</p>
                 </Card>
