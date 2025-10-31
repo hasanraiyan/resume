@@ -23,6 +23,13 @@ export default function ProjectDetailClient({ project, relatedProjects }) {
       socialLinks: {}, // Empty social links for now
     })) || [];
 
+  // Debug logging for contributors
+  console.log('ProjectDetailClient - Project data:', project);
+  console.log('ProjectDetailClient - Raw contributors from project:', project.contributors);
+  console.log('ProjectDetailClient - Transformed contributors:', contributors);
+  console.log('ProjectDetailClient - Contributors length:', contributors.length);
+  console.log('ProjectDetailClient - Contributors condition check:', contributors.length > 0);
+
   return (
     <main className="">
       <Section className="py-8 sm:py-12 md:py-16 bg-white">
@@ -217,9 +224,16 @@ export default function ProjectDetailClient({ project, relatedProjects }) {
             )}
 
           {/* Contributors Section */}
-          {contributors.length > 0 && (
+          {(() => {
+            console.log('Rendering contributors section check:', contributors.length > 0);
+            return contributors.length > 0;
+          })() && (
             <div className="mb-12 sm:mb-16">
               <h3 className="text-2xl sm:text-3xl font-bold mb-8 text-center">Contributors</h3>
+              {/* Debug: Show contributors data */}
+              <div style={{ display: 'none' }}>
+                <pre>{JSON.stringify(contributors, null, 2)}</pre>
+              </div>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {contributors.map((contributor, index) => (
                   <div

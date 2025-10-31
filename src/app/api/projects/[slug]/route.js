@@ -22,6 +22,10 @@ export async function GET(request, { params }) {
   try {
     await dbConnect();
 
+    // Debug: Check if Contributor documents exist
+    const contributorCount = await Contributor.countDocuments();
+    console.log('Total contributors in database:', contributorCount);
+
     const { slug } = await params;
     console.log('API: Received parameter:', slug);
 
@@ -37,6 +41,7 @@ export async function GET(request, { params }) {
     }
 
     console.log('Project found:', project ? 'Yes' : 'No');
+    console.log('Project contributors before populate:', project?.contributors);
 
     if (!project) {
       // For debugging, show some sample projects
@@ -51,7 +56,9 @@ export async function GET(request, { params }) {
 
     // Sort contributors by order
     if (project.contributors) {
+      console.log('Project contributors after populate:', project.contributors);
       project.contributors = project.contributors.filter((c) => c.contributor);
+      console.log('Project contributors after filtering nulls:', project.contributors);
       project.contributors.sort((a, b) => (a.order || 0) - (b.order || 0));
     }
 
