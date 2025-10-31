@@ -54,23 +54,20 @@ export default async function ArticlesPage() {
                     </div>
                     <div className="flex items-center space-x-2">
                       <Badge
-                        variant={article.status === 'published' ? 'success' : 'secondary'}
+                        variant="tag"
                         className={
                           article.status === 'published'
                             ? 'bg-green-100 text-green-800 border border-green-200'
                             : 'bg-gray-100 text-gray-800 border border-gray-200'
                         }
                       >
+                        <i
+                          className={`fas ${article.status === 'published' ? 'fa-check-circle' : 'fa-clock'} mr-1`}
+                        ></i>
                         {article.status}
                       </Badge>
                       <Badge
-                        variant={
-                          article.visibility === 'private'
-                            ? 'warning'
-                            : article.visibility === 'unlisted'
-                              ? 'secondary'
-                              : 'info'
-                        }
+                        variant="tag"
                         className={
                           article.visibility === 'private'
                             ? 'bg-orange-100 text-orange-800 border border-orange-200'
@@ -79,6 +76,9 @@ export default async function ArticlesPage() {
                               : 'bg-blue-100 text-blue-800 border border-blue-200'
                         }
                       >
+                        <i
+                          className={`fas ${article.visibility === 'private' ? 'fa-lock' : article.visibility === 'unlisted' ? 'fa-eye-slash' : 'fa-globe'} mr-1`}
+                        ></i>
                         {article.visibility}
                       </Badge>
                     </div>
