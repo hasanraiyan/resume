@@ -78,12 +78,6 @@ export default function SectionsAdminPage() {
       description: 'Manage your service offerings, pricing, and descriptions',
     },
     {
-      href: '/admin/portfolio',
-      icon: 'fa-briefcase',
-      title: 'Skills & Portfolio',
-      description: 'Manage your skills, technologies, certifications, and portfolio items',
-    },
-    {
       href: '/admin/stats',
       icon: 'fa-chart-bar',
       title: 'Stats Section',
