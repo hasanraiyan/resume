@@ -74,8 +74,11 @@ import mongoose from 'mongoose';
  *
  * @typedef {Object} Project
  * @property {string} slug - Unique URL-friendly identifier for the project
+ * @property {string} status - Publication status (draft or published)
+ * @property {string} visibility - Project visibility (public, private, or unlisted, default: public)
  * @property {boolean} featured - Whether project is featured on homepage (default: false)
  * @property {boolean} isForSale - Whether project is available for purchase (default: false)
+ * @property {Date} publishedAt - Publication date (auto-set on publish)
  * @property {string} projectNumber - Display number for ordering projects
  * @property {string} category - Project category/type classification
  * @property {string} title - Project title/name
@@ -137,8 +140,21 @@ import mongoose from 'mongoose';
 const ProjectSchema = new mongoose.Schema(
   {
     slug: { type: String, required: true, unique: true },
+    status: {
+      type: String,
+      enum: ['draft', 'published'],
+      default: 'draft',
+      index: true,
+    },
+    visibility: {
+      type: String,
+      enum: ['public', 'private', 'unlisted'],
+      default: 'public',
+      index: true,
+    },
     featured: { type: Boolean, default: false },
     isForSale: { type: Boolean, default: false },
+    publishedAt: { type: Date },
     projectNumber: { type: String, required: true },
     category: { type: String, required: true },
     title: { type: String, required: true },
@@ -192,6 +208,14 @@ const ProjectSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Set publishedAt when status changes to published
+ProjectSchema.pre('save', function (next) {
+  if (this.isModified('status') && this.status === 'published' && !this.publishedAt) {
+    this.publishedAt = new Date();
+  }
+  next();
+});
 
 // Create text index for full-text search
 ProjectSchema.index({

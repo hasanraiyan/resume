@@ -3,18 +3,14 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import CustomCursor from '@/components/CustomCursor';
 import ProjectDetailClient from '@/components/projects/ProjectDetailClient';
-import dbConnect from '@/lib/dbConnect';
-import Project from '@/models/Project';
-import Contributor from '@/models/Contributor';
-import { serializeProject, serializeProjects } from '@/lib/serialize';
+import { getProjectBySlug, getAllPublishedProjects } from '@/app/actions/projectActions';
 
 // ========================================
 //  GENERATE STATIC PARAMS (Optional but recommended)
-// Pre-render all project pages at build time
+// Pre-render all published project pages at build time
 // ========================================
 export async function generateStaticParams() {
-  await dbConnect();
-  const projects = await Project.find({}, 'slug').lean();
+  const { projects } = await getAllPublishedProjects(false);
 
   return projects.map((project) => ({
     slug: project.slug,
@@ -25,9 +21,8 @@ export async function generateStaticParams() {
 // 🎯 GENERATE METADATA (SEO)
 // ========================================
 export async function generateMetadata({ params }) {
-  await dbConnect();
   const { slug } = await params;
-  const project = await Project.findOne({ slug }).lean();
+  const { project } = await getProjectBySlug(slug, false);
 
   if (!project) {
     return {
@@ -45,31 +40,20 @@ export async function generateMetadata({ params }) {
 // 🎨 SERVER COMPONENT (Handles async params)
 // ========================================
 export default async function ProjectDetailPage({ params }) {
-  await dbConnect();
-
   // Await params to unwrap the Promise
   const { slug } = await params;
-  const project = await Project.findOne({ slug }).populate('contributors.contributor').lean();
+  const { project } = await getProjectBySlug(slug, false);
 
   // If project not found, show 404
   if (!project) {
     notFound();
   }
 
-  // Serialize project data to remove MongoDB-specific objects
-  const projectData = serializeProject(project);
-
   // Get related projects from the same category (limit to 3)
-  const relatedProjectsData = await Project.find({
-    category: project.category,
-    _id: { $ne: project._id },
-  })
-    .populate('contributors.contributor')
-    .limit(3)
-    .lean();
-
-  // Serialize related projects data
-  const relatedProjects = serializeProjects(relatedProjectsData);
+  const { projects: relatedProjectsData } = await getAllPublishedProjects(false);
+  const relatedProjects = relatedProjectsData
+    .filter((p) => p.category === project.category && p._id !== project._id)
+    .slice(0, 3);
 
   return (
     <>

@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { getAllProjects } from '@/app/actions/projectActions';
 import { Button, Card, Badge } from '@/components/ui';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
+import { Badge as UIBadge } from '@/components/ui';
 
 export default async function ProjectsListPage() {
   const result = await getAllProjects();
@@ -55,8 +56,8 @@ export default async function ProjectsListPage() {
                   </div>
                 )}
 
-                {/* Status Badge */}
-                <div className="absolute top-3 left-3">
+                {/* Status Badges */}
+                <div className="absolute top-3 left-3 flex flex-col gap-2">
                   {project.featured && (
                     <Badge
                       variant="tag"
@@ -66,6 +67,34 @@ export default async function ProjectsListPage() {
                       Featured
                     </Badge>
                   )}
+                  <Badge
+                    variant={project.status === 'published' ? 'success' : 'secondary'}
+                    className={
+                      project.status === 'published'
+                        ? 'bg-green-100 text-green-800 border border-green-200'
+                        : 'bg-gray-100 text-gray-800 border border-gray-200'
+                    }
+                  >
+                    {project.status}
+                  </Badge>
+                  <Badge
+                    variant={
+                      project.visibility === 'private'
+                        ? 'warning'
+                        : project.visibility === 'unlisted'
+                          ? 'secondary'
+                          : 'info'
+                    }
+                    className={
+                      project.visibility === 'private'
+                        ? 'bg-orange-100 text-orange-800 border border-orange-200'
+                        : project.visibility === 'unlisted'
+                          ? 'bg-gray-100 text-gray-800 border border-gray-200'
+                          : 'bg-blue-100 text-blue-800 border border-blue-200'
+                    }
+                  >
+                    {project.visibility}
+                  </Badge>
                 </div>
               </div>
 

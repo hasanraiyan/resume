@@ -23,6 +23,8 @@ const defaultProject = {
   thumbnail: '',
   description: '',
   fullDescription: '',
+  status: 'draft',
+  visibility: 'public',
   featured: false,
   isForSale: false,
   images: [],
@@ -50,6 +52,7 @@ export default function ProjectForm({ initialData, onSave, onDelete, isEditing =
   const [message, setMessage] = useState({ type: '', text: '' });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [autoGenerateSlug, setAutoGenerateSlug] = useState(!isEditing);
+  const [currentAction, setCurrentAction] = useState(null); // Track which action is currently running
 
   useEffect(() => {
     if (initialData) {
@@ -164,12 +167,16 @@ export default function ProjectForm({ initialData, onSave, onDelete, isEditing =
     }
   };
 
-  const handleFormSubmit = async (e) => {
+  const handleFormSubmit = async (e, action = 'save', overrideStatus = null) => {
     e.preventDefault();
     setSaving(true);
+    setCurrentAction(action);
     setMessage({ type: '', text: '' });
 
     const submissionData = new FormData();
+    // Use overrideStatus if provided (for publish/draft actions), otherwise use current formData status
+    const currentStatus = overrideStatus || formData.status;
+
     // Convert nested objects to JSON strings for the server action
     submissionData.append(
       'images',
@@ -196,7 +203,9 @@ export default function ProjectForm({ initialData, onSave, onDelete, isEditing =
 
     // Append top-level fields
     for (const key in formData) {
-      if (!['images', 'tags', 'links', 'details', 'contributors'].includes(key)) {
+      if (key === 'status') {
+        submissionData.append(key, currentStatus);
+      } else if (!['images', 'tags', 'links', 'details', 'contributors'].includes(key)) {
         submissionData.append(key, formData[key]);
       }
     }
@@ -207,17 +216,41 @@ export default function ProjectForm({ initialData, onSave, onDelete, isEditing =
       } else {
         await onSave(submissionData);
       }
+      const actionMessages = {
+        publish: 'Project published successfully!',
+        save: 'Project saved successfully!',
+      };
       setMessage({
         type: 'success',
-        text: `Project ${isEditing ? 'updated' : 'created'} successfully!`,
+        text:
+          actionMessages[action] || `Project ${isEditing ? 'updated' : 'created'} successfully!`,
       });
+
+      // Update local form state to reflect the published status
+      if (action === 'publish') {
+        setFormData((prev) => ({ ...prev, status: 'published' }));
+      }
+
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {
       console.error('Failed to save project:', error);
       setMessage({ type: 'error', text: 'An error occurred while saving.' });
     } finally {
       setSaving(false);
+      setCurrentAction(null);
     }
+  };
+
+  const handleSaveDraft = (e) => {
+    e.preventDefault();
+    setFormData((prev) => ({ ...prev, status: 'draft' }));
+    handleFormSubmit(e, 'save', 'draft');
+  };
+
+  const handlePublish = (e) => {
+    e.preventDefault();
+    setFormData((prev) => ({ ...prev, status: 'published' }));
+    handleFormSubmit(e, 'publish', 'published');
   };
 
   const handleDelete = async () => {
@@ -310,6 +343,19 @@ export default function ProjectForm({ initialData, onSave, onDelete, isEditing =
                     value={formData.category}
                     onChange={handleChange}
                     name="category"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <CustomDropdownMinimal
+                    label="VISIBILITY"
+                    options={[
+                      { value: 'public', label: 'Public - Anyone can view' },
+                      { value: 'private', label: 'Private - Only authenticated users can view' },
+                      { value: 'unlisted', label: 'Unlisted - Accessible via direct link only' },
+                    ]}
+                    value={formData.visibility}
+                    onChange={handleChange}
+                    name="visibility"
                   />
                 </div>
               </div>
@@ -569,9 +615,22 @@ export default function ProjectForm({ initialData, onSave, onDelete, isEditing =
                   </div>
                 </div>
                 <ActionButton
-                  isSaving={saving}
-                  text={isEditing ? 'Update Project' : 'Create Project'}
+                  isSaving={saving && currentAction === 'save'}
+                  text="Save Draft"
                   savingText="Saving..."
+                  variant="secondary"
+                  onClick={handleSaveDraft}
+                  disabled={saving}
+                  className="w-full"
+                />
+
+                <ActionButton
+                  isSaving={saving && currentAction === 'publish'}
+                  text="Publish"
+                  savingText="Publishing..."
+                  variant="primary"
+                  onClick={handlePublish}
+                  disabled={saving}
                   className="w-full"
                 />
                 <ActionButton

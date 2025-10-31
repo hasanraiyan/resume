@@ -22,6 +22,8 @@ function processFormData(formData) {
   return {
     title: formData.get('title'),
     slug: formData.get('slug'),
+    status: formData.get('status'),
+    visibility: formData.get('visibility') || 'public',
     featured: formData.get('featured') === 'true',
     projectNumber: formData.get('projectNumber'),
     category: formData.get('category'),
@@ -158,11 +160,27 @@ export async function getAllProjects() {
  * @param {string} slug - The unique slug identifier for the project
  * @returns {Object} Object containing success status and serialized project data, or error object with null project
  */
-export async function getProjectBySlug(slug) {
+/**
+ * Retrieves a single project from the database by its slug.
+ * Checks visibility: authenticated users can access private and unlisted projects, non-authenticated can access public and unlisted.
+ * Used for displaying individual project pages.
+ *
+ * @param {string} slug - The unique slug identifier for the project
+ * @param {boolean} isAuthenticated - Whether the user is authenticated (default: false)
+ * @returns {Object} Object containing success status and serialized project data, or error object with null project
+ */
+export async function getProjectBySlug(slug, isAuthenticated = false) {
   await dbConnect();
 
   try {
-    const project = await Project.findOne({ slug }).lean();
+    const visibilityFilter = isAuthenticated
+      ? { $in: ['public', 'private', 'unlisted'] }
+      : { $in: ['public', 'unlisted'] };
+    const project = await Project.findOne({
+      slug,
+      status: 'published',
+      visibility: visibilityFilter,
+    }).lean();
     if (!project) {
       return { success: false, project: null };
     }
@@ -185,11 +203,43 @@ export async function getFeaturedProjects() {
   await dbConnect();
 
   try {
-    const projects = await Project.find({ featured: true }).sort({ createdAt: -1 }).lean();
+    const projects = await Project.find({ featured: true, status: 'published' })
+      .sort({ publishedAt: -1 })
+      .lean();
     const serializedProjects = serializeProjects(projects);
     return { success: true, projects: serializedProjects };
   } catch (error) {
     console.error('Get Featured Projects Error:', error);
+    return { success: false, projects: [] };
+  }
+}
+
+/**
+ * Retrieves all published projects from the database, sorted by published date in descending order.
+ * Filters by visibility: authenticated users see public, private, and unlisted projects, non-authenticated see only public.
+ * Used for displaying published projects on portfolio pages and other public views.
+ *
+ * @param {boolean} isAuthenticated - Whether the user is authenticated (default: false)
+ * @returns {Object} Object containing success status and array of serialized published projects, or error object
+ */
+export async function getAllPublishedProjects(isAuthenticated = false) {
+  await dbConnect();
+
+  try {
+    const visibilityFilter = isAuthenticated
+      ? { $in: ['public', 'private', 'unlisted'] }
+      : 'public';
+    const projects = await Project.find({
+      status: 'published',
+      visibility: visibilityFilter,
+    })
+      .sort({ publishedAt: -1 })
+      .lean();
+    // Serialize projects to handle MongoDB ObjectIds for client components
+    const serializedProjects = serializeProjects(projects);
+    return { success: true, projects: serializedProjects };
+  } catch (error) {
+    console.error('Get Published Projects Error:', error);
     return { success: false, projects: [] };
   }
 }
