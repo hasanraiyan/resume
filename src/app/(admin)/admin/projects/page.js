@@ -68,7 +68,7 @@ export default async function ProjectsListPage() {
                     </Badge>
                   )}
                   <Badge
-                    variant={project.status === 'published' ? 'success' : 'secondary'}
+                    variant="tag"
                     className={
                       project.status === 'published'
                         ? 'bg-green-100 text-green-800 border border-green-200'
@@ -81,13 +81,7 @@ export default async function ProjectsListPage() {
                     {project.status}
                   </Badge>
                   <Badge
-                    variant={
-                      project.visibility === 'private'
-                        ? 'warning'
-                        : project.visibility === 'unlisted'
-                          ? 'secondary'
-                          : 'info'
-                    }
+                    variant="tag"
                     className={
                       project.visibility === 'private'
                         ? 'bg-orange-100 text-orange-800 border border-orange-200'
