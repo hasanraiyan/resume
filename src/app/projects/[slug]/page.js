@@ -61,7 +61,7 @@ export default async function ProjectDetailPage({ params }) {
       <Navbar />
 
       {/* Pass data to Client Component for animations */}
-      <ProjectDetailClient project={projectData} relatedProjects={relatedProjects} />
+      <ProjectDetailClient project={project} relatedProjects={relatedProjects} />
 
       <Footer />
     </>
