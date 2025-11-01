@@ -179,6 +179,10 @@ export default function Skills() {
     }
   }, [loading]);
 
+  if (!loading && !skillsData.length && !technologies.length && !certifications.length) {
+    return null;
+  }
+
   return (
     <section ref={sectionRef} id="skills" className="py-16 sm:py-20 bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -192,71 +196,79 @@ export default function Skills() {
 
         <div className="space-y-12">
           {/* Skills and Technology Stack in one row on xl */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-8">
-            {/* Skills with progress bars */}
-            <div className="skill-section">
-              <h3 className="text-xl font-semibold mb-6">Core Skills</h3>
-              <div>
-                {skillsData.map((skill, index) => (
-                  <SkillBar
-                    key={skill._id || index}
-                    name={skill.name}
-                    level={skill.level}
-                    iconType={skill.iconType}
-                    icon={skill.icon}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Technology Stack */}
-            <div className="skill-section">
-              <h3 className="text-xl font-semibold mb-6">Technology Stack</h3>
-              <div className="flex flex-wrap gap-3">
-                {technologies.map((tech, index) => (
-                  <div
-                    key={tech._id || index}
-                    className="flex items-center gap-2 px-3 py-2 bg-white rounded-full text-sm font-medium border border-gray-200 hover:border-gray-400 transition-all duration-200 hover:shadow-sm"
-                  >
-                    <div className="text-gray-700">
-                      {renderIcon(tech.iconType, tech.iconName, 16)}
-                    </div>
-                    <span>{tech.name}</span>
+          {(skillsData.length > 0 || technologies.length > 0) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-8">
+              {/* Skills with progress bars */}
+              {skillsData.length > 0 && (
+                <div className="skill-section">
+                  <h3 className="text-xl font-semibold mb-6">Core Skills</h3>
+                  <div>
+                    {skillsData.map((skill, index) => (
+                      <SkillBar
+                        key={skill._id || index}
+                        name={skill.name}
+                        level={skill.level}
+                        iconType={skill.iconType}
+                        icon={skill.icon}
+                      />
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
+
+              {/* Technology Stack */}
+              {technologies.length > 0 && (
+                <div className="skill-section">
+                  <h3 className="text-xl font-semibold mb-6">Technology Stack</h3>
+                  <div className="flex flex-wrap gap-3">
+                    {technologies.map((tech, index) => (
+                      <div
+                        key={tech._id || index}
+                        className="flex items-center gap-2 px-3 py-2 bg-white rounded-full text-sm font-medium border border-gray-200 hover:border-gray-400 transition-all duration-200 hover:shadow-sm"
+                      >
+                        <div className="text-gray-700">
+                          {renderIcon(tech.iconType, tech.iconName, 16)}
+                        </div>
+                        <span>{tech.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+          )}
 
           {/* Certifications on new line */}
-          <div className="skill-section">
-            <h3 className="text-xl font-semibold mb-6">Certifications</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-              {certifications.map((cert, index) => (
-                <a
-                  key={cert._id || index}
-                  href={cert.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block"
-                >
-                  <Card
-                    variant="bordered"
-                    className="p-4 hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+          {certifications.length > 0 && (
+            <div className="skill-section">
+              <h3 className="text-xl font-semibold mb-6">Certifications</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                {certifications.map((cert, index) => (
+                  <a
+                    key={cert._id || index}
+                    href={cert.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block"
                   >
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="text-gray-900 text-lg">
-                        {renderIcon(cert.iconType, cert.iconName)}
+                    <Card
+                      variant="bordered"
+                      className="p-4 hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="text-gray-900 text-lg">
+                          {renderIcon(cert.iconType, cert.iconName)}
+                        </div>
+                        <h4 className="font-medium text-gray-900">{cert.name}</h4>
                       </div>
-                      <h4 className="font-medium text-gray-900">{cert.name}</h4>
-                    </div>
-                    <p className="text-sm text-gray-600">{cert.issuer}</p>
-                    <p className="text-xs text-gray-500 mt-1">{cert.date}</p>
-                  </Card>
-                </a>
-              ))}
+                      <p className="text-sm text-gray-600">{cert.issuer}</p>
+                      <p className="text-xs text-gray-500 mt-1">{cert.date}</p>
+                    </Card>
+                  </a>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </section>
