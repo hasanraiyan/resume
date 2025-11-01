@@ -15,8 +15,9 @@ import {
   faMdb,
   faGitAlt,
   faCss3,
+  faPython,
 } from '@fortawesome/free-brands-svg-icons';
-import { faCode, faDatabase, faServer } from '@fortawesome/free-solid-svg-icons';
+import { faCode, faDatabase, faServer, faShieldAlt } from '@fortawesome/free-solid-svg-icons';
 import { Database, Code, Server, Zap, Settings, Layers } from 'lucide-react';
 
 /** Icon mappings for dynamic rendering */
@@ -31,6 +32,8 @@ const faIcons = {
   faCss3,
   faDatabase,
   faServer,
+  faPython,
+  faShieldAlt,
 };
 
 const lucideIcons = {
@@ -163,28 +166,28 @@ export default function Skills() {
   ];
   const certifications = [
     {
-      name: 'React Developer Certification',
-      issuer: 'Meta',
+      name: 'Programming Essentials in Python',
+      issuer: 'Cisco Networking Academy',
       date: '2024',
       iconType: 'fa',
-      iconName: 'faReact',
-      url: '#',
+      iconName: 'faPython',
+      url: 'https://www.linkedin.com/in/hasanraiyan/details/certifications/1722432407762/single-media-viewer/?type=DOCUMENT&profileId=ACoAAEcTpDkBEHLR25S1YoTbGMRi5VN6VjEQktU',
     },
     {
-      name: 'AWS Certified Developer',
-      issuer: 'Amazon Web Services',
-      date: '2024',
+      name: 'Solutions Arch. Job Simulation',
+      issuer: 'Forage',
+      date: 'Sep 2025',
       iconType: 'fa',
       iconName: 'faAws',
-      url: '#',
+      url: 'https://www.theforage.com/completion-certificates/pmnMSL4QiQ9JCgE3W/kkE9HyeNcw6rwCRGw_pmnMSL4QiQ9JCgE3W_ZmrAkWpQ7BESxJBFN_1758676838457_completion_certificate.pdf',
     },
     {
-      name: 'MongoDB Certified Developer',
-      issuer: 'MongoDB Inc.',
+      name: 'Introduction to Cybersecurity',
+      issuer: 'Cisco Networking Academy',
       date: '2024',
       iconType: 'fa',
-      iconName: 'faMdb',
-      url: '#',
+      iconName: 'faShieldAlt',
+      url: 'https://www.linkedin.com/in/hasanraiyan/details/certifications/1722432567935/single-media-viewer/?type=DOCUMENT&profileId=ACoAAEcTpDkBEHLR25S1YoTbGMRi5VN6VjEQktU&lipi=urn%3Ali%3Apage%3Ad_flagship3_profile_view_base_certifications_details%3BQYndfy81Q2GXd9wGDpDXhA%3D%3D',
     },
   ];
 
