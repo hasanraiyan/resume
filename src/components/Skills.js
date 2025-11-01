@@ -165,7 +165,7 @@ export default function Skills() {
     // { name: 'CI/CD', iconType: 'lucide', iconName: 'Settings' },
     // { name: 'Sentry', iconType: 'lucide', iconName: 'Code' },
     { name: 'Supabase', iconType: 'fa', iconName: 'faDatabase' },
-  ];
+  ].sort((a, b) => a.name.length - b.name.length);
   const certifications = [
     {
       name: 'Programming Essentials in Python',
