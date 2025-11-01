@@ -84,12 +84,6 @@ export default function SectionsAdminPage() {
       description: 'Update your achievement numbers, awards, and experience stats',
     },
     {
-      href: '/admin/skills',
-      icon: 'fa-code',
-      title: 'Skills Management',
-      description: 'Manage your technical skills and proficiency levels',
-    },
-    {
       href: '/admin/technologies',
       icon: 'fa-cogs',
       title: 'Technologies Management',

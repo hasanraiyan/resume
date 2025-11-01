@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Card } from '@/components/ui';
@@ -106,80 +106,49 @@ function SkillBar({ name, level, iconType, icon }) {
  */
 export default function Skills() {
   const sectionRef = useRef();
-  const [skillsData, setSkillsData] = useState([]);
-  const [technologies, setTechnologies] = useState([]);
-  const [certifications, setCertifications] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  // Static data
+  const skillsData = [
+    { name: 'JavaScript', level: 95, color: getSkillColor(95) },
+    { name: 'React', level: 90, color: getSkillColor(90) },
+    { name: 'Node.js', level: 85, color: getSkillColor(85) },
+  ];
+  const technologies = [
+    { name: 'React', iconType: 'fa', iconName: 'faReact' },
+    { name: 'Next.js', iconType: 'lucide', iconName: 'Server' },
+    { name: 'Node.js', iconType: 'fa', iconName: 'faNodeJs' },
+  ];
+  const certifications = [
+    {
+      name: 'AWS Certified',
+      issuer: 'AWS',
+      date: '2023',
+      iconType: 'fa',
+      iconName: 'faAws',
+      url: '#',
+    },
+  ];
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [skillsRes, techRes, certRes] = await Promise.all([
-          fetch('/api/skills'),
-          fetch('/api/technologies'),
-          fetch('/api/certifications'),
-        ]);
+    gsap.registerPlugin(ScrollTrigger);
 
-        const skills = await skillsRes.json();
-        const tech = await techRes.json();
-        const cert = await certRes.json();
+    const section = sectionRef.current;
+    if (!section) return;
 
-        setSkillsData(skills.map((skill) => ({ ...skill, color: getSkillColor(skill.level) })));
-        setTechnologies(tech);
-        setCertifications(cert);
-      } catch (error) {
-        console.error('Error fetching skills data:', error);
-        // Fallback to static data if API fails
-        setSkillsData([
-          { name: 'JavaScript', level: 95, color: getSkillColor(95) },
-          { name: 'React', level: 90, color: getSkillColor(90) },
-          { name: 'Node.js', level: 85, color: getSkillColor(85) },
-        ]);
-        setTechnologies([
-          { name: 'React', iconType: 'fa', iconName: 'faReact' },
-          { name: 'Next.js', iconType: 'lucide', iconName: 'Server' },
-          { name: 'Node.js', iconType: 'fa', iconName: 'faNodeJs' },
-        ]);
-        setCertifications([
-          {
-            name: 'AWS Certified',
-            issuer: 'AWS',
-            date: '2023',
-            iconType: 'fa',
-            iconName: 'faAws',
-            url: '#',
-          },
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    gsap.from(section.querySelectorAll('.skill-section'), {
+      opacity: 0,
+      y: 50,
+      duration: 1,
+      stagger: 0.2,
+      scrollTrigger: {
+        trigger: section,
+        start: 'top 80%',
+        toggleActions: 'play none none reverse',
+      },
+    });
   }, []);
 
-  useEffect(() => {
-    if (!loading) {
-      gsap.registerPlugin(ScrollTrigger);
-
-      const section = sectionRef.current;
-      if (!section) return;
-
-      gsap.from(section.querySelectorAll('.skill-section'), {
-        opacity: 0,
-        y: 50,
-        duration: 1,
-        stagger: 0.2,
-        scrollTrigger: {
-          trigger: section,
-          start: 'top 80%',
-          toggleActions: 'play none none reverse',
-        },
-      });
-    }
-  }, [loading]);
-
-  if (!loading && !skillsData.length && !technologies.length && !certifications.length) {
+  if (!skillsData.length && !technologies.length && !certifications.length) {
     return null;
   }
 
