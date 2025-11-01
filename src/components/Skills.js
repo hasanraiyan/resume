@@ -7,8 +7,17 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Card } from '@/components/ui';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faReact, faNodeJs, faDocker, faAws, faMdb } from '@fortawesome/free-brands-svg-icons';
-import { Database, Code, Server } from 'lucide-react';
+import {
+  faReact,
+  faNodeJs,
+  faDocker,
+  faAws,
+  faMdb,
+  faGitAlt,
+  faCss3,
+} from '@fortawesome/free-brands-svg-icons';
+import { faCode, faDatabase, faServer } from '@fortawesome/free-solid-svg-icons';
+import { Database, Code, Server, Zap, Settings, Layers } from 'lucide-react';
 
 /** Icon mappings for dynamic rendering */
 const faIcons = {
@@ -17,12 +26,20 @@ const faIcons = {
   faDocker,
   faAws,
   faMdb,
+  faGitAlt,
+  faCode,
+  faCss3,
+  faDatabase,
+  faServer,
 };
 
 const lucideIcons = {
   Database,
   Code,
   Server,
+  Zap,
+  Settings,
+  Layers,
 };
 
 /** Helper to render icon */
@@ -40,10 +57,10 @@ function renderIcon(iconType, iconName, size = 16) {
 /** Color mapping for skills based on level */
 function getSkillColor(level) {
   if (level >= 90) return 'bg-gray-800';
-  if (level >= 80) return 'bg-gray-700';
-  if (level >= 70) return 'bg-gray-600';
-  if (level >= 60) return 'bg-gray-500';
-  if (level >= 50) return 'bg-gray-400';
+  if (level >= 85) return 'bg-gray-700';
+  if (level >= 80) return 'bg-gray-600';
+  if (level >= 70) return 'bg-gray-500';
+  if (level >= 60) return 'bg-gray-400';
   return 'bg-gray-300';
 }
 
@@ -110,21 +127,63 @@ export default function Skills() {
   // Static data
   const skillsData = [
     { name: 'JavaScript', level: 95, color: getSkillColor(95) },
+    { name: 'TypeScript', level: 90, color: getSkillColor(90) },
     { name: 'React', level: 90, color: getSkillColor(90) },
+    { name: 'React Native', level: 85, color: getSkillColor(85) },
     { name: 'Node.js', level: 85, color: getSkillColor(85) },
+    { name: 'Express.js', level: 80, color: getSkillColor(80) },
+    { name: 'Next.js', level: 90, color: getSkillColor(90) },
+    { name: 'MongoDB', level: 85, color: getSkillColor(85) },
+    { name: 'Expo', level: 80, color: getSkillColor(80) },
   ];
   const technologies = [
     { name: 'React', iconType: 'fa', iconName: 'faReact' },
+    { name: 'React Native', iconType: 'fa', iconName: 'faReact' },
     { name: 'Next.js', iconType: 'lucide', iconName: 'Server' },
     { name: 'Node.js', iconType: 'fa', iconName: 'faNodeJs' },
+    { name: 'Express.js', iconType: 'lucide', iconName: 'Server' },
+    { name: 'MongoDB', iconType: 'fa', iconName: 'faMdb' },
+    { name: 'TypeScript', iconType: 'fa', iconName: 'faCode' },
+    { name: 'Expo', iconType: 'lucide', iconName: 'Code' },
+    { name: 'Git', iconType: 'fa', iconName: 'faGitAlt' },
+    { name: 'Vercel', iconType: 'lucide', iconName: 'Server' },
+    { name: 'Tailwind CSS', iconType: 'fa', iconName: 'faCss3' },
+    { name: 'OpenAI', iconType: 'lucide', iconName: 'Code' },
+    { name: 'Gemini', iconType: 'lucide', iconName: 'Code' },
+    { name: 'LLM', iconType: 'lucide', iconName: 'Code' },
+    { name: 'Generative AI', iconType: 'lucide', iconName: 'Code' },
+    { name: 'React Query', iconType: 'lucide', iconName: 'Zap' },
+    { name: 'Framer Motion', iconType: 'lucide', iconName: 'Layers' },
+    { name: 'Firebase', iconType: 'fa', iconName: 'faServer' },
+    // { name: 'GraphQL', iconType: 'lucide', iconName: 'Code' },
+    // { name: 'Prisma', iconType: 'fa', iconName: 'faDatabase' },
+    // { name: 'CI/CD', iconType: 'lucide', iconName: 'Settings' },
+    // { name: 'Sentry', iconType: 'lucide', iconName: 'Code' },
+    { name: 'Supabase', iconType: 'fa', iconName: 'faDatabase' },
   ];
   const certifications = [
     {
-      name: 'AWS Certified',
-      issuer: 'AWS',
-      date: '2023',
+      name: 'React Developer Certification',
+      issuer: 'Meta',
+      date: '2024',
+      iconType: 'fa',
+      iconName: 'faReact',
+      url: '#',
+    },
+    {
+      name: 'AWS Certified Developer',
+      issuer: 'Amazon Web Services',
+      date: '2024',
       iconType: 'fa',
       iconName: 'faAws',
+      url: '#',
+    },
+    {
+      name: 'MongoDB Certified Developer',
+      issuer: 'MongoDB Inc.',
+      date: '2024',
+      iconType: 'fa',
+      iconName: 'faMdb',
       url: '#',
     },
   ];
