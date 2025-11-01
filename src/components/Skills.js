@@ -198,6 +198,14 @@ export default function Skills() {
       iconName: 'faPython',
       url: 'https://www.hackerrank.com/certificates/bb25b2ccfbf1',
     },
+    {
+      name: 'SQL (Basic)',
+      issuer: 'HackerRank',
+      date: '2024',
+      iconType: 'fa',
+      iconName: 'faDatabase',
+      url: 'https://www.hackerrank.com/certificates/96328a48b49a',
+    },
   ];
 
   useEffect(() => {
