@@ -187,13 +187,17 @@ export async function getProjectBySlug(slug, isAuthenticated = false) {
       return { success: false, project: null };
     }
 
-    // Sort contributors by order
-    if (project.contributors) {
-      project.contributors = project.contributors.filter((c) => c.contributor);
-      project.contributors.sort((a, b) => (a.order || 0) - (b.order || 0));
+    const serializedProject = serializeProject(project);
+
+    // Sort contributors by order AFTER serialization
+    if (serializedProject.contributors) {
+      // Filter out any contributors that might not have been populated (e.g., deleted)
+      serializedProject.contributors = serializedProject.contributors.filter(
+        (c) => c && c.contributor
+      );
+      serializedProject.contributors.sort((a, b) => (a.order || 0) - (b.order || 0));
     }
 
-    const serializedProject = serializeProject(project);
     return { success: true, project: serializedProject };
   } catch (error) {
     console.error('Get Project Error:', error);
