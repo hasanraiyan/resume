@@ -37,6 +37,7 @@ export default function Navbar() {
     { id: 3, label: 'Work', href: '/#work' },
     { id: 4, label: 'Projects', href: '/projects' },
     { id: 5, label: 'Blog', href: '/blog' },
+    { id: 6, label: 'Roadmap', href: '/roadmap' },
   ];
 
   const cta = {
@@ -46,7 +47,7 @@ export default function Navbar() {
 
   // Mobile menu combines navigation and social links from heroData
   const mobileMenu = {
-    menuItems: [...navigationLinks, { id: 6, label: 'Contact', href: '/#contact' }],
+    menuItems: [...navigationLinks, { id: 7, label: 'Contact', href: '/#contact' }],
     cta: cta,
     socialLinks: heroData?.socialLinks || [], // Use social links from context
   };
