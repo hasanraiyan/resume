@@ -190,6 +190,14 @@ export default function Skills() {
       iconName: 'faShieldAlt',
       url: 'https://www.linkedin.com/in/hasanraiyan/details/certifications/1722432567935/single-media-viewer/?type=DOCUMENT&profileId=ACoAAEcTpDkBEHLR25S1YoTbGMRi5VN6VjEQktU&lipi=urn%3Ali%3Apage%3Ad_flagship3_profile_view_base_certifications_details%3BQYndfy81Q2GXd9wGDpDXhA%3D%3D',
     },
+    {
+      name: 'Python (Basic)',
+      issuer: 'HackerRank',
+      date: '2024',
+      iconType: 'fa',
+      iconName: 'faPython',
+      url: 'https://www.hackerrank.com/certificates/bb25b2ccfbf1',
+    },
   ];
 
   useEffect(() => {
