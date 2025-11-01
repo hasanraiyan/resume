@@ -37,7 +37,6 @@ export default function Navbar() {
     { id: 3, label: 'Work', href: '/#work' },
     { id: 4, label: 'Projects', href: '/projects' },
     { id: 5, label: 'Blog', href: '/blog' },
-    { id: 6, label: 'Roadmap', href: '/roadmap' },
   ];
 
   const cta = {
