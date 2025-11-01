@@ -147,6 +147,7 @@ export default function Skills() {
     { name: 'Express.js', iconType: 'lucide', iconName: 'Server' },
     { name: 'MongoDB', iconType: 'fa', iconName: 'faMdb' },
     { name: 'TypeScript', iconType: 'fa', iconName: 'faCode' },
+    { name: 'Python', iconType: 'fa', iconName: 'faPython' },
     { name: 'Expo', iconType: 'lucide', iconName: 'Code' },
     { name: 'Git', iconType: 'fa', iconName: 'faGitAlt' },
     { name: 'Vercel', iconType: 'lucide', iconName: 'Server' },
