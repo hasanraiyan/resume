@@ -30,6 +30,12 @@ const timelineData = [
       'Implemented interactive skill bars, certifications display, and comprehensive technology stack showcase with smooth animations.',
     status: 'completed',
     icon: CheckCircle,
+    subFeatures: [
+      'Interactive skill bars with GSAP animations',
+      'Certifications display with external links',
+      'Technology stack with categorized icons',
+      'Responsive design for all devices',
+    ],
   },
   {
     id: 2,
@@ -39,6 +45,13 @@ const timelineData = [
       'Building testimonials component with client photos, star ratings, company affiliations, and admin management interface for social proof.',
     status: 'in-progress',
     icon: Users,
+    subFeatures: [
+      'Client photo integration',
+      'Star rating system',
+      'Company and role display',
+      'Admin testimonial management',
+      'Social proof badges',
+    ],
   },
   {
     id: 3,
@@ -48,6 +61,13 @@ const timelineData = [
       'Implement email validation, GDPR-compliant consent, success/error states, and integration with email marketing service.',
     status: 'upcoming',
     icon: Mail,
+    subFeatures: [
+      'Real-time email validation',
+      'GDPR consent checkbox',
+      'Success/error state handling',
+      'Email service integration',
+      'Subscription management',
+    ],
   },
   {
     id: 4,
@@ -57,6 +77,13 @@ const timelineData = [
       'Create service packages with 3-4 pricing tiers, feature comparisons, call-to-action buttons, and admin management.',
     status: 'upcoming',
     icon: DollarSign,
+    subFeatures: [
+      '3-4 pricing tier options',
+      'Feature comparison table',
+      'Call-to-action integration',
+      'Admin pricing management',
+      'Payment gateway setup',
+    ],
   },
   {
     id: 5,
@@ -66,6 +93,13 @@ const timelineData = [
       'Build "How I Work" section with 4-6 step development process visualization, timeline indicators, and process illustrations.',
     status: 'upcoming',
     icon: Cog,
+    subFeatures: [
+      '4-6 step process visualization',
+      'Timeline/progress indicators',
+      'Custom process illustrations',
+      'Interactive step navigation',
+      'Process customization options',
+    ],
   },
   {
     id: 6,
@@ -222,6 +256,16 @@ export default function Timeline() {
                   </div>
                 </div>
                 <p className="text-gray-600 leading-relaxed">{item.description}</p>
+                {item.subFeatures && item.subFeatures.length > 0 && (
+                  <ul className="mt-4 space-y-2">
+                    {item.subFeatures.map((feature, index) => (
+                      <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
+                        <span className="text-black mt-1">•</span>
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
           );
