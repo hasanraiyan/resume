@@ -152,9 +152,10 @@ export default function Skills() {
     { name: 'Git', iconType: 'fa', iconName: 'faGitAlt' },
     { name: 'Vercel', iconType: 'lucide', iconName: 'Server' },
     { name: 'Tailwind CSS', iconType: 'fa', iconName: 'faCss3' },
+    { name: 'LLM', iconType: 'lucide', iconName: 'Code' },
+
     { name: 'OpenAI', iconType: 'lucide', iconName: 'Code' },
     { name: 'Gemini', iconType: 'lucide', iconName: 'Code' },
-    { name: 'LLM', iconType: 'lucide', iconName: 'Code' },
     { name: 'Generative AI', iconType: 'lucide', iconName: 'Code' },
     { name: 'React Query', iconType: 'lucide', iconName: 'Zap' },
     { name: 'Framer Motion', iconType: 'lucide', iconName: 'Layers' },
@@ -268,7 +269,7 @@ export default function Skills() {
               {technologies.length > 0 && (
                 <div className="skill-section">
                   <h3 className="text-xl font-semibold mb-6">Technology Stack</h3>
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex flex-wrap gap-3 justify-center">
                     {technologies.map((tech, index) => (
                       <div
                         key={tech._id || index}
