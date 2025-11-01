@@ -141,20 +141,28 @@ export default function Timeline() {
   }, []);
 
   /**
-   * Get status color for timeline item
+   * Get status styling for timeline item
    * @param {string} status - The status of the item
-   * @returns {string} Tailwind color class
+   * @returns {object} Styling object with bg and border classes
    */
-  const getStatusColor = (status) => {
+  const getStatusStyling = (status) => {
     switch (status) {
       case 'completed':
-        return 'bg-green-500';
+        return { bg: 'bg-black', border: '', iconColor: 'text-white' };
       case 'in-progress':
-        return 'bg-blue-500';
+        return { bg: 'bg-white', border: 'border-2 border-black', iconColor: 'text-black' };
       case 'upcoming':
-        return 'bg-gray-400';
+        return {
+          bg: 'bg-gray-100',
+          border: 'border-2 border-gray-400',
+          iconColor: 'text-gray-600',
+        };
       default:
-        return 'bg-gray-400';
+        return {
+          bg: 'bg-gray-100',
+          border: 'border-2 border-gray-400',
+          iconColor: 'text-gray-600',
+        };
     }
   };
 
@@ -179,22 +187,23 @@ export default function Timeline() {
   return (
     <div ref={timelineRef} className="relative">
       {/* Timeline line */}
-      <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-300"></div>
+      <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-black"></div>
 
       <div className="space-y-12">
         {timelineData.map((item, index) => {
           const IconComponent = item.icon;
+          const styling = getStatusStyling(item.status);
           return (
             <div key={item.id} className="timeline-item relative flex items-start">
               {/* Timeline dot */}
               <div
-                className={`relative z-10 flex-shrink-0 w-16 h-16 rounded-full ${getStatusColor(item.status)} flex items-center justify-center shadow-lg`}
+                className={`relative z-10 flex-shrink-0 w-16 h-16 rounded-full ${styling.bg} ${styling.border} flex items-center justify-center shadow-lg`}
               >
-                <IconComponent className="w-8 h-8 text-white" />
+                <IconComponent className={`w-8 h-8 ${styling.iconColor}`} />
               </div>
 
               {/* Content */}
-              <div className="ml-8 flex-1 bg-white rounded-lg shadow-md p-6 border-l-4 border-gray-300">
+              <div className="ml-8 flex-1 bg-white rounded-lg shadow-md p-6 border-l-4 border-black">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3">
                   <h3 className="text-xl font-semibold text-gray-900">{item.title}</h3>
                   <div className="flex items-center gap-3 mt-2 sm:mt-0">
@@ -202,10 +211,10 @@ export default function Timeline() {
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-medium ${
                         item.status === 'completed'
-                          ? 'bg-green-100 text-green-800'
+                          ? 'bg-black text-white'
                           : item.status === 'in-progress'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-gray-100 text-gray-800'
+                            ? 'bg-white border border-black text-black'
+                            : 'bg-gray-200 text-gray-700'
                       }`}
                     >
                       {getStatusText(item.status)}
