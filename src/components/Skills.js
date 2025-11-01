@@ -269,7 +269,7 @@ export default function Skills() {
               {technologies.length > 0 && (
                 <div className="skill-section">
                   <h3 className="text-xl font-semibold mb-6">Technology Stack</h3>
-                  <div className="flex flex-wrap gap-3 justify-center">
+                  <div className="flex flex-wrap gap-3 justify-between">
                     {technologies.map((tech, index) => (
                       <div
                         key={tech._id || index}
