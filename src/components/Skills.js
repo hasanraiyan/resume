@@ -165,7 +165,7 @@ export default function Skills() {
     // { name: 'CI/CD', iconType: 'lucide', iconName: 'Settings' },
     // { name: 'Sentry', iconType: 'lucide', iconName: 'Code' },
     { name: 'Supabase', iconType: 'fa', iconName: 'faDatabase' },
-  ].sort((a, b) => a.name.length - b.name.length);
+  ];
   const certifications = [
     {
       name: 'Programming Essentials in Python',
@@ -269,7 +269,7 @@ export default function Skills() {
               {technologies.length > 0 && (
                 <div className="skill-section">
                   <h3 className="text-xl font-semibold mb-6">Technology Stack</h3>
-                  <div className="flex flex-wrap gap-3 justify-between">
+                  <div className="flex flex-wrap gap-3">
                     {technologies.map((tech, index) => (
                       <div
                         key={tech._id || index}
