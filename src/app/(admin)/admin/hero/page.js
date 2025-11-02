@@ -724,6 +724,13 @@ export default function HeroAdminPage() {
           <ActionButton onClick={handleReset} text="Reset Changes" variant="ghost" />
         </div>
       </div>
+
+      {/* Media Library Modal */}
+      <MediaLibraryModal
+        isOpen={showMediaLibrary}
+        onClose={() => setShowMediaLibrary(false)}
+        onSelect={handleImageSelect}
+      />
     </AdminPageWrapper>
   );
 }
