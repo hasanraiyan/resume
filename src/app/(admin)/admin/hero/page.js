@@ -7,6 +7,7 @@ import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 import HeroPreview from '@/components/admin/HeroPreview';
 import IconPicker from '@/components/admin/IconPicker';
 import ActionButton from '@/components/admin/ActionButton';
+import MediaLibraryModal from '@/components/admin/MediaLibraryModal';
 
 export default function HeroAdminPage() {
   const { data: session, status } = useSession();
@@ -18,6 +19,7 @@ export default function HeroAdminPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [showMediaLibrary, setShowMediaLibrary] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -215,6 +217,12 @@ export default function HeroAdminPage() {
 
       return newData;
     });
+  };
+
+  const handleImageSelect = (asset) => {
+    handleInputChange('profile.image.url', asset.secure_url);
+    handleInputChange('profile.image.alt', asset.filename || 'Selected image');
+    setShowMediaLibrary(false);
   };
 
   const handleSocialLinkChange = (index, field, value) => {
@@ -495,13 +503,23 @@ export default function HeroAdminPage() {
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Image URL
                   </label>
-                  <input
-                    type="url"
-                    value={formData.profile.image.url}
-                    onChange={(e) => handleInputChange('profile.image.url', e.target.value)}
-                    className="w-full p-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                    placeholder=""
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={formData.profile.image.url}
+                      onChange={(e) => handleInputChange('profile.image.url', e.target.value)}
+                      className="flex-1 p-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                      placeholder=""
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowMediaLibrary(true)}
+                      className="px-4 py-3 bg-neutral-100 hover:bg-neutral-200 border border-neutral-300 rounded-lg transition-colors"
+                      title="Select from Media Library"
+                    >
+                      <i className="fas fa-images"></i>
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
