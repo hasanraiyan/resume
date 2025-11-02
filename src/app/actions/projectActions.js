@@ -7,6 +7,7 @@
 
 import dbConnect from '@/lib/dbConnect';
 import Project from '@/models/Project';
+import Contributor from '@/models/Contributor';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { serializeProject, serializeProjects } from '@/lib/serialize';
