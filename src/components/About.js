@@ -198,7 +198,8 @@ const About = () => {
               variant="secondary"
               className="inline-flex items-center"
             >
-              {aboutData.resume?.text} <i className={`${aboutData.resume?.icon} ml-2`}></i>
+              {aboutData.resume?.text}{' '}
+              <i className={`${aboutData.resume?.icon || 'fas fa-download'} ml-2`}></i>
             </Button>
           </div>
         </div>

@@ -61,6 +61,7 @@ export default function AboutPreview({ aboutData, isPreview = false }) {
                   className="inline-flex items-center"
                 >
                   {aboutData.resume?.text || 'Download Resume'}
+                  <i className={`${aboutData.resume?.icon || 'fas fa-download'} ml-2`}></i>
                 </Button>
               </div>
             </div>
