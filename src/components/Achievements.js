@@ -153,39 +153,32 @@ const Achievements = () => {
     >
       <div className="max-w-7xl mx-auto">
         <div className="relative">
-          <button
-            onClick={handlePrev}
-            className="hidden md:block absolute -left-10 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all text-gray-700 hover:text-gray-900"
-          >
-            <ChevronLeft size={24} />
-          </button>
-          <button
-            onClick={handleNext}
-            className="hidden md:block absolute -right-10 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all text-gray-700 hover:text-gray-900"
-          >
-            <ChevronRight size={24} />
-          </button>
+          {/* Render navigation buttons only if there are 3 or more achievements */}
+          {ACHIEVEMENTS.length >= 3 && (
+            <>
+              <button
+                onClick={handlePrev}
+                className="hidden md:block absolute -left-10 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all text-gray-700 hover:text-gray-900"
+              >
+                <ChevronLeft size={24} />
+              </button>
+              <button
+                onClick={handleNext}
+                className="hidden md:block absolute -right-10 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all text-gray-700 hover:text-gray-900"
+              >
+                <ChevronRight size={24} />
+              </button>
+            </>
+          )}
 
-          <Swiper
-            modules={[Pagination, Autoplay]}
-            slidesPerView={1}
-            spaceBetween={20}
-            loop={true}
-            autoplay={{
-              delay: 3500,
-              disableOnInteraction: false,
-            }}
-            pagination={{ clickable: true }}
-            onSwiper={(swiper) => (swiperRef.current = swiper)}
-            breakpoints={{
-              640: { slidesPerView: 2, spaceBetween: 20 },
-              1024: { slidesPerView: 3, spaceBetween: 30 },
-            }}
-            className="achievements-swiper"
-          >
-            {ACHIEVEMENTS.map((item, index) => (
-              <SwiperSlide key={index}>
-                <div className="relative group overflow-hidden rounded-2xl shadow-lg mb-8">
+          {/* Conditional rendering: static cards if < 3, Swiper otherwise */}
+          {ACHIEVEMENTS.length < 3 ? (
+            <div className="flex justify-center flex-wrap gap-8">
+              {ACHIEVEMENTS.map((item, index) => (
+                <div
+                  key={index}
+                  className="relative group overflow-hidden rounded-2xl shadow-lg mb-8 max-w-sm"
+                >
                   <img
                     src={item.src}
                     alt={item.alt}
@@ -200,9 +193,47 @@ const Achievements = () => {
                     </p>
                   </div>
                 </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
+              ))}
+            </div>
+          ) : (
+            <Swiper
+              modules={[Pagination, Autoplay]}
+              slidesPerView={3}
+              spaceBetween={30}
+              loop
+              autoplay={{
+                delay: 3500,
+                disableOnInteraction: false,
+              }}
+              pagination={{ clickable: true }}
+              onSwiper={(swiper) => (swiperRef.current = swiper)}
+              breakpoints={{
+                640: { slidesPerView: 2 },
+                1024: { slidesPerView: 3 },
+              }}
+              className="achievements-swiper"
+            >
+              {ACHIEVEMENTS.map((item, index) => (
+                <SwiperSlide key={index}>
+                  <div className="relative group overflow-hidden rounded-2xl shadow-lg mb-8">
+                    <img
+                      src={item.src}
+                      alt={item.alt}
+                      className="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-white/70 via-white/40 to-transparent backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end items-start p-6 text-left">
+                      <h3 className="font-semibold text-lg text-gray-800 mb-1 translate-y-3 group-hover:translate-y-0 transition-all duration-500">
+                        {item.title}
+                      </h3>
+                      <p className="text-sm text-gray-700 opacity-80 translate-y-4 group-hover:translate-y-0 transition-all duration-500 delay-100">
+                        {item.description}
+                      </p>
+                    </div>
+                  </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          )}
         </div>
       </div>
     </Section>
