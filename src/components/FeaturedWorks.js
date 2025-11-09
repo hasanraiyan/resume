@@ -176,12 +176,31 @@ const FeaturedWorks = ({ featuredProjects = [] }) => {
             </>
           )}
 
-          {/* Conditional rendering: static cards if < 3, Swiper otherwise */}
-          {featuredProjects.length < 3 ? (
-            <div className="flex justify-center flex-wrap gap-8">
-              {featuredProjects.map((project) => (
-                <Link key={project.id} href={`/projects/${project.slug}`}>
-                  <div className="relative group overflow-hidden rounded-2xl shadow-lg mb-8 max-w-sm cursor-pointer">
+          <Swiper
+            modules={[Pagination, Autoplay]}
+            slidesPerView={1}
+            spaceBetween={30}
+            loop
+            autoplay={{
+              delay: 3500,
+              disableOnInteraction: false,
+            }}
+            pagination={{
+              clickable: true,
+              bulletClass: 'swiper-pagination-bullet !bg-black',
+              bulletActiveClass: 'swiper-pagination-bullet-active !bg-black',
+            }}
+            onSwiper={(swiper) => (swiperRef.current = swiper)}
+            breakpoints={{
+              640: { slidesPerView: 2 },
+              1024: { slidesPerView: 3 },
+            }}
+            className="featured-works-swiper"
+          >
+            {featuredProjects.map((project) => (
+              <SwiperSlide key={project.id}>
+                <Link href={`/projects/${project.slug}`}>
+                  <div className="relative group overflow-hidden rounded-2xl shadow-lg mb-8 cursor-pointer">
                     <img
                       src={project.thumbnail}
                       alt={project.title}
@@ -200,56 +219,9 @@ const FeaturedWorks = ({ featuredProjects = [] }) => {
                     </div>
                   </div>
                 </Link>
-              ))}
-            </div>
-          ) : (
-            <Swiper
-              modules={[Pagination, Autoplay]}
-              slidesPerView={3}
-              spaceBetween={30}
-              loop
-              autoplay={{
-                delay: 3500,
-                disableOnInteraction: false,
-              }}
-              pagination={{
-                clickable: true,
-                bulletClass: 'swiper-pagination-bullet !bg-black',
-                bulletActiveClass: 'swiper-pagination-bullet-active !bg-black',
-              }}
-              onSwiper={(swiper) => (swiperRef.current = swiper)}
-              breakpoints={{
-                640: { slidesPerView: 2 },
-                1024: { slidesPerView: 3 },
-              }}
-              className="featured-works-swiper"
-            >
-              {featuredProjects.map((project) => (
-                <SwiperSlide key={project.id}>
-                  <Link href={`/projects/${project.slug}`}>
-                    <div className="relative group overflow-hidden rounded-2xl shadow-lg mb-8 cursor-pointer">
-                      <img
-                        src={project.thumbnail}
-                        alt={project.title}
-                        className="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-110"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-white/70 via-white/40 to-transparent backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end items-start p-6 text-left">
-                        <div className="text-xs font-semibold tracking-widest mb-2 text-black">
-                          {project.projectNumber} — {project.category}
-                        </div>
-                        <h3 className="font-semibold text-lg text-black mb-1 translate-y-3 group-hover:translate-y-0 transition-all duration-500 hover:text-black transition">
-                          {project.title}
-                        </h3>
-                        <p className="text-sm text-black opacity-80 translate-y-4 group-hover:translate-y-0 transition-all duration-500 delay-100">
-                          {truncateText(project.description)}
-                        </p>
-                      </div>
-                    </div>
-                  </Link>
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          )}
+              </SwiperSlide>
+            ))}
+          </Swiper>
         </div>
       </div>
 
