@@ -4,6 +4,7 @@ import Hero from '@/components/Hero';
 import Marquee from '@/components/Marquee';
 import About from '@/components/About';
 import Skills from '@/components/Skills';
+import Achievements from '@/components/Achievements';
 import Services from '@/components/Services';
 import Work from '@/components/Work';
 import Stats from '@/components/Stats';
@@ -45,6 +46,7 @@ export default async function Home() {
       <Marquee />
       <About />
       <Skills />
+      <Achievements />
       <Services services={services} />
       <Work featuredProjects={featuredProjects} />
       {/* Fix for CSS layout issue causing large right-side margin */}
