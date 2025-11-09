@@ -34,6 +34,13 @@ const ACHIEVEMENTS = [
     description:
       'Selected as a finalist in the Smart India Hackathon 2025 (Hardware Edition) for building an innovative real-world prototype.',
   },
+  {
+    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762685373/portfolio_assets/hxdyhklql3ohq4n8yxre.jpg',
+    alt: 'Newspaper Feature - SIH 2025 Selection',
+    title: 'Newspaper Feature — SIH 2025 Selection',
+    description:
+      'Featured in newspaper for being selected as a finalist in the Smart India Hackathon 2025.',
+  },
 ];
 
 /**
@@ -159,13 +166,13 @@ const Achievements = () => {
             <>
               <button
                 onClick={handlePrev}
-                className="hidden md:block absolute -left-10 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all text-gray-700 hover:text-gray-900"
+                className="hidden md:block absolute -left-10 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all text-black hover:text-black"
               >
                 <ChevronLeft size={24} />
               </button>
               <button
                 onClick={handleNext}
-                className="hidden md:block absolute -right-10 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all text-gray-700 hover:text-gray-900"
+                className="hidden md:block absolute -right-10 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all text-black hover:text-black"
               >
                 <ChevronRight size={24} />
               </button>
@@ -186,10 +193,10 @@ const Achievements = () => {
                     className="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-white/70 via-white/40 to-transparent backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end items-start p-6 text-left">
-                    <h3 className="font-semibold text-lg text-gray-800 mb-1 translate-y-3 group-hover:translate-y-0 transition-all duration-500">
+                    <h3 className="font-semibold text-lg text-black mb-1 translate-y-3 group-hover:translate-y-0 transition-all duration-500">
                       {item.title}
                     </h3>
-                    <p className="text-sm text-gray-700 opacity-80 translate-y-4 group-hover:translate-y-0 transition-all duration-500 delay-100">
+                    <p className="text-sm text-black opacity-80 translate-y-4 group-hover:translate-y-0 transition-all duration-500 delay-100">
                       {item.description}
                     </p>
                   </div>
@@ -206,7 +213,11 @@ const Achievements = () => {
                 delay: 3500,
                 disableOnInteraction: false,
               }}
-              pagination={{ clickable: true }}
+              pagination={{
+                clickable: true,
+                bulletClass: 'swiper-pagination-bullet !bg-black',
+                bulletActiveClass: 'swiper-pagination-bullet-active !bg-black',
+              }}
               onSwiper={(swiper) => (swiperRef.current = swiper)}
               breakpoints={{
                 640: { slidesPerView: 2 },
@@ -223,10 +234,10 @@ const Achievements = () => {
                       className="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-110"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-white/70 via-white/40 to-transparent backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end items-start p-6 text-left">
-                      <h3 className="font-semibold text-lg text-gray-800 mb-1 translate-y-3 group-hover:translate-y-0 transition-all duration-500">
+                      <h3 className="font-semibold text-lg text-black mb-1 translate-y-3 group-hover:translate-y-0 transition-all duration-500">
                         {item.title}
                       </h3>
-                      <p className="text-sm text-gray-700 opacity-80 translate-y-4 group-hover:translate-y-0 transition-all duration-500 delay-100">
+                      <p className="text-sm text-black opacity-80 translate-y-4 group-hover:translate-y-0 transition-all duration-500 delay-100">
                         {item.description}
                       </p>
                     </div>
