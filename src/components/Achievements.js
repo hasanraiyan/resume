@@ -148,8 +148,9 @@ const Achievements = () => {
     <Section
       id="achievements"
       title="Achievements"
-      subtitle="Milestones that inspire"
-      className="p-0 m-0"
+      description="Milestones that inspire"
+      className=""
+      centered={true}
     >
       <div className="max-w-7xl mx-auto">
         <div className="relative">

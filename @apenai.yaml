@@ -32,7 +32,7 @@ paths:
                 userMessage:
                   type: string
                   description: The user's message to send to the chatbot
-                  example: "What projects have you worked on?"
+                  example: 'What projects have you worked on?'
                 chatHistory:
                   type: array
                   description: Previous conversation messages
@@ -48,12 +48,12 @@ paths:
                 sessionId:
                   type: string
                   description: Unique session identifier
-                  example: "abc123"
+                  example: 'abc123'
                 path:
                   type: string
                   description: Current page path context
-                  example: "/projects"
-                  default: "/"
+                  example: '/projects'
+                  default: '/'
       responses:
         '200':
           description: Streaming AI response
@@ -88,7 +88,7 @@ paths:
             type: string
             minLength: 1
           description: Search query string
-          example: "react portfolio"
+          example: 'react portfolio'
       responses:
         '200':
           description: Search results
@@ -142,14 +142,14 @@ paths:
           in: query
           schema:
             type: string
-            enum: ["true"]
+            enum: ['true']
           description: Filter for featured projects only
         - name: category
           in: query
           schema:
             type: string
           description: Filter by project category
-          example: "web-development"
+          example: 'web-development'
         - name: limit
           in: query
           schema:
@@ -191,7 +191,7 @@ paths:
           schema:
             type: string
           description: Project slug or MongoDB ObjectId
-          example: "luxury-fashion-store"
+          example: 'luxury-fashion-store'
       responses:
         '200':
           description: Project retrieved successfully
@@ -230,7 +230,7 @@ paths:
           schema:
             type: string
           description: Project slug
-          example: "luxury-fashion-store"
+          example: 'luxury-fashion-store'
       responses:
         '200':
           description: Engagement data retrieved
@@ -280,7 +280,7 @@ paths:
           schema:
             type: string
           description: Project slug
-          example: "luxury-fashion-store"
+          example: 'luxury-fashion-store'
       requestBody:
         required: true
         content:
@@ -294,11 +294,11 @@ paths:
                 action:
                   type: string
                   enum: [increment, decrement]
-                  example: "increment"
+                  example: 'increment'
                 type:
                   type: string
                   enum: [like, clap]
-                  example: "like"
+                  example: 'like'
       responses:
         '200':
           description: Engagement updated
@@ -337,7 +337,7 @@ paths:
                     example: false
                   error:
                     type: string
-                    example: "Already engaged with this content"
+                    example: 'Already engaged with this content'
                   alreadyEngaged:
                     type: boolean
                     example: true
@@ -360,7 +360,7 @@ paths:
           schema:
             type: string
           description: Article slug
-          example: "react-performance-guide"
+          example: 'react-performance-guide'
       responses:
         '200':
           description: Engagement data retrieved
@@ -410,7 +410,7 @@ paths:
           schema:
             type: string
           description: Article slug
-          example: "react-performance-guide"
+          example: 'react-performance-guide'
       requestBody:
         required: true
         content:
@@ -424,11 +424,11 @@ paths:
                 action:
                   type: string
                   enum: [increment, decrement]
-                  example: "increment"
+                  example: 'increment'
                 type:
                   type: string
                   enum: [like, clap]
-                  example: "clap"
+                  example: 'clap'
       responses:
         '200':
           description: Engagement updated
@@ -467,7 +467,7 @@ paths:
                     example: false
                   error:
                     type: string
-                    example: "Already engaged with this content"
+                    example: 'Already engaged with this content'
                   alreadyEngaged:
                     type: boolean
                     example: true
@@ -493,11 +493,11 @@ paths:
                 properties:
                   status:
                     type: string
-                    example: "ok"
+                    example: 'ok'
                   timestamp:
                     type: string
                     format: date-time
-                    example: "2024-01-01T00:00:00.000Z"
+                    example: '2024-01-01T00:00:00.000Z'
 
 components:
   schemas:
@@ -509,10 +509,10 @@ components:
           example: false
         message:
           type: string
-          example: "Error message"
+          example: 'Error message'
         error:
           type: string
-          example: "Detailed error description"
+          example: 'Detailed error description'
 
     Project:
       type: object
@@ -520,23 +520,23 @@ components:
         id:
           type: string
           description: Project unique identifier
-          example: "507f1f77bcf86cd799439011"
+          example: '507f1f77bcf86cd799439011'
         _id:
           type: string
           description: MongoDB ObjectId as string
-          example: "507f1f77bcf86cd799439011"
+          example: '507f1f77bcf86cd799439011'
         title:
           type: string
-          example: "Luxury Fashion Store"
+          example: 'Luxury Fashion Store'
         slug:
           type: string
-          example: "luxury-fashion-store"
+          example: 'luxury-fashion-store'
         description:
           type: string
-          example: "A modern e-commerce platform for luxury fashion"
+          example: 'A modern e-commerce platform for luxury fashion'
         category:
           type: string
-          example: "e-commerce"
+          example: 'e-commerce'
         featured:
           type: boolean
           example: true
@@ -545,15 +545,15 @@ components:
           properties:
             live:
               type: string
-              example: "https://example.com"
+              example: 'https://example.com'
             github:
               type: string
-              example: "https://github.com/user/repo"
+              example: 'https://github.com/user/repo'
         tags:
           type: array
           items:
             type: string
-          example: ["React", "Next.js", "Stripe"]
+          example: ['React', 'Next.js', 'Stripe']
         createdAt:
           type: string
           format: date-time
@@ -568,10 +568,10 @@ components:
           properties:
             tagline:
               type: string
-              example: "Elegant shopping experience"
+              example: 'Elegant shopping experience'
             details:
               type: string
-              example: "Full project description with technical details..."
+              example: 'Full project description with technical details...'
             contributors:
               type: array
               items:
@@ -594,4 +594,3 @@ components:
             claps:
               type: integer
               example: 15
-

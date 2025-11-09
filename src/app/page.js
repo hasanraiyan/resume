@@ -7,6 +7,7 @@ import Skills from '@/components/Skills';
 import Achievements from '@/components/Achievements';
 import Services from '@/components/Services';
 import Work from '@/components/Work';
+import FeaturedWorks from '@/components/FeaturedWorks';
 import Stats from '@/components/Stats';
 import Contact from '@/components/Contact';
 import Footer from '@/components/Footer';
@@ -48,7 +49,8 @@ export default async function Home() {
       <Skills />
       <Achievements />
       <Services services={services} />
-      <Work featuredProjects={featuredProjects} />
+      {/* <Work featuredProjects={featuredProjects} /> */}
+      <FeaturedWorks featuredProjects={featuredProjects} />
       {/* Fix for CSS layout issue causing large right-side margin */}
       {/* overflow: 'hidden' clips any content extending beyond boundaries */}
       {/* width: '100%' ensures container takes full width of parent */}
