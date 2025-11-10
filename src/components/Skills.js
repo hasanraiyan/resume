@@ -57,69 +57,6 @@ function renderIcon(iconType, iconName, size = 16) {
   return null;
 }
 
-/** Color mapping for skills based on level */
-function getSkillColor(level) {
-  if (level >= 90) return 'bg-gray-800';
-  if (level >= 85) return 'bg-gray-700';
-  if (level >= 80) return 'bg-gray-600';
-  if (level >= 70) return 'bg-gray-500';
-  if (level >= 60) return 'bg-gray-400';
-  return 'bg-gray-300';
-}
-
-/**
- * Skill bar component with animation
- * @param {Object} props
- * @param {string} props.name - Skill name
- * @param {number} props.level - Proficiency level (0-100)
- * @param {string} [props.iconType] - Icon library type ('fa' or 'lucide')
- * @param {string} [props.icon] - Icon name/key
- */
-function SkillBar({ name, level, iconType, icon }) {
-  const barRef = useRef();
-
-  useEffect(() => {
-    const bar = barRef.current;
-    if (!bar) return;
-
-    gsap.set(bar, { width: 0 });
-    gsap.to(bar, {
-      width: `${level}%`,
-      duration: 1.5,
-      ease: 'power2.out',
-      scrollTrigger: {
-        trigger: bar,
-        start: 'top 80%',
-        toggleActions: 'play none none reverse',
-      },
-    });
-  }, [level]);
-
-  return (
-    <div className="mb-4">
-      <div className="flex justify-between mb-1">
-        <div className="flex items-center gap-2">
-          {icon && renderIcon(iconType, icon, 14)}
-          <span className="text-sm font-medium text-gray-700">{name}</span>
-        </div>
-        <span className="text-sm text-gray-500">{level}%</span>
-      </div>
-      <div
-        className="w-full bg-gray-200 rounded-full h-2.5"
-        role="progressbar"
-        aria-valuenow={level}
-        aria-valuemin="0"
-        aria-valuemax="100"
-      >
-        <div
-          ref={barRef}
-          className="h-2.5 rounded-full bg-gradient-to-r from-gray-300 to-gray-800"
-        />
-      </div>
-    </div>
-  );
-}
-
 /**
  * Skills component displaying core skills, technology stack, and certifications with animations.
  * @returns {JSX.Element} The Skills section JSX element.
@@ -129,31 +66,23 @@ export default function Skills() {
 
   // Static data
   const skillsData = [
-    { name: 'JavaScript', level: 95, color: getSkillColor(95) },
-    { name: 'TypeScript', level: 90, color: getSkillColor(90) },
-    { name: 'React', level: 90, color: getSkillColor(90) },
-    { name: 'React Native', level: 85, color: getSkillColor(85) },
-    { name: 'Node.js', level: 85, color: getSkillColor(85) },
-    { name: 'Express.js', level: 80, color: getSkillColor(80) },
-    { name: 'Next.js', level: 90, color: getSkillColor(90) },
-    { name: 'MongoDB', level: 85, color: getSkillColor(85) },
-    { name: 'Expo', level: 80, color: getSkillColor(80) },
-  ];
-  const technologies = [
+    { name: 'JavaScript', iconType: 'fa', iconName: 'faCode' },
+    { name: 'TypeScript', iconType: 'fa', iconName: 'faCode' },
     { name: 'React', iconType: 'fa', iconName: 'faReact' },
     { name: 'React Native', iconType: 'fa', iconName: 'faReact' },
-    { name: 'Next.js', iconType: 'lucide', iconName: 'Server' },
     { name: 'Node.js', iconType: 'fa', iconName: 'faNodeJs' },
-    { name: 'Express.js', iconType: 'lucide', iconName: 'Server' },
+    { name: 'Express.js', iconType: 'fa', iconName: 'faServer' },
+    { name: 'Next.js', iconType: 'lucide', iconName: 'Server' },
     { name: 'MongoDB', iconType: 'fa', iconName: 'faMdb' },
-    { name: 'TypeScript', iconType: 'fa', iconName: 'faCode' },
-    { name: 'Python', iconType: 'fa', iconName: 'faPython' },
     { name: 'Expo', iconType: 'lucide', iconName: 'Code' },
+  ];
+  const technologies = [
+    { name: 'Python', iconType: 'fa', iconName: 'faPython' },
     { name: 'Git', iconType: 'fa', iconName: 'faGitAlt' },
     { name: 'Vercel', iconType: 'lucide', iconName: 'Server' },
     { name: 'Tailwind CSS', iconType: 'fa', iconName: 'faCss3' },
     { name: 'LLM', iconType: 'lucide', iconName: 'Code' },
-
+    { name: 'MERN Stack', iconType: 'lucide', iconName: 'Code' },
     { name: 'OpenAI', iconType: 'lucide', iconName: 'Code' },
     { name: 'Gemini', iconType: 'lucide', iconName: 'Code' },
     { name: 'Generative AI', iconType: 'lucide', iconName: 'Code' },
@@ -247,19 +176,21 @@ export default function Skills() {
           {/* Skills and Technology Stack in one row on xl */}
           {(skillsData.length > 0 || technologies.length > 0) && (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-8">
-              {/* Skills with progress bars */}
+              {/* Skills */}
               {skillsData.length > 0 && (
                 <div className="skill-section">
                   <h3 className="text-xl font-semibold mb-6">Core Skills</h3>
-                  <div>
+                  <div className="flex flex-wrap gap-3">
                     {skillsData.map((skill, index) => (
-                      <SkillBar
+                      <div
                         key={skill._id || index}
-                        name={skill.name}
-                        level={skill.level}
-                        iconType={skill.iconType}
-                        icon={skill.icon}
-                      />
+                        className="flex items-center gap-2 px-3 py-2 bg-white rounded-full text-sm font-medium border border-gray-200 hover:border-gray-400 transition-all duration-200 hover:shadow-sm"
+                      >
+                        <div className="text-gray-700">
+                          {renderIcon(skill.iconType, skill.iconName, 16)}
+                        </div>
+                        <span>{skill.name}</span>
+                      </div>
                     ))}
                   </div>
                 </div>
