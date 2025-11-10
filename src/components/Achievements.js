@@ -35,11 +35,46 @@ const ACHIEVEMENTS = [
       'Selected as a finalist in the Smart India Hackathon 2025 (Hardware Edition) for building an innovative real-world prototype.',
   },
   {
+    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762698762/portfolio_assets/v9hfuc3gdddi1pj9qxeg.jpg',
+    alt: 'Receiving the Coder of the Month award at MIT Muzaffarpur',
+    title: 'Coder of the Month — MIT Muzaffarpur',
+    description:
+      'Awarded “Coder of the Month” for outstanding problem-solving and consistent performance in coding challenges at MIT Muzaffarpur.',
+  },
+  {
     src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762685373/portfolio_assets/hxdyhklql3ohq4n8yxre.jpg',
     alt: 'Newspaper Feature - SIH 2025 Selection',
     title: 'Newspaper Feature — SIH 2025 Selection',
     description:
       'Featured in newspaper for being selected as a finalist in the Smart India Hackathon 2025.',
+  },
+  {
+    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762785755/portfolio_assets/qgkdrzy7nrlnzighzrck.jpg',
+    alt: 'NIELIT Internship Certificate on Machine Learning using Python',
+    title: 'Machine Learning Internship — NIELIT, Patna',
+    description:
+      'Completed a 4-week internship on “Machine Learning using Python” conducted by NIELIT EC Muzaffarpur under the National Institute of Electronics & Information Technology (NIELIT), Patna. Gained hands-on experience with data preprocessing, model building, and ML algorithms using Python libraries like NumPy, Pandas, and scikit-learn.',
+  },
+  {
+    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762785972/portfolio_assets/a4senp6qn7fli89vfysk.jpg',
+    alt: 'Certificate of Participation in SUSTAIN-A-THON 2024 by Indian Oil Corporation Ltd.',
+    title: 'SUSTAIN-A-THON 2024 — Sustainability Hackathon',
+    description:
+      'Participated in “SUSTAIN-A-THON 2024,” a national-level sustainability hackathon organized by Indian Oil Corporation Ltd. The event focused on fostering innovation and developing sustainable solutions for a greener future.',
+  },
+  {
+    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762786062/portfolio_assets/hlvoafwqjlacyglrj9zc.jpg',
+    alt: 'Certificate of Appreciation for securing 2nd place in Hackstack’23 by Moxie Club, MIT Muzaffarpur',
+    title: 'Hackstack’23 — 2nd Place Winner',
+    description:
+      'Secured 2nd place in Hackstack’23, a coding and innovation competition organized by Moxie — the Technical Club of MIT Muzaffarpur. Recognized for creativity, teamwork, and technical problem-solving skills.',
+  },
+  {
+    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762786166/portfolio_assets/irvixzesg7dbuz1glezp.jpg',
+    alt: 'Certificate of Participation in SCIFE’24 Science Exhibition by Moxie, MIT Muzaffarpur',
+    title: 'SCIFE’24 — Science Exhibition Participant',
+    description:
+      'Actively participated in the Science Exhibition “SCIFE’24,” organized by Moxie — the Technical Club of MIT Muzaffarpur. Presented innovative tech ideas as part of Team Tech Thinkers on 28th February 2024.',
   },
 ];
 
