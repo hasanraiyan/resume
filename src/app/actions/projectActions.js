@@ -66,9 +66,9 @@ export async function createProject(formData) {
       success: false,
       message: error.code === 11000 ? 'Slug already exists.' : 'Failed to create project.',
     };
+  } finally {
+    redirect('/admin/projects');
   }
-
-  redirect('/admin/projects');
 }
 
 /**
@@ -129,8 +129,9 @@ export async function deleteProject(id) {
   } catch (error) {
     console.error('Delete Project Error:', error);
     return { success: false, message: 'Failed to delete project.' };
+  } finally {
+    redirect('/admin/projects');
   }
-  redirect('/admin/projects');
 }
 
 /**
