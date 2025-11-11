@@ -46,6 +46,9 @@ export const metadata = {
   title: 'Portfolio - Minimalist Creative',
   description: 'Creative Developer Portfolio',
   manifest: '/manifest.json',
+  icons: {
+    icon: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762069094/portfolio_assets/ckfre3frqkzgatpgmzu1.jpg',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
