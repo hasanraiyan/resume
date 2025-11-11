@@ -22,59 +22,54 @@ import 'swiper/css/pagination';
 const ACHIEVEMENTS = [
   {
     src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762678856/portfolio_assets/u9vr8j427iy1wocnrm6n.png',
-    alt: 'Featured in MIT Muzaffarpur Magazine 2025 Edition',
-    title: 'MIT Muzaffarpur Magazine 2025 — Featured Innovator',
+    alt: 'MIT Muzaffarpur Magazine 2025',
+    title: 'MIT Magazine 2025 — Featured Innovator',
     description:
-      'Recognized in the 2025 edition of the MIT Muzaffarpur magazine for developing PYQDeck — an AI-powered platform helping students simplify exam preparation.',
+      'Featured for building PYQDeck, an AI platform that streamlines exam prep for students.',
   },
   {
     src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762675267/portfolio_assets/smq6q7fn18ruw6lx38mg.jpg',
-    alt: 'Smart India Hackathon Finalist 2025',
+    alt: 'Smart India Hackathon 2025 Finalist',
     title: 'Smart India Hackathon 2025 — Finalist',
     description:
-      'Selected as a finalist in the Smart India Hackathon 2025 (Hardware Edition) for building an innovative real-world prototype.',
+      'National finalist in the Hardware Edition for an innovative real-world prototype.',
   },
   {
     src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762698762/portfolio_assets/v9hfuc3gdddi1pj9qxeg.jpg',
-    alt: 'Receiving the Coder of the Month award at MIT Muzaffarpur',
+    alt: 'Coder of the Month MIT',
     title: 'Coder of the Month — MIT Muzaffarpur',
-    description:
-      'Awarded “Coder of the Month” for outstanding problem-solving and consistent performance in coding challenges at MIT Muzaffarpur.',
+    description: 'Earned for top coding performance and consistent problem-solving.',
   },
   {
     src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762685373/portfolio_assets/hxdyhklql3ohq4n8yxre.jpg',
-    alt: 'Newspaper Feature - SIH 2025 Selection',
-    title: 'Newspaper Feature — SIH 2025 Selection',
-    description:
-      'Featured in newspaper for being selected as a finalist in the Smart India Hackathon 2025.',
+    alt: 'Newspaper SIH 2025',
+    title: 'Press Feature — SIH 2025 Selection',
+    description: 'Local newspaper covered my selection as a SIH 2025 finalist.',
   },
   {
     src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762785755/portfolio_assets/qgkdrzy7nrlnzighzrck.jpg',
-    alt: 'NIELIT Internship Certificate on Machine Learning using Python',
-    title: 'Machine Learning Internship — NIELIT, Patna',
+    alt: 'NIELIT ML Internship',
+    title: 'ML Intern — NIELIT Patna',
     description:
-      'Completed a 4-week internship on “Machine Learning using Python” conducted by NIELIT EC Muzaffarpur under the National Institute of Electronics & Information Technology (NIELIT), Patna. Gained hands-on experience with data preprocessing, model building, and ML algorithms using Python libraries like NumPy, Pandas, and scikit-learn.',
+      '4-week internship on ML with Python, covering data pipelines, models, and scikit-learn.',
   },
   {
     src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762785972/portfolio_assets/a4senp6qn7fli89vfysk.jpg',
-    alt: 'Certificate of Participation in SUSTAIN-A-THON 2024 by Indian Oil Corporation Ltd.',
-    title: 'SUSTAIN-A-THON 2024 — Sustainability Hackathon',
-    description:
-      'Participated in “SUSTAIN-A-THON 2024,” a national-level sustainability hackathon organized by Indian Oil Corporation Ltd. The event focused on fostering innovation and developing sustainable solutions for a greener future.',
+    alt: 'SUSTAIN-A-THON 2024',
+    title: 'SUSTAIN-A-THON 2024 — Participant',
+    description: 'National sustainability hackathon by Indian Oil, creating green tech solutions.',
   },
   {
     src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762786062/portfolio_assets/hlvoafwqjlacyglrj9zc.jpg',
-    alt: 'Certificate of Appreciation for securing 2nd place in Hackstack’23 by Moxie Club, MIT Muzaffarpur',
-    title: 'Hackstack’23 — 2nd Place Winner',
-    description:
-      'Secured 2nd place in Hackstack’23, a coding and innovation competition organized by Moxie — the Technical Club of MIT Muzaffarpur. Recognized for creativity, teamwork, and technical problem-solving skills.',
+    alt: 'Hackstack 23 2nd Place',
+    title: 'Hackstack’23 — 2nd Place',
+    description: 'Runner-up in MIT’s flagship hackathon for creative problem-solving and teamwork.',
   },
   {
     src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762786166/portfolio_assets/irvixzesg7dbuz1glezp.jpg',
-    alt: 'Certificate of Participation in SCIFE’24 Science Exhibition by Moxie, MIT Muzaffarpur',
-    title: 'SCIFE’24 — Science Exhibition Participant',
-    description:
-      'Actively participated in the Science Exhibition “SCIFE’24,” organized by Moxie — the Technical Club of MIT Muzaffarpur. Presented innovative tech ideas as part of Team Tech Thinkers on 28th February 2024.',
+    alt: 'SCIFE 24 Exhibition',
+    title: 'SCIFE’24 — Exhibitor',
+    description: 'Showcased tech innovations with Team Tech Thinkers at MIT’s science expo.',
   },
 ];
 

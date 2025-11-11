@@ -89,10 +89,6 @@ export default function Skills() {
     { name: 'React Query', iconType: 'lucide', iconName: 'Zap' },
     { name: 'Framer Motion', iconType: 'lucide', iconName: 'Layers' },
     { name: 'Firebase', iconType: 'fa', iconName: 'faServer' },
-    // { name: 'GraphQL', iconType: 'lucide', iconName: 'Code' },
-    // { name: 'Prisma', iconType: 'fa', iconName: 'faDatabase' },
-    // { name: 'CI/CD', iconType: 'lucide', iconName: 'Settings' },
-    // { name: 'Sentry', iconType: 'lucide', iconName: 'Code' },
     { name: 'Supabase', iconType: 'fa', iconName: 'faDatabase' },
   ];
   const certifications = [
