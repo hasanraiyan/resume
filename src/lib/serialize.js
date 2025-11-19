@@ -50,7 +50,7 @@
  * // ObjectIds and Dates are converted to strings
  * ```
  */
-export function serializeForClient(obj) {
+export function serializeForClient(obj, visited = new WeakSet()) {
   if (obj === null || obj === undefined) return obj;
 
   // Handle MongoDB ObjectId detection more specifically
@@ -68,8 +68,16 @@ export function serializeForClient(obj) {
     return obj.toString('base64');
   }
 
+  // Handle circular references
+  if (typeof obj === 'object') {
+    if (visited.has(obj)) {
+      return '[Circular]';
+    }
+    visited.add(obj);
+  }
+
   if (Array.isArray(obj)) {
-    return obj.map((item) => serializeForClient(item));
+    return obj.map((item) => serializeForClient(item, visited));
   }
 
   if (typeof obj === 'object') {
@@ -85,7 +93,7 @@ export function serializeForClient(obj) {
           serialized[key] = String(value);
         }
       } else if (value && typeof value === 'object') {
-        serialized[key] = serializeForClient(value);
+        serialized[key] = serializeForClient(value, visited);
       } else {
         serialized[key] = value;
       }

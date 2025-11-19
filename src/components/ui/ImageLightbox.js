@@ -161,89 +161,29 @@ export default function ImageLightbox({ asset, isOpen, onClose, onNext, onPrevio
         </div>
       </div>
 
-      {/* Image details panel */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gray-900 bg-opacity-90 backdrop-blur-sm text-white p-6 border-t border-gray-700">
-        <div className="max-w-4xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Basic info */}
-            <div>
-              <h3 className="text-lg font-semibold mb-2 truncate">{asset.filename}</h3>
-              <div className="space-y-1 text-sm">
-                <p>
-                  <span className="text-gray-400">Size:</span> {formatFileSize(asset.size)}
-                </p>
-                <p>
-                  <span className="text-gray-400">Format:</span> {asset.format?.toUpperCase()}
-                </p>
-                <p>
-                  <span className="text-gray-400">Dimensions:</span> {asset.width} × {asset.height}
-                  px
-                </p>
-              </div>
-            </div>
-
-            {/* Metadata */}
-            <div>
-              <h4 className="text-md font-semibold mb-2">Details</h4>
-              <div className="space-y-1 text-sm">
-                <p>
-                  <span className="text-gray-400">Uploaded:</span> {formatDate(asset.createdAt)}
-                </p>
-                <p>
-                  <span className="text-gray-400">Source:</span>
-                  <span
-                    className={`ml-1 px-2 py-1 rounded text-xs ${
-                      asset.source === 'pollinations'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-green-600 text-white'
-                    }`}
-                  >
-                    {asset.source === 'pollinations' ? 'AI Generated' : 'Uploaded'}
-                  </span>
-                </p>
-                {asset.prompt && (
-                  <div className="mt-2">
-                    <p className="text-gray-400 text-xs mb-1">AI Prompt:</p>
-                    <p
-                      className="text-xs bg-gray-800 p-2 rounded max-w-xs truncate"
-                      title={asset.prompt}
-                    >
-                      {asset.prompt}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Controls */}
-            <div className="flex flex-col justify-end">
-              <div className="flex items-center space-x-4 mb-4">
-                <button
-                  onClick={() => setZoom(1)}
-                  className="text-sm px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-all duration-200 font-medium"
-                >
-                  Fit to Screen
-                </button>
-                <div className="bg-gray-800 px-3 py-2 rounded-lg">
-                  <span className="text-sm text-gray-300">
-                    Zoom:{' '}
-                    <span className="text-white font-semibold">{Math.round(zoom * 100)}%</span>
-                  </span>
-                </div>
-              </div>
-              <div className="text-xs text-gray-400 space-y-1 bg-gray-800 bg-opacity-50 p-3 rounded-lg">
-                <p>
-                  🖱️ <span className="text-gray-300">Click image to zoom in/out</span>
-                </p>
-                <p>
-                  ⌨️ <span className="text-gray-300">+/- to zoom, 0 to reset</span>
-                </p>
-                <p>
-                  ← → <span className="text-gray-300">to navigate, Esc to close</span>
-                </p>
-              </div>
-            </div>
-          </div>
+      {/* Controls */}
+      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center gap-4 bg-gray-900 bg-opacity-90 backdrop-blur-sm p-3 rounded-xl border border-gray-700">
+        <button
+          onClick={() => {
+            navigator.clipboard.writeText(asset.secure_url);
+            // Optional: Visual feedback could be added here
+          }}
+          className="text-sm px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-all duration-200 font-medium text-white flex items-center gap-2"
+          title="Copy Image URL"
+        >
+          <i className="fas fa-link"></i>
+          Copy URL
+        </button>
+        <button
+          onClick={() => setZoom(1)}
+          className="text-sm px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-all duration-200 font-medium"
+        >
+          Fit to Screen
+        </button>
+        <div className="bg-gray-800 px-3 py-2 rounded-lg">
+          <span className="text-sm text-gray-300">
+            Zoom: <span className="text-white font-semibold">{Math.round(zoom * 100)}%</span>
+          </span>
         </div>
       </div>
     </div>

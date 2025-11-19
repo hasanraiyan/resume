@@ -1153,7 +1153,24 @@ export default function MediaLibraryClient({ initialAssets }) {
                     )}
 
                     {/* Delete Button Overlay */}
-                    <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(asset.secure_url);
+                          // Optional: Show a toast or temporary success state
+                          const btn = e.currentTarget;
+                          const originalIcon = btn.innerHTML;
+                          btn.innerHTML = '<i class="fas fa-check"></i>';
+                          setTimeout(() => {
+                            btn.innerHTML = originalIcon;
+                          }, 2000);
+                        }}
+                        className="bg-white hover:bg-gray-100 text-gray-700 rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium transition-colors shadow-lg"
+                        title="Copy URL"
+                      >
+                        <i className="fas fa-link"></i>
+                      </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
