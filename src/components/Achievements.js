@@ -1,7 +1,6 @@
 /**
- * @fileoverview Achievements section component for homepage.
- * Displays achievements in an interactive carousel with autoplay and navigation.
- * Features Swiper integration, hover animations, and responsive design.
+ * @fileoverview Achievements and Certifications section component.
+ * Displays two distinct carousels: one for achievements/awards and one for certifications.
  */
 
 'use client';
@@ -19,6 +18,39 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
+// --- DATA: CERTIFICATIONS ---
+const CERTIFICATES = [
+  {
+    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1763631873/portfolio_assets/iaeau07wjimbx3vlbhhw.png',
+    alt: 'LangChain Essentials Certificate',
+    title: 'LangChain Essentials — TypeScript',
+    description:
+      'Completed the LangChain Academy course on building LLM applications using TypeScript and LangChain.js.',
+  },
+  {
+    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762785755/portfolio_assets/qgkdrzy7nrlnzighzrck.jpg',
+    alt: 'NIELIT ML Internship',
+    title: 'ML Intern — NIELIT Patna',
+    description:
+      '4-week internship on ML with Python, covering data pipelines, models, and scikit-learn.',
+  },
+
+  {
+    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762785972/portfolio_assets/a4senp6qn7fli89vfysk.jpg',
+    alt: 'SUSTAIN-A-THON 2024',
+    title: 'SUSTAIN-A-THON 2024 — Participant',
+    description: 'National sustainability hackathon by Indian Oil, creating green tech solutions.',
+  },
+  {
+    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762786166/portfolio_assets/irvixzesg7dbuz1glezp.jpg',
+    alt: 'SCIFE 24 Exhibition',
+    title: 'SCIFE’24 — Exhibitor',
+    description: 'Showcased tech innovations with Team Tech Thinkers at MIT’s science expo.',
+  },
+  // Add more certificates here in the future
+];
+
+// --- DATA: ACHIEVEMENTS ---
 const ACHIEVEMENTS = [
   {
     src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762678856/portfolio_assets/u9vr8j427iy1wocnrm6n.png',
@@ -46,87 +78,98 @@ const ACHIEVEMENTS = [
     title: 'Press Feature — SIH 2025 Selection',
     description: 'Local newspaper covered my selection as a SIH 2025 finalist.',
   },
-  {
-    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762785755/portfolio_assets/qgkdrzy7nrlnzighzrck.jpg',
-    alt: 'NIELIT ML Internship',
-    title: 'ML Intern — NIELIT Patna',
-    description:
-      '4-week internship on ML with Python, covering data pipelines, models, and scikit-learn.',
-  },
-  {
-    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762785972/portfolio_assets/a4senp6qn7fli89vfysk.jpg',
-    alt: 'SUSTAIN-A-THON 2024',
-    title: 'SUSTAIN-A-THON 2024 — Participant',
-    description: 'National sustainability hackathon by Indian Oil, creating green tech solutions.',
-  },
+
   {
     src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762786062/portfolio_assets/hlvoafwqjlacyglrj9zc.jpg',
     alt: 'Hackstack 23 2nd Place',
     title: 'Hackstack’23 — 2nd Place',
     description: 'Runner-up in MIT’s flagship hackathon for creative problem-solving and teamwork.',
   },
-  {
-    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762786166/portfolio_assets/irvixzesg7dbuz1glezp.jpg',
-    alt: 'SCIFE 24 Exhibition',
-    title: 'SCIFE’24 — Exhibitor',
-    description: 'Showcased tech innovations with Team Tech Thinkers at MIT’s science expo.',
-  },
 ];
 
 /**
- * Achievements section component that displays accomplishments in an interactive carousel.
- * Features Swiper carousel with autoplay, pagination, and custom navigation controls.
- *
- * @component
- * @example
- * ```jsx
- * // Basic usage in homepage
- * <Achievements />
- *
- * // In layout with other sections
- * <main>
- *   <Hero />
- *   <About />
- *   <Achievements />
- *   <Work />
- *   <Contact />
- * </main>
- * ```
- *
- * @features
- * - Interactive Swiper carousel with autoplay
- * - Custom navigation arrows
- * - Pagination dots
- * - Hover animations with image scaling and overlay effects
- * - GSAP scroll-triggered animations
- * - Loading state coordination with LoadingContext
- * - Responsive breakpoints (1-3 slides per view)
- *
- * @animations
- * - Fade-in animation for the entire section
- * - Scroll-triggered entrance effects
- * - Hover scale effects on images
- * - Overlay fade-in on hover
- *
- * @responsiveness
- * - Mobile: Single slide per view
- * - Tablet: Two slides per view
- * - Desktop: Three slides per view
- * - Responsive spacing and typography
- *
- * @dependencies
- * - Swiper for carousel functionality
- * - GSAP for animations
- * - LoadingContext for coordinated loading states
- * - UI components (Section, Button)
- * - Lucide React for navigation icons
+ * Reusable Carousel Component to handle Logic for both sections
  */
-const Achievements = () => {
+const Carousel = ({ id, data, delay = 3500 }) => {
   const swiperRef = useRef(null);
+
+  const handlePrev = () => swiperRef.current?.slidePrev();
+  const handleNext = () => swiperRef.current?.slideNext();
+
+  // If only 1 item, we can center it or show 1 slide.
+  // If data length < 3, navigation buttons might not be needed on desktop.
+  const showNavButtons = data.length >= 3;
+
+  return (
+    <div className={`relative w-full swiper-container-${id}`}>
+      {showNavButtons && (
+        <>
+          <button
+            onClick={handlePrev}
+            className="hidden md:block absolute -left-12 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all text-black hover:text-black"
+            aria-label="Previous slide"
+          >
+            <ChevronLeft size={24} />
+          </button>
+          <button
+            onClick={handleNext}
+            className="hidden md:block absolute -right-12 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all text-black hover:text-black"
+            aria-label="Next slide"
+          >
+            <ChevronRight size={24} />
+          </button>
+        </>
+      )}
+
+      <Swiper
+        modules={[Pagination, Autoplay]}
+        slidesPerView={1}
+        spaceBetween={30}
+        loop={data.length > 1} // Only loop if more than 1 item
+        autoplay={{
+          delay: delay,
+          disableOnInteraction: false,
+        }}
+        pagination={{
+          clickable: true,
+          bulletClass: 'swiper-pagination-bullet !bg-black',
+          bulletActiveClass: 'swiper-pagination-bullet-active !bg-black',
+        }}
+        onSwiper={(swiper) => (swiperRef.current = swiper)}
+        breakpoints={{
+          640: { slidesPerView: data.length < 2 ? 1 : 2 },
+          1024: { slidesPerView: data.length < 3 ? data.length : 3 },
+        }}
+        className="achievements-swiper !pb-14" // Added padding bottom for pagination
+      >
+        {data.map((item, index) => (
+          <SwiperSlide key={index} className="h-auto">
+            <div className="relative group overflow-hidden rounded-2xl shadow-lg h-full">
+              <img
+                src={item.src}
+                alt={item.alt}
+                className="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-white/50 to-transparent backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end items-start p-6 text-left">
+                <h3 className="font-bold text-lg text-black mb-1 translate-y-3 group-hover:translate-y-0 transition-all duration-500">
+                  {item.title}
+                </h3>
+                <p className="text-sm text-black font-medium opacity-90 translate-y-4 group-hover:translate-y-0 transition-all duration-500 delay-100">
+                  {item.description}
+                </p>
+              </div>
+            </div>
+          </SwiperSlide>
+        ))}
+      </Swiper>
+    </div>
+  );
+};
+
+const Achievements = () => {
   const { registerComponent, markComponentAsLoaded } = useLoadingStatus();
 
   useEffect(() => {
-    // Register this component as "loaded" since it has no async data
     registerComponent('Achievements');
     markComponentAsLoaded('Achievements');
   }, [registerComponent, markComponentAsLoaded]);
@@ -134,125 +177,78 @@ const Achievements = () => {
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
 
-    // Small delay to ensure DOM is ready
     const timer = setTimeout(() => {
       try {
-        const container = document.querySelector('#achievements');
-        if (container) {
-          const swiperContainer = container.querySelector('.achievements-swiper');
-          if (swiperContainer) {
-            // Reset any existing transforms
-            gsap.set(swiperContainer, { opacity: 1, y: 0 });
+        // Animate Achievement Container
+        const achContainer = document.querySelector('.swiper-container-achievements');
+        if (achContainer) {
+          gsap.from(achContainer, {
+            opacity: 0,
+            y: 50,
+            duration: 1,
+            scrollTrigger: {
+              trigger: '#achievements-section',
+              start: 'top 85%',
+              end: 'bottom 20%',
+              toggleActions: 'play none none reverse',
+            },
+          });
+        }
 
-            gsap.from(swiperContainer, {
-              opacity: 0,
-              y: 50,
-              duration: 1,
-              scrollTrigger: {
-                trigger: '#achievements',
-                start: 'top 80%',
-                end: 'bottom 20%',
-                toggleActions: 'play none none reverse',
-                refreshPriority: -1,
-              },
-            });
-          }
+        // Animate Certificate Container
+        const certContainer = document.querySelector('.swiper-container-certificates');
+        if (certContainer) {
+          gsap.from(certContainer, {
+            opacity: 0,
+            y: 50,
+            duration: 1,
+            scrollTrigger: {
+              trigger: '#certificates-section',
+              start: 'top 85%',
+              end: 'bottom 20%',
+              toggleActions: 'play none none reverse',
+            },
+          });
         }
       } catch (error) {
-        console.warn('GSAP animation error in Achievements:', error);
+        console.warn('GSAP animation error:', error);
       }
     }, 100);
 
     return () => {
       clearTimeout(timer);
-      // Clean up GSAP animations
-      try {
-        ScrollTrigger.getAll().forEach((trigger) => {
-          if (trigger.trigger === '#achievements') {
-            trigger.kill();
-          }
-        });
-      } catch (error) {
-        console.warn('GSAP cleanup error:', error);
-      }
+      ScrollTrigger.getAll().forEach((t) => t.kill());
     };
   }, []);
 
-  const handlePrev = () => swiperRef.current?.slidePrev();
-  const handleNext = () => swiperRef.current?.slideNext();
-
   return (
-    <Section
-      id="achievements"
-      title="Achievements"
-      description="Milestones that inspire"
-      className=""
-      centered={true}
-    >
-      <div className="max-w-7xl mx-auto">
-        <div className="relative">
-          {/* Render navigation buttons only if there are 3 or more achievements */}
-          {ACHIEVEMENTS.length >= 3 && (
-            <>
-              <button
-                onClick={handlePrev}
-                className="hidden md:block absolute -left-10 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all text-black hover:text-black"
-              >
-                <ChevronLeft size={24} />
-              </button>
-              <button
-                onClick={handleNext}
-                className="hidden md:block absolute -right-10 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all text-black hover:text-black"
-              >
-                <ChevronRight size={24} />
-              </button>
-            </>
-          )}
-
-          <Swiper
-            modules={[Pagination, Autoplay]}
-            slidesPerView={1}
-            spaceBetween={30}
-            loop
-            autoplay={{
-              delay: 3500,
-              disableOnInteraction: false,
-            }}
-            pagination={{
-              clickable: true,
-              bulletClass: 'swiper-pagination-bullet !bg-black',
-              bulletActiveClass: 'swiper-pagination-bullet-active !bg-black',
-            }}
-            onSwiper={(swiper) => (swiperRef.current = swiper)}
-            breakpoints={{
-              640: { slidesPerView: 2 },
-              1024: { slidesPerView: 3 },
-            }}
-            className="achievements-swiper"
-          >
-            {ACHIEVEMENTS.map((item, index) => (
-              <SwiperSlide key={index}>
-                <div className="relative group overflow-hidden rounded-2xl shadow-lg mb-8">
-                  <img
-                    src={item.src}
-                    alt={item.alt}
-                    className="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-white/70 via-white/40 to-transparent backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end items-start p-6 text-left">
-                    <h3 className="font-semibold text-lg text-black mb-1 translate-y-3 group-hover:translate-y-0 transition-all duration-500">
-                      {item.title}
-                    </h3>
-                    <p className="text-sm text-black opacity-80 translate-y-4 group-hover:translate-y-0 transition-all duration-500 delay-100">
-                      {item.description}
-                    </p>
-                  </div>
-                </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
+    <div className="space-y-24">
+      {/* --- SECTION 1: ACHIEVEMENTS --- */}
+      <Section
+        id="achievements-section"
+        title="Achievements"
+        description="Milestones that inspire"
+        className=""
+        centered={true}
+      >
+        <div className="max-w-7xl mx-auto px-4">
+          <Carousel id="achievements" data={ACHIEVEMENTS} delay={3500} />
         </div>
-      </div>
-    </Section>
+      </Section>
+
+      {/* --- SECTION 2: CERTIFICATIONS --- */}
+      <Section
+        id="certificates-section"
+        title="Certifications"
+        description="Continuous learning & professional growth"
+        className=""
+        centered={true}
+      >
+        <div className="max-w-7xl mx-auto px-4">
+          <Carousel id="certificates" data={CERTIFICATES} delay={4500} />
+        </div>
+      </Section>
+    </div>
   );
 };
 
