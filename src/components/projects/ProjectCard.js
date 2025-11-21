@@ -3,97 +3,52 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Badge, ForSaleBadge } from '@/components/ui';
+import { ForSaleBadge } from '@/components/ui';
 
 /**
- * Project Card Component - CLEAN & MINIMAL
- * Using Next.js Link for better performance
+ * Project Card - "Immersive Gallery"
+ * Full bleed image, parallax hover, minimal typography.
+ * Removes the white "card" container.
  */
 export default function ProjectCard({ project }) {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
-
-  // Debug logging for image loading issues
-  const handleImageLoad = () => {
-    console.log(`Image loaded successfully: ${project.title}`);
-    setImageLoaded(true);
-  };
-
-  const handleImageError = (e) => {
-    console.error(`Image failed to load for ${project.title}:`, e);
-    setImageError(true);
-  };
 
   return (
-    <Link href={`/projects/${project.slug}`} className="group block hover-target">
-      {/* Project Image - Fixed aspect ratio */}
-      <div className="relative overflow-hidden rounded-lg mb-4 sm:mb-5 image-reveal">
-        <div className="aspect-[4/3] bg-gray-200 flex items-center justify-center">
-          {!imageError ? (
-            <Image
-              src={project.thumbnail}
-              alt={project.title}
-              fill
-              className={`w-full h-full object-cover transition-all duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-              loading="lazy"
-              onLoad={handleImageLoad}
-              onError={handleImageError}
-              unoptimized={true}
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full text-gray-400">
-              <i className="fas fa-image text-4xl"></i>
-            </div>
-          )}
-
-          {/* Loading state - only show if image hasn't loaded yet */}
-          {!imageLoaded && !imageError && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-200 z-10">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-400"></div>
-            </div>
-          )}
+    <Link href={`/projects/${project.slug}`} className="group block cursor-none relative">
+      {/* Image Container */}
+      <div className="relative w-full aspect-[16/10] overflow-hidden rounded-xl bg-gray-200 mb-6">
+        <div className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-105">
+          <Image
+            src={project.thumbnail}
+            alt={project.title}
+            fill
+            className={`object-cover transition-opacity duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+            onLoad={() => setImageLoaded(true)}
+            unoptimized
+          />
         </div>
 
-        {/* For Sale Badge */}
-        {project.isForSale && <ForSaleBadge className="top-3 right-3" />}
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-500" />
 
-        {/* Overlay on hover */}
-        <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-all duration-300"></div>
+        {/* Badges */}
+        {project.isForSale && <ForSaleBadge className="top-4 right-4" />}
       </div>
 
-      {/* Project Info */}
-      <div>
-        {/* Category */}
-        <div className="text-xs font-semibold tracking-widest mb-2 text-gray-600 uppercase">
-          {project.category}
-        </div>
-
+      {/* Minimal Meta Data */}
+      <div className="flex justify-between items-baseline border-b border-black/10 pb-4 group-hover:border-black transition-colors duration-500">
         {/* Title */}
-        <h3 className="text-xl sm:text-2xl font-bold mb-3 group-hover:text-gray-600 transition">
-          {project.title}
-        </h3>
+        <h3 className="text-2xl md:text-3xl font-serif italic text-black">{project.title}</h3>
 
-        {/* Description - 2 lines max with custom truncation */}
-        <p
-          className="text-sm sm:text-base text-gray-700 mb-4 leading-relaxed overflow-hidden"
-          style={{
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-          }}
-        >
-          {project.description}
-        </p>
+        {/* Category */}
+        <span className="text-xs font-mono uppercase tracking-widest text-gray-500 group-hover:text-black transition-colors">
+          {project.category}
+        </span>
+      </div>
 
-        {/* Tech Tags - Show only 3 */}
-        <div className="flex flex-wrap gap-2">
-          {project.tags.slice(0, 3).map((tag, index) => (
-            <Badge key={`${project.id}-${tag.id}-${index}`} variant="tag">
-              {tag.name}
-            </Badge>
-          ))}
-          {project.tags.length > 3 && <Badge variant="tag">+{project.tags.length - 3}</Badge>}
-        </div>
+      {/* Hover Reveal Text (Optional detail below line) */}
+      <div className="mt-2 opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 text-sm text-gray-500">
+        {project.description.substring(0, 60)}...
       </div>
     </Link>
   );

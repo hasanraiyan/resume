@@ -2,87 +2,10 @@
 
 import Link from 'next/link';
 import { cn } from '@/utils/classNames';
-import { componentStyles } from '@/styles/components';
 
 /**
- * @fileoverview Button - A versatile, reusable button component with Next.js Link support.
- *
- * Provides multiple variants (primary, secondary, ghost), sizes, and rendering modes.
- * Supports internal navigation via Next.js Link, external links, and regular button functionality.
- * Includes optional magnetic effect for enhanced user interaction.
- *
- * @component
- * @example
- * ```jsx
- * // Regular button
- * <Button onClick={handleClick}>Click me</Button>
- *
- * // Internal link
- * <Button href="/about">About</Button>
- *
- * // External link
- * <Button href="https://example.com" external>External</Button>
- *
- * // Different variants and sizes
- * <Button variant="secondary" size="large">Large Secondary</Button>
- * ```
- */
-
-/**
- * Button Component Props
- * @typedef {Object} ButtonProps
- * @property {'primary'|'secondary'|'ghost'} [variant='primary'] - Visual style variant of the button
- * @property {'small'|'base'|'large'} [size='base'] - Size of the button
- * @property {boolean} [magnetic=true] - Whether to enable magnetic hover effect
- * @property {string} [href] - URL for link buttons (internal or external)
- * @property {boolean} [external=false] - Whether the link is external (opens in new tab)
- * @property {Function} [onClick] - Click handler for regular buttons
- * @property {React.ReactNode} children - Button content (text or elements)
- * @property {string} [className=''] - Additional CSS classes
- * @property {Object} ...props - Additional props passed to the underlying element
- */
-
-/**
- * Button - A versatile, reusable button component with Next.js Link support.
- *
- * Provides multiple variants (primary, secondary, ghost), sizes, and rendering modes.
- * Supports internal navigation via Next.js Link, external links, and regular button functionality.
- * Includes optional magnetic effect for enhanced user interaction.
- *
- * @param {ButtonProps} props - The component props
- * @param {'primary'|'secondary'|'ghost'} [props.variant='primary'] - Visual style variant of the button
- * @param {'small'|'base'|'large'} [props.size='base'] - Size of the button
- * @param {boolean} [props.magnetic=true] - Whether to enable magnetic hover effect
- * @param {string} [props.href] - URL for link buttons (internal or external)
- * @param {boolean} [props.external=false] - Whether the link is external (opens in new tab)
- * @param {Function} [props.onClick] - Click handler for regular buttons
- * @param {React.ReactNode} props.children - Button content (text or elements)
- * @param {string} [props.className=''] - Additional CSS classes
- * @param {Object} ...props - Additional props passed to the underlying element
- * @returns {JSX.Element} The Button component (button, Link, or anchor element)
- *
- * @example
- * ```jsx
- * // Regular button with click handler
- * <Button variant="primary" size="base" onClick={handleSubmit}>
- *   Submit Form
- * </Button>
- *
- * // Internal navigation link
- * <Button href="/projects" variant="secondary">
- *   View Projects
- * </Button>
- *
- * // External link (opens in new tab)
- * <Button href="https://github.com" external variant="ghost">
- *   GitHub
- * </Button>
- *
- * // Large button with magnetic effect disabled
- * <Button size="large" magnetic={false} className="custom-button">
- *   Large Button
- * </Button>
- * ```
+ * Button - "Architectural" Style
+ * Transparent, border-bottom based buttons with hover arrow reveals.
  */
 export default function Button({
   variant = 'primary',
@@ -95,44 +18,58 @@ export default function Button({
   className = '',
   ...props
 }) {
-  // Combine classes
-  const classes = cn(
-    componentStyles.buttons.base,
-    componentStyles.buttons[variant],
-    size !== 'base' && componentStyles.buttons[size],
-    magnetic && 'magnetic-btn',
-    className
+  // Base styles for the "Swiss" button
+  // Flex container, border bottom, text styling
+  const baseStyles = `
+    group relative inline-flex items-center gap-2
+    pb-1 border-b border-black/20
+    font-medium transition-all duration-300
+    hover:border-black hover:gap-4
+  `;
+
+  const variants = {
+    primary: 'text-black',
+    secondary: 'text-gray-600 hover:text-black',
+    ghost: 'border-transparent hover:border-transparent !pb-0 hover:!gap-2',
+  };
+
+  const classes = cn(baseStyles, variants[variant], magnetic && 'magnetic-btn', className);
+
+  const content = (
+    <>
+      <span>{children}</span>
+      {/* Arrow Icon that slides in/opacity on hover */}
+      <svg
+        className="w-4 h-4 opacity-0 -translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </>
   );
 
-  // External link (opens in new tab)
   if (href && external) {
     return (
-      <a
-        href={href}
-        className={classes}
-        target="_blank"
-        rel="noopener noreferrer"
-        suppressHydrationWarning={true}
-        {...props}
-      >
-        {children}
+      <a href={href} className={classes} target="_blank" rel="noopener noreferrer" {...props}>
+        {content}
       </a>
     );
   }
 
-  // Internal link (Next.js Link)
   if (href) {
     return (
-      <Link href={href} className={classes} suppressHydrationWarning={true} {...props}>
-        {children}
+      <Link href={href} className={classes} {...props}>
+        {content}
       </Link>
     );
   }
 
-  // Regular button
   return (
-    <button onClick={onClick} className={classes} suppressHydrationWarning={true} {...props}>
-      {children}
+    <button onClick={onClick} className={classes} {...props}>
+      {content}
     </button>
   );
 }

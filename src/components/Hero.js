@@ -1,401 +1,120 @@
-/**
- * @fileoverview Hero section component for homepage.
- * Displays main heading, introduction, call-to-action buttons, social links,
- * and profile image with GSAP animations and real-time data updates.
- */
-
 'use client';
 
 import { useEffect, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Button, Badge } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { useHeroData } from '@/hooks/useHeroData';
 import { useLoadingStatus } from '@/context/LoadingContext';
-import { SkeletonLoader, SkeletonItem } from './Skeleton';
 
-/**
- * Default hero data structure used as fallback when API data is unavailable.
- * Provides complete default configuration for all hero section elements.
- *
- * @constant {Object}
- */
 const defaultHeroData = {
-  badge: {
-    text: 'CREATIVE DEVELOPER',
-  },
-
   heading: {
     line1: 'Crafting',
-    line2: 'Digital', // This has the stroke effect
+    line2: 'Digital',
     line3: 'Excellence',
   },
-
   introduction: {
-    text: "I'm John Doe, a creative developer focused on building beautiful and functional digital experiences that make a difference.",
-    name: 'John Doe', // Separate for easy replacement
+    text: "I'm John Doe, a creative developer focused on building beautiful and functional digital experiences.",
     role: 'creative developer',
   },
-
   cta: {
-    primary: {
-      text: 'View My Work',
-      link: '#work',
-    },
-    secondary: {
-      text: 'Contact Me',
-      link: '#contact',
-    },
-  },
-
-  socialLinks: [
-    {
-      id: 1,
-      name: 'Dribbble',
-      url: 'https://dribbble.com/yourusername', // Replace with actual URL
-      icon: 'fab fa-dribbble',
-    },
-    {
-      id: 2,
-      name: 'Behance',
-      url: 'https://behance.net/yourusername',
-      icon: 'fab fa-behance',
-    },
-    {
-      id: 3,
-      name: 'Instagram',
-      url: 'https://instagram.com/yourusername',
-      icon: 'fab fa-instagram',
-    },
-    {
-      id: 4,
-      name: 'LinkedIn',
-      url: 'https://linkedin.com/in/yourusername',
-      icon: 'fab fa-linkedin',
-    },
-  ],
-
-  profile: {
-    image: {
-      url: '',
-      alt: 'Portrait',
-    },
-    badge: {
-      value: '5+',
-      label: 'Years Experience',
-    },
+    primary: { text: 'View My Work', link: '#work' },
+    secondary: { text: 'Contact Me', link: '#contact' },
   },
 };
 
-/**
- * Skeleton loading component for the Hero section.
- * Displays animated placeholder content while hero data is being fetched.
- * Maintains the same layout structure as the actual hero component.
- *
- * @component
- * @returns {JSX.Element} Skeleton loading UI with animated placeholders
- *
- * @example
- * ```jsx
- * // Used automatically during loading state
- * if (loading) {
- *   return <HeroSkeleton />;
- * }
- * ```
- *
- * @skeleton
- * - Badge placeholder with rounded styling
- * - Three-line heading skeleton with stroke effect simulation
- * - Introduction text lines with varying widths
- * - CTA button placeholders
- * - Social link icon placeholders
- * - Profile image circle with pulse animation
- * - Experience badge skeleton
- *
- * @responsive Maintains responsive layout during loading state
- */
-function HeroSkeleton() {
-  return (
-    <section id="home" className="min-h-screen flex items-center pt-16 sm:pt-20 w-full">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-12 sm:py-16">
-        <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
-          {/* Left Column - Content Skeleton */}
-          <div className="order-2 lg:order-1">
-            {/* Badge Skeleton */}
-            <div className="mb-4 sm:mb-5">
-              <SkeletonItem height="h-7" width="w-32" className="rounded-full" />
-            </div>
-
-            {/* Main Heading Skeleton */}
-            <div className="mb-4 sm:mb-5 space-y-2">
-              <SkeletonItem height="h-12 sm:h-14 md:h-16 lg:h-20" width="w-full" />
-              <SkeletonItem
-                height="h-12 sm:h-14 md:h-16 lg:h-20"
-                width="w-3/4"
-                className="bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-clip-text"
-              />
-              <SkeletonItem height="h-12 sm:h-14 md:h-16 lg:h-20" width="w-2/3" />
-            </div>
-
-            {/* Introduction Skeleton */}
-            <div className="mb-8 sm:mb-10 space-y-3">
-              <SkeletonItem height="h-4" width="w-full" />
-              <SkeletonItem height="h-4" width="w-5/6" />
-              <SkeletonItem height="h-4" width="w-4/5" />
-            </div>
-
-            {/* CTA Buttons Skeleton */}
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 mb-8">
-              <SkeletonItem height="h-12" width="w-32" className="rounded-lg" />
-              <SkeletonItem height="h-12" width="w-28" className="rounded-lg" />
-            </div>
-
-            {/* Social Links Skeleton */}
-            <div className="flex gap-6 sm:gap-7 justify-center sm:justify-start">
-              {[1, 2, 3, 4].map((i) => (
-                <SkeletonItem key={i} height="h-5 w-5" className="rounded-full" />
-              ))}
-            </div>
-          </div>
-
-          {/* Right Column - Profile Image Skeleton */}
-          <div className="relative order-1 lg:order-2 max-w-sm mx-auto lg:max-w-none">
-            {/* Profile Image Skeleton */}
-            <div className="aspect-square bg-gray-200 rounded-full animate-pulse"></div>
-
-            {/* Experience Badge Skeleton */}
-            <div className="absolute -bottom-4 sm:-bottom-7 -right-4 sm:-right-7 bg-white p-4 sm:p-6 shadow-2xl rounded-lg">
-              <SkeletonItem height="h-8 sm:h-10" width="w-12" className="mb-1" />
-              <SkeletonItem height="h-3 sm:h-4" width="w-20" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/**
- * Main Hero component for the homepage.
- * Displays the primary landing section with animated heading, introduction,
- * call-to-action buttons, social links, and profile image.
- *
- * @component
- * @returns {JSX.Element} Hero section with full-screen layout and animations
- *
- * @example
- * ```jsx
- * // Standard usage in homepage layout
- * <Hero />
- *
- * // In Next.js page component
- * export default function HomePage() {
- *   return (
- *     <main>
- *       <Hero />
- *       <About />
- *       <Work />
- *       <Contact />
- *     </main>
- *   );
- * }
- * ```
- *
- * @features
- * - Dynamic content loading from `/api/hero`
- * - Fallback to default data if API fails
- * - GSAP scroll-triggered animations with stagger effects
- * - Real-time updates via custom events from admin interface
- * - Responsive two-column layout (content left, image right)
- * - Loading states with skeleton placeholders
- * - Social media links with hover effects
- * - Profile image with experience badge overlay
- * - Text stroke effect on middle heading line
- *
- * @animations
- * - Staggered fade-in animations for content sections
- * - Scroll-triggered entrance effects
- * - Automatic GSAP cleanup on unmount
- * - Image reveal effects on hover
- *
- * @responsiveness
- * - Mobile: Single column with image first, content second
- * - Desktop: Two-column layout (content left, image right)
- * - Responsive typography scaling (text-4xl to text-7xl)
- * - Adaptive spacing and button layouts
- * - Mobile-optimized social links positioning
- *
- * @dependencies
- * - React hooks (useState, useEffect)
- * - GSAP for animations and ScrollTrigger
- * - Custom hooks (useHeroData)
- * - Context providers (LoadingContext)
- * - UI components (Button, Badge)
- * - Skeleton components for loading states
- *
- * @dataflow
- * 1. Component mounts and registers with LoadingContext
- * 2. useHeroData hook fetches data from `/api/hero`
- * 3. Data updates trigger re-render with new content
- * 4. GSAP animations initialize after loading completes
- * 5. Real-time updates via 'heroDataUpdated' events
- */
 export default function Hero() {
-  const { heroData: fetchedHeroData, loading, error } = useHeroData();
+  const { heroData: fetchedHeroData, loading } = useHeroData();
   const [heroData, setHeroData] = useState(defaultHeroData);
   const { registerComponent, markComponentAsLoaded } = useLoadingStatus();
 
   useEffect(() => {
-    // Register this component as "loading" when it mounts
     registerComponent('Hero');
   }, [registerComponent]);
 
   useEffect(() => {
-    // When the loading state from useHeroData is resolved, mark as loaded
-    if (!loading) {
-      markComponentAsLoaded('Hero');
-    }
+    if (!loading) markComponentAsLoaded('Hero');
   }, [loading, markComponentAsLoaded]);
 
-  // Update hero data when fetched data changes
   useEffect(() => {
-    if (fetchedHeroData) {
-      setHeroData(fetchedHeroData);
-    }
+    if (fetchedHeroData) setHeroData(fetchedHeroData);
   }, [fetchedHeroData]);
 
-  // GSAP Animation - Always run this effect, but only animate when not loading
+  // GSAP Animations
   useEffect(() => {
     if (loading) return;
-
     gsap.registerPlugin(ScrollTrigger);
 
-    // Small delay to ensure DOM is ready
-    const timer = setTimeout(() => {
-      try {
-        const elements = document.querySelectorAll('#home .max-w-6xl > div > div');
-        if (elements.length > 0) {
-          // Reset any existing transforms
-          gsap.set(elements, { opacity: 1, y: 0 });
+    const tl = gsap.timeline();
 
-          gsap.from(elements, {
-            opacity: 0,
-            y: 50,
-            duration: 1,
-            stagger: 0.2,
-            scrollTrigger: {
-              trigger: '#home',
-              start: 'top 80%',
-              end: 'bottom 20%',
-              toggleActions: 'play none none reverse',
-              refreshPriority: -1,
-            },
-          });
-        }
-      } catch (error) {
-        console.warn('GSAP animation error in Hero:', error);
-      }
-    }, 100);
+    // Animate Heading Lines
+    tl.from('.hero-line', {
+      y: 100,
+      opacity: 0,
+      rotationX: -45,
+      stagger: 0.1,
+      duration: 1.2,
+      ease: 'power4.out',
+    });
 
-    return () => {
-      clearTimeout(timer);
-      // Clean up GSAP animations
-      try {
-        ScrollTrigger.getAll().forEach((trigger) => {
-          if (trigger.trigger === '#home') {
-            trigger.kill();
-          }
-        });
-      } catch (error) {
-        console.warn('GSAP cleanup error:', error);
-      }
-    };
+    // Animate Intro & Buttons
+    tl.from(
+      '.hero-fade',
+      {
+        y: 20,
+        opacity: 0,
+        stagger: 0.1,
+        duration: 0.8,
+        ease: 'power2.out',
+      },
+      '-=0.8'
+    );
   }, [loading]);
 
-  // Show skeleton while loading
-  if (loading) {
-    return <HeroSkeleton />;
-  }
+  if (loading) return <div className="h-screen w-full bg-[#FAFAF9]" />; // Minimal loader
 
   return (
-    <section id="home" className="min-h-screen flex items-center pt-16 sm:pt-20 w-full">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-12 sm:py-16">
-        <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
-          {/* Left Column - Content */}
-          <div className="order-2 lg:order-1">
-            {/* Badge */}
-            <div className="mb-4 sm:mb-5">
-              <Badge variant="category">{heroData.badge.text}</Badge>
-            </div>
+    <section
+      id="home"
+      className="min-h-screen flex flex-col justify-center relative overflow-hidden px-6"
+    >
+      {/* Background Gradient Orb (Subtle) */}
+      <div className="absolute top-[-10%] right-[-5%] w-[50vw] h-[50vw] bg-gray-200/50 rounded-full blur-[120px] pointer-events-none mix-blend-multiply" />
 
-            {/* Main Heading */}
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-5 leading-none">
-              {heroData.heading.line1}
-              <span className="block text-stroke">{heroData.heading.line2}</span>
-              {heroData.heading.line3}
-            </h1>
+      <div className="max-w-[90rem] mx-auto w-full z-10">
+        {/* Main Heading - Massive Display */}
+        <h1 className="flex flex-col text-[12vw] leading-[0.85] tracking-tighter font-serif text-black mb-12">
+          <span className="hero-line block overflow-hidden">{heroData.heading.line1}</span>
+          <span className="hero-line block overflow-hidden italic text-gray-400">
+            {heroData.heading.line2}
+          </span>
+          <span className="hero-line block overflow-hidden">{heroData.heading.line3}</span>
+        </h1>
 
-            {/* Introduction */}
-            <p className="text-base sm:text-lg text-gray-600 mb-8 sm:mb-10 max-w-lg text-justify leading-relaxed">
-              {heroData.introduction.text}
-            </p>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-5">
-              <Button
-                href={heroData.cta.primary.link}
-                variant="primary"
-                className="px-6 sm:px-7 py-3 sm:py-3.5 text-center"
-              >
-                {heroData.cta.primary.text}
-              </Button>
-              <Button
-                href={heroData.cta.secondary.link}
-                variant="secondary"
-                className="px-6 sm:px-7 py-3 sm:py-3.5 text-center"
-              >
-                {heroData.cta.secondary.text}
-              </Button>
-            </div>
-
-            {/* Social Links */}
-            <div className="flex gap-6 sm:gap-7 mt-8 sm:mt-10 justify-center sm:justify-start">
-              {heroData.socialLinks.map((social, index) => (
-                <a
-                  key={social.id || social._id || index}
-                  href={social.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xl hover:opacity-60 transition hover-target"
-                  aria-label={social.name}
-                >
-                  <i className={social.icon}></i>
-                </a>
-              ))}
-            </div>
+        {/* Bottom Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-end border-t border-black/10 pt-8">
+          {/* Role / Badge */}
+          <div className="hero-fade hidden lg:block">
+            <span className="text-xs font-mono uppercase tracking-widest">
+              ( {heroData.introduction.role || 'Developer'} )
+            </span>
           </div>
 
-          {/* Right Column - Profile Image */}
-          <div className="relative order-1 lg:order-2 max-w-sm mx-auto lg:max-w-none">
-            <div className="aspect-square bg-black rounded-full overflow-hidden image-reveal hover-target">
-              {heroData.profile.image.url ? (
-                <img
-                  src={heroData.profile.image.url}
-                  alt={heroData.profile.image.alt}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center text-white text-lg font-semibold">
-                  No Image
-                </div>
-              )}
-            </div>
+          {/* Introduction */}
+          <div className="hero-fade">
+            <p className="text-xl md:text-2xl leading-relaxed text-gray-600 max-w-md">
+              {heroData.introduction.text}
+            </p>
+          </div>
 
-            {/* Experience Badge */}
-            <div className="absolute -bottom-4 sm:-bottom-7 -right-4 sm:-right-7 bg-white p-4 sm:p-6 shadow-2xl rounded-lg">
-              <div className="text-3xl sm:text-4xl font-bold">{heroData.profile.badge.value}</div>
-              <div className="text-gray-600 text-xs sm:text-sm">{heroData.profile.badge.label}</div>
-            </div>
+          {/* CTA Buttons */}
+          <div className="hero-fade flex flex-col sm:flex-row gap-8 lg:justify-end">
+            <Button href={heroData.cta.primary.link} variant="primary">
+              {heroData.cta.primary.text}
+            </Button>
+            <Button href={heroData.cta.secondary.link} variant="ghost">
+              {heroData.cta.secondary.text}
+            </Button>
           </div>
         </div>
       </div>
