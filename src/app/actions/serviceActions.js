@@ -60,7 +60,12 @@ export async function getActiveServices() {
     await dbConnect();
     const services = await Service.find({ isActive: true }).sort({ displayOrder: 1 }).lean();
 
-    const serializedServices = services.map(serializeForClient);
+    // Simple serialization similar to API route
+    const serializedServices = services.map((service) => ({
+      ...service,
+      _id: service._id.toString(),
+      id: service._id.toString(),
+    }));
 
     return serializedServices;
   } catch (error) {
