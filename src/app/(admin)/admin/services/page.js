@@ -7,6 +7,7 @@ export default async function ServicesPage() {
   console.log('📋 [ADMIN SERVICES PAGE] Loading services admin page...');
   const services = await getAllServices();
   console.log('📊 [ADMIN SERVICES PAGE] Services loaded:', services.length);
+  console.log('🔍 [ADMIN SERVICES PAGE] Services data:', services);
 
   return (
     <AdminPageWrapper

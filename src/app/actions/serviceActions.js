@@ -80,13 +80,18 @@ export async function getActiveServices() {
  */
 export async function getAllServices() {
   try {
+    console.log('🔗 [GET ALL SERVICES] Connecting to DB...');
     await dbConnect();
+    console.log('📡 [GET ALL SERVICES] DB connected, fetching services...');
     const services = await Service.find({}).sort({ displayOrder: 1 }).lean();
+    console.log('📊 [GET ALL SERVICES] Raw services from DB:', services.length);
 
-    const serializedServices = services.map(serializeForClient);
+    const serializedServices = services.map((service) => serializeForClient(service));
+    console.log('🔄 [GET ALL SERVICES] Serialized services:', serializedServices.length);
 
     return serializedServices;
   } catch (error) {
+    console.error('❌ [GET ALL SERVICES] Error:', error);
     return [];
   }
 }
