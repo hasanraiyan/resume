@@ -38,6 +38,10 @@ export async function createService(formData) {
     await newService.save();
     console.log('✅ [CREATE SERVICE] Service created successfully');
 
+    // Revalidate the admin services page to show the new service
+    revalidatePath('/admin/services');
+    revalidatePath('/');
+
     return { success: true };
   } catch (error) {
     console.error('❌ [CREATE SERVICE] Error:', error);
@@ -109,6 +113,10 @@ export async function updateService(id, formData) {
     });
     console.log('✅ [UPDATE SERVICE] Service updated successfully for ID:', id);
 
+    // Revalidate the admin services page to show the updated service
+    revalidatePath('/admin/services');
+    revalidatePath('/');
+
     return { success: true };
   } catch (error) {
     console.error('❌ [UPDATE SERVICE] Error for ID:', id, error);
@@ -127,6 +135,10 @@ export async function deleteService(id) {
   try {
     await dbConnect();
     await Service.findByIdAndDelete(id);
+
+    // Revalidate the admin services page to remove the deleted service
+    revalidatePath('/admin/services');
+    revalidatePath('/');
 
     return { success: true };
   } catch (error) {
