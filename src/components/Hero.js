@@ -318,8 +318,8 @@ export default function Hero() {
   }
 
   return (
-    <section id="home" className="min-h-screen flex items-center pt-16 sm:pt-20 w-full">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-12 sm:py-16">
+    <section id="home" className="min-h-screen pt-10 md:p-0 flex items-center w-full">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-8 sm:py-16">
         <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
           {/* Left Column - Content */}
           <div className="order-2 lg:order-1">

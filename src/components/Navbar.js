@@ -3,31 +3,22 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { gsap } from 'gsap';
 import { Button } from '@/components/ui';
-import { useSiteContext } from '@/context/SiteContext'; // Import the context hook
+import { useSiteContext } from '@/context/SiteContext';
 import SearchOverlay from '@/components/search/SearchOverlay';
 
 /**
- * Responsive navigation bar with mobile menu, search, and magnetic button effects.
- *
- * This component provides a complete navigation system with desktop and mobile
- * layouts, smooth scrolling for anchor links, search overlay integration, and
- * interactive magnetic button animations. It uses dynamic data from the site
- * context for logo initials and social links.
- *
- * @returns {JSX.Element} Navigation bar with search overlay and mobile menu
+ * "Floating Pill" Navbar
+ * A premium, glassmorphism navigation bar centered at the bottom or top.
  */
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const pathname = usePathname();
-  const { initials, heroData } = useSiteContext(); // Use context to get dynamic data
+  const { initials, heroData } = useSiteContext();
 
-  // --- Data for the Navbar ---
-  // The logo is now dynamic, but the links are static structural elements.
   const logo = {
-    text: initials || 'JD', // Use initials from context, with a fallback
+    text: initials || 'JD',
     link: '/',
   };
 
@@ -44,70 +35,12 @@ export default function Navbar() {
     href: '/#contact',
   };
 
-  // Mobile menu combines navigation and social links from heroData
+  // Mobile menu combines navigation and social links
   const mobileMenu = {
     menuItems: [...navigationLinks, { id: 6, label: 'Contact', href: '/#contact' }],
     cta: cta,
-    socialLinks: heroData?.socialLinks || [], // Use social links from context
+    socialLinks: heroData?.socialLinks || [],
   };
-
-  // useEffect for magnetic buttons and smooth scrolling
-  useEffect(() => {
-    const magneticBtns = document.querySelectorAll('.magnetic-btn');
-
-    magneticBtns.forEach((btn) => {
-      const handleMouseMove = (e) => {
-        const rect = btn.getBoundingClientRect();
-        const x = e.clientX - rect.left - rect.width / 2;
-        const y = e.clientY - rect.top - rect.height / 2;
-
-        gsap.to(btn, {
-          x: x * 0.3,
-          y: y * 0.3,
-          duration: 0.4,
-          ease: 'power2.out',
-        });
-      };
-
-      const handleMouseLeave = () => {
-        gsap.to(btn, {
-          x: 0,
-          y: 0,
-          duration: 0.6,
-          ease: 'elastic.out(1, 0.3)',
-        });
-      };
-
-      btn.addEventListener('mousemove', handleMouseMove);
-      btn.addEventListener('mouseleave', handleMouseLeave);
-    });
-
-    const handleHashClick = (e) => {
-      const href = e.currentTarget.getAttribute('href');
-      if (href?.startsWith('/#')) {
-        if (pathname === '/') {
-          e.preventDefault();
-          const id = href.replace('/#', '');
-          const element = document.getElementById(id);
-          if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            setIsMenuOpen(false);
-          }
-        }
-      }
-    };
-
-    const hashLinks = document.querySelectorAll('a[href^="/#"]');
-    hashLinks.forEach((link) => {
-      link.addEventListener('click', handleHashClick);
-    });
-
-    return () => {
-      hashLinks.forEach((link) => {
-        link.removeEventListener('click', handleHashClick);
-      });
-    };
-  }, [pathname]);
 
   // Prevent body scroll when menu is open
   useEffect(() => {
@@ -120,188 +53,128 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="fixed w-full z-50 top-0 bg-white bg-opacity-90 backdrop-blur-sm border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-12">
-          <div className="flex items-center justify-between h-16 sm:h-20">
-            {/* Logo */}
-            <Link href={logo.link} className="text-xl sm:text-2xl font-bold hover-target z-50">
-              {logo.text}
-            </Link>
+      {/* FLOATING PILL CONTAINER (Desktop) */}
+      <nav className="hidden md:flex fixed bottom-8 left-1/2 -translate-x-1/2 z-50 items-center gap-1">
+        <div className="flex items-center gap-8 px-8 py-4 rounded-full premium-shadow shadow-[0_20px_60px_rgba(15,23,42,0.2)] transition-all duration-500 hover:scale-[1.02] bg-white">
+          {/* Logo (Minimal) */}
+          <Link
+            href={logo.link}
+            className="font-bold text-lg tracking-tight hover:opacity-50 transition-opacity"
+          >
+            {logo.text}
+          </Link>
 
-            {/* Desktop Menu */}
-            <div className="hidden md:flex items-center space-x-8 lg:space-x-10">
-              {navigationLinks.map((link) => (
-                <Link
-                  key={link.id}
-                  href={link.href}
-                  className={`text-sm lg:text-base font-medium underline-animate transition hover-target ${
-                    (link.href === '/' && pathname === '/') ||
-                    (link.href !== '/' && pathname.startsWith(link.href))
-                      ? 'text-black font-semibold'
-                      : 'text-gray-800 hover:text-gray-600'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              ))}
+          <span className="w-px h-4 bg-black/10 mx-2"></span>
 
-              {/* Search Button */}
-              <button
-                onClick={() => setIsSearchOpen(true)}
-                className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
-                aria-label="Search"
+          {/* Links */}
+          <div className="flex items-center gap-6">
+            {navigationLinks.map((link) => (
+              <Link
+                key={link.id}
+                href={link.href}
+                className={`text-sm font-medium transition-colors duration-300 ${
+                  (link.href === '/' && pathname === '/') ||
+                  (link.href !== '/' && pathname.startsWith(link.href))
+                    ? 'text-black'
+                    : 'text-gray-500 hover:text-black'
+                }`}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              </button>
-
-              {/* CTA Button */}
-              <Button
-                href={cta.href}
-                variant="primary"
-                className="px-4 lg:px-5 py-2 lg:py-2.5 text-sm lg:text-base"
-              >
-                {cta.text}
-              </Button>
-            </div>
-
-            {/* Mobile Menu and Search Buttons Container */}
-            <div className="flex items-center space-x-3 md:hidden">
-              {/* Search Button - Mobile */}
-              <button
-                onClick={() => setIsSearchOpen(true)}
-                className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
-                aria-label="Search"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              </button>
-
-              {/* Mobile Menu Button */}
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="z-50 relative w-10 h-10 flex items-center justify-center focus:outline-none"
-                aria-label="Toggle menu"
-              >
-                <div className="w-6 h-5 flex flex-col justify-between">
-                  <span
-                    className={`w-full h-0.5 bg-black transition-all duration-300 ease-out ${
-                      isMenuOpen ? 'rotate-45 translate-y-2' : ''
-                    }`}
-                  ></span>
-                  <span
-                    className={`w-full h-0.5 bg-black transition-all duration-300 ease-out ${
-                      isMenuOpen ? 'opacity-0' : 'opacity-100'
-                    }`}
-                  ></span>
-                  <span
-                    className={`w-full h-0.5 bg-black transition-all duration-300 ease-out ${
-                      isMenuOpen ? '-rotate-45 -translate-y-2' : ''
-                    }`}
-                  ></span>
-                </div>
-              </button>
-            </div>
+                {link.label}
+              </Link>
+            ))}
           </div>
+
+          <span className="w-px h-4 bg-black/10 mx-2"></span>
+
+          {/* Search Icon */}
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            className="text-gray-500 hover:text-black transition-colors"
+            aria-label="Search"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </button>
+
+          {/* CTA (Ghost Button inside Pill) */}
+          <Button
+            href={cta.href}
+            variant="ghost"
+            className="text-xs uppercase tracking-wider font-bold ml-2 !p-0 whitespace-nowrap"
+          >
+            {cta.text}
+          </Button>
         </div>
       </nav>
 
-      {/* Mobile Menu Overlay */}
-      <div
-        className={`md:hidden fixed inset-0 z-40 transition-all duration-500 ease-in-out ${
-          isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
-      >
-        {/* Backdrop */}
-        <div
-          className={`absolute inset-0 bg-black transition-opacity duration-500 ${
-            isMenuOpen ? 'opacity-50' : 'opacity-0'
-          }`}
-          onClick={() => setIsMenuOpen(false)}
-        ></div>
-
-        {/* Menu Panel */}
-        <div
-          className={`absolute top-0 right-0 h-full w-[85%] max-w-sm bg-white shadow-2xl transform transition-transform duration-500 ease-out ${
-            isMenuOpen ? 'translate-x-0' : 'translate-x-full'
-          }`}
+      {/* MOBILE HEADER (Top) */}
+      <div className="md:hidden fixed top-0 w-full z-50 px-6 py-6 flex justify-between items-center pointer-events-none drop-shadow-[0_10px_35px_rgba(15,23,42,0.15)]">
+        <Link
+          href={logo.link}
+          className="font-bold text-xl pointer-events-auto px-4 py-2 rounded-full bg-white shadow-md"
         >
-          <div className="flex flex-col h-full pt-24 pb-8 px-8">
-            {/* Menu Items */}
-            <nav className="flex-1 flex flex-col justify-start space-y-2">
-              {mobileMenu.menuItems.map((item) => (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`text-2xl font-bold transition py-4 border-b border-gray-100 ${
-                    (item.href === '/' && pathname === '/') ||
-                    (item.href !== '/' && pathname.startsWith(item.href))
-                      ? 'text-black'
-                      : 'text-gray-800 hover:text-gray-600'
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
+          {logo.text}
+        </Link>
 
-              {/* Search Button in Mobile Menu */}
-              <button
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  setIsSearchOpen(true);
-                }}
-                className="text-left text-2xl font-bold transition py-4 border-b border-gray-100 text-gray-800 hover:text-gray-600"
-              >
-                Search
-              </button>
-            </nav>
-
-            {/* CTA Button */}
-            <div className="mt-8">
-              <Button
-                href={mobileMenu.cta.href}
-                variant="primary"
-                className="block w-full text-center px-8 py-4 text-lg font-semibold"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {mobileMenu.cta.text}
-              </Button>
+        <div className="pointer-events-auto flex gap-3">
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            className="w-10 h-10 rounded-full flex items-center justify-center text-black bg-white shadow-md"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </button>
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="w-10 h-10 rounded-full flex items-center justify-center focus:outline-none bg-white shadow-md"
+          >
+            <div className="w-5 h-4 flex flex-col justify-between items-end">
+              <span
+                className={`w-full h-0.5 bg-black transition-all ${isMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`}
+              ></span>
+              <span
+                className={`w-2/3 h-0.5 bg-black transition-all ${isMenuOpen ? 'opacity-0' : ''}`}
+              ></span>
+              <span
+                className={`w-full h-0.5 bg-black transition-all ${isMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}
+              ></span>
             </div>
-
-            {/* Social Links */}
-            <div className="flex justify-center gap-6 mt-8 pt-6 border-t border-gray-200">
-              {mobileMenu.socialLinks.map((social) => (
-                <a
-                  key={social._id || social.id}
-                  href={social.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xl text-gray-600 hover:text-black transition w-12 h-12 flex items-center justify-center"
-                  aria-label={social.name}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <i className={social.icon}></i>
-                </a>
-              ))}
-            </div>
-          </div>
+          </button>
         </div>
       </div>
 
-      {/* Search Overlay */}
+      {/* MOBILE MENU OVERLAY */}
+      <div
+        className={`md:hidden fixed inset-0 z-40 bg-[#FAFAF9] transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${
+          isMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
+        }`}
+      >
+        <div className="flex flex-col h-full justify-center px-8 space-y-6">
+          {mobileMenu.menuItems.map((item) => (
+            <Link
+              key={item.id}
+              href={item.href}
+              onClick={() => setIsMenuOpen(false)}
+              className="text-5xl font-serif italic text-black hover:text-gray-600 transition-colors"
+            >
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+
       <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </>
   );
