@@ -13,6 +13,7 @@ export default function ChatbotWidget() {
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [chatbotSettings, setChatbotSettings] = useState(null);
+  const [useGraph, setUseGraph] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -100,6 +101,7 @@ export default function ChatbotWidget() {
           chatHistory,
           sessionId: analytics.sessionId,
           path: window.location.pathname,
+          useGraph,
         }),
       });
 
@@ -141,7 +143,7 @@ export default function ChatbotWidget() {
             try {
               const data = JSON.parse(line);
 
-              if (data.type === 'status') {
+              if (data.type === 'status' || data.type === 'node_status') {
                 // Update status message only - don't add message yet
                 setStatusMessage(data.message);
               } else if (data.type === 'content') {
@@ -410,6 +412,17 @@ export default function ChatbotWidget() {
             </div>
           </div>
           <div className="flex items-center space-x-1 sm:space-x-2">
+            <button
+              onClick={() => setUseGraph(!useGraph)}
+              className={`px-2 py-1 sm:px-3 sm:py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
+                useGraph
+                  ? 'text-blue-700 bg-blue-100 hover:bg-blue-200'
+                  : 'text-neutral-600 hover:text-neutral-900 bg-neutral-100 hover:bg-neutral-200'
+              }`}
+              title={useGraph ? 'Using graph mode (experimental)' : 'Switch to graph mode'}
+            >
+              🤖
+            </button>
             <button
               onClick={clearChat}
               className="px-2 py-1 sm:px-3 sm:py-1.5 text-xs font-medium text-neutral-600 hover:text-neutral-900 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-all duration-200 flex items-center gap-1"
