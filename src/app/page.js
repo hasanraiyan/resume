@@ -9,6 +9,7 @@ import Services from '@/components/Services';
 import Work from '@/components/Work';
 import FeaturedWorks from '@/components/FeaturedWorks';
 import Stats from '@/components/Stats';
+import Testimonials from '@/components/Testimonials';
 import Contact from '@/components/Contact';
 import Footer from '@/components/Footer';
 import HomepageLoaderManager from '@/components/HomepageLoaderManager';
@@ -57,6 +58,7 @@ export default async function Home() {
       <div style={{ overflow: 'hidden', width: '100%' }}>
         <Stats />
       </div>
+      <Testimonials />
       <Contact />
       <Footer />
     </HomepageLoaderManager>
