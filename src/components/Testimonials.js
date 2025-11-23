@@ -22,63 +22,15 @@ import 'swiper/css/pagination';
 const TESTIMONIALS = [
   {
     name: 'Sarah Johnson',
-    company: 'TechStart Inc.',
+    company: 'Career Simplify Multi Utility Private Limited',
+    companyLink: 'https://careersimplify.com',
     position: 'CEO',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
     rating: 5,
     content:
       'Raiyan delivered an exceptional e-commerce platform that exceeded our expectations. The attention to detail and user experience design was outstanding.',
-    project: 'E-commerce Platform Development',
-  },
-  {
-    name: 'Michael Chen',
-    company: 'Digital Agency Pro',
-    position: 'Creative Director',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Michael',
-    rating: 5,
-    content:
-      'Working with Raiyan was a game-changer for our agency. His React expertise and problem-solving skills helped us deliver a complex project on time.',
-    project: 'Custom Dashboard Application',
-  },
-  {
-    name: 'Emily Rodriguez',
-    company: 'Fashion Forward',
-    position: 'Marketing Manager',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emily',
-    rating: 4,
-    content:
-      'Raiyan transformed our online presence with a stunning website that perfectly captures our brand. The responsive design works flawlessly across all devices.',
-    project: 'Brand Website Redesign',
-  },
-  {
-    name: 'David Kim',
-    company: 'StartupHub',
-    position: 'Product Manager',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=David',
-    rating: 5,
-    content:
-      'The AI-powered chatbot Raiyan developed has revolutionized our customer support. Response times are down 80% and customer satisfaction is at an all-time high.',
-    project: 'AI Chatbot Implementation',
-  },
-  {
-    name: 'Lisa Thompson',
-    company: 'HealthTech Solutions',
-    position: 'CTO',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lisa',
-    rating: 5,
-    content:
-      "Raiyan's technical expertise and professional approach made our complex healthcare application project a success. Highly recommended for any project.",
-    project: 'Healthcare Application Development',
-  },
-  {
-    name: 'James Wilson',
-    company: 'RealEstate Plus',
-    position: 'Operations Director',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=James',
-    rating: 4,
-    content:
-      'The property management system Raiyan built has streamlined our entire workflow. Great communication throughout the project development process.',
-    project: 'Property Management System',
+    project: 'Career Simplify Website',
+    projectLink: '/projects/careersimplify',
   },
 ];
 
@@ -135,15 +87,37 @@ const TestimonialCard = ({ testimonial }) => {
         <div className="flex-grow">
           <div className="font-semibold text-black">{testimonial.name}</div>
           <div className="text-sm text-neutral-600">{testimonial.position}</div>
-          <div className="text-sm text-neutral-500">{testimonial.company}</div>
+          <div className="text-sm text-neutral-500">
+            {testimonial.companyLink ? (
+              <a
+                href={testimonial.companyLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-neutral-700 transition-colors"
+              >
+                {testimonial.company}
+              </a>
+            ) : (
+              testimonial.company
+            )}
+          </div>
         </div>
       </div>
 
       {/* Project Tag */}
       <div className="mt-4">
-        <span className="text-xs text-neutral-500 font-medium bg-neutral-50 px-3 py-1 rounded-full">
-          {testimonial.project}
-        </span>
+        {testimonial.projectLink ? (
+          <a
+            href={testimonial.projectLink}
+            className="text-xs text-neutral-500 font-medium bg-neutral-50 px-3 py-1 rounded-full hover:bg-neutral-100 transition-colors inline-block"
+          >
+            {testimonial.project}
+          </a>
+        ) : (
+          <span className="text-xs text-neutral-500 font-medium bg-neutral-50 px-3 py-1 rounded-full">
+            {testimonial.project}
+          </span>
+        )}
       </div>
     </div>
   );
