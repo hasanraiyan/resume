@@ -4,6 +4,11 @@ import CustomCursor from '@/components/CustomCursor';
 import { Section } from '@/components/ui';
 
 export default function ResumePage() {
+  const breadcrumbs = [
+    { label: 'Home', path: '/', icon: 'Home' },
+    { label: 'Resume', icon: 'FileText' },
+  ];
+
   return (
     <>
       <CustomCursor />
@@ -14,7 +19,8 @@ export default function ResumePage() {
           title="Resume"
           description="View my professional resume"
           centered={true}
-          className="py-12 sm:py-16 md:py-20"
+          className="py-12 sm:py-18 md:py-16"
+          breadcrumbs={breadcrumbs}
         >
           <div className="w-full max-w-4xl mx-auto flex flex-col items-center space-y-4">
             <img

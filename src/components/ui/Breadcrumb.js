@@ -47,7 +47,10 @@ const Breadcrumb = ({ breadcrumbs }) => {
   // If 3 or fewer breadcrumbs, show all
   if (breadcrumbs.length <= 3) {
     return (
-      <nav className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500 overflow-x-auto scrollbar-hide min-w-0 max-w-full px-4">
+      <nav
+        className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500 overflow-x-auto scrollbar-hide min-w-0 max-w-full px-4"
+        aria-label="Breadcrumb navigation"
+      >
         {breadcrumbs.map((item, index) => (
           <React.Fragment key={index}>
             {index > 0 && <ChevronRight size={12} className="text-gray-300 flex-shrink-0" />}
@@ -66,6 +69,7 @@ const Breadcrumb = ({ breadcrumbs }) => {
             ) : (
               <span
                 className={`flex items-center gap-1 flex-shrink-0 ${index === breadcrumbs.length - 1 ? 'font-medium text-gray-900' : ''}`}
+                aria-current={index === breadcrumbs.length - 1 ? 'page' : undefined}
               >
                 {item.icon &&
                   React.createElement(getIconComponent(item.icon), {
@@ -89,7 +93,10 @@ const Breadcrumb = ({ breadcrumbs }) => {
   ];
 
   return (
-    <nav className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500 overflow-x-auto scrollbar-hide min-w-0 max-w-full px-4">
+    <nav
+      className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500 overflow-x-auto scrollbar-hide min-w-0 max-w-full px-4"
+      aria-label="Breadcrumb navigation"
+    >
       {displayItems.map((item, index) => (
         <React.Fragment key={index}>
           {index > 0 && <ChevronRight size={12} className="text-gray-300 flex-shrink-0" />}
@@ -110,6 +117,7 @@ const Breadcrumb = ({ breadcrumbs }) => {
           ) : (
             <span
               className={`flex items-center gap-1 flex-shrink-0 ${item.originalIndex === breadcrumbs.length - 1 ? 'font-medium text-gray-900' : ''}`}
+              aria-current={item.originalIndex === breadcrumbs.length - 1 ? 'page' : undefined}
             >
               {item.icon &&
                 React.createElement(getIconComponent(item.icon), {
