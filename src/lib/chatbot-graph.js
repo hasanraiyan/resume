@@ -3,11 +3,16 @@
  * Uses graph-based state machine architecture for AI agent behavior
  */
 
-import { StateGraph, START, END } from '@langchain/langgraph';
+import { StateGraph, START, END, Annotation } from '@langchain/langgraph';
 import OpenAI from 'openai';
 import { buildDynamicContext } from '@/lib/ai/context-builder';
 import { buildSystemMessages } from '@/app/api/chat/route';
-import { tools, executeToolCall, getToolStatusMessage, pruneContext } from '@/lib/chatbot-utils';
+import {
+  tools as chatbotTools,
+  executeToolCall,
+  getToolStatusMessage,
+  pruneContext,
+} from '@/lib/chatbot-utils';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -16,20 +21,20 @@ const openai = new OpenAI({
 });
 
 // Define the state structure
-const ChatbotState = {
-  messages: [], // Array of message objects
-  userMessage: '', // Current user message
-  chatHistory: [], // Previous conversation history
-  path: '/', // Current page path
-  context: {}, // Dynamic context
-  toolsUsed: [], // Array of tools executed
-  iteration: 0, // Current iteration count
-  shouldContinue: true, // Whether to continue tool calling
-  finalMessages: [], // Final messages for response generation
-  streamController: null, // For streaming responses
-  toolCalls: [], // Current tool calls to execute
-  aiResponse: '', // Final AI response
-};
+const ChatbotState = Annotation.Root({
+  messages: Annotation(),
+  userMessage: Annotation(),
+  chatHistory: Annotation(),
+  path: Annotation(),
+  context: Annotation(),
+  toolsUsed: Annotation(),
+  iteration: Annotation(),
+  shouldContinue: Annotation(),
+  finalMessages: Annotation(),
+  streamController: Annotation(),
+  toolCalls: Annotation(),
+  aiResponse: Annotation(),
+});
 
 // =================================================================================
 // GRAPH NODES - Each represents a step in the conversation flow
@@ -422,4 +427,4 @@ export async function executeChatbotGraph({
 // EXPORTS
 // =================================================================================
 
-export { chatbotGraph, ChatbotState, executeChatbotGraph };
+export { chatbotGraph, ChatbotState };
