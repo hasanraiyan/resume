@@ -21,18 +21,18 @@ import 'swiper/css/pagination';
 
 // --- DATA: TESTIMONIALS ---
 const TESTIMONIALS = [
-  // {
-  //     name: 'Sumit Ranjan Verma',
-  //     company: 'Career Simplify Multi Utility Private Limited',
-  //     companyLink: 'https://careersimplify.com',
-  //     // position: 'CEO',
-  //     avatar: 'https://careersimplify.in/assets/cslogo-C1vdCqlW.svg',
-  //     rating: 5,
-  //     content:
-  //         'Raiyan delivered an exceptional e-commerce platform that exceeded our expectations. The attention to detail and user experience design was outstanding.',
-  //     project: 'Career Simplify Website',
-  //     projectLink: '/projects/careersimplify',
-  // },
+  {
+    name: 'Shivam Kumar Singh',
+    company: 'Career Simplify Multi Utility Private Limited',
+    companyLink: 'https://careersimplify.com',
+    // position: 'CEO',
+    avatar: 'https://careersimplify.in/assets/cslogo-C1vdCqlW.svg',
+    rating: 5,
+    content:
+      'Raiyan demonstrated exceptional ownership by independently building our platform from the ground up and delivering a  functional, stable product. He managed every stage of development backend, frontend, database architecture, and deployment while resolving major performance bottlenecks with practical and scalable solutions. The platform is now live and expanding on the solid technical foundation he created. Raiyan consistently proved to be reliable, proactive, and continues to provide valuable support and improvements post-launch.',
+    project: 'Career Simplify Website',
+    projectLink: '/projects/careersimplify',
+  },
 ];
 
 /**
