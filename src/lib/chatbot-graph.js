@@ -41,6 +41,18 @@ const ChatbotState = {
 async function initializeState(state) {
   console.log('[Graph] 🏁 Initializing conversation state...');
 
+  // Send status update to UI
+  if (state.streamController) {
+    const statusData =
+      JSON.stringify({
+        type: 'node_status',
+        node: 'initialize',
+        status: 'running',
+        message: '🤖 Initializing conversation...',
+      }) + '\n';
+    state.streamController.enqueue(new TextEncoder().encode(statusData));
+  }
+
   const { userMessage, chatHistory = [], path = '/' } = state;
   const context = await buildDynamicContext();
 
@@ -57,6 +69,18 @@ async function initializeState(state) {
 
   console.log('[Graph] ✅ State initialized with', messages.length, 'messages');
 
+  // Send completion status
+  if (state.streamController) {
+    const statusData =
+      JSON.stringify({
+        type: 'node_status',
+        node: 'initialize',
+        status: 'completed',
+        message: '✅ Conversation initialized',
+      }) + '\n';
+    state.streamController.enqueue(new TextEncoder().encode(statusData));
+  }
+
   return {
     ...state,
     messages,
@@ -71,7 +95,7 @@ async function initializeState(state) {
  * Decide whether the AI needs to call tools or can generate a response
  */
 async function shouldCallTools(state) {
-  const { messages, iteration } = state;
+  const { messages, iteration, streamController } = state;
   const MAX_ITERATIONS = 3;
 
   if (iteration >= MAX_ITERATIONS) {
@@ -82,6 +106,18 @@ async function shouldCallTools(state) {
   console.log(
     `[Graph] 🤔 Checking if tools needed (iteration ${iteration + 1}/${MAX_ITERATIONS})...`
   );
+
+  // Send status update
+  if (streamController) {
+    const statusData =
+      JSON.stringify({
+        type: 'node_status',
+        node: 'check_tools',
+        status: 'running',
+        message: `🔍 Analyzing request (Step ${iteration + 1})...`,
+      }) + '\n';
+    streamController.enqueue(new TextEncoder().encode(statusData));
+  }
 
   const prunedMessages = pruneContext(messages, 50000);
 
@@ -97,6 +133,19 @@ async function shouldCallTools(state) {
 
   if (response.tool_calls) {
     console.log(`[Graph] 🛠️ AI requested ${response.tool_calls.length} tool call(s)`);
+
+    // Send status update for tool calls
+    if (streamController) {
+      const statusData =
+        JSON.stringify({
+          type: 'node_status',
+          node: 'check_tools',
+          status: 'completed',
+          message: `🛠️ Found ${response.tool_calls.length} action(s) to take`,
+        }) + '\n';
+      streamController.enqueue(new TextEncoder().encode(statusData));
+    }
+
     return {
       ...state,
       messages: [...messages, response],
@@ -106,6 +155,19 @@ async function shouldCallTools(state) {
     };
   } else {
     console.log('[Graph] ✅ No tools needed, proceeding to response');
+
+    // Send status update for direct response
+    if (streamController) {
+      const statusData =
+        JSON.stringify({
+          type: 'node_status',
+          node: 'check_tools',
+          status: 'completed',
+          message: '✨ Ready to respond directly',
+        }) + '\n';
+      streamController.enqueue(new TextEncoder().encode(statusData));
+    }
+
     return {
       ...state,
       messages: [...messages, response],
@@ -121,6 +183,18 @@ async function executeTools(state) {
   const { messages, toolCalls, toolsUsed, iteration, streamController } = state;
 
   console.log(`[Graph] 🔧 Executing ${toolCalls.length} tool(s) in iteration ${iteration}...`);
+
+  // Send node status update
+  if (streamController) {
+    const statusData =
+      JSON.stringify({
+        type: 'node_status',
+        node: 'execute_tools',
+        status: 'running',
+        message: `⚡ Executing ${toolCalls.length} action(s)...`,
+      }) + '\n';
+    streamController.enqueue(new TextEncoder().encode(statusData));
+  }
 
   let updatedMessages = [...messages];
   let updatedToolsUsed = [...toolsUsed];
@@ -157,6 +231,18 @@ async function executeTools(state) {
 
   console.log(`[Graph] ✅ Executed ${toolCalls.length} tool(s) successfully`);
 
+  // Send completion status
+  if (streamController) {
+    const statusData =
+      JSON.stringify({
+        type: 'node_status',
+        node: 'execute_tools',
+        status: 'completed',
+        message: `✅ Completed ${toolCalls.length} action(s)`,
+      }) + '\n';
+    streamController.enqueue(new TextEncoder().encode(statusData));
+  }
+
   return {
     ...state,
     messages: updatedMessages,
@@ -171,6 +257,18 @@ async function generateResponse(state) {
   const { messages, streamController } = state;
 
   console.log('[Graph] 🌊 Generating final response...');
+
+  // Send node status update
+  if (streamController) {
+    const statusData =
+      JSON.stringify({
+        type: 'node_status',
+        node: 'generate_response',
+        status: 'running',
+        message: '🧠 Crafting response...',
+      }) + '\n';
+    streamController.enqueue(new TextEncoder().encode(statusData));
+  }
 
   const finalMessages = pruneContext(messages, 50000);
 
@@ -200,6 +298,18 @@ async function generateResponse(state) {
   console.log(
     `[Graph] ✅ Response generated (${chunkCount} chunks, ${assistantMessage.content.length} chars)`
   );
+
+  // Send completion status
+  if (streamController) {
+    const statusData =
+      JSON.stringify({
+        type: 'node_status',
+        node: 'generate_response',
+        status: 'completed',
+        message: '✨ Response ready',
+      }) + '\n';
+    streamController.enqueue(new TextEncoder().encode(statusData));
+  }
 
   return {
     ...state,
@@ -328,30 +438,43 @@ export async function executeChatbotGraph({
 }) {
   console.log('[Graph] 🚀 Starting graph execution...');
 
-  // Create initial state
-  const initialState = {
-    userMessage,
-    chatHistory,
-    path,
-    sessionId,
-  };
-
-  // For now, return a simple response since full graph streaming integration is complex
-  // This is a placeholder - full implementation would require more work
+  // Create a stream for real-time updates
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        // Simple implementation for now
-        controller.enqueue(
-          new TextEncoder().encode(
-            JSON.stringify({
-              type: 'content',
-              message: 'Graph-based chatbot is being implemented. This is a placeholder response.',
-            }) + '\n'
-          )
-        );
+        // Initialize state
+        let state = {
+          userMessage,
+          chatHistory,
+          path,
+          sessionId,
+          streamController: controller,
+          messages: [],
+          context: {},
+          toolsUsed: [],
+          iteration: 0,
+          shouldContinue: true,
+          toolCalls: [],
+          aiResponse: '',
+        };
+
+        // Execute graph nodes sequentially (simulating the graph flow)
+        state = await initializeState(state);
+        state = await shouldCallTools(state);
+
+        // Loop for tool execution if needed
+        while (state.shouldContinue && state.iteration < 3) {
+          state = await executeTools(state);
+          state = await shouldCallTools(state);
+        }
+
+        // Generate final response
+        state = await generateResponse(state);
+
+        // Close the stream
         controller.close();
       } catch (error) {
+        console.error('[Graph] ❌ Error in graph execution:', error);
         controller.error(error);
       }
     },
