@@ -55,10 +55,28 @@ export default async function ProjectDetailPage({ params }) {
     .filter((p) => p.category === project.category && p._id !== project._id)
     .slice(0, 3);
 
+  const getProjectIcon = (category) => {
+    switch (category?.toLowerCase()) {
+      case 'web':
+      case 'website':
+        return 'Globe';
+      case 'mobile':
+      case 'app':
+        return 'Smartphone';
+      case 'design':
+        return 'Palette';
+      case 'development':
+      case 'code':
+        return 'Code';
+      default:
+        return 'FileText';
+    }
+  };
+
   const breadcrumbs = [
     { label: 'Home', path: '/', icon: 'Home' },
     { label: 'Projects', path: '/projects', icon: 'FolderOpen' },
-    { label: project.title, icon: 'FileText' },
+    { label: project.title, icon: getProjectIcon(project.category) },
   ];
 
   return (

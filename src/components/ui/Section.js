@@ -13,7 +13,7 @@ import Breadcrumb from './Breadcrumb';
  * @param {boolean} props.centered - Center the header
  * @param {string} props.className - Additional wrapper classes
  * @param {string} props.containerClassName - Additional container classes
- * @param {Array} props.breadcrumbs - Array of breadcrumb items: [{ label, path?, icon?: 'Home' | 'FolderOpen' | 'FileText' }]
+ * @param {Array} props.breadcrumbs - Array of breadcrumb items: [{ label, path?, icon?: 'Home' | 'FolderOpen' | 'FileText' | 'Globe' | 'Smartphone' | 'Palette' | 'Code' }]
  * @param {React.ReactNode} props.children
  */
 export default function Section({

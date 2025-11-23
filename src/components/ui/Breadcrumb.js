@@ -4,7 +4,16 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ChevronRight, Home, FolderOpen, FileText } from 'lucide-react';
+import {
+  ChevronRight,
+  Home,
+  FolderOpen,
+  FileText,
+  Globe,
+  Smartphone,
+  Palette,
+  Code,
+} from 'lucide-react';
 
 const getIconComponent = (iconName) => {
   switch (iconName) {
@@ -14,6 +23,14 @@ const getIconComponent = (iconName) => {
       return FolderOpen;
     case 'FileText':
       return FileText;
+    case 'Globe':
+      return Globe;
+    case 'Smartphone':
+      return Smartphone;
+    case 'Palette':
+      return Palette;
+    case 'Code':
+      return Code;
     default:
       return null;
   }
@@ -23,7 +40,7 @@ const getIconComponent = (iconName) => {
  * A reusable breadcrumb component for navigation
  *
  * @param {object} props - Component props
- * @param {Array} props.breadcrumbs - Array of breadcrumb items: [{ label, path?, icon?: 'Home' | 'FolderOpen' | 'FileText' }]
+ * @param {Array} props.breadcrumbs - Array of breadcrumb items: [{ label, path?, icon?: 'Home' | 'FolderOpen' | 'FileText' | 'Globe' | 'Smartphone' | 'Palette' | 'Code' }]
  * @returns {JSX.Element} The rendered Breadcrumb component
  */
 const Breadcrumb = ({ breadcrumbs }) => {
