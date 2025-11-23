@@ -352,73 +352,8 @@ const chatbotGraph = workflow.compile();
 // UTILITY FUNCTIONS (imported/adapted from original route.js)
 // =================================================================================
 
-// Import required functions and constants from the original file
-// These would need to be extracted to shared utilities
-const tools = [
-  // ... same tools definition
-  {
-    type: 'function',
-    function: {
-      name: 'listAllProjects',
-      description:
-        'Get a list of all available project titles, their slugs, and short descriptions.',
-      parameters: { type: 'object', properties: {} },
-    },
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'getProjectDetails',
-      description:
-        'Get the complete, detailed information for a single project using its unique slug.',
-      parameters: {
-        type: 'object',
-        properties: {
-          slug: { type: 'string', description: 'The URL-friendly slug of the project.' },
-        },
-        required: ['slug'],
-      },
-    },
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'listAllArticles',
-      description: 'Get a list of all published article titles, their slugs, and excerpts.',
-      parameters: { type: 'object', properties: {} },
-    },
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'getArticleDetails',
-      description: 'Get the full content and details for a single article using its unique slug.',
-      parameters: {
-        type: 'object',
-        properties: {
-          slug: { type: 'string', description: 'The URL-friendly slug of the article.' },
-        },
-        required: ['slug'],
-      },
-    },
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'searchPortfolio',
-      description:
-        'Performs an intelligent, fuzzy search for projects or articles using specific keywords.',
-      parameters: {
-        type: 'object',
-        properties: { query: { type: 'string', description: 'The search term or keyword.' } },
-        required: ['query'],
-      },
-    },
-  },
-];
-
 function getTools() {
-  return tools;
+  return chatbotTools;
 }
 
 // Tool functions are now imported from chatbot-utils
