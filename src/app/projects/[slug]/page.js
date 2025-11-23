@@ -55,13 +55,23 @@ export default async function ProjectDetailPage({ params }) {
     .filter((p) => p.category === project.category && p._id !== project._id)
     .slice(0, 3);
 
+  const breadcrumbs = [
+    { label: 'Home', path: '/', icon: 'Home' },
+    { label: 'Projects', path: '/projects', icon: 'FolderOpen' },
+    { label: project.title, icon: 'FileText' },
+  ];
+
   return (
     <>
       <CustomCursor />
       <Navbar />
 
       {/* Pass data to Client Component for animations */}
-      <ProjectDetailClient project={project} relatedProjects={relatedProjects} />
+      <ProjectDetailClient
+        project={project}
+        relatedProjects={relatedProjects}
+        breadcrumbs={breadcrumbs}
+      />
 
       <Footer />
     </>

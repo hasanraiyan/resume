@@ -9,6 +9,11 @@ export default async function ProjectsPage() {
   // Fetch published projects with public visibility
   const { projects } = await getAllPublishedProjects(false);
 
+  const breadcrumbs = [
+    { label: 'Home', path: '/', icon: 'Home' },
+    { label: 'Projects', icon: 'FolderOpen' },
+  ];
+
   return (
     <>
       <CustomCursor />
@@ -19,7 +24,8 @@ export default async function ProjectsPage() {
           title="All Projects"
           description="Explore my complete portfolio of web and mobile applications"
           centered={true}
-          className="py-12 sm:py-16 md:py-20"
+          className="py-12 sm:py-18 md:py-16"
+          breadcrumbs={breadcrumbs}
         >
           <ProjectsPageClient projects={projects} />
         </Section>

@@ -48,6 +48,12 @@ export default async function ArticlePage({ params }) {
     notFound();
   }
 
+  const breadcrumbs = [
+    { label: 'Home', path: '/', icon: 'Home' },
+    { label: 'Blog', path: '/blog', icon: 'FileText' },
+    { label: article.title, icon: 'FileText' },
+  ];
+
   const formattedDate = (dateString) => {
     if (!dateString || isNaN(new Date(dateString).getTime())) return '';
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -65,16 +71,14 @@ export default async function ArticlePage({ params }) {
       <Navbar />
 
       <main className=" min-h-screen bg-gray-50">
-        <Section className="py-12 sm:py-16 md:py-20 bg-white " containerClassName="max-w-4xl">
+        <Section
+          className="py-12 sm:py-18 md:py-16 bg-white "
+          containerClassName="max-w-4xl"
+          breadcrumbs={breadcrumbs}
+        >
           <article>
             {/* --- ARTICLE HEADER --- */}
             <header className="mb-8 md:mb-12">
-              <div className="mb-6">
-                <Button href="/blog" variant="ghost" className="inline-flex items-center text-sm">
-                  <i className="fas fa-arrow-left mr-2"></i> Back to All Articles
-                </Button>
-              </div>
-
               <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4 font-['Playfair_Display'] leading-tight">
                 {article.title}
               </h1>

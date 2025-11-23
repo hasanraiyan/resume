@@ -14,6 +14,11 @@ export default async function BlogPage() {
   const isAuthenticated = !!session?.user?.isAdmin;
   const { success, articles } = await getAllPublishedArticles(isAuthenticated);
 
+  const breadcrumbs = [
+    { label: 'Home', path: '/', icon: 'Home' },
+    { label: 'Blog', icon: 'FileText' },
+  ];
+
   if (!success) {
     return (
       <>
@@ -24,7 +29,8 @@ export default async function BlogPage() {
             title="Error"
             description="Failed to load articles. Please try again."
             centered={true}
-            className="py-12 sm:py-16 md:py-20"
+            className="py-12 sm:py-18 md:py-12"
+            breadcrumbs={breadcrumbs}
           />
         </main>
         <Footer />
@@ -42,7 +48,8 @@ export default async function BlogPage() {
           title="From the Blog"
           description="Thoughts, insights, and tutorials on web development, design, and technology."
           centered={true}
-          className="py-12 sm:py-16 md:py-20"
+          className="py-12 sm:py-18 md:py-12"
+          breadcrumbs={breadcrumbs}
         >
           {articles.length === 0 ? (
             <div className="text-center py-12">

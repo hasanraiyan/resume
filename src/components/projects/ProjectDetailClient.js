@@ -10,7 +10,7 @@ import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 import LikeButton from '@/components/LikeButton';
 import SocialShare from '@/components/SocialShare';
 
-export default function ProjectDetailClient({ project, relatedProjects }) {
+export default function ProjectDetailClient({ project, relatedProjects, breadcrumbs }) {
   // Transform contributors from the project data
   // Now that contributors are populated, use the actual contributor data
   const contributors =
@@ -32,14 +32,9 @@ export default function ProjectDetailClient({ project, relatedProjects }) {
 
   return (
     <main className="">
-      <Section className="py-8 sm:py-12 md:py-16 bg-white">
+      <Section className="py-8 sm:py-14 md:py-12 bg-white" breadcrumbs={breadcrumbs}>
         <div className="max-w-4xl mx-auto project-detail-content">
           <div className="text-center">
-            <div className="mb-6 sm:mb-8">
-              <Button href="/projects" variant="ghost" className="inline-flex items-center">
-                <i className="fas fa-arrow-left mr-2"></i> Back to Projects
-              </Button>
-            </div>
             <div className="text-xs font-semibold tracking-widest mb-3 sm:mb-4 text-gray-600">
               {project.projectNumber} — {project.category}
             </div>
