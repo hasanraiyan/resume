@@ -24,6 +24,7 @@ import dbConnect from '@/lib/dbConnect';
 import Project from '@/models/Project';
 import Article from '@/models/Article';
 import { performSearch } from '@/lib/search/search';
+import { executeChatbotGraph } from '@/lib/chatbot-graph';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -466,7 +467,13 @@ export async function POST(request) {
   console.log('\n[Chat API] 🚀 ======== NEW CHAT REQUEST ======== ');
   const startTime = Date.now(); // Start timer for execution time
   try {
-    const { userMessage, chatHistory = [], sessionId, path = '/' } = await request.json();
+    const {
+      userMessage,
+      chatHistory = [],
+      sessionId,
+      path = '/',
+      useGraph = false,
+    } = await request.json();
     console.log('[Chat API] 📨 User message:', userMessage);
     console.log('[Chat API] 📍 Path:', path);
     console.log('[Chat API] 🔑 Session ID:', sessionId);
@@ -475,6 +482,13 @@ export async function POST(request) {
     if (!userMessage) {
       console.error('[Chat API] ❌ No user message provided');
       return NextResponse.json({ error: 'User message is required' }, { status: 400 });
+    }
+
+    // Use graph-based implementation if requested
+    if (useGraph) {
+      console.log('[Chat API] 🤖 Using graph-based implementation');
+      const stream = await executeChatbotGraph({ userMessage, chatHistory, path, sessionId });
+      return new NextResponse(stream, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
     }
 
     console.log('[Chat API] 🏗️ Building dynamic context...');
@@ -882,7 +896,7 @@ export async function POST(request) {
  * @param {string} path - Current page path the user is on
  * @returns {Array<{role: string, content: string}>} Array of system message objects
  */
-function buildSystemMessages(context, path) {
+export function buildSystemMessages(context, path) {
   const { chatbotSettings } = context || {};
 
   // Fallback defaults if chatbotSettings is missing
