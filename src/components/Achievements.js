@@ -47,7 +47,13 @@ const CERTIFICATES = [
     title: 'SCIFE’24 — Exhibitor',
     description: 'Showcased tech innovations with Team Tech Thinkers at MIT’s science expo.',
   },
-  // Add more certificates here in the future
+  {
+    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1763960607/portfolio_assets/cj3fmc7qu8hsbmhovk12.png',
+    alt: 'Foundation: Intro to the LangGraph Certificate',
+    title: 'Foundation — Intro to LangGraph',
+    description:
+      'Completed foundational training on LangGraph, focusing on graph-based LLM workflows and agentic development.',
+  },
 ];
 
 // --- DATA: ACHIEVEMENTS ---
