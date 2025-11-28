@@ -24,7 +24,7 @@ const TESTIMONIALS = [
   {
     name: 'Shivam Kumar Singh',
     company: 'Career Simplify Multi Utility Private Limited',
-    companyLink: 'https://careersimplify.com',
+    companyLink: 'https://careersimplify.in',
     // position: 'CEO',
     avatar: 'https://careersimplify.in/assets/cslogo-C1vdCqlW.svg',
     rating: 5,
