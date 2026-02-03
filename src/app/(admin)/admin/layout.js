@@ -42,6 +42,7 @@ function AdminLayoutContent({ children }) {
     { name: 'Dashboard', href: '/admin/dashboard', icon: 'fas fa-tachometer-alt' },
     { name: 'Manage Sections', href: '/admin/sections', icon: 'fas fa-cog' },
     { name: 'Media Library', href: '/admin/media', icon: 'fas fa-images' },
+    { name: 'Storage', href: '/admin/storage', icon: 'fas fa-cloud' },
     { name: 'Messages', href: '/admin/contacts', icon: 'fas fa-envelope' },
     { name: 'Projects', href: '/admin/projects', icon: 'fas fa-folder' },
     { name: 'Services', href: '/admin/services', icon: 'fas fa-tools' },
