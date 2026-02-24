@@ -61,6 +61,13 @@ const CERTIFICATES = [
   description:
     'Recognized by MIT Muzaffarpur Alumni Association International (MITMAAI) for serving as Event Coordinator for Alumni Meet 2025 and contributing to the successful planning and execution of “Connections – 2025”.',
 },
+  {
+  src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1771932622/portfolio_assets/m7jnhoas5xsi9xqxfhnn.jpg',
+  alt: 'CLIMB 3rd Position Certificate',
+  title: 'C.L.I.M.B — 3rd Position (Team DOSTIFY)',
+  description:
+    'Secured 3rd position at C.L.I.M.B (Campus Leadership & Innovation Movement for Betterment) with Team DOSTIFY, recognized by MIT Muzaffarpur and MITMAAI USA for innovation and leadership.',
+},
 ];
 
 // --- DATA: ACHIEVEMENTS ---
