@@ -54,6 +54,13 @@ const CERTIFICATES = [
     description:
       'Completed foundational training on LangGraph, focusing on graph-based LLM workflows and agentic development.',
   },
+  {
+  src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1771931409/portfolio_assets/kec3i8yr1pcp0dutteck.jpg',
+  alt: 'MITMAAI Certificate of Appreciation',
+  title: 'Alumni Meet 2025 — Event Coordinator (MITMAAI)',
+  description:
+    'Recognized by MIT Muzaffarpur Alumni Association International (MITMAAI) for serving as Event Coordinator for Alumni Meet 2025 and contributing to the successful planning and execution of “Connections – 2025”.',
+},
 ];
 
 // --- DATA: ACHIEVEMENTS ---
