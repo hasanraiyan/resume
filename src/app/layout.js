@@ -3,12 +3,10 @@ import './globals.css';
 import SessionProvider from '@/components/SessionProvider';
 import AnalyticsProvider from '@/components/AnalyticsProvider';
 import { SiteProvider } from '@/context/SiteContext';
-import { CursorProvider } from '@/context/CursorContext'; // Import CursorProvider
+import { CursorProvider } from '@/context/CursorContext';
 import ChatbotWidget from '@/components/chatbot/ChatbotWidget';
 import PWAManager from '@/components/PWAManager';
-import dbConnect from '@/lib/dbConnect';
-import HeroSection from '@/models/HeroSection';
-import { serializeForClient } from '@/lib/serialize';
+import { getHeroData } from '@/app/actions/heroActions';
 import Script from 'next/script';
 import { Analytics } from '@vercel/analytics/next';
 
@@ -140,14 +138,13 @@ const jsonLd = {
     'Expert freelance web developer specializing in Next.js, React, and minimalist UI design.',
 };
 
-export default async function RootLayout({ children }) {
-  await dbConnect();
-  let heroData = await HeroSection.findOne({ isActive: true }).lean();
-  if (!heroData) {
-    heroData = await HeroSection.seedDefault();
-  }
+/** Default hero data used when the DB is unreachable. */
+const DEFAULT_HERO = { introduction: { name: '' }, socialLinks: [] };
 
-  const serializedHeroData = serializeForClient(heroData);
+export default async function RootLayout({ children }) {
+  // Fetch hero data via a dedicated server action that owns its own
+  // try/catch. A DB failure returns null instead of crashing the layout.
+  const serializedHeroData = (await getHeroData()) ?? DEFAULT_HERO;
   const initials = getInitials(serializedHeroData.introduction?.name);
 
   return (

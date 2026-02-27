@@ -2,18 +2,20 @@
  * @fileoverview Hero section component for homepage.
  * Displays main heading, introduction, call-to-action buttons, social links,
  * and profile image with GSAP animations and real-time data updates.
+ *
+ * Data flow:
+ * - Primary: heroData from SiteContext (fetched server-side in layout.js — no extra request)
+ * - Real-time: listens for 'heroDataUpdated' events from the admin panel and re-fetches
+ *   only when an admin saves changes, keeping the live-preview experience intact.
  */
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Button, Badge } from '@/components/ui';
-import { useHeroData } from '@/hooks/useHeroData';
-import { useLoadingStatus } from '@/context/LoadingContext';
-import { SkeletonLoader, SkeletonItem } from './Skeleton';
-
+import { useSiteContext } from '@/context/SiteContext';
 /**
  * Default hero data structure used as fallback when API data is unavailable.
  * Provides complete default configuration for all hero section elements.
@@ -88,94 +90,6 @@ const defaultHeroData = {
 };
 
 /**
- * Skeleton loading component for the Hero section.
- * Displays animated placeholder content while hero data is being fetched.
- * Maintains the same layout structure as the actual hero component.
- *
- * @component
- * @returns {JSX.Element} Skeleton loading UI with animated placeholders
- *
- * @example
- * ```jsx
- * // Used automatically during loading state
- * if (loading) {
- *   return <HeroSkeleton />;
- * }
- * ```
- *
- * @skeleton
- * - Badge placeholder with rounded styling
- * - Three-line heading skeleton with stroke effect simulation
- * - Introduction text lines with varying widths
- * - CTA button placeholders
- * - Social link icon placeholders
- * - Profile image circle with pulse animation
- * - Experience badge skeleton
- *
- * @responsive Maintains responsive layout during loading state
- */
-function HeroSkeleton() {
-  return (
-    <section id="home" className="min-h-screen flex items-center pt-16 sm:pt-20 w-full">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-12 sm:py-16">
-        <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
-          {/* Left Column - Content Skeleton */}
-          <div className="order-2 lg:order-1">
-            {/* Badge Skeleton */}
-            <div className="mb-4 sm:mb-5">
-              <SkeletonItem height="h-7" width="w-32" className="rounded-full" />
-            </div>
-
-            {/* Main Heading Skeleton */}
-            <div className="mb-4 sm:mb-5 space-y-2">
-              <SkeletonItem height="h-12 sm:h-14 md:h-16 lg:h-20" width="w-full" />
-              <SkeletonItem
-                height="h-12 sm:h-14 md:h-16 lg:h-20"
-                width="w-3/4"
-                className="bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-clip-text"
-              />
-              <SkeletonItem height="h-12 sm:h-14 md:h-16 lg:h-20" width="w-2/3" />
-            </div>
-
-            {/* Introduction Skeleton */}
-            <div className="mb-8 sm:mb-10 space-y-3">
-              <SkeletonItem height="h-4" width="w-full" />
-              <SkeletonItem height="h-4" width="w-5/6" />
-              <SkeletonItem height="h-4" width="w-4/5" />
-            </div>
-
-            {/* CTA Buttons Skeleton */}
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 mb-8">
-              <SkeletonItem height="h-12" width="w-32" className="rounded-lg" />
-              <SkeletonItem height="h-12" width="w-28" className="rounded-lg" />
-            </div>
-
-            {/* Social Links Skeleton */}
-            <div className="flex gap-6 sm:gap-7 justify-center sm:justify-start">
-              {[1, 2, 3, 4].map((i) => (
-                <SkeletonItem key={i} height="h-5 w-5" className="rounded-full" />
-              ))}
-            </div>
-          </div>
-
-          {/* Right Column - Profile Image Skeleton */}
-          <div className="relative order-1 lg:order-2 max-w-sm mx-auto lg:max-w-none">
-            {/* Profile Image Skeleton */}
-            <div className="aspect-square bg-gray-200 rounded-full animate-pulse"></div>
-
-            {/* Experience Badge Skeleton */}
-            <div className="absolute -bottom-4 sm:-bottom-7 -right-4 sm:-right-7 bg-white p-4 sm:p-6 shadow-2xl rounded-lg">
-              <SkeletonItem height="h-8 sm:h-10" width="w-12" className="mb-1" />
-              <SkeletonItem height="h-3 sm:h-4" width="w-20" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/**
  * Main Hero component for the homepage.
  * Displays the primary landing section with animated heading, introduction,
  * call-to-action buttons, social links, and profile image.
@@ -226,48 +140,52 @@ function HeroSkeleton() {
  * - Mobile-optimized social links positioning
  *
  * @dependencies
- * - React hooks (useState, useEffect)
+ * - React hooks (useState, useEffect, useCallback)
  * - GSAP for animations and ScrollTrigger
- * - Custom hooks (useHeroData)
- * - Context providers (LoadingContext)
- * - UI components (Button, Badge)
- * - Skeleton components for loading states
+ * - SiteContext (heroData from server-side fetch in layout.js)
  *
  * @dataflow
- * 1. Component mounts and registers with LoadingContext
- * 2. useHeroData hook fetches data from `/api/hero`
- * 3. Data updates trigger re-render with new content
- * 4. GSAP animations initialize after loading completes
- * 5. Real-time updates via 'heroDataUpdated' events
+ * 1. layout.js fetches HeroSection from MongoDB server-side
+ * 2. heroData is passed into SiteContext and consumed here — no client fetch
+ * 3. GSAP animations initialize on mount
+ * 4. Real-time admin preview: 'heroDataUpdated' events trigger a single re-fetch
  */
 export default function Hero() {
-  const { heroData: fetchedHeroData, loading, error } = useHeroData();
-  const [heroData, setHeroData] = useState(defaultHeroData);
-  const { registerComponent, markComponentAsLoaded } = useLoadingStatus();
+  // Use hero data already fetched server-side by layout.js via SiteContext.
+  // This eliminates the redundant client-side fetch to /api/hero on every page load.
+  const { heroData: siteHeroData } = useSiteContext();
 
-  useEffect(() => {
-    // Register this component as "loading" when it mounts
-    registerComponent('Hero');
-  }, [registerComponent]);
+  // Initialise from SiteContext data (or fall back to defaults if context isn't ready).
+  const [heroData, setHeroData] = useState(siteHeroData || defaultHeroData);
 
+  // Keep data in sync if SiteContext value changes (e.g. during hydration).
   useEffect(() => {
-    // When the loading state from useHeroData is resolved, mark as loaded
-    if (!loading) {
-      markComponentAsLoaded('Hero');
+    if (siteHeroData) {
+      setHeroData(siteHeroData);
     }
-  }, [loading, markComponentAsLoaded]);
+  }, [siteHeroData]);
 
-  // Update hero data when fetched data changes
-  useEffect(() => {
-    if (fetchedHeroData) {
-      setHeroData(fetchedHeroData);
+  // Real-time admin preview: re-fetch only when an admin saves a change.
+  // This avoids the full initial fetch while preserving the live-preview experience.
+  const refreshFromApi = useCallback(async () => {
+    try {
+      const response = await fetch('/api/hero', { cache: 'no-store' });
+      const result = await response.json();
+      if (result.success && result.data) {
+        setHeroData(result.data);
+      }
+    } catch (err) {
+      console.warn('Hero: could not refresh data from admin update', err);
     }
-  }, [fetchedHeroData]);
+  }, []);
 
-  // GSAP Animation - Always run this effect, but only animate when not loading
   useEffect(() => {
-    if (loading) return;
+    window.addEventListener('heroDataUpdated', refreshFromApi);
+    return () => window.removeEventListener('heroDataUpdated', refreshFromApi);
+  }, [refreshFromApi]);
 
+  // GSAP Animation — runs once on mount (data is already available from SiteContext).
+  useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
 
     // Small delay to ensure DOM is ready
@@ -299,7 +217,6 @@ export default function Hero() {
 
     return () => {
       clearTimeout(timer);
-      // Clean up GSAP animations
       try {
         ScrollTrigger.getAll().forEach((trigger) => {
           if (trigger.trigger === '#home') {
@@ -310,12 +227,7 @@ export default function Hero() {
         console.warn('GSAP cleanup error:', error);
       }
     };
-  }, [loading]);
-
-  // Show skeleton while loading
-  if (loading) {
-    return <HeroSkeleton />;
-  }
+  }, []);
 
   return (
     <section id="home" className="min-h-screen pt-10 md:p-0 flex items-center w-full">
