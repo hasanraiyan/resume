@@ -199,13 +199,15 @@ function MdContent({ content, onLinkClick }) {
           <a
             {...props}
             href={href}
-            className="inline-flex items-center gap-0.5 text-blue-600 hover:text-blue-800 underline decoration-blue-300 underline-offset-2 transition-colors"
+            className="text-blue-600 hover:text-blue-800 underline decoration-blue-300 underline-offset-2 transition-colors break-words"
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => onLinkClick?.(e, href)}
           >
             {children}
-            {href?.startsWith('http') && <ExternalLink className="w-2.5 h-2.5 inline-block" />}
+            {href?.startsWith('http') && (
+              <ExternalLink className="w-2.5 h-2.5 inline-block ml-0.5 mb-0.5 align-middle" />
+            )}
           </a>
         ),
         strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
@@ -460,7 +462,15 @@ export default function ChatbotWidget() {
 
   const handleOpenChat = useCallback(async () => {
     setIsOpen(true);
-    await fetchSettings();
+    if (!settingsFetched) {
+      await fetchSettings();
+    }
+  }, [fetchSettings, settingsFetched]);
+
+  // Pre-fetch settings on load so the chatbot is ready instantly without a 3-second delay,
+  // and so we can hide the FAB button if the chatbot is disabled by the admin.
+  useEffect(() => {
+    fetchSettings();
   }, [fetchSettings]);
 
   const send = useCallback(
