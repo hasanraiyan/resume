@@ -10,6 +10,7 @@ import dbConnect from '@/lib/dbConnect';
 import HeroSection from '@/models/HeroSection';
 import { serializeForClient } from '@/lib/serialize';
 import Script from 'next/script';
+import { Analytics } from '@vercel/analytics/next';
 
 // (Font definitions remain the same)
 
@@ -171,6 +172,7 @@ export default async function RootLayout({ children }) {
                 {children}
                 <ChatbotWidget />
                 <PWAManager />
+                <Analytics />
               </SiteProvider>
             </CursorProvider>
           </AnalyticsProvider>
