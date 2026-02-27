@@ -9,6 +9,15 @@ import CustomCursor from '@/components/CustomCursor';
 import { Section } from '@/components/ui';
 import BlogPageClient from '@/components/blog/BlogPageClient';
 
+export const metadata = {
+  title: 'Web Development Blog - Next.js, React & Design Insights',
+  description:
+    'Tutorials, insights, and thoughts on modern web development, performance optimization, and minimalist design.',
+  alternates: {
+    canonical: '/blog',
+  },
+};
+
 export default async function BlogPage() {
   const session = await getServerSession(authOptions);
   const isAuthenticated = !!session?.user?.isAdmin;

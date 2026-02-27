@@ -2,10 +2,10 @@ import { getAllPublishedArticles } from '@/app/actions/articleActions';
 import Project from '@/models/Project';
 import dbConnect from '@/lib/dbConnect';
 
-export default async function sitemap() {
+export async function GET() {
   await dbConnect();
 
-  const baseUrl = 'https://hasanraiyan.vercel.app'; // Replace with your actual domain
+  const baseUrl = 'https://hasanraiyan.vercel.app';
 
   // Static pages
   const staticPages = [
@@ -42,8 +42,12 @@ export default async function sitemap() {
         }))
       : [];
 
-  // Fetch projects
-  const projects = await Project.find({}).lean();
+  // Fetch published and public projects
+  const projects = await Project.find({
+    status: 'published',
+    visibility: 'public',
+  }).lean();
+
   const projectEntries = projects.map((project) => ({
     url: `${baseUrl}/projects/${project.slug}`,
     lastModified: new Date(project.updatedAt || project.createdAt),
@@ -51,5 +55,27 @@ export default async function sitemap() {
     priority: 0.6,
   }));
 
-  return [...staticPages, ...articleEntries, ...projectEntries];
+  const allEntries = [...staticPages, ...articleEntries, ...projectEntries];
+
+  const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  ${allEntries
+    .map((entry) => {
+      return `
+    <url>
+      <loc>${entry.url}</loc>
+      <lastmod>${entry.lastModified.toISOString()}</lastmod>
+      <changefreq>${entry.changeFrequency}</changefreq>
+      <priority>${entry.priority}</priority>
+    </url>
+  `;
+    })
+    .join('')}
+</urlset>`;
+
+  return new Response(sitemapXml, {
+    headers: {
+      'Content-Type': 'application/xml',
+    },
+  });
 }

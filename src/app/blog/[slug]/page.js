@@ -35,6 +35,29 @@ export async function generateMetadata({ params }) {
   return {
     title: `${article.title} | Blog`,
     description: article.excerpt,
+    alternates: {
+      canonical: `/blog/${article.slug}`,
+    },
+    openGraph: {
+      title: article.title,
+      description: article.excerpt,
+      type: 'article',
+      url: `https://hasanraiyan.vercel.app/blog/${article.slug}`,
+      images: article.coverImage
+        ? [
+            {
+              url: article.coverImage,
+              alt: article.title,
+            },
+          ]
+        : [],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: article.title,
+      description: article.excerpt,
+      images: article.coverImage ? [article.coverImage] : [],
+    },
   };
 }
 
