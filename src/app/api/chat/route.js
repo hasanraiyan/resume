@@ -1,8 +1,8 @@
 /**
  * @fileoverview Chat API route for handling AI-powered chatbot interactions.
- * Processes user messages through an AI chatbot that can list/retrieve portfolio
- * data (projects, articles) and perform intelligent searches, streaming responses
- * back to the client in real-time.
+ * Uses true end-to-end streaming — the agentic tool-calling loop runs inside
+ * the ReadableStream so status events and content tokens are sent to the client
+ * in real time with no blocking pre-stream phase.
  */
 
 import { NextResponse } from 'next/server';
@@ -10,13 +10,7 @@ import OpenAI from 'openai';
 import { buildDynamicContext } from '@/lib/ai/context-builder';
 import Analytics from '@/models/Analytics';
 import ChatLog from '@/models/ChatLog';
-import {
-  tools,
-  executeToolCall,
-  getToolStatusMessage,
-  pruneContext,
-  calculateContextSize,
-} from '@/lib/chatbot-utils';
+import { tools, executeToolCall, getToolStatusMessage, pruneContext } from '@/lib/chatbot-utils';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -25,11 +19,37 @@ const openai = new OpenAI({
 });
 
 // =================================================================================
+// HELPERS
+// =================================================================================
+
+/** UTF-8 encodes a JSON event line for the stream. */
+function encodeEvent(obj) {
+  return new TextEncoder().encode(JSON.stringify(obj) + '\n');
+}
+
+/**
+ * Merges streaming tool_call deltas into a map keyed by index.
+ * Each entry accumulates id, function.name, and function.arguments.
+ */
+function mergeToolCallDeltas(map, deltas) {
+  for (const d of deltas) {
+    const idx = d.index ?? 0;
+    if (!map[idx]) {
+      map[idx] = { id: '', type: 'function', function: { name: '', arguments: '' } };
+    }
+    if (d.id) map[idx].id += d.id;
+    if (d.function?.name) map[idx].function.name += d.function.name;
+    if (d.function?.arguments) map[idx].function.arguments += d.function.arguments;
+  }
+}
+
+// =================================================================================
 // MAIN API ROUTE (POST HANDLER)
 // =================================================================================
 
 export async function POST(request) {
   const startTime = Date.now();
+
   try {
     const { userMessage, chatHistory = [], sessionId, path = '/' } = await request.json();
 
@@ -49,7 +69,7 @@ export async function POST(request) {
           callToAction: "I'd be happy to help you get in touch with Raiyan.",
           rules: ['Always be professional and helpful'],
           isActive: true,
-          modelName: process.env.OPENAI_MODEL_NAME || 'gpt-3.5-turbo',
+          modelName: process.env.OPENAI_MODEL_NAME || 'openai-large',
         },
       };
     }
@@ -59,114 +79,132 @@ export async function POST(request) {
     }
 
     const actualModel =
-      context.chatbotSettings?.modelName || process.env.OPENAI_MODEL_NAME || 'gpt-3.5-turbo';
+      context.chatbotSettings?.modelName || process.env.OPENAI_MODEL_NAME || 'openai-large';
 
     const systemMessages = buildSystemMessages(context, path);
+
+    // Build message history — passed into the stream closure
     const messages = [
       ...systemMessages,
       ...chatHistory.map((msg) => ({ role: msg.role, content: msg.content })),
       { role: 'user', content: userMessage },
     ];
 
-    // Iterative tool calling
-    const MAX_ITERATIONS = 3;
-    const MAX_CONTEXT_CHARS = 50000;
-    let toolsUsed = [];
-    let iteration = 0;
-    let shouldContinue = true;
-
-    while (shouldContinue && iteration < MAX_ITERATIONS) {
-      iteration++;
-
-      const prunedMessages = pruneContext(messages, MAX_CONTEXT_CHARS);
-      const completion = await openai.chat.completions.create({
-        model: actualModel,
-        messages: prunedMessages,
-        tools,
-        tool_choice: 'auto',
-      });
-
-      const response = completion.choices[0].message;
-
-      if (response.tool_calls) {
-        messages.push(response);
-
-        for (const toolCall of response.tool_calls) {
-          const toolResult = await executeToolCall(toolCall);
-          const resultString = JSON.stringify(toolResult);
-
-          // Truncate oversized tool results before storing
-          const MAX_TOOL_RESULT_SIZE = 5000;
-          const isTruncated = resultString.length > MAX_TOOL_RESULT_SIZE;
-          const truncatedResult = isTruncated
-            ? {
-                ...toolResult,
-                _truncated: true,
-                _originalSize: resultString.length,
-                _preview: resultString.substring(0, 1000) + '...',
-              }
-            : toolResult;
-
-          toolsUsed.push({
-            name: toolCall.function.name,
-            arguments: JSON.parse(toolCall.function.arguments),
-            iteration,
-            result: truncatedResult,
-          });
-
-          messages.push({
-            role: 'tool',
-            tool_call_id: toolCall.id,
-            content: JSON.stringify(toolResult),
-          });
-        }
-      } else {
-        shouldContinue = false;
-      }
-    }
-
-    // Final prune before streaming
-    const finalMessages = pruneContext(messages, MAX_CONTEXT_CHARS);
-
+    // -------------------------------------------------------------------------
+    // True end-to-end streaming
+    //
+    // The entire agentic loop runs inside the ReadableStream so we can push
+    // events to the client immediately:
+    //   {type: "status", message: "🔍 Getting project details..."}  ← real time
+    //   {type: "content", message: "Sure! Here's what I found…"}   ← tokens live
+    // -------------------------------------------------------------------------
     const stream = new ReadableStream({
       async start(controller) {
-        let assistantMessage = { content: '' };
+        const MAX_ITERATIONS = 3;
+        const MAX_CONTEXT_CHARS = 50_000;
+        const MAX_TOOL_RESULT_SIZE = 5_000;
+
+        const toolsUsed = [];
+        let assistantContent = '';
+
         try {
-          // Send tool status updates before streaming content
-          for (const tool of toolsUsed) {
-            const statusMessage = getToolStatusMessage(tool.name, tool.arguments, tool.iteration);
-            controller.enqueue(
-              new TextEncoder().encode(
-                JSON.stringify({ type: 'status', message: statusMessage }) + '\n'
-              )
-            );
-          }
+          for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
+            const prunedMessages = pruneContext(messages, MAX_CONTEXT_CHARS);
 
-          const completion = await openai.chat.completions.create({
-            model: actualModel,
-            messages: finalMessages,
-            stream: true,
-          });
+            // ── Open a streaming completion ──────────────────────────────────
+            const completionStream = await openai.chat.completions.create({
+              model: actualModel,
+              messages: prunedMessages,
+              tools,
+              tool_choice: 'auto',
+              stream: true,
+            });
 
-          for await (const chunk of completion) {
-            const content = chunk.choices[0]?.delta?.content || '';
-            if (content) {
-              assistantMessage.content += content;
-              controller.enqueue(
-                new TextEncoder().encode(
-                  JSON.stringify({ type: 'content', message: content }) + '\n'
-                )
-              );
+            // Accumulate deltas
+            const toolCallMap = {}; // index → partial tool call
+            let hasToolCalls = false;
+            let iterationContent = ''; // assistant text for this iteration
+
+            for await (const chunk of completionStream) {
+              const delta = chunk.choices[0]?.delta;
+              if (!delta) continue;
+
+              if (delta.tool_calls?.length) {
+                hasToolCalls = true;
+                mergeToolCallDeltas(toolCallMap, delta.tool_calls);
+              }
+
+              if (delta.content) {
+                iterationContent += delta.content;
+                assistantContent += delta.content;
+                // Stream content tokens to the client immediately
+                controller.enqueue(encodeEvent({ type: 'content', message: delta.content }));
+              }
             }
+
+            // ── If no tool calls, AI gave its final answer — we're done ─────
+            if (!hasToolCalls) break;
+
+            // ── Assemble resolved tool calls from the delta map ──────────────
+            const assembledToolCalls = Object.values(toolCallMap);
+
+            // Push the assistant turn (with tool_calls) into the message history
+            messages.push({
+              role: 'assistant',
+              content: iterationContent || null,
+              tool_calls: assembledToolCalls,
+            });
+
+            // ── Execute every tool call and emit status events live ──────────
+            for (const toolCall of assembledToolCalls) {
+              let parsedArgs;
+              try {
+                parsedArgs = JSON.parse(toolCall.function.arguments);
+              } catch {
+                parsedArgs = {};
+              }
+
+              // Emit status so the user sees "🔍 Getting project details..." instantly
+              const statusMsg = getToolStatusMessage(toolCall.function.name, parsedArgs, iteration);
+              controller.enqueue(encodeEvent({ type: 'status', message: statusMsg }));
+
+              // Execute the tool DB query
+              const toolResult = await executeToolCall(toolCall);
+              const resultString = JSON.stringify(toolResult);
+
+              // Truncate oversized tool results before storing in history
+              const isTruncated = resultString.length > MAX_TOOL_RESULT_SIZE;
+              const storedResult = isTruncated
+                ? {
+                    _truncated: true,
+                    _originalSize: resultString.length,
+                    _preview: resultString.substring(0, 1_000) + '...',
+                  }
+                : toolResult;
+
+              toolsUsed.push({
+                name: toolCall.function.name,
+                arguments: parsedArgs,
+                iteration,
+                result: storedResult,
+              });
+
+              // Push the tool result back into the message history for the next turn
+              messages.push({
+                role: 'tool',
+                tool_call_id: toolCall.id,
+                content: resultString,
+              });
+            }
+            // Loop continues → AI gets the tool results and can call more tools or answer
           }
 
           controller.close();
 
-          // Skip analytics + log if there was no response
-          if (!assistantMessage.content?.trim()) return;
+          // ── Post-stream analytics & logging (fire-and-forget) ────────────
+          if (!assistantContent?.trim()) return;
 
-          // Save analytics event (fire-and-forget, don't block stream)
-          const analyticsEvent = new Analytics({
+          new Analytics({
             eventType: 'chatbot_interaction',
             path,
             sessionId,
@@ -175,10 +213,10 @@ export async function POST(request) {
               toolsCount: toolsUsed.length,
               toolsUsed: toolsUsed.length ? toolsUsed : undefined,
             },
-          });
-          analyticsEvent.save().catch((err) => console.error('[Chat] Analytics save failed:', err));
+          })
+            .save()
+            .catch((err) => console.error('[Chat] Analytics save failed:', err));
 
-          // Build conversation context for the log
           const currentConversationTurn = [
             ...systemMessages,
             ...chatHistory.filter((msg) => msg.role !== 'assistant'),
@@ -186,30 +224,29 @@ export async function POST(request) {
           ];
 
           const contextString = JSON.stringify(currentConversationTurn);
-          const MAX_CONTEXT_SIZE = 50000;
-          const shouldTruncateContext = contextString.length > MAX_CONTEXT_SIZE;
+          const shouldTruncateContext = contextString.length > 50_000;
           const finalContextForDB = shouldTruncateContext
             ? [
                 {
                   role: 'system',
-                  content: `Context truncated for storage. Original: ${contextString.length} chars, ${currentConversationTurn.length} messages.`,
+                  content: `Context truncated. Original: ${contextString.length} chars, ${currentConversationTurn.length} messages.`,
                 },
                 ...currentConversationTurn.filter((m) => m.role === 'system'),
               ]
             : currentConversationTurn;
 
-          const chatLog = new ChatLog({
+          new ChatLog({
             sessionId,
             path,
             userMessage,
-            aiResponse: assistantMessage.content,
+            aiResponse: assistantContent,
             modelName: actualModel,
             conversationContext: finalContextForDB,
             toolsUsed,
             executionTime: Date.now() - startTime,
-          });
-
-          chatLog.save().catch((err) => console.error('[Chat] ChatLog save failed:', err));
+          })
+            .save()
+            .catch((err) => console.error('[Chat] ChatLog save failed:', err));
         } catch (error) {
           console.error('[Chat] Stream error:', error);
           controller.error(error);
