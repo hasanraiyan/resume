@@ -21,9 +21,11 @@ export default function Input({
   name,
   value,
   onChange,
+  onBlur,
   placeholder = '',
   required = false,
   className = '',
+  hasError = false,
   ...props
 }) {
   return (
@@ -34,9 +36,14 @@ export default function Input({
         name={name}
         value={value}
         onChange={onChange}
+        onBlur={onBlur}
         placeholder={placeholder}
         required={required}
-        className={cn(componentStyles.forms.input, className)}
+        className={cn(
+          componentStyles.forms.input,
+          hasError && 'ring-1 ring-red-500 border-red-500',
+          className
+        )}
         suppressHydrationWarning={true}
         {...props}
       />
