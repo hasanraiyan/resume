@@ -33,6 +33,29 @@ export async function generateMetadata({ params }) {
   return {
     title: `${project.title} - Portfolio`,
     description: project.description,
+    alternates: {
+      canonical: `/projects/${project.slug}`,
+    },
+    openGraph: {
+      title: `${project.title} - Portfolio`,
+      description: project.description,
+      type: 'website',
+      url: `https://hasanraiyan.vercel.app/projects/${project.slug}`,
+      images: project.thumbnail
+        ? [
+            {
+              url: project.thumbnail,
+              alt: project.title,
+            },
+          ]
+        : [],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${project.title} - Portfolio`,
+      description: project.description,
+      images: project.thumbnail ? [project.thumbnail] : [],
+    },
   };
 }
 
