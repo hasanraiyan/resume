@@ -88,8 +88,26 @@ export default async function ArticlePage({ params }) {
 
   const publishDate = formattedDate(article.publishedAt) || formattedDate(article.createdAt);
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: article.title,
+    description: article.excerpt,
+    image: article.coverImage ? [article.coverImage] : [],
+    datePublished: article.publishedAt || article.createdAt,
+    author: {
+      '@type': 'Person',
+      name: 'Raiyan Hasan',
+      url: 'https://hasanraiyan.vercel.app',
+    },
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <CustomCursor />
       <Navbar />
 

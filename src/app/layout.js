@@ -52,12 +52,12 @@ export const metadata = {
   description:
     'Expert freelance web developer specializing in Next.js, React, and minimalist UI design. Building high-performance, conversion-focused websites and SaaS MVPs.',
   keywords: [
-    'Next.js Developer',
-    'React Developer',
-    'Freelance Web Developer',
-    'UI Designer',
-    'SaaS MVP',
-    'Web Development',
+    'Hire Next.js developer for SaaS MVP',
+    'Convert React app to Next.js 14',
+    'Freelance headless CMS developer',
+    'React to Next.js Migration Expert',
+    'Next.js Performance Optimization',
+    'Freelance Front-end Developer for Startups',
   ],
   authors: [{ name: 'Raiyan Hasan', url: 'https://hasanraiyan.vercel.app' }],
   creator: 'Raiyan Hasan',
@@ -112,6 +112,9 @@ export const metadata = {
       'max-image-preview': 'large',
       'max-snippet': -1,
     },
+  },
+  verification: {
+    google: 'JPIiaNXrg8wrdFpkbSeFxSy40-b9UdqnPfdo48j_VeQ',
   },
   other: {
     'mobile-web-app-capable': 'yes',
