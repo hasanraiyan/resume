@@ -19,6 +19,7 @@
  * ```
  */
 
+import { unstable_cache } from 'next/cache';
 import dbConnect from '../dbConnect';
 import HeroSection from '../../models/HeroSection';
 import AboutSection from '../../models/AboutSection';
@@ -213,27 +214,34 @@ export async function getChatbotSettings() {
  * @returns {Promise<Object>} Complete context object containing all chatbot data
  * @throws {Error} If context building fails
  */
-export async function buildDynamicContext() {
-  try {
-    // Fetch all context data in parallel
-    const [coreIdentity, aboutSummary, projectOverview, articleOverview, chatbotSettings] =
-      await Promise.all([
-        getCoreIdentity(),
-        getAboutSummary(),
-        getProjectOverview(),
-        getArticleOverview(),
-        getChatbotSettings(),
-      ]);
+export const buildDynamicContext = unstable_cache(
+  async () => {
+    try {
+      // Fetch all context data in parallel
+      const [coreIdentity, aboutSummary, projectOverview, articleOverview, chatbotSettings] =
+        await Promise.all([
+          getCoreIdentity(),
+          getAboutSummary(),
+          getProjectOverview(),
+          getArticleOverview(),
+          getChatbotSettings(),
+        ]);
 
-    return {
-      coreIdentity,
-      aboutSummary,
-      projectOverview,
-      articleOverview,
-      chatbotSettings,
-    };
-  } catch (error) {
-    console.error('Error building dynamic context:', error);
-    throw error;
+      return {
+        coreIdentity,
+        aboutSummary,
+        projectOverview,
+        articleOverview,
+        chatbotSettings,
+      };
+    } catch (error) {
+      console.error('Error building dynamic context:', error);
+      throw error;
+    }
+  },
+  ['ai-dynamic-context'],
+  {
+    tags: ['ai-context', 'chatbot-settings', 'projects', 'articles', 'hero', 'about'],
+    revalidate: 3600, // Revalidate every hour fallback
   }
-}
+);
