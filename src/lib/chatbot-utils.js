@@ -87,28 +87,25 @@ export const tools = [
  * Retrieves a list of all available projects from the database.
  */
 export async function listAllProjects() {
-  console.log('[Chat Utils] 📋 Executing listAllProjects...');
   try {
     await dbConnect();
     const projects = await Project.find({})
       .select('title slug description')
       .sort({ createdAt: -1 })
       .lean();
-    console.log(`[Chat Utils] ✅ Retrieved ${projects.length} projects`);
 
-    if (projects.length === 0) {
-      return 'No projects found in the database.';
-    }
+    if (projects.length === 0) return 'No projects found in the database.';
 
     const markdownList = projects
-      .map((project, index) => {
-        return `${index + 1}. **[${project.title}](/${project.slug})** - ${project.description}`;
-      })
+      .map(
+        (project, index) =>
+          `${index + 1}. **[${project.title}](/${project.slug})** - ${project.description}`
+      )
       .join('\n');
 
     return `Here are all available projects:\n\n${markdownList}\n\nUse the getProjectDetails tool with a specific slug to get more information about any project.`;
   } catch (error) {
-    console.error('[Chat Utils] ❌ Error in listAllProjects:', error);
+    console.error('[Chat Utils] listAllProjects failed:', error);
     return { error: 'Failed to retrieve projects.' };
   }
 }
@@ -117,27 +114,21 @@ export async function listAllProjects() {
  * Retrieves complete details for a specific project by its slug.
  */
 export async function getProjectDetails(slug) {
-  console.log(`[Chat Utils] 🔍 Executing getProjectDetails for slug: "${slug}"`);
   try {
     await dbConnect();
     const project = await Project.findOne({ slug }).lean();
-    if (!project) {
-      console.log(`[Chat Utils] ⚠️ Project not found: "${slug}"`);
-      return { error: 'Project not found' };
-    }
-    console.log(`[Chat Utils] ✅ Retrieved project: "${project.title}"`);
+    if (!project) return { error: 'Project not found' };
 
     const tags = project.tags?.map((t) => t.name || t).join(', ') || 'No tags';
     const liveUrl = project.links?.live ? `[View Live Demo](${project.links.live}) 🔗` : '';
     const githubUrl = project.links?.github
       ? `[GitHub Repository](${project.links.github}) 💻`
       : '';
-
     const links = [liveUrl, githubUrl].filter(Boolean).join(' | ');
 
     return `**${project.title}**\n\n**Category:** ${project.category || 'Not specified'}\n**Tagline:** ${project.tagline || 'No tagline'}\n\n**Description:**\n${project.description}\n\n**Details:**\n${project.details || 'No additional details'}\n\n**Tags:** ${tags}\n\n**Links:** ${links || 'No external links'}\n\n**[View Project →](/${project.slug})**`;
   } catch (error) {
-    console.error('[Chat Utils] ❌ Error in getProjectDetails:', error);
+    console.error('[Chat Utils] getProjectDetails failed:', error);
     return { error: 'Failed to retrieve project details.' };
   }
 }
@@ -146,28 +137,25 @@ export async function getProjectDetails(slug) {
  * Retrieves a list of all published articles from the database.
  */
 export async function listAllArticles() {
-  console.log('[Chat Utils] 📰 Executing listAllArticles...');
   try {
     await dbConnect();
     const articles = await Article.find({ status: 'published' })
       .select('title slug excerpt')
       .sort({ publishedAt: -1 })
       .lean();
-    console.log(`[Chat Utils] ✅ Retrieved ${articles.length} published articles`);
 
-    if (articles.length === 0) {
-      return 'No published articles found.';
-    }
+    if (articles.length === 0) return 'No published articles found.';
 
     const markdownList = articles
-      .map((article, index) => {
-        return `${index + 1}. **[${article.title}](/${article.slug})** - ${article.excerpt || 'No excerpt available'}`;
-      })
+      .map(
+        (article, index) =>
+          `${index + 1}. **[${article.title}](/${article.slug})** - ${article.excerpt || 'No excerpt available'}`
+      )
       .join('\n');
 
     return `Here are all published articles:\n\n${markdownList}\n\nUse the getArticleDetails tool with a specific slug to read any article.`;
   } catch (error) {
-    console.error('[Chat Utils] ❌ Error in listAllArticles:', error);
+    console.error('[Chat Utils] listAllArticles failed:', error);
     return { error: 'Failed to retrieve articles.' };
   }
 }
@@ -176,21 +164,22 @@ export async function listAllArticles() {
  * Retrieves complete details for a specific published article by its slug.
  */
 export async function getArticleDetails(slug) {
-  console.log(`[Chat Utils] 🔍 Executing getArticleDetails for slug: "${slug}"`);
   try {
     await dbConnect();
     const article = await Article.findOne({ slug, status: 'published' }).lean();
-    if (!article) {
-      console.log(`[Chat Utils] ⚠️ Article not found: "${slug}"`);
-      return { error: 'Article not found' };
-    }
-    console.log(`[Chat Utils] ✅ Retrieved article: "${article.title}"`);
+    if (!article) return { error: 'Article not found' };
 
     const tags = article.tags?.join(', ') || 'No tags';
+    // Truncate article content to avoid blowing up context window
+    const contentPreview =
+      article.content?.length > 3000
+        ? article.content.substring(0, 3000) +
+          '\n\n*[Content truncated — read the full article at the link below.]*'
+        : article.content;
 
-    return `**${article.title}**\n\n${article.content}\n\n**Tags:** ${tags}\n\n**[Read Full Article →](/${article.slug})**`;
+    return `**${article.title}**\n\n${contentPreview}\n\n**Tags:** ${tags}\n\n**[Read Full Article →](/${article.slug})**`;
   } catch (error) {
-    console.error('[Chat Utils] ❌ Error in getArticleDetails:', error);
+    console.error('[Chat Utils] getArticleDetails failed:', error);
     return { error: 'Failed to retrieve article details.' };
   }
 }
@@ -199,26 +188,23 @@ export async function getArticleDetails(slug) {
  * Performs an intelligent fuzzy search across all projects and articles.
  */
 export async function searchPortfolio(query) {
-  console.log(`[Chat Utils] 🔎 Executing searchPortfolio with query: "${query}"`);
   try {
     const results = await performSearch(query);
     if (results.length === 0) {
-      console.log(`[Chat Utils] ℹ️ No results found for: "${query}"`);
       return { message: `No results found for "${query}". Try different keywords.` };
     }
-    console.log(`[Chat Utils] ✅ Found ${results.length} results for: "${query}"`);
 
     const markdownResults = results
       .map((item, index) => {
         const type = item.type === 'project' ? 'Project' : 'Article';
-        const url = item.type === 'project' ? `/${item.slug}` : `/${item.slug}`;
+        const url = `/${item.slug}`;
         return `${index + 1}. **${type}: [${item.title}](${url})** - ${item.description || item.excerpt || 'No description available'}`;
       })
       .join('\n');
 
     return `Search results for "${query}":\n\n${markdownResults}\n\nUse getProjectDetails or getArticleDetails tools for more specific information.`;
   } catch (error) {
-    console.error('[Chat Utils] ❌ Error in searchPortfolio:', error);
+    console.error('[Chat Utils] searchPortfolio failed:', error);
     return { error: 'Search failed.' };
   }
 }
@@ -234,8 +220,6 @@ export async function executeToolCall(toolCall) {
   const { name, arguments: args } = toolCall.function;
   const parsedArgs = JSON.parse(args);
 
-  console.log(`[Chat Utils] 🔧 Executing tool: ${name}`, parsedArgs);
-
   switch (name) {
     case 'listAllProjects':
       return await listAllProjects();
@@ -248,7 +232,7 @@ export async function executeToolCall(toolCall) {
     case 'searchPortfolio':
       return await searchPortfolio(parsedArgs.query);
     default:
-      console.error(`[Chat Utils] ❌ Unknown tool requested: ${name}`);
+      console.error(`[Chat Utils] Unknown tool requested: ${name}`);
       return { error: 'Unknown tool', toolName: name };
   }
 }
@@ -257,13 +241,12 @@ export async function executeToolCall(toolCall) {
  * Maps tool names to user-friendly status messages.
  */
 export function getToolStatusMessage(toolName, args, iteration = null) {
-  const iterationSuffix = iteration > 1 ? ` (Step ${iteration})` : '';
-
+  const iterationSuffix = iteration > 1 ? ` (step ${iteration})` : '';
   switch (toolName) {
     case 'listAllProjects':
       return `🎨 Loading all projects...${iterationSuffix}`;
     case 'getProjectDetails':
-      return `🔍 Getting details about the project...${iterationSuffix}`;
+      return `🔍 Getting project details...${iterationSuffix}`;
     case 'listAllArticles':
       return `📚 Fetching blog articles...${iterationSuffix}`;
     case 'getArticleDetails':
@@ -294,12 +277,7 @@ export function calculateContextSize(messages) {
  */
 export function pruneContext(messages, maxChars) {
   const currentSize = calculateContextSize(messages);
-
-  if (currentSize <= maxChars) {
-    return messages;
-  }
-
-  console.log(`[Chat Utils] ⚠️ Context too large: ${currentSize} chars, pruning to ${maxChars}...`);
+  if (currentSize <= maxChars) return messages;
 
   const systemMessages = messages.filter((m) => m.role === 'system');
   const userMessage = messages[messages.length - 1];
@@ -318,11 +296,7 @@ export function pruneContext(messages, maxChars) {
         break;
       }
     }
-
     recentMessages = middleMessages.slice(startIndex);
-    console.log(
-      `[Chat Utils] ✂️ Keeping only latest tool calls (removed ${startIndex} old messages)`
-    );
   } else {
     let accumulatedSize = calculateContextSize([...systemMessages, userMessage]);
     for (let i = middleMessages.length - 1; i >= 0; i--) {
@@ -334,7 +308,6 @@ export function pruneContext(messages, maxChars) {
             : JSON.stringify(msg.content)
           : ''
       ).length;
-
       if (accumulatedSize + msgSize < maxChars) {
         recentMessages.unshift(msg);
         accumulatedSize += msgSize;
@@ -344,12 +317,5 @@ export function pruneContext(messages, maxChars) {
     }
   }
 
-  const prunedMessages = [...systemMessages, ...recentMessages, userMessage];
-  const finalSize = calculateContextSize(prunedMessages);
-
-  console.log(
-    `[Chat Utils] ✂️ Pruned from ${messages.length} to ${prunedMessages.length} messages (${currentSize} → ${finalSize} chars)`
-  );
-
-  return prunedMessages;
+  return [...systemMessages, ...recentMessages, userMessage];
 }
