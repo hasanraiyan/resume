@@ -16,8 +16,10 @@
  */
 
 import { NextResponse } from 'next/server';
-import dbConnect from '../../../../lib/dbConnect';
-import ChatbotSettings from '../../../../models/ChatbotSettings';
+import dbConnect from '@/lib/dbConnect';
+import ChatbotSettings from '@/models/ChatbotSettings';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { getServerSession } from 'next-auth';
 
 // GET - Fetch current chatbot settings
 
@@ -131,6 +133,11 @@ export async function GET() {
  */
 export async function POST(request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user?.role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     await dbConnect();
 
     const body = await request.json();
