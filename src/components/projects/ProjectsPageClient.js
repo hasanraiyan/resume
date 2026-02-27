@@ -5,6 +5,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import ProjectCard from './ProjectCard';
 import ProjectFilters from './ProjectFilters';
+import { ProjectCardSkeleton } from '@/components/Skeleton';
 
 export default function ProjectsPageClient({ projects }) {
   const [filteredProjects, setFilteredProjects] = useState(projects);
@@ -95,9 +96,8 @@ export default function ProjectsPageClient({ projects }) {
 
       {/* Projects Grid */}
       {isLoading ? (
-        <div className="text-center py-20">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-black"></div>
-          <p className="mt-4 text-gray-600">Loading projects...</p>
+        <div className="py-8">
+          <ProjectCardSkeleton />
         </div>
       ) : filteredProjects.length === 0 ? (
         <div className="text-center py-20">

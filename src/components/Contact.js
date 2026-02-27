@@ -116,6 +116,8 @@ export default function Contact() {
   const [formData, setFormData] = useState(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [touchedFields, setTouchedFields] = useState({});
   const [calendlyPrefill, setCalendlyPrefill] = useState({
     name: initialFormData.name || '',
     email: initialFormData.email || '',
@@ -156,30 +158,73 @@ export default function Contact() {
     };
   }, []);
 
+  /**
+   * Validates a single field value and returns an error string (or null).
+   */
+  const validateField = (name, value) => {
+    switch (name) {
+      case 'name':
+        if (!value.trim()) return 'Name is required.';
+        if (value.trim().length < 2) return 'Name must be at least 2 characters.';
+        return null;
+      case 'email':
+        if (!value.trim()) return 'Email is required.';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()))
+          return 'Please enter a valid email address.';
+        return null;
+      case 'projectType':
+        if (!value) return 'Please select a project type.';
+        return null;
+      case 'message':
+        if (!value.trim()) return 'Message is required.';
+        if (value.trim().length < 10) return 'Message must be at least 10 characters.';
+        return null;
+      default:
+        return null;
+    }
+  };
+
+  /** Validate all fields and return errors object. */
+  const validateAll = () => {
+    const errors = {};
+    contactData.form.fields.forEach((field) => {
+      const err = validateField(field.name, formData[field.name] ?? '');
+      if (err) errors[field.name] = err;
+    });
+    return errors;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Run full validation before submitting
+    const errors = validateAll();
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      // Mark all fields as touched so errors are visible
+      const allTouched = contactData.form.fields.reduce(
+        (acc, f) => ({ ...acc, [f.name]: true }),
+        {}
+      );
+      setTouchedFields(allTouched);
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitResult(null);
 
     try {
-      // Create FormData object from the form
       const formDataObj = new FormData(e.target);
-
-      // Call the server action directly
       const result = await createContactSubmission(formDataObj);
 
       if (result.success) {
         const submittedName = formDataObj.get('name') || '';
         const submittedEmail = formDataObj.get('email') || '';
-
-        setCalendlyPrefill({
-          name: submittedName,
-          email: submittedEmail,
-        });
-
+        setCalendlyPrefill({ name: submittedName, email: submittedEmail });
         setSubmitResult('success');
-        // Clear the form
         setFormData(initialFormData);
+        setFieldErrors({});
+        setTouchedFields({});
       } else {
         setSubmitResult('error');
       }
@@ -193,18 +238,16 @@ export default function Contact() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const updatedFormData = {
-      ...formData,
-      [name]: value,
-    };
-
+    const updatedFormData = { ...formData, [name]: value };
     setFormData(updatedFormData);
 
-    if (name === 'name' || name === 'email') {
-      if (calendlyPrefillTimeout.current) {
-        clearTimeout(calendlyPrefillTimeout.current);
-      }
+    // Clear error for this field as the user corrects it
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: null }));
+    }
 
+    if (name === 'name' || name === 'email') {
+      if (calendlyPrefillTimeout.current) clearTimeout(calendlyPrefillTimeout.current);
       calendlyPrefillTimeout.current = setTimeout(() => {
         setCalendlyPrefill({
           name: updatedFormData.name || '',
@@ -212,6 +255,14 @@ export default function Contact() {
         });
       }, 350);
     }
+  };
+
+  /** Show validation error when user leaves a field. */
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    setTouchedFields((prev) => ({ ...prev, [name]: true }));
+    const err = validateField(name, value);
+    setFieldErrors((prev) => ({ ...prev, [name]: err }));
   };
 
   useEffect(() => {
@@ -238,7 +289,8 @@ export default function Contact() {
    */
   const renderField = (field) => {
     switch (field.type) {
-      case 'textarea':
+      case 'textarea': {
+        const hasErr = touchedFields[field.name] && fieldErrors[field.name];
         return (
           <div>
             <label className="block text-xs font-semibold mb-2 tracking-wider">{field.label}</label>
@@ -246,32 +298,53 @@ export default function Contact() {
               name={field.name}
               value={formData[field.name]}
               onChange={handleChange}
+              onBlur={handleBlur}
               rows={field.rows}
               required={field.required}
               placeholder={field.placeholder}
-              className="w-full border-b-2 border-gray-300 pb-3 focus:border-black focus:outline-none transition text-sm sm:text-base bg-transparent hover-target resize-none"
+              className={`w-full border-b-2 pb-3 focus:outline-none transition text-sm sm:text-base bg-transparent hover-target resize-none ${
+                hasErr
+                  ? 'border-red-500 focus:border-red-600'
+                  : 'border-gray-300 focus:border-black'
+              }`}
               suppressHydrationWarning={true}
             />
+            {hasErr && (
+              <p role="alert" className="mt-1 text-xs text-red-600">
+                {fieldErrors[field.name]}
+              </p>
+            )}
           </div>
         );
+      }
 
-      case 'dropdown':
+      case 'dropdown': {
+        const hasErr = touchedFields[field.name] && fieldErrors[field.name];
         return (
-          <>
+          <div>
             <CustomDropdownMinimal
               label={field.label}
               options={field.options}
               value={formData[field.name]}
               onChange={handleChange}
+              onBlur={handleBlur}
               name={field.name}
               required={field.required}
               placeholder={field.placeholder}
             />
             <input type="hidden" name={field.name} value={formData[field.name]} />
-          </>
+            {hasErr && (
+              <p role="alert" className="mt-1 text-xs text-red-600">
+                {fieldErrors[field.name]}
+              </p>
+            )}
+          </div>
         );
+      }
 
-      default: // text, email, etc.
+      default: {
+        // text, email, etc.
+        const hasErr = touchedFields[field.name] && fieldErrors[field.name];
         return (
           <div>
             <Input
@@ -280,10 +353,18 @@ export default function Contact() {
               name={field.name}
               value={formData[field.name]}
               onChange={handleChange}
+              onBlur={handleBlur}
               required={field.required}
+              hasError={hasErr}
             />
+            {hasErr && (
+              <p role="alert" className="mt-1 text-xs text-red-600">
+                {fieldErrors[field.name]}
+              </p>
+            )}
           </div>
         );
+      }
     }
   };
 

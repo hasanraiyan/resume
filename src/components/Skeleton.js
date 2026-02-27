@@ -60,13 +60,75 @@ export function StatsSkeleton() {
 }
 
 /**
+ * Skeleton for a single blog article card (matches BlogCard layout).
+ * Used by BlogPageClient during filter/search transitions.
+ */
+export function BlogCardSkeleton() {
+  return (
+    <>
+      <style>{shimmerStyles}</style>
+      <div className="max-w-4xl mx-auto space-y-12 sm:space-y-16">
+        {[1, 2, 3].map((i) => (
+          <article key={i} className="grid md:grid-cols-[1fr_2fr] gap-6 sm:gap-8 items-start">
+            {/* Thumbnail */}
+            <SkeletonItem
+              className="rounded-lg aspect-video md:aspect-square"
+              height="h-full min-h-[180px]"
+            />
+            {/* Content */}
+            <div className="space-y-3">
+              <SkeletonItem height="h-3" width="w-24" />
+              <SkeletonItem height="h-6" width="w-3/4" />
+              <SkeletonItem height="h-6" width="w-1/2" />
+              <SkeletonItem height="h-4" width="w-full" />
+              <SkeletonItem height="h-4" width="w-5/6" />
+              <div className="flex gap-2 pt-1">
+                <SkeletonItem height="h-5" width="w-14" className="rounded-full" />
+                <SkeletonItem height="h-5" width="w-14" className="rounded-full" />
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </>
+  );
+}
+
+/**
+ * Skeleton for a project card grid (matches ProjectCard layout).
+ * Used by ProjectsPageClient during filter/search transitions.
+ */
+export function ProjectCardSkeleton() {
+  return (
+    <>
+      <style>{shimmerStyles}</style>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10 lg:gap-12">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="rounded-lg overflow-hidden border border-neutral-100">
+            {/* Image */}
+            <SkeletonItem height="h-48" className="rounded-none" />
+            {/* Body */}
+            <div className="p-5 space-y-3">
+              <SkeletonItem height="h-5" width="w-3/4" />
+              <SkeletonItem height="h-4" width="w-full" />
+              <SkeletonItem height="h-4" width="w-5/6" />
+              <div className="flex gap-2 pt-1">
+                <SkeletonItem height="h-5" width="w-16" className="rounded-full" />
+                <SkeletonItem height="h-5" width="w-16" className="rounded-full" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+/**
  * Generic skeleton loader component for various content types.
  *
- * Provides different skeleton layouts (stats, card, text, list, default)
- * and supports rendering multiple instances.
- *
  * @param {Object} props - Component props
- * @param {string} props.type - Skeleton type ('stats', 'card', 'text', 'list', 'default')
+ * @param {string} props.type - Skeleton type ('stats', 'card', 'text', 'list', 'blog', 'project', 'default')
  * @param {number} props.count - Number of skeleton items to render
  * @param {string} props.className - Additional CSS classes
  * @returns {JSX.Element} Skeleton loader with shimmer animation
@@ -76,6 +138,12 @@ export function SkeletonLoader({ type = 'default', count = 1, className = '' }) 
     switch (type) {
       case 'stats':
         return <StatsSkeleton />;
+
+      case 'blog':
+        return <BlogCardSkeleton />;
+
+      case 'project':
+        return <ProjectCardSkeleton />;
 
       case 'card':
         return (
@@ -137,13 +205,10 @@ export function SkeletonLoader({ type = 'default', count = 1, className = '' }) 
 /**
  * Main skeleton component that conditionally renders skeleton or content.
  *
- * Shows skeleton loader when loading, otherwise renders the actual content.
- * Provides a clean API for loading states with animated placeholders.
- *
  * @param {Object} props - Component props
  * @param {React.ReactNode} props.children - Content to render when not loading
  * @param {boolean} props.isLoading - Whether to show skeleton loader
- * @param {string} props.type - Skeleton type ('stats', 'card', 'text', 'list', 'default')
+ * @param {string} props.type - Skeleton type
  * @param {number} props.count - Number of skeleton items to render
  * @param {string} props.className - Additional CSS classes
  * @returns {JSX.Element} Skeleton loader or children based on loading state

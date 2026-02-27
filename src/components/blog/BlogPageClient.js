@@ -7,6 +7,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import BlogCard from './BlogCard';
 import BlogFilters from './BlogFilters';
+import { BlogCardSkeleton } from '@/components/Skeleton';
 
 export default function BlogPageClient({ articles }) {
   const [filteredArticles, setFilteredArticles] = useState(articles);
@@ -87,9 +88,8 @@ export default function BlogPageClient({ articles }) {
       <BlogFilters onFilterChange={handleFilterChange} onSearch={handleSearch} />
 
       {isLoading ? (
-        <div className="text-center py-20">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-black"></div>
-          <p className="mt-4 text-gray-600">Loading articles...</p>
+        <div className="py-8">
+          <BlogCardSkeleton />
         </div>
       ) : filteredArticles.length === 0 ? (
         <div className="text-center py-20">

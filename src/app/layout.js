@@ -115,19 +115,6 @@ export const metadata = {
   },
 };
 
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Person',
-  name: 'Raiyan Hasan',
-  url: 'https://hasanraiyan.vercel.app',
-  jobTitle: 'Freelance Web Developer',
-  sameAs: ['https://github.com/hasanraiyan', 'https://linkedin.com/in/hasanraiyan'],
-  image:
-    'https://res.cloudinary.com/djkpavwmp/image/upload/v1762069094/portfolio_assets/ckfre3frqkzgatpgmzu1.jpg',
-  description:
-    'Expert freelance web developer specializing in Next.js, React, and minimalist UI design.',
-};
-
 /** Default hero data used when the DB is unreachable. */
 const DEFAULT_HERO = { introduction: { name: '' }, socialLinks: [] };
 
@@ -136,6 +123,24 @@ export default async function RootLayout({ children }) {
   // try/catch. A DB failure returns null instead of crashing the layout.
   const serializedHeroData = (await getHeroData()) ?? DEFAULT_HERO;
   const initials = getInitials(serializedHeroData.introduction?.name);
+
+  // Build JSON-LD from live DB data so sameAs stays in sync with social links.
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: 'Raiyan Hasan',
+    url: 'https://hasanraiyan.vercel.app',
+    jobTitle: 'Freelance Web Developer',
+    sameAs: serializedHeroData.socialLinks?.map((l) => l.url).filter(Boolean) ?? [
+      'https://github.com/hasanraiyan',
+      'https://linkedin.com/in/hasanraiyan',
+    ],
+    image:
+      serializedHeroData.profile?.image?.url ||
+      'https://res.cloudinary.com/djkpavwmp/image/upload/v1762069094/portfolio_assets/ckfre3frqkzgatpgmzu1.jpg',
+    description:
+      'Expert freelance web developer specializing in Next.js, React, and minimalist UI design.',
+  };
 
   return (
     <html lang="en" className={`${spaceGrotesk.variable} ${playfairDisplay.variable}`}>
