@@ -10,7 +10,6 @@ import OpenAI from 'openai';
 import { buildDynamicContext } from '@/lib/ai/context-builder';
 import Analytics from '@/models/Analytics';
 import ChatLog from '@/models/ChatLog';
-import { executeChatbotGraph } from '@/lib/chatbot-graph';
 import {
   tools,
   executeToolCall,
@@ -32,22 +31,10 @@ const openai = new OpenAI({
 export async function POST(request) {
   const startTime = Date.now();
   try {
-    const {
-      userMessage,
-      chatHistory = [],
-      sessionId,
-      path = '/',
-      useGraph = false,
-    } = await request.json();
+    const { userMessage, chatHistory = [], sessionId, path = '/' } = await request.json();
 
     if (!userMessage) {
       return NextResponse.json({ error: 'User message is required' }, { status: 400 });
-    }
-
-    // Use graph-based implementation if requested
-    if (useGraph) {
-      const stream = await executeChatbotGraph({ userMessage, chatHistory, path, sessionId });
-      return new NextResponse(stream, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
     }
 
     // Build dynamic context (with fallback on failure)
