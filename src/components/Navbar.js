@@ -138,6 +138,8 @@ export default function Navbar() {
           </button>
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={isMenuOpen}
             className="w-10 h-10 rounded-full flex items-center justify-center focus:outline-none bg-white shadow-md"
           >
             <div className="w-5 h-4 flex flex-col justify-between items-end">

@@ -1,5 +1,6 @@
 import { Space_Grotesk, Playfair_Display } from 'next/font/google';
 import './globals.css';
+import '@/lib/fontawesome'; // registers all FA icons — replaces the CDN <link>
 import SessionProvider from '@/components/SessionProvider';
 import AnalyticsProvider from '@/components/AnalyticsProvider';
 import { SiteProvider } from '@/context/SiteContext';
@@ -7,7 +8,7 @@ import { CursorProvider } from '@/context/CursorContext';
 import ChatbotWidget from '@/components/chatbot/ChatbotWidget';
 import PWAManager from '@/components/PWAManager';
 import { getHeroData } from '@/app/actions/heroActions';
-import Script from 'next/script';
+import { getInitials } from '@/utils/string';
 import { Analytics } from '@vercel/analytics/next';
 
 // (Font definitions remain the same)
@@ -24,21 +25,10 @@ const playfairDisplay = Playfair_Display({
   variable: '--font-playfair',
 });
 
-// Helper to generate initials
-const getInitials = (name = '') => {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase();
-};
-
 export const viewport = {
   themeColor: '#1f2937',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: 'cover',
 };
 
@@ -150,10 +140,6 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en" className={`${spaceGrotesk.variable} ${playfairDisplay.variable}`}>
       <head>
-        <link
-          rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
