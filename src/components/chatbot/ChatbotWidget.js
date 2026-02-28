@@ -194,7 +194,7 @@ function CodeBlock({ language, children }) {
   );
 }
 
-function MdContent({ content, onLinkClick }) {
+function MdContent({ content, onLinkClick, isUser = false }) {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
@@ -214,7 +214,7 @@ function MdContent({ content, onLinkClick }) {
           <a
             {...props}
             href={href}
-            className="text-blue-600 hover:text-blue-800 underline decoration-blue-300 underline-offset-2 transition-colors break-words"
+            className={`hover:text-current underline underline-offset-2 transition-colors break-words ${isUser ? 'text-white decoration-white/30' : 'text-blue-600 decoration-blue-300'}`}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => onLinkClick?.(e, href)}
@@ -233,9 +233,18 @@ function MdContent({ content, onLinkClick }) {
         h2: ({ children }) => <p className="font-semibold mb-1">{children}</p>,
         h3: ({ children }) => <p className="font-medium mb-1">{children}</p>,
         blockquote: ({ children }) => (
-          <blockquote className="border-l-2 border-neutral-300 pl-2 italic opacity-70 my-1">
-            {children}
-          </blockquote>
+          <div
+            className={`flex gap-2 items-start mb-3 border-l-2 ${isUser ? 'border-white/20 bg-white/5' : 'border-neutral-200 bg-neutral-50/50'} py-1.5 px-3 rounded-r-lg italic`}
+          >
+            <CornerDownRight
+              className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${isUser ? 'text-white/40' : 'text-neutral-400'}`}
+            />
+            <div
+              className={`text-[12px] leading-relaxed ${isUser ? 'text-white/70' : 'text-neutral-500'}`}
+            >
+              {children}
+            </div>
+          </div>
         ),
         table: ({ children }) => (
           <div className="overflow-x-auto my-2">
@@ -1004,7 +1013,7 @@ export default function ChatbotWidget() {
                         {message.role === 'assistant' ? (
                           <MdContent content={message.content} onLinkClick={handleLinkClick} />
                         ) : (
-                          <p className="leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                          <MdContent content={message.content} isUser={true} />
                         )}
                         <p className={`text-[10px] mt-1.5 text-neutral-400`}>
                           {message.timestamp.toLocaleTimeString([], {
