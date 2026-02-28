@@ -200,24 +200,29 @@ function MdContent({ content, onLinkClick, isUser = false }) {
       remarkPlugins={[remarkGfm]}
       components={{
         p: ({ children }) => <p className="mb-1.5 last:mb-0 leading-relaxed">{children}</p>,
-        code({ node, inline, className, children, ...props }) {
+        code({ node, inline, className, children }) {
           const match = /language-(\w+)/.exec(className || '');
           if (!inline && match) return <CodeBlock language={match[1]}>{children}</CodeBlock>;
           if (!inline && !match) return <CodeBlock language="text">{children}</CodeBlock>;
           return (
-            <code className="bg-black/10 rounded px-1 py-0.5 font-mono text-[10px]" {...props}>
+            <code className="bg-black/10 rounded px-1 py-0.5 font-mono text-[10px]">
               {children}
             </code>
           );
         },
         a: ({ node, href, children, ...props }) => (
           <a
-            {...props}
             href={href}
-            className={`hover:text-current underline underline-offset-2 transition-colors break-words ${isUser ? 'text-white decoration-white/30' : 'text-blue-600 decoration-blue-300'}`}
+            className={`relative z-10 pointer-events-auto hover:text-current underline underline-offset-2 transition-colors break-words ${isUser ? 'text-white decoration-white/30' : 'text-blue-600 decoration-blue-300'}`}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={(e) => onLinkClick?.(e, href)}
+            onClick={(e) => {
+              // We don't preventDefault so that target="_blank" handles the new tab natively,
+              // but we still trigger tracking if provided.
+              if (onLinkClick) {
+                onLinkClick(e, href);
+              }
+            }}
           >
             {children}
             {href?.startsWith('http') && (
