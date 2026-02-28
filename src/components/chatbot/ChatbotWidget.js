@@ -15,6 +15,8 @@ import {
   Wrench,
   Bot,
   User,
+  Sparkles,
+  CornerDownRight,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -530,6 +532,8 @@ export default function ChatbotWidget() {
   const [statusMessage, setStatusMessage] = useState('');
   const [chatbotSettings, setChatbotSettings] = useState(null);
   const [settingsFetched, setSettingsFetched] = useState(false);
+  const [selection, setSelection] = useState({ text: '', x: 0, y: 0, show: false });
+  const [activeQuote, setActiveQuote] = useState('');
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -542,6 +546,65 @@ export default function ChatbotWidget() {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [isOpen]);
+
+  // Handle global text selection for Contextual AI
+  useEffect(() => {
+    const updateSelectionPos = () => {
+      const activeSelection = window.getSelection();
+      if (!activeSelection || activeSelection.rangeCount === 0) return;
+
+      const text = activeSelection.toString().trim();
+      if (!text) {
+        setSelection((prev) => ({ ...prev, show: false }));
+        return;
+      }
+
+      const range = activeSelection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+
+      // Check if selection is inside the chatbot
+      if (activeSelection.anchorNode?.parentElement?.closest('.chatbot-widget-container')) {
+        setSelection((prev) => ({ ...prev, show: false }));
+        return;
+      }
+
+      setSelection({
+        text,
+        x: rect.left + rect.width / 2,
+        y: rect.top - 10, // Viewport relative
+        show: true,
+      });
+    };
+
+    const handleMouseUp = () => {
+      setTimeout(updateSelectionPos, 10);
+    };
+
+    const handleMouseDown = (e) => {
+      if (!e.target.closest('.ai-selection-tooltip')) {
+        setSelection((prev) => ({ ...prev, show: false }));
+      }
+    };
+
+    // Keep tooltip anchored during scroll
+    const handleScroll = () => {
+      if (window.getSelection().toString().trim()) {
+        updateSelectionPos();
+      } else {
+        setSelection((prev) => ({ ...prev, show: false }));
+      }
+    };
+
+    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   // Handle Escape key to close widget
   useEffect(() => {
@@ -597,12 +660,20 @@ export default function ChatbotWidget() {
 
   const send = useCallback(
     async (content, hidden = false) => {
-      if (!content.trim() || isLoading) return;
+      if ((!content.trim() && !activeQuote) || isLoading) return;
+
+      const currentQuote = activeQuote;
+      let finalContent = content.trim();
+
+      if (currentQuote) {
+        finalContent = `> "${currentQuote.trim()}"\n\n${finalContent}`;
+        setActiveQuote(''); // Clear UI immediately
+      }
 
       const userMessage = {
         id: Date.now(),
         role: 'user',
-        content: content.trim(),
+        content: finalContent,
         timestamp: new Date(),
         hidden,
       };
@@ -612,7 +683,7 @@ export default function ChatbotWidget() {
       try {
         await streamChatResponse({
           content: userMessage.content,
-          history: messages.filter((m) => !m.hidden), // Send all messages (except hidden flag, but content IS sent) to API
+          history: messages.filter((m) => !m.hidden),
           setMessages,
           setStatus: setStatusMessage,
         });
@@ -632,7 +703,7 @@ export default function ChatbotWidget() {
         setIsLoading(false);
       }
     },
-    [isLoading, messages]
+    [isLoading, messages, activeQuote]
   );
 
   const handleSubmit = (e) => {
@@ -713,298 +784,333 @@ export default function ChatbotWidget() {
       ? chatbotSettings.suggestedPrompts.map((t) => ({ text: t }))
       : getDefaultPrompts(chatbotSettings);
 
-  // FAB (closed state)
+  const handleAskKiroContext = useCallback(() => {
+    if (!selection.text) return;
+    setActiveQuote(selection.text);
+    if (!isOpen) {
+      setIsOpen(true);
+      if (!settingsFetched) fetchSettings();
+    }
+    setSelection((prev) => ({ ...prev, show: false }));
+    window.getSelection()?.removeAllRanges();
+    setTimeout(() => inputRef.current?.focus(), 150);
+  }, [selection.text, isOpen, settingsFetched, fetchSettings]);
+
+  const renderContextualButton = () => {
+    if (!selection.show) return null;
+    return (
+      <div
+        className="fixed z-[100] animate-in zoom-in-95 duration-200 pointer-events-auto"
+        style={{
+          left: `${selection.x}px`,
+          top: `${selection.y}px`,
+          transform: 'translate(-50%, -100%)',
+        }}
+      >
+        <button
+          onClick={handleAskKiroContext}
+          className="ai-selection-tooltip flex items-center gap-2 px-3 py-1.5 bg-black text-white text-[11px] font-medium rounded-lg shadow-xl hover:bg-neutral-800 transition-colors border border-white/10"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
+          Ask {chatbotSettings?.aiName || 'Kiro'}
+        </button>
+        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-black" />
+      </div>
+    );
+  };
+
+  // 1. FAB (closed state)
   if (!isOpen) {
     return (
-      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 group flex flex-col items-end gap-2">
-        {/* Tooltip */}
-        <div className="opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 px-3 py-1.5 bg-black text-white text-xs font-medium rounded-lg shadow-lg pointer-events-none whitespace-nowrap">
-          Chat with {chatbotSettings?.aiName || 'Kiro'}
-        </div>
-
-        <button
-          onClick={handleOpenChat}
-          className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-black to-neutral-900 hover:from-neutral-900 hover:to-black text-white shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center justify-center border border-white/20 backdrop-blur-sm"
-          aria-label="Open chat"
-        >
-          {/* Notification Badge */}
-          <div className="absolute top-0 right-0 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-theme-bg shadow-sm z-20">
-            <div className="absolute inset-0 w-full h-full bg-red-500 rounded-full animate-ping opacity-75" />
+      <>
+        {renderContextualButton()}
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 group flex flex-col items-end gap-2 chatbot-widget-container">
+          {/* Tooltip */}
+          <div className="opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 px-3 py-1.5 bg-black text-white text-xs font-medium rounded-lg shadow-lg pointer-events-none whitespace-nowrap">
+            Chat with {chatbotSettings?.aiName || 'Kiro'}
           </div>
 
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 relative z-10" />
-        </button>
-      </div>
+          <button
+            onClick={handleOpenChat}
+            className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-black to-neutral-900 hover:from-neutral-900 hover:to-black text-white shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center justify-center border border-white/20 backdrop-blur-sm"
+            aria-label="Open chat"
+          >
+            {/* Notification Badge */}
+            <div className="absolute top-0 right-0 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-theme-bg shadow-sm z-20">
+              <div className="absolute inset-0 w-full h-full bg-red-500 rounded-full animate-ping opacity-75" />
+            </div>
+
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 relative z-10" />
+          </button>
+        </div>
+      </>
     );
   }
 
+  // 2. Offline state
   if (settingsFetched && (!chatbotSettings || !chatbotSettings.isActive)) {
     return (
-      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 animate-in slide-in-from-bottom-4 duration-300">
-        <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-[calc(100vw-2rem)] sm:w-96 flex flex-col border border-neutral-200/50 shadow-black/10 overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 sm:p-5 border-b border-neutral-200/50 bg-neutral-50/80">
-            <div className="flex items-center space-x-3">
-              <div className="w-3 h-3 bg-neutral-400 rounded-full border-2 border-white shadow-sm" />
-              <div>
-                <h3 className="font-semibold text-neutral-900 text-base">Offline</h3>
+      <>
+        {renderContextualButton()}
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 animate-in slide-in-from-bottom-4 duration-300 chatbot-widget-container">
+          <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-[calc(100vw-2rem)] sm:w-96 flex flex-col border border-neutral-200/50 shadow-black/10 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-neutral-200/50 bg-neutral-50/80">
+              <div className="flex items-center space-x-3">
+                <div className="w-3 h-3 bg-neutral-400 rounded-full border-2 border-white shadow-sm" />
+                <div>
+                  <h3 className="font-semibold text-neutral-900 text-base">Offline</h3>
+                </div>
               </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-2 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 rounded-lg transition-all duration-200"
+              >
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-2 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 rounded-lg transition-all duration-200"
-            >
-              <X className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-          </div>
-          {/* Content */}
-          <div className="p-6 text-center bg-white space-y-4">
-            <div className="w-12 h-12 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-2">
-              <MessageCircle className="w-6 h-6 text-neutral-400" />
+            {/* Content */}
+            <div className="p-6 text-center bg-white space-y-4">
+              <div className="w-12 h-12 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                <MessageCircle className="w-6 h-6 text-neutral-400" />
+              </div>
+              <h4 className="font-medium text-neutral-900">AI Assistant is currently away</h4>
+              <p className="text-sm text-neutral-500 leading-relaxed">
+                {chatbotSettings?.aiName || 'Kiro'} is taking a break right now. You can still reach
+                out directly via the contact form for any inquiries or project requests.
+              </p>
+              <a
+                href="#contact"
+                className="mt-4 inline-flex items-center justify-center w-full px-4 py-3 bg-black text-white rounded-xl hover:bg-neutral-800 transition-colors shadow-sm font-medium text-sm"
+                onClick={(e) => {
+                  setIsOpen(false);
+                  if (window.location.pathname !== '/') {
+                    e.preventDefault();
+                    window.location.href = '/#contact';
+                  }
+                }}
+              >
+                Contact Me
+              </a>
             </div>
-            <h4 className="font-medium text-neutral-900">AI Assistant is currently away</h4>
-            <p className="text-sm text-neutral-500 leading-relaxed">
-              {chatbotSettings?.aiName || 'Kiro'} is taking a break right now. You can still reach
-              out directly via the contact form for any inquiries or project requests.
-            </p>
-            <a
-              href="#contact"
-              className="mt-4 inline-flex items-center justify-center w-full px-4 py-3 bg-black text-white rounded-xl hover:bg-neutral-800 transition-colors shadow-sm font-medium text-sm"
-              onClick={(e) => {
-                setIsOpen(false);
-                if (window.location.pathname !== '/') {
-                  e.preventDefault();
-                  window.location.href = '/#contact';
-                }
-              }}
-            >
-              Contact Me
-            </a>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
-  // Chat window
+  // 3. Active Chat Window
   return (
-    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 animate-in slide-in-from-bottom-4 duration-300">
-      <div className="bg-white/95 backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl w-[calc(100vw-2rem)] sm:w-96 h-[80vh] max-h-[800px] sm:h-[40rem] flex flex-col border border-white/20 shadow-black/10">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-neutral-200/50 bg-gradient-to-r from-neutral-50/80 to-white/80 rounded-t-2xl">
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <div className="relative">
-              <div className="w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-sm" />
-              <div className="absolute inset-0 w-3 h-3 bg-green-500 rounded-full animate-ping opacity-20" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-neutral-900 text-base">
-                {chatbotSettings?.aiName || 'Kiro'}
-              </h3>
-              <p className="text-[10px] text-neutral-500 -mt-0.5 hidden sm:block">AI Assistant</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-1 sm:space-x-2">
-            <button
-              onClick={clearChat}
-              className="px-2 py-1 sm:px-3 sm:py-1.5 text-xs font-medium text-neutral-600 hover:text-neutral-900 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-all duration-200 flex items-center gap-1"
-            >
-              <Trash2 className="w-3 h-3" />
-              <span className="hidden sm:inline">Clear</span>
-            </button>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-2 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 rounded-lg transition-all duration-200"
-              aria-label="Close chat"
-            >
-              <X className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3 bg-gradient-to-b from-white/50 to-neutral-50/50 custom-chat-scrollbar">
-          {messages.map((message, index) => {
-            // ── Tool action card ────────────────────────────────────────────
-            // Only render while the tool is still running (pending).
-            // Once done, StepHistory on the assistant bubble takes over — no duplication.
-            if (message.role === 'tool_action') {
-              if (message.done) return null;
-              // Add a spacer to align the ToolCard with the text (skipping the avatar)
-              return (
-                <div
-                  key={message.id}
-                  className="flex gap-3 justify-start animate-in slide-in-from-bottom-2 duration-300 w-full"
-                >
-                  <div className="w-7 h-7 shrink-0 mt-1" />
-                  <div className="flex-1 min-w-0 max-w-[95%]">
-                    <ToolCard label={message.label} Icon={message.Icon} pending={true} />
-                  </div>
-                </div>
-              );
-            }
-
-            // ── Regular message bubble ──────────────────────────────────────
-            if (message.hidden) return null;
-
-            const isAssistant = message.role === 'assistant';
-
-            // Determine if the previous visible message is from the same role
-            let isConsecutive = false;
-            for (let i = index - 1; i >= 0; i--) {
-              const prevMsg = messages[i];
-              if (prevMsg.hidden) continue;
-              if (prevMsg.role === 'tool_action' && prevMsg.done) continue;
-              isConsecutive = prevMsg.role === message.role;
-              break;
-            }
-
-            return (
-              <div
-                key={message.id}
-                className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'} animate-in slide-in-from-bottom-2 duration-300 w-full`}
-              >
-                {/* Avatar */}
-                <div className="relative w-7 h-7 shrink-0 mt-1 flex items-center justify-center">
-                  {!isConsecutive && (
-                    <div
-                      className={`w-full h-full rounded-full flex items-center justify-center shadow-sm ${
-                        message.role === 'user'
-                          ? 'bg-black ring-2 ring-black/10'
-                          : 'bg-neutral-100 border border-neutral-200/60'
-                      }`}
-                    >
-                      {message.role === 'user' ? (
-                        <User className="w-3.5 h-3.5 text-white" />
-                      ) : (
-                        <Bot className="w-3.5 h-3.5 text-neutral-600" />
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Content */}
-                <div
-                  className={`flex-1 min-w-0 ${message.role === 'user' ? 'max-w-[85%]' : 'max-w-[95%]'} flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}
-                >
-                  {/* StepHistory above assistant bubble */}
-                  {isAssistant && message.steps?.length > 0 && (
-                    <StepHistory
-                      steps={message.steps}
-                      onInteract={(block, action) => handleUIInteract(message.id, block, action)}
-                    />
-                  )}
-
-                  {message.content && (
-                    <div
-                      className={`px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-sm text-[13px] overflow-hidden ${
-                        message.role === 'user'
-                          ? 'bg-gradient-to-br from-black to-neutral-900 text-white shadow-black/20 rounded-tr-sm'
-                          : 'bg-white/90 backdrop-blur-sm text-neutral-900 shadow-neutral-200/50 border border-neutral-200/50 rounded-tl-sm'
-                      }`}
-                    >
-                      {message.role === 'assistant' ? (
-                        <MdContent content={message.content} onLinkClick={handleLinkClick} />
-                      ) : (
-                        <p className="leading-relaxed whitespace-pre-wrap">{message.content}</p>
-                      )}
-
-                      <p
-                        className={`text-[10px] ${message.content ? 'mt-1.5' : ''} ${message.role === 'user' ? 'text-neutral-400' : 'text-neutral-400'}`}
-                      >
-                        {message.timestamp.toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </p>
-                    </div>
-                  )}
-                </div>
+    <>
+      {renderContextualButton()}
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 animate-in slide-in-from-bottom-4 duration-300 chatbot-widget-container">
+        <div className="bg-white/95 backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl w-[calc(100vw-2rem)] sm:w-96 h-[80vh] max-h-[800px] sm:h-[40rem] flex flex-col border border-white/20 shadow-black/10">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 sm:p-5 border-b border-neutral-200/50 bg-gradient-to-r from-neutral-50/80 to-white/80 rounded-t-2xl">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <div className="relative">
+                <div className="w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-sm" />
+                <div className="absolute inset-0 w-3 h-3 bg-green-500 rounded-full animate-ping opacity-20" />
               </div>
-            );
-          })}
-
-          {/* Typing indicator (only when loading and no tool_action visible yet) */}
-          {isLoading && !messages.some((m) => m.role === 'tool_action' && !m.done) && (
-            <div className="flex gap-3 flex-row animate-in slide-in-from-bottom-2 duration-300 w-full mt-1">
-              <div className="relative w-7 h-7 shrink-0 flex items-center justify-center">
-                {/* Background Track */}
-                <div className="absolute inset-0 rounded-full border-[1.5px] border-neutral-200" />
-                {/* Spinning Gradient Ring */}
-                <div className="absolute inset-0 rounded-full border-[1.5px] border-transparent border-t-neutral-800 border-r-neutral-800 animate-spin" />
-                {/* Bot Icon */}
-                <Bot className="w-3.5 h-3.5 text-neutral-600" />
-              </div>
-              <div className="flex-1 min-w-0 max-w-[95%]">
-                {/* Empty space filler for layout */}
+              <div>
+                <h3 className="font-semibold text-neutral-900 text-base">
+                  {chatbotSettings?.aiName || 'Kiro'}
+                </h3>
+                <p className="text-[10px] text-neutral-500 -mt-0.5 hidden sm:block">AI Assistant</p>
               </div>
             </div>
-          )}
-
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Suggested prompts */}
-        {!isLoading && (
-          <div className="px-3 sm:px-4 pt-2 border-t border-neutral-200/50 bg-white/80 backdrop-blur-sm">
-            <div className="flex items-center gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {suggestedPrompts.map((prompt, index) => (
-                <button
-                  key={index}
-                  onClick={() => handlePromptClick(prompt.text)}
-                  className="px-3 py-1.5 bg-white hover:bg-neutral-100 border border-neutral-200/80 rounded-full text-xs text-neutral-700 font-medium whitespace-nowrap flex-shrink-0 transition-colors duration-200"
-                >
-                  {prompt.text}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Input */}
-        <div className="p-3 border-t border-neutral-200/50 bg-white shrink-0">
-          <div className="relative rounded-2xl border border-neutral-200/80 bg-neutral-50/50 focus-within:border-black/50 focus-within:ring-1 focus-within:ring-black/20 transition-all">
-            <textarea
-              ref={inputRef}
-              value={inputMessage}
-              onChange={(e) => {
-                setInputMessage(e.target.value);
-                e.target.style.height = 'auto';
-                e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px';
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  if (!isLoading && inputMessage.trim()) {
-                    handleSubmit(e);
-                  }
-                }
-              }}
-              placeholder={`Ask ${chatbotSettings?.aiName || 'Kiro'} a question...`}
-              rows={1}
-              disabled={isLoading}
-              className="w-full resize-none bg-transparent px-4 pt-3 pb-10 text-[13px] leading-relaxed outline-none placeholder:text-neutral-400 disabled:opacity-50 max-h-40 overflow-hidden text-neutral-900"
-              style={{ height: '44px' }}
-            />
-            {/* Bottom row: send button right */}
-            <div className="absolute bottom-2 right-2 flex items-center justify-end pointer-events-none">
+            <div className="flex items-center space-x-1 sm:space-x-2">
               <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={isLoading || !inputMessage.trim()}
-                className="pointer-events-auto w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-black text-white hover:opacity-90 active:scale-95"
+                onClick={clearChat}
+                className="px-2 py-1 sm:px-3 sm:py-1.5 text-xs font-medium text-neutral-600 hover:text-neutral-900 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-all duration-200 flex items-center gap-1"
               >
-                {isLoading ? (
-                  <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                )}
+                <Trash2 className="w-3 h-3" />
+                <span className="hidden sm:inline">Clear</span>
+              </button>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-2 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 rounded-lg transition-all duration-200"
+                aria-label="Close chat"
+              >
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
           </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3 bg-gradient-to-b from-white/50 to-neutral-50/50 custom-chat-scrollbar">
+            {messages.map((message, index) => {
+              if (message.role === 'tool_action') {
+                if (message.done) return null;
+                return (
+                  <div
+                    key={message.id}
+                    className="flex gap-3 justify-start animate-in slide-in-from-bottom-2 duration-300 w-full"
+                  >
+                    <div className="w-7 h-7 shrink-0 mt-1" />
+                    <div className="flex-1 min-w-0 max-w-[95%]">
+                      <ToolCard label={message.label} Icon={message.Icon} pending={true} />
+                    </div>
+                  </div>
+                );
+              }
+
+              if (message.hidden) return null;
+              const isAssistant = message.role === 'assistant';
+
+              let isConsecutive = false;
+              for (let i = index - 1; i >= 0; i--) {
+                const prevMsg = messages[i];
+                if (prevMsg.hidden) continue;
+                if (prevMsg.role === 'tool_action' && prevMsg.done) continue;
+                isConsecutive = prevMsg.role === message.role;
+                break;
+              }
+
+              return (
+                <div
+                  key={message.id}
+                  className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'} animate-in slide-in-from-bottom-2 duration-300 w-full`}
+                >
+                  <div className="relative w-7 h-7 shrink-0 mt-1 flex items-center justify-center">
+                    {!isConsecutive && (
+                      <div
+                        className={`w-full h-full rounded-full flex items-center justify-center shadow-sm ${message.role === 'user' ? 'bg-black ring-2 ring-black/10' : 'bg-neutral-100 border border-neutral-200/60'}`}
+                      >
+                        {message.role === 'user' ? (
+                          <User className="w-3.5 h-3.5 text-white" />
+                        ) : (
+                          <Bot className="w-3.5 h-3.5 text-neutral-600" />
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div
+                    className={`flex-1 min-w-0 ${message.role === 'user' ? 'max-w-[85%]' : 'max-w-[95%]'} flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}
+                  >
+                    {isAssistant && message.steps?.length > 0 && (
+                      <StepHistory
+                        steps={message.steps}
+                        onInteract={(block, action) => handleUIInteract(message.id, block, action)}
+                      />
+                    )}
+
+                    {message.content && (
+                      <div
+                        className={`px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-sm text-[13px] overflow-hidden ${message.role === 'user' ? 'bg-gradient-to-br from-black to-neutral-900 text-white shadow-black/20 rounded-tr-sm' : 'bg-white/90 backdrop-blur-sm text-neutral-900 shadow-neutral-200/50 border border-neutral-200/50 rounded-tl-sm'}`}
+                      >
+                        {message.role === 'assistant' ? (
+                          <MdContent content={message.content} onLinkClick={handleLinkClick} />
+                        ) : (
+                          <p className="leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                        )}
+                        <p className={`text-[10px] mt-1.5 text-neutral-400`}>
+                          {message.timestamp.toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {isLoading && !messages.some((m) => m.role === 'tool_action' && !m.done) && (
+              <div className="flex gap-3 flex-row animate-in slide-in-from-bottom-2 duration-300 w-full mt-1">
+                <div className="relative w-7 h-7 shrink-0 flex items-center justify-center">
+                  <div className="absolute inset-0 rounded-full border-[1.5px] border-neutral-200" />
+                  <div className="absolute inset-0 rounded-full border-[1.5px] border-transparent border-t-neutral-800 border-r-neutral-800 animate-spin" />
+                  <Bot className="w-3.5 h-3.5 text-neutral-600" />
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Suggested prompts / Active Quote */}
+          {!isLoading && (
+            <div className="border-t border-neutral-200/50 bg-white/80 backdrop-blur-sm">
+              {activeQuote ? (
+                <div className="px-3 sm:px-4 py-3 bg-neutral-50 animate-in slide-in-from-bottom-2 duration-300">
+                  <div className="flex items-start gap-2 group">
+                    <CornerDownRight className="w-3.5 h-3.5 text-neutral-400 mt-1 shrink-0" />
+                    <div className="flex-1 min-w-0 pr-6 relative">
+                      <p className="text-xs text-neutral-600 line-clamp-2 leading-relaxed italic border-l-2 border-neutral-300 pl-3">
+                        "{activeQuote.trim()}"
+                      </p>
+                      <button
+                        onClick={() => setActiveQuote('')}
+                        className="absolute -top-1 -right-1 p-1 rounded-full text-neutral-400 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
+                        title="Remove quote"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="px-3 sm:px-4 py-2 flex items-center gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {suggestedPrompts.map((prompt, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handlePromptClick(prompt.text)}
+                      className="px-3 py-1.5 bg-white hover:bg-neutral-100 border border-neutral-200/80 rounded-full text-xs text-neutral-700 font-medium whitespace-nowrap flex-shrink-0 transition-colors duration-200"
+                    >
+                      {prompt.text}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Input Area */}
+          <div className="p-3 border-t border-neutral-200/50 bg-white shrink-0">
+            <div className="relative rounded-2xl border border-neutral-200/80 bg-neutral-50/50 focus-within:border-black/50 focus-within:ring-1 focus-within:ring-black/20 transition-all">
+              <textarea
+                ref={inputRef}
+                value={inputMessage}
+                onChange={(e) => {
+                  setInputMessage(e.target.value);
+                  e.target.style.height = 'auto';
+                  e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px';
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (!isLoading && (inputMessage.trim() || activeQuote)) {
+                      handleSubmit(e);
+                    }
+                  }
+                }}
+                placeholder={`Ask ${chatbotSettings?.aiName || 'Kiro'} a question...`}
+                rows={1}
+                disabled={isLoading}
+                className="w-full resize-none bg-transparent px-4 pt-3 pb-10 text-[13px] leading-relaxed outline-none placeholder:text-neutral-400 disabled:opacity-50 max-h-40 overflow-hidden text-neutral-900"
+                style={{ height: '44px' }}
+              />
+              <div className="absolute bottom-2 right-2 flex items-center justify-end pointer-events-none">
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={isLoading || (!inputMessage.trim() && !activeQuote)}
+                  className="pointer-events-auto w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-black text-white hover:opacity-90 active:scale-95"
+                >
+                  {isLoading ? (
+                    <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
