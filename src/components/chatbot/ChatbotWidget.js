@@ -790,7 +790,7 @@ export default function ChatbotWidget() {
   // Chat window
   return (
     <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 animate-in slide-in-from-bottom-4 duration-300">
-      <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-[calc(100vw-2rem)] sm:w-96 h-[36rem] sm:h-[40rem] flex flex-col border border-white/20 shadow-black/10">
+      <div className="bg-white/95 backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl w-[calc(100vw-2rem)] sm:w-96 h-[80vh] max-h-[800px] sm:h-[40rem] flex flex-col border border-white/20 shadow-black/10">
         {/* Header */}
         <div className="flex items-center justify-between p-4 sm:p-5 border-b border-neutral-200/50 bg-gradient-to-r from-neutral-50/80 to-white/80 rounded-t-2xl">
           <div className="flex items-center space-x-2 sm:space-x-3">
