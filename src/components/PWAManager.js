@@ -156,6 +156,7 @@ export default function PWAManager() {
             <button
               onClick={() => setShowInstallPrompt(false)}
               className="ml-4 text-gray-400 hover:text-gray-600"
+              aria-label="Close install prompt"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -202,6 +203,7 @@ export default function PWAManager() {
           <button
             onClick={() => window.location.reload()}
             className="ml-2 bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700 transition-colors"
+            aria-label="Refresh to apply update"
           >
             Refresh
           </button>
