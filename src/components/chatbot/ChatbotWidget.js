@@ -905,31 +905,46 @@ export default function ChatbotWidget() {
         )}
 
         {/* Input */}
-        <div
-          className={`p-3 sm:p-4 bg-white/80 backdrop-blur-sm rounded-b-2xl ${isLoading ? 'border-t border-neutral-200/50' : ''}`}
-        >
-          <form onSubmit={handleSubmit} className="flex items-center gap-2">
-            <input
+        <div className="p-3 border-t border-neutral-200/50 bg-white shrink-0">
+          <div className="relative rounded-2xl border border-neutral-200/80 bg-neutral-50/50 focus-within:border-black/50 focus-within:ring-1 focus-within:ring-black/20 transition-all">
+            <textarea
               ref={inputRef}
-              type="text"
               value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="Type your message..."
-              className="flex-1 px-3 sm:px-4 py-3 border border-neutral-200/60 rounded-xl focus:outline-none focus:border-black focus:ring-1 focus:ring-black bg-white transition-all duration-200 placeholder:text-neutral-400 text-neutral-900 text-sm"
+              onChange={(e) => {
+                setInputMessage(e.target.value);
+                e.target.style.height = 'auto';
+                e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px';
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (!isLoading && inputMessage.trim()) {
+                    handleSubmit(e);
+                  }
+                }
+              }}
+              placeholder={`Ask ${chatbotSettings?.aiName || 'Kiro'} a question...`}
+              rows={1}
               disabled={isLoading}
+              className="w-full resize-none bg-transparent px-4 pt-3 pb-10 text-[13px] leading-relaxed outline-none placeholder:text-neutral-400 disabled:opacity-50 max-h-40 overflow-hidden text-neutral-900"
+              style={{ height: '44px' }}
             />
-            <button
-              type="submit"
-              disabled={isLoading || !inputMessage.trim()}
-              className="bg-gradient-to-br from-black to-neutral-900 hover:from-neutral-800 hover:to-black text-white p-2 sm:p-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg flex-shrink-0"
-            >
-              {isLoading ? (
-                <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <Send className="w-4 h-4 sm:w-5 sm:h-5" />
-              )}
-            </button>
-          </form>
+            {/* Bottom row: send button right */}
+            <div className="absolute bottom-2 right-2 flex items-center justify-end pointer-events-none">
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isLoading || !inputMessage.trim()}
+                className="pointer-events-auto w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-black text-white hover:opacity-90 active:scale-95"
+              >
+                {isLoading ? (
+                  <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
