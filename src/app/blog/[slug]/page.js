@@ -13,6 +13,7 @@ import Link from 'next/link';
 import SocialShare from '@/components/SocialShare';
 import LikeButton from '@/components/LikeButton';
 import NewsletterForm from '@/components/NewsletterForm';
+import ReadingProgressBar from '@/components/blog/ReadingProgressBar';
 
 export async function generateStaticParams() {
   const { success, articles } = await getAllPublishedArticles(true);
@@ -108,6 +109,7 @@ export default async function ArticlePage({ params }) {
       />
       <CustomCursor />
       <Navbar />
+      <ReadingProgressBar />
 
       <main className="min-h-screen bg-white">
         {/* ── Cover Image (full-bleed) ── */}
