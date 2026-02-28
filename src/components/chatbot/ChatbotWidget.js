@@ -67,7 +67,7 @@ function parseToolFromStatus(statusMsg) {
 // StepHistory — Perplexity-style collapsible completed-tools summary
 // ---------------------------------------------------------------------------
 
-function StepHistory({ tools }) {
+function StepHistory({ tools, uiBlocks }) {
   const [expanded, setExpanded] = useState(false);
   if (!tools || tools.length === 0) return null;
 
@@ -115,6 +115,14 @@ function StepHistory({ tools }) {
               </div>
             );
           })}
+
+          {uiBlocks && uiBlocks.length > 0 && (
+            <div className="mt-4 w-full">
+              {uiBlocks.map((block, idx) => (
+                <StaticGenUI key={`hist-ui-${idx}`} block={block} />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -714,26 +722,15 @@ export default function ChatbotWidget() {
                 key={message.id}
                 className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'} animate-in slide-in-from-bottom-2 duration-300 w-full`}
               >
-                {/* GENERATIVE UI BLOCKS RENDERED ABOVE THE BUBBLE FULL WIDTH */}
-                {message.role === 'assistant' && message.uiBlocks?.length > 0 && (
-                  <div className="mb-3 w-full space-y-2">
-                    {message.uiBlocks.map((block, idx) => (
-                      <StaticGenUI key={`${message.id}-ui-${idx}`} block={block} />
-                    ))}
-                  </div>
-                )}
-
-                <div
-                  className={`max-w-full sm:max-w-[85%] ${message.role === 'assistant' ? 'w-full' : ''}`}
-                >
+                <div className={`max-w-full sm:max-w-[90%]`}>
                   {/* StepHistory above assistant bubble */}
                   {message.role === 'assistant' && message.completedTools?.length > 0 && (
-                    <StepHistory tools={message.completedTools} />
+                    <StepHistory tools={message.completedTools} uiBlocks={message.uiBlocks} />
                   )}
 
                   {message.content && (
                     <div
-                      className={`px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-sm text-sm ${
+                      className={`px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-sm text-sm overflow-hidden ${
                         message.role === 'user'
                           ? 'bg-gradient-to-br from-black to-neutral-900 text-white shadow-black/20 rounded-tr-sm'
                           : 'bg-white/90 backdrop-blur-sm text-neutral-900 shadow-neutral-200/50 border border-neutral-200/50 rounded-tl-sm'
@@ -744,8 +741,9 @@ export default function ChatbotWidget() {
                       ) : (
                         <p className="leading-relaxed whitespace-pre-wrap">{message.content}</p>
                       )}
+
                       <p
-                        className={`text-[10px] mt-1.5 ${message.role === 'user' ? 'text-neutral-400' : 'text-neutral-400'}`}
+                        className={`text-[10px] ${message.content ? 'mt-1.5' : ''} ${message.role === 'user' ? 'text-neutral-400' : 'text-neutral-400'}`}
                       >
                         {message.timestamp.toLocaleTimeString([], {
                           hour: '2-digit',
