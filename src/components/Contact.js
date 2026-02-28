@@ -273,6 +273,57 @@ export default function Contact() {
     };
   }, []);
 
+  // Listen for chatbot prefill events
+  useEffect(() => {
+    const handlePrefill = (e) => {
+      const payload = e.detail;
+      if (!payload) return;
+
+      // Extract and sanitize incoming fields
+      const { name, email, projectType, message } = payload;
+
+      setFormData((prev) => {
+        const newData = { ...prev };
+        if (typeof name === 'string') newData.name = name;
+        if (typeof email === 'string') newData.email = email;
+        if (typeof message === 'string') newData.message = message;
+
+        if (typeof projectType === 'string') {
+          // Check if it's a valid option
+          const isValidOption = contactData.form.fields
+            .find((f) => f.name === 'projectType')
+            .options.some((opt) => opt.value === projectType);
+
+          newData.projectType = isValidOption ? projectType : 'other';
+        }
+
+        return newData;
+      });
+
+      // Mark prefilled fields as touched so validation runs/shows
+      setTouchedFields((prev) => ({
+        ...prev,
+        ...(name && { name: true }),
+        ...(email && { email: true }),
+        ...(projectType && { projectType: true }),
+        ...(message && { message: true }),
+      }));
+
+      // Optionally validate the new data immediately
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev };
+        if (name) newErrors.name = validateField('name', name);
+        if (email) newErrors.email = validateField('email', email);
+        if (projectType) newErrors.projectType = validateField('projectType', projectType);
+        if (message) newErrors.message = validateField('message', message);
+        return newErrors;
+      });
+    };
+
+    window.addEventListener('contact_prefill', handlePrefill);
+    return () => window.removeEventListener('contact_prefill', handlePrefill);
+  }, []);
+
   /**
    * Renders a form field based on its type configuration.
    *

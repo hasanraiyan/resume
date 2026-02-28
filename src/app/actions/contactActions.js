@@ -10,6 +10,55 @@ import Contact from '@/models/Contact';
 import TelegramSettings from '@/models/TelegramSettings';
 import { decrypt } from '@/lib/crypto';
 import { revalidatePath } from 'next/cache';
+import { headers } from 'next/headers';
+
+// Simple in-memory rate limiting for server actions
+const contactRateLimitMap = new Map();
+
+/**
+ * Rate limiting logic for contact submissions
+ */
+function checkRateLimit(ip) {
+  const maxRequests = 3;
+  const windowMs = 60000; // 1 minute
+  const now = Date.now();
+  const windowStart = now - windowMs;
+
+  let rateLimitData = contactRateLimitMap.get(ip);
+
+  if (!rateLimitData) {
+    rateLimitData = { requests: [], blocked: false, blockUntil: 0 };
+    contactRateLimitMap.set(ip, rateLimitData);
+  }
+
+  // Clean old requests
+  rateLimitData.requests = rateLimitData.requests.filter((timestamp) => timestamp > windowStart);
+
+  // Check block status
+  if (rateLimitData.blocked && now < rateLimitData.blockUntil) {
+    return false;
+  }
+
+  // Check if over limit
+  if (rateLimitData.requests.length >= maxRequests) {
+    rateLimitData.blocked = true;
+    rateLimitData.blockUntil = now + 5 * 60 * 1000; // Block for 5 minutes
+    return false;
+  }
+
+  rateLimitData.requests.push(now);
+
+  // Clean up old entries
+  if (contactRateLimitMap.size > 1000) {
+    for (const [key, data] of contactRateLimitMap.entries()) {
+      if (data.requests.length === 0 && !data.blocked) {
+        contactRateLimitMap.delete(key);
+      }
+    }
+  }
+
+  return true;
+}
 
 /**
  * Sends a Telegram notification for new contact submissions.
@@ -74,6 +123,13 @@ ${contactData.message.replace(/([_*\[\]()~`>#+\-=|{}.!])/g, '\\$1')}
  */
 export async function createContactSubmission(formData) {
   await dbConnect();
+
+  // Basic IP rate limiting
+  const headersList = await headers();
+  const ip = headersList.get('x-forwarded-for') || 'unknown';
+  if (!checkRateLimit(ip)) {
+    return { success: false, message: 'Too many submissions. Please try again later.' };
+  }
 
   try {
     const contactData = {

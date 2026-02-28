@@ -6,13 +6,12 @@ import { getAllPublishedArticles } from '@/app/actions/articleActions';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import CustomCursor from '@/components/CustomCursor';
-import { Section } from '@/components/ui';
 import BlogPageClient from '@/components/blog/BlogPageClient';
 
 export const metadata = {
-  title: 'Web Development Blog - Next.js, React & Design Insights',
+  title: 'Blog — Raiyan Hasan',
   description:
-    'Tutorials, insights, and thoughts on modern web development, performance optimization, and minimalist design.',
+    'Tutorials, insights, and thoughts on modern web development, performance optimization, and design.',
   alternates: {
     canonical: '/blog',
   },
@@ -23,24 +22,15 @@ export default async function BlogPage() {
   const isAuthenticated = !!session?.user?.isAdmin;
   const { success, articles } = await getAllPublishedArticles(isAuthenticated);
 
-  const breadcrumbs = [
-    { label: 'Home', path: '/', icon: 'Home' },
-    { label: 'Blog', icon: 'FileText' },
-  ];
-
   if (!success) {
     return (
       <>
         <CustomCursor />
         <Navbar />
-        <main className=" min-h-screen">
-          <Section
-            title="Error"
-            description="Failed to load articles. Please try again."
-            centered={true}
-            className="py-12 sm:py-18 md:py-12"
-            breadcrumbs={breadcrumbs}
-          />
+        <main className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-neutral-500 text-lg">Failed to load articles. Please try again.</p>
+          </div>
         </main>
         <Footer />
       </>
@@ -52,23 +42,30 @@ export default async function BlogPage() {
       <CustomCursor />
       <Navbar />
 
-      <main className=" min-h-screen">
-        <Section
-          title="From the Blog"
-          description="Thoughts, insights, and tutorials on web development, design, and technology."
-          centered={true}
-          className="py-12 sm:py-18 md:py-12"
-          breadcrumbs={breadcrumbs}
-        >
+      <main className="min-h-screen bg-white">
+        <div className="max-w-3xl mx-auto px-5 sm:px-6 py-12 sm:py-16">
+          {/* Page header */}
+          <header className="text-center mb-12">
+            <h1
+              className="text-4xl sm:text-5xl font-bold text-neutral-900 mb-3"
+              style={{ fontFamily: "'Georgia', 'Noto Serif', serif" }}
+            >
+              Blog
+            </h1>
+            <p className="text-neutral-500 text-base max-w-lg mx-auto">
+              Thoughts, tutorials, and insights on web development and design.
+            </p>
+          </header>
+
           {articles.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-gray-500 text-lg">No articles published yet.</div>
-              <p className="text-gray-400 mt-2">Check back soon for new content!</p>
+            <div className="text-center py-20">
+              <p className="text-neutral-400 text-lg">No articles published yet.</p>
+              <p className="text-neutral-400 mt-2 text-sm">Check back soon for new content!</p>
             </div>
           ) : (
             <BlogPageClient articles={articles} />
           )}
-        </Section>
+        </div>
       </main>
 
       <Footer />

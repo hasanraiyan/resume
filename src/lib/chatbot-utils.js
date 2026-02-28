@@ -77,6 +77,49 @@ export const tools = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'draftContactLead',
+      description:
+        'Drafts a contact form payload with the information you have gathered from the user. Call this tool when you have enough context to populate some or all of the fields for a message to the developer. It creates a structured payload that can be sent to the contact form.',
+      parameters: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: "The user's name." },
+          email: { type: 'string', description: "The user's email address." },
+          projectType: {
+            type: 'string',
+            description:
+              "The type of project (e.g., 'web-design', 'web-development', 'mobile-app', 'branding', 'ui-ux', 'consulting', 'ecommerce', 'cms-development', 'seo-optimization', 'api-integration', 'database-design', 'maintenance', 'redesign', 'landing-page', 'portfolio', 'blog', 'other').",
+            enum: [
+              'web-design',
+              'web-development',
+              'mobile-app',
+              'branding',
+              'ui-ux',
+              'consulting',
+              'ecommerce',
+              'cms-development',
+              'seo-optimization',
+              'api-integration',
+              'database-design',
+              'maintenance',
+              'redesign',
+              'landing-page',
+              'portfolio',
+              'blog',
+              'other',
+            ],
+          },
+          message: {
+            type: 'string',
+            description: "A summary or draft of the user's message/request.",
+          },
+        },
+      },
+    },
+  },
 ];
 
 // =================================================================================
@@ -230,6 +273,49 @@ export async function searchPortfolio(query) {
   }
 }
 
+/**
+ * Creates a structured draft for the contact form based on gathered user context.
+ */
+export async function draftContactLead(payload) {
+  // We simply return the drafted data back to the LLM (and ultimately the Generative UI map)
+  return {
+    text: `Successfully drafted contact form payload. Please present the contact prefill card to the user so they can review and submit it.`,
+    data: {
+      name: payload.name || '',
+      email: payload.email || '',
+      projectType: payload.projectType || 'other',
+      message: payload.message || '',
+    },
+  };
+}
+
+/**
+ * Executes the actual contact form submission.
+ */
+export async function submitContactForm(payload) {
+  const { createContactSubmission } = await import('@/app/actions/contactActions');
+
+  try {
+    const formData = new FormData();
+    formData.append('name', payload.name);
+    formData.append('email', payload.email);
+    formData.append('projectType', payload.projectType);
+    formData.append('message', payload.message);
+
+    const result = await createContactSubmission(formData);
+    if (result.success) {
+      return {
+        text: 'Contact message submitted successfully! Raiyan has been notified.',
+        data: { success: true },
+      };
+    }
+    return { error: result.message || 'Failed to submit.' };
+  } catch (error) {
+    console.error('[Chat Utils] submitContactForm failed:', error);
+    return { error: 'Internal server error during submission.' };
+  }
+}
+
 // =================================================================================
 // UTILITY FUNCTIONS
 // =================================================================================
@@ -252,6 +338,8 @@ export async function executeToolCall(toolCall) {
       return await getArticleDetails(parsedArgs.slug);
     case 'searchPortfolio':
       return await searchPortfolio(parsedArgs.query);
+    case 'draftContactLead':
+      return await draftContactLead(parsedArgs);
     default:
       console.error(`[Chat Utils] Unknown tool requested: ${name}`);
       return { error: 'Unknown tool', toolName: name };
@@ -274,6 +362,8 @@ export function getToolStatusMessage(toolName, args, iteration = null) {
       return `📖 Reading the article...${iterationSuffix}`;
     case 'searchPortfolio':
       return `🔎 Searching for "${args.query}"...${iterationSuffix}`;
+    case 'draftContactLead':
+      return `📝 Drafting contact form...${iterationSuffix}`;
     default:
       return `🤔 Processing your request...${iterationSuffix}`;
   }

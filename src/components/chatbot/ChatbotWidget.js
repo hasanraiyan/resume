@@ -47,6 +47,8 @@ function getToolMetadata(toolName, content) {
         label: extracted ? `Searching for "${extracted}"` : 'Searching portfolio',
         Icon: Search,
       };
+    case 'draftContactLead':
+      return { label: 'Drafting contact form', Icon: FileText };
     default:
       return { label: content || 'Processing', Icon: Wrench };
   }
@@ -60,6 +62,7 @@ function parseToolFromStatus(statusMsg) {
   if (statusMsg.includes('blog articles')) return 'listAllArticles';
   if (statusMsg.includes('Reading')) return 'getArticleDetails';
   if (statusMsg.includes('Searching')) return 'searchPortfolio';
+  if (statusMsg.includes('Drafting contact form')) return 'draftContactLead';
   return null;
 }
 
@@ -67,62 +70,60 @@ function parseToolFromStatus(statusMsg) {
 // StepHistory — Perplexity-style collapsible completed-tools summary
 // ---------------------------------------------------------------------------
 
-function StepHistory({ tools, uiBlocks }) {
-  const [expanded, setExpanded] = useState(false);
-  if (!tools || tools.length === 0) return null;
+function StepHistory({ steps, onInteract }) {
+  const [expanded, setExpanded] = useState(true);
+  if (!steps || steps.length === 0) return null;
 
-  const uniqueIcons = [...new Set(tools.map((t) => t.Icon))];
+  const tools = steps.filter((s) => s.type === 'tool');
+  const uniqueIcons = [...new Set(tools.map((t) => t.Icon).filter(Boolean))];
 
   return (
-    <div className="mb-2 animate-in fade-in slide-in-from-top-1 duration-300">
+    <div className="flex flex-col w-full mb-3 group/history">
       <button
-        onClick={() => setExpanded((v) => !v)}
-        className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border border-neutral-200/70 bg-neutral-50/80 hover:bg-neutral-100/80 transition-all group"
+        onClick={() => setExpanded(!expanded)}
+        className="flex fit-content items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-500 hover:text-neutral-700 transition-all duration-200 w-fit"
       >
-        {/* Stacked mini-icon avatars */}
-        <div className="flex -space-x-1.5 mr-0.5">
-          {uniqueIcons.slice(0, 3).map((Icon, i) => (
-            <div
-              key={i}
-              className="w-4 h-4 rounded-full bg-white border border-neutral-200 flex items-center justify-center shadow-sm shrink-0"
-            >
-              <Icon className="w-2.5 h-2.5 text-neutral-500" />
-            </div>
+        <div className="flex -space-x-1">
+          {uniqueIcons.slice(0, 3).map((Icon, idx) => (
+            <Icon key={idx} className="w-3.5 h-3.5" />
           ))}
         </div>
-        <span className="text-[10px] font-medium text-neutral-500 group-hover:text-neutral-700 transition-colors">
-          Performed {tools.length} {tools.length === 1 ? 'action' : 'actions'}
+        <span className="text-[11px] font-medium">
+          Performed {tools.length} action{tools.length > 1 ? 's' : ''}
         </span>
         <ChevronDown
-          className={`w-3 h-3 text-neutral-400 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+          className={`w-3.5 h-3.5 transition-transform duration-300 ${expanded ? '' : 'rotate-180'}`}
         />
       </button>
 
       {expanded && (
-        <div className="mt-1.5 ml-2 pl-3 border-l-2 border-neutral-200/60 space-y-1.5 animate-in fade-in slide-in-from-left-1 duration-200">
-          {tools.map((tool, idx) => {
-            const { Icon } = tool;
-            return (
-              <div key={idx} className="flex items-center gap-2 text-[10px] text-neutral-500">
-                <div className="w-3.5 h-3.5 rounded-full bg-neutral-100 border border-neutral-200/80 flex items-center justify-center shrink-0">
-                  <Icon className="w-2 h-2" />
+        <div className="mt-2 ml-4 pl-4 border-l-2 border-dashed border-neutral-200 space-y-3 animate-in fade-in slide-in-from-left-2 duration-300">
+          {steps.map((step, idx) => {
+            if (step.type === 'tool') {
+              return (
+                <div
+                  key={`step-${idx}`}
+                  className="flex items-center justify-between text-[13px] text-neutral-600"
+                >
+                  <div className="flex items-center gap-2">
+                    {step.Icon && <step.Icon className="w-3.5 h-3.5 text-neutral-400" />}
+                    <span>{step.label}</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-2 py-0.5 rounded-md bg-neutral-100 text-[10px] font-bold text-neutral-400">
+                    {step.done ? 'DONE' : 'RUNNING'}
+                  </div>
                 </div>
-                <span className="truncate max-w-[180px]">{tool.label}</span>
-                <div className="flex-1 h-px bg-gradient-to-r from-neutral-200 to-transparent" />
-                <span className="text-[9px] font-mono text-neutral-400 uppercase tracking-wide shrink-0">
-                  Done
-                </span>
-              </div>
-            );
+              );
+            }
+            if (step.type === 'ui') {
+              return (
+                <div key={`step-${idx}`} className="w-full">
+                  <StaticGenUI block={step} onInteract={onInteract} />
+                </div>
+              );
+            }
+            return null;
           })}
-
-          {uiBlocks && uiBlocks.length > 0 && (
-            <div className="mt-4 w-full">
-              {uiBlocks.map((block, idx) => (
-                <StaticGenUI key={`hist-ui-${idx}`} block={block} />
-              ))}
-            </div>
-          )}
         </div>
       )}
     </div>
@@ -294,8 +295,7 @@ async function streamChatResponse({ content, history, setMessages, setStatus }) 
     id: Date.now() + 1,
     role: 'assistant',
     content: '',
-    completedTools: [], // accumulate completed tools for StepHistory
-    uiBlocks: [], // UI blocks (Generative UI)
+    steps: [], // interleaved list of tool actions and UI blocks
     timestamp: new Date(),
   };
   let messageAdded = false;
@@ -326,7 +326,7 @@ async function streamChatResponse({ content, history, setMessages, setStatus }) 
           if (!messageAdded) {
             setMessages((prev) => [
               ...prev,
-              { ...assistantMessage, uiBlocks: [...assistantMessage.uiBlocks] },
+              { ...assistantMessage, steps: [...assistantMessage.steps] },
             ]);
             messageAdded = true;
           } else {
@@ -350,8 +350,7 @@ async function streamChatResponse({ content, history, setMessages, setStatus }) 
           if (messageAdded && assistantMessage.content.trim().length > 0) {
             assistantMessage.id = Date.now() + Math.random();
             assistantMessage.content = '';
-            assistantMessage.completedTools = [];
-            assistantMessage.uiBlocks = [];
+            assistantMessage.steps = [];
             messageAdded = false;
           }
 
@@ -370,6 +369,7 @@ async function streamChatResponse({ content, history, setMessages, setStatus }) 
             {
               id: toolMsgId,
               role: 'tool_action',
+              toolName, // Track the machine name for later
               label,
               Icon,
               done: false,
@@ -377,25 +377,41 @@ async function streamChatResponse({ content, history, setMessages, setStatus }) 
             },
           ]);
 
-          // Save metadata so StepHistory can show it after
-          turnCompletedTools.push({ label, Icon });
+          // Save metadata into ordered steps
+          assistantMessage.steps.push({
+            type: 'tool',
+            id: toolMsgId,
+            label,
+            Icon,
+            done: false,
+          });
         } else if (data.type === 'ui') {
           // Add the Generative UI block to the assistant message
           // Prevent duplicates if the exact same block payload is already there
-          const isDuplicate = assistantMessage.uiBlocks.some(
-            (b) =>
-              b.component === data.component &&
-              JSON.stringify(b.payload) === JSON.stringify(data.payload)
+          const isDuplicate = assistantMessage.steps.some(
+            (s) =>
+              s.type === 'ui' &&
+              s.component === data.component &&
+              JSON.stringify(s.payload) === JSON.stringify(data.payload)
           );
 
           if (!isDuplicate) {
-            assistantMessage.uiBlocks.push(data);
+            // Attach the current tool action ID to the UI block
+            // This allows the UI interaction to mark the tool as 'done' later
+            assistantMessage.steps.push({
+              type: 'ui',
+              ...data,
+              toolActionId: activeToolMsgId,
+            });
           }
 
           if (!messageAdded) {
             setMessages((prev) => [
               ...prev,
-              { ...assistantMessage, uiBlocks: [...assistantMessage.uiBlocks] },
+              {
+                ...assistantMessage,
+                steps: [...assistantMessage.steps],
+              },
             ]);
             messageAdded = true;
           } else {
@@ -404,12 +420,34 @@ async function streamChatResponse({ content, history, setMessages, setStatus }) 
                 m.id === assistantMessage.id
                   ? {
                       ...m,
-                      uiBlocks: [...assistantMessage.uiBlocks],
+                      steps: [...assistantMessage.steps],
                     }
                   : m
               )
             );
           }
+        } else if (data.type === 'metadata') {
+          // Save tool_calls to the assistant message so it can be sent in history later
+          assistantMessage.tool_calls = data.tool_calls;
+          if (messageAdded) {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMessage.id ? { ...m, tool_calls: data.tool_calls } : m
+              )
+            );
+          }
+        } else if (data.type === 'tool_result') {
+          // Add the tool result to history (hidden from UI but present for next turn)
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now() + Math.random(),
+              role: 'tool',
+              tool_call_id: data.tool_call_id,
+              content: data.content,
+              hidden: true,
+            },
+          ]);
         } else if (data.type === 'content') {
           setStatus('');
 
@@ -420,13 +458,11 @@ async function streamChatResponse({ content, history, setMessages, setStatus }) 
           activeToolMsgId = null;
 
           assistantMessage.content += data.message;
-          // Attach completed tools for rendering StepHistory inside the assistant bubble
-          assistantMessage.completedTools = [...turnCompletedTools];
 
           if (!messageAdded) {
             setMessages((prev) => [
               ...prev,
-              { ...assistantMessage, uiBlocks: [...assistantMessage.uiBlocks] },
+              { ...assistantMessage, steps: [...assistantMessage.steps] },
             ]);
             messageAdded = true;
           } else {
@@ -436,20 +472,40 @@ async function streamChatResponse({ content, history, setMessages, setStatus }) 
                   ? {
                       ...m,
                       content: assistantMessage.content,
-                      completedTools: assistantMessage.completedTools,
+                      steps: [...assistantMessage.steps],
                     }
                   : m
               )
             );
           }
         }
-      }
-    }
+      } // end for lines
+    } // end while
   } finally {
     setStatus('');
-    // Mark any still-pending tool as done
+    // ✅ Post-stream cleanup: Mark tool action as done (IF it's not a pending draft)
     if (activeToolMsgId !== null) {
-      setMessages((prev) => prev.map((m) => (m.id === activeToolMsgId ? { ...m, done: true } : m)));
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id === activeToolMsgId) {
+            const isDrafting = m.toolName === 'draftContactLead';
+            return { ...m, done: !isDrafting };
+          }
+          if (m.id === assistantMessage.id) {
+            return {
+              ...m,
+              steps: m.steps.map((s) => {
+                if (s.id === activeToolMsgId) {
+                  const isDrafting = s.toolName === 'draftContactLead';
+                  return { ...s, done: !isDrafting };
+                }
+                return s;
+              }),
+            };
+          }
+          return m;
+        })
+      );
     }
     reader.releaseLock();
   }
@@ -495,7 +551,7 @@ export default function ChatbotWidget() {
               id: 1,
               role: 'assistant',
               content: buildWelcomeMessage(settings),
-              completedTools: [],
+              steps: [],
               timestamp: new Date(),
             },
           ]);
@@ -522,7 +578,7 @@ export default function ChatbotWidget() {
   }, [fetchSettings]);
 
   const send = useCallback(
-    async (content) => {
+    async (content, hidden = false) => {
       if (!content.trim() || isLoading) return;
 
       const userMessage = {
@@ -530,6 +586,7 @@ export default function ChatbotWidget() {
         role: 'user',
         content: content.trim(),
         timestamp: new Date(),
+        hidden,
       };
       setMessages((prev) => [...prev, userMessage]);
       setIsLoading(true);
@@ -537,7 +594,7 @@ export default function ChatbotWidget() {
       try {
         await streamChatResponse({
           content: userMessage.content,
-          history: messages,
+          history: messages.filter((m) => !m.hidden), // Send all messages (except hidden flag, but content IS sent) to API
           setMessages,
           setStatus: setStatusMessage,
         });
@@ -549,7 +606,7 @@ export default function ChatbotWidget() {
             role: 'assistant',
             content:
               "Sorry, I'm having trouble responding right now. However, you can reach out directly via [the contact form](#contact) instead!",
-            completedTools: [],
+            steps: [],
             timestamp: new Date(),
           },
         ]);
@@ -571,10 +628,10 @@ export default function ChatbotWidget() {
   const clearChat = () => {
     setMessages([
       {
-        id: Date.now(),
+        id: 1,
         role: 'assistant',
         content: buildWelcomeMessage(chatbotSettings),
-        completedTools: [],
+        steps: [],
         timestamp: new Date(),
       },
     ]);
@@ -591,6 +648,45 @@ export default function ChatbotWidget() {
           : 'external',
       chatbotSession: analytics.sessionId,
     });
+  };
+
+  const handleUIInteract = (messageId, block, action) => {
+    // 1. Remove the active UI block from the assistant's message
+    // 2. Add a completed tool summary to the StepHistory
+    let label = 'Interacted with form';
+    if (action === 'sent') label = 'Sent contact message';
+    if (action === 'edit') label = 'Prefilled contact form';
+    if (action === 'discard') label = 'Discarded contact draft';
+
+    setMessages((prev) =>
+      prev.map((m) => {
+        if (m.id === messageId) {
+          return {
+            ...m,
+            steps: m.steps.map((s) => (s === block ? { ...s, resolved: true, action: label } : s)),
+          };
+        }
+        // Also find the associated tool_action and mark it done
+        if (m.id === block.toolActionId) {
+          return { ...m, done: true };
+        }
+        return m;
+      })
+    );
+
+    // 3. Send a hidden message to the AI so it knows what the user did
+    let prompt = '';
+    if (action === 'sent') {
+      prompt = 'I have submitted the contact form successfully.';
+    } else if (action === 'edit') {
+      prompt = 'I decided to edit the contact form details myself before sending.';
+    } else if (action === 'discard') {
+      prompt = 'I cancelled the contact form draft.';
+    }
+
+    if (prompt) {
+      send(prompt, true);
+    }
   };
 
   const suggestedPrompts =
@@ -717,6 +813,10 @@ export default function ChatbotWidget() {
             }
 
             // ── Regular message bubble ──────────────────────────────────────
+            if (message.hidden) return null;
+
+            const isAssistant = message.role === 'assistant';
+
             return (
               <div
                 key={message.id}
@@ -724,8 +824,11 @@ export default function ChatbotWidget() {
               >
                 <div className={`max-w-full sm:max-w-[90%]`}>
                   {/* StepHistory above assistant bubble */}
-                  {message.role === 'assistant' && message.completedTools?.length > 0 && (
-                    <StepHistory tools={message.completedTools} uiBlocks={message.uiBlocks} />
+                  {isAssistant && message.steps?.length > 0 && (
+                    <StepHistory
+                      steps={message.steps}
+                      onInteract={(block, action) => handleUIInteract(message.id, block, action)}
+                    />
                   )}
 
                   {message.content && (

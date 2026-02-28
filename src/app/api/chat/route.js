@@ -12,6 +12,7 @@ import Analytics from '@/models/Analytics';
 import ChatLog from '@/models/ChatLog';
 import { tools, executeToolCall, getToolStatusMessage, pruneContext } from '@/lib/chatbot-utils';
 import { getUIBlockForToolResult } from '@/lib/chatbot-generative-ui';
+import { rateLimit } from '@/lib/rateLimit';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -49,6 +50,9 @@ function mergeToolCallDeltas(map, deltas) {
 // =================================================================================
 
 export async function POST(request) {
+  const rateLimitResponse = rateLimit(request, 10, 60000); // 10 requests per minute
+  if (rateLimitResponse) return rateLimitResponse;
+
   const startTime = Date.now();
 
   try {
@@ -87,7 +91,12 @@ export async function POST(request) {
     // Build message history — passed into the stream closure
     const messages = [
       ...systemMessages,
-      ...chatHistory.map((msg) => ({ role: msg.role, content: msg.content })),
+      ...chatHistory.map((msg) => {
+        const m = { role: msg.role, content: msg.content };
+        if (msg.tool_calls) m.tool_calls = msg.tool_calls;
+        if (msg.tool_call_id) m.tool_call_id = msg.tool_call_id;
+        return m;
+      }),
       { role: 'user', content: userMessage },
     ];
 
@@ -156,6 +165,14 @@ export async function POST(request) {
               tool_calls: assembledToolCalls,
             });
 
+            // Stream metadata to the client so it can preserve tool_calls in history
+            controller.enqueue(
+              encodeEvent({
+                type: 'metadata',
+                tool_calls: assembledToolCalls,
+              })
+            );
+
             // ── Execute every tool call and emit status events live ──────────
             for (const toolCall of assembledToolCalls) {
               let parsedArgs;
@@ -208,6 +225,21 @@ export async function POST(request) {
                 tool_call_id: toolCall.id,
                 content: stringResultForLLM,
               });
+
+              // Stream tool result back to the client for history preservation
+              controller.enqueue(
+                encodeEvent({
+                  type: 'tool_result',
+                  tool_call_id: toolCall.id,
+                  content: stringResultForLLM,
+                })
+              );
+
+              // If the tool called was "draftContactLead", force the loop to stop after this iteration.
+              // This gives the user time to review the UI block before any further AI actions.
+              if (toolCall.function.name === 'draftContactLead') {
+                iteration = MAX_ITERATIONS + 1; // Break outer loop
+              }
             }
             // Loop continues → AI gets the tool results and can call more tools or answer
           }
@@ -315,10 +347,25 @@ LINK FORMATTING RULES (CRITICAL):
 - GitHub: Use [GitHub Repository](external-url) 💻
 - NEVER mention projects/articles without including clickable links
 
+CONTACT FORM INSTRUCTIONS (CRITICAL):
+When a user expresses interest in starting a project, hiring Raiyan, or contacting him, DO NOT immediately use the \`draftContactLead\` tool.
+Instead, follow this process:
+1. Enthusiastically acknowledge their interest.
+2. Ask them for the required information: their name, their email address, and a brief description of what they are looking to build (if they haven't provided it already).
+3. Wait for their response.
+4. ONLY ONCE you have collected at least their name, email, and a basic message/idea, THEN call the \`draftContactLead\` tool to present them with the draft.
+5. After calling \`draftContactLead\`, tell them they can review the details in the card above and click "Send" to deliver the message.
+
 TOOL RESPONSE FORMAT:
 Tools return human-readable markdown with links. Use the markdown format provided by tools directly in responses.
 
-GOAL: Convert visitors to clients by guiding them to the contact form using: "${settings.callToAction}"
+STANDALONE CONTACT FLOW:
+- Your only contact tool is \`draftContactLead\`. It creates a UI card for the user.
+- The user will see this UI card and click "Send" themselves. YOU DO NOT handle the actual submission.
+- NEVER tell the user that you are "sending" or "submitting" the message; instead, say you have "prepared a draft" or "prefilled the form".
+- Users can submit from any page; you don't need to redirect them to the contact section.
+
+GOAL: Convert visitors to clients by using the standalone contact flow: "${settings.callToAction}"
 RULES: ${settings.rules?.join('. ') || defaultSettings.rules.join('. ')}
 
 PAGE CONTEXT: The user is currently on this page: "${path || '/'}"

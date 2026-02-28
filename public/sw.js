@@ -7,8 +7,8 @@ const API_CACHE = 'portfolio-api-v1';
 const STATIC_FILES = [
   '/',
   '/manifest.json',
-  '/icon.svg',
-  '/globals.css',
+  '/3D.png',
+  '/resume.pdf',
   // Add other critical assets
 ];
 

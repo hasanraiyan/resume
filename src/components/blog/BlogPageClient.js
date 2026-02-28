@@ -1,53 +1,15 @@
-// src/components/blog/BlogPageClient.js
-
 'use client';
 
-import { useState, useEffect } from 'react';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useState } from 'react';
 import BlogCard from './BlogCard';
 import BlogFilters from './BlogFilters';
-import { BlogCardSkeleton } from '@/components/Skeleton';
 
+/**
+ * Blog Page Client — Medium-style article feed with dividers.
+ */
 export default function BlogPageClient({ articles }) {
   const [filteredArticles, setFilteredArticles] = useState(articles);
   const [isLoading, setIsLoading] = useState(false);
-
-  // Cleanup on component mount to ensure fresh state
-  useEffect(() => {
-    ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
-    ScrollTrigger.refresh();
-  }, []);
-
-  useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
-    ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
-
-    const timer = setTimeout(() => {
-      const list = document.querySelector('.articles-list');
-      if (list && list.children.length > 0) {
-        gsap.set(list.children, { opacity: 1, y: 0 });
-        gsap.from(list.children, {
-          opacity: 0,
-          y: 50,
-          duration: 0.8,
-          stagger: 0.1,
-          scrollTrigger: {
-            trigger: list,
-            start: 'top 85%',
-            toggleActions: 'play none none reverse',
-            refreshPriority: -1,
-          },
-        });
-      }
-      ScrollTrigger.refresh();
-    }, 100);
-
-    return () => {
-      clearTimeout(timer);
-      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
-    };
-  }, [filteredArticles]);
 
   const handleFilterChange = (tag) => {
     setIsLoading(true);
@@ -60,7 +22,7 @@ export default function BlogPageClient({ articles }) {
       }
       setFilteredArticles(filtered);
       setIsLoading(false);
-    }, 300);
+    }, 150);
   };
 
   const handleSearch = (query) => {
@@ -80,38 +42,60 @@ export default function BlogPageClient({ articles }) {
         setFilteredArticles(results);
       }
       setIsLoading(false);
-    }, 300);
+    }, 150);
   };
 
   return (
     <>
-      <BlogFilters onFilterChange={handleFilterChange} onSearch={handleSearch} />
+      <BlogFilters
+        onFilterChange={handleFilterChange}
+        onSearch={handleSearch}
+        articles={articles}
+      />
 
       {isLoading ? (
-        <div className="py-8">
-          <BlogCardSkeleton />
+        <div className="max-w-2xl mx-auto space-y-8 py-8">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="animate-pulse">
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_180px] gap-5 sm:gap-8">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-neutral-200" />
+                    <div className="h-3 w-24 bg-neutral-200 rounded" />
+                  </div>
+                  <div className="h-5 w-4/5 bg-neutral-200 rounded" />
+                  <div className="h-4 w-full bg-neutral-100 rounded" />
+                  <div className="h-4 w-3/4 bg-neutral-100 rounded" />
+                  <div className="flex gap-2">
+                    <div className="h-3 w-16 bg-neutral-100 rounded" />
+                    <div className="h-3 w-20 bg-neutral-100 rounded" />
+                  </div>
+                </div>
+                <div className="hidden sm:block">
+                  <div className="aspect-[4/3] bg-neutral-100 rounded-sm" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : filteredArticles.length === 0 ? (
-        <div className="text-center py-20">
-          <i className="fas fa-search text-5xl text-gray-300 mb-4"></i>
-          <p className="text-xl text-gray-600">No articles found</p>
-          <p className="text-gray-500 mt-2">Try adjusting your search or filters</p>
+        <div className="text-center py-20 max-w-md mx-auto">
+          <p className="text-xl text-neutral-400 font-light">No articles found</p>
+          <p className="text-neutral-400 text-sm mt-2">Try adjusting your search or filters</p>
         </div>
       ) : (
-        <>
-          <div
-            key={filteredArticles.length}
-            className="articles-list max-w-4xl mx-auto space-y-12 sm:space-y-16"
-          >
+        <div className="max-w-2xl mx-auto">
+          <div className="divide-y divide-neutral-100">
             {filteredArticles.map((article) => (
-              <BlogCard key={article._id} article={article} />
+              <div key={article._id} className="py-7 first:pt-0 last:pb-0">
+                <BlogCard article={article} />
+              </div>
             ))}
           </div>
-          <div className="text-center mt-12 sm:mt-16 text-sm text-gray-600">
-            Showing <span className="font-semibold">{filteredArticles.length}</span> of{' '}
-            <span className="font-semibold">{articles.length}</span> articles
+          <div className="text-center mt-10 text-[13px] text-neutral-400">
+            Showing {filteredArticles.length} of {articles.length} articles
           </div>
-        </>
+        </div>
       )}
     </>
   );

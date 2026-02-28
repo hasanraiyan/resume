@@ -55,47 +55,52 @@ const CERTIFICATES = [
       'Completed foundational training on LangGraph, focusing on graph-based LLM workflows and agentic development.',
   },
   {
-  src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1771931409/portfolio_assets/kec3i8yr1pcp0dutteck.jpg',
-  alt: 'MITMAAI Certificate of Appreciation',
-  title: 'Alumni Meet 2025 — Event Coordinator (MITMAAI)',
-  description:
-    'Recognized by MIT Muzaffarpur Alumni Association International (MITMAAI) for serving as Event Coordinator for Alumni Meet 2025 and contributing to the successful planning and execution of “Connections – 2025”.',
-},
+    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1771931409/portfolio_assets/kec3i8yr1pcp0dutteck.jpg',
+    alt: 'MITMAAI Certificate of Appreciation',
+    title: 'Alumni Meet 2025 — Event Coordinator (MITMAAI)',
+    description:
+      'Recognized by MIT Muzaffarpur Alumni Association International (MITMAAI) for serving as Event Coordinator for Alumni Meet 2025 and contributing to the successful planning and execution of “Connections – 2025”.',
+  },
   {
-  src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1771932622/portfolio_assets/m7jnhoas5xsi9xqxfhnn.jpg',
-  alt: 'CLIMB 3rd Position Certificate',
-  title: 'C.L.I.M.B — 3rd Position (Team DOSTIFY)',
-  description:
-    'Secured 3rd position at C.L.I.M.B (Campus Leadership & Innovation Movement for Betterment) with Team DOSTIFY, recognized by MIT Muzaffarpur and MITMAAI USA for innovation and leadership.',
-},
+    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1771932622/portfolio_assets/m7jnhoas5xsi9xqxfhnn.jpg',
+    alt: 'CLIMB 3rd Position Certificate',
+    title: 'C.L.I.M.B — 3rd Position (Team DOSTIFY)',
+    description:
+      'Secured 3rd position at C.L.I.M.B (Campus Leadership & Innovation Movement for Betterment) with Team DOSTIFY, recognized by MIT Muzaffarpur and MITMAAI USA for innovation and leadership.',
+  },
 ];
 
 // --- DATA: ACHIEVEMENTS ---
 const ACHIEVEMENTS = [
-    {
-  src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1772214725/portfolio_assets/yhe9pmxetss39hfaxwyn.jpg',
-  alt: 'CLIMB Competition 3rd Place - Dostify Project',
-  title: 'CLIMB Competition — 3rd Place',
-  description: 'Secured 3rd place in the CLIMB Innovation Competition for Dostify, presenting a solution-driven project with strong technical execution and real-world impact.',
-},
   {
-  src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1772214725/portfolio_assets/yyiciqegiexqyaslnwyf.jpg',
-  alt: 'CLIMB Competition Team Triumph - Dostify',
-  title: 'CLIMB Competition — Team Triumph',
-  description: 'Celebrating our 3rd place finish at the CLIMB Competition with Team Dostify, recognized for innovation, collaboration, and impactful problem-solving.',
-},{
-  src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1772214725/portfolio_assets/lbevyaxkxxhvmoznulcy.jpg',
-  alt: 'Dostify Project Funding - ₹40,000 Grant',
-  title: 'Dostify — ₹40,000 Project Grant',
-  description: 'Awarded ₹40,000 in funding by the MIT Muzaffarpur Alumni Association International for Dostify, recognizing the project’s innovation, feasibility, and real-world potential.',
-},
+    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1772214725/portfolio_assets/yhe9pmxetss39hfaxwyn.jpg',
+    alt: 'CLIMB Competition 3rd Place - Dostify Project',
+    title: 'CLIMB Competition — 3rd Place',
+    description:
+      'Secured 3rd place in the CLIMB Innovation Competition for Dostify, presenting a solution-driven project with strong technical execution and real-world impact.',
+  },
+  {
+    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1772214725/portfolio_assets/yyiciqegiexqyaslnwyf.jpg',
+    alt: 'CLIMB Competition Team Triumph - Dostify',
+    title: 'CLIMB Competition — Team Triumph',
+    description:
+      'Celebrating our 3rd place finish at the CLIMB Competition with Team Dostify, recognized for innovation, collaboration, and impactful problem-solving.',
+  },
+  {
+    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1772214725/portfolio_assets/lbevyaxkxxhvmoznulcy.jpg',
+    alt: 'Dostify Project Funding - ₹40,000 Grant',
+    title: 'Dostify — ₹40,000 Project Grant',
+    description:
+      'Awarded ₹40,000 in funding by the MIT Muzaffarpur Alumni Association International for Dostify, recognizing the project’s innovation, feasibility, and real-world potential.',
+  },
 
   {
-  src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1772214725/portfolio_assets/sh6efuvk5lpllzeaylgo.jpg',
-  alt: 'CLIMB Competition 3rd Position Medal - Dostify',
-  title: 'CLIMB — 3rd Position Medal',
-  description: 'Awarded 3rd position at the CLIMB Innovation Competition for Dostify, recognizing persistence, technical execution, and impactful problem-solving.',
-},
+    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1772214725/portfolio_assets/sh6efuvk5lpllzeaylgo.jpg',
+    alt: 'CLIMB Competition 3rd Position Medal - Dostify',
+    title: 'CLIMB — 3rd Position Medal',
+    description:
+      'Awarded 3rd position at the CLIMB Innovation Competition for Dostify, recognizing persistence, technical execution, and impactful problem-solving.',
+  },
   {
     src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762678856/portfolio_assets/u9vr8j427iy1wocnrm6n.png',
     alt: 'MIT Muzaffarpur Magazine 2025',
@@ -129,9 +134,6 @@ const ACHIEVEMENTS = [
     title: 'Hackstack’23 — 2nd Place',
     description: 'Runner-up in MIT’s flagship hackathon for creative problem-solving and teamwork.',
   },
-
-
-  
 ];
 
 /**

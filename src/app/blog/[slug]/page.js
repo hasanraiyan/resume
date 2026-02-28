@@ -8,14 +8,13 @@ import { notFound } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import CustomCursor from '@/components/CustomCursor';
-import { Section, Badge, Button } from '@/components/ui';
 import Image from 'next/image';
+import Link from 'next/link';
 import SocialShare from '@/components/SocialShare';
 import LikeButton from '@/components/LikeButton';
 import NewsletterForm from '@/components/NewsletterForm';
 
 export async function generateStaticParams() {
-  // Generate params for all published articles (including private ones for authenticated access)
   const { success, articles } = await getAllPublishedArticles(true);
   if (!success) return [];
   return articles.map((article) => ({ slug: article.slug }));
@@ -43,14 +42,7 @@ export async function generateMetadata({ params }) {
       description: article.excerpt,
       type: 'article',
       url: `https://hasanraiyan.vercel.app/blog/${article.slug}`,
-      images: article.coverImage
-        ? [
-            {
-              url: article.coverImage,
-              alt: article.title,
-            },
-          ]
-        : [],
+      images: article.coverImage ? [{ url: article.coverImage, alt: article.title }] : [],
     },
     twitter: {
       card: 'summary_large_image',
@@ -71,22 +63,28 @@ export default async function ArticlePage({ params }) {
     notFound();
   }
 
-  const breadcrumbs = [
-    { label: 'Home', path: '/', icon: 'Home' },
-    { label: 'Blog', path: '/blog', icon: 'FileText' },
-    { label: article.title, icon: 'FileText' },
-  ];
+  // Fetch related articles
+  const { articles: allArticles } = await getAllPublishedArticles(isAuthenticated);
+  const relatedArticles = allArticles?.filter((a) => a.slug !== article.slug).slice(0, 3) || [];
 
-  const formattedDate = (dateString) => {
+  const formatDate = (dateString) => {
     if (!dateString || isNaN(new Date(dateString).getTime())) return '';
     return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
       month: 'long',
       day: 'numeric',
+      year: 'numeric',
     });
   };
 
-  const publishDate = formattedDate(article.publishedAt) || formattedDate(article.createdAt);
+  const estimateReadTime = (content) => {
+    if (!content) return '1 min read';
+    const words = content.trim().split(/\s+/).length;
+    const minutes = Math.max(1, Math.ceil(words / 265));
+    return `${minutes} min read`;
+  };
+
+  const publishDate = formatDate(article.publishedAt) || formatDate(article.createdAt);
+  const readTime = estimateReadTime(article.content);
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -111,111 +109,193 @@ export default async function ArticlePage({ params }) {
       <CustomCursor />
       <Navbar />
 
-      <main className=" min-h-screen bg-gray-50">
-        <Section
-          className="py-12 sm:py-18 md:py-16 bg-white "
-          containerClassName="max-w-4xl"
-          breadcrumbs={breadcrumbs}
-        >
-          <article>
-            {/* --- ARTICLE HEADER --- */}
-            <header className="mb-8 md:mb-12">
-              <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4 font-['Playfair_Display'] leading-tight">
-                {article.title}
-              </h1>
+      <main className="min-h-screen bg-white">
+        {/* ── Cover Image (full-bleed) ── */}
+        {article.coverImage && (
+          <div className="relative w-full max-h-[480px] overflow-hidden bg-neutral-100">
+            <Image
+              src={article.coverImage}
+              alt={article.title}
+              width={1200}
+              height={480}
+              className="w-full h-full object-cover"
+              priority
+            />
+          </div>
+        )}
 
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-gray-500 mb-6">
-                <time dateTime={article.publishedAt || article.createdAt}>
-                  Published on {publishDate}
-                </time>
-                {article.tags && article.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {article.tags.map((tag, index) => (
-                      <Badge
-                        key={index}
-                        variant="tag"
-                        className="bg-blue-50 text-blue-700 font-medium"
-                      >
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
+        {/* ── Article Content ── */}
+        <article className="max-w-6xl mx-auto px-5 sm:px-6 pt-10 pb-16">
+          {/* Header */}
+          <header className="mb-8">
+            <h1
+              className="text-[32px] sm:text-[40px] lg:text-[44px] font-bold text-neutral-900 leading-[1.15] tracking-tight mb-5"
+              style={{ fontFamily: "'Georgia', 'Noto Serif', serif" }}
+            >
+              {article.title}
+            </h1>
+
+            {/* Subtitle / Excerpt */}
+            <p
+              className="text-lg sm:text-xl text-neutral-500 leading-relaxed mb-6"
+              style={{ fontFamily: "'Georgia', 'Noto Serif', serif" }}
+            >
+              {article.excerpt}
+            </p>
+
+            {/* Author block */}
+            <div className="flex items-center gap-3 pb-6 border-b border-neutral-100">
+              <div className="w-11 h-11 rounded-full bg-neutral-900 flex items-center justify-center shrink-0">
+                <span className="text-sm font-bold text-white">R</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-neutral-900">Raiyan Hasan</span>
+                </div>
+                <div className="flex items-center gap-2 text-[13px] text-neutral-400">
+                  <time dateTime={article.publishedAt || article.createdAt}>{publishDate}</time>
+                  <span>·</span>
+                  <span>{readTime}</span>
+                </div>
               </div>
 
-              {/* Social Sharing and Engagement */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+              {/* Share + Engagement */}
+              <div className="flex items-center gap-2">
                 <SocialShare
                   title={article.title}
                   slug={article.slug}
                   excerpt={article.excerpt}
                   type="article"
                 />
-                <div className="flex items-center gap-3">
-                  <LikeButton
-                    type="article"
-                    slug={article.slug}
-                    engagementType="like"
-                    initialCount={article.likes || 0}
-                  />
-                  <LikeButton
-                    type="article"
-                    slug={article.slug}
-                    engagementType="clap"
-                    initialCount={article.claps || 0}
-                  />
-                </div>
-              </div>
-            </header>
-
-            {/* --- UNLISTED NOTICE --- */}
-            {article.visibility === 'unlisted' && (
-              <div className="mb-6 p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 text-center">
-                <i className="fas fa-link mr-2"></i>
-                This article is not listed publicly and can only be accessed via direct link.
-              </div>
-            )}
-
-            {/* --- COVER IMAGE --- */}
-            {article.coverImage && (
-              <div className="relative aspect-video overflow-hidden rounded-lg bg-gray-100 mb-8 md:mb-12 shadow-inner">
-                <Image
-                  src={article.coverImage}
-                  alt={article.title}
-                  fill
-                  className="w-full h-full object-cover"
-                  priority
-                />
-              </div>
-            )}
-
-            {/* --- ARTICLE CONTENT --- */}
-            <div className="prose prose-lg max-w-none">
-              {/* Render excerpt as an intro */}
-              <p className="text-lg text-gray-600 leading-relaxed border-l-4 border-gray-200 pl-4 italic">
-                {article.excerpt}
-              </p>
-              <MarkdownRenderer content={article.content} />
-            </div>
-
-            {/* Newsletter Subscription CTA */}
-            <div className="mt-12 pt-8 border-t border-gray-200">
-              <div className="max-w-2xl mx-auto text-center">
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">Enjoyed this article?</h3>
-                <p className="text-gray-600 mb-8">
-                  Subscribe to our newsletter for more insights, projects, and updates delivered to
-                  your inbox.
-                </p>
-                <NewsletterForm
-                  source="blog"
-                  placeholder="Enter your email for more great content"
-                  buttonText="Subscribe Now"
-                  className="newsletter-blog-form"
-                />
               </div>
             </div>
-          </article>
-        </Section>
+
+            {/* Tags */}
+            {article.tags && article.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-5">
+                {article.tags.map((tag, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex px-3 py-1 rounded-full bg-neutral-100 text-neutral-600 text-[12px] font-medium"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </header>
+
+          {/* Unlisted notice */}
+          {article.visibility === 'unlisted' && (
+            <div className="mb-8 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700 text-center">
+              🔗 This article is not listed publicly and can only be accessed via direct link.
+            </div>
+          )}
+
+          {/* ── Article Body ── */}
+          <div className="article-body">
+            <MarkdownRenderer content={article.content} />
+          </div>
+
+          {/* ── Engagement Bar ── */}
+          <div className="flex items-center justify-between mt-12 pt-6 border-t border-neutral-100">
+            <div className="flex items-center gap-4">
+              <LikeButton
+                type="article"
+                slug={article.slug}
+                engagementType="clap"
+                initialCount={article.claps || 0}
+              />
+              <LikeButton
+                type="article"
+                slug={article.slug}
+                engagementType="like"
+                initialCount={article.likes || 0}
+              />
+            </div>
+            <SocialShare
+              title={article.title}
+              slug={article.slug}
+              excerpt={article.excerpt}
+              type="article"
+            />
+          </div>
+
+          {/* ── Newsletter CTA ── */}
+          <div className="mt-14 p-8 bg-neutral-50 rounded-2xl text-center">
+            <h3
+              className="text-2xl font-bold text-neutral-900 mb-2"
+              style={{ fontFamily: "'Georgia', 'Noto Serif', serif" }}
+            >
+              Enjoyed this article?
+            </h3>
+            <p className="text-neutral-500 text-sm mb-6 max-w-md mx-auto">
+              Subscribe to get notified when new articles are published — no spam, ever.
+            </p>
+            <NewsletterForm
+              source="blog"
+              placeholder="Your email address"
+              buttonText="Subscribe"
+              className="newsletter-blog-form"
+            />
+          </div>
+
+          {/* ── More from Raiyan ── */}
+          {relatedArticles.length > 0 && (
+            <div className="mt-16 pt-10 border-t border-neutral-100">
+              <h3 className="text-lg font-bold text-neutral-900 mb-6">More from Raiyan Hasan</h3>
+              <div className="space-y-6">
+                {relatedArticles.map((related) => (
+                  <Link key={related.slug} href={`/blog/${related.slug}`} className="group block">
+                    <div className="grid grid-cols-[1fr_100px] gap-4 items-start">
+                      <div className="min-w-0">
+                        <h4
+                          className="text-base font-bold text-neutral-900 leading-snug mb-1 group-hover:text-neutral-600 transition-colors"
+                          style={{ fontFamily: "'Georgia', 'Noto Serif', serif" }}
+                        >
+                          {related.title}
+                        </h4>
+                        <p className="text-[13px] text-neutral-400 line-clamp-2">
+                          {related.excerpt}
+                        </p>
+                        <div className="flex items-center gap-2 text-[12px] text-neutral-400 mt-2">
+                          <time>
+                            {new Date(related.publishedAt || related.createdAt).toLocaleDateString(
+                              'en-US',
+                              {
+                                month: 'short',
+                                day: 'numeric',
+                              }
+                            )}
+                          </time>
+                          <span>·</span>
+                          <span>
+                            {Math.max(
+                              1,
+                              Math.ceil((related.content?.trim().split(/\s+/).length || 0) / 265)
+                            )}{' '}
+                            min read
+                          </span>
+                        </div>
+                      </div>
+                      {related.coverImage && (
+                        <div className="aspect-square relative overflow-hidden rounded-sm bg-neutral-100">
+                          <Image
+                            src={related.coverImage}
+                            alt={related.title}
+                            fill
+                            className="object-cover"
+                            loading="lazy"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </article>
       </main>
 
       <Footer />
