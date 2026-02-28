@@ -258,16 +258,19 @@ function MdContent({ content, onLinkClick }) {
 
 function buildWelcomeMessage(settings) {
   const name = settings?.aiName || 'Kiro';
-  return `Hi! I'm ${name}, Raiyan's AI assistant. I can help you learn about his projects and experience. What would you like to know?`;
+  return `Hi! I'm ${name}, the AI assistant. I can help you learn about the projects and experience here. What would you like to know?`;
 }
 
-const DEFAULT_PROMPTS = [
-  { text: "Tell me about Raiyan's projects" },
-  { text: 'Book a appointment with him' },
-  { text: "What's his tech stack?" },
-  { text: 'How can I get in touch?' },
-  { text: 'Show me his latest blog post' },
-];
+function getDefaultPrompts(settings) {
+  // Return generic/dynamic prompts if the user hasn't set custom ones
+  return [
+    { text: 'Tell me about the portfolio projects' },
+    { text: 'Book an appointment' },
+    { text: "What's the tech stack?" },
+    { text: 'How can I get in touch?' },
+    { text: 'Show me the latest blog post' },
+  ];
+}
 
 // ---------------------------------------------------------------------------
 // Core streaming helper
@@ -695,7 +698,7 @@ export default function ChatbotWidget() {
   const suggestedPrompts =
     chatbotSettings?.suggestedPrompts?.length > 0
       ? chatbotSettings.suggestedPrompts.map((t) => ({ text: t }))
-      : DEFAULT_PROMPTS;
+      : getDefaultPrompts(chatbotSettings);
 
   // FAB (closed state)
   if (!isOpen) {
@@ -739,8 +742,8 @@ export default function ChatbotWidget() {
             </div>
             <h4 className="font-medium text-neutral-900">AI Assistant is currently away</h4>
             <p className="text-sm text-neutral-500 leading-relaxed">
-              Kiro is taking a break right now. You can still reach Raiyan directly via the contact
-              form for any inquiries or project requests.
+              {chatbotSettings?.aiName || 'Kiro'} is taking a break right now. You can still reach
+              out directly via the contact form for any inquiries or project requests.
             </p>
             <a
               href="#contact"
@@ -753,7 +756,7 @@ export default function ChatbotWidget() {
                 }
               }}
             >
-              Contact Raiyan
+              Contact Me
             </a>
           </div>
         </div>
