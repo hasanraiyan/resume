@@ -114,13 +114,13 @@ export default async function ArticlePage({ params }) {
       <main className="min-h-screen bg-white">
         {/* ── Cover Image (full-bleed) ── */}
         {article.coverImage && (
-          <div className="relative w-full max-h-[480px] overflow-hidden bg-neutral-100">
+          <div className="relative w-full h-[480px] overflow-hidden bg-neutral-100 flex items-center justify-center">
             <Image
               src={article.coverImage}
               alt={article.title}
               width={1200}
               height={480}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover object-center"
               priority
             />
           </div>
