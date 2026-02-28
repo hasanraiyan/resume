@@ -259,23 +259,35 @@ function ArticleCard(article) {
 
 function ContactPrefillCard({ payload, onInteract }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSendDirectly = async () => {
+  const [formData, setFormData] = useState({
+    name: payload.name || '',
+    email: payload.email || '',
+    projectType:
+      payload.projectType && payload.projectType !== 'other' ? payload.projectType : 'web-design',
+    message: payload.message || '',
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSendDirectly = async (e) => {
+    e?.preventDefault();
     setIsSubmitting(true);
     setErrorMsg('');
 
     try {
-      const formData = new FormData();
-      formData.append('name', payload.name || 'Anonymous User');
-      formData.append('email', payload.email || 'no-email@example.com');
-      formData.append(
-        'projectType',
-        payload.projectType && payload.projectType !== 'other' ? payload.projectType : 'other'
-      );
-      formData.append('message', payload.message || 'Draft message from Chatbot.');
+      const data = new FormData();
+      data.append('name', formData.name || 'Anonymous User');
+      data.append('email', formData.email || 'no-email@example.com');
+      data.append('projectType', formData.projectType);
+      data.append('message', formData.message || 'Draft message from Chatbot.');
 
-      const res = await createContactSubmission(formData);
+      const res = await createContactSubmission(data);
 
       if (res.success) {
         if (onInteract) onInteract('sent');
@@ -288,29 +300,6 @@ function ContactPrefillCard({ payload, onInteract }) {
       setErrorMsg('An unexpected error occurred.');
       setIsSubmitting(false);
     }
-  };
-
-  const handleEditInForm = () => {
-    // Dispatch event for Contact.js to listen to
-    const event = new CustomEvent('contact_prefill', {
-      detail: payload,
-    });
-    window.dispatchEvent(event);
-
-    // Scroll to contact section and update URL hash safely
-    const contactSection = document.getElementById('contact');
-    if (contactSection) {
-      contactSection.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      // If we are not on the homepage, redirect to /#contact
-      if (window.location.pathname !== '/') {
-        window.location.href = '/#contact';
-      } else {
-        window.location.hash = 'contact';
-      }
-    }
-
-    if (onInteract) onInteract('edit');
   };
 
   const handleDiscard = () => {
@@ -331,69 +320,157 @@ function ContactPrefillCard({ payload, onInteract }) {
           I've drafted a message with the details you provided.
         </p>
 
-        <div className="space-y-2 mb-4 text-xs bg-neutral-50 p-3 rounded-lg border border-neutral-100">
-          <div className="flex">
-            <span className="w-16 font-semibold text-neutral-500">Name:</span>
-            <span className="text-neutral-900 truncate">
-              {payload.name || <span className="text-neutral-400 italic">Not provided</span>}
-            </span>
+        {!isEditing ? (
+          <div className="space-y-2 mb-4 text-xs bg-neutral-50 p-3 rounded-lg border border-neutral-100">
+            <div className="flex">
+              <span className="w-16 font-semibold text-neutral-500">Name:</span>
+              <span className="text-neutral-900 truncate">
+                {formData.name || <span className="text-neutral-400 italic">Not provided</span>}
+              </span>
+            </div>
+            <div className="flex">
+              <span className="w-16 font-semibold text-neutral-500">Email:</span>
+              <span className="text-neutral-900 truncate">
+                {formData.email || <span className="text-neutral-400 italic">Not provided</span>}
+              </span>
+            </div>
+            <div className="flex">
+              <span className="w-16 font-semibold text-neutral-500">Project:</span>
+              <span className="text-neutral-900">
+                {formData.projectType !== 'other' ? (
+                  formData.projectType
+                ) : (
+                  <span className="text-neutral-400 italic">Not specified</span>
+                )}
+              </span>
+            </div>
+            <div className="flex">
+              <span className="w-16 font-semibold text-neutral-500 shrink-0">Message:</span>
+              <span className="text-neutral-900 line-clamp-3">
+                {formData.message || (
+                  <span className="text-neutral-400 italic">No message drafted</span>
+                )}
+              </span>
+            </div>
           </div>
-          <div className="flex">
-            <span className="w-16 font-semibold text-neutral-500">Email:</span>
-            <span className="text-neutral-900 truncate">
-              {payload.email || <span className="text-neutral-400 italic">Not provided</span>}
-            </span>
-          </div>
-          <div className="flex">
-            <span className="w-16 font-semibold text-neutral-500">Project:</span>
-            <span className="text-neutral-900">
-              {payload.projectType !== 'other' ? (
-                payload.projectType
-              ) : (
-                <span className="text-neutral-400 italic">Not specified</span>
-              )}
-            </span>
-          </div>
-          <div className="flex">
-            <span className="w-16 font-semibold text-neutral-500 shrink-0">Message:</span>
-            <span className="text-neutral-900 line-clamp-3">
-              {payload.message || (
-                <span className="text-neutral-400 italic">No message drafted</span>
-              )}
-            </span>
-          </div>
-        </div>
+        ) : (
+          <form
+            onSubmit={handleSendDirectly}
+            className="space-y-3 mb-4 text-xs p-3 rounded-lg border border-neutral-200 bg-neutral-50"
+          >
+            <div>
+              <label className="block text-neutral-600 font-medium mb-1">Name</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Your name"
+                className="w-full px-2 py-1.5 border border-neutral-300 rounded focus:outline-none focus:border-black"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-neutral-600 font-medium mb-1">Email</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Your email"
+                className="w-full px-2 py-1.5 border border-neutral-300 rounded focus:outline-none focus:border-black"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-neutral-600 font-medium mb-1">Project Type</label>
+              <select
+                name="projectType"
+                value={formData.projectType}
+                onChange={handleChange}
+                className="w-full px-2 py-1.5 border border-neutral-300 rounded focus:outline-none focus:border-black bg-white"
+                required
+              >
+                <option value="web-design">Web Design</option>
+                <option value="web-development">Web Development</option>
+                <option value="ecommerce">E-commerce</option>
+                <option value="mobile-app">Mobile App</option>
+                <option value="ui-ux">UI/UX Design</option>
+                <option value="seo-optimization">SEO Optimization</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-neutral-600 font-medium mb-1">Message</label>
+              <textarea
+                name="message"
+                value={formData.message}
+                onChange={handleChange}
+                placeholder="Tell me about your project..."
+                rows="3"
+                className="w-full px-2 py-1.5 border border-neutral-300 rounded focus:outline-none focus:border-black resize-none"
+                required
+              />
+            </div>
+          </form>
+        )}
 
         <div className="space-y-2">
-          <button
-            onClick={handleSendDirectly}
-            disabled={isSubmitting}
-            className="inline-flex justify-center items-center w-full py-2 px-3 bg-black text-white rounded-xl text-xs font-bold hover:bg-neutral-800 transition-colors gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
-          >
-            {isSubmitting ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <Send className="w-3.5 h-3.5" />
-            )}
-            {isSubmitting ? 'Sending...' : 'Send to Raiyan'}
-          </button>
+          {!isEditing ? (
+            <>
+              <button
+                onClick={handleSendDirectly}
+                disabled={isSubmitting}
+                className="inline-flex justify-center items-center w-full py-2 px-3 bg-black text-white rounded-xl text-xs font-bold hover:bg-neutral-800 transition-colors gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
+              >
+                {isSubmitting ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Send className="w-3.5 h-3.5" />
+                )}
+                {isSubmitting ? 'Sending...' : 'Send to Raiyan'}
+              </button>
 
-          <div className="flex gap-2">
-            <button
-              onClick={handleEditInForm}
-              disabled={isSubmitting}
-              className="flex-1 inline-flex justify-center items-center py-2 px-3 bg-white border border-neutral-200 text-neutral-700 rounded-xl text-xs font-medium hover:bg-neutral-50 hover:border-neutral-300 transition-colors disabled:opacity-50"
-            >
-              Edit in form
-            </button>
-            <button
-              onClick={handleDiscard}
-              disabled={isSubmitting}
-              className="flex-1 inline-flex justify-center items-center py-2 px-3 bg-red-50 text-red-600 rounded-xl text-xs font-medium hover:bg-red-100 transition-colors disabled:opacity-50"
-            >
-              Discard
-            </button>
-          </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setIsEditing(true)}
+                  disabled={isSubmitting}
+                  className="flex-1 inline-flex justify-center items-center py-2 px-3 bg-white border border-neutral-200 text-neutral-700 rounded-xl text-xs font-medium hover:bg-neutral-50 hover:border-neutral-300 transition-colors disabled:opacity-50"
+                >
+                  Edit Details
+                </button>
+                <button
+                  onClick={handleDiscard}
+                  disabled={isSubmitting}
+                  className="flex-1 inline-flex justify-center items-center py-2 px-3 bg-red-50 text-red-600 rounded-xl text-xs font-medium hover:bg-red-100 transition-colors disabled:opacity-50"
+                >
+                  Discard
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={handleSendDirectly}
+                disabled={isSubmitting}
+                className="flex-1 inline-flex justify-center items-center py-2 px-3 bg-black text-white rounded-xl text-xs font-bold hover:bg-neutral-800 transition-colors gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
+              >
+                {isSubmitting ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Send className="w-3.5 h-3.5" />
+                )}
+                {isSubmitting ? 'Sending...' : 'Save & Send'}
+              </button>
+              <button
+                onClick={() => setIsEditing(false)}
+                disabled={isSubmitting}
+                className="flex-1 inline-flex justify-center items-center py-2 px-3 bg-white border border-neutral-200 text-neutral-700 rounded-xl text-xs font-medium hover:bg-neutral-50 hover:border-neutral-300 transition-colors disabled:opacity-50"
+              >
+                Cancel Edit
+              </button>
+            </div>
+          )}
         </div>
         {errorMsg && (
           <p className="text-red-500 text-[10px] mt-2 text-center bg-red-50 p-2 rounded-lg">
