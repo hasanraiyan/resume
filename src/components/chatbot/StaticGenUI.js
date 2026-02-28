@@ -9,6 +9,7 @@ import {
   Search,
   Send,
   CheckCircle2,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -28,11 +29,18 @@ export default function StaticGenUI({ block, onInteract }) {
     case 'article_list':
       return <ArticleList items={block.payload.items} />;
     case 'article_card':
-      return <ArticleCard {...block.payload} />;
+      return <ArticleCard {...block.payload} onInteract={onInteract} />;
     case 'search_results':
       return <SearchResults items={block.payload.items} />;
     case 'contact_prefill':
-      return <ContactPrefillCard payload={block.payload} onInteract={onInteract} />;
+      return (
+        <ContactPrefillCard
+          {...block.payload}
+          onInteract={(action) => onInteract(block, action)}
+          resolved={block.resolved}
+          action={block.action}
+        />
+      );
     default:
       console.warn('Unknown UI block component:', block.component);
       return null;
@@ -257,11 +265,10 @@ function ArticleCard(article) {
 // CONTACT PREFILL COMPONENTS
 // ---------------------------------------------------------------------------
 
-function ContactPrefillCard({ payload, onInteract }) {
+function ContactPrefillCard({ onInteract, resolved, action, ...payload }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-
   const [formData, setFormData] = useState({
     name: payload.name || '',
     email: payload.email || '',
@@ -269,6 +276,42 @@ function ContactPrefillCard({ payload, onInteract }) {
       payload.projectType && payload.projectType !== 'other' ? payload.projectType : 'web-design',
     message: payload.message || '',
   });
+
+  // If resolved, show a simple final status card
+  if (resolved) {
+    const isSent = action?.toLowerCase().includes('sent');
+    const isDiscarded = action?.toLowerCase().includes('discard');
+
+    return (
+      <div className="flex flex-col w-full mt-3 overflow-hidden rounded-2xl border border-neutral-200/50 bg-neutral-50 shadow-sm">
+        <div className="p-4 flex items-center gap-3">
+          <div
+            className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+              isDiscarded ? 'bg-neutral-100' : 'bg-green-100'
+            }`}
+          >
+            {isDiscarded ? (
+              <X className="w-4 h-4 text-neutral-500" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4 text-green-600" />
+            )}
+          </div>
+          <div>
+            <h4 className="font-bold text-neutral-900 text-sm">
+              {isSent ? 'Message Sent' : isDiscarded ? 'Draft Discarded' : 'Action Completed'}
+            </h4>
+            <p className="text-[11px] text-neutral-500">
+              {isSent
+                ? 'Your message has been delivered to Raiyan.'
+                : isDiscarded
+                  ? 'This contact draft was cancelled.'
+                  : `User performed: ${action}`}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;

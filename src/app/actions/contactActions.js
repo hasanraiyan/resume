@@ -125,7 +125,7 @@ export async function createContactSubmission(formData) {
   await dbConnect();
 
   // Basic IP rate limiting
-  const headersList = headers();
+  const headersList = await headers();
   const ip = headersList.get('x-forwarded-for') || 'unknown';
   if (!checkRateLimit(ip)) {
     return { success: false, message: 'Too many submissions. Please try again later.' };

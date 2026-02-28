@@ -289,6 +289,33 @@ export async function draftContactLead(payload) {
   };
 }
 
+/**
+ * Executes the actual contact form submission.
+ */
+export async function submitContactForm(payload) {
+  const { createContactSubmission } = await import('@/app/actions/contactActions');
+
+  try {
+    const formData = new FormData();
+    formData.append('name', payload.name);
+    formData.append('email', payload.email);
+    formData.append('projectType', payload.projectType);
+    formData.append('message', payload.message);
+
+    const result = await createContactSubmission(formData);
+    if (result.success) {
+      return {
+        text: 'Contact message submitted successfully! Raiyan has been notified.',
+        data: { success: true },
+      };
+    }
+    return { error: result.message || 'Failed to submit.' };
+  } catch (error) {
+    console.error('[Chat Utils] submitContactForm failed:', error);
+    return { error: 'Internal server error during submission.' };
+  }
+}
+
 // =================================================================================
 // UTILITY FUNCTIONS
 // =================================================================================
