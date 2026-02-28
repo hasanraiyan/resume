@@ -5,6 +5,8 @@ import CustomCursor from '@/components/CustomCursor';
 import ProjectDetailClient from '@/components/projects/ProjectDetailClient';
 import { getProjectBySlug, getAllPublishedProjects } from '@/app/actions/projectActions';
 
+import ReadingProgressBar from '@/components/blog/ReadingProgressBar';
+
 // ========================================
 //  GENERATE STATIC PARAMS (Optional but recommended)
 // Pre-render all published project pages at build time
@@ -106,6 +108,7 @@ export default async function ProjectDetailPage({ params }) {
     <>
       <CustomCursor />
       <Navbar />
+      <ReadingProgressBar />
 
       {/* Pass data to Client Component for animations */}
       <ProjectDetailClient
