@@ -81,7 +81,7 @@ function StepHistory({ steps, onInteract }) {
     <div className="flex flex-col w-full mb-3 group/history">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-500 hover:text-neutral-700 transition-all duration-200 w-fit"
+        className="flex fit-content items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-500 hover:text-neutral-700 transition-all duration-200 w-fit"
       >
         <div className="flex -space-x-1">
           {uniqueIcons.slice(0, 3).map((Icon, idx) => (
