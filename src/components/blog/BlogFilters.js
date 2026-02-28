@@ -73,12 +73,15 @@ export default function BlogFilters({ onFilterChange, onSearch, articles = [] })
 
       {/* Tag pills */}
       {dynamicTags.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-2">
+        <div
+          className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
           {allTags.map((tag) => (
             <button
               key={tag.id}
               onClick={() => handleTagClick(tag.id)}
-              className={`px-4 py-1.5 rounded-full text-[13px] font-medium transition-all duration-200 ${
+              className={`px-4 py-1.5 rounded-full text-[13px] font-medium transition-all duration-200 shrink-0 whitespace-nowrap ${
                 activeTag === tag.id
                   ? 'bg-neutral-900 text-white'
                   : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
