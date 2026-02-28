@@ -13,6 +13,8 @@ import {
   FolderOpen,
   BookOpen,
   Wrench,
+  Bot,
+  User,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -261,6 +263,7 @@ function buildWelcomeMessage(settings) {
 
 const DEFAULT_PROMPTS = [
   { text: "Tell me about Raiyan's projects" },
+  { text: 'Book a appointment with him' },
   { text: "What's his tech stack?" },
   { text: 'How can I get in touch?' },
   { text: 'Show me his latest blog post' },
@@ -796,18 +799,22 @@ export default function ChatbotWidget() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3 bg-gradient-to-b from-white/50 to-neutral-50/50">
-          {messages.map((message) => {
+          {messages.map((message, index) => {
             // ── Tool action card ────────────────────────────────────────────
             // Only render while the tool is still running (pending).
             // Once done, StepHistory on the assistant bubble takes over — no duplication.
             if (message.role === 'tool_action') {
               if (message.done) return null;
+              // Add a spacer to align the ToolCard with the text (skipping the avatar)
               return (
                 <div
                   key={message.id}
-                  className="flex justify-start animate-in slide-in-from-bottom-2 duration-300"
+                  className="flex gap-3 justify-start animate-in slide-in-from-bottom-2 duration-300 w-full"
                 >
-                  <ToolCard label={message.label} Icon={message.Icon} pending={true} />
+                  <div className="w-7 h-7 shrink-0 mt-1" />
+                  <div className="flex-1 min-w-0 max-w-[95%]">
+                    <ToolCard label={message.label} Icon={message.Icon} pending={true} />
+                  </div>
                 </div>
               );
             }
@@ -817,12 +824,44 @@ export default function ChatbotWidget() {
 
             const isAssistant = message.role === 'assistant';
 
+            // Determine if the previous visible message is from the same role
+            let isConsecutive = false;
+            for (let i = index - 1; i >= 0; i--) {
+              const prevMsg = messages[i];
+              if (prevMsg.hidden) continue;
+              if (prevMsg.role === 'tool_action' && prevMsg.done) continue;
+              isConsecutive = prevMsg.role === message.role;
+              break;
+            }
+
             return (
               <div
                 key={message.id}
-                className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'} animate-in slide-in-from-bottom-2 duration-300 w-full`}
+                className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'} animate-in slide-in-from-bottom-2 duration-300 w-full`}
               >
-                <div className={`max-w-full sm:max-w-[90%]`}>
+                {/* Avatar */}
+                <div className="relative w-7 h-7 shrink-0 mt-1 flex items-center justify-center">
+                  {!isConsecutive && (
+                    <div
+                      className={`w-full h-full rounded-full flex items-center justify-center shadow-sm ${
+                        message.role === 'user'
+                          ? 'bg-black ring-2 ring-black/10'
+                          : 'bg-neutral-100 border border-neutral-200/60'
+                      }`}
+                    >
+                      {message.role === 'user' ? (
+                        <User className="w-3.5 h-3.5 text-white" />
+                      ) : (
+                        <Bot className="w-3.5 h-3.5 text-neutral-600" />
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Content */}
+                <div
+                  className={`flex-1 min-w-0 ${message.role === 'user' ? 'max-w-[85%]' : 'max-w-[95%]'} flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}
+                >
                   {/* StepHistory above assistant bubble */}
                   {isAssistant && message.steps?.length > 0 && (
                     <StepHistory
@@ -833,7 +872,7 @@ export default function ChatbotWidget() {
 
                   {message.content && (
                     <div
-                      className={`px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-sm text-sm overflow-hidden ${
+                      className={`px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-sm text-[13px] overflow-hidden ${
                         message.role === 'user'
                           ? 'bg-gradient-to-br from-black to-neutral-900 text-white shadow-black/20 rounded-tr-sm'
                           : 'bg-white/90 backdrop-blur-sm text-neutral-900 shadow-neutral-200/50 border border-neutral-200/50 rounded-tl-sm'
@@ -862,24 +901,17 @@ export default function ChatbotWidget() {
 
           {/* Typing indicator (only when loading and no tool_action visible yet) */}
           {isLoading && !messages.some((m) => m.role === 'tool_action' && !m.done) && (
-            <div className="flex justify-start animate-in slide-in-from-bottom-2 duration-300">
-              <div className="bg-white/90 backdrop-blur-sm px-4 py-3 rounded-2xl rounded-tl-sm shadow-neutral-200/50 border border-neutral-200/50">
-                <div className="flex items-center space-x-2">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" />
-                    <div
-                      className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"
-                      style={{ animationDelay: '0.1s' }}
-                    />
-                    <div
-                      className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"
-                      style={{ animationDelay: '0.2s' }}
-                    />
-                  </div>
-                  <span className="text-xs text-neutral-500">
-                    {statusMessage || `${chatbotSettings?.aiName || 'Kiro'} is thinking...`}
-                  </span>
-                </div>
+            <div className="flex gap-3 flex-row animate-in slide-in-from-bottom-2 duration-300 w-full mt-1">
+              <div className="relative w-7 h-7 shrink-0 flex items-center justify-center">
+                {/* Background Track */}
+                <div className="absolute inset-0 rounded-full border-[1.5px] border-neutral-200" />
+                {/* Spinning Gradient Ring */}
+                <div className="absolute inset-0 rounded-full border-[1.5px] border-transparent border-t-neutral-800 border-r-neutral-800 animate-spin" />
+                {/* Bot Icon */}
+                <Bot className="w-3.5 h-3.5 text-neutral-600" />
+              </div>
+              <div className="flex-1 min-w-0 max-w-[95%]">
+                {/* Empty space filler for layout */}
               </div>
             </div>
           )}

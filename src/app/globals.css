@@ -322,3 +322,20 @@ body {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Gemini style loading indicator */
+.gemini-loading-ring {
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0 340deg, #3b82f6 360deg);
+  animation: spin 1s linear infinite;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 0);
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 0);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
