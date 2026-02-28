@@ -70,7 +70,7 @@ function parseToolFromStatus(statusMsg) {
 // StepHistory — Perplexity-style collapsible completed-tools summary
 // ---------------------------------------------------------------------------
 
-function StepHistory({ tools }) {
+function StepHistory({ tools, uiBlocks }) {
   const [expanded, setExpanded] = useState(false);
   if (!tools || tools.length === 0) return null;
 
@@ -118,6 +118,14 @@ function StepHistory({ tools }) {
               </div>
             );
           })}
+
+          {uiBlocks && uiBlocks.length > 0 && (
+            <div className="mt-4 w-full">
+              {uiBlocks.map((block, idx) => (
+                <StaticGenUI key={`hist-ui-${idx}`} block={block} />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -751,6 +759,16 @@ export default function ChatbotWidget() {
             // ── Regular message bubble ──────────────────────────────────────
             if (message.hidden) return null;
 
+            const isAssistant = message.role === 'assistant';
+            const historyBlocks =
+              isAssistant && message.uiBlocks?.length > 0
+                ? message.uiBlocks.filter((b) => b.component !== 'contact_prefill')
+                : [];
+            const interactiveBlocks =
+              isAssistant && message.uiBlocks?.length > 0
+                ? message.uiBlocks.filter((b) => b.component === 'contact_prefill')
+                : [];
+
             return (
               <div
                 key={message.id}
@@ -758,8 +776,8 @@ export default function ChatbotWidget() {
               >
                 <div className={`max-w-full sm:max-w-[90%]`}>
                   {/* StepHistory above assistant bubble */}
-                  {message.role === 'assistant' && message.completedTools?.length > 0 && (
-                    <StepHistory tools={message.completedTools} />
+                  {isAssistant && message.completedTools?.length > 0 && (
+                    <StepHistory tools={message.completedTools} uiBlocks={historyBlocks} />
                   )}
 
                   {message.content && (
@@ -787,10 +805,10 @@ export default function ChatbotWidget() {
                     </div>
                   )}
 
-                  {/* UI Blocks outside of the content bubble but attached to the message container */}
-                  {message.role === 'assistant' && message.uiBlocks?.length > 0 && (
+                  {/* Interactive UI Blocks outside of the content bubble but attached to the message container */}
+                  {interactiveBlocks.length > 0 && (
                     <div className="mt-2 w-full space-y-2">
-                      {message.uiBlocks.map((block, idx) => (
+                      {interactiveBlocks.map((block, idx) => (
                         <StaticGenUI
                           key={`ui-block-${message.id}-${idx}`}
                           block={block}
