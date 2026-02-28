@@ -94,6 +94,9 @@ export default async function ArticlePage({ params }) {
     description: article.excerpt,
     image: article.coverImage ? [article.coverImage] : [],
     datePublished: article.publishedAt || article.createdAt,
+    dateModified: article.updatedAt || article.publishedAt || article.createdAt,
+    wordCount: article.content ? article.content.trim().split(/\s+/).length : 0,
+    articleSection: article.tags && article.tags.length > 0 ? article.tags[0] : 'Technology',
     author: {
       '@type': 'Person',
       name: 'Raiyan Hasan',
