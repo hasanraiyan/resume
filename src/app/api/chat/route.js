@@ -11,6 +11,7 @@ import { buildDynamicContext } from '@/lib/ai/context-builder';
 import Analytics from '@/models/Analytics';
 import ChatLog from '@/models/ChatLog';
 import { tools, executeToolCall, getToolStatusMessage, pruneContext } from '@/lib/chatbot-utils';
+import { getUIBlockForToolResult } from '@/lib/chatbot-generative-ui';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -168,19 +169,31 @@ export async function POST(request) {
               const statusMsg = getToolStatusMessage(toolCall.function.name, parsedArgs, iteration);
               controller.enqueue(encodeEvent({ type: 'status', message: statusMsg }));
 
-              // Execute the tool DB query
+              // Execute the tool DB query (returns { text, data })
               const toolResult = await executeToolCall(toolCall);
-              const resultString = JSON.stringify(toolResult);
+
+              // 1. Check if we should emit a Generative UI block to the frontend
+              const uiBlock = getUIBlockForToolResult(toolCall.function.name, toolResult);
+              if (uiBlock) {
+                controller.enqueue(encodeEvent({ type: 'ui', ...uiBlock }));
+              }
+
+              // 2. Extract just the markdown text for the LLM to read
+              // If the tool failed or is returning an old format, fallback to standard stringification
+              const stringResultForLLM =
+                typeof toolResult === 'string'
+                  ? toolResult
+                  : toolResult.text || JSON.stringify(toolResult);
 
               // Truncate oversized tool results before storing in history
-              const isTruncated = resultString.length > MAX_TOOL_RESULT_SIZE;
+              const isTruncated = stringResultForLLM.length > MAX_TOOL_RESULT_SIZE;
               const storedResult = isTruncated
                 ? {
                     _truncated: true,
-                    _originalSize: resultString.length,
-                    _preview: resultString.substring(0, 1_000) + '...',
+                    _originalSize: stringResultForLLM.length,
+                    _preview: stringResultForLLM.substring(0, 1_000) + '...',
                   }
-                : toolResult;
+                : stringResultForLLM;
 
               toolsUsed.push({
                 name: toolCall.function.name,
@@ -189,11 +202,11 @@ export async function POST(request) {
                 result: storedResult,
               });
 
-              // Push the tool result back into the message history for the next turn
+              // Push the tool result TEXT back into the message history for the LLM
               messages.push({
                 role: 'tool',
                 tool_call_id: toolCall.id,
-                content: resultString,
+                content: stringResultForLLM,
               });
             }
             // Loop continues → AI gets the tool results and can call more tools or answer

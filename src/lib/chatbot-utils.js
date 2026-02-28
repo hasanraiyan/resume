@@ -90,7 +90,7 @@ export async function listAllProjects() {
   try {
     await dbConnect();
     const projects = await Project.find({})
-      .select('title slug description')
+      .select('title slug description thumbnail tagline category')
       .sort({ createdAt: -1 })
       .lean();
 
@@ -103,10 +103,13 @@ export async function listAllProjects() {
       )
       .join('\n');
 
-    return `Here are all available projects:\n\n${markdownList}\n\nUse the getProjectDetails tool with a specific slug to get more information about any project.`;
+    return {
+      text: `Here are all available projects:\n\n${markdownList}\n\nUse the getProjectDetails tool with a specific slug to get more information about any project.`,
+      data: projects,
+    };
   } catch (error) {
     console.error('[Chat Utils] listAllProjects failed:', error);
-    return { error: 'Failed to retrieve projects.' };
+    return { error: 'Failed to retrieve projects.', text: 'Failed to retrieve projects.' };
   }
 }
 
@@ -126,10 +129,16 @@ export async function getProjectDetails(slug) {
       : '';
     const links = [liveUrl, githubUrl].filter(Boolean).join(' | ');
 
-    return `**${project.title}**\n\n**Category:** ${project.category || 'Not specified'}\n**Tagline:** ${project.tagline || 'No tagline'}\n\n**Description:**\n${project.description}\n\n**Details:**\n${project.details || 'No additional details'}\n\n**Tags:** ${tags}\n\n**Links:** ${links || 'No external links'}\n\n**[View Project →](/${project.slug})**`;
+    return {
+      text: `**${project.title}**\n\n**Category:** ${project.category || 'Not specified'}\n**Tagline:** ${project.tagline || 'No tagline'}\n\n**Description:**\n${project.description}\n\n**Details:**\n${project.details || 'No additional details'}\n\n**Tags:** ${tags}\n\n**Links:** ${links || 'No external links'}\n\n**[View Project →](/${project.slug})**`,
+      data: project,
+    };
   } catch (error) {
     console.error('[Chat Utils] getProjectDetails failed:', error);
-    return { error: 'Failed to retrieve project details.' };
+    return {
+      error: 'Failed to retrieve project details.',
+      text: 'Failed to retrieve project details.',
+    };
   }
 }
 
@@ -140,7 +149,7 @@ export async function listAllArticles() {
   try {
     await dbConnect();
     const articles = await Article.find({ status: 'published' })
-      .select('title slug excerpt')
+      .select('title slug excerpt coverImage publishedAt')
       .sort({ publishedAt: -1 })
       .lean();
 
@@ -153,10 +162,13 @@ export async function listAllArticles() {
       )
       .join('\n');
 
-    return `Here are all published articles:\n\n${markdownList}\n\nUse the getArticleDetails tool with a specific slug to read any article.`;
+    return {
+      text: `Here are all published articles:\n\n${markdownList}\n\nUse the getArticleDetails tool with a specific slug to read any article.`,
+      data: articles,
+    };
   } catch (error) {
     console.error('[Chat Utils] listAllArticles failed:', error);
-    return { error: 'Failed to retrieve articles.' };
+    return { error: 'Failed to retrieve articles.', text: 'Failed to retrieve articles.' };
   }
 }
 
@@ -177,10 +189,16 @@ export async function getArticleDetails(slug) {
           '\n\n*[Content truncated — read the full article at the link below.]*'
         : article.content;
 
-    return `**${article.title}**\n\n${contentPreview}\n\n**Tags:** ${tags}\n\n**[Read Full Article →](/${article.slug})**`;
+    return {
+      text: `**${article.title}**\n\n${contentPreview}\n\n**Tags:** ${tags}\n\n**[Read Full Article →](/${article.slug})**`,
+      data: article,
+    };
   } catch (error) {
     console.error('[Chat Utils] getArticleDetails failed:', error);
-    return { error: 'Failed to retrieve article details.' };
+    return {
+      error: 'Failed to retrieve article details.',
+      text: 'Failed to retrieve article details.',
+    };
   }
 }
 
@@ -202,10 +220,13 @@ export async function searchPortfolio(query) {
       })
       .join('\n');
 
-    return `Search results for "${query}":\n\n${markdownResults}\n\nUse getProjectDetails or getArticleDetails tools for more specific information.`;
+    return {
+      text: `Search results for "${query}":\n\n${markdownResults}\n\nUse getProjectDetails or getArticleDetails tools for more specific information.`,
+      data: results,
+    };
   } catch (error) {
     console.error('[Chat Utils] searchPortfolio failed:', error);
-    return { error: 'Search failed.' };
+    return { error: 'Search failed.', text: 'Search failed.' };
   }
 }
 

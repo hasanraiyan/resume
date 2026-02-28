@@ -19,6 +19,7 @@ import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import getAnalytics from '@/lib/analytics';
+import StaticGenUI from './StaticGenUI';
 
 // ---------------------------------------------------------------------------
 // Tool metadata — maps tool names to labels + icons
@@ -286,6 +287,7 @@ async function streamChatResponse({ content, history, setMessages, setStatus }) 
     role: 'assistant',
     content: '',
     completedTools: [], // accumulate completed tools for StepHistory
+    uiBlocks: [], // UI blocks (Generative UI)
     timestamp: new Date(),
   };
   let messageAdded = false;
@@ -314,7 +316,10 @@ async function streamChatResponse({ content, history, setMessages, setStatus }) 
           // Raw text fallback
           assistantMessage.content += line;
           if (!messageAdded) {
-            setMessages((prev) => [...prev, { ...assistantMessage }]);
+            setMessages((prev) => [
+              ...prev,
+              { ...assistantMessage, uiBlocks: [...assistantMessage.uiBlocks] },
+            ]);
             messageAdded = true;
           } else {
             setMessages((prev) =>
@@ -334,10 +339,11 @@ async function streamChatResponse({ content, history, setMessages, setStatus }) 
           // If the AI already streamed some text before calling this tool (e.g.
           // "I'll fetch all the available info..."), close that bubble and prepare
           // a fresh one for the post-tool response — avoids merged text.
-          if (messageAdded) {
+          if (messageAdded && assistantMessage.content.trim().length > 0) {
             assistantMessage.id = Date.now() + Math.random();
             assistantMessage.content = '';
             assistantMessage.completedTools = [];
+            assistantMessage.uiBlocks = [];
             messageAdded = false;
           }
 
@@ -365,6 +371,37 @@ async function streamChatResponse({ content, history, setMessages, setStatus }) 
 
           // Save metadata so StepHistory can show it after
           turnCompletedTools.push({ label, Icon });
+        } else if (data.type === 'ui') {
+          // Add the Generative UI block to the assistant message
+          // Prevent duplicates if the exact same block payload is already there
+          const isDuplicate = assistantMessage.uiBlocks.some(
+            (b) =>
+              b.component === data.component &&
+              JSON.stringify(b.payload) === JSON.stringify(data.payload)
+          );
+
+          if (!isDuplicate) {
+            assistantMessage.uiBlocks.push(data);
+          }
+
+          if (!messageAdded) {
+            setMessages((prev) => [
+              ...prev,
+              { ...assistantMessage, uiBlocks: [...assistantMessage.uiBlocks] },
+            ]);
+            messageAdded = true;
+          } else {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMessage.id
+                  ? {
+                      ...m,
+                      uiBlocks: [...assistantMessage.uiBlocks],
+                    }
+                  : m
+              )
+            );
+          }
         } else if (data.type === 'content') {
           setStatus('');
 
@@ -379,7 +416,10 @@ async function streamChatResponse({ content, history, setMessages, setStatus }) 
           assistantMessage.completedTools = [...turnCompletedTools];
 
           if (!messageAdded) {
-            setMessages((prev) => [...prev, { ...assistantMessage }]);
+            setMessages((prev) => [
+              ...prev,
+              { ...assistantMessage, uiBlocks: [...assistantMessage.uiBlocks] },
+            ]);
             messageAdded = true;
           } else {
             setMessages((prev) =>
@@ -672,8 +712,17 @@ export default function ChatbotWidget() {
             return (
               <div
                 key={message.id}
-                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}
+                className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'} animate-in slide-in-from-bottom-2 duration-300 w-full`}
               >
+                {/* GENERATIVE UI BLOCKS RENDERED ABOVE THE BUBBLE FULL WIDTH */}
+                {message.role === 'assistant' && message.uiBlocks?.length > 0 && (
+                  <div className="mb-3 w-full space-y-2">
+                    {message.uiBlocks.map((block, idx) => (
+                      <StaticGenUI key={`${message.id}-ui-${idx}`} block={block} />
+                    ))}
+                  </div>
+                )}
+
                 <div
                   className={`max-w-full sm:max-w-[85%] ${message.role === 'assistant' ? 'w-full' : ''}`}
                 >
@@ -682,27 +731,29 @@ export default function ChatbotWidget() {
                     <StepHistory tools={message.completedTools} />
                   )}
 
-                  <div
-                    className={`px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-sm text-sm ${
-                      message.role === 'user'
-                        ? 'bg-gradient-to-br from-black to-neutral-900 text-white shadow-black/20 rounded-tr-sm'
-                        : 'bg-white/90 backdrop-blur-sm text-neutral-900 shadow-neutral-200/50 border border-neutral-200/50 rounded-tl-sm'
-                    }`}
-                  >
-                    {message.role === 'assistant' ? (
-                      <MdContent content={message.content} onLinkClick={handleLinkClick} />
-                    ) : (
-                      <p className="leading-relaxed whitespace-pre-wrap">{message.content}</p>
-                    )}
-                    <p
-                      className={`text-[10px] mt-1.5 ${message.role === 'user' ? 'text-neutral-400' : 'text-neutral-400'}`}
+                  {message.content && (
+                    <div
+                      className={`px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-sm text-sm ${
+                        message.role === 'user'
+                          ? 'bg-gradient-to-br from-black to-neutral-900 text-white shadow-black/20 rounded-tr-sm'
+                          : 'bg-white/90 backdrop-blur-sm text-neutral-900 shadow-neutral-200/50 border border-neutral-200/50 rounded-tl-sm'
+                      }`}
                     >
-                      {message.timestamp.toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </p>
-                  </div>
+                      {message.role === 'assistant' ? (
+                        <MdContent content={message.content} onLinkClick={handleLinkClick} />
+                      ) : (
+                        <p className="leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                      )}
+                      <p
+                        className={`text-[10px] mt-1.5 ${message.role === 'user' ? 'text-neutral-400' : 'text-neutral-400'}`}
+                      >
+                        {message.timestamp.toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             );

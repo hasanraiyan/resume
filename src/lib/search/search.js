@@ -124,9 +124,9 @@ export async function performSearch(query, isAuthenticated = false) {
       ? { $in: ['public', 'private', 'unlisted'] }
       : 'public';
     const [projectResults, articleResults] = await Promise.all([
-      Project.find({}).select('slug title description category tags').lean(),
+      Project.find({}).select('slug title description category tags thumbnail').lean(),
       Article.find({ status: 'published', visibility: visibilityFilter })
-        .select('slug title excerpt tags visibility')
+        .select('slug title excerpt tags visibility coverImage')
         .lean(),
     ]);
 
@@ -167,6 +167,7 @@ export async function performSearch(query, isAuthenticated = false) {
       score: 1 - result.score, // Invert score so higher is better
       category: result.item.category,
       tags: result.item.tags,
+      thumbnail: result.item.thumbnail || result.item.coverImage,
       url:
         result.item.type === 'project'
           ? `/projects/${result.item.slug}`
