@@ -70,11 +70,11 @@ function parseToolFromStatus(statusMsg) {
 // StepHistory — Perplexity-style collapsible completed-tools summary
 // ---------------------------------------------------------------------------
 
-function StepHistory({ tools, uiBlocks }) {
+function StepHistory({ tools }) {
   const [expanded, setExpanded] = useState(false);
   if (!tools || tools.length === 0) return null;
 
-  const uniqueIcons = [...new Set(tools.map((t) => t.Icon))];
+  const uniqueIcons = [...new Set(tools.map((t) => t.Icon).filter(Boolean))];
 
   return (
     <div className="mb-2 animate-in fade-in slide-in-from-top-1 duration-300">
@@ -118,14 +118,6 @@ function StepHistory({ tools, uiBlocks }) {
               </div>
             );
           })}
-
-          {uiBlocks && uiBlocks.length > 0 && (
-            <div className="mt-4 w-full">
-              {uiBlocks.map((block, idx) => (
-                <StaticGenUI key={`hist-ui-${idx}`} block={block} />
-              ))}
-            </div>
-          )}
         </div>
       )}
     </div>
@@ -525,7 +517,7 @@ export default function ChatbotWidget() {
   }, [fetchSettings]);
 
   const send = useCallback(
-    async (content) => {
+    async (content, hidden = false) => {
       if (!content.trim() || isLoading) return;
 
       const userMessage = {
@@ -533,6 +525,7 @@ export default function ChatbotWidget() {
         role: 'user',
         content: content.trim(),
         timestamp: new Date(),
+        hidden,
       };
       setMessages((prev) => [...prev, userMessage]);
       setIsLoading(true);
@@ -540,7 +533,7 @@ export default function ChatbotWidget() {
       try {
         await streamChatResponse({
           content: userMessage.content,
-          history: messages,
+          history: messages.filter((m) => !m.hidden), // Send all messages (except hidden flag, but content IS sent) to API
           setMessages,
           setStatus: setStatusMessage,
         });
@@ -594,6 +587,42 @@ export default function ChatbotWidget() {
           : 'external',
       chatbotSession: analytics.sessionId,
     });
+  };
+
+  const handleUIInteract = (messageId, block, action) => {
+    // 1. Remove the active UI block from the assistant's message
+    // 2. Add a completed tool summary to the StepHistory
+    setMessages((prev) =>
+      prev.map((m) => {
+        if (m.id === messageId) {
+          let label = 'Interacted with form';
+          if (action === 'sent') label = 'Sent contact message';
+          if (action === 'edit') label = 'Prefilled contact form';
+          if (action === 'discard') label = 'Discarded contact draft';
+
+          return {
+            ...m,
+            uiBlocks: m.uiBlocks.filter((b) => b.component !== block.component),
+            completedTools: [...m.completedTools, { label, Icon: FileText }],
+          };
+        }
+        return m;
+      })
+    );
+
+    // 3. Send a hidden message to the AI so it knows what the user did
+    let prompt = '';
+    if (action === 'sent') {
+      prompt = 'I have submitted the contact form successfully.';
+    } else if (action === 'edit') {
+      prompt = 'I decided to edit the contact form details myself before sending.';
+    } else if (action === 'discard') {
+      prompt = 'I cancelled the contact form draft.';
+    }
+
+    if (prompt) {
+      send(prompt, true);
+    }
   };
 
   const suggestedPrompts =
@@ -720,6 +749,8 @@ export default function ChatbotWidget() {
             }
 
             // ── Regular message bubble ──────────────────────────────────────
+            if (message.hidden) return null;
+
             return (
               <div
                 key={message.id}
@@ -728,7 +759,7 @@ export default function ChatbotWidget() {
                 <div className={`max-w-full sm:max-w-[90%]`}>
                   {/* StepHistory above assistant bubble */}
                   {message.role === 'assistant' && message.completedTools?.length > 0 && (
-                    <StepHistory tools={message.completedTools} uiBlocks={message.uiBlocks} />
+                    <StepHistory tools={message.completedTools} />
                   )}
 
                   {message.content && (
@@ -753,6 +784,19 @@ export default function ChatbotWidget() {
                           minute: '2-digit',
                         })}
                       </p>
+                    </div>
+                  )}
+
+                  {/* UI Blocks outside of the content bubble but attached to the message container */}
+                  {message.role === 'assistant' && message.uiBlocks?.length > 0 && (
+                    <div className="mt-2 w-full space-y-2">
+                      {message.uiBlocks.map((block, idx) => (
+                        <StaticGenUI
+                          key={`ui-block-${message.id}-${idx}`}
+                          block={block}
+                          onInteract={(action) => handleUIInteract(message.id, block, action)}
+                        />
+                      ))}
                     </div>
                   )}
                 </div>

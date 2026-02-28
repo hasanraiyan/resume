@@ -1,14 +1,23 @@
 'use client';
 
-import React from 'react';
-import { ExternalLink, Github, FolderGit2, BookOpen, Search, Send } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  ExternalLink,
+  Github,
+  FolderGit2,
+  BookOpen,
+  Search,
+  Send,
+  CheckCircle2,
+} from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { createContactSubmission } from '@/app/actions/contactActions';
 
 /**
  * Renders a specific generative UI component block
  */
-export default function StaticGenUI({ block }) {
+export default function StaticGenUI({ block, onInteract }) {
   if (!block || !block.component || !block.payload) return null;
 
   switch (block.component) {
@@ -23,7 +32,7 @@ export default function StaticGenUI({ block }) {
     case 'search_results':
       return <SearchResults items={block.payload.items} />;
     case 'contact_prefill':
-      return <ContactPrefillCard {...block.payload} />;
+      return <ContactPrefillCard payload={block.payload} onInteract={onInteract} />;
     default:
       console.warn('Unknown UI block component:', block.component);
       return null;
@@ -248,8 +257,40 @@ function ArticleCard(article) {
 // CONTACT PREFILL COMPONENTS
 // ---------------------------------------------------------------------------
 
-function ContactPrefillCard(payload) {
-  const handlePrefillClick = () => {
+function ContactPrefillCard({ payload, onInteract }) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleSendDirectly = async () => {
+    setIsSubmitting(true);
+    setErrorMsg('');
+
+    try {
+      const formData = new FormData();
+      formData.append('name', payload.name || 'Anonymous User');
+      formData.append('email', payload.email || 'no-email@example.com');
+      formData.append(
+        'projectType',
+        payload.projectType && payload.projectType !== 'other' ? payload.projectType : 'other'
+      );
+      formData.append('message', payload.message || 'Draft message from Chatbot.');
+
+      const res = await createContactSubmission(formData);
+
+      if (res.success) {
+        if (onInteract) onInteract('sent');
+      } else {
+        setErrorMsg(res.message || 'Failed to send message.');
+        setIsSubmitting(false); // only reset on error, on success unmounts
+      }
+    } catch (error) {
+      console.error('Error submitting contact form from bot:', error);
+      setErrorMsg('An unexpected error occurred.');
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditInForm = () => {
     // Dispatch event for Contact.js to listen to
     const event = new CustomEvent('contact_prefill', {
       detail: payload,
@@ -268,6 +309,12 @@ function ContactPrefillCard(payload) {
         window.location.hash = 'contact';
       }
     }
+
+    if (onInteract) onInteract('edit');
+  };
+
+  const handleDiscard = () => {
+    if (onInteract) onInteract('discard');
   };
 
   return (
@@ -317,13 +364,42 @@ function ContactPrefillCard(payload) {
           </div>
         </div>
 
-        <button
-          onClick={handlePrefillClick}
-          className="inline-flex justify-center items-center w-full py-2 px-3 bg-neutral-900 text-white rounded-xl text-xs font-medium hover:bg-neutral-800 transition-colors gap-2"
-        >
-          <Send className="w-3.5 h-3.5" />
-          Use this in contact form
-        </button>
+        <div className="space-y-2">
+          <button
+            onClick={handleSendDirectly}
+            disabled={isSubmitting}
+            className="inline-flex justify-center items-center w-full py-2 px-3 bg-black text-white rounded-xl text-xs font-bold hover:bg-neutral-800 transition-colors gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
+          >
+            {isSubmitting ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Send className="w-3.5 h-3.5" />
+            )}
+            {isSubmitting ? 'Sending...' : 'Send to Raiyan'}
+          </button>
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleEditInForm}
+              disabled={isSubmitting}
+              className="flex-1 inline-flex justify-center items-center py-2 px-3 bg-white border border-neutral-200 text-neutral-700 rounded-xl text-xs font-medium hover:bg-neutral-50 hover:border-neutral-300 transition-colors disabled:opacity-50"
+            >
+              Edit in form
+            </button>
+            <button
+              onClick={handleDiscard}
+              disabled={isSubmitting}
+              className="flex-1 inline-flex justify-center items-center py-2 px-3 bg-red-50 text-red-600 rounded-xl text-xs font-medium hover:bg-red-100 transition-colors disabled:opacity-50"
+            >
+              Discard
+            </button>
+          </div>
+        </div>
+        {errorMsg && (
+          <p className="text-red-500 text-[10px] mt-2 text-center bg-red-50 p-2 rounded-lg">
+            {errorMsg}
+          </p>
+        )}
       </div>
     </div>
   );
