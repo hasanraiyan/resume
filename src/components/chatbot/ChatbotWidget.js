@@ -47,6 +47,8 @@ function getToolMetadata(toolName, content) {
         label: extracted ? `Searching for "${extracted}"` : 'Searching portfolio',
         Icon: Search,
       };
+    case 'draftContactLead':
+      return { label: 'Drafting contact form', Icon: FileText };
     default:
       return { label: content || 'Processing', Icon: Wrench };
   }
@@ -60,6 +62,7 @@ function parseToolFromStatus(statusMsg) {
   if (statusMsg.includes('blog articles')) return 'listAllArticles';
   if (statusMsg.includes('Reading')) return 'getArticleDetails';
   if (statusMsg.includes('Searching')) return 'searchPortfolio';
+  if (statusMsg.includes('Drafting contact form')) return 'draftContactLead';
   return null;
 }
 

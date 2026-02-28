@@ -63,6 +63,15 @@ export function getUIBlockForToolResult(toolName, rawResult) {
           };
         }
         break;
+
+      case 'draftContactLead':
+        if (rawResult.data) {
+          return {
+            component: 'contact_prefill',
+            payload: rawResult.data,
+          };
+        }
+        break;
     }
   } catch (err) {
     console.error('[GenUI Mapper] Failed to map tool result:', err);

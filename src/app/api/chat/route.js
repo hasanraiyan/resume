@@ -12,6 +12,7 @@ import Analytics from '@/models/Analytics';
 import ChatLog from '@/models/ChatLog';
 import { tools, executeToolCall, getToolStatusMessage, pruneContext } from '@/lib/chatbot-utils';
 import { getUIBlockForToolResult } from '@/lib/chatbot-generative-ui';
+import { rateLimit } from '@/lib/rateLimit';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -49,6 +50,9 @@ function mergeToolCallDeltas(map, deltas) {
 // =================================================================================
 
 export async function POST(request) {
+  const rateLimitResponse = rateLimit(request, 10, 60000); // 10 requests per minute
+  if (rateLimitResponse) return rateLimitResponse;
+
   const startTime = Date.now();
 
   try {

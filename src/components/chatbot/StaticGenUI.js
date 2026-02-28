@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ExternalLink, Github, FolderGit2, BookOpen, Search } from 'lucide-react';
+import { ExternalLink, Github, FolderGit2, BookOpen, Search, Send } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -22,6 +22,8 @@ export default function StaticGenUI({ block }) {
       return <ArticleCard {...block.payload} />;
     case 'search_results':
       return <SearchResults items={block.payload.items} />;
+    case 'contact_prefill':
+      return <ContactPrefillCard {...block.payload} />;
     default:
       console.warn('Unknown UI block component:', block.component);
       return null;
@@ -237,6 +239,91 @@ function ArticleCard(article) {
         >
           Read Full Article
         </Link>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// CONTACT PREFILL COMPONENTS
+// ---------------------------------------------------------------------------
+
+function ContactPrefillCard(payload) {
+  const handlePrefillClick = () => {
+    // Dispatch event for Contact.js to listen to
+    const event = new CustomEvent('contact_prefill', {
+      detail: payload,
+    });
+    window.dispatchEvent(event);
+
+    // Scroll to contact section and update URL hash safely
+    const contactSection = document.getElementById('contact');
+    if (contactSection) {
+      contactSection.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      // If we are not on the homepage, redirect to /#contact
+      if (window.location.pathname !== '/') {
+        window.location.href = '/#contact';
+      } else {
+        window.location.hash = 'contact';
+      }
+    }
+  };
+
+  return (
+    <div className="flex flex-col w-full mt-3 overflow-hidden rounded-2xl border border-neutral-200/50 bg-white shadow-sm hover:shadow-md transition-shadow">
+      <div className="p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="inline-flex items-center px-2 py-1 rounded-md bg-blue-50 text-blue-700 text-[10px] font-bold uppercase tracking-widest">
+            Draft Contact
+          </span>
+        </div>
+
+        <h4 className="font-bold text-neutral-900 text-base mb-2 leading-tight">Ready to send?</h4>
+        <p className="text-sm text-neutral-600 mb-4 leading-relaxed">
+          I've drafted a message with the details you provided.
+        </p>
+
+        <div className="space-y-2 mb-4 text-xs bg-neutral-50 p-3 rounded-lg border border-neutral-100">
+          <div className="flex">
+            <span className="w-16 font-semibold text-neutral-500">Name:</span>
+            <span className="text-neutral-900 truncate">
+              {payload.name || <span className="text-neutral-400 italic">Not provided</span>}
+            </span>
+          </div>
+          <div className="flex">
+            <span className="w-16 font-semibold text-neutral-500">Email:</span>
+            <span className="text-neutral-900 truncate">
+              {payload.email || <span className="text-neutral-400 italic">Not provided</span>}
+            </span>
+          </div>
+          <div className="flex">
+            <span className="w-16 font-semibold text-neutral-500">Project:</span>
+            <span className="text-neutral-900">
+              {payload.projectType !== 'other' ? (
+                payload.projectType
+              ) : (
+                <span className="text-neutral-400 italic">Not specified</span>
+              )}
+            </span>
+          </div>
+          <div className="flex">
+            <span className="w-16 font-semibold text-neutral-500 shrink-0">Message:</span>
+            <span className="text-neutral-900 line-clamp-3">
+              {payload.message || (
+                <span className="text-neutral-400 italic">No message drafted</span>
+              )}
+            </span>
+          </div>
+        </div>
+
+        <button
+          onClick={handlePrefillClick}
+          className="inline-flex justify-center items-center w-full py-2 px-3 bg-neutral-900 text-white rounded-xl text-xs font-medium hover:bg-neutral-800 transition-colors gap-2"
+        >
+          <Send className="w-3.5 h-3.5" />
+          Use this in contact form
+        </button>
       </div>
     </div>
   );
