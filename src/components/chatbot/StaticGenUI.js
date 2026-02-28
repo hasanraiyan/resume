@@ -56,15 +56,13 @@ function ProjectList({ items }) {
 
   return (
     <div className="mt-3">
-      <h3 className="flex items-center gap-2 px-1 text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-2">
-        <FolderGit2 className="w-3.5 h-3.5" />
-        Projects
-      </h3>
       <div className="flex overflow-x-auto gap-3 w-full pb-3 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-1">
         {items.map((project) => (
           <Link
             key={project.slug}
             href={`/projects/${project.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
             className="group flex flex-col overflow-hidden rounded-xl border border-neutral-200/50 bg-white hover:bg-neutral-50 hover:border-neutral-300 transition-all text-left shadow-sm hover:shadow-md w-[180px] sm:w-[200px] snap-start shrink-0"
           >
             {project.thumbnail ? (
@@ -136,6 +134,8 @@ function ProjectCard(project) {
         <div className="flex items-center gap-2 mt-auto pt-2 border-t border-neutral-100">
           <Link
             href={`/projects/${project.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex-1 inline-flex justify-center items-center py-2 px-3 bg-neutral-900 text-white rounded-xl text-xs font-medium hover:bg-neutral-800 transition-colors"
           >
             View Full Case Study
@@ -182,15 +182,13 @@ function ArticleList({ items }) {
 
   return (
     <div className="mt-3">
-      <h3 className="flex items-center gap-2 px-1 text-[11px] font-bold uppercase tracking-wider text-orange-600 mb-2">
-        <BookOpen className="w-3.5 h-3.5" />
-        Articles
-      </h3>
       <div className="flex overflow-x-auto gap-3 w-full pb-3 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-1">
         {items.map((article) => (
           <Link
             key={article.slug}
             href={`/blog/${article.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
             className="group flex flex-col overflow-hidden rounded-xl border border-neutral-200/50 bg-white hover:bg-neutral-50 hover:border-neutral-300 transition-all text-left shadow-sm hover:shadow-md w-[180px] sm:w-[200px] snap-start shrink-0"
           >
             {article.coverImage ? (
@@ -252,6 +250,8 @@ function ArticleCard(article) {
 
         <Link
           href={`/blog/${article.slug}`}
+          target="_blank"
+          rel="noopener noreferrer"
           className="inline-flex justify-center items-center w-full py-2 px-3 bg-neutral-900 text-white rounded-xl text-xs font-medium hover:bg-neutral-800 transition-colors"
         >
           Read Full Article
@@ -541,10 +541,6 @@ function SearchResults({ items }) {
 
   return (
     <div className="mt-3">
-      <h3 className="flex items-center gap-2 px-1 text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-2">
-        <Search className="w-3.5 h-3.5" />
-        Search Results
-      </h3>
       <div className="flex overflow-x-auto gap-3 w-full pb-3 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-1">
         {items.map((item, idx) => {
           const isProject = item.type === 'project';
@@ -558,6 +554,8 @@ function SearchResults({ items }) {
             <Link
               key={`${item.type}-${item.slug}-${idx}`}
               href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
               className="group flex flex-col overflow-hidden rounded-xl border border-neutral-200/50 bg-white hover:bg-neutral-50 hover:border-neutral-300 transition-all text-left shadow-sm hover:shadow-md w-[180px] sm:w-[200px] snap-start shrink-0"
             >
               {item.thumbnail ? (

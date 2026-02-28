@@ -20,6 +20,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { toast } from 'sonner';
 import getAnalytics from '@/lib/analytics';
 import StaticGenUI from './StaticGenUI';
 
@@ -542,6 +543,17 @@ export default function ChatbotWidget() {
     }
   }, [isOpen]);
 
+  // Handle Escape key to close widget
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
   // Lazy settings fetch
   const fetchSettings = useCallback(async () => {
     if (settingsFetched) return;
@@ -611,7 +623,7 @@ export default function ChatbotWidget() {
             id: Date.now() + 1,
             role: 'assistant',
             content:
-              "Sorry, I'm having trouble responding right now. However, you can reach out directly via [the contact form](#contact) instead!",
+              "⚠️ **Connection Error**\n\nI'm having trouble connecting to the server right now. Please try sending your message again, or reach out directly [via the contact form](#contact).",
             steps: [],
             timestamp: new Date(),
           },
@@ -641,6 +653,7 @@ export default function ChatbotWidget() {
         timestamp: new Date(),
       },
     ]);
+    toast.success('Chat history cleared');
   };
 
   const handleLinkClick = (e, href) => {
@@ -703,12 +716,22 @@ export default function ChatbotWidget() {
   // FAB (closed state)
   if (!isOpen) {
     return (
-      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 group flex flex-col items-end gap-2">
+        {/* Tooltip */}
+        <div className="opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 px-3 py-1.5 bg-black text-white text-xs font-medium rounded-lg shadow-lg pointer-events-none whitespace-nowrap">
+          Chat with {chatbotSettings?.aiName || 'Kiro'}
+        </div>
+
         <button
           onClick={handleOpenChat}
-          className="group relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-black to-neutral-900 hover:from-neutral-900 hover:to-black text-white shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center justify-center border border-white/20 backdrop-blur-sm"
+          className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-black to-neutral-900 hover:from-neutral-900 hover:to-black text-white shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center justify-center border border-white/20 backdrop-blur-sm"
           aria-label="Open chat"
         >
+          {/* Notification Badge */}
+          <div className="absolute top-0 right-0 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-theme-bg shadow-sm z-20">
+            <div className="absolute inset-0 w-full h-full bg-red-500 rounded-full animate-ping opacity-75" />
+          </div>
+
           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 relative z-10" />
         </button>
@@ -801,7 +824,7 @@ export default function ChatbotWidget() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3 bg-gradient-to-b from-white/50 to-neutral-50/50">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3 bg-gradient-to-b from-white/50 to-neutral-50/50 custom-chat-scrollbar">
           {messages.map((message, index) => {
             // ── Tool action card ────────────────────────────────────────────
             // Only render while the tool is still running (pending).

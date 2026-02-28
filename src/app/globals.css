@@ -339,3 +339,18 @@ body {
     transform: rotate(360deg);
   }
 }
+
+/* Custom Chatblock Scrollbar */
+.custom-chat-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-chat-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-chat-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #d4d4d8;
+  border-radius: 10px;
+}
+.custom-chat-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #a1a1aa;
+}
