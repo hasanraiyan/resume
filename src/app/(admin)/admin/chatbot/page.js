@@ -165,7 +165,7 @@ export default function ChatbotSettingsPage() {
 
     return (
       <div
-        className={`space-y-4 relative z-40 bg-white p-4 rounded-xl border transition-all cursor-pointer ${
+        className={`space-y-4 relative bg-white p-4 rounded-xl border transition-all cursor-pointer hover:z-50 focus-within:z-50 ${
           isDefault ? 'border-blue-500 ring-1 ring-blue-500/20 shadow-sm' : 'border-neutral-200'
         }`}
         onClick={() => handleInputChange('defaultEngine', engineKey)}

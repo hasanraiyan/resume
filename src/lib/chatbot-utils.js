@@ -8,118 +8,130 @@ import Project from '@/models/Project';
 import Article from '@/models/Article';
 import { performSearch } from '@/lib/search/search';
 
+import { tool } from '@langchain/core/tools';
+import { z } from 'zod';
+
 // =================================================================================
-// TOOL DEFINITIONS
+// LANGCHAIN TOOL DEFINITIONS
 // =================================================================================
 
-export const tools = [
-  {
-    type: 'function',
-    function: {
-      name: 'listAllProjects',
-      description:
-        "Get a list of all available project titles, their slugs, and short descriptions. Use this when the user asks a general question like 'What projects have you worked on?' or 'Show me your portfolio'.",
-      parameters: { type: 'object', properties: {} },
-    },
+export const listAllProjectsTool = tool(
+  async () => {
+    const result = await listAllProjects();
+    return typeof result === 'string' ? result : JSON.stringify(result);
   },
   {
-    type: 'function',
-    function: {
-      name: 'getProjectDetails',
-      description:
-        "Get the complete, detailed information for a single project using its unique slug. Use this only after you know the specific slug, for example, after the user asks for more details about a project from the list provided by 'listAllProjects'.",
-      parameters: {
-        type: 'object',
-        properties: {
-          slug: {
-            type: 'string',
-            description: 'The URL-friendly slug of the project (e.g., "luxury-fashion-store").',
-          },
-        },
-        required: ['slug'],
-      },
-    },
+    name: 'listAllProjects',
+    description:
+      "Get a list of all available project titles, their slugs, and short descriptions. Use this when the user asks a general question like 'What projects have you worked on?' or 'Show me your portfolio'.",
+  }
+);
+
+export const getProjectDetailsTool = tool(
+  async ({ slug }) => {
+    const result = await getProjectDetails(slug);
+    return typeof result === 'string' ? result : JSON.stringify(result);
   },
   {
-    type: 'function',
-    function: {
-      name: 'listAllArticles',
-      description:
-        "Get a list of all published article titles, their slugs, and excerpts. Use this when the user asks a general question like 'What have you written about?' or 'Show me your blog posts'.",
-      parameters: { type: 'object', properties: {} },
-    },
+    name: 'getProjectDetails',
+    description:
+      'Get the complete, detailed information for a single project using its unique slug. Use this only after you know the specific slug.',
+    schema: z.object({
+      slug: z
+        .string()
+        .describe('The URL-friendly slug of the project (e.g., "luxury-fashion-store").'),
+    }),
+  }
+);
+
+export const listAllArticlesTool = tool(
+  async () => {
+    const result = await listAllArticles();
+    return typeof result === 'string' ? result : JSON.stringify(result);
   },
   {
-    type: 'function',
-    function: {
-      name: 'getArticleDetails',
-      description:
-        'Get the full content and details for a single article using its unique slug. Use this when a user asks to read a specific article that you know the slug for.',
-      parameters: {
-        type: 'object',
-        properties: {
-          slug: { type: 'string', description: 'The URL-friendly slug of the article.' },
-        },
-        required: ['slug'],
-      },
-    },
+    name: 'listAllArticles',
+    description:
+      "Get a list of all published article titles, their slugs, and excerpts. Use this when the user asks a general question like 'What have you written about?' or 'Show me your blog posts'.",
+  }
+);
+
+export const getArticleDetailsTool = tool(
+  async ({ slug }) => {
+    const result = await getArticleDetails(slug);
+    return typeof result === 'string' ? result : JSON.stringify(result);
   },
   {
-    type: 'function',
-    function: {
-      name: 'searchPortfolio',
-      description:
-        'Performs an intelligent, fuzzy search for projects or articles using specific keywords (e.g., "React", "e-commerce", "AI"). Use this for topic-based questions or when the user is looking for experience with a certain technology.',
-      parameters: {
-        type: 'object',
-        properties: { query: { type: 'string', description: 'The search term or keyword.' } },
-        required: ['query'],
-      },
-    },
+    name: 'getArticleDetails',
+    description:
+      'Get the full content and details for a single article using its unique slug. Use this when a user asks to read a specific article that you know the slug for.',
+    schema: z.object({
+      slug: z.string().describe('The URL-friendly slug of the article.'),
+    }),
+  }
+);
+
+export const searchPortfolioTool = tool(
+  async ({ query }) => {
+    const result = await searchPortfolio(query);
+    return typeof result === 'string' ? result : JSON.stringify(result);
   },
   {
-    type: 'function',
-    function: {
-      name: 'draftContactLead',
-      description:
-        'Drafts a contact form payload with the information you have gathered from the user. Call this tool when you have enough context to populate some or all of the fields for a message to the developer. It creates a structured payload that can be sent to the contact form.',
-      parameters: {
-        type: 'object',
-        properties: {
-          name: { type: 'string', description: "The user's name." },
-          email: { type: 'string', description: "The user's email address." },
-          projectType: {
-            type: 'string',
-            description:
-              "The type of project (e.g., 'web-design', 'web-development', 'mobile-app', 'branding', 'ui-ux', 'consulting', 'ecommerce', 'cms-development', 'seo-optimization', 'api-integration', 'database-design', 'maintenance', 'redesign', 'landing-page', 'portfolio', 'blog', 'other').",
-            enum: [
-              'web-design',
-              'web-development',
-              'mobile-app',
-              'branding',
-              'ui-ux',
-              'consulting',
-              'ecommerce',
-              'cms-development',
-              'seo-optimization',
-              'api-integration',
-              'database-design',
-              'maintenance',
-              'redesign',
-              'landing-page',
-              'portfolio',
-              'blog',
-              'other',
-            ],
-          },
-          message: {
-            type: 'string',
-            description: "A summary or draft of the user's message/request.",
-          },
-        },
-      },
-    },
+    name: 'searchPortfolio',
+    description:
+      'Performs an intelligent, fuzzy search for projects or articles using specific keywords (e.g., "React", "e-commerce", "AI"). Use this for topic-based questions or when the user is looking for experience with a certain technology.',
+    schema: z.object({
+      query: z.string().describe('The search term or keyword.'),
+    }),
+  }
+);
+
+export const draftContactLeadTool = tool(
+  async (payload) => {
+    const result = await draftContactLead(payload);
+    return typeof result === 'string' ? result : JSON.stringify(result);
   },
+  {
+    name: 'draftContactLead',
+    description:
+      'Drafts a contact form payload with the information you have gathered from the user. Call this tool when you have enough context to populate some or all of the fields.',
+    schema: z.object({
+      name: z.string().optional().describe("The user's name."),
+      email: z.string().optional().describe("The user's email address."),
+      projectType: z
+        .enum([
+          'web-design',
+          'web-development',
+          'mobile-app',
+          'branding',
+          'ui-ux',
+          'consulting',
+          'ecommerce',
+          'cms-development',
+          'seo-optimization',
+          'api-integration',
+          'database-design',
+          'maintenance',
+          'redesign',
+          'landing-page',
+          'portfolio',
+          'blog',
+          'other',
+        ])
+        .optional()
+        .describe('The type of project.'),
+      message: z.string().optional().describe("A summary or draft of the user's message/request."),
+    }),
+  }
+);
+
+export const internalTools = [
+  listAllProjectsTool,
+  getProjectDetailsTool,
+  listAllArticlesTool,
+  getArticleDetailsTool,
+  searchPortfolioTool,
+  draftContactLeadTool,
 ];
 
 // =================================================================================
@@ -321,35 +333,27 @@ export async function submitContactForm(payload) {
 // =================================================================================
 
 /**
- * Routes and executes the appropriate tool function based on the tool call from the AI.
- */
-export async function executeToolCall(toolCall) {
-  const { name, arguments: args } = toolCall.function;
-  const parsedArgs = JSON.parse(args);
-
-  switch (name) {
-    case 'listAllProjects':
-      return await listAllProjects();
-    case 'getProjectDetails':
-      return await getProjectDetails(parsedArgs.slug);
-    case 'listAllArticles':
-      return await listAllArticles();
-    case 'getArticleDetails':
-      return await getArticleDetails(parsedArgs.slug);
-    case 'searchPortfolio':
-      return await searchPortfolio(parsedArgs.query);
-    case 'draftContactLead':
-      return await draftContactLead(parsedArgs);
-    default:
-      console.error(`[Chat Utils] Unknown tool requested: ${name}`);
-      return { error: 'Unknown tool', toolName: name };
-  }
-}
-
-/**
  * Maps tool names to user-friendly status messages.
  */
-export function getToolStatusMessage(toolName, args, iteration = null) {
+export function getToolStatusMessage(toolName, rawArgs, iteration = null) {
+  let args = rawArgs;
+  if (typeof rawArgs === 'string') {
+    try {
+      args = JSON.parse(rawArgs);
+    } catch (e) {
+      args = {};
+    }
+  }
+
+  // LangGraph often wraps tool arguments in { input: "{\"query\": \"...\"}" }
+  if (args && typeof args.input === 'string') {
+    try {
+      args = JSON.parse(args.input);
+    } catch (e) {
+      // Just keep it as the wrapper if it fails
+    }
+  }
+
   const iterationSuffix = iteration > 1 ? ` (step ${iteration})` : '';
   switch (toolName) {
     case 'listAllProjects':
@@ -360,13 +364,17 @@ export function getToolStatusMessage(toolName, args, iteration = null) {
       return `📚 Fetching blog articles...${iterationSuffix}`;
     case 'getArticleDetails':
       return `📖 Reading the article...${iterationSuffix}`;
-    case 'searchPortfolio':
-      return `🔎 Searching for "${args.query}"...${iterationSuffix}`;
+    case 'searchPortfolio': {
+      const q = args?.query || (typeof args === 'string' ? args : 'items');
+      return `🔎 Searching for "${q}"...${iterationSuffix}`;
+    }
     case 'draftContactLead':
       return `📝 Drafting contact form...${iterationSuffix}`;
     case 'search_the_internet':
-    case 'tavily_search':
-      return `🌐 Searching the internet for "${args.query || 'information'}"...${iterationSuffix}`;
+    case 'tavily_search': {
+      const q = args?.query || (typeof args === 'string' ? args : 'information');
+      return `🌐 Searching the internet for "${q}"...${iterationSuffix}`;
+    }
     default:
       return `🤔 Processing your request...${iterationSuffix}`;
   }
@@ -394,34 +402,39 @@ export function pruneContext(messages, maxChars) {
   if (currentSize <= maxChars) return messages;
 
   const systemMessages = messages.filter((m) => m.role === 'system');
-  const userMessage = messages[messages.length - 1];
-  const middleMessages = messages.slice(systemMessages.length, -1);
-
-  const latestToolIndex = middleMessages.findLastIndex((m) => m.role === 'tool');
-  const latestAssistantIndex = middleMessages.findLastIndex((m) => m.role === 'assistant');
+  const contentMessages = messages.slice(systemMessages.length);
+  const latestToolIndex = contentMessages.findLastIndex((m) => m.role === 'tool');
+  const latestAssistantIndex = contentMessages.findLastIndex((m) => m.role === 'assistant');
 
   let recentMessages = [];
 
   if (latestToolIndex !== -1) {
+    // If tools exist, we MUST keep identifying the whole chain (Assistant TC -> Tool TR)
     let startIndex = latestAssistantIndex;
     for (let i = latestAssistantIndex; i >= 0; i--) {
-      if (middleMessages[i].role === 'assistant' && middleMessages[i].tool_calls) {
+      if (contentMessages[i].role === 'assistant' && contentMessages[i].tool_calls) {
         startIndex = i;
+        // Optimization: Include the user prompt that triggered this chain
+        if (i > 0 && contentMessages[i - 1].role === 'user') {
+          startIndex = i - 1;
+        }
         break;
       }
     }
-    recentMessages = middleMessages.slice(startIndex);
+    recentMessages = contentMessages.slice(startIndex);
   } else {
-    let accumulatedSize = calculateContextSize([...systemMessages, userMessage]);
-    for (let i = middleMessages.length - 1; i >= 0; i--) {
-      const msg = middleMessages[i];
-      const msgSize = (
-        msg.content
-          ? typeof msg.content === 'string'
-            ? msg.content
-            : JSON.stringify(msg.content)
-          : ''
-      ).length;
+    let accumulatedSize = calculateContextSize([...systemMessages]);
+    for (let i = contentMessages.length - 1; i >= 0; i--) {
+      const msg = contentMessages[i];
+      const msgSize =
+        msg.role === 'tool' || (msg.role === 'assistant' && msg.tool_calls)
+          ? 200 // heuristic for tool metadata size
+          : (msg.content
+              ? typeof msg.content === 'string'
+                ? msg.content
+                : JSON.stringify(msg.content)
+              : ''
+            ).length;
       if (accumulatedSize + msgSize < maxChars) {
         recentMessages.unshift(msg);
         accumulatedSize += msgSize;
@@ -431,5 +444,10 @@ export function pruneContext(messages, maxChars) {
     }
   }
 
-  return [...systemMessages, ...recentMessages, userMessage];
+  // Final check: Ensure we start with a user message for strict providers
+  while (recentMessages.length > 0 && recentMessages[0].role !== 'user') {
+    recentMessages.shift();
+  }
+
+  return [...systemMessages, ...recentMessages];
 }

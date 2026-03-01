@@ -127,11 +127,11 @@ export default function CustomDropdownMinimal({
                     key={option.value}
                     type="button"
                     onClick={() => handleSelect(option.value)}
-                    className={`w-full text-left px-4 py-3 text-sm transition-all relative border-l-4
+                    className={`w-full text-left px-4 py-3 text-sm outline-none transition-all relative border-l-4
                       ${
                         option.value === value
                           ? 'bg-neutral-50 border-black font-semibold text-black'
-                          : 'bg-white border-transparent text-neutral-600 hover:bg-neutral-50 hover:text-black hover:border-neutral-300'
+                          : 'bg-white border-transparent text-neutral-600 hover:bg-neutral-50 focus:bg-neutral-50 hover:text-black hover:border-neutral-300'
                       }
                     `}
                   >

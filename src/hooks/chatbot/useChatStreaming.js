@@ -72,7 +72,13 @@ export function useChatStreaming() {
     const analytics = getAnalytics();
     const chatHistory = history
       .filter((msg) => msg.role !== 'system' && msg.role !== 'tool_action')
-      .map(({ role, content: c }) => ({ role, content: c }));
+      .map((msg) => {
+        const m = { role: msg.role, content: msg.content };
+        if (msg.tool_calls) m.tool_calls = msg.tool_calls;
+        if (msg.tool_call_id) m.tool_call_id = msg.tool_call_id;
+        if (msg.name) m.name = msg.name;
+        return m;
+      });
 
     const response = await fetch('/api/chat', {
       method: 'POST',
@@ -141,16 +147,6 @@ export function useChatStreaming() {
             // Detect which tool this is
             const toolName = parseToolFromStatus(data.message);
             const { label, Icon } = getToolMetadata(toolName, data.message);
-
-            // If the AI already streamed some text before calling this tool (e.g.
-            // "I'll fetch all the available info..."), close that bubble and prepare
-            // a fresh one for the post-tool response — avoids merged text.
-            if (messageAdded && assistantMessage.content.trim().length > 0) {
-              assistantMessage.id = Date.now() + Math.random();
-              assistantMessage.content = '';
-              assistantMessage.steps = [];
-              messageAdded = false;
-            }
 
             // ✅ Mark the PREVIOUS tool as done before starting the next one
             if (activeToolMsgId !== null) {
@@ -226,13 +222,27 @@ export function useChatStreaming() {
             }
           } else if (data.type === 'metadata') {
             // Save tool_calls to the assistant message so it can be sent in history later
-            assistantMessage.tool_calls = data.tool_calls;
+            if (!assistantMessage.tool_calls) {
+              assistantMessage.tool_calls = [];
+            }
+            // Overwrite incoming tool calls to support multi-turn in LangGraph
+            // Langgraph sends the full list of tool calls for that specific AIMessage at the end of the generation step.
+            if (data.tool_calls) {
+              assistantMessage.tool_calls = data.tool_calls;
+            }
+
             if (messageAdded) {
               setMessages((prev) =>
                 prev.map((m) =>
-                  m.id === assistantMessage.id ? { ...m, tool_calls: data.tool_calls } : m
+                  m.id === assistantMessage.id
+                    ? { ...m, tool_calls: assistantMessage.tool_calls }
+                    : m
                 )
               );
+            } else {
+              // Ensure we actually add this turn to the history state immediately
+              setMessages((prev) => [...prev, { ...assistantMessage }]);
+              messageAdded = true;
             }
           } else if (data.type === 'tool_result') {
             // Add the tool result to history (hidden from UI but present for next turn)
@@ -242,6 +252,7 @@ export function useChatStreaming() {
                 id: Date.now() + Math.random(),
                 role: 'tool',
                 tool_call_id: data.tool_call_id,
+                name: data.name,
                 content: data.content,
                 hidden: true,
               },
@@ -333,7 +344,7 @@ export function useChatStreaming() {
       try {
         await streamChatResponse({
           content: userMessage.content,
-          history: messages.filter((m) => !m.hidden),
+          history: messages,
           activeMCPs,
           selectedModel,
           setMessages,
