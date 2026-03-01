@@ -178,6 +178,14 @@ export async function getChatbotSettings() {
       };
     }
 
+    // Migration helper for legacy string model settings
+    const migrateSlot = (slotData, defaultValue = '') => {
+      if (typeof slotData === 'string') {
+        return { providerId: 'default-openai', model: slotData || defaultValue };
+      }
+      return slotData || { providerId: '', model: '' };
+    };
+
     return {
       aiName: settings.aiName,
       persona: settings.persona,
@@ -186,6 +194,13 @@ export async function getChatbotSettings() {
       callToAction: settings.callToAction,
       rules: settings.rules,
       isActive: settings.isActive,
+      // CRITICAL: These fields are required for the Multi-Provider Hub to work.
+      // Without these, the Chat API cannot find your custom Base URLs.
+      modelName: migrateSlot(settings.modelName),
+      fastModel: migrateSlot(settings.fastModel),
+      thinkingModel: migrateSlot(settings.thinkingModel),
+      proModel: migrateSlot(settings.proModel),
+      providers: settings.providers || [],
     };
   } catch (error) {
     console.error('Error fetching chatbot settings:', error);

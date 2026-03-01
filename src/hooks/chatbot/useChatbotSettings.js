@@ -13,17 +13,16 @@ export function useChatbotSettings() {
       if (response.ok) {
         const settings = await response.json();
         setChatbotSettings(settings);
-        if (settings.modelName === 'fast' && settings.fastModel) {
-          setSelectedModel(settings.fastModel);
-        } else if (settings.modelName === 'thinking' && settings.thinkingModel) {
-          setSelectedModel(settings.thinkingModel);
-        } else if (settings.modelName === 'pro' && settings.proModel) {
-          setSelectedModel(settings.proModel);
-        } else {
-          setSelectedModel(
-            settings.fastModel || settings.thinkingModel || settings.proModel || settings.modelName
-          );
-        }
+        // Default to Fast, then Thinking, then Pro
+        const firstAvailable = settings.fastModel?.model
+          ? settings.fastModel
+          : settings.thinkingModel?.model
+            ? settings.thinkingModel
+            : settings.proModel?.model
+              ? settings.proModel
+              : null;
+
+        setSelectedModel(firstAvailable);
       } else {
         setChatbotSettings({ isActive: false });
       }

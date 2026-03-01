@@ -21,6 +21,7 @@ import ChatbotSettings from '@/models/ChatbotSettings';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { getServerSession } from 'next-auth';
 import { encrypt } from '@/lib/crypto';
+import { revalidateTag } from 'next/cache';
 
 // GET - Fetch current chatbot settings
 
@@ -69,38 +70,21 @@ export async function GET() {
       await settings.save();
     }
 
-    // Migration: If providers is empty, add default OpenAI provider
-    let isModified = false;
-    if (!settings.providers || settings.providers.length === 0) {
-      settings.providers = [
-        {
-          id: 'default-openai',
-          name: 'OpenAI (Default)',
-          baseUrl: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
-          apiKey: encrypt(process.env.OPENAI_API_KEY || 'sk-none'),
-          isActive: true,
-          supportsTools: true,
-        },
-      ];
-      isModified = true;
-    }
-
     // Migration: Migrate string values to object slots
-    const migrateSlot = (slotData, defaultValue) => {
+    let isModified = false;
+    const migrateSlot = (slotData) => {
       if (typeof slotData === 'string') {
         isModified = true;
-        return { providerId: 'default-openai', model: slotData || defaultValue };
+        // Map old strings to the default OpenAI ID if they existed, but with no model default
+        return { providerId: 'default-openai', model: slotData || '' };
       }
       return slotData;
     };
 
-    settings.modelName = migrateSlot(
-      settings.modelName,
-      process.env.OPENAI_MODEL_NAME || 'openai-large'
-    );
-    settings.fastModel = migrateSlot(settings.fastModel, '');
-    settings.thinkingModel = migrateSlot(settings.thinkingModel, '');
-    settings.proModel = migrateSlot(settings.proModel, '');
+    settings.modelName = migrateSlot(settings.modelName);
+    settings.fastModel = migrateSlot(settings.fastModel);
+    settings.thinkingModel = migrateSlot(settings.thinkingModel);
+    settings.proModel = migrateSlot(settings.proModel);
 
     if (isModified) {
       await settings.save();
@@ -192,7 +176,25 @@ export async function POST(request) {
 
     await dbConnect();
 
-    const body = await request.json();
+    // Check if the request body is empty
+    const contentType = request.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      return NextResponse.json({ error: 'Unsupported media type' }, { status: 415 });
+    }
+
+    const bodyText = await request.text();
+    if (!bodyText || bodyText.trim() === '') {
+      return NextResponse.json({ error: 'Empty request body' }, { status: 400 });
+    }
+
+    let body;
+    try {
+      body = JSON.parse(bodyText);
+    } catch (e) {
+      console.error('[Admin API] JSON Parse Error:', e);
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+
     const {
       aiName,
       persona,
@@ -202,8 +204,8 @@ export async function POST(request) {
       rules,
       isActive = true,
       modelName = {
-        providerId: 'default-openai',
-        model: process.env.OPENAI_MODEL_NAME || 'openai-large',
+        providerId: '',
+        model: '',
       },
       fastModel = { providerId: '', model: '' },
       thinkingModel = { providerId: '', model: '' },
@@ -282,6 +284,15 @@ export async function POST(request) {
       });
 
       await settings.save();
+    }
+
+    // Clear the AI context cache to ensure the chatbot picks up the new providers/models immediately
+    try {
+      revalidateTag('ai-context');
+      revalidateTag('chatbot-settings');
+      console.log('[Admin API] AI Context revalidated');
+    } catch (revalidateError) {
+      console.error('[Admin API] Revalidation failed:', revalidateError);
     }
 
     // Mask API keys for response

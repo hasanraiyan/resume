@@ -82,7 +82,7 @@ export async function POST(request) {
           callToAction: "I'd be happy to help you get in touch with Raiyan.",
           rules: ['Always be professional and helpful'],
           isActive: true,
-          modelName: process.env.OPENAI_MODEL_NAME || 'openai-large',
+          modelName: { providerId: '', model: '' },
         },
       };
     }
@@ -91,40 +91,42 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Chatbot is currently disabled' }, { status: 503 });
     }
 
-    const defaultModel = {
-      providerId: 'default-openai',
-      model: process.env.OPENAI_MODEL_NAME || 'openai-large',
-    };
-    const actualModelSelection =
-      selectedModel || context.chatbotSettings?.modelName || defaultModel;
+    // Priority: 1. Explicitly selected model from UI, 2. Fast Engine, 3. Empty
+    const actualModelSelection = selectedModel ||
+      context.chatbotSettings?.fastModel || { providerId: '', model: '' };
 
     // Ensure actualModelSelection is an object
     const actualModel =
       typeof actualModelSelection === 'string'
-        ? { providerId: 'default-openai', model: actualModelSelection }
+        ? { providerId: '', model: actualModelSelection }
         : actualModelSelection;
 
     // Find the provider in the settings
     const providers = context.chatbotSettings?.providers || [];
     let provider = providers.find((p) => p.id === actualModel.providerId);
 
-    // Fallback if provider not found or not in providers array
-    if (!provider) {
-      provider = {
-        id: 'default-openai',
-        baseUrl: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
-        apiKey: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY : 'sk-none', // not encrypted here since fallback
-        supportsTools: true,
-      };
-    } else {
-      // Decode if we got it from DB
-      provider.apiKey = decrypt(provider.apiKey);
+    // If no provider is selected or found, return an error
+    if (!provider || !actualModel.model) {
+      console.error('[Chat] No valid provider or model configured');
+      return NextResponse.json(
+        {
+          error:
+            'AI Chatbot is not fully configured. Please select a Provider and Model in Admin Settings.',
+        },
+        { status: 500 }
+      );
     }
 
+    // Decode API key from DB
+    provider.apiKey = decrypt(provider.apiKey);
+
     // Initialize OpenAI client dynamically based on the provider config
+    console.log(`[Chat] Initializing OpenAI client for provider: ${provider.id}`);
+    console.log(`[Chat] Base URL: ${provider.baseUrl}`);
+
     const openai = new OpenAI({
-      apiKey: provider.apiKey || process.env.OPENAI_API_KEY,
-      baseURL: provider.baseUrl || process.env.OPENAI_BASE_URL,
+      apiKey: provider.apiKey,
+      baseURL: provider.baseUrl,
     });
 
     const systemMessages = buildSystemMessages(context, path);
@@ -254,8 +256,12 @@ export async function POST(request) {
             const prunedMessages = pruneContext(messages, MAX_CONTEXT_CHARS);
 
             // ── Open a streaming completion ──────────────────────────────────
+            // Sanitize model name (strip 'models/' prefix common in Google models)
+            // This is REQUIRED because the Google OpenAI endpoint rejects the 'models/' prefix.
+            const actualModelName = (actualModel.model || '').replace(/^models\//, '');
+
             const chatOptions = {
-              model: actualModel.model,
+              model: actualModelName,
               messages: prunedMessages,
               stream: true,
             };
@@ -264,6 +270,10 @@ export async function POST(request) {
               chatOptions.tools = toolsForOpenAI;
               chatOptions.tool_choice = 'auto';
             }
+
+            console.log(
+              `[Chat] REQUEST SENT TO: ${provider.baseUrl || 'default'} | MODEL: ${chatOptions.model} (Original: ${actualModel.model})`
+            );
 
             const completionStream = await openai.chat.completions.create(chatOptions);
 

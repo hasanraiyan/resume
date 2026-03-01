@@ -58,7 +58,7 @@ import mongoose from 'mongoose';
  * @property {string} callToAction - Standard CTA message to guide users toward contact
  * @property {string[]} rules - Array of behavioral rules and guidelines for the AI
  * @property {boolean} [isActive=true] - Whether the chatbot system is currently active
- * @property {string} modelName - AI model identifier for API requests (default: process.env.OPENAI_MODEL_NAME)
+ * @property {string} modelName - AI model identifier for API requests
  * @property {Date} createdAt - Auto-generated creation timestamp
  * @property {Date} updatedAt - Auto-generated update timestamp
  */
@@ -113,12 +113,12 @@ const ChatbotSettingsSchema = new mongoose.Schema(
     },
     modelName: {
       type: {
-        providerId: { type: String, default: 'default-openai' },
-        model: { type: String, default: process.env.OPENAI_MODEL_NAME || 'openai-large' },
+        providerId: { type: String, default: '' },
+        model: { type: String, default: '' },
       },
       default: {
-        providerId: 'default-openai',
-        model: process.env.OPENAI_MODEL_NAME || 'openai-large',
+        providerId: '',
+        model: '',
       },
     },
     fastModel: {

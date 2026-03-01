@@ -436,58 +436,6 @@ export default function ChatbotSettingsPage() {
                   </p>
                 </div>
 
-                <div className="space-y-2 sm:col-span-2 relative z-[40]">
-                  <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-xl space-y-3 shadow-sm">
-                    <h4 className="font-semibold text-sm text-neutral-800">
-                      Default Fallback Model
-                    </h4>
-                    <p className="text-xs text-neutral-500 mb-2">
-                      The engine handling user queries if the user doesn't pick one or the role
-                      isn't assigned.
-                    </p>
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <CustomDropdown
-                        label="Provider"
-                        name="modelName-provider"
-                        value={formData.modelName?.providerId || ''}
-                        onChange={(e) =>
-                          handleInputChange('modelName', {
-                            ...formData.modelName,
-                            providerId: e.target.value,
-                            model: '',
-                          })
-                        }
-                        options={[
-                          { value: '', label: '- Select Provider -' },
-                          ...(formData.providers || []).map((p) => ({
-                            value: p.id,
-                            label: p.name,
-                          })),
-                        ]}
-                      />
-                      <CustomDropdown
-                        label="Model"
-                        name="modelName-model"
-                        value={formData.modelName?.model || ''}
-                        isLoading={fetchingModels[formData.modelName?.providerId]}
-                        onChange={(e) =>
-                          handleInputChange('modelName', {
-                            ...formData.modelName,
-                            model: e.target.value,
-                          })
-                        }
-                        options={[
-                          { value: '', label: '- Select Model -' },
-                          ...(modelsByProvider[formData.modelName?.providerId] || []).map((m) => ({
-                            value: m,
-                            label: m,
-                          })),
-                        ]}
-                      />
-                    </div>
-                  </div>
-                </div>
-
                 <div className="space-y-6 sm:col-span-2 p-6 bg-neutral-50/50 border border-neutral-200 rounded-2xl relative z-[30]">
                   <div>
                     <label className="block text-sm font-semibold text-neutral-900 mb-1 flex items-center gap-2">
