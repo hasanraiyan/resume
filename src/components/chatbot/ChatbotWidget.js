@@ -621,7 +621,7 @@ export default function ChatbotWidget() {
     };
     document.addEventListener('mousedown', handleGlobalClick);
     return () => document.removeEventListener('mousedown', handleGlobalClick);
-  }, [isToolsMenuOpen]);
+  }, [isToolsMenuOpen, isModelSelectorOpen]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -708,16 +708,22 @@ export default function ChatbotWidget() {
     loadMCPs();
   }, []);
 
-  // Handle Escape key to close widget
+  // Handle Escape key to close selector menus or widget
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) {
-        setIsOpen(false);
+      if (e.key === 'Escape') {
+        if (isModelSelectorOpen) {
+          setIsModelSelectorOpen(false);
+        } else if (isToolsMenuOpen) {
+          setIsToolsMenuOpen(false);
+        } else if (isOpen) {
+          setIsOpen(false);
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
+  }, [isOpen, isModelSelectorOpen, isToolsMenuOpen]);
 
   const toggleListening = useCallback(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
