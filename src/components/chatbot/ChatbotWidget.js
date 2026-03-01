@@ -709,7 +709,11 @@ export default function ChatbotWidget() {
 
   // Handle Escape key to close widget
   useEffect(() => {
-    const handleKeyDown = (e) => {};
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
