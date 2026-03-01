@@ -503,11 +503,11 @@ export default function ChatbotSettingsPage() {
               </div>
               <div className="flex flex-col items-start hidden sm:block text-left">
                 <span className="block leading-none mb-1">{tab.label}</span>
-                <span
+                {/* <span
                   className={`text-[10px] font-normal leading-none ${activeTab === tab.id ? 'text-neutral-500' : 'text-neutral-400'}`}
                 >
                   {tab.desc}
-                </span>
+                </span> */}
               </div>
             </button>
           ))}

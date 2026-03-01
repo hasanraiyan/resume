@@ -24,15 +24,6 @@ export const getBackendMCPConfig = async () => {
     return [
       ...dbConfigs,
       {
-        id: 'mcp-pdf-service',
-        name: 'PDF Tools',
-        description: 'Create and process PDF documents',
-        type: 'mcp',
-        url: 'https://pdfservice.pyqdeck.in/mcp/sse',
-        icon: 'FileText',
-        color: 'red-500',
-      },
-      {
         id: 'mcp-tavily',
         name: 'Search',
         description: 'Search the web for latest information',
