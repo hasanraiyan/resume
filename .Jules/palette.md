@@ -1,0 +1,3 @@
+## 2024-03-01 - Add ARIA label to search close button
+**Learning:** Icon-only close buttons inside overlay/modal components in this app frequently lack `aria-label`s, rendering them functionally invisible or poorly described to screen reader users (e.g., the close button in `src/components/search/SearchOverlay.js` and `src/components/admin/MediaLibraryModal.js`). This creates a significant barrier to exiting modal contexts.
+**Action:** When working on modal or overlay components, explicitly verify that all interactive controls—especially those lacking visible text (like an 'X' icon)—have an appropriate `aria-label` attribute describing their action (e.g., `aria-label="Close search"`).
