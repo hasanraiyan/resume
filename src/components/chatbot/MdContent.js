@@ -116,6 +116,53 @@ export default function MdContent({ content, onLinkClick, isUser = false }) {
             </th>
           ),
           td: ({ children }) => <td className="border border-neutral-200 px-2 py-1">{children}</td>,
+          img: ({ src, alt, ...props }) => {
+            // If the AI mistakenly uses an image tag for a YouTube video, render an iframe instead
+            if (src && (src.includes('youtube.com') || src.includes('youtu.be'))) {
+              let videoId = '';
+              if (src.includes('youtube.com/watch?v=')) {
+                videoId = src.split('v=')[1].split('&')[0];
+              } else if (src.includes('youtu.be/')) {
+                videoId = src.split('youtu.be/')[1].split('?')[0];
+              }
+
+              if (videoId) {
+                return (
+                  <div className="my-2 w-full aspect-video rounded-xl overflow-hidden shadow-sm border border-neutral-200">
+                    <iframe
+                      className="w-full h-full"
+                      src={`https://www.youtube.com/embed/${videoId}`}
+                      title={alt || 'YouTube video'}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
+                  </div>
+                );
+              }
+            }
+
+            return (
+              <span className="block my-2 w-full rounded-xl overflow-hidden border border-neutral-200/60 bg-neutral-100 relative">
+                <img
+                  src={src}
+                  alt={alt || 'Image'}
+                  className="w-full h-auto object-cover max-h-96"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    if (e.currentTarget.nextElementSibling) {
+                      e.currentTarget.nextElementSibling.style.display = 'flex';
+                    }
+                  }}
+                  {...props}
+                />
+                <span className="hidden flex-col items-center justify-center p-4 text-center text-neutral-400 text-[11px] w-full min-h-[160px] bg-neutral-50/50">
+                  <span className="font-medium text-neutral-500 mb-1">Image not available</span>
+                  {alt && alt !== 'Offline' && <span className="italic line-clamp-2">"{alt}"</span>}
+                </span>
+              </span>
+            );
+          },
         }}
       >
         {content}

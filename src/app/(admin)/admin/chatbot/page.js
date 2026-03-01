@@ -18,6 +18,8 @@ import {
   Check,
   Sparkles,
   Wrench,
+  Server,
+  Network,
 } from 'lucide-react';
 
 export default function ChatbotSettingsPage() {
@@ -39,6 +41,7 @@ export default function ChatbotSettingsPage() {
     { id: 'persona', label: 'Personality', icon: UserCircle, desc: 'AI style & tone' },
     { id: 'knowledge', label: 'Knowledge', icon: BookOpen, desc: 'Base context & services' },
     { id: 'behavior', label: 'Behavior', icon: ShieldCheck, desc: 'Rules & instructions' },
+    { id: 'mcp', label: 'MCP Servers', icon: Server, desc: 'Dynamic tool servers' },
   ];
 
   const [formData, setFormData] = useState({
@@ -55,6 +58,20 @@ export default function ChatbotSettingsPage() {
     proModel: { providerId: '', model: '' },
     defaultEngine: 'fast',
     providers: [],
+  });
+
+  const [mcpServers, setMcpServers] = useState([]);
+  const [fetchingMcp, setFetchingMcp] = useState(false);
+  const [mcpSaving, setMcpSaving] = useState(false);
+  const [mcpError, setMcpError] = useState('');
+  const [isMcpModalOpen, setIsMcpModalOpen] = useState(false);
+  const [editingServer, setEditingServer] = useState(null);
+  const [mcpFormData, setMcpFormData] = useState({
+    name: '',
+    description: '',
+    url: '',
+    icon: 'Server',
+    isActive: true,
   });
 
   const [modelsByProvider, setModelsByProvider] = useState({});
@@ -84,10 +101,26 @@ export default function ChatbotSettingsPage() {
     }
   };
 
+  const fetchMcpServers = async () => {
+    try {
+      setFetchingMcp(true);
+      const response = await fetch('/api/admin/chatbot/mcp');
+      if (response.ok) {
+        const result = await response.json();
+        setMcpServers(result);
+      }
+    } catch (error) {
+      console.error('Error fetching MCP servers:', error);
+    } finally {
+      setFetchingMcp(false);
+    }
+  };
+
   // Fetch settings
   useEffect(() => {
     if (session?.user?.role === 'admin') {
       fetchSettings();
+      fetchMcpServers();
     }
   }, [session]);
 
@@ -319,6 +352,79 @@ export default function ChatbotSettingsPage() {
 
         return newData;
       });
+    }
+  };
+
+  const handleOpenMcpModal = (server = null) => {
+    setMcpError('');
+    if (server) {
+      setEditingServer(server);
+      setMcpFormData({
+        name: server.name,
+        description: server.description || '',
+        url: server.url,
+        icon: server.icon || 'Server',
+        isActive: server.isActive,
+      });
+    } else {
+      setEditingServer(null);
+      setMcpFormData({
+        name: '',
+        description: '',
+        url: '',
+        icon: 'Server',
+        isActive: true,
+      });
+    }
+    setIsMcpModalOpen(true);
+  };
+
+  const handleSaveMcp = async () => {
+    try {
+      setMcpSaving(true);
+      setMcpError('');
+      const isEdit = !!editingServer;
+      const url = isEdit ? `/api/admin/chatbot/mcp/${editingServer._id}` : '/api/admin/chatbot/mcp';
+      const method = isEdit ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(mcpFormData),
+      });
+
+      if (response.ok) {
+        setMessage({
+          type: 'success',
+          text: `MCP Server ${isEdit ? 'updated' : 'added'} successfully.`,
+        });
+        setIsMcpModalOpen(false);
+        fetchMcpServers(); // reload list
+      } else {
+        const errorData = await response.json();
+        setMcpError(errorData.error || 'Failed to save MCP server');
+      }
+    } catch (error) {
+      console.error(error);
+      setMcpError('Network error or failed to connect to MCP server');
+    } finally {
+      setMcpSaving(false);
+    }
+  };
+
+  const handleDeleteMcp = async (id) => {
+    if (!confirm('Are you sure you want to delete this MCP server?')) return;
+    try {
+      const response = await fetch(`/api/admin/chatbot/mcp/${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'MCP Server deleted successfully.' });
+        fetchMcpServers();
+      } else {
+        setMessage({ type: 'error', text: 'Failed to delete MCP server' });
+      }
+    } catch (error) {
+      console.error(error);
+      setMessage({ type: 'error', text: 'Error deleting MCP server' });
     }
   };
 
@@ -754,8 +860,218 @@ export default function ChatbotSettingsPage() {
               </div>
             </div>
           )}
+
+          {activeTab === 'mcp' && (
+            <div className="p-6 sm:p-8 space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-neutral-100">
+                <div>
+                  <h3 className="text-lg font-semibold text-black mb-1">Dynamic MCP Servers</h3>
+                  <p className="text-sm text-neutral-500">
+                    Add Model Context Protocol (MCP) servers via SSE endpoints. This allows your
+                    chatbot to access dynamic tools and external data.
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleOpenMcpModal()}
+                  className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-xl transition-colors text-sm font-medium flex items-center gap-2 border border-neutral-200 shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Server
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {fetchingMcp ? (
+                  <div className="text-center p-8 border border-dashed border-neutral-300 rounded-2xl bg-neutral-50">
+                    <div className="w-6 h-6 border-2 border-black border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-neutral-500 text-sm">Loading servers...</p>
+                  </div>
+                ) : mcpServers.length === 0 ? (
+                  <div className="text-center p-8 border border-dashed border-neutral-300 rounded-2xl bg-neutral-50">
+                    <p className="text-neutral-500 text-sm">
+                      No MCP servers configured yet. Click "Add Server" to connect to an external
+                      service.
+                    </p>
+                  </div>
+                ) : (
+                  mcpServers.map((server) => (
+                    <div
+                      key={server._id}
+                      className="p-6 border border-neutral-200 rounded-2xl bg-white shadow-sm space-y-4"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-10 h-10 rounded-xl flex items-center justify-center bg-blue-50 text-blue-600 border border-blue-100`}
+                          >
+                            <Server className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-base text-black flex items-center gap-2">
+                              {server.name}
+                              <span
+                                className={`text-[10px] px-2 py-0.5 rounded-full ${server.isActive ? 'bg-green-100 text-green-700' : 'bg-neutral-100 text-neutral-600'}`}
+                              >
+                                {server.isActive ? 'Active' : 'Inactive'}
+                              </span>
+                            </h4>
+                            <p className="text-xs text-neutral-500 font-mono mt-0.5 truncate max-w-[200px] sm:max-w-md">
+                              {server.url}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => handleOpenMcpModal(server)}
+                            className="text-neutral-400 hover:text-blue-600 p-2 rounded-lg hover:bg-blue-50 transition-colors"
+                            title="Edit Server"
+                          >
+                            <Settings className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteMcp(server._id)}
+                            className="text-neutral-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                            title="Delete Server"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                      {server.description && (
+                        <p className="text-sm text-neutral-600 border-t border-neutral-100 pt-3">
+                          {server.description}
+                        </p>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* MCP Modal */}
+      {isMcpModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setIsMcpModalOpen(false)}
+          ></div>
+          <div className="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-8 relative z-10 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold font-['Playfair_Display']">
+                {editingServer ? 'Edit MCP Server' : 'Add MCP Server'}
+              </h3>
+              <button
+                disabled={mcpSaving}
+                onClick={() => setIsMcpModalOpen(false)}
+                className="p-2 hover:bg-neutral-100 rounded-full transition-colors flex items-center justify-center disabled:opacity-50"
+              >
+                <span className="text-neutral-500 font-bold block leading-none">✕</span>
+              </button>
+            </div>
+
+            {mcpError && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl text-sm flex items-start gap-3 shadow-sm">
+                <div className="p-1 bg-red-100 rounded-lg shrink-0 w-6 h-6 flex items-center justify-center font-bold text-red-600">
+                  !
+                </div>
+                <div className="font-mono mt-0.5 break-all max-h-[150px] overflow-y-auto custom-scrollbar">
+                  {mcpError}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-5">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-neutral-700">Server Name</label>
+                <input
+                  type="text"
+                  value={mcpFormData.name}
+                  onChange={(e) => setMcpFormData((p) => ({ ...p, name: e.target.value }))}
+                  className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
+                  placeholder="e.g. Memory Service"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-neutral-700">SSE Endpont URL</label>
+                <input
+                  type="text"
+                  value={mcpFormData.url}
+                  onChange={(e) => setMcpFormData((p) => ({ ...p, url: e.target.value }))}
+                  className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-mono"
+                  placeholder="http://localhost:3001/mcp/sse"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-neutral-700">
+                  Description (Optional)
+                </label>
+                <textarea
+                  value={mcpFormData.description}
+                  onChange={(e) => setMcpFormData((p) => ({ ...p, description: e.target.value }))}
+                  rows={2}
+                  className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm resize-y"
+                  placeholder="What tools does this server provide?"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-neutral-700">Icon Name</label>
+                  <input
+                    type="text"
+                    value={mcpFormData.icon}
+                    onChange={(e) => setMcpFormData((p) => ({ ...p, icon: e.target.value }))}
+                    className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
+                    placeholder="e.g. Database, Box"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-medium text-neutral-800">
+                    Active Status
+                  </label>
+                  <div className="px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl flex items-center justify-between w-full">
+                    <span className="text-sm text-neutral-600">
+                      {mcpFormData.isActive ? 'Enabled' : 'Disabled'}
+                    </span>
+                    <Switch
+                      checked={mcpFormData.isActive}
+                      onCheckedChange={(value) =>
+                        setMcpFormData((p) => ({ ...p, isActive: value }))
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 flex gap-3 justify-end">
+              <button
+                disabled={mcpSaving}
+                onClick={() => setIsMcpModalOpen(false)}
+                className="px-5 py-2.5 rounded-xl border border-neutral-200 text-sm font-medium hover:bg-neutral-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={mcpSaving}
+                onClick={handleSaveMcp}
+                className="px-5 py-2.5 rounded-xl bg-black text-white text-sm font-medium hover:bg-neutral-800 transition-colors shadow-lg shadow-black/10 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {mcpSaving && (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                )}
+                {mcpSaving
+                  ? 'Testing Connection...'
+                  : editingServer
+                    ? 'Update Server'
+                    : 'Add Server'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sticky Action Footer */}
       <div className="fixed bottom-0 left-0 lg:left-64 right-0 p-4 bg-white/80 backdrop-blur-xl border-t border-neutral-200/60 z-40 transform transition-transform shadow-[0_-10px_40px_rgba(0,0,0,0.03)]">

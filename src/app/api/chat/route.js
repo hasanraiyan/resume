@@ -169,7 +169,7 @@ export async function POST(request) {
             controller.enqueue(
               encodeEvent({ type: 'status', message: '🔌 Connecting to external tools...' })
             );
-            const backendMCPs = getBackendMCPConfig();
+            const backendMCPs = await getBackendMCPConfig();
 
             // 1. Resolve MultiServerMCPClient tools (SSE/HTTP transports)
             const mcpServerConfig = {};

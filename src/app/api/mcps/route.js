@@ -8,7 +8,7 @@ import { getFrontendSafeMCPs } from '@/lib/mcpConfig';
  */
 export async function GET() {
   try {
-    const safeMCPs = getFrontendSafeMCPs();
+    const safeMCPs = await getFrontendSafeMCPs();
     return NextResponse.json(safeMCPs);
   } catch (error) {
     console.error('Error fetching MCPs:', error);

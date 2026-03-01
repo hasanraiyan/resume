@@ -1,8 +1,15 @@
+import * as LucideIcons from 'lucide-react';
 import { Settings2, X, Check, Globe, FileText, Wrench } from 'lucide-react';
 
-function getMCPIcon(mcpId) {
-  if (mcpId?.includes('search') || mcpId?.includes('tavily')) return Globe;
-  if (mcpId?.includes('pdf') || mcpId?.includes('file')) return FileText;
+function getMCPIcon(mcp) {
+  if (mcp?.icon && LucideIcons[mcp.icon]) {
+    return LucideIcons[mcp.icon];
+  }
+
+  // Fallbacks
+  const mcpId = mcp?.id || '';
+  if (mcpId.includes('search') || mcpId.includes('tavily')) return Globe;
+  if (mcpId.includes('pdf') || mcpId.includes('file')) return FileText;
   return Wrench;
 }
 
@@ -56,8 +63,8 @@ export default function ToolSelector({
                 className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50/80 hover:bg-blue-100/60 rounded-lg text-blue-600 text-[11px] font-medium transition-colors shrink-0"
               >
                 {(() => {
-                  const Icon = getMCPIcon(mcp.id);
-                  return <Icon className="w-3.5 h-3.5 text-blue-500" />;
+                  const Icon = getMCPIcon(mcp);
+                  return <Icon className={`w-3.5 h-3.5 text-${mcp.color || 'blue-500'}`} />;
                 })()}
                 {mcp.name}
                 <button
@@ -86,7 +93,7 @@ export default function ToolSelector({
           <div className="p-1.5 flex flex-col gap-1">
             {availableMCPs.map((mcp) => {
               const isActive = activeMCPs.includes(mcp.id);
-              const Icon = getMCPIcon(mcp.id);
+              const Icon = getMCPIcon(mcp);
               return (
                 <button
                   key={mcp.id}
@@ -103,7 +110,7 @@ export default function ToolSelector({
                 >
                   <div className="flex items-center gap-3">
                     <Icon
-                      className={`w-4 h-4 shrink-0 mt-0.5 ${isActive ? 'text-blue-500' : 'text-neutral-400'}`}
+                      className={`w-4 h-4 shrink-0 mt-0.5 ${isActive ? `text-${mcp.color || 'blue-500'}` : 'text-neutral-400'}`}
                     />
                     <div className="flex flex-col">
                       <span className="text-xs font-semibold">{mcp.name}</span>
