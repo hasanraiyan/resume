@@ -158,23 +158,25 @@ export default function NewsletterForm({
 
         <div className="relative">
           <div
-            className={`flex items-center border rounded-lg transition-all duration-200 ${getStatusColor()}`}
+            className={`flex flex-col sm:flex-row items-stretch sm:items-center border rounded-lg transition-all duration-200 overflow-hidden ${getStatusColor()}`}
           >
-            <div className="pl-4 pr-3 py-3">{getStatusIcon()}</div>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              placeholder={placeholder}
-              required
-              className="flex-1 px-0 py-3 bg-transparent border-0 focus:ring-0 focus:outline-none text-gray-900 placeholder-gray-500"
-              disabled={status === 'loading'}
-            />
+            <div className="flex items-center flex-1">
+              <div className="pl-4 pr-3 py-3">{getStatusIcon()}</div>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                placeholder={placeholder}
+                required
+                className="w-full px-0 py-3 bg-transparent border-0 focus:ring-0 focus:outline-none text-gray-900 placeholder-gray-500 min-w-0"
+                disabled={status === 'loading'}
+              />
+            </div>
             <button
               type="submit"
               disabled={status === 'loading'}
-              className="px-6 py-3 bg-gray-900 text-white rounded-r-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+              className="px-6 py-3 sm:py-3 bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium sm:w-auto w-full"
             >
               {status === 'loading' ? 'Subscribing...' : buttonText}
             </button>
