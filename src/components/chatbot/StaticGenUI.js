@@ -99,76 +99,39 @@ function ProjectList({ items }) {
 
 function ProjectCard(project) {
   return (
-    <div className="flex flex-col w-full mt-3 overflow-hidden rounded-2xl border border-neutral-200/50 bg-white shadow-sm hover:shadow-md transition-shadow">
-      {project.thumbnail && (
-        <div className="relative w-full h-32 bg-neutral-100 border-b border-neutral-100">
-          {/* Attempt to load image if thumbnail exists, fallback to placeholder if it fails */}
-          <Image
-            src={project.thumbnail}
-            alt={project.title}
-            fill
-            className="object-cover"
-            onError={(e) => {
-              e.target.style.display = 'none';
-            }}
-          />
-        </div>
-      )}
-
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-4 mb-2">
-          <div>
-            <h4 className="font-bold text-neutral-900 text-base">{project.title}</h4>
-            {(project.category || project.tagline) && (
-              <p className="text-xs text-brand-600 font-medium mt-1 uppercase tracking-wider">
-                {project.category || 'Project'} • {project.tagline}
-              </p>
-            )}
+    <div className="mt-3">
+      <Link
+        href={`/projects/${project.slug}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group flex flex-col overflow-hidden rounded-xl border border-neutral-200/50 bg-white hover:bg-neutral-50 hover:border-neutral-300 transition-all text-left shadow-sm hover:shadow-md w-[200px] sm:w-[220px] shrink-0"
+      >
+        {project.thumbnail ? (
+          <div className="relative w-full aspect-video shrink-0 bg-neutral-100 border-b border-neutral-100">
+            <Image
+              src={project.thumbnail}
+              alt={project.title}
+              fill
+              className="object-cover"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
           </div>
+        ) : (
+          <div className="w-full aspect-video shrink-0 bg-neutral-100 flex items-center justify-center border-b border-neutral-100 transition-colors group-hover:bg-neutral-200">
+            <FolderGit2 className="w-6 h-6 text-neutral-400" />
+          </div>
+        )}
+        <div className="flex flex-col min-w-0 flex-1 p-3">
+          <h4 className="font-semibold text-neutral-900 text-[13px] line-clamp-2 leading-tight mb-1">
+            {project.title}
+          </h4>
+          <p className="text-[11px] text-neutral-500 line-clamp-2 mt-auto">
+            {project.tagline || project.category || 'View Project'}
+          </p>
         </div>
-
-        <p className="text-sm text-neutral-600 line-clamp-3 mb-4 leading-relaxed">
-          {project.description}
-        </p>
-
-        <div className="flex items-center gap-2 mt-auto pt-2 border-t border-neutral-100">
-          <Link
-            href={`/projects/${project.slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 inline-flex justify-center items-center py-2 px-3 bg-neutral-900 text-white rounded-xl text-xs font-medium hover:bg-neutral-800 transition-colors"
-          >
-            View Full Case Study
-          </Link>
-
-          {(project.liveUrl || project.githubUrl) && (
-            <div className="flex gap-2">
-              {project.liveUrl && (
-                <a
-                  href={project.liveUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2 rounded-xl border border-neutral-200 text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
-                  title="Live Website"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              )}
-              {project.githubUrl && (
-                <a
-                  href={project.githubUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2 rounded-xl border border-neutral-200 text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
-                  title="GitHub Repository"
-                >
-                  <Github className="w-4 h-4" />
-                </a>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+      </Link>
     </div>
   );
 }
