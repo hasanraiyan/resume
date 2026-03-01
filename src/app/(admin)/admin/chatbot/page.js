@@ -21,6 +21,8 @@ import {
   Server,
   Network,
 } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
+import LucideIconPicker from '@/components/admin/LucideIconPicker';
 
 export default function ChatbotSettingsPage() {
   const { data: session, status } = useSession();
@@ -41,7 +43,7 @@ export default function ChatbotSettingsPage() {
     { id: 'persona', label: 'Personality', icon: UserCircle, desc: 'AI style & tone' },
     { id: 'knowledge', label: 'Knowledge', icon: BookOpen, desc: 'Base context & services' },
     { id: 'behavior', label: 'Behavior', icon: ShieldCheck, desc: 'Rules & instructions' },
-    { id: 'mcp', label: 'MCP Servers', icon: Server, desc: 'Dynamic tool servers' },
+    { id: 'mcp', label: 'MCP', icon: Server, desc: 'Dynamic tool servers' },
   ];
 
   const [formData, setFormData] = useState({
@@ -894,56 +896,59 @@ export default function ChatbotSettingsPage() {
                     </p>
                   </div>
                 ) : (
-                  mcpServers.map((server) => (
-                    <div
-                      key={server._id}
-                      className="p-6 border border-neutral-200 rounded-2xl bg-white shadow-sm space-y-4"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`w-10 h-10 rounded-xl flex items-center justify-center bg-blue-50 text-blue-600 border border-blue-100`}
-                          >
-                            <Server className="w-5 h-5" />
+                  mcpServers.map((server) => {
+                    const IconComponent = LucideIcons[server.icon] || LucideIcons.Server;
+                    return (
+                      <div
+                        key={server._id}
+                        className="p-6 border border-neutral-200 rounded-2xl bg-white shadow-sm space-y-4"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-10 h-10 rounded-xl flex items-center justify-center bg-blue-50 text-blue-600 border border-blue-100`}
+                            >
+                              <IconComponent className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-base text-black flex items-center gap-2">
+                                {server.name}
+                                <span
+                                  className={`text-[10px] px-2 py-0.5 rounded-full ${server.isActive ? 'bg-green-100 text-green-700' : 'bg-neutral-100 text-neutral-600'}`}
+                                >
+                                  {server.isActive ? 'Active' : 'Inactive'}
+                                </span>
+                              </h4>
+                              <p className="text-xs text-neutral-500 font-mono mt-0.5 truncate max-w-[200px] sm:max-w-md">
+                                {server.url}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <h4 className="font-semibold text-base text-black flex items-center gap-2">
-                              {server.name}
-                              <span
-                                className={`text-[10px] px-2 py-0.5 rounded-full ${server.isActive ? 'bg-green-100 text-green-700' : 'bg-neutral-100 text-neutral-600'}`}
-                              >
-                                {server.isActive ? 'Active' : 'Inactive'}
-                              </span>
-                            </h4>
-                            <p className="text-xs text-neutral-500 font-mono mt-0.5 truncate max-w-[200px] sm:max-w-md">
-                              {server.url}
-                            </p>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              onClick={() => handleOpenMcpModal(server)}
+                              className="text-neutral-400 hover:text-blue-600 p-2 rounded-lg hover:bg-blue-50 transition-colors"
+                              title="Edit Server"
+                            >
+                              <Settings className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteMcp(server._id)}
+                              className="text-neutral-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                              title="Delete Server"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <button
-                            onClick={() => handleOpenMcpModal(server)}
-                            className="text-neutral-400 hover:text-blue-600 p-2 rounded-lg hover:bg-blue-50 transition-colors"
-                            title="Edit Server"
-                          >
-                            <Settings className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteMcp(server._id)}
-                            className="text-neutral-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors"
-                            title="Delete Server"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                        {server.description && (
+                          <p className="text-sm text-neutral-600 border-t border-neutral-100 pt-3">
+                            {server.description}
+                          </p>
+                        )}
                       </div>
-                      {server.description && (
-                        <p className="text-sm text-neutral-600 border-t border-neutral-100 pt-3">
-                          {server.description}
-                        </p>
-                      )}
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -1017,21 +1022,18 @@ export default function ChatbotSettingsPage() {
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-neutral-700">Icon Name</label>
-                  <input
-                    type="text"
+                <div className="space-y-1.5 w-full">
+                  <label className="text-sm font-medium text-neutral-700">Icon</label>
+                  <LucideIconPicker
                     value={mcpFormData.icon}
-                    onChange={(e) => setMcpFormData((p) => ({ ...p, icon: e.target.value }))}
-                    className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
-                    placeholder="e.g. Database, Box"
+                    onChange={(val) => setMcpFormData((p) => ({ ...p, icon: val }))}
                   />
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-sm font-medium text-neutral-800">
                     Active Status
                   </label>
-                  <div className="px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl flex items-center justify-between w-full">
+                  <div className="px-4 h-[42px] bg-neutral-50 border border-neutral-200 rounded-xl flex items-center justify-between w-full">
                     <span className="text-sm text-neutral-600">
                       {mcpFormData.isActive ? 'Enabled' : 'Disabled'}
                     </span>
