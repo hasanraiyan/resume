@@ -53,6 +53,7 @@ export default function ChatbotSettingsPage() {
     fastModel: { providerId: '', model: '' },
     thinkingModel: { providerId: '', model: '' },
     proModel: { providerId: '', model: '' },
+    defaultEngine: 'fast',
     providers: [],
   });
 
@@ -148,6 +149,9 @@ export default function ChatbotSettingsPage() {
   // Model slots UI generator
   const renderModelSlot = (label, name) => {
     const slotValue = formData[name] || { providerId: '', model: '' };
+    const engineKey = name.replace('Model', '');
+    const isDefault = formData.defaultEngine === engineKey;
+
     const providerOptions = [
       { value: '', label: '- Select Provider -' },
       ...(formData.providers || []).map((p) => ({ value: p.id, label: p.name })),
@@ -160,18 +164,32 @@ export default function ChatbotSettingsPage() {
     ];
 
     return (
-      <div className="space-y-4 relative z-40 bg-white p-4 rounded-xl border border-neutral-200">
-        <h4 className="font-semibold text-sm text-neutral-800 flex items-center gap-2">
-          {name === 'fastModel'
-            ? '🚀'
-            : name === 'thinkingModel'
-              ? '🧠'
-              : name === 'proModel'
-                ? '👑'
-                : '🤖'}
-          {label}
-        </h4>
-        <div className="space-y-3">
+      <div
+        className={`space-y-4 relative z-40 bg-white p-4 rounded-xl border transition-all cursor-pointer ${
+          isDefault ? 'border-blue-500 ring-1 ring-blue-500/20 shadow-sm' : 'border-neutral-200'
+        }`}
+        onClick={() => handleInputChange('defaultEngine', engineKey)}
+      >
+        <div className="flex items-center justify-between">
+          <h4 className="font-semibold text-sm text-neutral-800 flex items-center gap-2">
+            {name === 'fastModel'
+              ? '🚀'
+              : name === 'thinkingModel'
+                ? '🧠'
+                : name === 'proModel'
+                  ? '👑'
+                  : '🤖'}
+            {label}
+          </h4>
+          <div
+            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+              isDefault ? 'border-blue-500 bg-blue-500' : 'border-neutral-300 bg-white'
+            }`}
+          >
+            {isDefault && <Check className="w-3 h-3 text-white stroke-[3]" />}
+          </div>
+        </div>
+        <div className="space-y-3" onClick={(e) => e.stopPropagation()}>
           <CustomDropdown
             label="Provider"
             name={`${name}-provider`}

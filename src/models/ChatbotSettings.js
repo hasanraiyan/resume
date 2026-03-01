@@ -142,6 +142,11 @@ const ChatbotSettingsSchema = new mongoose.Schema(
       },
       default: { providerId: '', model: '' },
     },
+    defaultEngine: {
+      type: String,
+      enum: ['fast', 'thinking', 'pro'],
+      default: 'fast',
+    },
     providers: {
       type: [
         {

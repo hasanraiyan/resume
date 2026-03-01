@@ -112,6 +112,7 @@ export async function GET() {
       fastModel: settings.fastModel,
       thinkingModel: settings.thinkingModel,
       proModel: settings.proModel,
+      defaultEngine: settings.defaultEngine || 'fast',
       providers: sanitizedProviders,
     });
   } catch (error) {
@@ -210,6 +211,7 @@ export async function POST(request) {
       fastModel = { providerId: '', model: '' },
       thinkingModel = { providerId: '', model: '' },
       proModel = { providerId: '', model: '' },
+      defaultEngine = 'fast',
       providers = [],
     } = body;
 
@@ -263,6 +265,7 @@ export async function POST(request) {
       settings.fastModel = fastModel;
       settings.thinkingModel = thinkingModel;
       settings.proModel = proModel;
+      settings.defaultEngine = defaultEngine;
       settings.providers = updatedProviders;
 
       await settings.save();
@@ -280,6 +283,7 @@ export async function POST(request) {
         fastModel,
         thinkingModel,
         proModel,
+        defaultEngine,
         providers: updatedProviders,
       });
 
@@ -318,6 +322,7 @@ export async function POST(request) {
         fastModel: settings.fastModel,
         thinkingModel: settings.thinkingModel,
         proModel: settings.proModel,
+        defaultEngine: settings.defaultEngine,
         providers: sanitizedProviders,
       },
     });

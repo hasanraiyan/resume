@@ -13,16 +13,21 @@ export function useChatbotSettings() {
       if (response.ok) {
         const settings = await response.json();
         setChatbotSettings(settings);
-        // Default to Fast, then Thinking, then Pro
-        const firstAvailable = settings.fastModel?.model
-          ? settings.fastModel
-          : settings.thinkingModel?.model
-            ? settings.thinkingModel
-            : settings.proModel?.model
-              ? settings.proModel
-              : null;
+        // Default logic: Priority to setting's defaultEngine, fall back to Fast, then Thinking, then Pro
+        const defaultEngine = settings.defaultEngine || 'fast';
+        const defaultSlot = `${defaultEngine}Model`;
 
-        setSelectedModel(firstAvailable);
+        const initialModel = settings[defaultSlot]?.model
+          ? settings[defaultSlot]
+          : settings.fastModel?.model
+            ? settings.fastModel
+            : settings.thinkingModel?.model
+              ? settings.thinkingModel
+              : settings.proModel?.model
+                ? settings.proModel
+                : null;
+
+        setSelectedModel(initialModel);
       } else {
         setChatbotSettings({ isActive: false });
       }
