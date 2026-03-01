@@ -1354,15 +1354,16 @@ export default function ChatbotWidget() {
                   )}
 
                   {isToolsMenuOpen && (
-                    <div className="absolute bottom-full left-0 mb-2 w-48 bg-white/95 backdrop-blur-xl rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-neutral-200/50 overflow-hidden text-left animate-in fade-in slide-in-from-bottom-2 duration-200 z-50">
+                    <div className="absolute bottom-full left-0 mb-3 w-56 bg-white/95 backdrop-blur-xl rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-neutral-200/50 overflow-hidden text-left animate-in fade-in slide-in-from-bottom-2 duration-200 z-50">
                       <div className="px-3 py-2 border-b border-neutral-100 bg-neutral-50/80">
                         <span className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider">
                           Available Tools
                         </span>
                       </div>
-                      <div className="p-1">
+                      <div className="p-1.5 flex flex-col gap-1">
                         {availableMCPs.map((mcp) => {
                           const isActive = activeMCPs.includes(mcp.id);
+                          const Icon = getMCPIcon(mcp.id);
                           return (
                             <button
                               key={mcp.id}
@@ -1375,19 +1376,20 @@ export default function ChatbotWidget() {
                                 setIsToolsMenuOpen(false);
                                 setTimeout(() => inputRef.current?.focus(), 50);
                               }}
-                              className={`w-full text-left px-3 py-2.5 text-xs rounded-lg transition-colors flex items-center gap-2.5 ${isActive ? 'bg-blue-50/50 text-blue-700 font-medium' : 'hover:bg-neutral-100 text-neutral-700'}`}
+                              className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center justify-between ${isActive ? 'bg-blue-50/50 text-blue-700' : 'hover:bg-neutral-100 text-neutral-700'}`}
                             >
-                              {(() => {
-                                const Icon = getMCPIcon(mcp.id);
-                                return (
-                                  <Icon
-                                    className={`w-3.5 h-3.5 ${isActive ? 'text-blue-500' : 'text-neutral-400'}`}
-                                  />
-                                );
-                              })()}
-                              <div className="flex flex-col">
-                                <span>{mcp.name}</span>
+                              <div className="flex items-center gap-3">
+                                <Icon
+                                  className={`w-4 h-4 shrink-0 mt-0.5 ${isActive ? 'text-blue-500' : 'text-neutral-400'}`}
+                                />
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-semibold">{mcp.name}</span>
+                                  <span className="text-[10px] text-neutral-400 mt-0.5">
+                                    {mcp.description}
+                                  </span>
+                                </div>
                               </div>
+                              {isActive && <Check className="w-3.5 h-3.5 text-blue-500" />}
                             </button>
                           );
                         })}

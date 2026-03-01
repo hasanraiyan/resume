@@ -18,7 +18,7 @@ export const getBackendMCPConfig = () => {
     {
       id: 'mcp-tavily',
       name: 'Search',
-      description: 'Search the web for up-to-date information',
+      description: 'Search the web for latest information',
       type: 'rest',
       // Secret API key injected with process.env on the server side
       apiKey: process.env.TAVILY_API_KEY || null,
