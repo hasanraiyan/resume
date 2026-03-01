@@ -13,6 +13,8 @@ import ChatLog from '@/models/ChatLog';
 import { tools, executeToolCall, getToolStatusMessage, pruneContext } from '@/lib/chatbot-utils';
 import { getUIBlockForToolResult } from '@/lib/chatbot-generative-ui';
 import { rateLimit } from '@/lib/rateLimit';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -56,7 +58,13 @@ export async function POST(request) {
   const startTime = Date.now();
 
   try {
-    const { userMessage, chatHistory = [], sessionId, path = '/' } = await request.json();
+    const {
+      userMessage,
+      chatHistory = [],
+      sessionId,
+      path = '/',
+      activeMCPs = [],
+    } = await request.json();
 
     if (!userMessage) {
       return NextResponse.json({ error: 'User message is required' }, { status: 400 });
@@ -116,8 +124,48 @@ export async function POST(request) {
 
         const toolsUsed = [];
         let assistantContent = '';
+        const mcpClients = [];
+        let allTools = [...tools];
 
         try {
+          if (activeMCPs && activeMCPs.length > 0) {
+            controller.enqueue(
+              encodeEvent({ type: 'status', message: '🔌 Connecting to external tools...' })
+            );
+            for (const mcpUrl of activeMCPs) {
+              try {
+                const transport = new SSEClientTransport(new URL(mcpUrl));
+                const client = new Client(
+                  { name: 'KiroChatbot', version: '1.0.0' },
+                  { capabilities: { tools: {} } }
+                );
+                await client.connect(transport);
+                mcpClients.push({ url: mcpUrl, client, transport });
+
+                const { tools: extTools } = await client.listTools();
+                if (extTools) {
+                  for (const extTool of extTools) {
+                    allTools.push({
+                      type: 'function',
+                      function: {
+                        name: `mcp_${mcpClients.length - 1}_${extTool.name}`,
+                        description: extTool.description,
+                        parameters: extTool.inputSchema,
+                      },
+                      _isMCP: true,
+                      _originalName: extTool.name,
+                      _clientIndex: mcpClients.length - 1,
+                    });
+                  }
+                }
+              } catch (err) {
+                console.error('[Chat] Failed to connect to MCP:', mcpUrl, err);
+              }
+            }
+          }
+
+          const toolsForOpenAI = allTools.map((t) => ({ type: t.type, function: t.function }));
+
           for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
             const prunedMessages = pruneContext(messages, MAX_CONTEXT_CHARS);
 
@@ -125,7 +173,7 @@ export async function POST(request) {
             const completionStream = await openai.chat.completions.create({
               model: actualModel,
               messages: prunedMessages,
-              tools,
+              tools: toolsForOpenAI,
               tool_choice: 'auto',
               stream: true,
             });
@@ -183,11 +231,34 @@ export async function POST(request) {
               }
 
               // Emit status so the user sees "🔍 Getting project details..." instantly
-              const statusMsg = getToolStatusMessage(toolCall.function.name, parsedArgs, iteration);
-              controller.enqueue(encodeEvent({ type: 'status', message: statusMsg }));
+              let statusMsg = getToolStatusMessage(toolCall.function.name, parsedArgs, iteration);
 
-              // Execute the tool DB query (returns { text, data })
-              const toolResult = await executeToolCall(toolCall);
+              // Handle MCP tools execution
+              let toolResult;
+              const mcpMatch = allTools.find((t) => t.function.name === toolCall.function.name);
+
+              if (mcpMatch && mcpMatch._isMCP) {
+                if (!statusMsg || statusMsg.includes('Processing your request')) {
+                  statusMsg = `⚙️ Running ${mcpMatch._originalName}...${iteration > 1 ? ` (step ${iteration})` : ''}`;
+                }
+                controller.enqueue(encodeEvent({ type: 'status', message: statusMsg }));
+                try {
+                  const mcpClientInfo = mcpClients[mcpMatch._clientIndex];
+                  const res = await mcpClientInfo.client.callTool({
+                    name: mcpMatch._originalName,
+                    arguments: parsedArgs,
+                  });
+                  toolResult = {
+                    text: res.content.map((c) => c.text).join('\n'),
+                  };
+                } catch (err) {
+                  toolResult = { error: err.message };
+                }
+              } else {
+                controller.enqueue(encodeEvent({ type: 'status', message: statusMsg }));
+                // Execute the internal tool DB query
+                toolResult = await executeToolCall(toolCall);
+              }
 
               // 1. Check if we should emit a Generative UI block to the frontend
               const uiBlock = getUIBlockForToolResult(toolCall.function.name, toolResult);
@@ -246,6 +317,14 @@ export async function POST(request) {
 
           controller.close();
 
+          for (const { transport } of mcpClients) {
+            try {
+              await transport.close();
+            } catch (e) {
+              console.error('[Chat] Error closing MCP transport:', e);
+            }
+          }
+
           // ── Post-stream analytics & logging (fire-and-forget) ────────────
           if (!assistantContent?.trim()) return;
 
@@ -295,6 +374,13 @@ export async function POST(request) {
         } catch (error) {
           console.error('[Chat] Stream error:', error);
           controller.error(error);
+
+          // Ensure clients are closed on error
+          for (const { transport } of mcpClients) {
+            try {
+              await transport.close();
+            } catch (e) {}
+          }
         }
       },
     });

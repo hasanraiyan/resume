@@ -17,6 +17,8 @@ import {
   User,
   Sparkles,
   CornerDownRight,
+  Plus,
+  Settings2,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -25,6 +27,19 @@ import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { toast } from 'sonner';
 import getAnalytics from '@/lib/analytics';
 import StaticGenUI from './StaticGenUI';
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const AVAILABLE_MCPS = [
+  {
+    id: 'pdf-service',
+    name: 'PDF Tools',
+    url: 'https://pdfservice.pyqdeck.in/mcp/sse',
+    description: 'Create and process PDF documents',
+  },
+];
 
 // ---------------------------------------------------------------------------
 // Tool metadata — maps tool names to labels + icons
@@ -210,26 +225,37 @@ function MdContent({ content, onLinkClick, isUser = false }) {
             </code>
           );
         },
-        a: ({ node, href, children, ...props }) => (
-          <a
-            href={href}
-            className={`relative z-10 pointer-events-auto hover:text-current underline underline-offset-2 transition-colors break-words ${isUser ? 'text-white decoration-white/30' : 'text-blue-600 decoration-blue-300'}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => {
-              // We don't preventDefault so that target="_blank" handles the new tab natively,
-              // but we still trigger tracking if provided.
-              if (onLinkClick) {
-                onLinkClick(e, href);
-              }
-            }}
-          >
-            {children}
-            {href?.startsWith('http') && (
-              <ExternalLink className="w-2.5 h-2.5 inline-block ml-0.5 mb-0.5 align-middle" />
-            )}
-          </a>
-        ),
+        a: ({ node, href, children, ...props }) => {
+          let cleanHref = href || '';
+          // Ensure it has a protocol if it looks like an external domain but lacks one
+          if (cleanHref.startsWith('www.')) {
+            cleanHref = `https://${cleanHref}`;
+          }
+
+          return (
+            <a
+              href={cleanHref}
+              className={`relative z-50 pointer-events-auto hover:text-current underline underline-offset-2 transition-colors break-words ${isUser ? 'text-white decoration-white/30' : 'text-blue-600 decoration-blue-300'}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                e.stopPropagation(); // Stop event bubbling to prevent global selection / layout listeners from firing
+                console.log('🔗 Markdown link clicked:', cleanHref);
+                if (onLinkClick) {
+                  onLinkClick(e, cleanHref);
+                }
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              onMouseUp={(e) => e.stopPropagation()}
+              {...props}
+            >
+              {children}
+              {cleanHref?.startsWith('http') && (
+                <ExternalLink className="w-2.5 h-2.5 inline-block ml-0.5 mb-0.5 align-middle" />
+              )}
+            </a>
+          );
+        },
         strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
         ul: ({ children }) => <ul className="list-disc pl-4 my-1 space-y-0.5">{children}</ul>,
         ol: ({ children }) => <ol className="list-decimal pl-4 my-1 space-y-0.5">{children}</ol>,
@@ -293,7 +319,7 @@ function getDefaultPrompts(settings) {
 // Core streaming helper
 // ---------------------------------------------------------------------------
 
-async function streamChatResponse({ content, history, setMessages, setStatus }) {
+async function streamChatResponse({ content, history, setMessages, setStatus, activeMCPs = [] }) {
   const analytics = getAnalytics();
   const chatHistory = history
     .filter((msg) => msg.role !== 'system' && msg.role !== 'tool_action')
@@ -307,6 +333,7 @@ async function streamChatResponse({ content, history, setMessages, setStatus }) 
       chatHistory,
       sessionId: analytics.sessionId,
       path: window.location.pathname,
+      activeMCPs: activeMCPs.map((mcp) => mcp.url),
     }),
   });
 
@@ -548,8 +575,21 @@ export default function ChatbotWidget() {
   const [settingsFetched, setSettingsFetched] = useState(false);
   const [selection, setSelection] = useState({ text: '', x: 0, y: 0, show: false });
   const [activeQuote, setActiveQuote] = useState('');
+  const [activeMCPs, setActiveMCPs] = useState([]);
+  const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Close tools menu on background click
+  useEffect(() => {
+    const handleGlobalClick = (e) => {
+      if (isToolsMenuOpen && !e.target.closest('.tools-menu-container')) {
+        setIsToolsMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleGlobalClick);
+    return () => document.removeEventListener('mousedown', handleGlobalClick);
+  }, [isToolsMenuOpen]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -698,6 +738,7 @@ export default function ChatbotWidget() {
         await streamChatResponse({
           content: userMessage.content,
           history: messages.filter((m) => !m.hidden),
+          activeMCPs,
           setMessages,
           setStatus: setStatusMessage,
         });
@@ -724,6 +765,9 @@ export default function ChatbotWidget() {
     e.preventDefault();
     send(inputMessage);
     setInputMessage('');
+    if (inputRef.current) {
+      inputRef.current.style.height = '44px';
+    }
   };
 
   const handlePromptClick = (text) => send(text);
@@ -1067,24 +1111,46 @@ export default function ChatbotWidget() {
                   </div>
                 </div>
               ) : (
-                <div className="px-3 sm:px-4 py-2 flex items-center gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  {suggestedPrompts.map((prompt, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handlePromptClick(prompt.text)}
-                      className="px-3 py-1.5 bg-white hover:bg-neutral-100 border border-neutral-200/80 rounded-full text-xs text-neutral-700 font-medium whitespace-nowrap flex-shrink-0 transition-colors duration-200"
-                    >
-                      {prompt.text}
-                    </button>
-                  ))}
-                </div>
+                activeMCPs.length === 0 && (
+                  <div className="px-3 sm:px-4 py-2 flex items-center gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {suggestedPrompts.map((prompt, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handlePromptClick(prompt.text)}
+                        className="px-3 py-1.5 bg-white hover:bg-neutral-100 border border-neutral-200/80 rounded-full text-xs text-neutral-700 font-medium whitespace-nowrap flex-shrink-0 transition-colors duration-200"
+                      >
+                        {prompt.text}
+                      </button>
+                    ))}
+                  </div>
+                )
               )}
             </div>
           )}
 
           {/* Input Area */}
           <div className="p-3 border-t border-neutral-200/50 bg-white shrink-0">
-            <div className="relative rounded-2xl border border-neutral-200/80 bg-neutral-50/50 focus-within:border-black/50 focus-within:ring-1 focus-within:ring-black/20 transition-all">
+            {activeMCPs.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2 px-1">
+                {activeMCPs.map((mcp) => (
+                  <div
+                    key={mcp.id}
+                    className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50/80 border border-blue-200/60 rounded-full text-blue-700 text-[11px] font-medium"
+                  >
+                    <Wrench className="w-3 h-3 text-blue-500" />
+                    {mcp.name}
+                    <button
+                      onClick={() => setActiveMCPs((prev) => prev.filter((p) => p.id !== mcp.id))}
+                      className="ml-1 p-0.5 hover:bg-blue-100/80 rounded-full transition-colors"
+                      title="Remove Tool"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="rounded-3xl border border-neutral-200/80 bg-neutral-50/50 focus-within:border-black/50 focus-within:ring-1 focus-within:ring-black/20 transition-all flex flex-col">
               <textarea
                 ref={inputRef}
                 value={inputMessage}
@@ -1104,22 +1170,75 @@ export default function ChatbotWidget() {
                 placeholder={`Ask ${chatbotSettings?.aiName || 'Kiro'} a question...`}
                 rows={1}
                 disabled={isLoading}
-                className="w-full resize-none bg-transparent px-4 pt-3 pb-10 text-[13px] leading-relaxed outline-none placeholder:text-neutral-400 disabled:opacity-50 max-h-40 overflow-hidden text-neutral-900"
+                className="w-full resize-none bg-transparent px-4 pt-3 pb-2 text-[13px] leading-relaxed outline-none placeholder:text-neutral-400 disabled:opacity-50 max-h-40 overflow-hidden text-neutral-900 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                 style={{ height: '44px' }}
               />
-              <div className="absolute bottom-2 right-2 flex items-center justify-end pointer-events-none">
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={isLoading || (!inputMessage.trim() && !activeQuote)}
-                  className="pointer-events-auto w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-black text-white hover:opacity-90 active:scale-95"
-                >
-                  {isLoading ? (
-                    <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+
+              <div className="flex justify-between items-center px-2 pb-2 mt-auto">
+                {/* Left: Settings Menu */}
+                <div className="relative tools-menu-container">
+                  <button
+                    onClick={() => setIsToolsMenuOpen(!isToolsMenuOpen)}
+                    disabled={isLoading}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isToolsMenuOpen ? 'bg-neutral-200 text-neutral-800' : 'bg-transparent text-neutral-500 hover:bg-neutral-200/50 hover:text-neutral-700'} disabled:opacity-50`}
+                    title="Tools"
+                  >
+                    <Settings2 className="w-[18px] h-[18px]" />
+                  </button>
+
+                  {isToolsMenuOpen && (
+                    <div className="absolute bottom-full left-0 mb-2 w-48 bg-white/95 backdrop-blur-xl rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-neutral-200/50 overflow-hidden text-left animate-in fade-in slide-in-from-bottom-2 duration-200 z-50">
+                      <div className="px-3 py-2 border-b border-neutral-100 bg-neutral-50/80">
+                        <span className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider">
+                          Available Tools
+                        </span>
+                      </div>
+                      <div className="p-1">
+                        {AVAILABLE_MCPS.map((mcp) => {
+                          const isActive = activeMCPs.some((p) => p.id === mcp.id);
+                          return (
+                            <button
+                              key={mcp.id}
+                              onClick={() => {
+                                if (isActive) {
+                                  setActiveMCPs((prev) => prev.filter((p) => p.id !== mcp.id));
+                                } else {
+                                  setActiveMCPs((prev) => [...prev, mcp]);
+                                }
+                                setIsToolsMenuOpen(false);
+                                setTimeout(() => inputRef.current?.focus(), 50);
+                              }}
+                              className={`w-full text-left px-3 py-2.5 text-xs rounded-lg transition-colors flex items-center gap-2.5 ${isActive ? 'bg-blue-50/50 text-blue-700 font-medium' : 'hover:bg-neutral-100 text-neutral-700'}`}
+                            >
+                              <Wrench
+                                className={`w-3.5 h-3.5 ${isActive ? 'text-blue-500' : 'text-neutral-400'}`}
+                              />
+                              <div className="flex flex-col">
+                                <span>{mcp.name}</span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   )}
-                </button>
+                </div>
+
+                {/* Right: Submit Button */}
+                <div className="flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={isLoading || (!inputMessage.trim() && !activeQuote)}
+                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-black text-white hover:opacity-90 active:scale-95"
+                  >
+                    {isLoading ? (
+                      <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
