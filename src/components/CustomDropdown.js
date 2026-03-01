@@ -121,7 +121,7 @@ export default function CustomDropdownMinimal({ label, options, value, onChange,
         {isOpen && (
           <div
             ref={optionsRef}
-            className="absolute z-50 w-full mt-2 bg-white border border-gray-200 shadow-xl rounded-sm overflow-hidden"
+            className="absolute z-50 w-full mt-2 bg-white border border-gray-200 shadow-xl rounded-sm"
           >
             {/* Hover indicator */}
             <div

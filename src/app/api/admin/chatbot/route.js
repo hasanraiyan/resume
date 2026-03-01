@@ -77,7 +77,9 @@ export async function GET() {
       rules: settings.rules,
       isActive: settings.isActive,
       modelName: settings.modelName,
-      userSelectableModels: settings.userSelectableModels,
+      fastModel: settings.fastModel,
+      thinkingModel: settings.thinkingModel,
+      proModel: settings.proModel,
     });
   } catch (error) {
     console.error('Error fetching chatbot settings:', error);
@@ -149,9 +151,11 @@ export async function POST(request) {
       servicesOffered,
       callToAction,
       rules,
-      isActive,
-      modelName,
-      userSelectableModels,
+      isActive = true,
+      modelName = 'openai-large',
+      fastModel = '',
+      thinkingModel = '',
+      proModel = '',
     } = body;
 
     // Validate required fields
@@ -173,9 +177,11 @@ export async function POST(request) {
       settings.servicesOffered = servicesOffered;
       settings.callToAction = callToAction;
       settings.rules = filteredRules;
-      settings.isActive = isActive !== undefined ? isActive : true;
-      settings.modelName = modelName || process.env.OPENAI_MODEL_NAME || 'openai-large';
-      settings.userSelectableModels = userSelectableModels || [];
+      settings.isActive = isActive;
+      settings.modelName = modelName;
+      settings.fastModel = fastModel;
+      settings.thinkingModel = thinkingModel;
+      settings.proModel = proModel;
 
       await settings.save();
     } else {
@@ -187,9 +193,11 @@ export async function POST(request) {
         servicesOffered,
         callToAction,
         rules: filteredRules,
-        isActive: isActive !== undefined ? isActive : true,
-        modelName: modelName || process.env.OPENAI_MODEL_NAME || 'openai-large',
-        userSelectableModels: userSelectableModels || [],
+        isActive,
+        modelName,
+        fastModel,
+        thinkingModel,
+        proModel,
       });
 
       await settings.save();
@@ -206,7 +214,9 @@ export async function POST(request) {
         rules: settings.rules,
         isActive: settings.isActive,
         modelName: settings.modelName,
-        userSelectableModels: settings.userSelectableModels,
+        fastModel: settings.fastModel,
+        thinkingModel: settings.thinkingModel,
+        proModel: settings.proModel,
       },
     });
   } catch (error) {

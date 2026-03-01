@@ -784,8 +784,17 @@ export default function ChatbotWidget() {
       if (response.ok) {
         const settings = await response.json();
         setChatbotSettings(settings);
-        if (settings.userSelectableModels?.length > 0) {
-          setSelectedModel(settings.userSelectableModels[0]);
+        if (settings.modelName === 'fast' && settings.fastModel) {
+          setSelectedModel(settings.fastModel);
+        } else if (settings.modelName === 'thinking' && settings.thinkingModel) {
+          setSelectedModel(settings.thinkingModel);
+        } else if (settings.modelName === 'pro' && settings.proModel) {
+          setSelectedModel(settings.proModel);
+        } else {
+          // Fallback to whichever is first available
+          setSelectedModel(
+            settings.fastModel || settings.thinkingModel || settings.proModel || settings.modelName
+          );
         }
         if (settings.isActive) {
           setMessages([
@@ -1346,7 +1355,9 @@ export default function ChatbotWidget() {
 
                 {/* Right: Submit Button or Voice Input */}
                 <div className="flex items-center justify-end gap-2">
-                  {chatbotSettings?.userSelectableModels?.length > 0 && (
+                  {(chatbotSettings?.fastModel ||
+                    chatbotSettings?.thinkingModel ||
+                    chatbotSettings?.proModel) && (
                     <div className="relative model-selector-container">
                       <button
                         type="button"
@@ -1355,15 +1366,10 @@ export default function ChatbotWidget() {
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-full text-xs font-medium transition-colors disabled:opacity-50"
                       >
                         {(() => {
-                          if (selectedModel?.includes('mini') || selectedModel?.includes('flash'))
-                            return 'Fast';
-                          if (
-                            selectedModel?.includes('o1') ||
-                            selectedModel?.includes('reasoning') ||
-                            selectedModel?.includes('thinking')
-                          )
-                            return 'Thinking';
-                          return 'Pro';
+                          if (selectedModel === chatbotSettings?.fastModel) return 'Fast';
+                          if (selectedModel === chatbotSettings?.thinkingModel) return 'Thinking';
+                          if (selectedModel === chatbotSettings?.proModel) return 'Pro';
+                          return 'Default';
                         })()}
                         <ChevronDown
                           className={`w-3 h-3 transition-transform ${isModelSelectorOpen ? 'rotate-180' : ''}`}
@@ -1377,51 +1383,81 @@ export default function ChatbotWidget() {
                               AI Models
                             </span>
                           </div>
-                          <div className="p-1.5">
-                            {chatbotSettings.userSelectableModels.map((model) => {
-                              const isSelected = selectedModel === model;
-                              let label = 'Pro';
-                              let desc = 'Thinks longer for advanced maths and code';
-                              if (model.includes('mini') || model.includes('flash')) {
-                                label = 'Fast';
-                                desc = 'Answers quickly';
-                              } else if (
-                                model.includes('o1') ||
-                                model.includes('reasoning') ||
-                                model.includes('thinking')
-                              ) {
-                                label = 'Thinking';
-                                desc = 'Solves complex problems';
-                              }
+                          <div className="p-1.5 flex flex-col gap-1">
+                            {chatbotSettings.fastModel && (
+                              <button
+                                onClick={() => {
+                                  setSelectedModel(chatbotSettings.fastModel);
+                                  setIsModelSelectorOpen(false);
+                                  setTimeout(() => inputRef.current?.focus(), 50);
+                                }}
+                                className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center justify-between ${
+                                  selectedModel === chatbotSettings.fastModel
+                                    ? 'bg-blue-50/50 text-blue-700'
+                                    : 'hover:bg-neutral-100 text-neutral-700'
+                                }`}
+                              >
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-semibold">Fast Engine</span>
+                                  <span className="text-[10px] text-neutral-400 mt-0.5">
+                                    Quick, everyday answers
+                                  </span>
+                                </div>
+                                {selectedModel === chatbotSettings.fastModel && (
+                                  <Check className="w-3.5 h-3.5 text-blue-500" />
+                                )}
+                              </button>
+                            )}
 
-                              return (
-                                <button
-                                  key={model}
-                                  onClick={() => {
-                                    setSelectedModel(model);
-                                    setIsModelSelectorOpen(false);
-                                    setTimeout(() => inputRef.current?.focus(), 50);
-                                  }}
-                                  className="w-full text-left p-2.5 rounded-lg transition-colors flex items-center justify-between hover:bg-neutral-100"
-                                >
-                                  <div className="flex flex-col pr-3">
-                                    <span
-                                      className={`text-[13px] ${isSelected ? 'font-medium text-neutral-900' : 'text-neutral-700'}`}
-                                    >
-                                      {label}
-                                    </span>
-                                    <span className="text-[11px] text-neutral-500 leading-tight mt-0.5">
-                                      {desc}
-                                    </span>
-                                  </div>
-                                  {isSelected && (
-                                    <div className="w-4 h-4 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
-                                      <Check className="w-3 h-3 text-white" />
-                                    </div>
-                                  )}
-                                </button>
-                              );
-                            })}
+                            {chatbotSettings.thinkingModel && (
+                              <button
+                                onClick={() => {
+                                  setSelectedModel(chatbotSettings.thinkingModel);
+                                  setIsModelSelectorOpen(false);
+                                  setTimeout(() => inputRef.current?.focus(), 50);
+                                }}
+                                className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center justify-between ${
+                                  selectedModel === chatbotSettings.thinkingModel
+                                    ? 'bg-blue-50/50 text-blue-700'
+                                    : 'hover:bg-neutral-100 text-neutral-700'
+                                }`}
+                              >
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-semibold">Thinking Engine</span>
+                                  <span className="text-[10px] text-neutral-400 mt-0.5">
+                                    Deep reasoning
+                                  </span>
+                                </div>
+                                {selectedModel === chatbotSettings.thinkingModel && (
+                                  <Check className="w-3.5 h-3.5 text-blue-500" />
+                                )}
+                              </button>
+                            )}
+
+                            {chatbotSettings.proModel && (
+                              <button
+                                onClick={() => {
+                                  setSelectedModel(chatbotSettings.proModel);
+                                  setIsModelSelectorOpen(false);
+                                  setTimeout(() => inputRef.current?.focus(), 50);
+                                }}
+                                className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center justify-between ${
+                                  selectedModel === chatbotSettings.proModel
+                                    ? 'bg-blue-50/50 text-blue-700'
+                                    : 'hover:bg-neutral-100 text-neutral-700'
+                                }`}
+                              >
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-semibold">Pro Engine</span>
+                                  <span className="text-[10px] text-neutral-400 mt-0.5">
+                                    Advanced capability
+                                  </span>
+                                </div>
+                                {selectedModel === chatbotSettings.proModel && (
+                                  <Check className="w-3.5 h-3.5 text-blue-500" />
+                                )}
+                              </button>
+                            )}
                           </div>
                         </div>
                       )}

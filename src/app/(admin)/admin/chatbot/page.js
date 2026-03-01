@@ -48,7 +48,9 @@ export default function ChatbotSettingsPage() {
     rules: [''],
     isActive: true,
     modelName: 'openai-large',
-    userSelectableModels: [],
+    fastModel: '',
+    thinkingModel: '',
+    proModel: '',
   });
 
   // Redirect if not admin
@@ -343,52 +345,71 @@ export default function ChatbotSettingsPage() {
 
                 <div className="space-y-2 sm:col-span-2">
                   <CustomDropdown
-                    label="Default AI Model"
+                    label="Default Engine Role"
                     name="modelName"
                     value={formData.modelName}
                     onChange={(e) => handleInputChange('modelName', e.target.value)}
-                    options={availableModels.map((model) => ({ value: model, label: model }))}
+                    options={[
+                      { value: 'fast', label: '🚀 Fast Engine' },
+                      { value: 'thinking', label: '🧠 Thinking Engine' },
+                      { value: 'pro', label: '👑 Pro Engine' },
+                    ]}
                   />
                   <p className="text-xs text-neutral-500 mt-2">
                     The default engine handling user queries if the user doesn't pick one.
                   </p>
                 </div>
 
-                <div className="space-y-3 sm:col-span-2">
-                  <label className="block text-sm font-medium text-neutral-800 flex items-center gap-2">
-                    User-Selectable Models
-                  </label>
-                  <p className="text-xs text-neutral-500">
-                    Allow users to switch between these models inside the chatbot widget directly.
-                  </p>
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4 bg-neutral-50 border border-neutral-200 rounded-xl max-h-60 overflow-y-auto custom-scrollbar">
-                    {availableModels.map((model) => {
-                      const isSelected = formData.userSelectableModels?.includes(model);
-                      return (
-                        <label
-                          key={model}
-                          className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-all ${isSelected ? 'border-blue-500 bg-blue-50/50' : 'border-neutral-200 bg-white hover:border-neutral-300'}`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={(e) => {
-                              const current = formData.userSelectableModels || [];
-                              const newSelection = e.target.checked
-                                ? [...current, model]
-                                : current.filter((m) => m !== model);
-                              handleInputChange('userSelectableModels', newSelection);
-                            }}
-                            className="w-4 h-4 text-blue-600 border-neutral-300 rounded focus:ring-blue-500"
-                          />
-                          <span
-                            className={`text-sm ${isSelected ? 'text-blue-900 font-medium' : 'text-neutral-700'}`}
-                          >
-                            {model}
-                          </span>
-                        </label>
-                      );
-                    })}
+                <div className="space-y-6 sm:col-span-2 p-6 bg-neutral-50/50 border border-neutral-200 rounded-2xl">
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-900 mb-1 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-blue-500" />
+                      Widget Model Selection
+                    </label>
+                    <p className="text-xs text-neutral-500 mb-4">
+                      Assign specific models to default roles. These options will appear in the
+                      chatbot widget so users can choose how the AI thinks. Select "- None -" to
+                      disable a slot.
+                    </p>
+                  </div>
+
+                  <div className="grid sm:grid-cols-3 gap-6 relative z-50">
+                    <div className="space-y-2 relative z-50">
+                      <CustomDropdown
+                        label="🚀 Fast Engine"
+                        name="fastModel"
+                        value={formData.fastModel}
+                        onChange={(e) => handleInputChange('fastModel', e.target.value)}
+                        options={[
+                          { value: '', label: '- None -' },
+                          ...availableModels.map((m) => ({ value: m, label: m })),
+                        ]}
+                      />
+                    </div>
+                    <div className="space-y-2 relative z-40">
+                      <CustomDropdown
+                        label="🧠 Thinking Engine"
+                        name="thinkingModel"
+                        value={formData.thinkingModel}
+                        onChange={(e) => handleInputChange('thinkingModel', e.target.value)}
+                        options={[
+                          { value: '', label: '- None -' },
+                          ...availableModels.map((m) => ({ value: m, label: m })),
+                        ]}
+                      />
+                    </div>
+                    <div className="space-y-2 relative z-30">
+                      <CustomDropdown
+                        label="👑 Pro Engine"
+                        name="proModel"
+                        value={formData.proModel}
+                        onChange={(e) => handleInputChange('proModel', e.target.value)}
+                        options={[
+                          { value: '', label: '- None -' },
+                          ...availableModels.map((m) => ({ value: m, label: m })),
+                        ]}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

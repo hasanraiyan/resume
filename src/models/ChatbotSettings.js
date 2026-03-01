@@ -116,9 +116,17 @@ const ChatbotSettingsSchema = new mongoose.Schema(
       required: true,
       default: process.env.OPENAI_MODEL_NAME || 'openai-large',
     },
-    userSelectableModels: {
-      type: [String],
-      default: [],
+    fastModel: {
+      type: String,
+      default: '',
+    },
+    thinkingModel: {
+      type: String,
+      default: '',
+    },
+    proModel: {
+      type: String,
+      default: '',
     },
   },
   {
