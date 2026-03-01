@@ -184,37 +184,6 @@ export async function POST(request) {
                   transport: 'sse',
                   url: cfg.url,
                 };
-              } else if (cfg && cfg.type === 'rest' && cfg.apiKey && mcpId === 'mcp-tavily') {
-                // 2. Wrap basic REST setups into LangChain native tools manually
-                allTools.push(
-                  tool(
-                    async ({ query }) => {
-                      const res = await fetch('https://api.tavily.com/search', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          api_key: cfg.apiKey,
-                          query,
-                          search_depth: 'basic',
-                          include_answer: true,
-                        }),
-                      });
-                      if (!res.ok) throw new Error(`Tavily error: ${res.status}`);
-                      const data = await res.json();
-                      return (
-                        data.answer ||
-                        data.results?.map((r) => r.content).join('\n') ||
-                        'No results'
-                      );
-                    },
-                    {
-                      name: 'search_the_internet',
-                      description:
-                        'CRITICAL: Search the live internet for up-to-date information, news, current events.',
-                      schema: z.object({ query: z.string() }),
-                    }
-                  )
-                );
               }
             }
 

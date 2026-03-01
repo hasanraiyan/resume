@@ -8,7 +8,6 @@ function getMCPIcon(mcp) {
 
   // Fallbacks
   const mcpId = mcp?.id || '';
-  if (mcpId.includes('search') || mcpId.includes('tavily')) return Globe;
   if (mcpId.includes('pdf') || mcpId.includes('file')) return FileText;
   return Wrench;
 }

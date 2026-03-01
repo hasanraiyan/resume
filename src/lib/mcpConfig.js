@@ -26,18 +26,7 @@ export const getBackendMCPConfig = async (isAdmin = false) => {
       adminOnly: server.adminOnly || false,
     }));
 
-    return [
-      ...dbConfigs,
-      {
-        id: 'mcp-tavily',
-        name: 'Search',
-        description: 'Search the web for latest information',
-        type: 'rest',
-        apiKey: process.env.TAVILY_API_KEY || null,
-        icon: 'Globe',
-        color: 'green-500',
-      },
-    ];
+    return [...dbConfigs];
   } catch (error) {
     console.error('Error fetching dynamic MCP config:', error);
     return [];

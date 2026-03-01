@@ -370,11 +370,6 @@ export function getToolStatusMessage(toolName, rawArgs, iteration = null) {
     }
     case 'draftContactLead':
       return `📝 Drafting contact form...${iterationSuffix}`;
-    case 'search_the_internet':
-    case 'tavily_search': {
-      const q = args?.query || (typeof args === 'string' ? args : 'information');
-      return `🌐 Searching the internet for "${q}"...${iterationSuffix}`;
-    }
     default:
       return `🤔 Processing your request...${iterationSuffix}`;
   }

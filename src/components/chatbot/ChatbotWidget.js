@@ -33,7 +33,7 @@ function getDefaultPrompts(settings) {
 export default function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
-  const [activeMCPs, setActiveMCPs] = useState([]); // Stores IDs like ['mcp-tavily']
+  const [activeMCPs, setActiveMCPs] = useState([]);
   const [availableMCPs, setAvailableMCPs] = useState([]); // Fetched from backend
   const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
