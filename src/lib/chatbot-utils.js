@@ -364,6 +364,9 @@ export function getToolStatusMessage(toolName, args, iteration = null) {
       return `🔎 Searching for "${args.query}"...${iterationSuffix}`;
     case 'draftContactLead':
       return `📝 Drafting contact form...${iterationSuffix}`;
+    case 'search_the_internet':
+    case 'tavily_search':
+      return `🌐 Searching the internet for "${args.query || 'information'}"...${iterationSuffix}`;
     default:
       return `🤔 Processing your request...${iterationSuffix}`;
   }

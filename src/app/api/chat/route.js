@@ -15,6 +15,7 @@ import { getUIBlockForToolResult } from '@/lib/chatbot-generative-ui';
 import { rateLimit } from '@/lib/rateLimit';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+import { getBackendMCPConfig } from '@/lib/mcpConfig';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -61,10 +62,13 @@ export async function POST(request) {
     const {
       userMessage,
       chatHistory = [],
-      sessionId,
+      sessionId: providedSessionId,
       path = '/',
       activeMCPs = [],
     } = await request.json();
+
+    const sessionId =
+      providedSessionId || `fallback-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
     if (!userMessage) {
       return NextResponse.json({ error: 'User message is required' }, { status: 400 });
@@ -132,15 +136,66 @@ export async function POST(request) {
             controller.enqueue(
               encodeEvent({ type: 'status', message: '🔌 Connecting to external tools...' })
             );
-            for (const mcpUrl of activeMCPs) {
+            // activeMCPs is now an array of IDs from the frontend
+            const backendMCPs = getBackendMCPConfig();
+
+            for (const mcpId of activeMCPs) {
+              // Find the backend configuration for this ID
+              const mcpConfig = backendMCPs.find((m) => m.id === mcpId);
+
               try {
-                const transport = new SSEClientTransport(new URL(mcpUrl));
+                if (!mcpConfig) {
+                  console.warn(`Skipping invalid or securely disabled Tool: ${mcpId}`);
+                  continue;
+                }
+
+                // Handle Native REST tools mapped from the MCP configuration
+                if (mcpConfig.type === 'rest') {
+                  if (mcpId === 'mcp-tavily' && mcpConfig.apiKey) {
+                    allTools.push({
+                      type: 'function',
+                      function: {
+                        name: 'search_the_internet',
+                        description:
+                          'CRITICAL: Use this tool to search the live internet for up-to-date information, latest news, current events, and facts outside your training data. Extremely useful when the user asks for "news", "latest", or "search".',
+                        parameters: {
+                          type: 'object',
+                          properties: {
+                            query: {
+                              type: 'string',
+                              description:
+                                'The search query to look up on the web. Make it concise and optimized for a search engine.',
+                            },
+                          },
+                          required: ['query'],
+                        },
+                      },
+                      _isREST: true,
+                      _restProvider: 'tavily',
+                      _apiKey: mcpConfig.apiKey,
+                    });
+                  }
+                  continue;
+                }
+
+                // Standard SSE MCPs must have a url
+                if (!mcpConfig.url) continue;
+
+                const transport = new SSEClientTransport(new URL(mcpConfig.url));
                 const client = new Client(
                   { name: 'KiroChatbot', version: '1.0.0' },
                   { capabilities: { tools: {} } }
                 );
-                await client.connect(transport);
-                mcpClients.push({ url: mcpUrl, client, transport });
+
+                // Enforce a strict 5-second timeout on the MCP connection to prevent hanging
+                const connectPromise = client.connect(transport);
+                const timeoutPromise = new Promise((_, reject) =>
+                  setTimeout(() => reject(new Error('Connection timed out after 5000ms')), 5000)
+                );
+
+                await Promise.race([connectPromise, timeoutPromise]);
+
+                mcpClients.push({ url: mcpConfig.url, client, transport });
 
                 const { tools: extTools } = await client.listTools();
                 if (extTools) {
@@ -159,7 +214,7 @@ export async function POST(request) {
                   }
                 }
               } catch (err) {
-                console.error('[Chat] Failed to connect to MCP:', mcpUrl, err);
+                console.error('[Chat] Failed to connect to MCP:', mcpConfig.url, err);
               }
             }
           }
@@ -205,6 +260,10 @@ export async function POST(request) {
 
             // ── Assemble resolved tool calls from the delta map ──────────────
             const assembledToolCalls = Object.values(toolCallMap);
+            console.log(
+              `\n\n[Chat Iteration ${iteration}] AI Selected Tools:`,
+              assembledToolCalls.map((t) => t.function.name)
+            );
 
             // Push the assistant turn (with tool_calls) into the message history
             messages.push({
@@ -251,6 +310,36 @@ export async function POST(request) {
                   toolResult = {
                     text: res.content.map((c) => c.text).join('\n'),
                   };
+                } catch (err) {
+                  toolResult = { error: err.message };
+                }
+              } else if (mcpMatch && mcpMatch._isREST) {
+                // Execute Native REST Tool
+                if (!statusMsg || statusMsg.includes('Processing your request')) {
+                  statusMsg = `🌐 Searching the web...${iteration > 1 ? ` (step ${iteration})` : ''}`;
+                }
+                controller.enqueue(encodeEvent({ type: 'status', message: statusMsg }));
+                try {
+                  if (mcpMatch._restProvider === 'tavily') {
+                    const tResponse = await fetch('https://api.tavily.com/search', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        api_key: mcpMatch._apiKey,
+                        query: parsedArgs.query,
+                        search_depth: 'basic',
+                        include_answer: true,
+                      }),
+                    });
+                    if (!tResponse.ok) throw new Error(`Tavily API error: ${tResponse.status}`);
+                    const tData = await tResponse.json();
+                    toolResult = {
+                      text:
+                        tData.answer ||
+                        (tData.results && tData.results.map((r) => r.content).join('\\n\\n')) ||
+                        'No results found.',
+                    };
+                  }
                 } catch (err) {
                   toolResult = { error: err.message };
                 }
