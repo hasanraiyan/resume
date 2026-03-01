@@ -607,12 +607,11 @@ export default function ChatbotSettingsPage() {
 
                         <div className="flex gap-4">
                           <div className="space-y-2 flex-1">
-                            <label className="block text-xs font-medium text-neutral-600">
+                            <label className="block text-xs font-medium text-neutral-600 mb-2">
                               Active Status
                             </label>
                             <div className="h-[38px] flex items-center">
                               <Switch
-                                label="Active"
                                 checked={provider.isActive}
                                 onCheckedChange={(value) =>
                                   handleUpdateProvider(provider.id, 'isActive', value)
@@ -621,12 +620,11 @@ export default function ChatbotSettingsPage() {
                             </div>
                           </div>
                           <div className="space-y-2 flex-1">
-                            <label className="block text-xs font-medium text-neutral-600">
+                            <label className="block text-xs font-medium text-neutral-600 mb-2">
                               Supports Tools
                             </label>
                             <div className="h-[38px] flex items-center">
                               <Switch
-                                label="Tools"
                                 checked={provider.supportsTools !== false}
                                 onCheckedChange={(value) =>
                                   handleUpdateProvider(provider.id, 'supportsTools', value)

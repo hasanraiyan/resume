@@ -2,16 +2,22 @@
 
 import * as SwitchPrimitives from '@radix-ui/react-switch';
 import { cn } from '../ui';
-const Switch = ({ checked, onCheckedChange, label, description }) => (
+
+const Switch = ({ checked, onCheckedChange, label, description, id }) => {
+  const switchId = id || "chatbot-status-" + Math.random().toString(36).substr(2, 9);
+
+  return (
   <div className="flex items-center justify-between">
-    <div className="flex flex-col">
-      <label htmlFor="chatbot-status" className="block text-sm font-medium text-neutral-700">
-        {label}
-      </label>
-      {description && <p className="text-sm text-neutral-500">{description}</p>}
-    </div>
+    {label && (
+      <div className="flex flex-col mr-4">
+        <label htmlFor={switchId} className="block text-sm font-medium text-neutral-700">
+          {label}
+        </label>
+        {description && <p className="text-sm text-neutral-500">{description}</p>}
+      </div>
+    )}
     <SwitchPrimitives.Root
-      id="chatbot-status"
+      id={switchId}
       checked={checked}
       onCheckedChange={onCheckedChange}
       className={cn(
@@ -27,6 +33,7 @@ const Switch = ({ checked, onCheckedChange, label, description }) => (
       />
     </SwitchPrimitives.Root>
   </div>
-);
+  );
+};
 
 export default Switch;

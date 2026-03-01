@@ -114,7 +114,7 @@ const ChatbotSettingsSchema = new mongoose.Schema(
     modelName: {
       type: {
         providerId: { type: String, default: 'default-openai' },
-        model: { type: String, required: true },
+        model: { type: String, default: process.env.OPENAI_MODEL_NAME || 'openai-large' },
       },
       default: {
         providerId: 'default-openai',
