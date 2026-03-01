@@ -19,6 +19,7 @@ import {
   CornerDownRight,
   Plus,
   Settings2,
+  Globe,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -58,11 +59,25 @@ function getToolMetadata(toolName, content) {
         label: extracted ? `Searching for "${extracted}"` : 'Searching portfolio',
         Icon: Search,
       };
+    case 'search_the_internet':
+      return {
+        label: extracted ? `Searching the internet for "${extracted}"` : 'Searching the internet',
+        Icon: Globe,
+      };
     case 'draftContactLead':
       return { label: 'Drafting contact form', Icon: FileText };
     default:
       return { label: content || 'Processing', Icon: Wrench };
   }
+}
+
+// ---------------------------------------------------------------------------
+// Helper: Get icon for specific MCP/Tool ID
+// ---------------------------------------------------------------------------
+function getMCPIcon(mcpId) {
+  if (mcpId?.includes('search') || mcpId?.includes('tavily')) return Globe;
+  if (mcpId?.includes('pdf') || mcpId?.includes('file')) return FileText;
+  return Wrench;
 }
 
 // Parse tool name from the emoji status string emitted by getToolStatusMessage
@@ -72,7 +87,10 @@ function parseToolFromStatus(statusMsg) {
   if (statusMsg.includes('project details')) return 'getProjectDetails';
   if (statusMsg.includes('blog articles')) return 'listAllArticles';
   if (statusMsg.includes('Reading')) return 'getArticleDetails';
-  if (statusMsg.includes('Searching')) return 'searchPortfolio';
+  if (statusMsg.includes('Searching')) {
+    if (statusMsg.includes('internet')) return 'search_the_internet';
+    return 'searchPortfolio';
+  }
   if (statusMsg.includes('Drafting contact form')) return 'draftContactLead';
   return null;
 }
@@ -1152,7 +1170,10 @@ export default function ChatbotWidget() {
                       key={mcp.id}
                       className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50/80 border border-blue-200/60 rounded-full text-blue-700 text-[11px] font-medium"
                     >
-                      <Wrench className="w-3 h-3 text-blue-500" />
+                      {(() => {
+                        const Icon = getMCPIcon(mcp.id);
+                        return <Icon className="w-3 h-3 text-blue-500" />;
+                      })()}
                       {mcp.name}
                       <button
                         onClick={() => setActiveMCPs((prev) => prev.filter((id) => id !== mcp.id))}
@@ -1226,9 +1247,14 @@ export default function ChatbotWidget() {
                               }}
                               className={`w-full text-left px-3 py-2.5 text-xs rounded-lg transition-colors flex items-center gap-2.5 ${isActive ? 'bg-blue-50/50 text-blue-700 font-medium' : 'hover:bg-neutral-100 text-neutral-700'}`}
                             >
-                              <Wrench
-                                className={`w-3.5 h-3.5 ${isActive ? 'text-blue-500' : 'text-neutral-400'}`}
-                              />
+                              {(() => {
+                                const Icon = getMCPIcon(mcp.id);
+                                return (
+                                  <Icon
+                                    className={`w-3.5 h-3.5 ${isActive ? 'text-blue-500' : 'text-neutral-400'}`}
+                                  />
+                                );
+                              })()}
                               <div className="flex flex-col">
                                 <span>{mcp.name}</span>
                               </div>
