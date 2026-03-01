@@ -53,7 +53,8 @@ import { getServerSession } from 'next-auth';
  *   "callToAction": "I'd be happy to help you get in touch with Raiyan.",
  *   "rules": ["Always be professional", "Guide to contact form"],
  *   "isActive": true,
- *   "modelName": "gpt-3.5-turbo"
+ *   "modelName": "gpt-3.5-turbo",
+ *   "imageInputEnabled": false
  * }
  */
 export async function GET() {
@@ -77,6 +78,7 @@ export async function GET() {
       rules: settings.rules,
       isActive: settings.isActive,
       modelName: settings.modelName,
+      imageInputEnabled: settings.imageInputEnabled,
     });
   } catch (error) {
     console.error('Error fetching chatbot settings:', error);
@@ -118,7 +120,8 @@ export async function GET() {
  *   "callToAction": "I'd be happy to help you get in touch with Raiyan.",
  *   "rules": ["Always be professional", "Guide to contact form"],
  *   "isActive": true,
- *   "modelName": "gpt-3.5-turbo"
+ *   "modelName": "gpt-3.5-turbo",
+ *   "imageInputEnabled": false
  * }
  *
  * @example Response:
@@ -150,6 +153,7 @@ export async function POST(request) {
       rules,
       isActive,
       modelName,
+      imageInputEnabled,
     } = body;
 
     // Validate required fields
@@ -173,6 +177,7 @@ export async function POST(request) {
       settings.rules = filteredRules;
       settings.isActive = isActive !== undefined ? isActive : true;
       settings.modelName = modelName || process.env.OPENAI_MODEL_NAME || 'openai-large';
+      settings.imageInputEnabled = imageInputEnabled !== undefined ? imageInputEnabled : false;
 
       await settings.save();
     } else {
@@ -186,6 +191,7 @@ export async function POST(request) {
         rules: filteredRules,
         isActive: isActive !== undefined ? isActive : true,
         modelName: modelName || process.env.OPENAI_MODEL_NAME || 'openai-large',
+        imageInputEnabled: imageInputEnabled !== undefined ? imageInputEnabled : false,
       });
 
       await settings.save();
@@ -202,6 +208,7 @@ export async function POST(request) {
         rules: settings.rules,
         isActive: settings.isActive,
         modelName: settings.modelName,
+        imageInputEnabled: settings.imageInputEnabled,
       },
     });
   } catch (error) {

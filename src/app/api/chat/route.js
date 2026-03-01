@@ -65,13 +65,14 @@ export async function POST(request) {
       sessionId: providedSessionId,
       path = '/',
       activeMCPs = [],
+      imageBase64,
     } = await request.json();
 
     const sessionId =
       providedSessionId || `fallback-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
-    if (!userMessage) {
-      return NextResponse.json({ error: 'User message is required' }, { status: 400 });
+    if (!userMessage && !imageBase64) {
+      return NextResponse.json({ error: 'User message or image is required' }, { status: 400 });
     }
 
     // Build dynamic context (with fallback on failure)
@@ -104,13 +105,35 @@ export async function POST(request) {
     const messages = [
       ...systemMessages,
       ...chatHistory.map((msg) => {
-        const m = { role: msg.role, content: msg.content };
+        let content = msg.content;
+
+        // Handle images in history if they exist (though usually we don't send full base64 history back to save tokens)
+        if (msg.imageBase64) {
+          content = [
+            { type: 'text', text: msg.content || 'Attached image' },
+            { type: 'image_url', image_url: { url: msg.imageBase64 } },
+          ];
+        }
+
+        const m = { role: msg.role, content: content };
         if (msg.tool_calls) m.tool_calls = msg.tool_calls;
         if (msg.tool_call_id) m.tool_call_id = msg.tool_call_id;
         return m;
       }),
-      { role: 'user', content: userMessage },
     ];
+
+    // Add current user message
+    if (imageBase64) {
+      messages.push({
+        role: 'user',
+        content: [
+          { type: 'text', text: userMessage || 'Attached image' },
+          { type: 'image_url', image_url: { url: imageBase64 } },
+        ],
+      });
+    } else {
+      messages.push({ role: 'user', content: userMessage });
+    }
 
     // -------------------------------------------------------------------------
     // True end-to-end streaming

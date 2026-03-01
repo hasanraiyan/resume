@@ -20,6 +20,8 @@ import {
   Plus,
   Settings2,
   Globe,
+  Paperclip,
+  Image as ImageIcon,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -332,7 +334,14 @@ function getDefaultPrompts(settings) {
 // Core streaming helper
 // ---------------------------------------------------------------------------
 
-async function streamChatResponse({ content, history, setMessages, setStatus, activeMCPs = [] }) {
+async function streamChatResponse({
+  content,
+  imageBase64,
+  history,
+  setMessages,
+  setStatus,
+  activeMCPs = [],
+}) {
   const analytics = getAnalytics();
   const chatHistory = history
     .filter((msg) => msg.role !== 'system' && msg.role !== 'tool_action')
@@ -347,6 +356,7 @@ async function streamChatResponse({ content, history, setMessages, setStatus, ac
       sessionId: analytics.sessionId,
       path: window.location.pathname,
       activeMCPs: activeMCPs, // Pass array of IDs directly
+      imageBase64: imageBase64,
     }),
   });
 
@@ -591,8 +601,11 @@ export default function ChatbotWidget() {
   const [activeMCPs, setActiveMCPs] = useState([]); // Stores IDs like ['mcp-tavily']
   const [availableMCPs, setAvailableMCPs] = useState([]); // Fetched from backend
   const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
+  const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
+  const [attachedImage, setAttachedImage] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Close tools menu on background click
   useEffect(() => {
@@ -600,10 +613,13 @@ export default function ChatbotWidget() {
       if (isToolsMenuOpen && !e.target.closest('.tools-menu-container')) {
         setIsToolsMenuOpen(false);
       }
+      if (isPlusMenuOpen && !e.target.closest('.plus-menu-container')) {
+        setIsPlusMenuOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleGlobalClick);
     return () => document.removeEventListener('mousedown', handleGlobalClick);
-  }, [isToolsMenuOpen]);
+  }, [isToolsMenuOpen, isPlusMenuOpen]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -744,7 +760,7 @@ export default function ChatbotWidget() {
 
   const send = useCallback(
     async (content, hidden = false) => {
-      if ((!content.trim() && !activeQuote) || isLoading) return;
+      if ((!content.trim() && !activeQuote && !attachedImage) || isLoading) return;
 
       const currentQuote = activeQuote;
       let finalContent = content.trim();
@@ -758,15 +774,21 @@ export default function ChatbotWidget() {
         id: Date.now(),
         role: 'user',
         content: finalContent,
+        imageBase64: attachedImage,
         timestamp: new Date(),
         hidden,
       };
+
+      const imageToSend = attachedImage;
+      setAttachedImage(null);
+
       setMessages((prev) => [...prev, userMessage]);
       setIsLoading(true);
 
       try {
         await streamChatResponse({
           content: userMessage.content,
+          imageBase64: imageToSend,
           history: messages.filter((m) => !m.hidden),
           activeMCPs,
           setMessages,
@@ -788,7 +810,7 @@ export default function ChatbotWidget() {
         setIsLoading(false);
       }
     },
-    [isLoading, messages, activeQuote, activeMCPs]
+    [isLoading, messages, activeQuote, activeMCPs, attachedImage]
   );
 
   const handleSubmit = (e) => {
@@ -800,7 +822,30 @@ export default function ChatbotWidget() {
     }
   };
 
-  const handlePromptClick = (text) => send(text);
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setAttachedImage(e.target.result);
+      setIsPlusMenuOpen(false);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = ''; // Reset input
+  };
+
+  const handlePromptClick = useCallback((text) => send(text), [send]);
 
   const clearChat = () => {
     setMessages([
@@ -1089,6 +1134,15 @@ export default function ChatbotWidget() {
                       <div
                         className={`px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-sm text-[13px] overflow-hidden ${message.role === 'user' ? 'bg-gradient-to-br from-black to-neutral-900 text-white shadow-black/20 rounded-tr-sm' : 'bg-white/90 backdrop-blur-sm text-neutral-900 shadow-neutral-200/50 border border-neutral-200/50 rounded-tl-sm'}`}
                       >
+                        {message.imageBase64 && (
+                          <div className="mb-2 max-w-[200px] rounded-lg overflow-hidden border border-white/20">
+                            <img
+                              src={message.imageBase64}
+                              alt="Uploaded"
+                              className="w-full h-auto object-cover"
+                            />
+                          </div>
+                        )}
                         {message.role === 'assistant' ? (
                           <MdContent content={message.content} onLinkClick={handleLinkClick} />
                         ) : (
@@ -1160,6 +1214,21 @@ export default function ChatbotWidget() {
 
           {/* Input Area */}
           <div className="p-3 border-t border-neutral-200/50 bg-white shrink-0">
+            {attachedImage && (
+              <div className="flex items-center gap-2 mb-2 px-2">
+                <div className="relative group rounded-lg overflow-hidden border border-neutral-200 w-16 h-16 shrink-0 bg-neutral-100">
+                  <img src={attachedImage} alt="Preview" className="w-full h-full object-cover" />
+                  <button
+                    onClick={() => setAttachedImage(null)}
+                    className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label="Remove image"
+                  >
+                    <X className="w-4 h-4 text-white" />
+                  </button>
+                </div>
+              </div>
+            )}
+
             {activeMCPs.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-2 px-1">
                 {activeMCPs.map((mcpId) => {
@@ -1199,7 +1268,7 @@ export default function ChatbotWidget() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    if (!isLoading && (inputMessage.trim() || activeQuote)) {
+                    if (!isLoading && (inputMessage.trim() || activeQuote || attachedImage)) {
                       handleSubmit(e);
                     }
                   }
@@ -1212,58 +1281,94 @@ export default function ChatbotWidget() {
               />
 
               <div className="flex justify-between items-center px-2 pb-2 mt-auto">
-                {/* Left: Settings Menu */}
-                <div className="relative tools-menu-container">
-                  <button
-                    onClick={() => setIsToolsMenuOpen(!isToolsMenuOpen)}
-                    disabled={isLoading}
-                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isToolsMenuOpen ? 'bg-neutral-200 text-neutral-800' : 'bg-transparent text-neutral-500 hover:bg-neutral-200/50 hover:text-neutral-700'} disabled:opacity-50`}
-                    title="Tools"
-                  >
-                    <Settings2 className="w-[18px] h-[18px]" />
-                  </button>
+                {/* Left: Settings Menu & Image Upload */}
+                <div className="flex items-center gap-1">
+                  {chatbotSettings?.imageInputEnabled && (
+                    <div className="relative plus-menu-container">
+                      <button
+                        onClick={() => setIsPlusMenuOpen(!isPlusMenuOpen)}
+                        disabled={isLoading}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isPlusMenuOpen ? 'bg-neutral-200 text-neutral-800' : 'bg-transparent text-neutral-500 hover:bg-neutral-200/50 hover:text-neutral-700'} disabled:opacity-50`}
+                        title="Add attachment"
+                      >
+                        <Plus className="w-5 h-5" />
+                      </button>
 
-                  {isToolsMenuOpen && (
-                    <div className="absolute bottom-full left-0 mb-2 w-48 bg-white/95 backdrop-blur-xl rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-neutral-200/50 overflow-hidden text-left animate-in fade-in slide-in-from-bottom-2 duration-200 z-50">
-                      <div className="px-3 py-2 border-b border-neutral-100 bg-neutral-50/80">
-                        <span className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider">
-                          Available Tools
-                        </span>
-                      </div>
-                      <div className="p-1">
-                        {availableMCPs.map((mcp) => {
-                          const isActive = activeMCPs.includes(mcp.id);
-                          return (
+                      {isPlusMenuOpen && (
+                        <div className="absolute bottom-full left-0 mb-2 w-48 bg-white/95 backdrop-blur-xl rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-neutral-200/50 overflow-hidden text-left animate-in fade-in slide-in-from-bottom-2 duration-200 z-50">
+                          <div className="p-1">
                             <button
-                              key={mcp.id}
-                              onClick={() => {
-                                if (isActive) {
-                                  setActiveMCPs([]);
-                                } else {
-                                  setActiveMCPs([mcp.id]);
-                                }
-                                setIsToolsMenuOpen(false);
-                                setTimeout(() => inputRef.current?.focus(), 50);
-                              }}
-                              className={`w-full text-left px-3 py-2.5 text-xs rounded-lg transition-colors flex items-center gap-2.5 ${isActive ? 'bg-blue-50/50 text-blue-700 font-medium' : 'hover:bg-neutral-100 text-neutral-700'}`}
+                              onClick={() => fileInputRef.current?.click()}
+                              className="w-full text-left px-3 py-2.5 text-xs rounded-lg transition-colors flex items-center gap-2.5 hover:bg-neutral-100 text-neutral-700"
                             >
-                              {(() => {
-                                const Icon = getMCPIcon(mcp.id);
-                                return (
-                                  <Icon
-                                    className={`w-3.5 h-3.5 ${isActive ? 'text-blue-500' : 'text-neutral-400'}`}
-                                  />
-                                );
-                              })()}
-                              <div className="flex flex-col">
-                                <span>{mcp.name}</span>
-                              </div>
+                              <Paperclip className="w-3.5 h-3.5 text-neutral-400" />
+                              <span>Upload files</span>
                             </button>
-                          );
-                        })}
-                      </div>
+                            <input
+                              type="file"
+                              ref={fileInputRef}
+                              onChange={handleImageUpload}
+                              accept="image/*"
+                              className="hidden"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
+
+                  <div className="relative tools-menu-container">
+                    <button
+                      onClick={() => setIsToolsMenuOpen(!isToolsMenuOpen)}
+                      disabled={isLoading}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isToolsMenuOpen ? 'bg-neutral-200 text-neutral-800' : 'bg-transparent text-neutral-500 hover:bg-neutral-200/50 hover:text-neutral-700'} disabled:opacity-50`}
+                      title="Tools"
+                    >
+                      <Settings2 className="w-[18px] h-[18px]" />
+                    </button>
+
+                    {isToolsMenuOpen && (
+                      <div className="absolute bottom-full left-0 mb-2 w-48 bg-white/95 backdrop-blur-xl rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-neutral-200/50 overflow-hidden text-left animate-in fade-in slide-in-from-bottom-2 duration-200 z-50">
+                        <div className="px-3 py-2 border-b border-neutral-100 bg-neutral-50/80">
+                          <span className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider">
+                            Available Tools
+                          </span>
+                        </div>
+                        <div className="p-1">
+                          {availableMCPs.map((mcp) => {
+                            const isActive = activeMCPs.includes(mcp.id);
+                            return (
+                              <button
+                                key={mcp.id}
+                                onClick={() => {
+                                  if (isActive) {
+                                    setActiveMCPs([]);
+                                  } else {
+                                    setActiveMCPs([mcp.id]);
+                                  }
+                                  setIsToolsMenuOpen(false);
+                                  setTimeout(() => inputRef.current?.focus(), 50);
+                                }}
+                                className={`w-full text-left px-3 py-2.5 text-xs rounded-lg transition-colors flex items-center gap-2.5 ${isActive ? 'bg-blue-50/50 text-blue-700 font-medium' : 'hover:bg-neutral-100 text-neutral-700'}`}
+                              >
+                                {(() => {
+                                  const Icon = getMCPIcon(mcp.id);
+                                  return (
+                                    <Icon
+                                      className={`w-3.5 h-3.5 ${isActive ? 'text-blue-500' : 'text-neutral-400'}`}
+                                    />
+                                  );
+                                })()}
+                                <div className="flex flex-col">
+                                  <span>{mcp.name}</span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Right: Submit Button */}
@@ -1271,7 +1376,7 @@ export default function ChatbotWidget() {
                   <button
                     type="button"
                     onClick={handleSubmit}
-                    disabled={isLoading || (!inputMessage.trim() && !activeQuote)}
+                    disabled={isLoading || (!inputMessage.trim() && !activeQuote && !attachedImage)}
                     className="w-8 h-8 rounded-full flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-black text-white hover:opacity-90 active:scale-95"
                   >
                     {isLoading ? (

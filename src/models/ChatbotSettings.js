@@ -116,6 +116,10 @@ const ChatbotSettingsSchema = new mongoose.Schema(
       required: true,
       default: process.env.OPENAI_MODEL_NAME || 'openai-large',
     },
+    imageInputEnabled: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

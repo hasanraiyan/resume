@@ -1,0 +1,26 @@
+
+> resume@0.1.0 build /app
+> rm -rf .next/cache && next build --no-lint
+
+ ⚠ Linting is disabled.
+   ▲ Next.js 15.5.9
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · serverActions
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 62s
+   Checking validity of types ...
+   Collecting page data ...
+=== CLOUDINARY CONFIG DEBUG ===
+Cloudinary configured: { cloud_name: 'NOT SET', api_key: 'NOT SET', api_secret: 'NOT SET' }
+[Error: querySrv ENOTFOUND _mongodb._tcp.mock.mock.mongodb.net] {
+  errno: undefined,
+  code: 'ENOTFOUND',
+  syscall: 'querySrv',
+  hostname: '_mongodb._tcp.mock.mock.mongodb.net'
+}
+
+> Build error occurred
+[Error: Failed to collect page data for /blog/[slug]] { type: 'Error' }
+ ELIFECYCLE  Command failed with exit code 1.

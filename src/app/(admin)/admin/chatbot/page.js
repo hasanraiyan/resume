@@ -28,6 +28,7 @@ export default function ChatbotSettingsPage() {
     rules: [''],
     isActive: true,
     modelName: 'openai-large',
+    imageInputEnabled: false,
   });
 
   // Redirect if not admin
@@ -262,6 +263,14 @@ export default function ChatbotSettingsPage() {
                     onChange={(e) => handleInputChange('aiName', e.target.value)}
                     className="w-full p-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                     placeholder="e.g., Kiro"
+                  />
+                </div>
+                <div>
+                  <Switch
+                    label="Image Input"
+                    description="Enable or disable image uploads in the chatbot."
+                    checked={formData.imageInputEnabled}
+                    onCheckedChange={(value) => handleInputChange('imageInputEnabled', value)}
                   />
                 </div>
                 <div>
