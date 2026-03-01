@@ -1,0 +1,53 @@
+<<<<<<< SEARCH
+    modelName: {
+      type: String,
+      required: true,
+      default: process.env.OPENAI_MODEL_NAME || 'openai-large',
+    },
+    fastModel: {
+      type: String,
+      default: '',
+    },
+    thinkingModel: {
+      type: String,
+      default: '',
+    },
+    proModel: {
+      type: String,
+      default: '',
+    },
+  },
+  {
+=======
+    modelName: {
+      type: Object,
+      default: { providerId: 'default-openai', model: process.env.OPENAI_MODEL_NAME || 'openai-large' },
+    },
+    fastModel: {
+      type: Object,
+      default: { providerId: '', model: '' },
+    },
+    thinkingModel: {
+      type: Object,
+      default: { providerId: '', model: '' },
+    },
+    proModel: {
+      type: Object,
+      default: { providerId: '', model: '' },
+    },
+    providers: {
+      type: [
+        {
+          id: { type: String, required: true },
+          name: { type: String, required: true },
+          baseUrl: { type: String, required: true },
+          apiKey: { type: String, required: true },
+          isActive: { type: Boolean, default: true },
+          supportsTools: { type: Boolean, default: true },
+        }
+      ],
+      default: []
+    }
+  },
+  {
+>>>>>>> REPLACE

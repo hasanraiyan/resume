@@ -34,6 +34,7 @@ export default function ChatbotSettingsPage() {
 
   const tabs = [
     { id: 'general', label: 'General', icon: Settings, desc: 'Core settings & model' },
+    { id: 'providers', label: 'Providers', icon: Sparkles, desc: 'Manage AI Providers' },
     { id: 'persona', label: 'Personality', icon: UserCircle, desc: 'AI style & tone' },
     { id: 'knowledge', label: 'Knowledge', icon: BookOpen, desc: 'Base context & services' },
     { id: 'behavior', label: 'Behavior', icon: ShieldCheck, desc: 'Rules & instructions' },
@@ -47,11 +48,14 @@ export default function ChatbotSettingsPage() {
     callToAction: '',
     rules: [''],
     isActive: true,
-    modelName: 'openai-large',
-    fastModel: '',
-    thinkingModel: '',
-    proModel: '',
+    modelName: { providerId: 'default-openai', model: 'openai-large' },
+    fastModel: { providerId: '', model: '' },
+    thinkingModel: { providerId: '', model: '' },
+    proModel: { providerId: '', model: '' },
+    providers: [],
   });
+
+  const [modelsByProvider, setModelsByProvider] = useState({});
 
   // Redirect if not admin
   useEffect(() => {
@@ -85,24 +89,108 @@ export default function ChatbotSettingsPage() {
     }
   }, [session]);
 
-  // Fetch available models
+  // Fetch available models for each provider
   useEffect(() => {
-    const fetchModels = async () => {
+    const fetchModelsForProvider = async (providerId) => {
+      if (modelsByProvider[providerId]) return; // Already fetched
       try {
-        const response = await fetch('/api/admin/chatbot/models');
+        const response = await fetch(`/api/admin/chatbot/providers/${providerId}/models`);
         if (response.ok) {
           const models = await response.json();
-          setAvailableModels(models);
+          setModelsByProvider((prev) => ({ ...prev, [providerId]: models }));
         }
       } catch (error) {
-        console.error('Error fetching available models:', error);
+        console.error(`Error fetching models for provider ${providerId}:`, error);
       }
     };
 
-    if (session?.user?.role === 'admin') {
-      fetchModels();
+    if (session?.user?.role === 'admin' && formData.providers?.length > 0) {
+      formData.providers.forEach((p) => fetchModelsForProvider(p.id));
     }
-  }, [session]);
+  }, [session, formData.providers, modelsByProvider]);
+
+  const handleAddProvider = () => {
+    const newId = `provider-${Date.now()}`;
+    setFormData((prev) => ({
+      ...prev,
+      providers: [
+        ...prev.providers,
+        {
+          id: newId,
+          name: 'New Provider',
+          baseUrl: 'https://api.openai.com/v1',
+          apiKey: '',
+          isActive: true,
+          supportsTools: true,
+        },
+      ],
+    }));
+  };
+
+  const handleUpdateProvider = (id, field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      providers: prev.providers.map((p) => (p.id === id ? { ...p, [field]: value } : p)),
+    }));
+  };
+
+  const handleDeleteProvider = (id) => {
+    setFormData((prev) => ({
+      ...prev,
+      providers: prev.providers.filter((p) => p.id !== id),
+    }));
+  };
+
+  // Model slots UI generator
+  const renderModelSlot = (label, name) => {
+    const slotValue = formData[name] || { providerId: '', model: '' };
+    const providerOptions = [
+      { value: '', label: '- Select Provider -' },
+      ...(formData.providers || []).map((p) => ({ value: p.id, label: p.name })),
+    ];
+
+    const selectedProviderId = slotValue.providerId;
+    const modelOptions = [
+      { value: '', label: '- Select Model -' },
+      ...(modelsByProvider[selectedProviderId] || []).map((m) => ({ value: m, label: m })),
+    ];
+
+    return (
+      <div className="space-y-4 relative z-40 bg-white p-4 rounded-xl border border-neutral-200">
+        <h4 className="font-semibold text-sm text-neutral-800 flex items-center gap-2">
+          {name === 'fastModel'
+            ? '🚀'
+            : name === 'thinkingModel'
+              ? '🧠'
+              : name === 'proModel'
+                ? '👑'
+                : '🤖'}
+          {label}
+        </h4>
+        <div className="space-y-3">
+          <CustomDropdown
+            label="Provider"
+            name={`${name}-provider`}
+            value={selectedProviderId}
+            onChange={(e) => {
+              const newProviderId = e.target.value;
+              handleInputChange(name, { providerId: newProviderId, model: '' });
+            }}
+            options={providerOptions}
+          />
+          <CustomDropdown
+            label="Model"
+            name={`${name}-model`}
+            value={slotValue.model}
+            onChange={(e) =>
+              handleInputChange(name, { providerId: selectedProviderId, model: e.target.value })
+            }
+            options={modelOptions}
+          />
+        </div>
+      </div>
+    );
+  };
 
   const handleSave = useCallback(async () => {
     setSaving(true);
@@ -344,20 +432,54 @@ export default function ChatbotSettingsPage() {
                 </div>
 
                 <div className="space-y-2 sm:col-span-2">
-                  <CustomDropdown
-                    label="Default Engine Role"
-                    name="modelName"
-                    value={formData.modelName}
-                    onChange={(e) => handleInputChange('modelName', e.target.value)}
-                    options={[
-                      { value: 'fast', label: '🚀 Fast Engine' },
-                      { value: 'thinking', label: '🧠 Thinking Engine' },
-                      { value: 'pro', label: '👑 Pro Engine' },
-                    ]}
-                  />
-                  <p className="text-xs text-neutral-500 mt-2">
-                    The default engine handling user queries if the user doesn't pick one.
-                  </p>
+                  <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-xl space-y-3">
+                    <h4 className="font-semibold text-sm text-neutral-800">
+                      Default Fallback Model
+                    </h4>
+                    <p className="text-xs text-neutral-500 mb-2">
+                      The engine handling user queries if the user doesn't pick one or the role
+                      isn't assigned.
+                    </p>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <CustomDropdown
+                        label="Provider"
+                        name="modelName-provider"
+                        value={formData.modelName?.providerId || ''}
+                        onChange={(e) =>
+                          handleInputChange('modelName', {
+                            ...formData.modelName,
+                            providerId: e.target.value,
+                            model: '',
+                          })
+                        }
+                        options={[
+                          { value: '', label: '- Select Provider -' },
+                          ...(formData.providers || []).map((p) => ({
+                            value: p.id,
+                            label: p.name,
+                          })),
+                        ]}
+                      />
+                      <CustomDropdown
+                        label="Model"
+                        name="modelName-model"
+                        value={formData.modelName?.model || ''}
+                        onChange={(e) =>
+                          handleInputChange('modelName', {
+                            ...formData.modelName,
+                            model: e.target.value,
+                          })
+                        }
+                        options={[
+                          { value: '', label: '- Select Model -' },
+                          ...(modelsByProvider[formData.modelName?.providerId] || []).map((m) => ({
+                            value: m,
+                            label: m,
+                          })),
+                        ]}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-6 sm:col-span-2 p-6 bg-neutral-50/50 border border-neutral-200 rounded-2xl">
@@ -367,51 +489,156 @@ export default function ChatbotSettingsPage() {
                       Widget Model Selection
                     </label>
                     <p className="text-xs text-neutral-500 mb-4">
-                      Assign specific models to default roles. These options will appear in the
-                      chatbot widget so users can choose how the AI thinks. Select "- None -" to
-                      disable a slot.
+                      Assign specific providers and models to roles. These options will appear in
+                      the chatbot widget so users can choose how the AI thinks.
                     </p>
                   </div>
 
                   <div className="grid sm:grid-cols-3 gap-6 relative z-50">
-                    <div className="space-y-2 relative z-50">
-                      <CustomDropdown
-                        label="🚀 Fast Engine"
-                        name="fastModel"
-                        value={formData.fastModel}
-                        onChange={(e) => handleInputChange('fastModel', e.target.value)}
-                        options={[
-                          { value: '', label: '- None -' },
-                          ...availableModels.map((m) => ({ value: m, label: m })),
-                        ]}
-                      />
-                    </div>
-                    <div className="space-y-2 relative z-40">
-                      <CustomDropdown
-                        label="🧠 Thinking Engine"
-                        name="thinkingModel"
-                        value={formData.thinkingModel}
-                        onChange={(e) => handleInputChange('thinkingModel', e.target.value)}
-                        options={[
-                          { value: '', label: '- None -' },
-                          ...availableModels.map((m) => ({ value: m, label: m })),
-                        ]}
-                      />
-                    </div>
-                    <div className="space-y-2 relative z-30">
-                      <CustomDropdown
-                        label="👑 Pro Engine"
-                        name="proModel"
-                        value={formData.proModel}
-                        onChange={(e) => handleInputChange('proModel', e.target.value)}
-                        options={[
-                          { value: '', label: '- None -' },
-                          ...availableModels.map((m) => ({ value: m, label: m })),
-                        ]}
-                      />
-                    </div>
+                    {renderModelSlot('Fast Engine', 'fastModel')}
+                    {renderModelSlot('Thinking Engine', 'thinkingModel')}
+                    {renderModelSlot('Pro Engine', 'proModel')}
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'providers' && (
+            <div className="p-6 sm:p-8 space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-neutral-100">
+                <div>
+                  <h3 className="text-lg font-semibold text-black mb-1">AI Providers</h3>
+                  <p className="text-sm text-neutral-500">
+                    Configure API keys and base URLs for different AI models (OpenAI, Anthropic,
+                    OpenRouter, etc.).
+                  </p>
+                </div>
+                <button
+                  onClick={handleAddProvider}
+                  className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-xl transition-colors text-sm font-medium flex items-center gap-2 border border-neutral-200 shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Provider
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {!formData.providers || formData.providers.length === 0 ? (
+                  <div className="text-center p-8 border border-dashed border-neutral-300 rounded-2xl bg-neutral-50">
+                    <p className="text-neutral-500 text-sm">
+                      No providers configured yet. Click "Add Provider" to get started.
+                    </p>
+                  </div>
+                ) : (
+                  formData.providers.map((provider) => (
+                    <div
+                      key={provider.id}
+                      className="p-6 border border-neutral-200 rounded-2xl bg-white shadow-sm space-y-4"
+                    >
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-semibold text-base text-black flex items-center gap-2">
+                          <div
+                            className={`w-2 h-2 rounded-full ${provider.isActive ? 'bg-green-500' : 'bg-red-500'}`}
+                          ></div>
+                          {provider.name}
+                        </h4>
+                        <button
+                          onClick={() => handleDeleteProvider(provider.id)}
+                          className="text-neutral-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                          title="Delete Provider"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="block text-xs font-medium text-neutral-600">
+                            Provider Name
+                          </label>
+                          <input
+                            type="text"
+                            value={provider.name}
+                            onChange={(e) =>
+                              handleUpdateProvider(provider.id, 'name', e.target.value)
+                            }
+                            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-neutral-50 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                            placeholder="e.g., OpenAI"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-xs font-medium text-neutral-600">
+                            Base URL
+                          </label>
+                          <input
+                            type="text"
+                            value={provider.baseUrl}
+                            onChange={(e) =>
+                              handleUpdateProvider(provider.id, 'baseUrl', e.target.value)
+                            }
+                            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-neutral-50 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                            placeholder="e.g., https://api.openai.com/v1"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-xs font-medium text-neutral-600">
+                            API Key
+                          </label>
+                          <input
+                            type="password"
+                            value={provider.apiKey === '********' ? '' : provider.apiKey}
+                            onChange={(e) =>
+                              handleUpdateProvider(provider.id, 'apiKey', e.target.value)
+                            }
+                            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-neutral-50 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                            placeholder={
+                              provider.apiKey === '********'
+                                ? '******** (Encrypted)'
+                                : 'Enter API Key'
+                            }
+                          />
+                          <p className="text-[10px] text-neutral-500">
+                            Leave empty to keep existing key. Never visible in frontend.
+                          </p>
+                        </div>
+
+                        <div className="flex gap-4">
+                          <div className="space-y-2 flex-1">
+                            <label className="block text-xs font-medium text-neutral-600">
+                              Active Status
+                            </label>
+                            <div className="h-[38px] flex items-center">
+                              <Switch
+                                label="Active"
+                                checked={provider.isActive}
+                                onCheckedChange={(value) =>
+                                  handleUpdateProvider(provider.id, 'isActive', value)
+                                }
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-2 flex-1">
+                            <label className="block text-xs font-medium text-neutral-600">
+                              Supports Tools
+                            </label>
+                            <div className="h-[38px] flex items-center">
+                              <Switch
+                                label="Tools"
+                                checked={provider.supportsTools !== false}
+                                onCheckedChange={(value) =>
+                                  handleUpdateProvider(provider.id, 'supportsTools', value)
+                                }
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}

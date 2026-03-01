@@ -112,21 +112,48 @@ const ChatbotSettingsSchema = new mongoose.Schema(
       default: true,
     },
     modelName: {
-      type: String,
-      required: true,
-      default: process.env.OPENAI_MODEL_NAME || 'openai-large',
+      type: {
+        providerId: { type: String, default: 'default-openai' },
+        model: { type: String, required: true },
+      },
+      default: {
+        providerId: 'default-openai',
+        model: process.env.OPENAI_MODEL_NAME || 'openai-large',
+      },
     },
     fastModel: {
-      type: String,
-      default: '',
+      type: {
+        providerId: { type: String, default: '' },
+        model: { type: String, default: '' },
+      },
+      default: { providerId: '', model: '' },
     },
     thinkingModel: {
-      type: String,
-      default: '',
+      type: {
+        providerId: { type: String, default: '' },
+        model: { type: String, default: '' },
+      },
+      default: { providerId: '', model: '' },
     },
     proModel: {
-      type: String,
-      default: '',
+      type: {
+        providerId: { type: String, default: '' },
+        model: { type: String, default: '' },
+      },
+      default: { providerId: '', model: '' },
+    },
+    providers: {
+      type: [
+        {
+          id: { type: String, required: true },
+          name: { type: String, required: true },
+          baseUrl: { type: String, required: true },
+          apiKey: { type: String, required: true }, // Encrypted
+          isActive: { type: Boolean, default: true },
+          supportsTools: { type: Boolean, default: true },
+        },
+      ],
+      default: [],
     },
   },
   {

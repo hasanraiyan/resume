@@ -1,0 +1,111 @@
+<<<<<<< SEARCH
+  // Fetch available models
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        const response = await fetch('/api/admin/chatbot/models');
+        if (response.ok) {
+          const models = await response.json();
+          setAvailableModels(models);
+        }
+      } catch (error) {
+        console.error('Error fetching available models:', error);
+      }
+    };
+
+    if (session?.user?.role === 'admin') {
+      fetchModels();
+    }
+  }, [session]);
+=======
+  // Fetch available models for each provider
+  useEffect(() => {
+    const fetchModelsForProvider = async (providerId) => {
+      if (modelsByProvider[providerId]) return; // Already fetched
+      try {
+        const response = await fetch(`/api/admin/chatbot/providers/${providerId}/models`);
+        if (response.ok) {
+          const models = await response.json();
+          setModelsByProvider(prev => ({ ...prev, [providerId]: models }));
+        }
+      } catch (error) {
+        console.error(`Error fetching models for provider ${providerId}:`, error);
+      }
+    };
+
+    if (session?.user?.role === 'admin' && formData.providers?.length > 0) {
+      formData.providers.forEach(p => fetchModelsForProvider(p.id));
+    }
+  }, [session, formData.providers]);
+
+  // Handle provider add/edit/delete
+  const handleAddProvider = () => {
+    const newId = `provider-${Date.now()}`;
+    setFormData(prev => ({
+      ...prev,
+      providers: [...prev.providers, {
+        id: newId,
+        name: 'New Provider',
+        baseUrl: '',
+        apiKey: '',
+        isActive: true,
+        supportsTools: true,
+      }]
+    }));
+  };
+
+  const handleUpdateProvider = (id, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      providers: prev.providers.map(p => p.id === id ? { ...p, [field]: value } : p)
+    }));
+  };
+
+  const handleDeleteProvider = (id) => {
+    setFormData(prev => ({
+      ...prev,
+      providers: prev.providers.filter(p => p.id !== id)
+    }));
+  };
+
+  // Model slots
+  const renderModelSlot = (label, name) => {
+    const slotValue = formData[name] || { providerId: '', model: '' };
+    const providerOptions = [
+      { value: '', label: '- Select Provider -' },
+      ...(formData.providers || []).map(p => ({ value: p.id, label: p.name }))
+    ];
+
+    const selectedProviderId = slotValue.providerId;
+    const modelOptions = [
+      { value: '', label: '- Select Model -' },
+      ...(modelsByProvider[selectedProviderId] || []).map(m => ({ value: m, label: m }))
+    ];
+
+    return (
+      <div className="space-y-4 relative z-40 bg-white p-4 rounded-xl border border-neutral-200">
+        <h4 className="font-semibold text-sm text-neutral-800">{label}</h4>
+        <div className="space-y-3">
+          <CustomDropdown
+            label="Provider"
+            name={`${name}-provider`}
+            value={selectedProviderId}
+            onChange={(e) => {
+              const newProviderId = e.target.value;
+              handleInputChange(name, { providerId: newProviderId, model: '' });
+            }}
+            options={providerOptions}
+          />
+          <CustomDropdown
+            label="Model"
+            name={`${name}-model`}
+            value={slotValue.model}
+            onChange={(e) => handleInputChange(name, { providerId: selectedProviderId, model: e.target.value })}
+            options={modelOptions}
+            disabled={!selectedProviderId || !modelsByProvider[selectedProviderId]}
+          />
+        </div>
+      </div>
+    );
+  };
+>>>>>>> REPLACE

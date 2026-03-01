@@ -1,0 +1,123 @@
+<<<<<<< SEARCH
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+import { getBackendMCPConfig } from '@/lib/mcpConfig';
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseURL: process.env.OPENAI_BASE_URL,
+});
+
+// =================================================================================
+// HELPERS
+=======
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+import { getBackendMCPConfig } from '@/lib/mcpConfig';
+import { decrypt } from '@/lib/crypto';
+
+// =================================================================================
+// HELPERS
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    if (context.chatbotSettings?.isActive === false) {
+      return NextResponse.json({ error: 'Chatbot is currently disabled' }, { status: 503 });
+    }
+
+    const actualModel =
+      selectedModel ||
+      context.chatbotSettings?.modelName ||
+      process.env.OPENAI_MODEL_NAME ||
+      'openai-large';
+
+    const systemMessages = buildSystemMessages(context, path);
+=======
+    if (context.chatbotSettings?.isActive === false) {
+      return NextResponse.json({ error: 'Chatbot is currently disabled' }, { status: 503 });
+    }
+
+    const defaultModel = { providerId: 'default-openai', model: process.env.OPENAI_MODEL_NAME || 'openai-large' };
+    const actualModelSelection = selectedModel || context.chatbotSettings?.modelName || defaultModel;
+
+    // Ensure actualModelSelection is an object
+    const actualModel = typeof actualModelSelection === 'string'
+      ? { providerId: 'default-openai', model: actualModelSelection }
+      : actualModelSelection;
+
+    // Find the provider in the settings
+    const providers = context.chatbotSettings?.providers || [];
+    let provider = providers.find(p => p.id === actualModel.providerId);
+
+    if (!provider) {
+      // Fallback if provider not found
+      provider = {
+        id: 'default-openai',
+        baseUrl: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
+        apiKey: process.env.OPENAI_API_KEY ? decrypt(process.env.OPENAI_API_KEY) : 'sk-none',
+        supportsTools: true,
+      };
+    }
+
+    const decryptedKey = decrypt(provider.apiKey);
+
+    const openai = new OpenAI({
+      apiKey: decryptedKey || process.env.OPENAI_API_KEY,
+      baseURL: provider.baseUrl || process.env.OPENAI_BASE_URL,
+    });
+
+    const systemMessages = buildSystemMessages(context, path);
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+          for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
+            const prunedMessages = pruneContext(messages, MAX_CONTEXT_CHARS);
+
+            // ── Open a streaming completion ──────────────────────────────────
+            const completionStream = await openai.chat.completions.create({
+              model: actualModel,
+              messages: prunedMessages,
+              tools: toolsForOpenAI,
+              tool_choice: 'auto',
+              stream: true,
+            });
+=======
+          for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
+            const prunedMessages = pruneContext(messages, MAX_CONTEXT_CHARS);
+
+            // ── Open a streaming completion ──────────────────────────────────
+            const chatOptions = {
+              model: actualModel.model,
+              messages: prunedMessages,
+              stream: true,
+            };
+
+            if (provider.supportsTools !== false && toolsForOpenAI.length > 0) {
+              chatOptions.tools = toolsForOpenAI;
+              chatOptions.tool_choice = 'auto';
+            }
+
+            const completionStream = await openai.chat.completions.create(chatOptions);
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            new ChatLog({
+              sessionId,
+              path,
+              userMessage,
+              aiResponse: assistantContent,
+              modelName: actualModel,
+              conversationContext: finalContextForDB,
+              toolsUsed,
+              executionTime: Date.now() - startTime,
+            })
+=======
+            new ChatLog({
+              sessionId,
+              path,
+              userMessage,
+              aiResponse: assistantContent,
+              modelName: actualModel.model,
+              conversationContext: finalContextForDB,
+              toolsUsed,
+              executionTime: Date.now() - startTime,
+            })
+>>>>>>> REPLACE

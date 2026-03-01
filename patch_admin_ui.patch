@@ -1,0 +1,51 @@
+<<<<<<< SEARCH
+  const [activeTab, setActiveTab] = useState('general');
+
+  const tabs = [
+    { id: 'general', label: 'General', icon: Settings, desc: 'Core settings & model' },
+    { id: 'persona', label: 'Personality', icon: UserCircle, desc: 'AI style & tone' },
+    { id: 'knowledge', label: 'Knowledge', icon: BookOpen, desc: 'Base context & services' },
+    { id: 'behavior', label: 'Behavior', icon: ShieldCheck, desc: 'Rules & instructions' },
+  ];
+
+  const [formData, setFormData] = useState({
+    aiName: 'Kiro',
+    persona: '',
+    baseKnowledge: '',
+    servicesOffered: '',
+    callToAction: '',
+    rules: [''],
+    isActive: true,
+    modelName: 'openai-large',
+    fastModel: '',
+    thinkingModel: '',
+    proModel: '',
+  });
+=======
+  const [activeTab, setActiveTab] = useState('general');
+
+  const tabs = [
+    { id: 'general', label: 'General', icon: Settings, desc: 'Core settings & model' },
+    { id: 'providers', label: 'Providers', icon: Sparkles, desc: 'Manage AI Providers' },
+    { id: 'persona', label: 'Personality', icon: UserCircle, desc: 'AI style & tone' },
+    { id: 'knowledge', label: 'Knowledge', icon: BookOpen, desc: 'Base context & services' },
+    { id: 'behavior', label: 'Behavior', icon: ShieldCheck, desc: 'Rules & instructions' },
+  ];
+
+  const [formData, setFormData] = useState({
+    aiName: 'Kiro',
+    persona: '',
+    baseKnowledge: '',
+    servicesOffered: '',
+    callToAction: '',
+    rules: [''],
+    isActive: true,
+    modelName: { providerId: 'default-openai', model: 'openai-large' },
+    fastModel: { providerId: '', model: '' },
+    thinkingModel: { providerId: '', model: '' },
+    proModel: { providerId: '', model: '' },
+    providers: [],
+  });
+
+  const [modelsByProvider, setModelsByProvider] = useState({});
+>>>>>>> REPLACE
