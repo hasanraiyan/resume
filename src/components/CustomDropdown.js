@@ -1,7 +1,6 @@
-'use client';
-
 import { useState, useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
+import { Loader2 } from 'lucide-react';
 
 // Custom scrollbar styles
 const scrollbarStyles = `
@@ -18,30 +17,25 @@ const scrollbarStyles = `
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #9ca3af;
+    border-radius: 2px;
   }
 `;
 
 /**
  * Minimal custom dropdown component with smooth animations.
- *
- * This component provides a styled dropdown with GSAP animations for opening/closing,
- * hover effects with an indicator bar, custom scrollbar styling, and proper accessibility.
- * It supports a limited number of visible options with scrolling for better UX.
- *
- * @param {Object} props - Component props
- * @param {string} props.label - Label text for the dropdown
- * @param {Array} props.options - Array of option objects with value and label properties
- * @param {string} props.value - Currently selected value
- * @param {Function} props.onChange - Callback function called when selection changes
- * @param {string} props.name - Name attribute for form integration
- * @returns {JSX.Element} Dropdown component
  */
-export default function CustomDropdownMinimal({ label, options, value, onChange, name }) {
+export default function CustomDropdownMinimal({
+  label,
+  options = [],
+  value,
+  onChange,
+  name,
+  isLoading = false,
+  placeholder = 'Select',
+}) {
   const [isOpen, setIsOpen] = useState(false);
-  const [hoveredIndex, setHoveredIndex] = useState(null);
   const dropdownRef = useRef(null);
   const optionsRef = useRef(null);
-  const indicatorRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -58,29 +52,11 @@ export default function CustomDropdownMinimal({ label, options, value, onChange,
     if (optionsRef.current && isOpen) {
       gsap.fromTo(
         optionsRef.current,
-        { opacity: 0, y: -15 },
-        { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' }
+        { opacity: 0, y: -10, scale: 0.98 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.2, ease: 'power2.out' }
       );
     }
   }, [isOpen]);
-
-  // Animate hover indicator
-  useEffect(() => {
-    if (indicatorRef.current && hoveredIndex !== null) {
-      const itemHeight = 48; // py-3 = 12px top + 12px bottom + content height
-      gsap.to(indicatorRef.current, {
-        y: hoveredIndex * itemHeight,
-        opacity: 1,
-        duration: 0.3,
-        ease: 'power2.out',
-      });
-    } else if (indicatorRef.current) {
-      gsap.to(indicatorRef.current, {
-        opacity: 0,
-        duration: 0.2,
-      });
-    }
-  }, [hoveredIndex]);
 
   const handleSelect = (optionValue) => {
     onChange({ target: { name, value: optionValue } });
@@ -88,74 +64,87 @@ export default function CustomDropdownMinimal({ label, options, value, onChange,
   };
 
   const selectedOption = options.find((opt) => opt.value === value);
-
-  const MAX_VISIBLE_OPTIONS = 5;
+  const MAX_VISIBLE_OPTIONS = 6;
 
   return (
     <>
       <style>{scrollbarStyles}</style>
-      <div ref={dropdownRef} className="relative">
-        <label className="block text-xs font-semibold mb-2 tracking-wider">{label}</label>
+      <div ref={dropdownRef} className="relative w-full">
+        {label && (
+          <label className="block text-xs font-semibold mb-2 tracking-wider text-neutral-600 uppercase">
+            {label}
+          </label>
+        )}
 
         <button
           type="button"
+          disabled={isLoading}
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full border-b-2 border-gray-300 pb-3 focus:border-black focus:outline-none transition text-sm sm:text-base bg-transparent text-left flex justify-between items-center group"
+          className={`w-full border-b-2 pb-2.5 transition-all text-sm sm:text-base bg-transparent text-left flex justify-between items-center group
+            ${isOpen ? 'border-black' : 'border-neutral-200 hover:border-neutral-400'}
+            ${isLoading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}
+          `}
           suppressHydrationWarning={true}
         >
-          <span className="text-black">{selectedOption?.label || 'Select'}</span>
+          <div className="flex items-center gap-2 overflow-hidden mr-2">
+            {isLoading && <Loader2 className="w-4 h-4 animate-spin text-neutral-400 shrink-0" />}
+            <span
+              className={`truncate ${selectedOption ? 'text-black font-medium' : 'text-neutral-400'}`}
+            >
+              {selectedOption?.label || placeholder}
+            </span>
+          </div>
 
           <svg
-            className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-            fill="currentColor"
-            viewBox="0 0 20 20"
+            className={`w-3.5 h-3.5 transition-transform duration-300 text-neutral-400 group-hover:text-black ${isOpen ? 'rotate-180 text-black' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
             <path
-              fillRule="evenodd"
-              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-              clipRule="evenodd"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2.5"
+              d="M19 9l-7 7-7-7"
             />
           </svg>
         </button>
 
-        {isOpen && (
+        {isOpen && !isLoading && (
           <div
             ref={optionsRef}
-            className="absolute z-50 w-full mt-2 bg-white border border-gray-200 shadow-xl rounded-sm"
+            className="absolute z-[100] left-0 right-0 mt-2 bg-white border border-neutral-200 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] rounded-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
           >
-            {/* Hover indicator */}
-            <div
-              ref={indicatorRef}
-              className="absolute left-0 top-0 w-1 h-12 bg-black opacity-0 pointer-events-none z-10"
-            />
-
             {/* Scrollable options container */}
-            <div
-              className={`max-h-48 overflow-y-auto custom-scrollbar ${
-                options.length > MAX_VISIBLE_OPTIONS ? 'border-b border-gray-100' : ''
-              }`}
-            >
-              {options.map((option, index) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => handleSelect(option.value)}
-                  onMouseEnter={() => setHoveredIndex(index)}
-                  onMouseLeave={() => setHoveredIndex(null)}
-                  className={`w-full text-left px-4 py-3 text-sm sm:text-base transition-colors relative ${
-                    option.value === value ? 'bg-gray-50 font-semibold' : 'hover:bg-gray-50'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
+            <div className={`max-h-[260px] overflow-y-auto custom-scrollbar`}>
+              {options.length === 0 ? (
+                <div className="px-4 py-6 text-center text-sm text-neutral-400 italic">
+                  No options available
+                </div>
+              ) : (
+                options.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleSelect(option.value)}
+                    className={`w-full text-left px-4 py-3 text-sm transition-all relative border-l-4
+                      ${
+                        option.value === value
+                          ? 'bg-neutral-50 border-black font-semibold text-black'
+                          : 'bg-white border-transparent text-neutral-600 hover:bg-neutral-50 hover:text-black hover:border-neutral-300'
+                      }
+                    `}
+                  >
+                    {option.label}
+                  </button>
+                ))
+              )}
             </div>
 
-            {/* Show count if more than max visible */}
+            {/* Show count info if many options */}
             {options.length > MAX_VISIBLE_OPTIONS && (
-              <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500 text-center">
-                {options.length - MAX_VISIBLE_OPTIONS} more option
-                {options.length - MAX_VISIBLE_OPTIONS !== 1 ? 's' : ''} - scroll to view
+              <div className="px-4 py-1.5 bg-neutral-50/50 border-t border-neutral-100 text-[10px] text-neutral-400 text-center uppercase tracking-widest font-medium">
+                Scroll for more ({options.length})
               </div>
             )}
           </div>

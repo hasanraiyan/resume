@@ -28,6 +28,7 @@ export default function ChatbotSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [availableModels, setAvailableModels] = useState([]);
+  const [fetchingModels, setFetchingModels] = useState({});
 
   // Form state
   const [activeTab, setActiveTab] = useState('general');
@@ -92,7 +93,8 @@ export default function ChatbotSettingsPage() {
   // Fetch available models for each provider
   useEffect(() => {
     const fetchModelsForProvider = async (providerId) => {
-      if (modelsByProvider[providerId]) return; // Already fetched
+      if (!providerId || modelsByProvider[providerId]) return;
+      setFetchingModels((prev) => ({ ...prev, [providerId]: true }));
       try {
         const response = await fetch(`/api/admin/chatbot/providers/${providerId}/models`);
         if (response.ok) {
@@ -101,6 +103,8 @@ export default function ChatbotSettingsPage() {
         }
       } catch (error) {
         console.error(`Error fetching models for provider ${providerId}:`, error);
+      } finally {
+        setFetchingModels((prev) => ({ ...prev, [providerId]: false }));
       }
     };
 
@@ -182,6 +186,7 @@ export default function ChatbotSettingsPage() {
             label="Model"
             name={`${name}-model`}
             value={slotValue.model}
+            isLoading={fetchingModels[selectedProviderId]}
             onChange={(e) =>
               handleInputChange(name, { providerId: selectedProviderId, model: e.target.value })
             }
@@ -385,7 +390,7 @@ export default function ChatbotSettingsPage() {
         </div>
 
         {/* Form Content */}
-        <div className="bg-white rounded-3xl border border-neutral-200/60 shadow-sm overflow-hidden min-h-[400px]">
+        <div className="bg-white rounded-3xl border border-neutral-200/60 shadow-sm min-h-[400px]">
           {activeTab === 'general' && (
             <div className="p-6 sm:p-8 space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
               <div className="pb-6 border-b border-neutral-100">
@@ -431,8 +436,8 @@ export default function ChatbotSettingsPage() {
                   </p>
                 </div>
 
-                <div className="space-y-2 sm:col-span-2">
-                  <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-xl space-y-3">
+                <div className="space-y-2 sm:col-span-2 relative z-[40]">
+                  <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-xl space-y-3 shadow-sm">
                     <h4 className="font-semibold text-sm text-neutral-800">
                       Default Fallback Model
                     </h4>
@@ -464,6 +469,7 @@ export default function ChatbotSettingsPage() {
                         label="Model"
                         name="modelName-model"
                         value={formData.modelName?.model || ''}
+                        isLoading={fetchingModels[formData.modelName?.providerId]}
                         onChange={(e) =>
                           handleInputChange('modelName', {
                             ...formData.modelName,
@@ -482,7 +488,7 @@ export default function ChatbotSettingsPage() {
                   </div>
                 </div>
 
-                <div className="space-y-6 sm:col-span-2 p-6 bg-neutral-50/50 border border-neutral-200 rounded-2xl">
+                <div className="space-y-6 sm:col-span-2 p-6 bg-neutral-50/50 border border-neutral-200 rounded-2xl relative z-[30]">
                   <div>
                     <label className="block text-sm font-semibold text-neutral-900 mb-1 flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-blue-500" />
