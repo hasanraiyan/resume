@@ -290,7 +290,6 @@ export async function POST(request) {
     try {
       revalidateTag('ai-context');
       revalidateTag('chatbot-settings');
-      console.log('[Admin API] AI Context revalidated');
     } catch (revalidateError) {
       console.error('[Admin API] Revalidation failed:', revalidateError);
     }

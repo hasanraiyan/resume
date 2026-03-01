@@ -193,21 +193,13 @@ export async function POST(request) {
     // Handle both single event objects and arrays of events
     const events = Array.isArray(body) ? body : [body];
 
-    console.log(`Processing ${events.length} event(s)`);
-
     for (let i = 0; i < events.length; i++) {
       const event = events[i];
-      console.log(`Processing event ${i + 1}:`, JSON.stringify(event, null, 2));
 
       // Validate required fields
       const { eventType, path, sessionId, userAgent, referrer, properties = {}, userRole } = event;
 
       if (!eventType || !path || !sessionId) {
-        console.log(`Event ${i + 1} validation failed - missing required fields:`, {
-          hasEventType: !!eventType,
-          hasPath: !!path,
-          hasSessionId: !!sessionId,
-        });
         return NextResponse.json(
           { error: `Missing required fields in event ${i + 1}: eventType, path, sessionId` },
           { status: 400 }
@@ -216,7 +208,6 @@ export async function POST(request) {
 
       // Filter out bot traffic
       if (isBot(userAgent)) {
-        console.log(`Event ${i + 1} filtered - bot detected:`, userAgent?.substring(0, 100));
         continue; // Skip this event but continue processing others
       }
 
@@ -229,11 +220,6 @@ export async function POST(request) {
       const forwarded = request.headers.get('x-forwarded-for');
       const realIP = request.headers.get('x-real-ip');
       const clientIP = forwarded ? forwarded.split(',')[0] : realIP || request.ip || 'unknown';
-
-      console.log(`Event ${i + 1} client info:`, {
-        clientIP: clientIP?.substring(0, 20) + '...',
-        userAgentLength: userAgent?.length || 0,
-      });
 
       // Parse device info from user agent (simplified)
       const deviceInfo = {
@@ -259,8 +245,6 @@ export async function POST(request) {
             ? 'Tablet'
             : 'Desktop',
       };
-
-      console.log(`Event ${i + 1} parsed device info:`, deviceInfo);
 
       // Create analytics record
       const analyticsData = {
