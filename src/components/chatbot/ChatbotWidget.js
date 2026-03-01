@@ -607,6 +607,7 @@ export default function ChatbotWidget() {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const recognitionRef = useRef(null);
+  const silenceTimerRef = useRef(null);
 
   // Close tools menu on background click
   useEffect(() => {
@@ -738,11 +739,21 @@ export default function ChatbotWidget() {
 
     const originalInput = inputMessage.trim();
 
+    const resetSilenceTimer = () => {
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = setTimeout(() => {
+        recognition.stop();
+        setIsListening(false);
+      }, 5000); // 5 seconds of silence
+    };
+
     recognition.onstart = () => {
       setIsListening(true);
+      resetSilenceTimer();
     };
 
     recognition.onresult = (event) => {
+      resetSilenceTimer();
       let currentTranscript = '';
       for (let i = 0; i < event.results.length; i++) {
         currentTranscript += event.results[i][0].transcript;
@@ -760,6 +771,7 @@ export default function ChatbotWidget() {
 
     recognition.onerror = (event) => {
       console.error('Speech recognition error', event.error);
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       setIsListening(false);
       if (event.error !== 'no-speech') {
         toast.error(`Microphone error: ${event.error}`);
@@ -767,6 +779,7 @@ export default function ChatbotWidget() {
     };
 
     recognition.onend = () => {
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       setIsListening(false);
     };
 
@@ -1014,9 +1027,13 @@ export default function ChatbotWidget() {
             className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-black to-neutral-900 hover:from-neutral-900 hover:to-black text-white shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center justify-center border border-white/20 backdrop-blur-sm"
             aria-label="Open chat"
           >
-            {/* Notification Badge */}
-            <div className="absolute top-0 right-0 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-theme-bg shadow-sm z-20">
-              <div className="absolute inset-0 w-full h-full bg-red-500 rounded-full animate-ping opacity-75" />
+            {/* Notification Badge / Status Indicator */}
+            <div
+              className={`absolute top-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-theme-bg shadow-sm z-20 ${settingsFetched && chatbotSettings?.isActive ? 'bg-green-500' : 'bg-red-500'}`}
+            >
+              <div
+                className={`absolute inset-0 w-full h-full rounded-full animate-ping opacity-75 ${settingsFetched && chatbotSettings?.isActive ? 'bg-green-500' : 'bg-red-500'}`}
+              />
             </div>
 
             <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
