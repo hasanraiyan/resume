@@ -20,6 +20,7 @@ import {
   Plus,
   Settings2,
   Globe,
+  Mic,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -591,8 +592,10 @@ export default function ChatbotWidget() {
   const [activeMCPs, setActiveMCPs] = useState([]); // Stores IDs like ['mcp-tavily']
   const [availableMCPs, setAvailableMCPs] = useState([]); // Fetched from backend
   const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   // Close tools menu on background click
   useEffect(() => {
@@ -692,14 +695,71 @@ export default function ChatbotWidget() {
 
   // Handle Escape key to close widget
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) {
-        setIsOpen(false);
-      }
-    };
+    const handleKeyDown = (e) => {};
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
+
+  const toggleListening = useCallback(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error('Voice input is not supported in this browser.');
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    const originalInput = inputMessage.trim();
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event) => {
+      let currentTranscript = '';
+      for (let i = 0; i < event.results.length; i++) {
+        currentTranscript += event.results[i][0].transcript;
+      }
+      setInputMessage(originalInput ? originalInput + ' ' + currentTranscript : currentTranscript);
+
+      // Auto-resize textarea when text is added via voice
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.style.height = 'auto';
+          inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 160) + 'px';
+        }
+      }, 0);
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error', event.error);
+      setIsListening(false);
+      if (event.error !== 'no-speech') {
+        toast.error(`Microphone error: ${event.error}`);
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    try {
+      recognition.start();
+      recognitionRef.current = recognition;
+    } catch (err) {
+      console.error('Failed to start speech recognition', err);
+      setIsListening(false);
+    }
+  }, [isListening, inputMessage]);
 
   // Lazy settings fetch
   const fetchSettings = useCallback(async () => {
@@ -1266,20 +1326,45 @@ export default function ChatbotWidget() {
                   )}
                 </div>
 
-                {/* Right: Submit Button */}
+                {/* Right: Submit Button or Voice Input */}
                 <div className="flex items-center justify-end">
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={isLoading || (!inputMessage.trim() && !activeQuote)}
-                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-black text-white hover:opacity-90 active:scale-95"
-                  >
-                    {isLoading ? (
-                      <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                  </button>
+                  {!isListening && (inputMessage.trim() || activeQuote) ? (
+                    <button
+                      type="button"
+                      onClick={handleSubmit}
+                      disabled={isLoading}
+                      className="w-8 h-8 rounded-full flex items-center justify-center transition-all bg-black text-white hover:opacity-90 active:scale-95"
+                    >
+                      {isLoading ? (
+                        <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4" />
+                      )}
+                    </button>
+                  ) : (
+                    <div className="relative flex items-center justify-center w-8 h-8">
+                      {isListening && (
+                        <div className="absolute inset-0 rounded-full bg-blue-500/20 animate-ping" />
+                      )}
+                      <button
+                        type="button"
+                        onClick={toggleListening}
+                        disabled={isLoading}
+                        className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-95 ${
+                          isListening
+                            ? 'bg-neutral-100 text-blue-600'
+                            : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                        }`}
+                        title={isListening ? 'Listening...' : 'Voice Input'}
+                      >
+                        {isLoading ? (
+                          <span className="w-3.5 h-3.5 border-2 border-neutral-400/40 border-t-neutral-600 rounded-full animate-spin" />
+                        ) : (
+                          <Mic className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
