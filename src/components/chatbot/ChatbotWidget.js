@@ -1027,7 +1027,7 @@ export default function ChatbotWidget() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3 bg-gradient-to-b from-white/50 to-neutral-50/50 custom-chat-scrollbar">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3 bg-transparent custom-chat-scrollbar">
             {messages.map((message, index) => {
               if (message.role === 'tool_action') {
                 if (message.done) return null;
@@ -1087,7 +1087,7 @@ export default function ChatbotWidget() {
 
                     {message.content && (
                       <div
-                        className={`px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-sm text-[13px] overflow-hidden ${message.role === 'user' ? 'bg-gradient-to-br from-black to-neutral-900 text-white shadow-black/20 rounded-tr-sm' : 'bg-white/90 backdrop-blur-sm text-neutral-900 shadow-neutral-200/50 border border-neutral-200/50 rounded-tl-sm'}`}
+                        className={`px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-sm text-[13px] overflow-hidden ${message.role === 'user' ? 'bg-gradient-to-br from-black to-neutral-900 text-white shadow-black/20 rounded-tr-sm' : 'bg-white/95 text-neutral-900 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-neutral-200/60 rounded-tl-sm'}`}
                       >
                         {message.role === 'assistant' ? (
                           <MdContent content={message.content} onLinkClick={handleLinkClick} />
@@ -1121,9 +1121,9 @@ export default function ChatbotWidget() {
 
           {/* Suggested prompts / Active Quote */}
           {!isLoading && (
-            <div className="border-t border-neutral-200/50 bg-white/80 backdrop-blur-sm">
+            <div className="border-t border-neutral-200/50 bg-transparent">
               {activeQuote ? (
-                <div className="px-3 sm:px-4 py-3 bg-neutral-50 animate-in slide-in-from-bottom-2 duration-300">
+                <div className="px-3 sm:px-4 py-3 bg-transparent animate-in slide-in-from-bottom-2 duration-300">
                   <div className="flex items-start gap-2 group">
                     <CornerDownRight className="w-3.5 h-3.5 text-neutral-400 mt-1 shrink-0" />
                     <div className="flex-1 min-w-0 pr-6 relative">
@@ -1147,7 +1147,7 @@ export default function ChatbotWidget() {
                       <button
                         key={index}
                         onClick={() => handlePromptClick(prompt.text)}
-                        className="px-3 py-1.5 bg-white hover:bg-neutral-100 border border-neutral-200/80 rounded-full text-xs text-neutral-700 font-medium whitespace-nowrap flex-shrink-0 transition-colors duration-200"
+                        className="px-3 py-1.5 bg-neutral-50/50 hover:bg-neutral-100 border border-neutral-200/80 rounded-full text-xs text-neutral-700 font-medium whitespace-nowrap flex-shrink-0 transition-colors duration-200"
                       >
                         {prompt.text}
                       </button>
@@ -1159,7 +1159,7 @@ export default function ChatbotWidget() {
           )}
 
           {/* Input Area */}
-          <div className="p-3 border-t border-neutral-200/50 bg-white shrink-0">
+          <div className="p-3 border-t border-neutral-200/50 bg-transparent shrink-0">
             {activeMCPs.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-2 px-1">
                 {activeMCPs.map((mcpId) => {
