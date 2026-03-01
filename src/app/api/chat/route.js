@@ -16,12 +16,7 @@ import { rateLimit } from '@/lib/rateLimit';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { getBackendMCPConfig } from '@/lib/mcpConfig';
-
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: process.env.OPENAI_BASE_URL,
-});
+import { decrypt } from '@/lib/crypto';
 
 // =================================================================================
 // HELPERS
@@ -96,11 +91,41 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Chatbot is currently disabled' }, { status: 503 });
     }
 
+    const defaultModel = {
+      providerId: 'default-openai',
+      model: process.env.OPENAI_MODEL_NAME || 'openai-large',
+    };
+    const actualModelSelection =
+      selectedModel || context.chatbotSettings?.modelName || defaultModel;
+
+    // Ensure actualModelSelection is an object
     const actualModel =
-      selectedModel ||
-      context.chatbotSettings?.modelName ||
-      process.env.OPENAI_MODEL_NAME ||
-      'openai-large';
+      typeof actualModelSelection === 'string'
+        ? { providerId: 'default-openai', model: actualModelSelection }
+        : actualModelSelection;
+
+    // Find the provider in the settings
+    const providers = context.chatbotSettings?.providers || [];
+    let provider = providers.find((p) => p.id === actualModel.providerId);
+
+    // Fallback if provider not found or not in providers array
+    if (!provider) {
+      provider = {
+        id: 'default-openai',
+        baseUrl: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
+        apiKey: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY : 'sk-none', // not encrypted here since fallback
+        supportsTools: true,
+      };
+    } else {
+      // Decode if we got it from DB
+      provider.apiKey = decrypt(provider.apiKey);
+    }
+
+    // Initialize OpenAI client dynamically based on the provider config
+    const openai = new OpenAI({
+      apiKey: provider.apiKey || process.env.OPENAI_API_KEY,
+      baseURL: provider.baseUrl || process.env.OPENAI_BASE_URL,
+    });
 
     const systemMessages = buildSystemMessages(context, path);
 
@@ -229,13 +254,18 @@ export async function POST(request) {
             const prunedMessages = pruneContext(messages, MAX_CONTEXT_CHARS);
 
             // ── Open a streaming completion ──────────────────────────────────
-            const completionStream = await openai.chat.completions.create({
-              model: actualModel,
+            const chatOptions = {
+              model: actualModel.model,
               messages: prunedMessages,
-              tools: toolsForOpenAI,
-              tool_choice: 'auto',
               stream: true,
-            });
+            };
+
+            if (provider.supportsTools !== false && toolsForOpenAI.length > 0) {
+              chatOptions.tools = toolsForOpenAI;
+              chatOptions.tool_choice = 'auto';
+            }
+
+            const completionStream = await openai.chat.completions.create(chatOptions);
 
             // Accumulate deltas
             const toolCallMap = {}; // index → partial tool call
@@ -457,7 +487,7 @@ export async function POST(request) {
             path,
             userMessage,
             aiResponse: assistantContent,
-            modelName: actualModel,
+            modelName: actualModel.model,
             conversationContext: finalContextForDB,
             toolsUsed,
             executionTime: Date.now() - startTime,

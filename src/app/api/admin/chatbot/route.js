@@ -20,6 +20,7 @@ import dbConnect from '@/lib/dbConnect';
 import ChatbotSettings from '@/models/ChatbotSettings';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { getServerSession } from 'next-auth';
+import { encrypt } from '@/lib/crypto';
 
 // GET - Fetch current chatbot settings
 
@@ -68,6 +69,53 @@ export async function GET() {
       await settings.save();
     }
 
+    // Migration: If providers is empty, add default OpenAI provider
+    let isModified = false;
+    if (!settings.providers || settings.providers.length === 0) {
+      settings.providers = [
+        {
+          id: 'default-openai',
+          name: 'OpenAI (Default)',
+          baseUrl: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
+          apiKey: encrypt(process.env.OPENAI_API_KEY || 'sk-none'),
+          isActive: true,
+          supportsTools: true,
+        },
+      ];
+      isModified = true;
+    }
+
+    // Migration: Migrate string values to object slots
+    const migrateSlot = (slotData, defaultValue) => {
+      if (typeof slotData === 'string') {
+        isModified = true;
+        return { providerId: 'default-openai', model: slotData || defaultValue };
+      }
+      return slotData;
+    };
+
+    settings.modelName = migrateSlot(
+      settings.modelName,
+      process.env.OPENAI_MODEL_NAME || 'openai-large'
+    );
+    settings.fastModel = migrateSlot(settings.fastModel, '');
+    settings.thinkingModel = migrateSlot(settings.thinkingModel, '');
+    settings.proModel = migrateSlot(settings.proModel, '');
+
+    if (isModified) {
+      await settings.save();
+    }
+
+    // Mask API keys for frontend
+    const sanitizedProviders = settings.providers.map((p) => ({
+      id: p.id,
+      name: p.name,
+      baseUrl: p.baseUrl,
+      apiKey: p.apiKey ? '********' : '',
+      isActive: p.isActive,
+      supportsTools: p.supportsTools,
+    }));
+
     return NextResponse.json({
       aiName: settings.aiName,
       persona: settings.persona,
@@ -80,6 +128,7 @@ export async function GET() {
       fastModel: settings.fastModel,
       thinkingModel: settings.thinkingModel,
       proModel: settings.proModel,
+      providers: sanitizedProviders,
     });
   } catch (error) {
     console.error('Error fetching chatbot settings:', error);
@@ -152,10 +201,14 @@ export async function POST(request) {
       callToAction,
       rules,
       isActive = true,
-      modelName = 'openai-large',
-      fastModel = '',
-      thinkingModel = '',
-      proModel = '',
+      modelName = {
+        providerId: 'default-openai',
+        model: process.env.OPENAI_MODEL_NAME || 'openai-large',
+      },
+      fastModel = { providerId: '', model: '' },
+      thinkingModel = { providerId: '', model: '' },
+      proModel = { providerId: '', model: '' },
+      providers = [],
     } = body;
 
     // Validate required fields
@@ -168,6 +221,32 @@ export async function POST(request) {
 
     // Find existing settings or create new one
     let settings = await ChatbotSettings.findOne({});
+
+    // Process providers: encrypt API keys if they are newly provided or updated
+    let updatedProviders = [];
+    if (providers && Array.isArray(providers)) {
+      updatedProviders = providers.map((p) => {
+        let encryptedKey = p.apiKey;
+        // If the key is '********', it means the user didn't update it, so we retain the old one
+        if (p.apiKey === '********' && settings && settings.providers) {
+          const existingProvider = settings.providers.find((ep) => ep.id === p.id);
+          if (existingProvider) {
+            encryptedKey = existingProvider.apiKey;
+          }
+        } else if (p.apiKey && p.apiKey !== '********') {
+          encryptedKey = encrypt(p.apiKey);
+        }
+
+        return {
+          id: p.id,
+          name: p.name,
+          baseUrl: p.baseUrl,
+          apiKey: encryptedKey,
+          isActive: p.isActive,
+          supportsTools: p.supportsTools,
+        };
+      });
+    }
 
     if (settings) {
       // Update existing settings
@@ -182,6 +261,7 @@ export async function POST(request) {
       settings.fastModel = fastModel;
       settings.thinkingModel = thinkingModel;
       settings.proModel = proModel;
+      settings.providers = updatedProviders;
 
       await settings.save();
     } else {
@@ -198,10 +278,21 @@ export async function POST(request) {
         fastModel,
         thinkingModel,
         proModel,
+        providers: updatedProviders,
       });
 
       await settings.save();
     }
+
+    // Mask API keys for response
+    const sanitizedProviders = settings.providers.map((p) => ({
+      id: p.id,
+      name: p.name,
+      baseUrl: p.baseUrl,
+      apiKey: p.apiKey ? '********' : '',
+      isActive: p.isActive,
+      supportsTools: p.supportsTools,
+    }));
 
     return NextResponse.json({
       message: 'Chatbot settings saved successfully',
@@ -217,6 +308,7 @@ export async function POST(request) {
         fastModel: settings.fastModel,
         thinkingModel: settings.thinkingModel,
         proModel: settings.proModel,
+        providers: sanitizedProviders,
       },
     });
   } catch (error) {
