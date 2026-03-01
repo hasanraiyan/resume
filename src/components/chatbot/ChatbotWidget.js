@@ -1280,7 +1280,10 @@ export default function ChatbotWidget() {
                 <div className="relative tools-menu-container flex items-center gap-1.5">
                   {activeMCPs.length === 0 ? (
                     <button
-                      onClick={() => setIsToolsMenuOpen(!isToolsMenuOpen)}
+                      onClick={() => {
+                        setIsToolsMenuOpen(!isToolsMenuOpen);
+                        if (!isToolsMenuOpen) setIsModelSelectorOpen(false);
+                      }}
                       disabled={isLoading}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${isToolsMenuOpen ? 'bg-neutral-200 text-neutral-800' : 'bg-transparent text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700'} disabled:opacity-50`}
                       title="Tools"
@@ -1290,7 +1293,10 @@ export default function ChatbotWidget() {
                     </button>
                   ) : (
                     <button
-                      onClick={() => setIsToolsMenuOpen(!isToolsMenuOpen)}
+                      onClick={() => {
+                        setIsToolsMenuOpen(!isToolsMenuOpen);
+                        if (!isToolsMenuOpen) setIsModelSelectorOpen(false);
+                      }}
                       disabled={isLoading}
                       className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isToolsMenuOpen ? 'bg-neutral-200 text-neutral-800' : 'bg-transparent text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700'} disabled:opacity-50 shrink-0`}
                       title="Add more tools"
@@ -1381,7 +1387,10 @@ export default function ChatbotWidget() {
                     <div className="relative model-selector-container">
                       <button
                         type="button"
-                        onClick={() => setIsModelSelectorOpen(!isModelSelectorOpen)}
+                        onClick={() => {
+                          setIsModelSelectorOpen(!isModelSelectorOpen);
+                          if (!isModelSelectorOpen) setIsToolsMenuOpen(false);
+                        }}
                         disabled={isLoading}
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-full text-xs font-medium transition-colors disabled:opacity-50"
                       >
