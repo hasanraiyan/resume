@@ -28,6 +28,7 @@ export default function ChatbotSettingsPage() {
     rules: [''],
     isActive: true,
     modelName: 'openai-large',
+    userSelectableModels: [],
   });
 
   // Redirect if not admin
@@ -280,6 +281,33 @@ export default function ChatbotSettingsPage() {
                     onChange={(e) => handleInputChange('modelName', e.target.value)}
                     options={availableModels.map((model) => ({ value: model, label: model }))}
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    User-Selectable Models
+                  </label>
+                  <p className="text-xs text-neutral-500 mb-3">
+                    Allow users to switch between these models in the chatbot widget.
+                  </p>
+                  <div className="space-y-2 border border-neutral-200 rounded-lg p-3 bg-neutral-50 max-h-48 overflow-y-auto custom-scrollbar">
+                    {availableModels.map((model) => (
+                      <label key={model} className="flex items-center space-x-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.userSelectableModels?.includes(model)}
+                          onChange={(e) => {
+                            const current = formData.userSelectableModels || [];
+                            const newSelection = e.target.checked
+                              ? [...current, model]
+                              : current.filter((m) => m !== model);
+                            handleInputChange('userSelectableModels', newSelection);
+                          }}
+                          className="w-4 h-4 text-black border-neutral-300 rounded focus:ring-black"
+                        />
+                        <span className="text-sm text-neutral-700">{model}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

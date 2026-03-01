@@ -65,6 +65,7 @@ export async function POST(request) {
       sessionId: providedSessionId,
       path = '/',
       activeMCPs = [],
+      selectedModel,
     } = await request.json();
 
     const sessionId =
@@ -96,7 +97,10 @@ export async function POST(request) {
     }
 
     const actualModel =
-      context.chatbotSettings?.modelName || process.env.OPENAI_MODEL_NAME || 'openai-large';
+      selectedModel ||
+      context.chatbotSettings?.modelName ||
+      process.env.OPENAI_MODEL_NAME ||
+      'openai-large';
 
     const systemMessages = buildSystemMessages(context, path);
 

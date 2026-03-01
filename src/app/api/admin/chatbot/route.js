@@ -77,6 +77,7 @@ export async function GET() {
       rules: settings.rules,
       isActive: settings.isActive,
       modelName: settings.modelName,
+      userSelectableModels: settings.userSelectableModels,
     });
   } catch (error) {
     console.error('Error fetching chatbot settings:', error);
@@ -150,6 +151,7 @@ export async function POST(request) {
       rules,
       isActive,
       modelName,
+      userSelectableModels,
     } = body;
 
     // Validate required fields
@@ -173,6 +175,7 @@ export async function POST(request) {
       settings.rules = filteredRules;
       settings.isActive = isActive !== undefined ? isActive : true;
       settings.modelName = modelName || process.env.OPENAI_MODEL_NAME || 'openai-large';
+      settings.userSelectableModels = userSelectableModels || [];
 
       await settings.save();
     } else {
@@ -186,6 +189,7 @@ export async function POST(request) {
         rules: filteredRules,
         isActive: isActive !== undefined ? isActive : true,
         modelName: modelName || process.env.OPENAI_MODEL_NAME || 'openai-large',
+        userSelectableModels: userSelectableModels || [],
       });
 
       await settings.save();
@@ -202,6 +206,7 @@ export async function POST(request) {
         rules: settings.rules,
         isActive: settings.isActive,
         modelName: settings.modelName,
+        userSelectableModels: settings.userSelectableModels,
       },
     });
   } catch (error) {

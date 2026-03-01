@@ -21,6 +21,7 @@ import {
   Settings2,
   Globe,
   Mic,
+  Check,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -333,7 +334,14 @@ function getDefaultPrompts(settings) {
 // Core streaming helper
 // ---------------------------------------------------------------------------
 
-async function streamChatResponse({ content, history, setMessages, setStatus, activeMCPs = [] }) {
+async function streamChatResponse({
+  content,
+  history,
+  setMessages,
+  setStatus,
+  activeMCPs = [],
+  selectedModel,
+}) {
   const analytics = getAnalytics();
   const chatHistory = history
     .filter((msg) => msg.role !== 'system' && msg.role !== 'tool_action')
@@ -348,6 +356,7 @@ async function streamChatResponse({ content, history, setMessages, setStatus, ac
       sessionId: analytics.sessionId,
       path: window.location.pathname,
       activeMCPs: activeMCPs, // Pass array of IDs directly
+      selectedModel,
     }),
   });
 
@@ -593,6 +602,8 @@ export default function ChatbotWidget() {
   const [availableMCPs, setAvailableMCPs] = useState([]); // Fetched from backend
   const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [selectedModel, setSelectedModel] = useState(null);
+  const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -602,6 +613,9 @@ export default function ChatbotWidget() {
     const handleGlobalClick = (e) => {
       if (isToolsMenuOpen && !e.target.closest('.tools-menu-container')) {
         setIsToolsMenuOpen(false);
+      }
+      if (isModelSelectorOpen && !e.target.closest('.model-selector-container')) {
+        setIsModelSelectorOpen(false);
       }
     };
     document.addEventListener('mousedown', handleGlobalClick);
@@ -770,6 +784,9 @@ export default function ChatbotWidget() {
       if (response.ok) {
         const settings = await response.json();
         setChatbotSettings(settings);
+        if (settings.userSelectableModels?.length > 0) {
+          setSelectedModel(settings.userSelectableModels[0]);
+        }
         if (settings.isActive) {
           setMessages([
             {
@@ -829,6 +846,7 @@ export default function ChatbotWidget() {
           content: userMessage.content,
           history: messages.filter((m) => !m.hidden),
           activeMCPs,
+          selectedModel,
           setMessages,
           setStatus: setStatusMessage,
         });
@@ -1327,7 +1345,89 @@ export default function ChatbotWidget() {
                 </div>
 
                 {/* Right: Submit Button or Voice Input */}
-                <div className="flex items-center justify-end">
+                <div className="flex items-center justify-end gap-2">
+                  {chatbotSettings?.userSelectableModels?.length > 0 && (
+                    <div className="relative model-selector-container">
+                      <button
+                        type="button"
+                        onClick={() => setIsModelSelectorOpen(!isModelSelectorOpen)}
+                        disabled={isLoading}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-full text-xs font-medium transition-colors disabled:opacity-50"
+                      >
+                        {(() => {
+                          if (selectedModel?.includes('mini') || selectedModel?.includes('flash'))
+                            return 'Fast';
+                          if (
+                            selectedModel?.includes('o1') ||
+                            selectedModel?.includes('reasoning') ||
+                            selectedModel?.includes('thinking')
+                          )
+                            return 'Thinking';
+                          return 'Pro';
+                        })()}
+                        <ChevronDown
+                          className={`w-3 h-3 transition-transform ${isModelSelectorOpen ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+
+                      {isModelSelectorOpen && (
+                        <div className="absolute bottom-full right-0 mb-3 w-56 bg-white/95 backdrop-blur-xl rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-neutral-200/50 overflow-hidden text-left animate-in fade-in slide-in-from-bottom-2 duration-200 z-50">
+                          <div className="px-3 py-2 border-b border-neutral-100 bg-neutral-50/80">
+                            <span className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider">
+                              AI Models
+                            </span>
+                          </div>
+                          <div className="p-1.5">
+                            {chatbotSettings.userSelectableModels.map((model) => {
+                              const isSelected = selectedModel === model;
+                              let label = 'Pro';
+                              let desc = 'Thinks longer for advanced maths and code';
+                              if (model.includes('mini') || model.includes('flash')) {
+                                label = 'Fast';
+                                desc = 'Answers quickly';
+                              } else if (
+                                model.includes('o1') ||
+                                model.includes('reasoning') ||
+                                model.includes('thinking')
+                              ) {
+                                label = 'Thinking';
+                                desc = 'Solves complex problems';
+                              }
+
+                              return (
+                                <button
+                                  key={model}
+                                  onClick={() => {
+                                    setSelectedModel(model);
+                                    setIsModelSelectorOpen(false);
+                                    setTimeout(() => inputRef.current?.focus(), 50);
+                                  }}
+                                  className="w-full text-left p-2.5 rounded-lg transition-colors flex items-center justify-between hover:bg-neutral-100"
+                                >
+                                  <div className="flex flex-col pr-3">
+                                    <span
+                                      className={`text-[13px] ${isSelected ? 'font-medium text-neutral-900' : 'text-neutral-700'}`}
+                                    >
+                                      {label}
+                                    </span>
+                                    <span className="text-[11px] text-neutral-500 leading-tight mt-0.5">
+                                      {desc}
+                                    </span>
+                                  </div>
+                                  {isSelected && (
+                                    <div className="w-4 h-4 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
+                                      <Check className="w-3 h-3 text-white" />
+                                    </div>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {!isListening && (inputMessage.trim() || activeQuote) ? (
                     <button
                       type="button"
