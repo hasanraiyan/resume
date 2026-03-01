@@ -1238,9 +1238,9 @@ export default function ChatbotWidget() {
                               key={mcp.id}
                               onClick={() => {
                                 if (isActive) {
-                                  setActiveMCPs((prev) => prev.filter((id) => id !== mcp.id));
+                                  setActiveMCPs([]);
                                 } else {
-                                  setActiveMCPs((prev) => [...prev, mcp.id]);
+                                  setActiveMCPs([mcp.id]);
                                 }
                                 setIsToolsMenuOpen(false);
                                 setTimeout(() => inputRef.current?.focus(), 50);
