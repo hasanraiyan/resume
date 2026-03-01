@@ -1,3 +1,4 @@
+'use client';
 import * as LucideIcons from 'lucide-react';
 import { Settings2, X, Check, Globe, FileText, Wrench } from 'lucide-react';
 
@@ -22,6 +23,8 @@ export default function ToolSelector({
   isLoading,
   inputRef,
 }) {
+  if (!availableMCPs || availableMCPs.length === 0) return null;
+
   return (
     <div className="relative tools-menu-container flex items-center gap-1.5">
       {activeMCPs.length === 0 ? (

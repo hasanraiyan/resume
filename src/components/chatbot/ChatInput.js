@@ -1,3 +1,4 @@
+'use client';
 import { Send } from 'lucide-react';
 import ToolSelector from './ToolSelector';
 import ModelSelector from './ModelSelector';
@@ -49,7 +50,9 @@ export default function ChatInput({
           style={{ height: '44px' }}
         />
 
-        <div className="flex justify-between items-center px-2 pb-2 mt-auto">
+        <div
+          className={`flex ${!availableMCPs || availableMCPs.length === 0 ? 'justify-end' : 'justify-between'} items-center px-2 pb-2 mt-auto`}
+        >
           {/* Left: Settings Menu & Active Tools */}
           <ToolSelector
             activeMCPs={activeMCPs}
