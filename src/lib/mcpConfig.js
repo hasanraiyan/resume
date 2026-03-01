@@ -6,10 +6,14 @@ import McpServer from '@/models/McpServer';
  * This file is NEVER sent to the client. It contains the actual connection URLs,
  * which may include secret API keys injected via environment variables.
  */
-export const getBackendMCPConfig = async () => {
+export const getBackendMCPConfig = async (isAdmin = false) => {
   try {
     await dbConnect();
-    const dynamicServers = await McpServer.find({ isActive: true });
+    const query = { isActive: true };
+    if (!isAdmin) {
+      query.adminOnly = { $ne: true };
+    }
+    const dynamicServers = await McpServer.find(query);
 
     const dbConfigs = dynamicServers.map((server) => ({
       id: server._id.toString(),
@@ -19,6 +23,7 @@ export const getBackendMCPConfig = async () => {
       url: server.url,
       icon: server.icon || 'Server',
       color: server.color || 'blue-500',
+      adminOnly: server.adminOnly || false,
     }));
 
     return [
@@ -43,8 +48,8 @@ export const getBackendMCPConfig = async () => {
  * Returns a sanitized list of available MCPs for the frontend.
  * Strips out the actual URLs and keys to prevent leaking secrets to the browser.
  */
-export const getFrontendSafeMCPs = async () => {
-  const config = await getBackendMCPConfig();
+export const getFrontendSafeMCPs = async (isAdmin = false) => {
+  const config = await getBackendMCPConfig(isAdmin);
   return (
     config
       // Only expose tools that are fully configured

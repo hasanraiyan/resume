@@ -33,6 +33,10 @@ const McpServerSchema = new mongoose.Schema(
       type: String,
       default: 'blue-500',
     },
+    adminOnly: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

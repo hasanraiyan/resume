@@ -74,6 +74,7 @@ export default function ChatbotSettingsPage() {
     url: '',
     icon: 'Server',
     isActive: true,
+    adminOnly: false,
   });
 
   const [modelsByProvider, setModelsByProvider] = useState({});
@@ -367,6 +368,7 @@ export default function ChatbotSettingsPage() {
         url: server.url,
         icon: server.icon || 'Server',
         isActive: server.isActive,
+        adminOnly: server.adminOnly || false,
       });
     } else {
       setEditingServer(null);
@@ -918,6 +920,11 @@ export default function ChatbotSettingsPage() {
                                 >
                                   {server.isActive ? 'Active' : 'Inactive'}
                                 </span>
+                                {server.adminOnly && (
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 flex items-center gap-1">
+                                    <ShieldCheck className="w-3 h-3" /> Admin Only
+                                  </span>
+                                )}
                               </h4>
                               <p className="text-xs text-neutral-500 font-mono mt-0.5 truncate max-w-[200px] sm:max-w-md">
                                 {server.url}
@@ -1021,8 +1028,8 @@ export default function ChatbotSettingsPage() {
                   placeholder="What tools does this server provide?"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5 w-full">
+              <div className="grid grid-cols-2 gap-4 items-start">
+                <div className="space-y-1.5">
                   <label className="text-sm font-medium text-neutral-700">Icon</label>
                   <LucideIconPicker
                     value={mcpFormData.icon}
@@ -1046,30 +1053,45 @@ export default function ChatbotSettingsPage() {
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="mt-8 flex gap-3 justify-end">
-              <button
-                disabled={mcpSaving}
-                onClick={() => setIsMcpModalOpen(false)}
-                className="px-5 py-2.5 rounded-xl border border-neutral-200 text-sm font-medium hover:bg-neutral-50 transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                disabled={mcpSaving}
-                onClick={handleSaveMcp}
-                className="px-5 py-2.5 rounded-xl bg-black text-white text-sm font-medium hover:bg-neutral-800 transition-colors shadow-lg shadow-black/10 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                {mcpSaving && (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                )}
-                {mcpSaving
-                  ? 'Testing Connection...'
-                  : editingServer
-                    ? 'Update Server'
-                    : 'Add Server'}
-              </button>
+              <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-2xl flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-semibold text-blue-900 block flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4" /> Admin Only Tool
+                  </label>
+                  <p className="text-[11px] text-blue-700 mt-0.5">
+                    If enabled, this tool will only be available to logged-in admins.
+                  </p>
+                </div>
+                <Switch
+                  checked={mcpFormData.adminOnly}
+                  onCheckedChange={(value) => setMcpFormData((p) => ({ ...p, adminOnly: value }))}
+                />
+              </div>
+
+              <div className="mt-8 flex gap-3 justify-end">
+                <button
+                  disabled={mcpSaving}
+                  onClick={() => setIsMcpModalOpen(false)}
+                  className="px-5 py-2.5 rounded-xl border border-neutral-200 text-sm font-medium hover:bg-neutral-50 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={mcpSaving}
+                  onClick={handleSaveMcp}
+                  className="px-5 py-2.5 rounded-xl bg-black text-white text-sm font-medium hover:bg-neutral-800 transition-colors shadow-lg shadow-black/10 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {mcpSaving && (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  )}
+                  {mcpSaving
+                    ? 'Testing Connection...'
+                    : editingServer
+                      ? 'Update Server'
+                      : 'Add Server'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

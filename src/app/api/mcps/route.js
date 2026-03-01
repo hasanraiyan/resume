@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getFrontendSafeMCPs } from '@/lib/mcpConfig';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 /**
  * GET /api/mcps
@@ -8,7 +10,9 @@ import { getFrontendSafeMCPs } from '@/lib/mcpConfig';
  */
 export async function GET() {
   try {
-    const safeMCPs = await getFrontendSafeMCPs();
+    const session = await getServerSession(authOptions);
+    const isAdmin = session?.user?.role === 'admin';
+    const safeMCPs = await getFrontendSafeMCPs(isAdmin);
     return NextResponse.json(safeMCPs);
   } catch (error) {
     console.error('Error fetching MCPs:', error);

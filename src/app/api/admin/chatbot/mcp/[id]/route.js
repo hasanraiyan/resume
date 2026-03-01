@@ -55,7 +55,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    const { name, description, type, url, icon, isActive, color } = body;
+    const { name, description, type, url, icon, isActive, color, adminOnly } = body;
 
     // Validate required fields
     if (!name || !url) {
@@ -81,6 +81,7 @@ export async function PUT(request, { params }) {
         icon,
         isActive,
         color,
+        adminOnly,
       },
       { new: true, runValidators: true }
     );

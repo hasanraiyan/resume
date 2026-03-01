@@ -13,6 +13,8 @@ import { getUIBlockForToolResult } from '@/lib/chatbot-generative-ui';
 import { rateLimit } from '@/lib/rateLimit';
 import { getBackendMCPConfig } from '@/lib/mcpConfig';
 import { decrypt } from '@/lib/crypto';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { z } from 'zod';
 import { ChatOpenAI } from '@langchain/openai';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
@@ -169,7 +171,9 @@ export async function POST(request) {
             controller.enqueue(
               encodeEvent({ type: 'status', message: '🔌 Connecting to external tools...' })
             );
-            const backendMCPs = await getBackendMCPConfig();
+            const session = await getServerSession(authOptions);
+            const isAdmin = session?.user?.role === 'admin';
+            const backendMCPs = await getBackendMCPConfig(isAdmin);
 
             // 1. Resolve MultiServerMCPClient tools (SSE/HTTP transports)
             const mcpServerConfig = {};

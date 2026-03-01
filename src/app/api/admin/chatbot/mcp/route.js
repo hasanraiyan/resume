@@ -70,7 +70,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    const { name, description, type, url, icon, isActive, color } = body;
+    const { name, description, type, url, icon, isActive, color, adminOnly } = body;
 
     // Validate required fields
     if (!name || !url) {
@@ -94,6 +94,7 @@ export async function POST(request) {
       icon: icon || 'Server',
       isActive: isActive !== undefined ? isActive : true,
       color: color || 'blue-500',
+      adminOnly: adminOnly !== undefined ? adminOnly : false,
     });
 
     await newServer.save();
