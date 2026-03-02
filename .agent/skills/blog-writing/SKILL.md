@@ -141,27 +141,26 @@ You can now generate these images automatically using the provided tool:
 
 #### How to use the Image Generation Tool:
 
-Run the following command in the terminal for a single image:
-
-```bash
-node .agent/skills/blog-writing/tool/image-gen-tool.js --prompt="[YOUR_PROMPT]" [--aspectRatio="16:9"]
-```
-
-Or for batch generation:
+To generate images, you MUST use the batch generation method with a JSON file:
 
 ```bash
 node .agent/skills/blog-writing/tool/image-gen-tool.js --inputFile="prompts.json" [--outputFile="results.json"]
 ```
 
-- `[YOUR_PROMPT]`: Use the prompt rules above.
-- `--inputFile`: Path to a JSON file containing an array of objects: `[{ "id": "Cover", "prompt": "...", "aspectRatio": "16:9" }]`.
+- `--inputFile`: Path to a JSON file containing an array of objects: `[{ "id": "Cover", "prompt": "...", "aspectRatio": "16:9" }]`. Use the prompt rules above.
 - `--outputFile`: (Optional) Where to save the results. Defaults to `image-results.json`.
-- `--aspectRatio`: Supported values are `1:1` (default), `9:16`, `16:9`, `3:4`, `4:3`, `3:2`, `2:3`, `5:4`, `4:5`, `4:1`, `1:4`, `8:1`, and `1:8`.
+- `--aspectRatio` (in JSON): Supported values are `1:1` (default), `9:16`, `16:9`, `3:4`, `4:3`, `3:2`, `2:3`, `5:4`, `4:5`, `4:1`, `1:4`, `8:1`, and `1:8`.
 
-**Example**:
+**Example `prompts.json`**:
 
-```bash
-node .agent/skills/blog-writing/tool/image-gen-tool.js --prompt="A clean minimal illustration of agentic AI on a white background, soft pastels, geometric shapes, 16:9, no text" --aspectRatio="16:9"
+```json
+[
+  {
+    "id": "Cover",
+    "prompt": "A clean minimal illustration of agentic AI on a white background, soft pastels, geometric shapes, 16:9, no text",
+    "aspectRatio": "16:9"
+  }
+]
 ```
 
 The tool will output the image URL. Use this URL directly in your blog markdown:
@@ -310,7 +309,7 @@ Once you have drafted the blog and metadata, follow this specific workflow to fi
 2.  **Extract Prompts**: Read through `File 2` (`.metadata.md`) and identify all image prompts (Cover, Image 1, Image 2, etc.).
 3.  **Generate Images**: For each identified prompt, execute the image generation tool:
     ```bash
-    node .agent/skills/blog-writing/tool/image-gen-tool.js --prompt="[PROMPT_FROM_METADATA]" --aspectRatio="16:9"
+    node .agent/skills/blog-writing/tool/image-gen-tool.js --inputFile="prompts.json"
     ```
 4.  **Update Content**: Take the URLs returned by the tool and replace the `IMAGE_URL_N` placeholders in `File 1` (`[topic-name].md`) with the actual generated URLs.
 5.  **Final Polish**: Ensure the content looks as intended before notifying the user.
