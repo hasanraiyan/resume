@@ -144,95 +144,77 @@ export async function uploadAsset(formData) {
     return { success: false, error: errorMessage };
   }
 }
-// --- ACTION 3: GENERATE MEDIA VIA POLLINATIONS ---
-export async function generateMedia({ prompt, preset = 'square', model = 'flux', seed }) {
+// --- ACTION 3: GENERATE MEDIA VIA GEMINI ---
+export async function generateMedia({
+  prompt,
+  aspectRatio = '1:1',
+  providerId,
+  model = 'gemini-2.0-flash-preview-image-generation',
+}) {
   console.log('=== GENERATE MEDIA DEBUG ===');
-  console.log('generateMedia called with prompt:', prompt, 'preset:', preset, 'model:', model);
+  console.log('generateMedia called with:', { prompt, aspectRatio, providerId, model });
 
   if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
     console.log('Invalid prompt provided');
     return { success: false, error: 'Prompt is required and must be a non-empty string.' };
   }
 
-  // Define dimension presets
-  const presets = {
-    square: { width: 1024, height: 1024 },
-    landscape: { width: 1280, height: 720 },
-    portrait: { width: 720, height: 1280 },
-    wide: { width: 1280, height: 720 },
-    tall: { width: 720, height: 1280 },
-  };
-
-  const dimensions = presets[preset] || presets.square;
-
   try {
-    // Construct Pollinations URL with parameters
-    const baseUrl = 'https://pollinations.ai/p';
-    const urlParams = new URLSearchParams({
-      prompt: prompt.trim(),
-      width: dimensions.width.toString(),
-      height: dimensions.height.toString(),
+    const { default: imageService } = await import('@/lib/image-service');
+
+    const { buffer, mimeType, extension } = await imageService.generateImage(
+      prompt.trim(),
+      aspectRatio,
+      providerId,
+      model
+    );
+
+    console.log('Gemini image generated, uploading to Cloudinary...');
+
+    // Upload the generated image buffer to Cloudinary
+    const uploadResult = await new Promise((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream(
+          {
+            resource_type: 'image',
+            folder: 'portfolio_assets',
+            format: extension,
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        )
+        .end(buffer);
     });
 
-    if (seed !== undefined) {
-      urlParams.append('seed', seed.toString());
-    }
-
-    // Add nologo parameter to remove logos from generated images
-    urlParams.append('nologo', 'true');
-    // Add enhance parameter to true
-    urlParams.append('enhance', 'true');
-    // Add model parameter
-    urlParams.append('model', model);
-
-    const pollinationsUrl = `${baseUrl}/${encodeURIComponent(prompt.trim())}?${urlParams.toString()}`;
-
-    console.log('Pollinations URL constructed:', pollinationsUrl);
-
-    // Generate a unique public_id for the asset (using timestamp + random string)
-    const publicId = `pollinations_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-
-    // For Pollinations, we directly use the generated URL
-    const imageUrl = pollinationsUrl;
-    const secureUrl = pollinationsUrl; // Pollinations URLs are already secure
+    console.log('Cloudinary upload successful:', uploadResult.public_id);
 
     // Save to database
     await dbConnect();
     console.log('Database connected for media generation');
 
     const newAsset = new MediaAsset({
-      public_id: publicId,
-      url: imageUrl,
-      secure_url: secureUrl,
-      filename: `generated_${prompt.slice(0, 50).replace(/[^a-zA-Z0-9]/g, '_')}.png`, // Generate filename from prompt
-      format: 'png', // Pollinations typically generates PNG
-      source: 'pollinations',
+      public_id: uploadResult.public_id,
+      url: uploadResult.url,
+      secure_url: uploadResult.secure_url,
+      filename: `generated_${prompt.slice(0, 50).replace(/[^a-zA-Z0-9]/g, '_')}.${extension}`,
+      format: uploadResult.format,
+      size: uploadResult.bytes,
+      width: uploadResult.width,
+      height: uploadResult.height,
+      source: 'gemini',
       prompt: prompt.trim(),
-      // Note: For Pollinations, we don't have size/width/height readily available without fetching the image
-      // We can leave these as null or fetch them if needed in a future enhancement
     });
-
-    console.log('Generated asset object:', newAsset);
 
     await newAsset.save();
     console.log('Generated asset saved to database');
 
-    revalidatePath('/admin/media'); // Refresh the media library page
-    console.log('Path revalidated');
+    revalidatePath('/admin/media');
 
     return {
       success: true,
-      asset: {
-        _id: newAsset._id,
-        public_id: newAsset.public_id,
-        url: newAsset.url,
-        secure_url: newAsset.secure_url,
-        filename: newAsset.filename,
-        format: newAsset.format,
-        source: newAsset.source,
-        prompt: newAsset.prompt,
-        createdAt: newAsset.createdAt,
-      },
+      asset: JSON.parse(JSON.stringify(newAsset)),
     };
   } catch (error) {
     console.error('Media generation error details:', error);
@@ -267,7 +249,7 @@ export async function deleteAsset(assetId) {
       return { success: false, error: 'Asset not found in database.' };
     }
 
-    // Check if this is an AI-generated image (not stored in Cloudinary)
+    // Check if this is a legacy Pollinations image (not stored in Cloudinary)
     const isAIGenerated = asset.source === 'pollinations';
 
     console.log('Asset source:', asset.source, '- AI Generated:', isAIGenerated);

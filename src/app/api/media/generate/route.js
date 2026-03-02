@@ -2,19 +2,13 @@
 import { generateMedia } from '@/app/actions/mediaActions';
 
 export async function POST(request) {
-  console.log('=== API GENERATE MEDIA DEBUG ===');
-  console.log('API route for media generation called');
-
   try {
     const body = await request.json();
-    const { prompt, preset, model, seed } = body;
+    const { prompt, aspectRatio, providerId, model } = body;
 
-    console.log('Request body:', { prompt, preset, model, seed });
+    console.log('API generate request:', { prompt, aspectRatio, providerId, model });
 
-    // Call the server action
-    const result = await generateMedia({ prompt, preset, model, seed });
-
-    console.log('Generation result:', result);
+    const result = await generateMedia({ prompt, aspectRatio, providerId, model });
 
     if (result.success) {
       return Response.json({ success: true, asset: result.asset });

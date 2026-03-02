@@ -46,4 +46,37 @@ The frontend UI of the chat bot needs improvement, specifically the "tool part" 
 ---
 
 **Priority**: High
-**Status**: 🆕 Pending
+**Status**: ✅ Completed
+
+---
+
+## ✨ Completed Work
+
+### Changes Made:
+
+1. **Redesigned StepHistory Component**
+   - Simplified header to pill-shaped "Performed X actions" with chevron
+   - Removed complex icon display
+   - Clean, minimal UI matching website design
+
+2. **Updated ToolCard Component**
+   - Changed color scheme from blue/green to neutral (matches website)
+   - Improved status indicators (spinning clock for running, check circle for done)
+   - Better overflow handling and text truncation
+
+3. **Fixed Tool Status Tracking**
+   - Fixed issue where tools showed "Running" even after completion
+   - Updated both local `assistantMessage.steps` and state
+   - Proper sync between tool_action messages and StepHistory display
+
+4. **Improved Message Display**
+   - Removed duplicate tool_action message display
+   - Tools now only show in StepHistory (cleaner UI)
+   - Better visual hierarchy and spacing
+
+### Result:
+
+- Clean, modern UI matching Gemini/ChatGPT style
+- Neutral color scheme matching overall website design
+- Improved user experience with clear tool execution status
+- Responsive and performant component structure

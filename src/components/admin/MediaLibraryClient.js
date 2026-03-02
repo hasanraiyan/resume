@@ -27,18 +27,27 @@ export default function MediaLibraryClient({ initialAssets }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState('');
   const [prompt, setPrompt] = useState('');
+  const [providers, setProviders] = useState([]);
+  const [selectedProvider, setSelectedProvider] = useState('');
   const [models, setModels] = useState([]);
-  const [selectedModel, setSelectedModel] = useState('flux');
-  const [seed, setSeed] = useState('');
-  const [preset, setPreset] = useState('square');
+  const [selectedModel, setSelectedModel] = useState('');
+  const [fetchingModels, setFetchingModels] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState('1:1');
   const [selectedTemplate, setSelectedTemplate] = useState('');
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const presetOptions = [
-    { value: 'square', label: 'Square (1024x1024)' },
-    { value: 'landscape', label: 'Landscape (1280x720)' },
-    { value: 'portrait', label: 'Portrait (720x1280)' },
-    { value: 'wide', label: 'Wide (1280x720)' },
-    { value: 'tall', label: 'Tall (720x1280)' },
+  const aspectRatioOptions = [
+    { value: '1:1', label: 'Square (1:1)' },
+    { value: '16:9', label: 'Landscape (16:9)' },
+    { value: '9:16', label: 'Portrait (9:16)' },
+    { value: '4:3', label: 'Standard (4:3)' },
+    { value: '3:4', label: 'Tall (3:4)' },
+    { value: '3:2', label: 'Wide (3:2)' },
+    { value: '2:3', label: 'Narrow (2:3)' },
+    { value: '5:4', label: 'Photo (5:4)' },
+    { value: '4:5', label: 'Photo Tall (4:5)' },
+    { value: '4:1', label: 'Ultra Wide (4:1)' },
+    { value: '1:4', label: 'Ultra Tall (1:4)' },
+    { value: '8:1', label: 'Panoramic (8:1)' },
+    { value: '1:8', label: 'Skyscraper (1:8)' },
   ];
 
   const promptTemplates = [
@@ -467,20 +476,70 @@ export default function MediaLibraryClient({ initialAssets }) {
     }
   };
 
+  // Persist provider/model/aspectRatio selections to localStorage
+  const saveSelection = (key, value) => {
+    try {
+      localStorage.setItem(`media-gen-${key}`, value);
+    } catch {}
+  };
+
+  // Fetch available providers on mount
   useEffect(() => {
-    const fetchModels = async () => {
+    const fetchProviders = async () => {
       try {
         const response = await fetch('/api/media/models');
         const data = await response.json();
-        if (data.models) {
+        if (data.providers && data.providers.length > 0) {
+          setProviders(data.providers);
+          const saved = localStorage.getItem('media-gen-provider');
+          const match = saved && data.providers.find((p) => p.id === saved);
+          if (match) {
+            setSelectedProvider(saved);
+          } else {
+            const google = data.providers.find((p) => p.isGoogle);
+            setSelectedProvider(google ? google.id : data.providers[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch providers:', error);
+      }
+    };
+    // Restore aspect ratio
+    const savedRatio = localStorage.getItem('media-gen-aspectRatio');
+    if (savedRatio) setAspectRatio(savedRatio);
+
+    fetchProviders();
+  }, []);
+
+  // Fetch models when selected provider changes
+  useEffect(() => {
+    if (!selectedProvider) return;
+    saveSelection('provider', selectedProvider);
+    const fetchModelsForProvider = async () => {
+      setFetchingModels(true);
+      setModels([]);
+      setSelectedModel('');
+      try {
+        const response = await fetch(`/api/media/models?providerId=${selectedProvider}`);
+        const data = await response.json();
+        if (data.models && data.models.length > 0) {
           setModels(data.models);
+          const saved = localStorage.getItem('media-gen-model');
+          if (saved && data.models.includes(saved)) {
+            setSelectedModel(saved);
+          } else {
+            const imageModel = data.models.find((m) => m.includes('image'));
+            setSelectedModel(imageModel || data.models[0]);
+          }
         }
       } catch (error) {
         console.error('Failed to fetch models:', error);
+      } finally {
+        setFetchingModels(false);
       }
     };
-    fetchModels();
-  }, []);
+    fetchModelsForProvider();
+  }, [selectedProvider]);
 
   // Filter and sort assets
   const filteredAndSortedAssets = assets
@@ -573,9 +632,9 @@ export default function MediaLibraryClient({ initialAssets }) {
         },
         body: JSON.stringify({
           prompt: prompt.trim(),
-          preset,
+          aspectRatio,
+          providerId: selectedProvider,
           model: selectedModel,
-          seed: seed ? parseInt(seed) : undefined,
         }),
       });
 
@@ -584,7 +643,6 @@ export default function MediaLibraryClient({ initialAssets }) {
       if (result.success) {
         setAssets((prev) => [result.asset, ...prev]);
         setPrompt('');
-        setSeed('');
       } else {
         setGenerateError(result.error || 'Generation failed');
       }
@@ -673,46 +731,44 @@ export default function MediaLibraryClient({ initialAssets }) {
         </div>
       )}
 
-      {/* Enhanced Generate Media Section */}
-      <div className="bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-dashed border-purple-200 rounded-xl overflow-hidden">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
-                <i className="fas fa-magic text-white text-lg"></i>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-gray-900">AI Image Generator</h3>
-                <p className="text-sm text-gray-600">
-                  Create stunning images with artificial intelligence
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="text-purple-600 hover:text-purple-700 text-sm font-medium flex items-center gap-1"
-            >
-              <i className={`fas fa-chevron-${showAdvanced ? 'up' : 'down'} text-xs`}></i>
-              {showAdvanced ? 'Less Options' : 'More Options'}
-            </button>
+      {/* AI Image Generator Section */}
+      <div className="bg-white rounded-2xl border border-neutral-200/60 shadow-sm overflow-hidden">
+        <div className="p-6 sm:p-8 space-y-6">
+          <div className="pb-5 border-b border-neutral-100">
+            <h3 className="text-lg font-semibold text-black mb-1 font-['Playfair_Display']">
+              AI Image Generator
+            </h3>
+            <p className="text-sm text-neutral-500">
+              Generate images using your configured AI providers.
+            </p>
           </div>
 
+          {/* Error Message */}
+          {generateError && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+              <div className="p-1.5 rounded-full bg-red-100">
+                <i className="fas fa-exclamation-circle text-red-600 text-xs"></i>
+              </div>
+              <p className="text-red-800 text-sm font-medium">{generateError}</p>
+            </div>
+          )}
+
           {/* Prompt Templates */}
-          <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-neutral-800">
               Quick Start Templates
             </label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {promptTemplates.map((category) => (
-                <div key={category.category} className="space-y-1">
-                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                <div key={category.category} className="space-y-1.5">
+                  <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
                     {category.category}
                   </div>
                   {category.templates.map((template) => (
                     <button
                       key={template.name}
                       onClick={() => handleTemplateSelect(template.prompt)}
-                      className="w-full text-left px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-colors duration-200"
+                      className="w-full text-left px-3 py-2 text-sm bg-neutral-50 border border-neutral-200 rounded-xl hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-all"
                       disabled={isGenerating}
                     >
                       {template.name}
@@ -724,140 +780,113 @@ export default function MediaLibraryClient({ initialAssets }) {
           </div>
 
           {/* Main Prompt Input */}
-          <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-neutral-800">
               Describe Your Image
             </label>
             <div className="relative">
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none bg-white shadow-sm"
+                className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-none bg-neutral-50 text-sm"
                 placeholder="A majestic lion standing on a mountain peak at sunset, photorealistic, dramatic lighting, 8k resolution..."
-                rows={4}
+                rows={3}
                 disabled={isGenerating}
               />
               {prompt && (
-                <div className="absolute bottom-2 right-2 text-xs text-gray-400">
-                  {prompt.length} characters
+                <div className="absolute bottom-2 right-3 text-[10px] text-neutral-400">
+                  {prompt.length} chars
                 </div>
               )}
             </div>
           </div>
 
-          {/* Basic Controls */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Dimensions</label>
+          {/* Controls */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5 bg-neutral-50/50 border border-neutral-200 rounded-2xl">
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-neutral-600">Provider</label>
               <select
-                value={preset}
-                onChange={(e) => setPreset(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white shadow-sm"
+                value={selectedProvider}
+                onChange={(e) => setSelectedProvider(e.target.value)}
+                className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                 disabled={isGenerating}
               >
-                {presetOptions.map((option) => (
+                {providers.length === 0 && <option value="">No providers configured</option>}
+                {providers.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-neutral-600">Model</label>
+              <select
+                value={selectedModel}
+                onChange={(e) => {
+                  setSelectedModel(e.target.value);
+                  saveSelection('model', e.target.value);
+                }}
+                className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                disabled={isGenerating || fetchingModels}
+              >
+                {fetchingModels ? (
+                  <option value="">Loading models...</option>
+                ) : models.length === 0 ? (
+                  <option value="">No models available</option>
+                ) : (
+                  models.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-neutral-600">Aspect Ratio</label>
+              <select
+                value={aspectRatio}
+                onChange={(e) => {
+                  setAspectRatio(e.target.value);
+                  saveSelection('aspectRatio', e.target.value);
+                }}
+                className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                disabled={isGenerating}
+              >
+                {aspectRatioOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
                 ))}
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">AI Model</label>
-              <select
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white shadow-sm"
-                disabled={isGenerating}
-              >
-                {models.map((model) => (
-                  <option key={model} value={model}>
-                    {model.charAt(0).toUpperCase() + model.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Seed (Optional)
-              </label>
-              <input
-                type="number"
-                value={seed}
-                onChange={(e) => setSeed(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white shadow-sm"
-                placeholder="Random"
-                disabled={isGenerating}
-              />
-            </div>
           </div>
-
-          {/* Advanced Options (Collapsible) */}
-          {showAdvanced && (
-            <div className="border-t border-purple-200 pt-4 mb-6">
-              <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                <i className="fas fa-cog text-purple-500"></i>
-                Advanced Options
-              </h4>
-              <div className="bg-white p-4 rounded-lg border border-purple-100">
-                <div className="text-sm text-gray-600 mb-2">
-                  <strong>Tip:</strong> Advanced options will be available in future updates,
-                  including style presets, quality settings, and negative prompts.
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Generate Button */}
           <button
             onClick={handleGenerate}
             disabled={isGenerating || !prompt.trim()}
-            className={`w-full py-4 px-6 rounded-lg transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-xl flex items-center justify-center gap-3 ${
+            className={`w-full py-3 px-6 rounded-xl transition-all text-sm font-medium flex items-center justify-center gap-2.5 ${
               isGenerating || !prompt.trim()
-                ? 'bg-gray-400 text-gray-200 cursor-not-allowed shadow-none'
-                : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white hover:shadow-xl'
+                ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed border border-neutral-200'
+                : 'bg-black hover:bg-neutral-800 text-white shadow-lg shadow-black/10'
             }`}
           >
             {isGenerating ? (
               <>
-                <div
-                  className={`animate-spin rounded-full h-5 w-5 border-2 ${
-                    isGenerating || !prompt.trim()
-                      ? 'border-gray-300 border-t-gray-200'
-                      : 'border-white border-t-transparent'
-                  }`}
-                ></div>
-                Generating Your Image...
+                <div className="w-4 h-4 border-2 border-neutral-300 border-t-neutral-500 rounded-full animate-spin"></div>
+                Generating...
               </>
             ) : (
               <>
-                <i className="fas fa-sparkles"></i>
+                <i className="fas fa-sparkles text-xs"></i>
                 Generate Image
               </>
             )}
           </button>
-
-          {/* Generation Tips */}
-          {!isGenerating && (
-            <div className="mt-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
-              <div className="flex items-start gap-2">
-                <i className="fas fa-lightbulb text-purple-500 mt-0.5"></i>
-                <div className="text-sm text-purple-800">
-                  <strong>Pro Tips:</strong> Be specific in your prompts. Include style details,
-                  lighting, mood, and technical specifications for better results.
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
-
-      {/* Error Message */}
-      {generateError && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-600 text-sm">{generateError}</p>
-        </div>
-      )}
 
       {/* Search and Filter Section */}
       <div className="bg-white p-4 rounded-lg border shadow-sm">
@@ -908,7 +937,7 @@ export default function MediaLibraryClient({ initialAssets }) {
               >
                 <option value="all">All Sources</option>
                 <option value="upload">Uploaded</option>
-                <option value="pollinations">AI Generated</option>
+                <option value="gemini">AI Generated</option>
               </select>
             </div>
 
@@ -1146,7 +1175,7 @@ export default function MediaLibraryClient({ initialAssets }) {
                     />
 
                     {/* Source Badge */}
-                    {asset.source === 'pollinations' && (
+                    {(asset.source === 'gemini' || asset.source === 'pollinations') && (
                       <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full z-10">
                         AI Generated
                       </div>
@@ -1184,14 +1213,15 @@ export default function MediaLibraryClient({ initialAssets }) {
                     </div>
 
                     {/* Prompt Tooltip for Generated Assets */}
-                    {asset.source === 'pollinations' && asset.prompt && (
-                      <div
-                        className="absolute bottom-0 left-0 right-0 bg-black text-white text-xs p-2 rounded-bl-lg rounded-br-lg opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                        title={asset.prompt}
-                      >
-                        <p className="truncate">{asset.prompt}</p>
-                      </div>
-                    )}
+                    {(asset.source === 'gemini' || asset.source === 'pollinations') &&
+                      asset.prompt && (
+                        <div
+                          className="absolute bottom-0 left-0 right-0 bg-black text-white text-xs p-2 rounded-bl-lg rounded-br-lg opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                          title={asset.prompt}
+                        >
+                          <p className="truncate">{asset.prompt}</p>
+                        </div>
+                      )}
                   </div>
                 </div>
               );
@@ -1252,6 +1282,8 @@ export default function MediaLibraryClient({ initialAssets }) {
         onClose={closeLightbox}
         onNext={goToNextImage}
         onPrevious={goToPreviousImage}
+        currentIndex={currentImageIndex}
+        totalCount={paginatedAssets.length}
       />
     </div>
   );
