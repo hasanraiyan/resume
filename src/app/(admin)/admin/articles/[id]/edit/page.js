@@ -9,7 +9,10 @@ export default async function EditArticlePage({ params }) {
   console.log('EditArticlePage - params:', params);
   console.log('EditArticlePage - params.id:', id);
 
-  const { success, articles } = await getAllArticles();
+  // Passing empty object or high limit since we need all to find the ID.
+  // Ideally this should use getArticleById but we use getAllArticles to keep it as it was,
+  // or limit 1000 to ensure we find it.
+  const { success, articles } = await getAllArticles({ limit: 1000 });
   console.log('EditArticlePage - success:', success);
   console.log('EditArticlePage - articles count:', articles?.length || 0);
 

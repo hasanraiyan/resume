@@ -121,19 +121,56 @@ export async function deleteArticle(id) {
  * Retrieves all articles from the database, sorted by creation date in descending order.
  * Used primarily in admin interfaces for listing and managing all articles.
  *
- * @returns {Object} Object containing success status and array of serialized articles, or error object
+ * @param {Object} options - Pagination and search options
+ * @param {number} options.page - The page number to retrieve (default: 1)
+ * @param {number} options.limit - The number of articles per page (default: 10)
+ * @param {string} options.search - Optional search string to filter articles by title, excerpt, or tags
+ * @returns {Object} Object containing success status, array of serialized articles, and pagination metadata
  */
-export async function getAllArticles() {
+export async function getAllArticles({ page = 1, limit = 10, search = '' } = {}) {
   await dbConnect();
 
   try {
-    const articles = await Article.find({}).sort({ createdAt: -1 }).lean();
+    const query = {};
+    if (search) {
+      const searchRegex = new RegExp(search, 'i');
+      query.$or = [
+        { title: searchRegex },
+        { excerpt: searchRegex },
+        { tags: searchRegex },
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [articles, totalArticles] = await Promise.all([
+      Article.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Article.countDocuments(query),
+    ]);
+
     // Serialize articles to handle MongoDB ObjectIds for client components
     const serializedArticles = articles.map((article) => serializeForClient(article));
-    return { success: true, articles: serializedArticles };
+
+    return {
+      success: true,
+      articles: serializedArticles,
+      totalArticles,
+      totalPages: Math.ceil(totalArticles / limit),
+      currentPage: page
+    };
   } catch (error) {
     console.error('Get Articles Error:', error);
-    return { success: false, articles: [] };
+    return {
+      success: false,
+      articles: [],
+      totalArticles: 0,
+      totalPages: 0,
+      currentPage: 1
+    };
   }
 }
 
@@ -180,27 +217,91 @@ export async function getArticleBySlug(slug, isAuthenticated = false) {
  * Used for displaying published blog posts on the public blog page.
  *
  * @param {boolean} isAuthenticated - Whether the user is authenticated (default: false)
- * @returns {Object} Object containing success status and array of serialized published articles, or error object
+ * @param {Object} options - Pagination and filter options
+ * @param {number} options.page - The page number to retrieve (default: 1)
+ * @param {number} options.limit - The number of articles per page (default: 10)
+ * @param {string} options.search - Optional search string to filter articles
+ * @param {string} options.tag - Optional tag string to filter articles by tag
+ * @returns {Object} Object containing success status, array of serialized published articles, and pagination metadata
  */
-export async function getAllPublishedArticles(isAuthenticated = false) {
+export async function getAllPublishedArticles(isAuthenticated = false, { page = 1, limit = 10, search = '', tag = '' } = {}) {
   await dbConnect();
 
   try {
     const visibilityFilter = isAuthenticated
       ? { $in: ['public', 'private', 'unlisted'] }
       : 'public';
-    const articles = await Article.find({
+
+    const query = {
       status: 'published',
       visibility: visibilityFilter,
-    })
-      .sort({ publishedAt: -1 })
-      .lean();
+    };
+
+    // Get all unique tags for the available published articles and sort by frequency
+    const uniqueTagsAgg = await Article.aggregate([
+      { $match: { status: 'published', visibility: visibilityFilter } },
+      { $unwind: "$tags" },
+      { $group: { _id: { $toLower: "$tags" }, count: { $sum: 1 }, original: { $first: "$tags" } } },
+      { $sort: { count: -1 } }
+    ]);
+    const uniqueTags = uniqueTagsAgg.map(t => t.original);
+
+    if (search) {
+      const searchRegex = new RegExp(search, 'i');
+      query.$or = [
+        { title: searchRegex },
+        { excerpt: searchRegex },
+        { content: searchRegex },
+        { tags: searchRegex },
+      ];
+    }
+
+    if (tag && tag !== 'all') {
+      // Create regex for exact match ignoring case
+      const tagRegex = new RegExp(`^${tag}$`, 'i');
+      if (query.$or) {
+        query.$and = [
+          { $or: query.$or },
+          { tags: tagRegex }
+        ];
+        delete query.$or;
+      } else {
+        query.tags = tagRegex;
+      }
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [articles, totalArticles] = await Promise.all([
+      Article.find(query)
+        .sort({ publishedAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Article.countDocuments(query),
+    ]);
+
     // Serialize articles to handle MongoDB ObjectIds for client components
     const serializedArticles = articles.map((article) => serializeForClient(article));
-    return { success: true, articles: serializedArticles };
+
+    return {
+      success: true,
+      articles: serializedArticles,
+      totalArticles,
+      totalPages: Math.ceil(totalArticles / limit),
+      currentPage: page,
+      allTags: uniqueTags
+    };
   } catch (error) {
     console.error('Get Published Articles Error:', error);
-    return { success: false, articles: [] };
+    return {
+      success: false,
+      articles: [],
+      totalArticles: 0,
+      totalPages: 0,
+      currentPage: 1,
+      allTags: []
+    };
   }
 }
 
