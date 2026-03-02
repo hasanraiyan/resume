@@ -8,8 +8,7 @@ import { NextResponse } from 'next/server';
 import { buildDynamicContext } from '@/lib/ai/context-builder';
 import Analytics from '@/models/Analytics';
 import ChatLog from '@/models/ChatLog';
-import { internalTools, getToolStatusMessage } from '@/lib/chatbot-utils';
-import { getUIBlockForToolResult } from '@/lib/chatbot-generative-ui';
+import { getToolStatusMessage } from '@/lib/chatbot-utils';
 import { rateLimit } from '@/lib/rateLimit';
 import { getBackendMCPConfig } from '@/lib/mcpConfig';
 import { decrypt } from '@/lib/crypto';
@@ -163,24 +162,29 @@ export async function POST(request) {
       async start(controller) {
         let toolsUsed = [];
         let assistantContent = '';
-        let allTools = [...internalTools];
+        let allTools = [];
         let mcpClient = null;
 
         try {
-          if (activeMCPs?.length > 0) {
+          const session = await getServerSession(authOptions);
+          const isAdmin = session?.user?.role === 'admin';
+          const backendMCPs = await getBackendMCPConfig(isAdmin);
+
+          // Get default MCPs + frontend selected MCPs
+          const defaultMCPConfigs = backendMCPs.filter(m => m.isDefault);
+          const selectedMCPConfigs = backendMCPs.filter(m => activeMCPs.includes(m.id));
+          const allActiveConfigs = [...new Set([...defaultMCPConfigs, ...selectedMCPConfigs])];
+
+          if (allActiveConfigs.length > 0) {
             controller.enqueue(
-              encodeEvent({ type: 'status', message: '🔌 Connecting to external tools...' })
+              encodeEvent({ type: 'status', message: '🔌 Connecting to tools...' })
             );
-            const session = await getServerSession(authOptions);
-            const isAdmin = session?.user?.role === 'admin';
-            const backendMCPs = await getBackendMCPConfig(isAdmin);
 
             // 1. Resolve MultiServerMCPClient tools (SSE/HTTP transports)
             const mcpServerConfig = {};
-            for (const mcpId of activeMCPs) {
-              const cfg = backendMCPs.find((m) => m.id === mcpId);
+            for (const cfg of allActiveConfigs) {
               if (cfg && cfg.type !== 'rest' && cfg.url) {
-                mcpServerConfig[mcpId] = {
+                mcpServerConfig[cfg.id] = {
                   transport: 'sse',
                   url: cfg.url,
                 };
@@ -238,14 +242,8 @@ export async function POST(request) {
               const statusMsg = getToolStatusMessage(name, inputArgs) || `⚙️ Running ${name}...`;
               controller.enqueue(encodeEvent({ type: 'status', message: statusMsg }));
             } else if (type === 'on_tool_end' && name !== 'agent') {
-              // Tool finished execution -> push GenUI or Results
+              // Tool finished execution -> push Results
               const output = data.output;
-
-              // Map UI components (e.g. project list rendering visually)
-              const uiBlock = getUIBlockForToolResult(name, output);
-              if (uiBlock) {
-                controller.enqueue(encodeEvent({ type: 'ui', ...uiBlock }));
-              }
 
               // Send result to the frontend history manager
               controller.enqueue(
@@ -258,10 +256,6 @@ export async function POST(request) {
               );
 
               toolsUsed.push({ name, arguments: data.input, result: output, iteration: 1 });
-
-              // Important UI hack: if contact form drafts, stop execution
-              // In native langgraph, we could raise a custom error or just let the model realize it shouldn't talk anymore,
-              // but for now, we leave it to System prompt control ("After draftContactLead tell user to click send").
             } else if (type === 'on_chat_model_end') {
               // When the model provides formal tool_call metadata, pass it down so frontend keeps id consistency
               const aiMessage = data.output;
@@ -355,8 +349,8 @@ LINK FORMATTING RULES:
 - Live demos: [View Live Demo](url) 🔗 | GitHub: [GitHub Repository](url) 💻
 
 CONTACT FORM INSTRUCTIONS:
-- ONLY ONCE you have collected at least their name, email, and a basic message/idea, THEN call the \`draftContactLead\` tool.
-- After calling \`draftContactLead\`, STOP execution and tell them they can review the details in the card and click "Send".
+- ONLY ONCE you have collected at least their name, email, and a basic message/idea, THEN call the \`submitContactForm\` tool.
+- After calling \`submitContactForm\`, confirm the submission with the user.
 
 GOAL: Convert visitors to clients by using the call to action: "${settings.callToAction}"
 RULES: ${settings.rules?.join('. ') || ''}

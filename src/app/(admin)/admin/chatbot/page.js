@@ -75,6 +75,7 @@ export default function ChatbotSettingsPage() {
     icon: 'Server',
     isActive: true,
     adminOnly: false,
+    isDefault: false,
   });
 
   const [modelsByProvider, setModelsByProvider] = useState({});
@@ -369,6 +370,7 @@ export default function ChatbotSettingsPage() {
         icon: server.icon || 'Server',
         isActive: server.isActive,
         adminOnly: server.adminOnly || false,
+        isDefault: server.isDefault || false,
       });
     } else {
       setEditingServer(null);
@@ -378,6 +380,7 @@ export default function ChatbotSettingsPage() {
         url: '',
         icon: 'Server',
         isActive: true,
+        isDefault: false,
       });
     }
     setIsMcpModalOpen(true);
@@ -925,6 +928,11 @@ export default function ChatbotSettingsPage() {
                                     <ShieldCheck className="w-3 h-3" /> Admin Only
                                   </span>
                                 )}
+                                {server.isDefault && (
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 flex items-center gap-1">
+                                    <Server className="w-3 h-3" /> Default
+                                  </span>
+                                )}
                               </h4>
                               <p className="text-xs text-neutral-500 font-mono mt-0.5 truncate max-w-[200px] sm:max-w-md">
                                 {server.url}
@@ -1066,6 +1074,21 @@ export default function ChatbotSettingsPage() {
                 <Switch
                   checked={mcpFormData.adminOnly}
                   onCheckedChange={(value) => setMcpFormData((p) => ({ ...p, adminOnly: value }))}
+                />
+              </div>
+
+              <div className="p-4 bg-purple-50/50 border border-purple-100 rounded-2xl flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-semibold text-purple-900 block flex items-center gap-2">
+                    <Server className="w-4 h-4" /> Always Enable (Default)
+                  </label>
+                  <p className="text-[11px] text-purple-700 mt-0.5">
+                    If enabled, this tool will be automatically used by the AI without showing in the frontend tool picker.
+                  </p>
+                </div>
+                <Switch
+                  checked={mcpFormData.isDefault}
+                  onCheckedChange={(value) => setMcpFormData((p) => ({ ...p, isDefault: value }))}
                 />
               </div>
 
