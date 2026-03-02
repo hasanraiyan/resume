@@ -104,6 +104,7 @@ export default function BlogCard({ article }) {
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
                   loading="lazy"
+                  unoptimized={article.coverImage?.includes('utfs.io')}
                   onError={(e) => {
                     e.target.style.display = 'none';
                   }}

@@ -125,6 +125,7 @@ export default async function ArticlePage({ params }) {
               height={480}
               className="w-full h-full object-cover object-center"
               priority
+              unoptimized={article.coverImage?.includes('utfs.io')}
             />
           </div>
         )}
@@ -291,6 +292,7 @@ export default async function ArticlePage({ params }) {
                             fill
                             className="object-cover"
                             loading="lazy"
+                            unoptimized={related.coverImage?.includes('utfs.io')}
                           />
                         </div>
                       )}

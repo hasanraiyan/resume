@@ -125,7 +125,7 @@ No text. 16:9 aspect ratio.
 A clean, modern tech blog cover illustration on a white background.
 [Describe the central visual concept related to the article topic].
 Soft gradients, minimal geometric shapes, premium editorial aesthetic.
-No text. 16:9 aspect ratio.
+No text. 16:9 aspect ratio (to fit the 1200x480 container).
 ```
 
 ### When to include images:
@@ -141,14 +141,22 @@ You can now generate these images automatically using the provided tool:
 
 #### How to use the Image Generation Tool:
 
-Run the following command in the terminal:
+Run the following command in the terminal for a single image:
 
 ```bash
 node .agent/skills/blog-writing/tool/image-gen-tool.js --prompt="[YOUR_PROMPT]" [--aspectRatio="16:9"]
 ```
 
+Or for batch generation:
+
+```bash
+node .agent/skills/blog-writing/tool/image-gen-tool.js --inputFile="prompts.json" [--outputFile="results.json"]
+```
+
 - `[YOUR_PROMPT]`: Use the prompt rules above.
-- `--aspectRatio`: Supported values are `1:1` (default), `16:9` (landscape), and `9:16` (portrait).
+- `--inputFile`: Path to a JSON file containing an array of objects: `[{ "id": "Cover", "prompt": "...", "aspectRatio": "16:9" }]`.
+- `--outputFile`: (Optional) Where to save the results. Defaults to `image-results.json`.
+- `--aspectRatio`: Supported values are `1:1` (default), `9:16`, `16:9`, `3:4`, `4:3`, `3:2`, `2:3`, `5:4`, `4:5`, `4:1`, `1:4`, `8:1`, and `1:8`.
 
 **Example**:
 

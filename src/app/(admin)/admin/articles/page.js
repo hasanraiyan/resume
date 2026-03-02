@@ -125,6 +125,7 @@ export default function ArticlesPage() {
                     alt={article.title}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    unoptimized={article.coverImage?.includes('utfs.io')}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
