@@ -10,9 +10,11 @@ Visit this website to see all existing blog
 
 ---
 
-## Step 1: Topic Research
+## Step 1: Topic Selection & Deep Research
 
-Before writing, research trending and high-value topics:
+Before writing, you must select a topic and then deeply research it:
+
+### Part A: Select a Topic
 
 1.  **MANDATORY: Check Existing Blogs**: You MUST first fetch the list of currently published articles to avoid duplicates.
     - **Action**: Use `read_url_content` on `https://hasanraiyan.vercel.app/blog`.
@@ -24,6 +26,14 @@ Before writing, research trending and high-value topics:
     - Is timely OR evergreen (both work).
     - Shows technical depth and authority.
     - Would attract developer traffic (think: "what would I Google?").
+
+### Part B: Deep Web Research
+
+Once the topic is selected (and approved by the user, if applicable), you MUST perform comprehensive web research BEFORE writing the draft:
+
+1.  **Use `search_web` extensively**: Do multiple deep-dive searches on the specific concepts, libraries, and paradigms related to your topic.
+2.  **Gather context & examples**: Look for how leading companies are using the tech, find specific open-source libraries, and collect real-world analogies.
+3.  **Synthesize**: Do not start writing until you have collected enough technical depth to write an authoritative, 1,800+ word article without relying solely on your pre-trained knowledge.
 
 ### Good topic categories:
 
@@ -321,6 +331,7 @@ Once you have drafted the blog and metadata, follow this specific workflow to fi
 
 Before delivering the blog, verify:
 
+- [ ] Comprehensive deep web research was performed before drafting
 - [ ] Title is compelling and specific (not generic)
 - [ ] Opening hook grabs attention in the first 2 sentences
 - [ ] At least one real-world analogy is used
