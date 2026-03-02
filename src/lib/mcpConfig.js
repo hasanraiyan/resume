@@ -24,6 +24,7 @@ export const getBackendMCPConfig = async (isAdmin = false) => {
       icon: server.icon || 'Server',
       color: server.color || 'blue-500',
       adminOnly: server.adminOnly || false,
+      isDefault: server.isDefault || false,
     }));
 
     return [...dbConfigs];
@@ -41,12 +42,12 @@ export const getFrontendSafeMCPs = async (isAdmin = false) => {
   const config = await getBackendMCPConfig(isAdmin);
   return (
     config
-      // Only expose tools that are fully configured
+      // Only expose tools that are fully configured and not default
       .filter(
         (mcp) =>
-          (mcp.type === 'mcp' && mcp.url !== null) || (mcp.type === 'rest' && mcp.apiKey !== null)
+          ((mcp.type === 'mcp' && mcp.url !== null) || (mcp.type === 'rest' && mcp.apiKey !== null)) && !mcp.isDefault
       )
-      .map(({ id, name, description, icon, color }) => ({
+      .map(({ id, name, description, icon, color, isDefault }) => ({
         id,
         name,
         description,
