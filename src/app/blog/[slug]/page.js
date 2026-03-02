@@ -119,7 +119,7 @@ export default async function ArticlePage({ params }) {
         {article.coverImage && (
           <div className="relative w-full h-[480px] overflow-hidden bg-neutral-100 flex items-center justify-center">
             <Image
-              src={article.coverImage}
+              src={article.coverImage.trimStart()}
               alt={article.title}
               width={1200}
               height={480}
@@ -287,7 +287,7 @@ export default async function ArticlePage({ params }) {
                       {related.coverImage && (
                         <div className="aspect-square relative overflow-hidden rounded-sm bg-neutral-100">
                           <Image
-                            src={related.coverImage}
+                            src={related.coverImage.trimStart()}
                             alt={related.title}
                             fill
                             className="object-cover"
