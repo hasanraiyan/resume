@@ -28,7 +28,7 @@ export async function listAllProjects() {
     const markdownList = projects
       .map(
         (project, index) =>
-          `${index + 1}. **[${project.title}](/${project.slug})** - ${project.description}`
+          `${index + 1}. **[${project.title}](https://hasanraiyan.vercel.app/projects/${project.slug})** - ${project.description}`
       )
       .join('\n');
 
@@ -59,7 +59,7 @@ export async function getProjectDetails(slug) {
     const links = [liveUrl, githubUrl].filter(Boolean).join(' | ');
 
     return {
-      text: `**${project.title}**\n\n**Category:** ${project.category || 'Not specified'}\n**Tagline:** ${project.tagline || 'No tagline'}\n\n**Description:**\n${project.description}\n\n**Details:**\n${project.details || 'No additional details'}\n\n**Tags:** ${tags}\n\n**Links:** ${links || 'No external links'}\n\n**[View Project →](/${project.slug})**`,
+      text: `**${project.title}**\n\n**Category:** ${project.category || 'Not specified'}\n**Tagline:** ${project.tagline || 'No tagline'}\n\n**Description:**\n${project.description}\n\n**Details:**\n${project.details || 'No additional details'}\n\n**Tags:** ${tags}\n\n**Links:** ${links || 'No external links'}\n\n**[View Project →](https://hasanraiyan.vercel.app/projects/${project.slug})**`,
       data: project,
     };
   } catch (error) {
@@ -87,7 +87,7 @@ export async function listAllArticles() {
     const markdownList = articles
       .map(
         (article, index) =>
-          `${index + 1}. **[${article.title}](/${article.slug})** - ${article.excerpt || 'No excerpt available'}`
+          `${index + 1}. **[${article.title}](https://hasanraiyan.vercel.app/blog/${article.slug})** - ${article.excerpt || 'No excerpt available'}`
       )
       .join('\n');
 
@@ -119,7 +119,7 @@ export async function getArticleDetails(slug) {
         : article.content;
 
     return {
-      text: `**${article.title}**\n\n${contentPreview}\n\n**Tags:** ${tags}\n\n**[Read Full Article →](/${article.slug})**`,
+      text: `**${article.title}**\n\n${contentPreview}\n\n**Tags:** ${tags}\n\n**[Read Full Article →](https://hasanraiyan.vercel.app/blog/${article.slug})**`,
       data: article,
     };
   } catch (error) {
@@ -144,7 +144,10 @@ export async function searchPortfolio(query) {
     const markdownResults = results
       .map((item, index) => {
         const type = item.type === 'project' ? 'Project' : 'Article';
-        const url = `/${item.slug}`;
+        const url =
+          item.type === 'project'
+            ? `https://hasanraiyan.vercel.app/projects/${item.slug}`
+            : `https://hasanraiyan.vercel.app/blog/${item.slug}`;
         return `${index + 1}. **${type}: [${item.title}](${url})** - ${item.description || item.excerpt || 'No description available'}`;
       })
       .join('\n');
