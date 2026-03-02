@@ -132,10 +132,31 @@ No text. 16:9 aspect ratio.
 - **Before/after**: When showing transformations or improvements
 - Aim for **2-5 images** per article for visual richness
 
-If embedding image prompts for the user to generate later, use this format:
+### Automated Image Generation:
+
+You can now generate these images automatically using the provided tool:
+
+#### How to use the Image Generation Tool:
+
+Run the following command in the terminal:
+
+```bash
+node .agent/skills/blog-writing/tool/image-gen-tool.js --prompt="[YOUR_PROMPT]" [--aspectRatio="16:9"]
+```
+
+- `[YOUR_PROMPT]`: Use the prompt rules above.
+- `--aspectRatio`: Supported values are `1:1` (default), `16:9` (landscape), and `9:16` (portrait).
+
+**Example**:
+
+```bash
+node .agent/skills/blog-writing/tool/image-gen-tool.js --prompt="A clean minimal illustration of agentic AI on a white background, soft pastels, geometric shapes, 16:9, no text" --aspectRatio="16:9"
+```
+
+The tool will output the image URL. Use this URL directly in your blog markdown:
 
 ```markdown
-![PROMPT: Description of what to generate on a white background, minimal style, 16:9](IMAGE_URL_N)
+![Description](https://utfs.io/f/generated-12345.png)
 ```
 
 The user will generate the images, upload them, and replace `IMAGE_URL_N` with real URLs.
@@ -258,16 +279,30 @@ Images referenced in the blog content as `![...](IMAGE_URL_N)`:
 
 ## Publishing Checklist
 
-- [ ] Cover image generated and uploaded
-- [ ] All inline images generated and uploaded
-- [ ] IMAGE_URL_N placeholders replaced with real URLs in blog content
+- [ ] All images (Cover + Inline) generated using `image-gen-tool.js`
+- [ ] All `IMAGE_URL_N` placeholders in the blog content file replaced with real URLs
 - [ ] Content pasted into admin editor
 - [ ] Metadata fields filled in admin panel
 - [ ] Preview checked before publishing
 - [ ] **Cross-Post**: Copy Dev.to front matter and markdown to dev.to
 - [ ] **Cross-Post**: Import to Hashnode and set Canonical URL to the original post
 
-```
+````
+
+---
+
+## Step 7: Automated Image Insertion Workflow
+
+Once you have drafted the blog and metadata, follow this specific workflow to finalize the images:
+
+1.  **Generate Initial Files**: Create `File 1` (Content) and `File 2` (Metadata) as described in Step 6. Use placeholders like `![...](IMAGE_URL_1)` in the content.
+2.  **Extract Prompts**: Read through `File 2` (`.metadata.md`) and identify all image prompts (Cover, Image 1, Image 2, etc.).
+3.  **Generate Images**: For each identified prompt, execute the image generation tool:
+    ```bash
+    node .agent/skills/blog-writing/tool/image-gen-tool.js --prompt="[PROMPT_FROM_METADATA]" --aspectRatio="16:9"
+    ```
+4.  **Update Content**: Take the URLs returned by the tool and replace the `IMAGE_URL_N` placeholders in `File 1` (`[topic-name].md`) with the actual generated URLs.
+5.  **Final Polish**: Ensure the content looks as intended before notifying the user.
 
 ---
 
@@ -288,4 +323,4 @@ Before delivering the blog, verify:
 - [ ] All image prompts specify WHITE background
 - [ ] No unescaped apostrophes in single-quoted strings
 - [ ] Article is 1,800-2,800 words
-```
+````
