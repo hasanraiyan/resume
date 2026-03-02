@@ -164,8 +164,27 @@ export function useChatStreaming() {
 
             // ✅ Mark the PREVIOUS tool as done before starting the next one
             if (activeToolMsgId !== null) {
+              // Update local assistantMessage too
+              assistantMessage.steps = assistantMessage.steps.map((s) =>
+                s.id === activeToolMsgId ? { ...s, done: true } : s
+              );
+
               setMessages((prev) =>
-                prev.map((m) => (m.id === activeToolMsgId ? { ...m, done: true } : m))
+                prev.map((m) => {
+                  if (m.id === activeToolMsgId) {
+                    return { ...m, done: true };
+                  }
+                  // Also mark as done in assistant message steps
+                  if (m.role === 'assistant' && m.steps) {
+                    return {
+                      ...m,
+                      steps: m.steps.map((s) =>
+                        s.id === activeToolMsgId ? { ...s, done: true } : s
+                      ),
+                    };
+                  }
+                  return m;
+                })
               );
             }
 
@@ -275,8 +294,27 @@ export function useChatStreaming() {
             setStatus('');
 
             // ✅ Fix: mark ALL pending tool_action messages as done (not just the last one)
+            // Update local assistantMessage too
+            assistantMessage.steps = assistantMessage.steps.map((s) =>
+              s.type === 'tool' && !s.done ? { ...s, done: true } : s
+            );
+
             setMessages((prev) =>
-              prev.map((m) => (m.role === 'tool_action' && !m.done ? { ...m, done: true } : m))
+              prev.map((m) => {
+                if (m.role === 'tool_action' && !m.done) {
+                  return { ...m, done: true };
+                }
+                // Also mark all pending tools as done in assistant message steps
+                if (m.role === 'assistant' && m.steps) {
+                  return {
+                    ...m,
+                    steps: m.steps.map((s) =>
+                      s.type === 'tool' && !s.done ? { ...s, done: true } : s
+                    ),
+                  };
+                }
+                return m;
+              })
             );
             activeToolMsgId = null;
 

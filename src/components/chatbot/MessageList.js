@@ -13,19 +13,9 @@ export default function MessageList({
   return (
     <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3 bg-gradient-to-b from-white/50 to-neutral-50/50 custom-chat-scrollbar">
       {messages.map((message, index) => {
+        // Hide tool_action messages - they're shown in StepHistory instead
         if (message.role === 'tool_action') {
-          if (message.done) return null;
-          return (
-            <div
-              key={message.id}
-              className="flex gap-3 justify-start animate-in slide-in-from-bottom-2 duration-300 w-full"
-            >
-              <div className="w-7 h-7 shrink-0 mt-1" />
-              <div className="flex-1 min-w-0 max-w-[95%]">
-                <ToolCard label={message.label} Icon={message.Icon} pending={true} />
-              </div>
-            </div>
-          );
+          return null;
         }
 
         if (message.hidden) return null;
