@@ -6,29 +6,23 @@ import { useState, useMemo } from 'react';
  * Blog Filters — Medium-style pill tags + minimal search.
  * Tags are extracted dynamically from the article data.
  */
-export default function BlogFilters({ onFilterChange, onSearch, articles = [] }) {
-  const [activeTag, setActiveTag] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+export default function BlogFilters({ onFilterChange, onSearch, allTagsList = [], initialSearch = '', initialTag = 'all' }) {
+  const [activeTag, setActiveTag] = useState(initialTag);
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
 
-  // Build dynamic tag list from actual article data
+  // Build dynamic tag list from all tags
   const dynamicTags = useMemo(() => {
-    const tagCounts = {};
-    articles.forEach((article) => {
-      article.tags?.forEach((tag) => {
-        const normalized = tag.toLowerCase();
-        tagCounts[normalized] = (tagCounts[normalized] || 0) + 1;
-      });
-    });
+    if (!allTagsList || allTagsList.length === 0) return [];
 
-    // Sort by frequency, take top 8
-    return Object.entries(tagCounts)
-      .sort((a, b) => b[1] - a[1])
+    // Process unique tags that come from the backend distinct query
+    // They are just string values. We'll show up to 8.
+    return allTagsList
       .slice(0, 8)
-      .map(([tag]) => ({
-        id: tag,
+      .map((tag) => ({
+        id: tag.toLowerCase(),
         name: tag.charAt(0).toUpperCase() + tag.slice(1),
       }));
-  }, [articles]);
+  }, [allTagsList]);
 
   const allTags = [{ id: 'all', name: 'All' }, ...dynamicTags];
 
@@ -40,14 +34,19 @@ export default function BlogFilters({ onFilterChange, onSearch, articles = [] })
   const handleSearchChange = (e) => {
     const query = e.target.value;
     setSearchQuery(query);
-    onSearch(query);
   };
 
   return (
     <div className="mb-10">
       {/* Search */}
       <div className="mb-6">
-        <div className="relative max-w-md mx-auto">
+        <form
+          className="relative max-w-md mx-auto"
+          onSubmit={(e) => {
+            e.preventDefault();
+            onSearch(searchQuery);
+          }}
+        >
           <svg
             className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none"
             fill="none"
@@ -68,7 +67,7 @@ export default function BlogFilters({ onFilterChange, onSearch, articles = [] })
             onChange={handleSearchChange}
             className="w-full pl-10 pr-4 py-2.5 rounded-full border border-neutral-200 bg-neutral-50 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:bg-white transition-colors"
           />
-        </div>
+        </form>
       </div>
 
       {/* Tag pills */}

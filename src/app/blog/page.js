@@ -17,10 +17,21 @@ export const metadata = {
   },
 };
 
-export default async function BlogPage() {
+export default async function BlogPage({ searchParams }) {
   const session = await getServerSession(authOptions);
   const isAuthenticated = !!session?.user?.isAdmin;
-  const { success, articles } = await getAllPublishedArticles(isAuthenticated);
+
+  // Await searchParams in Next.js 15
+  const resolvedSearchParams = await searchParams;
+  const page = parseInt(resolvedSearchParams?.page || '1', 10);
+  const search = resolvedSearchParams?.search || '';
+  const tag = resolvedSearchParams?.tag || 'all';
+  const limit = 10;
+
+  const { success, articles, totalArticles, totalPages, currentPage, allTags } = await getAllPublishedArticles(
+    isAuthenticated,
+    { page, limit, search, tag }
+  );
 
   if (!success) {
     return (
@@ -57,13 +68,21 @@ export default async function BlogPage() {
             </p>
           </header>
 
-          {articles.length === 0 ? (
+          {articles.length === 0 && !search && tag === 'all' ? (
             <div className="text-center py-20">
               <p className="text-neutral-400 text-lg">No articles published yet.</p>
               <p className="text-neutral-400 mt-2 text-sm">Check back soon for new content!</p>
             </div>
           ) : (
-            <BlogPageClient articles={articles} />
+            <BlogPageClient
+              articles={articles}
+              totalArticles={totalArticles}
+              totalPages={totalPages}
+              currentPage={currentPage}
+              search={search}
+              tag={tag}
+              allTags={allTags}
+            />
           )}
         </div>
       </main>

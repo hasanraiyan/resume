@@ -1,48 +1,55 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import BlogCard from './BlogCard';
 import BlogFilters from './BlogFilters';
 
 /**
  * Blog Page Client — Medium-style article feed with dividers.
  */
-export default function BlogPageClient({ articles }) {
-  const [filteredArticles, setFilteredArticles] = useState(articles);
-  const [isLoading, setIsLoading] = useState(false);
+export default function BlogPageClient({ articles, totalArticles, totalPages, currentPage, search, tag, allTags = [] }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
-  const handleFilterChange = (tag) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      let filtered = articles;
-      if (tag && tag !== 'all') {
-        filtered = articles.filter((article) =>
-          article.tags?.some((articleTag) => articleTag.toLowerCase().includes(tag.toLowerCase()))
-        );
-      }
-      setFilteredArticles(filtered);
-      setIsLoading(false);
-    }, 150);
+  const updateFilters = (newTag, newSearch, newPage) => {
+    const params = new URLSearchParams(searchParams);
+
+    if (newTag && newTag !== 'all') {
+      params.set('tag', newTag);
+    } else {
+      params.delete('tag');
+    }
+
+    if (newSearch) {
+      params.set('search', newSearch);
+    } else {
+      params.delete('search');
+    }
+
+    if (newPage && newPage > 1) {
+      params.set('page', newPage.toString());
+    } else {
+      params.delete('page');
+    }
+
+    startTransition(() => {
+      router.push(`${pathname}?${params.toString()}`);
+    });
+  };
+
+  const handleFilterChange = (selectedTag) => {
+    updateFilters(selectedTag, search, 1);
   };
 
   const handleSearch = (query) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      if (query.trim() === '') {
-        setFilteredArticles(articles);
-      } else {
-        const searchTerm = query.toLowerCase();
-        const results = articles.filter(
-          (article) =>
-            article.title.toLowerCase().includes(searchTerm) ||
-            article.excerpt.toLowerCase().includes(searchTerm) ||
-            article.content.toLowerCase().includes(searchTerm) ||
-            article.tags?.some((tag) => tag.toLowerCase().includes(searchTerm))
-        );
-        setFilteredArticles(results);
-      }
-      setIsLoading(false);
-    }, 150);
+    updateFilters(tag, query, 1);
+  };
+
+  const handlePageChange = (newPage) => {
+    updateFilters(tag, search, newPage);
   };
 
   return (
@@ -50,10 +57,12 @@ export default function BlogPageClient({ articles }) {
       <BlogFilters
         onFilterChange={handleFilterChange}
         onSearch={handleSearch}
-        articles={articles}
+        allTagsList={allTags}
+        initialSearch={search}
+        initialTag={tag}
       />
 
-      {isLoading ? (
+      {isPending ? (
         <div className="max-w-2xl mx-auto space-y-8 py-8">
           {[1, 2, 3].map((i) => (
             <div key={i} className="animate-pulse">
@@ -78,7 +87,7 @@ export default function BlogPageClient({ articles }) {
             </div>
           ))}
         </div>
-      ) : filteredArticles.length === 0 ? (
+      ) : articles.length === 0 ? (
         <div className="text-center py-20 max-w-md mx-auto">
           <p className="text-xl text-neutral-400 font-light">No articles found</p>
           <p className="text-neutral-400 text-sm mt-2">Try adjusting your search or filters</p>
@@ -86,14 +95,47 @@ export default function BlogPageClient({ articles }) {
       ) : (
         <div className="max-w-2xl mx-auto">
           <div className="divide-y divide-neutral-100">
-            {filteredArticles.map((article) => (
+            {articles.map((article) => (
               <div key={article._id} className="py-7 first:pt-0 last:pb-0">
                 <BlogCard article={article} />
               </div>
             ))}
           </div>
-          <div className="text-center mt-10 text-[13px] text-neutral-400">
-            Showing {filteredArticles.length} of {articles.length} articles
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-neutral-100 pt-8 mt-10">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage <= 1}
+                className={`text-sm font-medium transition-colors ${
+                  currentPage <= 1
+                    ? 'text-neutral-300 cursor-not-allowed'
+                    : 'text-neutral-600 hover:text-black'
+                }`}
+              >
+                &larr; Previous
+              </button>
+
+              <div className="text-sm text-neutral-500">
+                Page {currentPage} of {totalPages}
+              </div>
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage >= totalPages}
+                className={`text-sm font-medium transition-colors ${
+                  currentPage >= totalPages
+                    ? 'text-neutral-300 cursor-not-allowed'
+                    : 'text-neutral-600 hover:text-black'
+                }`}
+              >
+                Next &rarr;
+              </button>
+            </div>
+          )}
+
+          <div className="text-center mt-6 text-[13px] text-neutral-400">
+            Showing {articles.length} of {totalArticles} articles
           </div>
         </div>
       )}

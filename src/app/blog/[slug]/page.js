@@ -16,7 +16,8 @@ import NewsletterForm from '@/components/NewsletterForm';
 import ReadingProgressBar from '@/components/blog/ReadingProgressBar';
 
 export async function generateStaticParams() {
-  const { success, articles } = await getAllPublishedArticles(true);
+  // Pass empty options to get default limit, or a high limit if there are many articles
+  const { success, articles } = await getAllPublishedArticles(true, { limit: 1000 });
   if (!success) return [];
   return articles.map((article) => ({ slug: article.slug }));
 }
@@ -25,8 +26,8 @@ export async function generateMetadata({ params }) {
   const { slug } = await params;
   const session = await getServerSession(authOptions);
   const isAuthenticated = !!session?.user?.isAdmin;
-  const { success, articles } = await getAllPublishedArticles(isAuthenticated);
-  const article = articles.find((a) => a.slug === slug);
+  // Use getArticleBySlug directly to avoid fetching all articles
+  const { success, article } = await getArticleBySlug(slug, isAuthenticated);
 
   if (!success || !article) {
     return { title: 'Article Not Found' };
@@ -65,7 +66,8 @@ export default async function ArticlePage({ params }) {
   }
 
   // Fetch related articles
-  const { articles: allArticles } = await getAllPublishedArticles(isAuthenticated);
+  // Get a few recent published articles
+  const { articles: allArticles } = await getAllPublishedArticles(isAuthenticated, { limit: 4 });
   const relatedArticles = allArticles?.filter((a) => a.slug !== article.slug).slice(0, 3) || [];
 
   const formatDate = (dateString) => {

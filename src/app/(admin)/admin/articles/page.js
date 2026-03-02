@@ -9,34 +9,41 @@ import { useState, useEffect } from 'react';
 
 export default function ArticlesPage() {
   const [articles, setArticles] = useState([]);
-  const [filteredArticles, setFilteredArticles] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Pagination and search state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalArticles, setTotalArticles] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const limit = 9; // Display 9 articles per page for a 3-column grid
+
+  const fetchArticles = async (page, search) => {
+    setLoading(true);
+    const { success, articles: fetchedArticles, totalPages: fetchedTotalPages, totalArticles: fetchedTotalArticles } =
+      await getAllArticles({ page, limit, search });
+
+    if (success) {
+      setArticles(fetchedArticles);
+      setTotalPages(fetchedTotalPages);
+      setTotalArticles(fetchedTotalArticles);
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fetchArticles = async () => {
-      const { success, articles: fetchedArticles } = await getAllArticles();
-      if (success) {
-        setArticles(fetchedArticles);
-        setFilteredArticles(fetchedArticles);
-      }
-      setLoading(false);
-    };
-    fetchArticles();
-  }, []);
+    fetchArticles(currentPage, searchQuery);
+  }, [currentPage, searchQuery]);
 
   const handleSearch = (searchTerm) => {
-    if (!searchTerm.trim()) {
-      setFilteredArticles(articles);
-      return;
-    }
+    setSearchQuery(searchTerm);
+    setCurrentPage(1); // Reset to first page on new search
+  };
 
-    const filtered = articles.filter(
-      (article) =>
-        article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        article.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        article.tags?.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
-    setFilteredArticles(filtered);
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
   };
 
   if (loading) {
@@ -53,7 +60,7 @@ export default function ArticlesPage() {
     );
   }
 
-  if (articles.length === 0) {
+  if (articles.length === 0 && !searchQuery) {
     return (
       <AdminPageWrapper
         title="Articles"
@@ -97,7 +104,7 @@ export default function ArticlesPage() {
         </Button>
       }
     >
-      {filteredArticles.length === 0 && articles.length > 0 ? (
+      {articles.length === 0 && searchQuery ? (
         <div className="text-center py-20">
           <div className="w-16 h-16 bg-neutral-100 rounded-lg flex items-center justify-center mx-auto mb-6">
             <i className="fas fa-search text-neutral-400 text-2xl"></i>
@@ -111,10 +118,11 @@ export default function ArticlesPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredArticles.map((article) => (
-            <Card
-              key={article._id}
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {articles.map((article) => (
+              <Card
+                key={article._id}
               className="overflow-hidden hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group"
             >
               {/* Article Image */}
@@ -209,8 +217,45 @@ export default function ArticlesPage() {
                   </div>
                 </div>
               </div>
-            </Card>
-          ))}
+              </Card>
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-neutral-100 pt-6">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage <= 1}
+                className={`text-sm font-medium transition-colors px-4 py-2 rounded-md ${
+                  currentPage <= 1
+                    ? 'text-neutral-400 cursor-not-allowed bg-neutral-50'
+                    : 'text-neutral-700 hover:text-black hover:bg-neutral-100'
+                }`}
+              >
+                &larr; Previous
+              </button>
+
+              <div className="text-sm text-neutral-600">
+                Page <span className="font-medium">{currentPage}</span> of <span className="font-medium">{totalPages}</span>
+              </div>
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage >= totalPages}
+                className={`text-sm font-medium transition-colors px-4 py-2 rounded-md ${
+                  currentPage >= totalPages
+                    ? 'text-neutral-400 cursor-not-allowed bg-neutral-50'
+                    : 'text-neutral-700 hover:text-black hover:bg-neutral-100'
+                }`}
+              >
+                Next &rarr;
+              </button>
+            </div>
+          )}
+
+          <div className="text-right text-xs text-neutral-500">
+            Total Articles: {totalArticles}
+          </div>
         </div>
       )}
     </AdminPageWrapper>
