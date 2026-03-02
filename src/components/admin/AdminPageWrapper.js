@@ -54,7 +54,7 @@ export default function AdminPageWrapper({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [searchable]);
   return (
-    <div className={`space-y-8 ${className}`}>
+    <div className={`space-y-8 pb-24 ${className}`}>
       {/* Page Header */}
       <div className="border-b-2 border-neutral-200 pb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
