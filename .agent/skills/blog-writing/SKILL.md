@@ -14,13 +14,16 @@ Visit this website to see all existing blog
 
 Before writing, research trending and high-value topics:
 
-1. **Search the web** for trending developer topics (use `search_web`)
-2. **Check existing blog articles** to avoid duplicates — view the blog listing or check the database
-3. **Pick a topic** that:
-   - Is different from existing articles (diversify the blog)
-   - Is timely OR evergreen (both work)
-   - Shows technical depth and authority
-   - Would attract developer traffic (think: "what would I Google?")
+1.  **MANDATORY: Check Existing Blogs**: You MUST first fetch the list of currently published articles to avoid duplicates.
+    - **Action**: Use `read_url_content` on `https://hasanraiyan.vercel.app/blog`.
+    - **Analysis**: Parse the returned markdown to extract all existing titles and slugs.
+    - **Constraint**: If your proposed topic or a very similar one already exists, you MUST pivot to a different angle or a new topic entirely.
+2.  **Search the web** for trending developer topics (use `search_web`).
+3.  **Pick a topic** that:
+    - Is different from existing articles (diversify the blog).
+    - Is timely OR evergreen (both work).
+    - Shows technical depth and authority.
+    - Would attract developer traffic (think: "what would I Google?").
 
 ### Good topic categories:
 
