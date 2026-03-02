@@ -1,6 +1,5 @@
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import CustomCursor from '@/components/CustomCursor';
 import { Section } from '@/components/ui';
 
 export default function ResumePage() {
@@ -11,7 +10,6 @@ export default function ResumePage() {
 
   return (
     <>
-      <CustomCursor />
       <Navbar />
 
       <main className="min-h-screen">

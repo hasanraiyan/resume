@@ -106,6 +106,8 @@ export async function GET() {
       baseKnowledge: settings.baseKnowledge,
       servicesOffered: settings.servicesOffered,
       callToAction: settings.callToAction,
+      suggestedPrompts: settings.suggestedPrompts || [],
+      welcomeMessage: settings.welcomeMessage || '',
       rules: settings.rules,
       isActive: settings.isActive,
       modelName: settings.modelName,
@@ -202,6 +204,8 @@ export async function POST(request) {
       baseKnowledge,
       servicesOffered,
       callToAction,
+      suggestedPrompts = [],
+      welcomeMessage = '',
       rules,
       isActive = true,
       modelName = {
@@ -259,6 +263,8 @@ export async function POST(request) {
       settings.baseKnowledge = baseKnowledge;
       settings.servicesOffered = servicesOffered;
       settings.callToAction = callToAction;
+      settings.suggestedPrompts = suggestedPrompts;
+      settings.welcomeMessage = welcomeMessage;
       settings.rules = filteredRules;
       settings.isActive = isActive;
       settings.modelName = modelName;
@@ -277,6 +283,8 @@ export async function POST(request) {
         baseKnowledge,
         servicesOffered,
         callToAction,
+        suggestedPrompts,
+        welcomeMessage,
         rules: filteredRules,
         isActive,
         modelName,
@@ -316,6 +324,8 @@ export async function POST(request) {
         baseKnowledge: settings.baseKnowledge,
         servicesOffered: settings.servicesOffered,
         callToAction: settings.callToAction,
+        suggestedPrompts: settings.suggestedPrompts,
+        welcomeMessage: settings.welcomeMessage,
         rules: settings.rules,
         isActive: settings.isActive,
         modelName: settings.modelName,

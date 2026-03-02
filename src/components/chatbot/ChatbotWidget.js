@@ -9,7 +9,7 @@ import getAnalytics from '@/lib/analytics';
 import { useChatbotSettings } from '@/hooks/chatbot/useChatbotSettings';
 import { useSelectionAI } from '@/hooks/chatbot/useSelectionAI';
 import { useVoiceRecognition } from '@/hooks/chatbot/useVoiceRecognition';
-import { useChatStreaming, buildWelcomeMessage } from '@/hooks/chatbot/useChatStreaming';
+import { useChatStreaming } from '@/hooks/chatbot/useChatStreaming';
 
 // Components
 import ChatHeader from './ChatHeader';
@@ -19,16 +19,7 @@ import FloatingActionButton from './FloatingActionButton';
 import ContextualAIButton from './ContextualAIButton';
 import OfflineState from './OfflineState';
 
-function getDefaultPrompts(settings) {
-  // Return generic/dynamic prompts if the user hasn't set custom ones
-  return [
-    { text: 'Tell me about the portfolio projects' },
-    { text: 'Book an appointment' },
-    { text: "What's the tech stack?" },
-    { text: 'How can I get in touch?' },
-    { text: 'Show me the latest blog post' },
-  ];
-}
+// No default prompts here - use database settings instead.
 
 export default function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -59,7 +50,7 @@ export default function ChatbotWidget() {
         {
           id: 1,
           role: 'assistant',
-          content: buildWelcomeMessage(chatbotSettings),
+          content: chatbotSettings.welcomeMessage || 'Hello! How can I help you today?',
           steps: [],
           timestamp: new Date(),
         },
@@ -149,7 +140,7 @@ export default function ChatbotWidget() {
       {
         id: 1,
         role: 'assistant',
-        content: buildWelcomeMessage(chatbotSettings),
+        content: chatbotSettings?.welcomeMessage || 'Hello! How can I help you today?',
         steps: [],
         timestamp: new Date(),
       },
@@ -217,10 +208,7 @@ export default function ChatbotWidget() {
     setTimeout(() => inputRef.current?.focus(), 150);
   }, [selection.text, isOpen, settingsFetched, fetchSettings, setActiveQuote, setSelection]);
 
-  const suggestedPrompts =
-    chatbotSettings?.suggestedPrompts?.length > 0
-      ? chatbotSettings.suggestedPrompts.map((t) => ({ text: t }))
-      : getDefaultPrompts(chatbotSettings);
+  const suggestedPrompts = (chatbotSettings?.suggestedPrompts || []).map((t) => ({ text: t }));
 
   // 1. FAB (closed state)
   if (!isOpen) {

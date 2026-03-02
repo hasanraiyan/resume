@@ -92,16 +92,7 @@ export async function POST(request) {
     try {
       context = await buildDynamicContext();
     } catch {
-      context = {
-        chatbotSettings: {
-          aiName: 'Kiro',
-          persona: 'You are Kiro, a professional and helpful AI assistant representing Raiyan.',
-          callToAction: "I'd be happy to help you get in touch with Raiyan.",
-          rules: ['Always be professional and helpful'],
-          isActive: true,
-          modelName: { providerId: '', model: '' },
-        },
-      };
+      return NextResponse.json({ error: 'Failed to build dynamic context.' }, { status: 500 });
     }
 
     if (context.chatbotSettings?.isActive === false) {
@@ -353,14 +344,13 @@ export async function POST(request) {
 
 export function buildSystemMessages(context, path) {
   const { chatbotSettings } = context || {};
-  const settings = chatbotSettings || {
-    aiName: 'Kiro',
-    persona: 'You are Kiro, a professional and helpful AI assistant representing Raiyan.',
-    callToAction: "I'd be happy to help you get in touch with Raiyan.",
-    rules: [
-      'Always be professional and helpful',
-      'Guide users toward the contact form when appropriate',
-    ],
+  if (!chatbotSettings) return [];
+
+  const settings = {
+    aiName: chatbotSettings.aiName || 'Assistant',
+    persona: chatbotSettings.persona || '',
+    callToAction: chatbotSettings.callToAction || '',
+    rules: chatbotSettings.rules || [],
   };
 
   return [

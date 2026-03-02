@@ -7,7 +7,6 @@ import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 import { notFound } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import CustomCursor from '@/components/CustomCursor';
 import Image from 'next/image';
 import Link from 'next/link';
 import SocialShare from '@/components/SocialShare';
@@ -112,7 +111,6 @@ export default async function ArticlePage({ params }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <CustomCursor />
       <Navbar />
       <ReadingProgressBar />
 

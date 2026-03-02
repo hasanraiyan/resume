@@ -1,6 +1,5 @@
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import CustomCursor from '@/components/CustomCursor';
 import { Section } from '@/components/ui';
 import ProjectsPageClient from '@/components/projects/ProjectsPageClient';
 import { getAllPublishedProjects } from '@/app/actions/projectActions';
@@ -25,7 +24,6 @@ export default async function ProjectsPage() {
 
   return (
     <>
-      <CustomCursor />
       <Navbar />
 
       <main className=" min-h-screen">

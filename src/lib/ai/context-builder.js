@@ -42,25 +42,20 @@ export async function getCoreIdentity() {
     const heroSection = await HeroSection.findOne({});
     if (!heroSection) {
       return {
-        name: 'Raiyan',
-        role: 'Full-Stack Developer',
-        introduction: 'A skilled developer creating modern web applications.',
+        name: '',
+        role: '',
+        introduction: '',
       };
     }
 
     return {
-      name: heroSection.name || 'Raiyan',
-      role: heroSection.role || 'Full-Stack Developer',
-      introduction:
-        heroSection.introduction || 'A skilled developer creating modern web applications.',
+      name: heroSection.name || '',
+      role: heroSection.role || '',
+      introduction: heroSection.introduction || '',
     };
   } catch (error) {
     console.error('Error fetching core identity:', error);
-    return {
-      name: 'Raiyan',
-      role: 'Full-Stack Developer',
-      introduction: 'A skilled developer creating modern web applications.',
-    };
+    return { name: '', role: '', introduction: '' };
   }
 }
 
@@ -76,17 +71,11 @@ export async function getAboutSummary() {
     await dbConnect();
 
     const aboutSection = await AboutSection.findOne({});
-    if (!aboutSection) {
-      return 'Raiyan is a skilled full-stack developer with expertise in modern web technologies.';
-    }
-
-    return (
-      aboutSection.bio ||
-      'Raiyan is a skilled full-stack developer with expertise in modern web technologies.'
-    );
+    if (!aboutSection) return '';
+    return aboutSection.bio || '';
   } catch (error) {
     console.error('Error fetching about summary:', error);
-    return 'Raiyan is a skilled full-stack developer with expertise in modern web technologies.';
+    return '';
   }
 }
 
@@ -104,18 +93,16 @@ export async function getProjectOverview() {
 
     const projects = await Project.find({}).limit(20).lean();
 
-    if (!projects || projects.length === 0) {
-      return 'Raiyan has worked on various web development projects using modern technologies.';
-    }
+    if (!projects || projects.length === 0) return '';
 
     const projectSummaries = projects.map((project) => {
       return `${project.title} - ${project.category} project${project.description ? ': ' + project.description.substring(0, 100) + '...' : ''}`;
     });
 
-    return `Raiyan has worked on the following projects: ${projectSummaries.join(', ')}.`;
+    return `Projects overview: ${projectSummaries.join(', ')}.`;
   } catch (error) {
     console.error('Error fetching project overview:', error);
-    return 'Raiyan has worked on various web development projects using modern technologies.';
+    return '';
   }
 }
 
@@ -133,18 +120,16 @@ export async function getArticleOverview() {
 
     const articles = await Article.find({}).limit(10).lean();
 
-    if (!articles || articles.length === 0) {
-      return 'Raiyan shares insights about web development and technology.';
-    }
+    if (!articles || articles.length === 0) return '';
 
     const articleSummaries = articles.map((article) => {
       return `${article.title}${article.excerpt ? ': ' + article.excerpt.substring(0, 100) + '...' : ''}`;
     });
 
-    return `Raiyan has written about: ${articleSummaries.join(', ')}.`;
+    return `Articles written: ${articleSummaries.join(', ')}.`;
   } catch (error) {
     console.error('Error fetching article overview:', error);
-    return 'Raiyan shares insights about web development and technology.';
+    return '';
   }
 }
 
@@ -165,16 +150,13 @@ export async function getChatbotSettings() {
     if (!settings) {
       // Return default settings if none exist
       return {
-        aiName: 'Kiro',
-        persona: 'You are Kiro, a professional and helpful AI assistant representing Raiyan.',
-        baseKnowledge: 'Raiyan is a skilled full-stack developer.',
-        servicesOffered: 'Full-stack web development, React applications, Node.js backends.',
-        callToAction: "I'd be happy to help you get in touch with Raiyan.",
-        rules: [
-          'Always be professional and helpful',
-          'Guide users toward the contact form when appropriate',
-        ],
-        isActive: true,
+        aiName: '',
+        persona: '',
+        baseKnowledge: '',
+        servicesOffered: '',
+        callToAction: '',
+        rules: [],
+        isActive: false,
       };
     }
 
@@ -192,6 +174,8 @@ export async function getChatbotSettings() {
       baseKnowledge: settings.baseKnowledge,
       servicesOffered: settings.servicesOffered,
       callToAction: settings.callToAction,
+      suggestedPrompts: settings.suggestedPrompts || [],
+      welcomeMessage: settings.welcomeMessage,
       rules: settings.rules,
       isActive: settings.isActive,
       // CRITICAL: These fields are required for the Multi-Provider Hub to work.
@@ -204,18 +188,10 @@ export async function getChatbotSettings() {
     };
   } catch (error) {
     console.error('Error fetching chatbot settings:', error);
-    // Return default settings on error
+    // Return empty or minimal structure on error to avoid breaking the app,
+    // but try to avoid hardcoded personas here if possible.
     return {
-      aiName: 'Kiro',
-      persona: 'You are Kiro, a professional and helpful AI assistant representing Raiyan.',
-      baseKnowledge: 'Raiyan is a skilled full-stack developer.',
-      servicesOffered: 'Full-stack web development, React applications, Node.js backends.',
-      callToAction: "I'd be happy to help you get in touch with Raiyan.",
-      rules: [
-        'Always be professional and helpful',
-        'Guide users toward the contact form when appropriate',
-      ],
-      isActive: true,
+      isActive: false,
     };
   }
 }

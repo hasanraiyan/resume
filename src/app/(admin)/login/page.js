@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card, Button, Input } from '@/components/ui';
-import CustomCursor from '@/components/CustomCursor';
 
 export default function AdminLogin() {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
@@ -105,7 +104,6 @@ export default function AdminLogin() {
 
   return (
     <>
-      <CustomCursor />
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
           {/* Header */}

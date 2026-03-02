@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import SessionProvider from '@/components/SessionProvider';
-import dynamic from 'next/dynamic';
-const CustomCursor = dynamic(() => import('@/components/CustomCursor'), { ssr: false });
 import { Button } from '@/components/ui';
 
 function AdminLayoutContent({ children }) {
@@ -52,7 +50,6 @@ function AdminLayoutContent({ children }) {
 
   return (
     <>
-      <CustomCursor />
       <div className="min-h-screen bg-gray-50 font-sans flex">
         {/* Sidebar */}
         <div

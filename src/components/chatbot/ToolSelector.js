@@ -34,7 +34,7 @@ export default function ToolSelector({
             if (!isToolsMenuOpen) setIsModelSelectorOpen(false);
           }}
           disabled={isLoading}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${isToolsMenuOpen ? 'bg-neutral-200 text-neutral-800' : 'bg-transparent text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700'} disabled:opacity-50`}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${isToolsMenuOpen ? 'bg-neutral-200 text-neutral-800' : 'bg-transparent text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700'} disabled:opacity-50`}
           title="Tools"
         >
           <Settings2 className="w-4 h-4" />
@@ -47,7 +47,7 @@ export default function ToolSelector({
             if (!isToolsMenuOpen) setIsModelSelectorOpen(false);
           }}
           disabled={isLoading}
-          className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isToolsMenuOpen ? 'bg-neutral-200 text-neutral-800' : 'bg-transparent text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700'} disabled:opacity-50 shrink-0`}
+          className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isToolsMenuOpen ? 'bg-neutral-200 text-neutral-800' : 'bg-transparent text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700'} disabled:opacity-50 shrink-0`}
           title="Add more tools"
         >
           <Settings2 className="w-4 h-4" />
@@ -86,7 +86,7 @@ export default function ToolSelector({
       )}
 
       {isToolsMenuOpen && (
-        <div className="absolute bottom-full left-0 mb-3 w-56 bg-white/95 backdrop-blur-xl rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-neutral-200/50 overflow-hidden text-left animate-in fade-in slide-in-from-bottom-2 duration-200 z-50">
+        <div className="absolute bottom-full left-0 mb-3 w-56 bg-white/95 backdrop-blur-xl rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-neutral-200/50 overflow-hidden text-left z-50">
           <div className="px-3 py-2 border-b border-neutral-100 bg-neutral-50/80">
             <span className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider">
               Available Tools

@@ -93,6 +93,21 @@ const ChatbotSettingsSchema = new mongoose.Schema(
         "It sounds like Raiyan's expertise would be a great fit for your project. The next step would be to get in touch directly to discuss the details. You can use the contact form on this site. Would you like me to guide you there?",
       required: true,
     },
+    suggestedPrompts: {
+      type: [String],
+      default: [
+        'Tell me about the portfolio projects',
+        'Book an appointment',
+        "What's the tech stack?",
+        'How can I get in touch?',
+        'Show me the latest blog post',
+      ],
+    },
+    welcomeMessage: {
+      type: String,
+      default:
+        "Hi! I'm Kiro, the AI assistant. I can help you learn about the projects and experience here. What would you like to know?",
+    },
     rules: {
       type: [String],
       default: [

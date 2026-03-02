@@ -26,7 +26,7 @@ export default function ChatInput({
 }) {
   return (
     <div className="p-3 border-t border-neutral-200/50 bg-white shrink-0">
-      <div className="rounded-3xl border border-neutral-200/80 bg-neutral-50/50 focus-within:border-black/50 focus-within:ring-1 focus-within:ring-black/20 transition-all flex flex-col">
+      <div className="rounded-3xl focus-within:border-black/50 focus-within:ring-1 focus-within:ring-black/20 transition-all flex flex-col">
         <textarea
           ref={inputRef}
           value={inputMessage}

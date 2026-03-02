@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import CustomCursor from '@/components/CustomCursor';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui';
@@ -7,7 +6,6 @@ import { Button } from '@/components/ui';
 export default function NotFound() {
   return (
     <div className="flex flex-col min-h-screen bg-[#FAFAF9]">
-      <CustomCursor />
       <Navbar />
 
       <main className="flex-grow flex items-center justify-center relative overflow-hidden pt-32 pb-20">

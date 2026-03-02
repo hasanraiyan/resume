@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import CustomCursor from '@/components/CustomCursor';
 import ProjectDetailClient from '@/components/projects/ProjectDetailClient';
 import { getProjectBySlug, getAllPublishedProjects } from '@/app/actions/projectActions';
 
@@ -106,7 +105,6 @@ export default async function ProjectDetailPage({ params }) {
 
   return (
     <>
-      <CustomCursor />
       <Navbar />
       <ReadingProgressBar />
 

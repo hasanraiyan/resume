@@ -36,6 +36,7 @@ export default function ChatbotSettingsPage() {
 
   // Form state
   const [activeTab, setActiveTab] = useState('general');
+  const [activeBehaviorSubtab, setActiveBehaviorSubtab] = useState('rules');
 
   const tabs = [
     { id: 'general', label: 'General', icon: Settings, desc: 'Core settings & model' },
@@ -52,6 +53,8 @@ export default function ChatbotSettingsPage() {
     baseKnowledge: '',
     servicesOffered: '',
     callToAction: '',
+    suggestedPrompts: [''],
+    welcomeMessage: '',
     rules: [''],
     isActive: true,
     modelName: { providerId: 'default-openai', model: 'openai-large' },
@@ -322,6 +325,32 @@ export default function ChatbotSettingsPage() {
       current[keys[keys.length - 1]] = value;
       return newData;
     });
+  };
+
+  const handlePromptChange = (index, value) => {
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        suggestedPrompts: prev.suggestedPrompts.map((prompt, i) => (i === index ? value : prompt)),
+      };
+      return newData;
+    });
+  };
+
+  const addPrompt = () => {
+    setFormData((prev) => ({
+      ...prev,
+      suggestedPrompts: [...prev.suggestedPrompts, ''],
+    }));
+  };
+
+  const removePrompt = (index) => {
+    if (formData.suggestedPrompts.length > 1) {
+      setFormData((prev) => ({
+        ...prev,
+        suggestedPrompts: prev.suggestedPrompts.filter((_, i) => i !== index),
+      }));
+    }
   };
 
   const handleRuleChange = (index, value) => {
@@ -769,6 +798,23 @@ export default function ChatbotSettingsPage() {
                     placeholder="What should the AI say to encourage contact..."
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-neutral-800 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-neutral-400" />
+                    Welcome Message
+                  </label>
+                  <p className="text-xs text-neutral-500 mb-2">
+                    The first message the AI sends to the user when the chat opens.
+                  </p>
+                  <textarea
+                    value={formData.welcomeMessage}
+                    onChange={(e) => handleInputChange('welcomeMessage', e.target.value)}
+                    rows={3}
+                    className="w-full p-4 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm leading-relaxed resize-y"
+                    placeholder="e.g., Hi! I'm Kiro. How can I help you today?"
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -817,54 +863,135 @@ export default function ChatbotSettingsPage() {
           )}
 
           {activeTab === 'behavior' && (
-            <div className="p-6 sm:p-8 space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-neutral-100">
-                <div>
-                  <h3 className="text-lg font-semibold text-black mb-1">Behavioral Rules</h3>
-                  <p className="text-sm text-neutral-500">
-                    Define specific, strict rules for how the AI must handle edge cases or certain
-                    prompts.
-                  </p>
-                </div>
+            <div className="p-6 sm:p-8 animate-in fade-in slide-in-from-right-4 duration-500">
+              {/* Behavior Sub-tabs */}
+              <div className="flex space-x-2 bg-white p-1.5 rounded-xl mb-6 border border-neutral-200 shadow-sm overflow-x-auto custom-scrollbar">
                 <button
-                  onClick={addRule}
-                  className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-xl transition-colors text-sm font-medium flex items-center gap-2 border border-neutral-200 shrink-0"
+                  onClick={() => setActiveBehaviorSubtab('rules')}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                    activeBehaviorSubtab === 'rules'
+                      ? 'bg-neutral-100 text-black shadow-sm'
+                      : 'text-neutral-500 hover:text-neutral-800 hover:bg-neutral-50'
+                  }`}
                 >
-                  <Plus className="w-4 h-4" />
-                  Add Rule
+                  <ShieldCheck className="w-4 h-4" />
+                  Rules
+                </button>
+                <button
+                  onClick={() => setActiveBehaviorSubtab('prompts')}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                    activeBehaviorSubtab === 'prompts'
+                      ? 'bg-neutral-100 text-black shadow-sm'
+                      : 'text-neutral-500 hover:text-neutral-800 hover:bg-neutral-50'
+                  }`}
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Suggested Prompts
                 </button>
               </div>
 
-              <div className="space-y-4">
-                {formData.rules.map((rule, index) => (
-                  <div
-                    key={index}
-                    className="relative group p-5 border border-neutral-200 rounded-2xl bg-neutral-50/50 hover:bg-neutral-50 transition-colors"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="font-semibold text-xs text-blue-600 tracking-wider uppercase bg-blue-100/50 px-2 py-1 rounded">
-                        Rule {index + 1}
-                      </span>
-                      {formData.rules.length > 1 && (
-                        <button
-                          onClick={() => removeRule(index)}
-                          className="text-neutral-400 hover:text-red-600 text-sm transition-colors p-1.5 rounded-lg hover:bg-red-50"
-                          title="Remove Rule"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+              {activeBehaviorSubtab === 'rules' && (
+                <div className="space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-neutral-100">
+                    <div>
+                      <h3 className="text-lg font-semibold text-black mb-1">Behavioral Rules</h3>
+                      <p className="text-sm text-neutral-500">
+                        Define specific, strict rules for how the AI must handle edge cases or
+                        certain prompts.
+                      </p>
                     </div>
-                    <textarea
-                      value={rule}
-                      onChange={(e) => handleRuleChange(index, e.target.value)}
-                      rows={2}
-                      className="w-full p-3 border border-neutral-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-y"
-                      placeholder={`Rule ${index + 1}...`}
-                    />
+                    <button
+                      onClick={addRule}
+                      className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-xl transition-colors text-sm font-medium flex items-center gap-2 border border-neutral-200 shrink-0"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Rule
+                    </button>
                   </div>
-                ))}
-              </div>
+
+                  <div className="space-y-4">
+                    {formData.rules.map((rule, index) => (
+                      <div
+                        key={index}
+                        className="relative group p-5 border border-neutral-200 rounded-2xl bg-neutral-50/50 hover:bg-neutral-50 transition-colors"
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="font-semibold text-xs text-blue-600 tracking-wider uppercase bg-blue-100/50 px-2 py-1 rounded">
+                            Rule {index + 1}
+                          </span>
+                          {formData.rules.length > 1 && (
+                            <button
+                              onClick={() => removeRule(index)}
+                              className="text-neutral-400 hover:text-red-600 text-sm transition-colors p-1.5 rounded-lg hover:bg-red-50"
+                              title="Remove Rule"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                        <textarea
+                          value={rule}
+                          onChange={(e) => handleRuleChange(index, e.target.value)}
+                          rows={2}
+                          className="w-full p-3 border border-neutral-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-y"
+                          placeholder={`Rule ${index + 1}...`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeBehaviorSubtab === 'prompts' && (
+                <div className="space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-neutral-100">
+                    <div>
+                      <h3 className="text-lg font-semibold text-black mb-1">Suggested Prompts</h3>
+                      <p className="text-sm text-neutral-500">
+                        Quick action buttons shown to the user at the start of the conversation.
+                      </p>
+                    </div>
+                    <button
+                      onClick={addPrompt}
+                      className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-xl transition-colors text-sm font-medium flex items-center gap-2 border border-neutral-200 shrink-0"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Prompt
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {formData.suggestedPrompts.map((prompt, index) => (
+                      <div
+                        key={`prompt-${index}`}
+                        className="relative group p-5 border border-neutral-200 rounded-2xl bg-neutral-50/50 hover:bg-neutral-50 transition-colors"
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="font-semibold text-xs text-purple-600 tracking-wider uppercase bg-purple-100/50 px-2 py-1 rounded">
+                            Prompt {index + 1}
+                          </span>
+                          {formData.suggestedPrompts.length > 1 && (
+                            <button
+                              onClick={() => removePrompt(index)}
+                              className="text-neutral-400 hover:text-red-600 text-sm transition-colors p-1.5 rounded-lg hover:bg-red-50"
+                              title="Remove Prompt"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          value={prompt}
+                          onChange={(e) => handlePromptChange(index, e.target.value)}
+                          className="w-full p-3 border border-neutral-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                          placeholder={`Suggested question ${index + 1}...`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1083,7 +1210,8 @@ export default function ChatbotSettingsPage() {
                     <Server className="w-4 h-4" /> Always Enable (Default)
                   </label>
                   <p className="text-[11px] text-purple-700 mt-0.5">
-                    If enabled, this tool will be automatically used by the AI without showing in the frontend tool picker.
+                    If enabled, this tool will be automatically used by the AI without showing in
+                    the frontend tool picker.
                   </p>
                 </div>
                 <Switch

@@ -1,11 +1,6 @@
 import { useState, useCallback } from 'react';
 import getAnalytics from '@/lib/analytics';
 
-export function buildWelcomeMessage(settings) {
-  const name = settings?.aiName || 'Kiro';
-  return `Hi! I'm ${name}, the AI assistant. I can help you learn about the projects and experience here. What would you like to know?`;
-}
-
 function parseToolFromStatus(statusMsg) {
   if (!statusMsg) return null;
   if (statusMsg.includes('Loading all projects')) return 'listAllProjects';

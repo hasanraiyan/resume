@@ -1,4 +1,3 @@
-import CustomCursor from '@/components/CustomCursor';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Marquee from '@/components/Marquee';
@@ -41,7 +40,6 @@ export default async function Home() {
 
   return (
     <HomepageLoaderManager>
-      <CustomCursor />
       <Navbar />
       <Hero />
       <Marquee />

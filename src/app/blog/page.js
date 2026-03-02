@@ -5,7 +5,6 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { getAllPublishedArticles } from '@/app/actions/articleActions';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import CustomCursor from '@/components/CustomCursor';
 import BlogPageClient from '@/components/blog/BlogPageClient';
 
 export const metadata = {
@@ -28,15 +27,12 @@ export default async function BlogPage({ searchParams }) {
   const tag = resolvedSearchParams?.tag || 'all';
   const limit = 10;
 
-  const { success, articles, totalArticles, totalPages, currentPage, allTags } = await getAllPublishedArticles(
-    isAuthenticated,
-    { page, limit, search, tag }
-  );
+  const { success, articles, totalArticles, totalPages, currentPage, allTags } =
+    await getAllPublishedArticles(isAuthenticated, { page, limit, search, tag });
 
   if (!success) {
     return (
       <>
-        <CustomCursor />
         <Navbar />
         <main className="min-h-screen flex items-center justify-center">
           <div className="text-center">
@@ -50,7 +46,6 @@ export default async function BlogPage({ searchParams }) {
 
   return (
     <>
-      <CustomCursor />
       <Navbar />
 
       <main className="min-h-screen bg-white">
