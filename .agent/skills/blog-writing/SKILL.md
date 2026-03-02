@@ -27,22 +27,23 @@ Before writing, you must select a topic and then deeply research it:
     - Shows technical depth and authority.
     - Would attract developer traffic (think: "what would I Google?").
 
-### Part B: Deep Web Research
+### Part B: Structured Research Plan
 
-Once the topic is selected (and approved by the user, if applicable), you MUST perform comprehensive web research BEFORE writing the draft:
+Selection is only the beginning. You MUST create a formal research plan to ensure technical authority:
 
-1.  **Use `search_web` extensively**: Do multiple deep-dive searches on the specific concepts, libraries, and paradigms related to your topic.
-2.  **Gather context & examples**: Look for how leading companies are using the tech, find specific open-source libraries, and collect real-world analogies.
-3.  **Synthesize**: Do not start writing until you have collected enough technical depth to write an authoritative, 1,800+ word article without relying solely on your pre-trained knowledge.
+1.  **Create a `research_plan.md` artifact**: Define exactly what questions you need to answer.
+2.  **Use `search_web` extensively**: Do multiple deep-dive searches on the specific concepts, libraries, and paradigms.
+3.  **Identify Specifications**: Look for RFCs, W3C standards (like WebMCP), or major framework documentation (Next.js 16).
+4.  **Gather context & examples**: Look for how leading companies are using the tech, find specific open-source libraries, and collect real-world analogies.
 
-### Good topic categories:
+### Part C: Deep Synthesis (The Bridge to Drafting)
 
-- AI & emerging tech (agentic AI, WebMCP, new standards)
-- JavaScript/web fundamentals (event loop, closures, async)
-- Practical tutorials (setting up tools, integrations)
-- Security & best practices
-- System design & architecture
-- Developer productivity & workflows
+Before writing the draft, you MUST synthesize your findings into a `gathered_research.md` artifact:
+
+1.  **Summarize Key Findings**: Document technical APIs, mechanisms, and error recovery patterns found.
+2.  **Identify Code Examples**: Outline the "Resilient Action" or "Intent Hooks" you will demonstrate.
+3.  **Anchor the Analogy**: Select the strongest real-world analogy and how it maps to the tech.
+4.  **Constraint**: Do not start writing until you have enough technical depth to write an authoritative, 2,000+ word article without relying solely on your pre-trained knowledge.
 
 ---
 
@@ -114,18 +115,18 @@ Blog posts SHOULD include inline images using markdown syntax:
 
 When writing image generation prompts (either for the user or for `generate_image`):
 
-1. **Be EXTREMELY specific and detailed**: Describe exactly what elements, objects, or actions should be in the image (e.g., "a server rack on the left sending glowing data packets to a laptop on the right" instead of just "client-server architecture"). Do not use generic terms—write long, explicit descriptions of the visual layout.
-2. **ALWAYS use white/light background** — never dark backgrounds
-3. **Style**: Clean, minimal, infographic-style illustration
-4. **No text in images** — labels and text should be in the blog content, not baked into images
-5. **Aspect ratio**: Always 16:9
-6. **Colors**: Use soft, harmonious pastels or the brand palette (neutral-900 for dark accents)
+1. **Be EXTREMELY specific and detailed**: Describe exactly what elements, objects, or actions should be in the image.
+2. **ALWAYS use white/light background** — never dark backgrounds.
+3. **Style**: Clean, minimal, infographic-style illustration.
+4. **No text in images** — labels and text should be in the blog content, not baked into images.
+5. **Aspect ratio**: Always 16:9.
+6. **Colors**: Use soft, harmonious pastels or the brand palette.
 
 ### Image prompt template:
 
 ```
 A clean, minimal infographic-style illustration on a white background.
-[Provide a long, highly detailed description of the exact visual scenario — specify the objects (e.g., two gears interlocking, a laptop displaying a grid), the layout (left/right/center), and the metaphorical action occurring].
+[Provide a long, highly detailed description of the exact visual scenario — specify the objects, layout, and metaphorical action].
 Soft pastel colors, geometric shapes, modern editorial style.
 No text. 16:9 aspect ratio.
 ```
@@ -134,53 +135,10 @@ No text. 16:9 aspect ratio.
 
 ```
 A clean, modern tech blog cover illustration on a white background.
-[Provide a long, highly detailed description of the exact visual scenario representing the article's core theme. Specify central objects, abstract shapes, layout, and how they interact visually].
+[Provide a long, highly detailed description of the core theme. Specify central objects, abstract shapes, layout, and how they interact visually].
 Soft gradients, minimal geometric shapes, premium editorial aesthetic.
 No text. 16:9 aspect ratio (to fit the 1200x480 container).
 ```
-
-### When to include images:
-
-- **Cover image**: Always provide a cover image prompt
-- **Diagrams**: For any concept that involves a flow, architecture, or comparison
-- **Before/after**: When showing transformations or improvements
-- Aim for **2-5 images** per article for visual richness
-
-### Automated Image Generation:
-
-You can now generate these images automatically using the provided tool:
-
-#### How to use the Image Generation Tool:
-
-To generate images, you MUST use the batch generation method with a JSON file:
-
-```bash
-node .agent/skills/blog-writing/tool/image-gen-tool.js --inputFile="prompts.json" [--outputFile="results.json"]
-```
-
-- `--inputFile`: Path to a JSON file containing an array of objects: `[{ "id": "Cover", "prompt": "...", "aspectRatio": "16:9" }]`. Use the prompt rules above.
-- `--outputFile`: (Optional) Where to save the results. Defaults to `image-results.json`.
-- `--aspectRatio` (in JSON): Supported values are `1:1` (default), `9:16`, `16:9`, `3:4`, `4:3`, `3:2`, `2:3`, `5:4`, `4:5`, `4:1`, `1:4`, `8:1`, and `1:8`.
-
-**Example `prompts.json`**:
-
-```json
-[
-  {
-    "id": "Cover",
-    "prompt": "A clean minimal illustration of agentic AI on a white background, soft pastels, geometric shapes, 16:9, no text",
-    "aspectRatio": "16:9"
-  }
-]
-```
-
-The tool will output the image URL. Use this URL directly in your blog markdown:
-
-```markdown
-![Description](https://utfs.io/f/generated-12345.png)
-```
-
-The user will generate the images, upload them, and replace `IMAGE_URL_N` with real URLs.
 
 ---
 
@@ -198,20 +156,6 @@ After writing the blog, ALWAYS provide this metadata block for the user to copy 
 | **Visibility** | Public - Anyone can view |
 ```
 
-### Tag rules:
-
-- Always lowercase
-- Use hyphens for multi-word tags (e.g., `web-development`)
-- Include 1-2 broad tags (e.g., `javascript`, `ai`) and 3-5 specific tags
-- Check existing tags on the blog to reuse when relevant
-
-### Slug rules:
-
-- All lowercase
-- Hyphens between words
-- Remove articles (a, an, the) if the slug gets too long
-- Max ~10 words
-
 ---
 
 ## Step 5: SEO & Cross-Posting Strategy
@@ -220,110 +164,63 @@ Writing is only half the battle. Every blog post MUST be optimized for distribut
 
 ### SEO Best Practices
 
-Ensure the metadata and content are structured for search intent. The tags chosen will be used for the `articleSection` JSON-LD schema on the blog, so the first tag should be the primary category (e.g., `javascript`, `react`, `architecture`).
+Ensure the metadata and content are structured for search intent. The first tag should be the primary category (e.g., `javascript`, `react`, `architecture`).
 
 ### Cross-Posting Playbook
 
-Always instruct the user to cross-post the article to Dev.to and Hashnode to maximize reach.
-The cross-posting must always use a **Canonical URL** pointing back to the original blog post at `https://hasanraiyan.vercel.app/blog/[slug]`.
+Always instruct the user to cross-post the article to Dev.to and Hashnode with a **Canonical URL** pointing back to the original blog post at `https://hasanraiyan.vercel.app/blog/[slug]`.
 
 ---
 
 ## Step 6: Output Files
 
-You MUST produce exactly **2 files**:
+You MUST produce exactly **3 files**:
 
 ### File 1: Blog Content
 
 **Path**: `d:\resume\blogs\[topic-name].md`
 
-Contains ONLY the article markdown content (what gets pasted into the Content editor). No metadata in this file.
+Contains ONLY the article markdown content.
 
 ### File 2: Metadata
 
 **Path**: `d:\resume\blogs\[topic-name].metadata.md`
 
-Contains everything needed to publish the article in the admin panel:
+Contains all admin panel fields, cross-posting front-matter, and image prompts.
 
-````markdown
-# Blog Metadata: [Article Title]
+### File 3: Image Prompts (Temporary)
 
-## Admin Panel Fields
+**Path**: `d:\tmp\[topic-name]-prompts.json`
 
-| Field          | Value                                                            |
-| -------------- | ---------------------------------------------------------------- |
-| **Title**      | [Exact title]                                                    |
-| **Slug**       | [lowercase-hyphenated-slug]                                      |
-| **Excerpt**    | [2-3 sentence summary - optimized for search intent]             |
-| **Tags**       | [comma-separated lowercase tags - first tag is primary category] |
-| **Visibility** | Public - Anyone can view                                         |
-
-## Dev.to Cross-Posting Front Matter
-
-Copy and paste this block at the very top of your Dev.to editor before pasting the markdown content:
-
-```yaml
----
-title: '[Exact Title]'
-published: true
-canonical_url: https://hasanraiyan.vercel.app/blog/[slug]
-tags: [tag1, tag2, tag3, tag4]
----
-```
-````
-
-## Cover Image
-
-**Prompt** (generate this and upload as Cover Image URL):
-
-> [Cover image prompt — MUST specify white background, minimal, 16:9]
-
-## Inline Images
-
-Images referenced in the blog content as `![...](IMAGE_URL_N)`:
-
-### IMAGE 1
-
-**Used in**: [Section name]
-**Prompt**:
-
-> [Full prompt — white background, 16:9]
-
-### IMAGE 2
-
-**Used in**: [Section name]
-**Prompt**:
-
-> [Full prompt — white background, 16:9]
-
-[...repeat for all images]
-
-## Publishing Checklist
-
-- [ ] All images (Cover + Inline) generated using `image-gen-tool.js`
-- [ ] All `IMAGE_URL_N` placeholders in the blog content file replaced with real URLs
-- [ ] Content pasted into admin editor
-- [ ] Metadata fields filled in admin panel
-- [ ] Preview checked before publishing
-- [ ] **Cross-Post**: Copy Dev.to front matter and markdown to dev.to
-- [ ] **Cross-Post**: Import to Hashnode and set Canonical URL to the original post
-
-````
+A JSON array of all prompts for the image generation tool.
 
 ---
 
 ## Step 7: Automated Image Insertion Workflow
 
-Once you have drafted the blog and metadata, follow this specific workflow to finalize the images:
-
-1.  **Generate Initial Files**: Create `File 1` (Content) and `File 2` (Metadata) as described in Step 6. Use placeholders like `![...](IMAGE_URL_1)` in the content.
-2.  **Extract Prompts**: Read through `File 2` (`.metadata.md`) and identify all image prompts (Cover, Image 1, Image 2, etc.).
-3.  **Generate Images**: For each identified prompt, execute the image generation tool:
+1.  **Generate Initial Files**: Create `File 1` (Content) and `File 2` (Metadata). Use placeholders like `![...](IMAGE_URL_1)` in the content.
+2.  **Extract Prompts**: Identify all image prompts in `File 2`.
+3.  **Generate Images**: Execute the image generation tool:
     ```bash
     node .agent/skills/blog-writing/tool/image-gen-tool.js --inputFile="prompts.json"
     ```
-4.  **Update Content**: Take the URLs returned by the tool and replace the `IMAGE_URL_N` placeholders in `File 1` (`[topic-name].md`) with the actual generated URLs.
-5.  **Final Polish**: Ensure the content looks as intended before notifying the user.
+4.  **Update Content**: Replace `IMAGE_URL_N` placeholders in `File 1` with the actual URLs.
+5.  **Final Polish**: Ensure the content looks as intended.
+
+---
+
+## Step 8: Multi-Stage Verification
+
+Once the blog is finalized, run these verification steps:
+
+1.  **Word Count & Readability**:
+    ```powershell
+    powershell -Command "(Get-Content d:\resume\blogs\[topic-name].md) -match '\w+' | Measure-Object -Word | Select-Object -ExpandProperty Words"
+    ```
+
+    - Aim for **2,000+ words** for high-authority content.
+2.  **Link Validation**: Manually check all custom links.
+3.  **Image URL verification**: Ensure the URLs in the markdown match the generation results exactly.
 
 ---
 
@@ -331,18 +228,17 @@ Once you have drafted the blog and metadata, follow this specific workflow to fi
 
 Before delivering the blog, verify:
 
-- [ ] Comprehensive deep web research was performed before drafting
+- [ ] Mandatory Research Plan created & followed
+- [ ] Detailed `gathered_research.md` synthesis complete
 - [ ] Title is compelling and specific (not generic)
 - [ ] Opening hook grabs attention in the first 2 sentences
 - [ ] At least one real-world analogy is used
 - [ ] Code examples are real, runnable, and well-commented
-- [ ] At least one comparison table is included (if applicable)
-- [ ] Common mistakes or practical tips section exists
+- [ ] At least one comparison table is included
+- [ ] Common mistakes or practical tips section exists (Section N-1)
 - [ ] Conclusion summarizes the key insight
 - [ ] Further Reading links are provided (3-4 relevant URLs)
-- [ ] Metadata table is complete (title, slug, excerpt, tags)
-- [ ] Dev.to cross-posting front matter is included in the metadata file
+- [ ] Metadata table is complete
+- [ ] Dev.to cross-posting front matter is included
 - [ ] All image prompts specify WHITE background
-- [ ] No unescaped apostrophes in single-quoted strings
-- [ ] Article is 1,800-2,800 words
-````
+- [ ] Article is 1,800-2,800 words (Verified via PowerShell)
