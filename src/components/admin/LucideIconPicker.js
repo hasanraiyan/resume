@@ -33,6 +33,7 @@ const COMMON_ICONS = [
   'FileJson',
   'Briefcase',
   'BookOpen',
+  'Youtube',
 ];
 
 export default function LucideIconPicker({ value, onChange }) {

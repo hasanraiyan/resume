@@ -211,6 +211,7 @@ export async function POST(request) {
 
           // Disable tools if provider requires it
           const finalTools = provider.supportsTools !== false ? allTools : [];
+          console.log('Final tools sent for AI response:', finalTools);
 
           // Create the agent Graph
           const agent = createReactAgent({
