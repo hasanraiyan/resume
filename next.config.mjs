@@ -49,6 +49,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: '*.cloudinary.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'utfs.io',
+      },
     ],
   },
   experimental: {

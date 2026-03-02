@@ -14,7 +14,7 @@ async function testMcpConnection(url) {
     // Timeout to prevent hanging
     const toolsPromise = client.getTools();
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Connection timed out after 8s')), 8000)
+      setTimeout(() => reject(new Error('Connection timed out after 15s')), 15000)
     );
 
     await Promise.race([toolsPromise, timeoutPromise]);

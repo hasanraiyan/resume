@@ -12,6 +12,7 @@ import { getToolStatusMessage } from '@/lib/chatbot-utils';
 import { rateLimit } from '@/lib/rateLimit';
 import { getBackendMCPConfig } from '@/lib/mcpConfig';
 import { decrypt } from '@/lib/crypto';
+import { portfolioTools } from '@/lib/ai/portfolio-tools';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { z } from 'zod';
@@ -162,7 +163,7 @@ export async function POST(request) {
       async start(controller) {
         let toolsUsed = [];
         let assistantContent = '';
-        let allTools = [];
+        let allTools = [...portfolioTools];
         let mcpClient = null;
 
         try {
@@ -171,8 +172,8 @@ export async function POST(request) {
           const backendMCPs = await getBackendMCPConfig(isAdmin);
 
           // Get default MCPs + frontend selected MCPs
-          const defaultMCPConfigs = backendMCPs.filter(m => m.isDefault);
-          const selectedMCPConfigs = backendMCPs.filter(m => activeMCPs.includes(m.id));
+          const defaultMCPConfigs = backendMCPs.filter((m) => m.isDefault);
+          const selectedMCPConfigs = backendMCPs.filter((m) => activeMCPs.includes(m.id));
           const allActiveConfigs = [...new Set([...defaultMCPConfigs, ...selectedMCPConfigs])];
 
           if (allActiveConfigs.length > 0) {
