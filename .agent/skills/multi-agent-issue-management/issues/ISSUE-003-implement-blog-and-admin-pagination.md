@@ -57,4 +57,4 @@ Add server-side pagination to the public blog page and the admin articles manage
 ---
 
 **Priority**: High
-**Status**: 🆕 Pending
+**Status**: ✅ Completed (2026-03-03)
