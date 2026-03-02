@@ -70,15 +70,29 @@ export function useChatStreaming() {
     selectedModel,
   }) => {
     const analytics = getAnalytics();
+    console.log('[useChatStreaming] Raw history:', history);
+
     const chatHistory = history
-      .filter((msg) => msg.role !== 'system' && msg.role !== 'tool_action')
+      .filter((msg) => {
+        const isValid = msg && msg.role !== 'system' && msg.role !== 'tool_action';
+        console.log('[useChatStreaming] Filter check:', { msg: msg?.role, isValid });
+        return isValid;
+      })
       .map((msg) => {
+        if (!msg) {
+          console.log('[useChatStreaming] NULL message encountered!');
+          return null;
+        }
         const m = { role: msg.role, content: msg.content };
         if (msg.tool_calls) m.tool_calls = msg.tool_calls;
         if (msg.tool_call_id) m.tool_call_id = msg.tool_call_id;
         if (msg.name) m.name = msg.name;
+        console.log('[useChatStreaming] Mapped message:', m);
         return m;
-      });
+      })
+      .filter(Boolean);
+
+    console.log('[useChatStreaming] Final chatHistory to send:', chatHistory);
 
     const response = await fetch('/api/chat', {
       method: 'POST',

@@ -157,7 +157,7 @@ function ArticleList({ items }) {
             {article.coverImage ? (
               <div className="relative w-full aspect-video shrink-0 bg-neutral-100 border-b border-neutral-100">
                 <Image
-                  src={article.coverImage}
+                  src={article.coverImage.trimStart()}
                   alt={article.title}
                   fill
                   className="object-cover"

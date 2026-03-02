@@ -121,7 +121,7 @@ export default function ArticlesPage() {
               <div className="aspect-video bg-neutral-100 relative overflow-hidden">
                 {article.coverImage ? (
                   <Image
-                    src={article.coverImage}
+                    src={article.coverImage.trimStart()}
                     alt={article.title}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"

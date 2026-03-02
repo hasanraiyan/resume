@@ -24,6 +24,7 @@ import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import {
   trimMessages,
   AIMessage,
+  AIMessageChunk,
   HumanMessage,
   SystemMessage,
   ToolMessage,
@@ -35,6 +36,11 @@ import {
 
 function encodeEvent(obj) {
   return new TextEncoder().encode(JSON.stringify(obj) + '\n');
+}
+
+// Filter out AIMessageChunk messages - they don't have .role and cause trimMessages to fail
+function sanitizeMessages(messages) {
+  return messages.filter((msg) => !(msg instanceof AIMessageChunk));
 }
 
 // Convert DB provider to a LangChain Chat Model
@@ -120,9 +126,11 @@ export async function POST(request) {
     const systemMessages = buildSystemMessages(context, path);
 
     // Initial LangChain state
+    const filteredHistory = chatHistory.filter((msg) => msg && msg.role);
+
     const messages = [
       ...systemMessages.map((msg) => new SystemMessage({ content: msg.content || '' })),
-      ...chatHistory.map((msg) => {
+      ...filteredHistory.map((msg) => {
         if (msg.role === 'user') return new HumanMessage({ content: msg.content || '' });
         if (msg.role === 'assistant') {
           const params = { content: msg.content || '' };
@@ -207,8 +215,10 @@ export async function POST(request) {
           const trimmer = trimMessages({
             maxTokens: 50000,
             strategy: 'last',
-            tokenCounter: (msgs) =>
-              msgs.map((m) => (m.content || '').length).reduce((a, b) => a + b, 0),
+            tokenCounter: (msgs) => {
+              const cleaned = sanitizeMessages(msgs);
+              return cleaned.map((m) => (m.content || '').length).reduce((a, b) => a + b, 0);
+            },
             includeSystem: true,
             allowPartial: false,
             startOn: 'human', // Strongly recommended by Google to prevent 400 sequence errors
@@ -217,57 +227,77 @@ export async function POST(request) {
           // Disable tools if provider requires it
           const finalTools = provider.supportsTools !== false ? allTools : [];
 
+          // Wrap trimmer to sanitize AIMessageChunk before processing
+          const safeMessageModifier = async (msgs) => {
+            const cleaned = sanitizeMessages(msgs);
+            // TEMPORARY: Skip trimming to debug - just sanitize
+            return cleaned;
+            // return trimmer.invoke(cleaned);
+          };
+
           // Create the agent Graph
           const agent = createReactAgent({
             llm: llm,
             tools: finalTools,
-            messageModifier: trimmer,
+            messageModifier: safeMessageModifier,
           });
 
           // Run streamed execution
           const eventStream = await agent.streamEvents({ messages }, { version: 'v2' });
 
           for await (const event of eventStream) {
-            const { event: type, data, name } = event;
+            try {
+              const { event: type, data, name } = event;
 
-            if (type === 'on_chat_model_stream') {
-              // Real-time text token stream
-              if (data.chunk?.content) {
-                assistantContent += data.chunk.content;
-                controller.enqueue(encodeEvent({ type: 'content', message: data.chunk.content }));
+              if (type === 'on_chat_model_stream') {
+                // Real-time text token stream
+                if (data.chunk?.content) {
+                  assistantContent += data.chunk.content;
+                  controller.enqueue(encodeEvent({ type: 'content', message: data.chunk.content }));
+                }
+              } else if (type === 'on_tool_start' && name !== 'agent') {
+                // Tool started -> send status to frontend UI
+                const inputArgs = data.input;
+                const statusMsg = getToolStatusMessage(name, inputArgs) || `⚙️ Running ${name}...`;
+                controller.enqueue(encodeEvent({ type: 'status', message: statusMsg }));
+              } else if (type === 'on_tool_end' && name !== 'agent') {
+                // Tool finished execution -> push Results
+                const output = data.output;
+
+                // Send result to the frontend history manager
+                controller.enqueue(
+                  encodeEvent({
+                    type: 'tool_result',
+                    tool_call_id: event.run_id, // Note: For true state sync we approximate run_id -> tool_call_id
+                    name: name,
+                    content: typeof output === 'string' ? output : JSON.stringify(output),
+                  })
+                );
+
+                toolsUsed.push({ name, arguments: data.input, result: output, iteration: 1 });
+              } else if (type === 'on_chat_model_end') {
+                // When the model provides formal tool_call metadata, pass it down so frontend keeps id consistency
+                const aiMessage = data.output;
+                if (aiMessage?.tool_calls?.length > 0) {
+                  // Map Langchain ToolCall back to raw format Frontend expects
+                  const formattedCalls = aiMessage.tool_calls.map((tc) => ({
+                    id: tc.id,
+                    type: 'function',
+                    function: { name: tc.name, arguments: JSON.stringify(tc.args) },
+                  }));
+                  controller.enqueue(encodeEvent({ type: 'metadata', tool_calls: formattedCalls }));
+                }
               }
-            } else if (type === 'on_tool_start' && name !== 'agent') {
-              // Tool started -> send status to frontend UI
-              const inputArgs = data.input;
-              const statusMsg = getToolStatusMessage(name, inputArgs) || `⚙️ Running ${name}...`;
-              controller.enqueue(encodeEvent({ type: 'status', message: statusMsg }));
-            } else if (type === 'on_tool_end' && name !== 'agent') {
-              // Tool finished execution -> push Results
-              const output = data.output;
-
-              // Send result to the frontend history manager
-              controller.enqueue(
-                encodeEvent({
-                  type: 'tool_result',
-                  tool_call_id: event.run_id, // Note: For true state sync we approximate run_id -> tool_call_id
-                  name: name,
-                  content: typeof output === 'string' ? output : JSON.stringify(output),
-                })
-              );
-
-              toolsUsed.push({ name, arguments: data.input, result: output, iteration: 1 });
-            } else if (type === 'on_chat_model_end') {
-              // When the model provides formal tool_call metadata, pass it down so frontend keeps id consistency
-              const aiMessage = data.output;
-              if (aiMessage?.tool_calls?.length > 0) {
-                // Map Langchain ToolCall back to raw format Frontend expects
-                const formattedCalls = aiMessage.tool_calls.map((tc) => ({
-                  id: tc.id,
-                  type: 'function',
-                  function: { name: tc.name, arguments: JSON.stringify(tc.args) },
-                }));
-                controller.enqueue(encodeEvent({ type: 'metadata', tool_calls: formattedCalls }));
-              }
+            } catch (eventError) {
+              console.error('[Chat] Error processing event:', {
+                error: eventError.message,
+                stack: eventError.stack,
+                eventType: event?.event,
+                eventName: event?.name,
+                cause: eventError.cause,
+              });
+              console.error('[Chat] Full error:', eventError);
+              throw eventError;
             }
           }
 

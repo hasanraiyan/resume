@@ -99,7 +99,7 @@ export default function BlogCard({ article }) {
             <div className="aspect-[4/3] relative overflow-hidden rounded-sm bg-neutral-100">
               {article.coverImage ? (
                 <Image
-                  src={article.coverImage}
+                  src={article.coverImage.trimStart()}
                   alt={article.title}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-500"

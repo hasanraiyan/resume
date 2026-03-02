@@ -195,7 +195,7 @@ export function ArticleForm({ article, onSave }) {
             {formData.coverImage && (
               <div className="mt-2">
                 <img
-                  src={formData.coverImage}
+                  src={formData.coverImage.trimStart()}
                   alt="Cover preview"
                   className="w-32 h-20 object-cover rounded border"
                   onError={(e) => {
