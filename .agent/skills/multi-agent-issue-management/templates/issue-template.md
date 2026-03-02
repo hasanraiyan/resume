@@ -1,5 +1,7 @@
 # Issue: [Feature Name]
 
+**ID**: ISSUE-[XXX]
+
 ## 🤖 Agent Assignment
 
 **Primary Agent**: [Jules | Codex | Antigravity]

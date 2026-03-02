@@ -30,12 +30,32 @@ To prevent git conflicts, assign tasks based on **isolation**:
 
 ---
 
-## Step 2: The Issue Template
+## Step 2: Issue Creation & ID Tracking
+
+Every task must be documented as an issue. Issues are stored in the `issues/` directory within this skill folder.
+
+### 🆔 Unique Issue IDs
+
+Each issue MUST have a unique tracking ID in the format `ISSUE-[ID]`.
+
+- Use a 3-digit zero-padded number (e.g., `ISSUE-001`).
+- IDs must be sequential and tracked to avoid collisions.
+
+### 📂 Storage & Naming
+
+- **Directory**: `d:\resume\.agent\skills\multi-agent-issue-management\issues\`
+- **Filename Pattern**: `ISSUE-[ID]-[slug].md`
+- **Example**: `ISSUE-012-refactor-auth-logic.md`
+
+---
+
+## Step 3: The Issue Template
 
 Always use the [Issue Template](./templates/issue-template.md) when defining a new task.
 
 ### Key Metadata Fields:
 
+- **`Issue ID`**: The unique tracking ID (e.g., `ISSUE-001`).
 - **`Agent`**: [Jules / Codex / Antigravity]
 - **`Scope`**: List specific files or directories this agent is allowed to touch.
 - **`Conflict Zone`**: List files that _other_ agents are currently working on.
