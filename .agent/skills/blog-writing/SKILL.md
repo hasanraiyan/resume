@@ -104,17 +104,18 @@ Blog posts SHOULD include inline images using markdown syntax:
 
 When writing image generation prompts (either for the user or for `generate_image`):
 
-1. **ALWAYS use white/light background** — never dark backgrounds
-2. **Style**: Clean, minimal, infographic-style illustration
-3. **No text in images** — labels and text should be in the blog content, not baked into images
-4. **Aspect ratio**: Always 16:9
-5. **Colors**: Use soft, harmonious pastels or the brand palette (neutral-900 for dark accents)
+1. **Be EXTREMELY specific and detailed**: Describe exactly what elements, objects, or actions should be in the image (e.g., "a server rack on the left sending glowing data packets to a laptop on the right" instead of just "client-server architecture"). Do not use generic terms—write long, explicit descriptions of the visual layout.
+2. **ALWAYS use white/light background** — never dark backgrounds
+3. **Style**: Clean, minimal, infographic-style illustration
+4. **No text in images** — labels and text should be in the blog content, not baked into images
+5. **Aspect ratio**: Always 16:9
+6. **Colors**: Use soft, harmonious pastels or the brand palette (neutral-900 for dark accents)
 
 ### Image prompt template:
 
 ```
 A clean, minimal infographic-style illustration on a white background.
-[Describe the visual concept — diagrams, flow charts, comparisons, metaphors].
+[Provide a long, highly detailed description of the exact visual scenario — specify the objects (e.g., two gears interlocking, a laptop displaying a grid), the layout (left/right/center), and the metaphorical action occurring].
 Soft pastel colors, geometric shapes, modern editorial style.
 No text. 16:9 aspect ratio.
 ```
@@ -123,7 +124,7 @@ No text. 16:9 aspect ratio.
 
 ```
 A clean, modern tech blog cover illustration on a white background.
-[Describe the central visual concept related to the article topic].
+[Provide a long, highly detailed description of the exact visual scenario representing the article's core theme. Specify central objects, abstract shapes, layout, and how they interact visually].
 Soft gradients, minimal geometric shapes, premium editorial aesthetic.
 No text. 16:9 aspect ratio (to fit the 1200x480 container).
 ```
