@@ -8,132 +8,6 @@ import Project from '@/models/Project';
 import Article from '@/models/Article';
 import { performSearch } from '@/lib/search/search';
 
-import { tool } from '@langchain/core/tools';
-import { z } from 'zod';
-
-// =================================================================================
-// LANGCHAIN TOOL DEFINITIONS
-// =================================================================================
-
-export const listAllProjectsTool = tool(
-  async () => {
-    const result = await listAllProjects();
-    return typeof result === 'string' ? result : JSON.stringify(result);
-  },
-  {
-    name: 'listAllProjects',
-    description:
-      "Get a list of all available project titles, their slugs, and short descriptions. Use this when the user asks a general question like 'What projects have you worked on?' or 'Show me your portfolio'.",
-  }
-);
-
-export const getProjectDetailsTool = tool(
-  async ({ slug }) => {
-    const result = await getProjectDetails(slug);
-    return typeof result === 'string' ? result : JSON.stringify(result);
-  },
-  {
-    name: 'getProjectDetails',
-    description:
-      'Get the complete, detailed information for a single project using its unique slug. Use this only after you know the specific slug.',
-    schema: z.object({
-      slug: z
-        .string()
-        .describe('The URL-friendly slug of the project (e.g., "luxury-fashion-store").'),
-    }),
-  }
-);
-
-export const listAllArticlesTool = tool(
-  async () => {
-    const result = await listAllArticles();
-    return typeof result === 'string' ? result : JSON.stringify(result);
-  },
-  {
-    name: 'listAllArticles',
-    description:
-      "Get a list of all published article titles, their slugs, and excerpts. Use this when the user asks a general question like 'What have you written about?' or 'Show me your blog posts'.",
-  }
-);
-
-export const getArticleDetailsTool = tool(
-  async ({ slug }) => {
-    const result = await getArticleDetails(slug);
-    return typeof result === 'string' ? result : JSON.stringify(result);
-  },
-  {
-    name: 'getArticleDetails',
-    description:
-      'Get the full content and details for a single article using its unique slug. Use this when a user asks to read a specific article that you know the slug for.',
-    schema: z.object({
-      slug: z.string().describe('The URL-friendly slug of the article.'),
-    }),
-  }
-);
-
-export const searchPortfolioTool = tool(
-  async ({ query }) => {
-    const result = await searchPortfolio(query);
-    return typeof result === 'string' ? result : JSON.stringify(result);
-  },
-  {
-    name: 'searchPortfolio',
-    description:
-      'Performs an intelligent, fuzzy search for projects or articles using specific keywords (e.g., "React", "e-commerce", "AI"). Use this for topic-based questions or when the user is looking for experience with a certain technology.',
-    schema: z.object({
-      query: z.string().describe('The search term or keyword.'),
-    }),
-  }
-);
-
-export const draftContactLeadTool = tool(
-  async (payload) => {
-    const result = await draftContactLead(payload);
-    return typeof result === 'string' ? result : JSON.stringify(result);
-  },
-  {
-    name: 'draftContactLead',
-    description:
-      'Drafts a contact form payload with the information you have gathered from the user. Call this tool when you have enough context to populate some or all of the fields.',
-    schema: z.object({
-      name: z.string().optional().describe("The user's name."),
-      email: z.string().optional().describe("The user's email address."),
-      projectType: z
-        .enum([
-          'web-design',
-          'web-development',
-          'mobile-app',
-          'branding',
-          'ui-ux',
-          'consulting',
-          'ecommerce',
-          'cms-development',
-          'seo-optimization',
-          'api-integration',
-          'database-design',
-          'maintenance',
-          'redesign',
-          'landing-page',
-          'portfolio',
-          'blog',
-          'other',
-        ])
-        .optional()
-        .describe('The type of project.'),
-      message: z.string().optional().describe("A summary or draft of the user's message/request."),
-    }),
-  }
-);
-
-export const internalTools = [
-  listAllProjectsTool,
-  getProjectDetailsTool,
-  listAllArticlesTool,
-  getArticleDetailsTool,
-  searchPortfolioTool,
-  draftContactLeadTool,
-];
-
 // =================================================================================
 // TOOL EXECUTION FUNCTIONS
 // =================================================================================
@@ -286,22 +160,6 @@ export async function searchPortfolio(query) {
 }
 
 /**
- * Creates a structured draft for the contact form based on gathered user context.
- */
-export async function draftContactLead(payload) {
-  // We simply return the drafted data back to the LLM (and ultimately the Generative UI map)
-  return {
-    text: `Successfully drafted contact form payload. Please present the contact prefill card to the user so they can review and submit it.`,
-    data: {
-      name: payload.name || '',
-      email: payload.email || '',
-      projectType: payload.projectType || 'other',
-      message: payload.message || '',
-    },
-  };
-}
-
-/**
  * Executes the actual contact form submission.
  */
 export async function submitContactForm(payload) {
@@ -368,8 +226,8 @@ export function getToolStatusMessage(toolName, rawArgs, iteration = null) {
       const q = args?.query || (typeof args === 'string' ? args : 'items');
       return `🔎 Searching for "${q}"...${iterationSuffix}`;
     }
-    case 'draftContactLead':
-      return `📝 Drafting contact form...${iterationSuffix}`;
+    case 'submitContactForm':
+      return `📝 Submitting contact form...${iterationSuffix}`;
     default:
       return `🤔 Processing your request...${iterationSuffix}`;
   }

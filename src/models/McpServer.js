@@ -37,6 +37,10 @@ const McpServerSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isDefault: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
