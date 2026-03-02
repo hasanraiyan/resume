@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { ChevronDown, CheckCircle2, Clock } from 'lucide-react';
-import StaticGenUI from './StaticGenUI';
 
 export default function StepHistory({ steps, onInteract }) {
   const [expanded, setExpanded] = useState(true);
@@ -67,13 +66,6 @@ export default function StepHistory({ steps, onInteract }) {
                       <Clock className="w-4 h-4 text-neutral-600 animate-spin" />
                     )}
                   </div>
-                </div>
-              );
-            }
-            if (step.type === 'ui') {
-              return (
-                <div key={`step-${idx}`} className="w-full mt-3">
-                  <StaticGenUI block={step} onInteract={onInteract} />
                 </div>
               );
             }

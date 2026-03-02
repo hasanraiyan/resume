@@ -212,48 +212,6 @@ export function useChatStreaming() {
               Icon,
               done: false,
             });
-          } else if (data.type === 'ui') {
-            // Add the Generative UI block to the assistant message
-            // Prevent duplicates if the exact same block payload is already there
-            const isDuplicate = assistantMessage.steps.some(
-              (s) =>
-                s.type === 'ui' &&
-                s.component === data.component &&
-                JSON.stringify(s.payload) === JSON.stringify(data.payload)
-            );
-
-            if (!isDuplicate) {
-              // Attach the current tool action ID to the UI block
-              // This allows the UI interaction to mark the tool as 'done' later
-              assistantMessage.steps.push({
-                type: 'ui',
-                ...data,
-                toolActionId: activeToolMsgId,
-              });
-            }
-
-            if (!messageAdded) {
-              setMessages((prev) => [
-                ...prev,
-                {
-                  ...assistantMessage,
-                  steps: [...assistantMessage.steps],
-                },
-              ]);
-              messageAdded = true;
-            } else {
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantMessage.id
-                    ? {
-                        ...m,
-                        steps: [...assistantMessage.steps],
-                      }
-                    : m
-                )
-              );
-            }
-          } else if (data.type === 'metadata') {
             // Save tool_calls to the assistant message so it can be sent in history later
             if (!assistantMessage.tool_calls) {
               assistantMessage.tool_calls = [];
