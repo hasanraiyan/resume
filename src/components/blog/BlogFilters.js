@@ -6,7 +6,13 @@ import { useState, useMemo } from 'react';
  * Blog Filters — Medium-style pill tags + minimal search.
  * Tags are extracted dynamically from the article data.
  */
-export default function BlogFilters({ onFilterChange, onSearch, allTagsList = [], initialSearch = '', initialTag = 'all' }) {
+export default function BlogFilters({
+  onFilterChange,
+  onSearch,
+  allTagsList = [],
+  initialSearch = '',
+  initialTag = 'all',
+}) {
   const [activeTag, setActiveTag] = useState(initialTag);
   const [searchQuery, setSearchQuery] = useState(initialSearch);
 
@@ -16,12 +22,10 @@ export default function BlogFilters({ onFilterChange, onSearch, allTagsList = []
 
     // Process unique tags that come from the backend distinct query
     // They are just string values. We'll show up to 8.
-    return allTagsList
-      .slice(0, 8)
-      .map((tag) => ({
-        id: tag.toLowerCase(),
-        name: tag.charAt(0).toUpperCase() + tag.slice(1),
-      }));
+    return allTagsList.slice(0, 8).map((tag) => ({
+      id: tag.toLowerCase(),
+      name: tag.charAt(0).toUpperCase() + tag.slice(1),
+    }));
   }, [allTagsList]);
 
   const allTags = [{ id: 'all', name: 'All' }, ...dynamicTags];

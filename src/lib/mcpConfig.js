@@ -45,7 +45,9 @@ export const getFrontendSafeMCPs = async (isAdmin = false) => {
       // Only expose tools that are fully configured and not default
       .filter(
         (mcp) =>
-          ((mcp.type === 'mcp' && mcp.url !== null) || (mcp.type === 'rest' && mcp.apiKey !== null)) && !mcp.isDefault
+          ((mcp.type === 'mcp' && mcp.url !== null) ||
+            (mcp.type === 'rest' && mcp.apiKey !== null)) &&
+          !mcp.isDefault
       )
       .map(({ id, name, description, icon, color, isDefault }) => ({
         id,

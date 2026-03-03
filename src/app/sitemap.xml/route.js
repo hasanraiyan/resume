@@ -30,7 +30,9 @@ export async function GET() {
   ];
 
   // Fetch published articles
-  const { success: articlesSuccess, articles } = await getAllPublishedArticles(false, { limit: 1000 });
+  const { success: articlesSuccess, articles } = await getAllPublishedArticles(false, {
+    limit: 1000,
+  });
 
   const articleEntries =
     articlesSuccess && articles

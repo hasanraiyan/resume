@@ -134,21 +134,13 @@ export async function getAllArticles({ page = 1, limit = 10, search = '' } = {})
     const query = {};
     if (search) {
       const searchRegex = new RegExp(search, 'i');
-      query.$or = [
-        { title: searchRegex },
-        { excerpt: searchRegex },
-        { tags: searchRegex },
-      ];
+      query.$or = [{ title: searchRegex }, { excerpt: searchRegex }, { tags: searchRegex }];
     }
 
     const skip = (page - 1) * limit;
 
     const [articles, totalArticles] = await Promise.all([
-      Article.find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
+      Article.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
       Article.countDocuments(query),
     ]);
 
@@ -160,7 +152,7 @@ export async function getAllArticles({ page = 1, limit = 10, search = '' } = {})
       articles: serializedArticles,
       totalArticles,
       totalPages: Math.ceil(totalArticles / limit),
-      currentPage: page
+      currentPage: page,
     };
   } catch (error) {
     console.error('Get Articles Error:', error);
@@ -169,7 +161,7 @@ export async function getAllArticles({ page = 1, limit = 10, search = '' } = {})
       articles: [],
       totalArticles: 0,
       totalPages: 0,
-      currentPage: 1
+      currentPage: 1,
     };
   }
 }
@@ -224,7 +216,10 @@ export async function getArticleBySlug(slug, isAuthenticated = false) {
  * @param {string} options.tag - Optional tag string to filter articles by tag
  * @returns {Object} Object containing success status, array of serialized published articles, and pagination metadata
  */
-export async function getAllPublishedArticles(isAuthenticated = false, { page = 1, limit = 10, search = '', tag = '' } = {}) {
+export async function getAllPublishedArticles(
+  isAuthenticated = false,
+  { page = 1, limit = 10, search = '', tag = '' } = {}
+) {
   await dbConnect();
 
   try {
@@ -240,11 +235,11 @@ export async function getAllPublishedArticles(isAuthenticated = false, { page = 
     // Get all unique tags for the available published articles and sort by frequency
     const uniqueTagsAgg = await Article.aggregate([
       { $match: { status: 'published', visibility: visibilityFilter } },
-      { $unwind: "$tags" },
-      { $group: { _id: { $toLower: "$tags" }, count: { $sum: 1 }, original: { $first: "$tags" } } },
-      { $sort: { count: -1 } }
+      { $unwind: '$tags' },
+      { $group: { _id: { $toLower: '$tags' }, count: { $sum: 1 }, original: { $first: '$tags' } } },
+      { $sort: { count: -1 } },
     ]);
-    const uniqueTags = uniqueTagsAgg.map(t => t.original);
+    const uniqueTags = uniqueTagsAgg.map((t) => t.original);
 
     if (search) {
       const searchRegex = new RegExp(search, 'i');
@@ -260,10 +255,7 @@ export async function getAllPublishedArticles(isAuthenticated = false, { page = 
       // Create regex for exact match ignoring case
       const tagRegex = new RegExp(`^${tag}$`, 'i');
       if (query.$or) {
-        query.$and = [
-          { $or: query.$or },
-          { tags: tagRegex }
-        ];
+        query.$and = [{ $or: query.$or }, { tags: tagRegex }];
         delete query.$or;
       } else {
         query.tags = tagRegex;
@@ -273,11 +265,7 @@ export async function getAllPublishedArticles(isAuthenticated = false, { page = 
     const skip = (page - 1) * limit;
 
     const [articles, totalArticles] = await Promise.all([
-      Article.find(query)
-        .sort({ publishedAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
+      Article.find(query).sort({ publishedAt: -1 }).skip(skip).limit(limit).lean(),
       Article.countDocuments(query),
     ]);
 
@@ -290,7 +278,7 @@ export async function getAllPublishedArticles(isAuthenticated = false, { page = 
       totalArticles,
       totalPages: Math.ceil(totalArticles / limit),
       currentPage: page,
-      allTags: uniqueTags
+      allTags: uniqueTags,
     };
   } catch (error) {
     console.error('Get Published Articles Error:', error);
@@ -300,7 +288,7 @@ export async function getAllPublishedArticles(isAuthenticated = false, { page = 
       totalArticles: 0,
       totalPages: 0,
       currentPage: 1,
-      allTags: []
+      allTags: [],
     };
   }
 }

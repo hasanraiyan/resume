@@ -16,6 +16,8 @@ import {
   DialogFooter,
 } from '@/components/ui/Dialog';
 import Button from '@/components/ui/Button';
+import MediaAgentSettingsModal from './MediaAgentSettingsModal';
+import { Settings, Zap, Play, Loader2, Bot } from 'lucide-react';
 
 // (This is a simplified version. You can add more features like search, filters, etc. later)
 export default function MediaLibraryClient({ initialAssets }) {
@@ -184,6 +186,11 @@ export default function MediaLibraryClient({ initialAssets }) {
   const [selectedAssets, setSelectedAssets] = useState(new Set());
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(new Map()); // Map<fileName, progress>
+
+  // AI Image Processing Agent state
+  const [isAgentSettingsOpen, setIsAgentSettingsOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingResults, setProcessingResults] = useState(null);
 
   // Process a single file upload
   const processFileUpload = async (file, onProgress) => {
@@ -743,6 +750,44 @@ export default function MediaLibraryClient({ initialAssets }) {
     }
   };
 
+  const handleProcessImages = async () => {
+    setIsProcessing(true);
+    setProcessingResults(null);
+    try {
+      const response = await fetch('/api/admin/media/process', {
+        method: 'POST',
+      });
+      const result = await response.json();
+
+      if (response.ok) {
+        setProcessingResults(result);
+
+        // If background processing started (HTTP 202)
+        if (response.status === 202) {
+          console.log('Background processing started:', result.message);
+        } else if (result.results) {
+          // If legacy synchronous processing completed (HTTP 200)
+          setAssets((prev) =>
+            prev.map((asset) => {
+              const match = result.results.find((r) => r.id === asset._id);
+              if (match && match.success) {
+                return { ...asset, aiDescription: match.description };
+              }
+              return asset;
+            })
+          );
+        }
+      } else {
+        alert(result.error || 'Failed to process images');
+      }
+    } catch (error) {
+      console.error('Error processing images:', error);
+      alert('Internal server error during processing');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   console.log('Rendering MediaLibraryClient with assets:', assets?.length || 0, 'assets');
   console.log('Assets data sample:', assets?.slice(0, 2));
 
@@ -1052,7 +1097,7 @@ export default function MediaLibraryClient({ initialAssets }) {
               (aiMode === 'edit' && selectedAssetsForEdit.length === 0)
                 ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed border border-neutral-200'
                 : aiMode === 'generate'
-                  ? 'bg-black hover:bg-neutral-800 text-white shadow-lg shadow-black/10'
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/10'
                   : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/10'
             }`}
           >
@@ -1225,25 +1270,84 @@ export default function MediaLibraryClient({ initialAssets }) {
 
       {/* Gallery Section */}
       {paginatedAssets.length > 0 && (
-        <div className="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
-          <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={
-                  paginatedAssets.length > 0 &&
-                  paginatedAssets.every((asset) => selectedAssets.has(asset._id))
-                }
-                onChange={(e) => handleSelectAll(e.target.checked)}
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <span className="text-sm font-medium text-gray-700">
-                Select All ({paginatedAssets.length} shown)
-              </span>
-            </label>
+        <div className="flex flex-col gap-3 mb-4">
+          {/* AI Processing Banner (Moved here) */}
+          <div className="flex items-center gap-4 p-3 px-4 bg-blue-50/50 border border-blue-100 rounded-2xl">
+            <div className="flex -space-x-2 overflow-hidden">
+              {assets
+                .filter((a) => !a.aiDescription)
+                .slice(0, 3)
+                .map((asset, i) => (
+                  <img
+                    key={i}
+                    src={asset.secure_url}
+                    className="w-6 h-6 rounded-full border-2 border-white object-cover"
+                  />
+                ))}
+              {assets.filter((a) => !a.aiDescription).length > 3 && (
+                <div className="w-6 h-6 rounded-full bg-blue-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-blue-600">
+                  +{assets.filter((a) => !a.aiDescription).length - 3}
+                </div>
+              )}
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-medium text-blue-900">
+                {assets.filter((a) => !a.aiDescription).length} images need processing for AI search
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsAgentSettingsOpen(true)}
+                className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                title="Agent Settings"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+              <Button
+                onClick={handleProcessImages}
+                disabled={isProcessing}
+                className="bg-blue-600 hover:bg-blue-700 text-white border-none rounded-xl h-8 px-4 text-xs font-semibold shadow-sm flex items-center gap-2"
+              >
+                {isProcessing ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Bot className="w-3 h-3" />
+                )}
+                {isProcessing ? 'Processing...' : 'Process All'}
+              </Button>
+            </div>
           </div>
-          <div className="text-xs text-gray-500">
-            Click images to preview • Check boxes to select for bulk actions
+
+          {processingResults && (
+            <div className="p-3 px-4 bg-green-50 border border-green-100 rounded-2xl animate-in fade-in slide-in-from-top-2">
+              <p className="text-xs font-medium text-green-800">
+                {processingResults.message}
+                {processingResults.results &&
+                  ` ${processingResults.results.filter((r) => r.success).length} successful.`}
+              </p>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-2xl">
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={
+                    paginatedAssets.length > 0 &&
+                    paginatedAssets.every((asset) => selectedAssets.has(asset._id))
+                  }
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  Select All ({paginatedAssets.length} shown)
+                </span>
+              </label>
+            </div>
+            <div className="text-xs text-gray-500">
+              Click images to preview • Check boxes to select for bulk actions
+            </div>
           </div>
         </div>
       )}
@@ -1394,7 +1498,7 @@ export default function MediaLibraryClient({ initialAssets }) {
                           });
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
-                        className="bg-indigo-500 hover:bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium transition-colors shadow-lg"
+                        className="bg-black hover:bg-gray-900 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium transition-colors shadow-lg border border-white/20"
                         title="Add to AI Edit"
                       >
                         <i className="fas fa-magic"></i>
@@ -1415,12 +1519,22 @@ export default function MediaLibraryClient({ initialAssets }) {
                     {(asset.source === 'gemini' || asset.source === 'pollinations') &&
                       asset.prompt && (
                         <div
-                          className="absolute bottom-0 left-0 right-0 bg-black text-white text-xs p-2 rounded-bl-lg rounded-br-lg opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                          className="absolute bottom-0 left-0 right-0 bg-black/80 text-white text-[10px] p-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 backdrop-blur-sm"
                           title={asset.prompt}
                         >
-                          <p className="truncate">{asset.prompt}</p>
+                          <p className="truncate font-medium">Prompt: {asset.prompt}</p>
                         </div>
                       )}
+
+                    {/* AI Description Overlay (New) */}
+                    {asset.aiDescription && (
+                      <div
+                        className="absolute bottom-0 left-0 right-0 bg-black/90 text-white text-[10px] p-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 backdrop-blur-sm border-t border-white/10"
+                        title={asset.aiDescription}
+                      >
+                        <p className="line-clamp-2 font-medium">AI: {asset.aiDescription}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -1476,18 +1590,18 @@ export default function MediaLibraryClient({ initialAssets }) {
 
       {/* AI Result Preview Modal */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="sm:max-w-2xl bg-white border-neutral-200">
+        <DialogContent className="sm:max-w-2xl bg-neutral-900 border-neutral-800 text-white">
           <DialogHeader>
-            <DialogTitle className="text-xl font-['Playfair_Display']">
+            <DialogTitle className="text-xl font-['Playfair_Display'] text-white">
               {previewData?.mode === 'edit' ? 'AI Edit Result' : 'AI Generation Result'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="mt-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="mt-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar text-white">
             {previewData?.mode === 'edit' && previewData?.befores?.length > 0 ? (
               <div className="space-y-6">
-                <div className="space-y-4">
-                  <p className="text-sm text-neutral-500">
+                <div className="space-y-4 text-white">
+                  <p className="text-sm text-neutral-400">
                     {previewData.befores.length > 1
                       ? 'You used multiple images as input. Here is the comparison with the primary image.'
                       : 'Slide to compare the original and the AI-edited version.'}
@@ -1500,8 +1614,8 @@ export default function MediaLibraryClient({ initialAssets }) {
                 </div>
 
                 {previewData.befores.length > 1 && (
-                  <div className="space-y-4 pt-4 border-t border-neutral-100">
-                    <p className="text-sm font-medium text-neutral-800">All Input Images</p>
+                  <div className="space-y-4 pt-4 border-t border-neutral-800">
+                    <p className="text-sm font-medium text-neutral-200">All Input Images</p>
                     <MultiImagePreview
                       images={previewData.befores}
                       aspectRatio={previewData.aspectRatio}
@@ -1509,10 +1623,10 @@ export default function MediaLibraryClient({ initialAssets }) {
                   </div>
                 )}
 
-                <div className="space-y-4 pt-4 border-t border-neutral-100">
-                  <p className="text-sm font-medium text-neutral-800">Final Result</p>
+                <div className="space-y-4 pt-4 border-t border-neutral-800 text-white">
+                  <p className="text-sm font-medium text-neutral-200">Final Result</p>
                   <div
-                    className={`relative w-full overflow-hidden rounded-xl border border-neutral-200 ${
+                    className={`relative w-full overflow-hidden rounded-xl border border-neutral-800 ${
                       previewData?.aspectRatio === '16:9'
                         ? 'aspect-video'
                         : previewData?.aspectRatio === '9:16'
@@ -1530,10 +1644,10 @@ export default function MediaLibraryClient({ initialAssets }) {
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
-                <p className="text-sm text-neutral-500">Your new AI-generated image is ready.</p>
+              <div className="space-y-4 text-white">
+                <p className="text-sm text-neutral-400">Your new AI-generated image is ready.</p>
                 <div
-                  className={`relative w-full overflow-hidden rounded-xl border border-neutral-200 ${
+                  className={`relative w-full overflow-hidden rounded-xl border border-neutral-800 ${
                     previewData?.aspectRatio === '16:9'
                       ? 'aspect-video'
                       : previewData?.aspectRatio === '9:16'
@@ -1552,10 +1666,11 @@ export default function MediaLibraryClient({ initialAssets }) {
             )}
           </div>
 
-          <DialogFooter className="mt-6">
+          <DialogFooter className="mt-6 flex justify-end gap-2">
             <Button
+              variant="outline"
               onClick={() => setIsPreviewOpen(false)}
-              className="bg-black hover:bg-neutral-800 text-white"
+              className="border-neutral-700 text-neutral-300 hover:bg-neutral-800 hover:text-white"
             >
               Close Preview
             </Button>
@@ -1572,6 +1687,14 @@ export default function MediaLibraryClient({ initialAssets }) {
         onPrevious={goToPreviousImage}
         currentIndex={currentImageIndex}
         totalCount={paginatedAssets.length}
+      />
+
+      <MediaAgentSettingsModal
+        isOpen={isAgentSettingsOpen}
+        onClose={() => setIsAgentSettingsOpen(false)}
+        onSave={() => {
+          // Could show a toast here
+        }}
       />
     </div>
   );

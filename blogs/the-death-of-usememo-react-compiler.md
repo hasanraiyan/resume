@@ -1,6 +1,6 @@
 # The Death of `useMemo`: How the React Compiler is Rewriting the Rules in 2026
 
-*For years, we"ve battled dependency arrays, stale closures, and unnecessary re-renders. The React Compiler finally fixes it—but it fundamentally changes how we write components.*
+_For years, we"ve battled dependency arrays, stale closures, and unnecessary re-renders. The React Compiler finally fixes it—but it fundamentally changes how we write components._
 
 ---
 
@@ -24,7 +24,7 @@ Let"s look at a classic, localized example of this bloated optimization workflow
 
 ```jsx
 // The pre-2025 React Developer Experience
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback } from 'react';
 
 // We have to arbitrarily wrap this in React.memo
 const ExpensiveChart = React.memo(({ data, onPointSelect }) => {
@@ -33,13 +33,13 @@ const ExpensiveChart = React.memo(({ data, onPointSelect }) => {
 });
 
 export default function Dashboard({ rawData }) {
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState('all');
   const [selectedPoint, setSelectedPoint] = useState(null);
 
   // We have to manually memoize the data transformation
   // And pray we don"t forget "filter" in the dependency array
   const filteredData = useMemo(() => {
-    return rawData.filter(item => item.category === filter);
+    return rawData.filter((item) => item.category === filter);
   }, [rawData, filter]);
 
   // We have to manually memoize the callback
@@ -51,17 +51,14 @@ export default function Dashboard({ rawData }) {
 
   return (
     <div>
-      <select value={filter} onChange={e => setFilter(e.target.value)}>
+      <select value={filter} onChange={(e) => setFilter(e.target.value)}>
         <option value="all">All</option>
         <option value="active">Active</option>
       </select>
-      
+
       <p>Selected: {selectedPoint}</p>
 
-      <ExpensiveChart 
-        data={filteredData} 
-        onPointSelect={handlePointSelect} 
-      />
+      <ExpensiveChart data={filteredData} onPointSelect={handlePointSelect} />
     </div>
   );
 }
@@ -85,7 +82,7 @@ If we run the previous `Dashboard` component through the React Compiler, the dev
 
 ```jsx
 // The 2026 React Developer Experience
-import React, { useState } from "react";
+import React, { useState } from 'react';
 
 // Just a normal component. The compiler handles the caching.
 const ExpensiveChart = ({ data, onPointSelect }) => {
@@ -94,11 +91,11 @@ const ExpensiveChart = ({ data, onPointSelect }) => {
 };
 
 export default function Dashboard({ rawData }) {
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState('all');
   const [selectedPoint, setSelectedPoint] = useState(null);
 
   // No useMemo. The compiler sees it depends on rawData and filter.
-  const filteredData = rawData.filter(item => item.category === filter);
+  const filteredData = rawData.filter((item) => item.category === filter);
 
   // No useCallback. The compiler handles stable references automatically.
   const handlePointSelect = (point) => {
@@ -107,18 +104,15 @@ export default function Dashboard({ rawData }) {
 
   return (
     <div>
-      <select value={filter} onChange={e => setFilter(e.target.value)}>
+      <select value={filter} onChange={(e) => setFilter(e.target.value)}>
         <option value="all">All</option>
         <option value="active">Active</option>
       </select>
-      
+
       <p>Selected: {selectedPoint}</p>
 
       {/* The compiler ensures this only re-renders when data or onPointSelect actually changes */}
-      <ExpensiveChart 
-        data={filteredData} 
-        onPointSelect={handlePointSelect} 
-      />
+      <ExpensiveChart data={filteredData} onPointSelect={handlePointSelect} />
     </div>
   );
 }
@@ -127,24 +121,24 @@ export default function Dashboard({ rawData }) {
 This isn"t just syntactic sugar. Under the hood, the compiler is performing sophisticated static analysis. Here is how the magic actually happens:
 
 1. **Parsing to AST**: The compiler reads your JavaScript/TypeScript code and converts it into an Abstract Syntax Tree (AST), breaking the code down into its structural components.
-2. **High-Level Intermediate Representation (HIR)**: The AST is converted into HIR, allowing the compiler to understand the *data flow* within your components. It sees how data moves from props to state to functions.
+2. **High-Level Intermediate Representation (HIR)**: The AST is converted into HIR, allowing the compiler to understand the _data flow_ within your components. It sees how data moves from props to state to functions.
 3. **Static Single Assignment (SSA)**: This is the crucial step. Through SSA, the compiler tracks exactly which values depend on other values. It builds a concrete map of dependencies.
-4. **Code Generation**: Finally, the compiler rewrites your component, injecting an invisible caching layer (often visualized as an internal `useMemoCache` array). It automatically caches calculations and object references, invalidating them *only* when the specific source data changes.
+4. **Code Generation**: Finally, the compiler rewrites your component, injecting an invisible caching layer (often visualized as an internal `useMemoCache` array). It automatically caches calculations and object references, invalidating them _only_ when the specific source data changes.
 
 Think of it this way: Instead of you manually managing a messy spreadsheet of dependencies, the React Compiler acts as a hyper-vigilant accountant that tracks every single variable and only updates the ledger when a specific formula demands it.
 
 ### Traditional Optimization vs React Compiler
 
-| Feature | Pre-Compiler Era (Manual) | React Compiler Era (Automatic) |
-|---------|----------------------------|--------------------------------|
-| **Mental Model** | Managing reference identity and dependency arrays manually. | Writing standard JavaScript. Let the compiler handle caching. |
-| **Boilerplate** | High. Codebases littered with `useMemo`, `useCallback`, and `memo`. | None. Clean, readable business logic. |
-| **Error Rate** | High. Missing dependencies lead to stale closures or infinite loops. | Low. The compiler rarely misses a dependency because it reads the AST. |
-| **Granularity**| Coarse. Often memoizing whole components or large data blocks. | Fine-grained. It can memoize individual JSX nodes or specific calculations. |
+| Feature          | Pre-Compiler Era (Manual)                                            | React Compiler Era (Automatic)                                              |
+| ---------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| **Mental Model** | Managing reference identity and dependency arrays manually.          | Writing standard JavaScript. Let the compiler handle caching.               |
+| **Boilerplate**  | High. Codebases littered with `useMemo`, `useCallback`, and `memo`.  | None. Clean, readable business logic.                                       |
+| **Error Rate**   | High. Missing dependencies lead to stale closures or infinite loops. | Low. The compiler rarely misses a dependency because it reads the AST.      |
+| **Granularity**  | Coarse. Often memoizing whole components or large data blocks.       | Fine-grained. It can memoize individual JSX nodes or specific calculations. |
 
 ## Section 3: What Happens to Existing Code?
 
-If you are maintaining a massive legacy codebase written in 2022, the immediate panic is usually: *"Do I have to delete thousands of `useMemo` calls?"*
+If you are maintaining a massive legacy codebase written in 2022, the immediate panic is usually: _"Do I have to delete thousands of `useMemo` calls?"_
 
 The short answer is: **No.**
 
@@ -157,12 +151,12 @@ Furthermore, the adoption strategy in modern frameworks (like Next.js 16) is des
 ```jsx
 // Opting out if the compiler gets confused by highly dynamic, mutated state
 function ComplexLegacyComponent() {
-  "use no memo";
+  'use no memo';
   // ... your old, messy code ...
 }
 ```
 
-The standard advice for 2026? Leave your existing `useMemo` hooks alone unless you are refactoring that specific component. But for all *new* code, write it as plain JavaScript. Let the React Compiler do its job.
+The standard advice for 2026? Leave your existing `useMemo` hooks alone unless you are refactoring that specific component. But for all _new_ code, write it as plain JavaScript. Let the React Compiler do its job.
 
 ![PROMPT: A clean, minimal infographic-style illustration on a white background. Showing a glowing, futuristic scanner (representing the React Compiler) passing over messy, tangled code and transforming it into a clean, organized, streamlined set of blocks. Soft pastel colors, geometric shapes, modern editorial style. No text. 16:9 aspect ratio.](IMAGE_URL_2)
 
@@ -177,38 +171,39 @@ If your code breaks the Rules of React, the compiler cannot optimize it, and it 
 Here are the critical mistakes that will break the compiler"s optimizations:
 
 ### 1. Mutating Variables During Render
+
 React components must be pure functions. If you mutate a variable that is used in the render phase, the compiler cannot guarantee safe memoization.
 
 ```jsx
 // ❌ BAD: Mutating an array during render
 function UserList({ users }) {
   // Mutating the prop directly! The compiler will bail out.
-  users.push({ id: 99, name: "Guest" }); 
-  
+  users.push({ id: 99, name: 'Guest' });
+
   return <div>{users.length} users</div>;
 }
 
 // ✅ GOOD: Creating a new reference
 function UserList({ users }) {
   // Pure mapping. The compiler can easily memoize this.
-  const allUsers = [...users, { id: 99, name: "Guest" }]; 
-  
+  const allUsers = [...users, { id: 99, name: 'Guest' }];
+
   return <div>{allUsers.length} users</div>;
 }
 ```
 
 ### 2. Relying on Local Mutations
 
-If you mutate an object or array locally *after* it has been used in a JSX element, the compiler gets confused about its reference stability.
+If you mutate an object or array locally _after_ it has been used in a JSX element, the compiler gets confused about its reference stability.
 
 ```jsx
 // ❌ BAD: Mutating after usage
 function Profile() {
-  const user = { name: "Alice" };
+  const user = { name: 'Alice' };
   const jsx = <div>{user.name}</div>;
-  
-  user.name = "Bob"; // Mutating AFTER the object was used in JSX
-  
+
+  user.name = 'Bob'; // Mutating AFTER the object was used in JSX
+
   return jsx;
 }
 ```
@@ -233,7 +228,7 @@ The death of `useMemo` doesn"t mean performance doesn"t matter anymore. It means
 
 ---
 
-*If you found this breakdown of the React Compiler helpful, stick around for more deep dives into the tools shaping modern web development. The future of frontend is moving fast, and we"re just getting started.*
+_If you found this breakdown of the React Compiler helpful, stick around for more deep dives into the tools shaping modern web development. The future of frontend is moving fast, and we"re just getting started._
 
 **Further Reading:**
 

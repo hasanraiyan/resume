@@ -72,7 +72,16 @@ Every report MUST follow this professional structure:
 
 ---
 
-## Step 5: Verification & Quality Check
+## Step 5: Persistence & Storage
+
+Once the report is generated and verified, you must persist it in the project's permanent storage:
+
+1.  **Create Directory**: If it doesn't exist, create a `reports/` directory in the project root.
+2.  **Save File**: Save the report as a `.md` file with a descriptive name (e.g., `reports/auth-flow-analysis.md`) so it remains accessible in the codebase.
+
+---
+
+## Step 6: Verification & Quality Check
 
 Before presenting the report, verify:
 

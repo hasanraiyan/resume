@@ -2,13 +2,13 @@
 
 ## Admin Panel Fields
 
-| Field          | Value                                                            |
-| -------------- | ---------------------------------------------------------------- |
-| **Title**      | The Death of useMemo: How the React Compiler is Rewriting the Rules in 2026 |
-| **Slug**       | the-death-of-usememo-react-compiler-2026                         |
+| Field          | Value                                                                                                                                                                  |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Title**      | The Death of useMemo: How the React Compiler is Rewriting the Rules in 2026                                                                                            |
+| **Slug**       | the-death-of-usememo-react-compiler-2026                                                                                                                               |
 | **Excerpt**    | For years, we've battled dependency arrays and stale closures. The React Compiler finally automates memoization, but it fundamentally changes how we write components. |
-| **Tags**       | react, javascript, performance, frontend, web-development        |
-| **Visibility** | Public - Anyone can view                                         |
+| **Tags**       | react, javascript, performance, frontend, web-development                                                                                                              |
+| **Visibility** | Public - Anyone can view                                                                                                                                               |
 
 ## Dev.to Cross-Posting Front Matter
 

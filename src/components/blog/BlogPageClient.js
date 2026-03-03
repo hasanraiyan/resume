@@ -8,7 +8,15 @@ import BlogFilters from './BlogFilters';
 /**
  * Blog Page Client — Medium-style article feed with dividers.
  */
-export default function BlogPageClient({ articles, totalArticles, totalPages, currentPage, search, tag, allTags = [] }) {
+export default function BlogPageClient({
+  articles,
+  totalArticles,
+  totalPages,
+  currentPage,
+  search,
+  tag,
+  allTags = [],
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
