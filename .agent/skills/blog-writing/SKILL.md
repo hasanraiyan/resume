@@ -17,8 +17,13 @@ Before writing, you must select a topic and then deeply research it:
 ### Part A: Select a Topic
 
 1.  **MANDATORY: Check Existing Blogs**: You MUST first fetch the list of currently published articles to avoid duplicates.
-    - **Action**: Use `read_url_content` on `https://hasanraiyan.vercel.app/blog`.
-    - **Analysis**: Parse the returned markdown to extract all existing titles and slugs.
+    - **Action**: Run the fetch-all-blogs tool:
+      ```bash
+      node .agent/skills/blog-writing/tool/fetch-all-blogs.js
+      ```
+      This calls the `/api/articles` endpoint and returns **all** published articles as JSON (bypasses pagination).
+      **Fallback**: If the API is not deployed yet, list markdown files in `d:\resume\blogs\` and extract topic names from filenames (ignore `.metadata.md` files).
+    - **Analysis**: Parse the returned JSON array of `{ title, slug, tags, publishedAt }` to check for duplicates.
     - **Constraint**: If your proposed topic or a very similar one already exists, you MUST pivot to a different angle or a new topic entirely.
 2.  **Search the web** for trending developer topics (use `search_web`).
 3.  **Pick a topic** that:
@@ -214,11 +219,13 @@ A JSON array of all prompts for the image generation tool.
 Once the blog is finalized, run these verification steps:
 
 1.  **Word Count & Readability**:
+
     ```powershell
     powershell -Command "(Get-Content d:\resume\blogs\[topic-name].md) -match '\w+' | Measure-Object -Word | Select-Object -ExpandProperty Words"
     ```
 
     - Aim for **2,000+ words** for high-authority content.
+
 2.  **Link Validation**: Manually check all custom links.
 3.  **Image URL verification**: Ensure the URLs in the markdown match the generation results exactly.
 
