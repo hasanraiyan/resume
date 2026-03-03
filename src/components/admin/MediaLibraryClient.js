@@ -5,8 +5,16 @@ import { useState, useEffect } from 'react';
 import { deleteAsset } from '@/app/actions/mediaActions';
 import Image from 'next/image';
 import imageCompression from 'browser-image-compression';
-// CustomDropdown removed due to width issues
 import ImageLightbox from '@/components/ui/ImageLightbox';
+import BeforeAfterSlider from '@/components/ui/BeforeAfterSlider';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/Dialog';
+import Button from '@/components/ui/Button';
 
 // (This is a simplified version. You can add more features like search, filters, etc. later)
 export default function MediaLibraryClient({ initialAssets }) {
@@ -25,8 +33,12 @@ export default function MediaLibraryClient({ initialAssets }) {
   const [uploadError, setUploadError] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [aiMode, setAiMode] = useState('generate'); // 'generate' or 'edit'
   const [generateError, setGenerateError] = useState('');
   const [prompt, setPrompt] = useState('');
+  const [selectedAssetForEdit, setSelectedAssetForEdit] = useState(null);
+  const [previewData, setPreviewData] = useState(null); // { before, after, mode }
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [providers, setProviders] = useState([]);
   const [selectedProvider, setSelectedProvider] = useState('');
   const [models, setModels] = useState([]);
@@ -483,6 +495,46 @@ export default function MediaLibraryClient({ initialAssets }) {
     } catch {}
   };
 
+  // Update aiMode based on selectedAssetForEdit
+  useEffect(() => {
+    if (selectedAssetForEdit) {
+      setAiMode('edit');
+
+      // Auto-select best matching aspect ratio
+      if (selectedAssetForEdit.width && selectedAssetForEdit.height) {
+        const ratio = selectedAssetForEdit.width / selectedAssetForEdit.height;
+        let bestMatch = '1:1';
+        let minDiff = Math.abs(ratio - 1);
+
+        const ratios = [
+          { val: '1:1', n: 1 },
+          { val: '16:9', n: 16 / 9 },
+          { val: '9:16', n: 9 / 16 },
+          { val: '4:3', n: 4 / 3 },
+          { val: '3:4', n: 3 / 4 },
+          { val: '3:2', n: 3 / 2 },
+          { val: '2:3', n: 2 / 3 },
+          { val: '5:4', n: 5 / 4 },
+          { val: '4:5', n: 4 / 5 },
+          { val: '4:1', n: 4 / 1 },
+          { val: '1:4', n: 1 / 4 },
+          { val: '8:1', n: 8 / 1 },
+          { val: '1:8', n: 1 / 8 },
+        ];
+
+        ratios.forEach((r) => {
+          const diff = Math.abs(ratio - r.n);
+          if (diff < minDiff) {
+            minDiff = diff;
+            bestMatch = r.val;
+          }
+        });
+        setAspectRatio(bestMatch);
+      }
+    } else {
+      setAiMode('generate');
+    }
+  }, [selectedAssetForEdit]);
   // Fetch available providers on mount
   useEffect(() => {
     const fetchProviders = async () => {
@@ -504,6 +556,7 @@ export default function MediaLibraryClient({ initialAssets }) {
         console.error('Failed to fetch providers:', error);
       }
     };
+
     // Restore aspect ratio
     const savedRatio = localStorage.getItem('media-gen-aspectRatio');
     if (savedRatio) setAspectRatio(savedRatio);
@@ -615,9 +668,14 @@ export default function MediaLibraryClient({ initialAssets }) {
     setSelectedTemplate(templatePrompt);
   };
 
-  const handleGenerate = async () => {
+  const handleAiAction = async () => {
     if (!prompt.trim()) {
       setGenerateError('Prompt is required');
+      return;
+    }
+
+    if (aiMode === 'edit' && !selectedAssetForEdit) {
+      setGenerateError('Please select an image to edit from the gallery below');
       return;
     }
 
@@ -625,17 +683,29 @@ export default function MediaLibraryClient({ initialAssets }) {
     setGenerateError('');
 
     try {
-      const response = await fetch('/api/media/generate', {
+      const endpoint = aiMode === 'generate' ? '/api/media/generate' : '/api/media/edit';
+      const body =
+        aiMode === 'generate'
+          ? {
+              prompt: prompt.trim(),
+              aspectRatio,
+              providerId: selectedProvider,
+              model: selectedModel,
+            }
+          : {
+              assetId: selectedAssetForEdit._id,
+              editPrompt: prompt.trim(),
+              aspectRatio,
+              providerId: selectedProvider,
+              model: selectedModel,
+            };
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          prompt: prompt.trim(),
-          aspectRatio,
-          providerId: selectedProvider,
-          model: selectedModel,
-        }),
+        body: JSON.stringify(body),
       });
 
       const result = await response.json();
@@ -643,8 +713,24 @@ export default function MediaLibraryClient({ initialAssets }) {
       if (result.success) {
         setAssets((prev) => [result.asset, ...prev]);
         setPrompt('');
+
+        // Prepare preview data
+        setPreviewData({
+          before: aiMode === 'edit' ? selectedAssetForEdit?.secure_url : null,
+          after: result.asset.secure_url,
+          mode: aiMode,
+          aspectRatio: aspectRatio,
+        });
+        setIsPreviewOpen(true);
+
+        if (aiMode === 'edit') {
+          setSelectedAssetForEdit(null);
+          setAiMode('generate');
+        }
       } else {
-        setGenerateError(result.error || 'Generation failed');
+        setGenerateError(
+          result.error || `${aiMode === 'generate' ? 'Generation' : 'Editing'} failed`
+        );
       }
     } catch (error) {
       setGenerateError('Network error. Please check your connection and try again.');
@@ -731,17 +817,82 @@ export default function MediaLibraryClient({ initialAssets }) {
         </div>
       )}
 
-      {/* AI Image Generator Section */}
+      {/* AI Image Panel (Generate & Edit) */}
       <div className="bg-white rounded-2xl border border-neutral-200/60 shadow-sm overflow-hidden">
         <div className="p-6 sm:p-8 space-y-6">
-          <div className="pb-5 border-b border-neutral-100">
-            <h3 className="text-lg font-semibold text-black mb-1 font-['Playfair_Display']">
-              AI Image Generator
-            </h3>
-            <p className="text-sm text-neutral-500">
-              Generate images using your configured AI providers.
-            </p>
+          <div className="pb-5 border-b border-neutral-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-black mb-1 font-['Playfair_Display']">
+                AI Media Studio
+              </h3>
+              <p className="text-sm text-neutral-500">
+                {aiMode === 'generate'
+                  ? 'Generate new images from scratch.'
+                  : 'Edit existing images with AI instructions.'}
+              </p>
+            </div>
+
+            <div className="flex bg-neutral-100 p-1 rounded-xl w-fit self-start pointer-events-none opacity-60">
+              <div
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  aiMode === 'generate' ? 'bg-white text-black shadow-sm' : 'text-neutral-500'
+                }`}
+              >
+                Generate
+              </div>
+              <div
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  aiMode === 'edit' ? 'bg-white text-black shadow-sm' : 'text-neutral-500'
+                }`}
+              >
+                Edit
+              </div>
+            </div>
           </div>
+
+          {/* Selected Asset for Editing Preview */}
+          {aiMode === 'edit' && (
+            <div
+              className={`p-4 rounded-xl border transition-all ${
+                selectedAssetForEdit
+                  ? 'bg-blue-50 border-blue-100'
+                  : 'bg-orange-50 border-orange-100'
+              }`}
+            >
+              {selectedAssetForEdit ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-blue-200 shadow-sm">
+                      <img
+                        src={selectedAssetForEdit.secure_url}
+                        alt="To Edit"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-blue-900">Image Selected</p>
+                      <p className="text-xs text-blue-700 truncate max-w-[200px]">
+                        {selectedAssetForEdit.filename}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedAssetForEdit(null)}
+                    className="p-2 text-blue-400 hover:text-blue-600 transition-colors"
+                  >
+                    <i className="fas fa-times-circle text-lg"></i>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 text-orange-700">
+                  <i className="fas fa-info-circle"></i>
+                  <p className="text-sm font-medium">
+                    Please select an image from the gallery below to start editing.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Error Message */}
           {generateError && (
@@ -753,45 +904,51 @@ export default function MediaLibraryClient({ initialAssets }) {
             </div>
           )}
 
-          {/* Prompt Templates */}
-          <div className="space-y-3">
-            <label className="block text-sm font-medium text-neutral-800">
-              Quick Start Templates
-            </label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {promptTemplates.map((category) => (
-                <div key={category.category} className="space-y-1.5">
-                  <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-                    {category.category}
+          {/* Prompt Templates (Only for Generate) */}
+          {aiMode === 'generate' && (
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-neutral-800">
+                Quick Start Templates
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {promptTemplates.map((category) => (
+                  <div key={category.category} className="space-y-1.5">
+                    <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                      {category.category}
+                    </div>
+                    {category.templates.map((template) => (
+                      <button
+                        key={template.name}
+                        onClick={() => handleTemplateSelect(template.prompt)}
+                        className="w-full text-left px-3 py-2 text-sm bg-neutral-50 border border-neutral-200 rounded-xl hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-all"
+                        disabled={isGenerating}
+                      >
+                        {template.name}
+                      </button>
+                    ))}
                   </div>
-                  {category.templates.map((template) => (
-                    <button
-                      key={template.name}
-                      onClick={() => handleTemplateSelect(template.prompt)}
-                      className="w-full text-left px-3 py-2 text-sm bg-neutral-50 border border-neutral-200 rounded-xl hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-all"
-                      disabled={isGenerating}
-                    >
-                      {template.name}
-                    </button>
-                  ))}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Main Prompt Input */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-neutral-800">
-              Describe Your Image
+              {aiMode === 'generate' ? 'Describe Your Image' : 'Describe Changes'}
             </label>
             <div className="relative">
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-none bg-neutral-50 text-sm"
-                placeholder="A majestic lion standing on a mountain peak at sunset, photorealistic, dramatic lighting, 8k resolution..."
+                placeholder={
+                  aiMode === 'generate'
+                    ? 'A majestic lion standing on a mountain peak at sunset...'
+                    : 'Change the sky to a stormy night, make the colors more vibrant...'
+                }
                 rows={3}
-                disabled={isGenerating}
+                disabled={isGenerating || (aiMode === 'edit' && !selectedAssetForEdit)}
               />
               {prompt && (
                 <div className="absolute bottom-2 right-3 text-[10px] text-neutral-400">
@@ -863,25 +1020,31 @@ export default function MediaLibraryClient({ initialAssets }) {
             </div>
           </div>
 
-          {/* Generate Button */}
+          {/* Action Button */}
           <button
-            onClick={handleGenerate}
-            disabled={isGenerating || !prompt.trim()}
+            onClick={handleAiAction}
+            disabled={
+              isGenerating || !prompt.trim() || (aiMode === 'edit' && !selectedAssetForEdit)
+            }
             className={`w-full py-3 px-6 rounded-xl transition-all text-sm font-medium flex items-center justify-center gap-2.5 ${
-              isGenerating || !prompt.trim()
+              isGenerating || !prompt.trim() || (aiMode === 'edit' && !selectedAssetForEdit)
                 ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed border border-neutral-200'
-                : 'bg-black hover:bg-neutral-800 text-white shadow-lg shadow-black/10'
+                : aiMode === 'generate'
+                  ? 'bg-black hover:bg-neutral-800 text-white shadow-lg shadow-black/10'
+                  : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/10'
             }`}
           >
             {isGenerating ? (
               <>
                 <div className="w-4 h-4 border-2 border-neutral-300 border-t-neutral-500 rounded-full animate-spin"></div>
-                Generating...
+                {aiMode === 'generate' ? 'Generating...' : 'Editing...'}
               </>
             ) : (
               <>
-                <i className="fas fa-sparkles text-xs"></i>
-                Generate Image
+                <i
+                  className={`fas ${aiMode === 'generate' ? 'fa-sparkles' : 'fa-magic'} text-xs`}
+                ></i>
+                {aiMode === 'generate' ? 'Generate Image' : 'Apply AI Edits'}
               </>
             )}
           </button>
@@ -1203,6 +1366,17 @@ export default function MediaLibraryClient({ initialAssets }) {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
+                          setSelectedAssetForEdit(asset);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="bg-indigo-500 hover:bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium transition-colors shadow-lg"
+                        title="Edit with AI"
+                      >
+                        <i className="fas fa-magic"></i>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
                           handleDelete(asset._id);
                         }}
                         className="bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium transition-colors shadow-lg"
@@ -1274,6 +1448,61 @@ export default function MediaLibraryClient({ initialAssets }) {
           </div>
         </div>
       )}
+
+      {/* AI Result Preview Modal */}
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="sm:max-w-2xl bg-white border-neutral-200">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-['Playfair_Display']">
+              {previewData?.mode === 'edit' ? 'AI Edit Result' : 'AI Generation Result'}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="mt-4">
+            {previewData?.mode === 'edit' && previewData?.before ? (
+              <div className="space-y-4">
+                <p className="text-sm text-neutral-500">
+                  Slide to compare the original and the AI-edited version.
+                </p>
+                <BeforeAfterSlider
+                  before={previewData.before}
+                  after={previewData.after}
+                  aspectRatio={previewData.aspectRatio}
+                />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-neutral-500">Your new AI-generated image is ready.</p>
+                <div
+                  className={`relative w-full overflow-hidden rounded-xl border border-neutral-200 ${
+                    previewData?.aspectRatio === '16:9'
+                      ? 'aspect-video'
+                      : previewData?.aspectRatio === '9:16'
+                        ? 'aspect-[9/16]'
+                        : 'aspect-square'
+                  }`}
+                >
+                  <Image
+                    src={previewData?.after}
+                    alt="Generated Result"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="mt-6">
+            <Button
+              onClick={() => setIsPreviewOpen(false)}
+              className="bg-black hover:bg-neutral-800 text-white"
+            >
+              Close Preview
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Image Lightbox */}
       <ImageLightbox

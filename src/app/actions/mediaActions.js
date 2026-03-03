@@ -221,6 +221,94 @@ export async function generateMedia({
     return { success: false, error: `Generation failed: ${error.message}` };
   }
 }
+// --- ACTION 4: EDIT MEDIA VIA GEMINI ---
+export async function editMedia({
+  assetId,
+  editPrompt,
+  aspectRatio = '1:1',
+  providerId,
+  model = 'gemini-3.1-flash-image-preview',
+}) {
+  console.log('=== EDIT MEDIA DEBUG ===');
+  console.log('editMedia called with:', { assetId, editPrompt, aspectRatio, providerId, model });
+
+  if (!assetId) {
+    return { success: false, error: 'Asset ID is required.' };
+  }
+  if (!editPrompt || typeof editPrompt !== 'string' || editPrompt.trim().length === 0) {
+    return { success: false, error: 'Edit prompt is required.' };
+  }
+
+  try {
+    await dbConnect();
+    const asset = await MediaAsset.findById(assetId);
+    if (!asset) {
+      return { success: false, error: 'Asset not found.' };
+    }
+
+    // Fetch the image and convert to base64
+    const imageResponse = await fetch(asset.secure_url || asset.url);
+    if (!imageResponse.ok) {
+      throw new Error('Failed to fetch original image from storage');
+    }
+    const arrayBuffer = await imageResponse.arrayBuffer();
+    const base64Image = Buffer.from(arrayBuffer).toString('base64');
+
+    const { default: imageService } = await import('@/lib/image-service');
+
+    const { buffer, mimeType, extension } = await imageService.editImage(
+      base64Image,
+      editPrompt.trim(),
+      aspectRatio,
+      providerId,
+      model
+    );
+
+    console.log('Gemini image edited, uploading to Cloudinary...');
+
+    // Upload the edited image buffer to Cloudinary
+    const uploadResult = await new Promise((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream(
+          {
+            resource_type: 'image',
+            folder: 'portfolio_assets',
+            format: extension,
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        )
+        .end(buffer);
+    });
+
+    const newAsset = new MediaAsset({
+      public_id: uploadResult.public_id,
+      url: uploadResult.url,
+      secure_url: uploadResult.secure_url,
+      filename: `edited_${asset.filename.split('.')[0]}_${Date.now()}.${extension}`,
+      format: uploadResult.format,
+      size: uploadResult.bytes,
+      width: uploadResult.width,
+      height: uploadResult.height,
+      source: 'gemini',
+      prompt: editPrompt.trim(),
+      parentAssetId: assetId,
+    });
+
+    await newAsset.save();
+    revalidatePath('/admin/media');
+
+    return {
+      success: true,
+      asset: JSON.parse(JSON.stringify(newAsset)),
+    };
+  } catch (error) {
+    console.error('Media editing error details:', error);
+    return { success: false, error: `Editing failed: ${error.message}` };
+  }
+}
 export async function deleteAsset(assetId) {
   console.log('=== DELETE ASSET DEBUG ===');
   console.log('deleteAsset called with assetId:', assetId);
