@@ -1,7 +1,7 @@
 // src/components/admin/MediaLibraryClient.js
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { deleteAsset } from '@/app/actions/mediaActions';
 import Image from 'next/image';
 import imageCompression from 'browser-image-compression';
@@ -78,6 +78,9 @@ export default function MediaLibraryClient({ initialAssets, title, description }
   const [isSearchingSemantic, setIsSearchingSemantic] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingResults, setProcessingResults] = useState(null);
+
+  // Infinite Scroll Observer Ref
+  const observer = useRef();
 
   const aspectRatioOptions = [
     { value: '1:1', label: 'Square (1:1)' },
@@ -689,11 +692,23 @@ export default function MediaLibraryClient({ initialAssets, title, description }
     ? semanticResults.length
     : filteredAndSortedAssets.length;
   const totalPages = Math.ceil(totalFilteredAssets / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
   const paginatedAssets = isSemanticSearch
-    ? semanticResults.slice(startIndex, endIndex)
-    : filteredAndSortedAssets.slice(startIndex, endIndex);
+    ? semanticResults.slice(0, currentPage * itemsPerPage)
+    : filteredAndSortedAssets.slice(0, currentPage * itemsPerPage);
+
+  const lastAssetElementRef = useCallback(
+    (node) => {
+      if (isSearchingSemantic) return;
+      if (observer.current) observer.current.disconnect();
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && currentPage < totalPages) {
+          setCurrentPage((prevPage) => prevPage + 1);
+        }
+      });
+      if (node) observer.current.observe(node);
+    },
+    [currentPage, totalPages, isSearchingSemantic]
+  );
 
   const handleSemanticSearch = async () => {
     if (!searchQuery.trim()) {
@@ -1278,7 +1293,7 @@ export default function MediaLibraryClient({ initialAssets, title, description }
         {/* Results Summary */}
         <div className="mt-4 flex justify-between items-center text-sm text-gray-600">
           <div>
-            Showing {startIndex + 1}-{Math.min(endIndex, totalFilteredAssets)} of{' '}
+            Showing 1-{Math.min(currentPage * itemsPerPage, totalFilteredAssets)} of{' '}
             {totalFilteredAssets} assets
             {isSemanticSearch ? (
               <span className="ml-2 px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full text-[10px] font-bold uppercase tracking-tight border border-blue-100 animate-pulse">
@@ -1643,50 +1658,20 @@ export default function MediaLibraryClient({ initialAssets, title, description }
           </div>
         </div>
 
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="mt-4 flex justify-center">
-            <div className="flex items-center gap-2">
-              {/* Previous Button */}
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-l-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <i className="fas fa-chevron-left"></i>
-              </button>
-
-              {/* Page Numbers */}
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
-                if (pageNum > totalPages) return null;
-
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`px-4 py-2 text-sm border border-gray-300 ${
-                      currentPage === pageNum
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
-
-              {/* Next Button */}
-              <button
-                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-r-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <i className="fas fa-chevron-right"></i>
-              </button>
+        {/* Sentinel element for Infinite Scroll */}
+        <div ref={lastAssetElementRef} className="h-10 mt-8 mb-20 flex justify-center">
+          {currentPage < totalPages && (
+            <div className="flex items-center gap-2 text-neutral-400 animate-pulse">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span className="text-sm font-medium">Loading more treasures...</span>
             </div>
-          </div>
-        )}
+          )}
+          {currentPage >= totalPages && totalFilteredAssets > 0 && (
+            <span className="text-sm text-neutral-400 font-medium italic">
+              ✨ You've reached the end of the library ✨
+            </span>
+          )}
+        </div>
 
         {/* AI Result Preview Modal */}
         <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
