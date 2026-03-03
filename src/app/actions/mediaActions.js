@@ -223,17 +223,19 @@ export async function generateMedia({
 }
 // --- ACTION 4: EDIT MEDIA VIA GEMINI ---
 export async function editMedia({
-  assetId,
+  assetIds,
   editPrompt,
   aspectRatio = '1:1',
   providerId,
   model = 'gemini-3.1-flash-image-preview',
 }) {
   console.log('=== EDIT MEDIA DEBUG ===');
-  console.log('editMedia called with:', { assetId, editPrompt, aspectRatio, providerId, model });
+  console.log('editMedia called with:', { assetIds, editPrompt, aspectRatio, providerId, model });
 
-  if (!assetId) {
-    return { success: false, error: 'Asset ID is required.' };
+  const ids = Array.isArray(assetIds) ? assetIds : [assetIds];
+
+  if (!ids || ids.length === 0) {
+    return { success: false, error: 'Asset IDs are required.' };
   }
   if (!editPrompt || typeof editPrompt !== 'string' || editPrompt.trim().length === 0) {
     return { success: false, error: 'Edit prompt is required.' };
@@ -241,23 +243,27 @@ export async function editMedia({
 
   try {
     await dbConnect();
-    const asset = await MediaAsset.findById(assetId);
-    if (!asset) {
-      return { success: false, error: 'Asset not found.' };
+    const assets = await MediaAsset.find({ _id: { $in: ids } });
+    if (!assets || assets.length === 0) {
+      return { success: false, error: 'Assets not found.' };
     }
 
-    // Fetch the image and convert to base64
-    const imageResponse = await fetch(asset.secure_url || asset.url);
-    if (!imageResponse.ok) {
-      throw new Error('Failed to fetch original image from storage');
-    }
-    const arrayBuffer = await imageResponse.arrayBuffer();
-    const base64Image = Buffer.from(arrayBuffer).toString('base64');
+    // Fetch images and convert to base64
+    const base64Images = await Promise.all(
+      assets.map(async (asset) => {
+        const imageResponse = await fetch(asset.secure_url || asset.url);
+        if (!imageResponse.ok) {
+          throw new Error(`Failed to fetch original image ${asset._id} from storage`);
+        }
+        const arrayBuffer = await imageResponse.arrayBuffer();
+        return Buffer.from(arrayBuffer).toString('base64');
+      })
+    );
 
     const { default: imageService } = await import('@/lib/image-service');
 
     const { buffer, mimeType, extension } = await imageService.editImage(
-      base64Image,
+      base64Images,
       editPrompt.trim(),
       aspectRatio,
       providerId,
@@ -287,14 +293,14 @@ export async function editMedia({
       public_id: uploadResult.public_id,
       url: uploadResult.url,
       secure_url: uploadResult.secure_url,
-      filename: `edited_${asset.filename.split('.')[0]}_${Date.now()}.${extension}`,
+      filename: `edited_multi_${Date.now()}.${extension}`,
       format: uploadResult.format,
       size: uploadResult.bytes,
       width: uploadResult.width,
       height: uploadResult.height,
       source: 'gemini',
       prompt: editPrompt.trim(),
-      parentAssetId: assetId,
+      parentAssetIds: ids,
     });
 
     await newAsset.save();

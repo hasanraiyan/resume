@@ -64,7 +64,7 @@ class ImageService {
     return { buffer, mimeType, extension };
   }
 
-  async editImage(base64Image, editPrompt, aspectRatio = '1:1', providerId, modelName) {
+  async editImage(base64Images, editPrompt, aspectRatio = '1:1', providerId, modelName) {
     await dbConnect();
     const settings = await ChatbotSettings.findOne({});
     if (!settings || !settings.providers || settings.providers.length === 0) {
@@ -97,18 +97,23 @@ class ImageService {
     const model = modelName || 'gemini-3.1-flash-image-preview';
     const genAI = new GoogleGenAI({ apiKey });
 
-    console.log(`[Gemini] Editing image with model: ${model}, aspect ratio: ${aspectRatio}`);
+    // Ensure base64Images is an array
+    const imagesArray = Array.isArray(base64Images) ? base64Images : [base64Images];
+
+    console.log(
+      `[Gemini] Editing image(s) with model: ${model}, count: ${imagesArray.length}, aspect ratio: ${aspectRatio}`
+    );
 
     const contents = [
       {
         role: 'user',
         parts: [
-          {
+          ...imagesArray.map((base64) => ({
             inlineData: {
-              data: base64Image,
+              data: base64,
               mimeType: 'image/jpeg',
             },
-          },
+          })),
           {
             text: editPrompt,
           },

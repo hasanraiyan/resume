@@ -7,6 +7,7 @@ import Image from 'next/image';
 import imageCompression from 'browser-image-compression';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 import BeforeAfterSlider from '@/components/ui/BeforeAfterSlider';
+import MultiImagePreview from '@/components/ui/MultiImagePreview';
 import {
   Dialog,
   DialogContent,
@@ -36,7 +37,7 @@ export default function MediaLibraryClient({ initialAssets }) {
   const [aiMode, setAiMode] = useState('generate'); // 'generate' or 'edit'
   const [generateError, setGenerateError] = useState('');
   const [prompt, setPrompt] = useState('');
-  const [selectedAssetForEdit, setSelectedAssetForEdit] = useState(null);
+  const [selectedAssetsForEdit, setSelectedAssetsForEdit] = useState([]); // Support multiple images
   const [previewData, setPreviewData] = useState(null); // { before, after, mode }
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [providers, setProviders] = useState([]);
@@ -495,14 +496,15 @@ export default function MediaLibraryClient({ initialAssets }) {
     } catch {}
   };
 
-  // Update aiMode based on selectedAssetForEdit
+  // Update aiMode based on selectedAssetsForEdit
   useEffect(() => {
-    if (selectedAssetForEdit) {
+    if (selectedAssetsForEdit.length > 0) {
       setAiMode('edit');
 
-      // Auto-select best matching aspect ratio
-      if (selectedAssetForEdit.width && selectedAssetForEdit.height) {
-        const ratio = selectedAssetForEdit.width / selectedAssetForEdit.height;
+      // Auto-select best matching aspect ratio based on the first selected image
+      const firstAsset = selectedAssetsForEdit[0];
+      if (firstAsset.width && firstAsset.height) {
+        const ratio = firstAsset.width / firstAsset.height;
         let bestMatch = '1:1';
         let minDiff = Math.abs(ratio - 1);
 
@@ -534,7 +536,7 @@ export default function MediaLibraryClient({ initialAssets }) {
     } else {
       setAiMode('generate');
     }
-  }, [selectedAssetForEdit]);
+  }, [selectedAssetsForEdit]);
   // Fetch available providers on mount
   useEffect(() => {
     const fetchProviders = async () => {
@@ -674,8 +676,8 @@ export default function MediaLibraryClient({ initialAssets }) {
       return;
     }
 
-    if (aiMode === 'edit' && !selectedAssetForEdit) {
-      setGenerateError('Please select an image to edit from the gallery below');
+    if (aiMode === 'edit' && selectedAssetsForEdit.length === 0) {
+      setGenerateError('Please select at least one image to edit from the gallery below');
       return;
     }
 
@@ -693,12 +695,14 @@ export default function MediaLibraryClient({ initialAssets }) {
               model: selectedModel,
             }
           : {
-              assetId: selectedAssetForEdit._id,
+              assetIds: selectedAssetsForEdit.map((a) => a._id),
               editPrompt: prompt.trim(),
               aspectRatio,
               providerId: selectedProvider,
               model: selectedModel,
             };
+
+      console.log('Sending AI action request:', { endpoint, body });
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -716,7 +720,7 @@ export default function MediaLibraryClient({ initialAssets }) {
 
         // Prepare preview data
         setPreviewData({
-          before: aiMode === 'edit' ? selectedAssetForEdit?.secure_url : null,
+          befores: aiMode === 'edit' ? selectedAssetsForEdit.map((a) => a.secure_url) : [],
           after: result.asset.secure_url,
           mode: aiMode,
           aspectRatio: aspectRatio,
@@ -724,7 +728,7 @@ export default function MediaLibraryClient({ initialAssets }) {
         setIsPreviewOpen(true);
 
         if (aiMode === 'edit') {
-          setSelectedAssetForEdit(null);
+          setSelectedAssetsForEdit([]);
           setAiMode('generate');
         }
       } else {
@@ -850,44 +854,58 @@ export default function MediaLibraryClient({ initialAssets }) {
             </div>
           </div>
 
-          {/* Selected Asset for Editing Preview */}
+          {/* Selected Assets for Editing Preview */}
           {aiMode === 'edit' && (
             <div
               className={`p-4 rounded-xl border transition-all ${
-                selectedAssetForEdit
+                selectedAssetsForEdit.length > 0
                   ? 'bg-blue-50 border-blue-100'
                   : 'bg-orange-50 border-orange-100'
               }`}
             >
-              {selectedAssetForEdit ? (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-blue-200 shadow-sm">
-                      <img
-                        src={selectedAssetForEdit.secure_url}
-                        alt="To Edit"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-blue-900">Image Selected</p>
-                      <p className="text-xs text-blue-700 truncate max-w-[200px]">
-                        {selectedAssetForEdit.filename}
-                      </p>
-                    </div>
+              {selectedAssetsForEdit.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-blue-900">
+                      {selectedAssetsForEdit.length} Image
+                      {selectedAssetsForEdit.length > 1 ? 's' : ''} Selected
+                    </p>
+                    <button
+                      onClick={() => setSelectedAssetsForEdit([])}
+                      className="text-xs text-blue-600 hover:text-blue-800 underline"
+                    >
+                      Clear All
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setSelectedAssetForEdit(null)}
-                    className="p-2 text-blue-400 hover:text-blue-600 transition-colors"
-                  >
-                    <i className="fas fa-times-circle text-lg"></i>
-                  </button>
+                  <div className="flex flex-wrap gap-3">
+                    {selectedAssetsForEdit.map((asset) => (
+                      <div key={asset._id} className="relative group">
+                        <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-blue-200 shadow-sm">
+                          <img
+                            src={asset.secure_url}
+                            alt="Selected"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <button
+                          onClick={() =>
+                            setSelectedAssetsForEdit((prev) =>
+                              prev.filter((a) => a._id !== asset._id)
+                            )
+                          }
+                          className="absolute -top-1.5 -right-1.5 bg-white text-red-500 rounded-full w-5 h-5 flex items-center justify-center shadow-md border border-neutral-100 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <i className="fas fa-times text-[10px]"></i>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-3 text-orange-700">
                   <i className="fas fa-info-circle"></i>
                   <p className="text-sm font-medium">
-                    Please select an image from the gallery below to start editing.
+                    Please select one or more images from the gallery below to start editing.
                   </p>
                 </div>
               )}
@@ -945,10 +963,10 @@ export default function MediaLibraryClient({ initialAssets }) {
                 placeholder={
                   aiMode === 'generate'
                     ? 'A majestic lion standing on a mountain peak at sunset...'
-                    : 'Change the sky to a stormy night, make the colors more vibrant...'
+                    : 'Combine these images into a collage, or change the background of all images...'
                 }
                 rows={3}
-                disabled={isGenerating || (aiMode === 'edit' && !selectedAssetForEdit)}
+                disabled={isGenerating || (aiMode === 'edit' && selectedAssetsForEdit.length === 0)}
               />
               {prompt && (
                 <div className="absolute bottom-2 right-3 text-[10px] text-neutral-400">
@@ -1024,10 +1042,14 @@ export default function MediaLibraryClient({ initialAssets }) {
           <button
             onClick={handleAiAction}
             disabled={
-              isGenerating || !prompt.trim() || (aiMode === 'edit' && !selectedAssetForEdit)
+              isGenerating ||
+              !prompt.trim() ||
+              (aiMode === 'edit' && selectedAssetsForEdit.length === 0)
             }
             className={`w-full py-3 px-6 rounded-xl transition-all text-sm font-medium flex items-center justify-center gap-2.5 ${
-              isGenerating || !prompt.trim() || (aiMode === 'edit' && !selectedAssetForEdit)
+              isGenerating ||
+              !prompt.trim() ||
+              (aiMode === 'edit' && selectedAssetsForEdit.length === 0)
                 ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed border border-neutral-200'
                 : aiMode === 'generate'
                   ? 'bg-black hover:bg-neutral-800 text-white shadow-lg shadow-black/10'
@@ -1366,11 +1388,14 @@ export default function MediaLibraryClient({ initialAssets }) {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedAssetForEdit(asset);
+                          setSelectedAssetsForEdit((prev) => {
+                            if (prev.some((a) => a._id === asset._id)) return prev;
+                            return [...prev, asset];
+                          });
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
                         className="bg-indigo-500 hover:bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium transition-colors shadow-lg"
-                        title="Edit with AI"
+                        title="Add to AI Edit"
                       >
                         <i className="fas fa-magic"></i>
                       </button>
@@ -1458,17 +1483,51 @@ export default function MediaLibraryClient({ initialAssets }) {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="mt-4">
-            {previewData?.mode === 'edit' && previewData?.before ? (
-              <div className="space-y-4">
-                <p className="text-sm text-neutral-500">
-                  Slide to compare the original and the AI-edited version.
-                </p>
-                <BeforeAfterSlider
-                  before={previewData.before}
-                  after={previewData.after}
-                  aspectRatio={previewData.aspectRatio}
-                />
+          <div className="mt-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+            {previewData?.mode === 'edit' && previewData?.befores?.length > 0 ? (
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <p className="text-sm text-neutral-500">
+                    {previewData.befores.length > 1
+                      ? 'You used multiple images as input. Here is the comparison with the primary image.'
+                      : 'Slide to compare the original and the AI-edited version.'}
+                  </p>
+                  <BeforeAfterSlider
+                    before={previewData.befores[0]}
+                    after={previewData.after}
+                    aspectRatio={previewData.aspectRatio}
+                  />
+                </div>
+
+                {previewData.befores.length > 1 && (
+                  <div className="space-y-4 pt-4 border-t border-neutral-100">
+                    <p className="text-sm font-medium text-neutral-800">All Input Images</p>
+                    <MultiImagePreview
+                      images={previewData.befores}
+                      aspectRatio={previewData.aspectRatio}
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-4 pt-4 border-t border-neutral-100">
+                  <p className="text-sm font-medium text-neutral-800">Final Result</p>
+                  <div
+                    className={`relative w-full overflow-hidden rounded-xl border border-neutral-200 ${
+                      previewData?.aspectRatio === '16:9'
+                        ? 'aspect-video'
+                        : previewData?.aspectRatio === '9:16'
+                          ? 'aspect-[9/16]'
+                          : 'aspect-square'
+                    }`}
+                  >
+                    <Image
+                      src={previewData?.after}
+                      alt="Generated Result"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="space-y-4">

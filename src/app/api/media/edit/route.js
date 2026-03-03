@@ -4,11 +4,24 @@ import { editMedia } from '@/app/actions/mediaActions';
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { assetId, editPrompt, aspectRatio, providerId, model } = body;
+    const { assetIds, assetId, editPrompt, aspectRatio, providerId, model } = body;
 
-    console.log('API edit request:', { assetId, editPrompt, aspectRatio, providerId, model });
+    console.log('API edit request:', {
+      assetIds,
+      assetId,
+      editPrompt,
+      aspectRatio,
+      providerId,
+      model,
+    });
 
-    const result = await editMedia({ assetId, editPrompt, aspectRatio, providerId, model });
+    const result = await editMedia({
+      assetIds: assetIds || (assetId ? [assetId] : undefined),
+      editPrompt,
+      aspectRatio,
+      providerId,
+      model,
+    });
 
     if (result.success) {
       return Response.json({ success: true, asset: result.asset });
