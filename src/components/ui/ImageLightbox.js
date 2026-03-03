@@ -207,6 +207,7 @@ export default function ImageLightbox({
                   : 'text-white/40 hover:text-white hover:bg-white/10'
               }`}
               title="Info (I)"
+              aria-label="Toggle info"
             >
               <i className="fas fa-info"></i>
             </button>
@@ -214,13 +215,14 @@ export default function ImageLightbox({
               onClick={handleDownload}
               className="w-8 h-8 rounded-lg text-white/40 hover:text-white hover:bg-white/10 flex items-center justify-center transition-all text-[11px]"
               title="Download (D)"
+              aria-label="Download image"
             >
               <i className="fas fa-download"></i>
             </button>
             <button
               onClick={onClose}
               className="w-8 h-8 rounded-lg text-white/40 hover:text-white hover:bg-white/10 flex items-center justify-center transition-all ml-1"
-              aria-label="Close (Esc)"
+              aria-label="Close lightbox"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -244,7 +246,7 @@ export default function ImageLightbox({
               onPrevious();
             }}
             className={`absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-white/[0.06] hover:bg-white/15 ring-1 ring-white/[0.06] hover:ring-white/15 flex items-center justify-center transition-all duration-300 group ${controlsClass}`}
-            aria-label="Previous"
+            aria-label="Previous image"
           >
             <svg
               className="w-4 h-4 text-white/40 group-hover:text-white transition-colors -translate-x-px"
@@ -266,7 +268,7 @@ export default function ImageLightbox({
               onNext();
             }}
             className={`absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-white/[0.06] hover:bg-white/15 ring-1 ring-white/[0.06] hover:ring-white/15 flex items-center justify-center transition-all duration-300 group ${controlsClass}`}
-            aria-label="Next"
+            aria-label="Next image"
           >
             <svg
               className="w-4 h-4 text-white/40 group-hover:text-white transition-colors translate-x-px"
@@ -329,6 +331,7 @@ export default function ImageLightbox({
           <button
             onClick={handleCopy}
             className="text-[11px] px-3.5 py-1.5 rounded-xl hover:bg-white/10 text-white/70 hover:text-white font-medium transition-all flex items-center gap-1.5"
+            aria-label="Copy image URL"
           >
             {copied ? (
               <>
@@ -360,18 +363,21 @@ export default function ImageLightbox({
           <button
             onClick={() => setZoom((z) => Math.max(z - 0.25, 0.5))}
             className="w-7 h-7 rounded-lg hover:bg-white/10 text-white/40 hover:text-white flex items-center justify-center transition-all text-[13px] font-light"
+            aria-label="Zoom out"
           >
             −
           </button>
           <button
             onClick={() => setZoom(1)}
             className="px-2 py-1 text-[11px] text-white/40 hover:text-white/70 tabular-nums min-w-[40px] text-center transition-colors cursor-pointer rounded-lg hover:bg-white/5"
+            aria-label="Reset zoom"
           >
             {Math.round(zoom * 100)}%
           </button>
           <button
             onClick={() => setZoom((z) => Math.min(z + 0.25, 3))}
             className="w-7 h-7 rounded-lg hover:bg-white/10 text-white/40 hover:text-white flex items-center justify-center transition-all text-[13px] font-light"
+            aria-label="Zoom in"
           >
             +
           </button>

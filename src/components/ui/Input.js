@@ -26,12 +26,19 @@ export default function Input({
   required = false,
   className = '',
   hasError = false,
+  id,
   ...props
 }) {
+  const inputId = id || name;
   return (
     <div>
-      {label && <label className={componentStyles.forms.label}>{label}</label>}
+      {label && (
+        <label htmlFor={inputId} className={componentStyles.forms.label}>
+          {label}
+        </label>
+      )}
       <input
+        id={inputId}
         type={type}
         name={name}
         value={value}
@@ -39,6 +46,7 @@ export default function Input({
         onBlur={onBlur}
         placeholder={placeholder}
         required={required}
+        aria-invalid={hasError ? 'true' : undefined}
         className={cn(
           componentStyles.forms.input,
           hasError && 'ring-1 ring-red-500 border-red-500',
