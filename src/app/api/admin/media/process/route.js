@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import MediaAsset from '@/models/MediaAsset';
+import MediaAgentSettings from '@/models/MediaAgentSettings';
 import { aiImageAgent } from '@/lib/ai/ai-image-agent';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
@@ -16,12 +17,20 @@ export async function POST(request) {
 
     await dbConnect();
 
-    // Find images lacking AI description
+    // Set global processing flag with timestamp
+    await MediaAgentSettings.findOneAndUpdate(
+      {},
+      { isProcessing: true, processingStartedAt: new Date() },
+      { upsert: true }
+    );
+
+    // Find images lacking AI description - process up to 50 at a time for safety
     const assetsToProcess = await MediaAsset.find({
       $or: [{ aiDescription: { $exists: false } }, { aiDescription: '' }, { aiDescription: null }],
-    }).limit(10); // Limit to 10 at a time for safety/timeout
+    }).limit(50);
 
     if (assetsToProcess.length === 0) {
+      await MediaAgentSettings.findOneAndUpdate({}, { isProcessing: false });
       return NextResponse.json({ message: 'No images found that require processing.' });
     }
 
@@ -57,29 +66,33 @@ export async function POST(request) {
         }
       }
 
+      // Reset global processing flag
+      await MediaAgentSettings.findOneAndUpdate({}, { isProcessing: false });
+
       revalidatePath('/admin/media');
-      console.log(`[Background] Image analysis complete.`);
+      console.log(`[Background] Image analysis batch complete.`);
     };
 
-    // If after() is available (Next.js 15+ / Vercel), use it.
-    // Otherwise, run it immediately (which may delay the response locally but ensures completion)
+    // Use after() if available
     if (typeof after === 'function') {
       after(backgroundTask);
     } else {
-      console.warn('[Warning] next/server: after() is not a function. Running synchronously.');
+      console.warn('[Warning] Running synchronously (after() unavailable).');
+      // In local dev, we don't await so the response returns, but it might still hang if the process dies.
       backgroundTask();
     }
 
     // Respond immediately with 202 Accepted
     return NextResponse.json(
       {
-        message: `Background processing started for ${assetsToProcess.length} images. You can continue using the dashboard.`,
+        message: `Background processing started for ${assetsToProcess.length} images. The dashboard will update when finished.`,
         count: assetsToProcess.length,
       },
       { status: 202 }
     );
   } catch (error) {
     console.error('Error in batch processing:', error);
+    await MediaAgentSettings.findOneAndUpdate({}, { isProcessing: false }).catch(() => {});
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

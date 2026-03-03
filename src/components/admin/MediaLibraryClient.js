@@ -18,6 +18,7 @@ import {
 import Button from '@/components/ui/Button';
 import MediaAgentSettingsModal from './MediaAgentSettingsModal';
 import { Settings, Zap, Play, Loader2, Bot } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 // (This is a simplified version. You can add more features like search, filters, etc. later)
 export default function MediaLibraryClient({ initialAssets }) {
@@ -29,9 +30,9 @@ export default function MediaLibraryClient({ initialAssets }) {
   );
   console.log('Initial assets preview:', initialAssets?.slice(0, 3));
 
+  const router = useRouter();
   const [assets, setAssets] = useState(initialAssets);
   const [isUploading, setIsUploading] = useState(false);
-  // FIX 1: Added missing 'isCompressing' state, which caused a crash on large file uploads.
   const [isCompressing, setIsCompressing] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
@@ -49,6 +50,31 @@ export default function MediaLibraryClient({ initialAssets }) {
   const [fetchingModels, setFetchingModels] = useState(false);
   const [aspectRatio, setAspectRatio] = useState('1:1');
   const [selectedTemplate, setSelectedTemplate] = useState('');
+
+  // Lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Search and filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [formatFilter, setFormatFilter] = useState('all');
+  const [sourceFilter, setSourceFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(24);
+
+  // Bulk operations state
+  const [selectedAssets, setSelectedAssets] = useState(new Set());
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(new Map()); // Map<fileName, progress>
+
+  // AI Image Processing Agent state
+  const [isAgentSettingsOpen, setIsAgentSettingsOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingResults, setProcessingResults] = useState(null);
+
   const aspectRatioOptions = [
     { value: '1:1', label: 'Square (1:1)' },
     { value: '16:9', label: 'Landscape (16:9)' },
@@ -168,29 +194,63 @@ export default function MediaLibraryClient({ initialAssets }) {
     },
   ];
 
-  // Lightbox state
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  // Synchronize local assets state when initialAssets prop changes (via router.refresh)
+  useEffect(() => {
+    setAssets(initialAssets);
+  }, [initialAssets]);
 
-  // Search and filter state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [formatFilter, setFormatFilter] = useState('all');
-  const [sourceFilter, setSourceFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('newest');
+  // Polling for AI Background Processing Status
+  useEffect(() => {
+    // Initial fetch of processing status
+    const fetchInitialStatus = async () => {
+      try {
+        const response = await fetch('/api/admin/media/settings');
+        if (response.ok) {
+          const data = await response.json();
+          setIsProcessing(data.isProcessing || false);
+        }
+      } catch (err) {
+        console.error('Initial status fetch failed:', err);
+      }
+    };
+    fetchInitialStatus();
+  }, []);
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(24);
+  useEffect(() => {
+    let pollInterval;
 
-  // Bulk operations state
-  const [selectedAssets, setSelectedAssets] = useState(new Set());
-  const [bulkActionLoading, setBulkActionLoading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(new Map()); // Map<fileName, progress>
+    const checkStatus = async () => {
+      try {
+        const response = await fetch('/api/admin/media/settings');
+        if (response.ok) {
+          const data = await response.json();
+          const processingNow = data.isProcessing;
 
-  // AI Image Processing Agent state
-  const [isAgentSettingsOpen, setIsAgentSettingsOpen] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processingResults, setProcessingResults] = useState(null);
+          // If it was processing and now it's finished
+          if (isProcessing && !processingNow) {
+            console.log('Background processing finished! Refreshing gallery...');
+            setProcessingResults({
+              message: 'Full batch processing complete! All images have been analyzed.',
+              isComplete: true,
+            });
+            router.refresh();
+          }
+
+          setIsProcessing(processingNow);
+        }
+      } catch (error) {
+        console.error('Error polling AI status:', error);
+      }
+    };
+
+    if (isProcessing) {
+      pollInterval = setInterval(checkStatus, 3000); // Poll every 3 seconds
+    } else {
+      clearInterval(pollInterval);
+    }
+
+    return () => clearInterval(pollInterval);
+  }, [isProcessing, router]);
 
   // Process a single file upload
   const processFileUpload = async (file, onProgress) => {

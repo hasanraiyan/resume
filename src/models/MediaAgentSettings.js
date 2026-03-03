@@ -19,6 +19,13 @@ const MediaAgentSettingsSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    isProcessing: {
+      type: Boolean,
+      default: false,
+    },
+    processingStartedAt: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

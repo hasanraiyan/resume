@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/Dialog';
 import Button from '@/components/ui/Button';
 import CustomDropdown from '@/components/CustomDropdown';
-import { Sparkles, Save, X, Bot } from 'lucide-react';
+import { Sparkles, Save, X, Bot, ShieldAlert } from 'lucide-react';
 
 export default function MediaAgentSettingsModal({ isOpen, onClose, onSave }) {
   const [settings, setSettings] = useState({
@@ -104,6 +104,34 @@ export default function MediaAgentSettingsModal({ isOpen, onClose, onSave }) {
     }
   };
 
+  const handleResetState = async () => {
+    if (
+      !confirm(
+        'Are you sure you want to reset the AI agent state? This will clear any "Processing" status.'
+      )
+    )
+      return;
+
+    setSaving(true);
+    try {
+      const response = await fetch('/api/admin/media/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isProcessing: false }),
+      });
+
+      if (response.ok) {
+        const updated = await response.json();
+        setSettings(updated);
+        alert('Agent state reset successfully.');
+      }
+    } catch (error) {
+      console.error('Error resetting agent state:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
@@ -162,19 +190,38 @@ export default function MediaAgentSettingsModal({ isOpen, onClose, onSave }) {
           </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={onClose} disabled={saving} className="rounded-xl">
-            <X className="w-4 h-4 mr-2" />
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSave}
-            isLoading={saving}
-            className="rounded-xl bg-black hover:bg-neutral-800 text-white border-none shadow-sm transition-all active:scale-95"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            Save Configuration
-          </Button>
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          <div className="flex-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleResetState}
+              disabled={saving}
+              className="text-amber-600 border-amber-200 hover:bg-amber-50 w-full sm:w-auto rounded-xl"
+            >
+              <ShieldAlert className="w-4 h-4 mr-2" />
+              Reset Agent State
+            </Button>
+          </div>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              disabled={saving}
+              className="rounded-xl flex-1 sm:flex-initial"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSave}
+              isLoading={saving}
+              className="rounded-xl bg-black hover:bg-neutral-800 text-white border-none shadow-sm transition-all active:scale-95 flex-1 sm:flex-initial"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Save Configuration
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -19,6 +19,16 @@ export async function GET() {
       await settings.save();
     }
 
+    // Self-healing: If stuck in processing for more than 10 minutes, reset it.
+    if (settings.isProcessing && settings.processingStartedAt) {
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+      if (settings.processingStartedAt < tenMinutesAgo) {
+        console.log('[Self-Healing] Detected stuck processing state. Resetting...');
+        settings.isProcessing = false;
+        await settings.save();
+      }
+    }
+
     return NextResponse.json(settings);
   } catch (error) {
     console.error('Error fetching media agent settings:', error);
