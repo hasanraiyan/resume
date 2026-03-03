@@ -12,8 +12,10 @@ export default async function MediaLibraryPage() {
   const serializedAssets = JSON.parse(JSON.stringify(assets));
 
   return (
-    <AdminPageWrapper title="Media Library" description="Upload and manage your images and assets.">
-      <MediaLibraryClient initialAssets={serializedAssets} />
-    </AdminPageWrapper>
+    <MediaLibraryClient
+      initialAssets={serializedAssets}
+      title="Media Library"
+      description="Upload and manage your images and assets."
+    />
   );
 }

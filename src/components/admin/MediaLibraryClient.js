@@ -17,11 +17,12 @@ import {
 } from '@/components/ui/Dialog';
 import Button from '@/components/ui/Button';
 import MediaAgentSettingsModal from './MediaAgentSettingsModal';
-import { Settings, Zap, Play, Loader2, Bot } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import AdminPageWrapper from './AdminPageWrapper';
+import { Settings, Zap, Play, Loader2, Bot, Plus, Upload } from 'lucide-react';
 
 // (This is a simplified version. You can add more features like search, filters, etc. later)
-export default function MediaLibraryClient({ initialAssets }) {
+export default function MediaLibraryClient({ initialAssets, title, description }) {
   console.log('=== MEDIA LIBRARY CLIENT DEBUG ===');
   console.log(
     'MediaLibraryClient initialized with initialAssets:',
@@ -852,42 +853,26 @@ export default function MediaLibraryClient({ initialAssets }) {
   console.log('Assets data sample:', assets?.slice(0, 2));
 
   return (
-    <div className="space-y-4">
-      {/* Upload Section */}
-      <div
-        className={`p-6 border-2 border-dashed rounded-lg transition-all duration-200 ${
-          isDragOver
-            ? 'border-blue-400 bg-blue-50 scale-105'
-            : 'border-gray-300 hover:border-gray-400'
-        }`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        <label htmlFor="file-upload" className="cursor-pointer block">
-          <div className="text-center">
-            <i
-              className={`fas fa-cloud-upload-alt text-3xl mb-3 ${
-                isDragOver ? 'text-blue-500' : 'text-gray-400'
-              }`}
-            ></i>
-            <p className={`text-lg font-medium ${isDragOver ? 'text-blue-700' : 'text-gray-600'}`}>
-              {isUploading
-                ? isCompressing
-                  ? 'Compressing files...'
-                  : 'Uploading files...'
-                : isDragOver
-                  ? 'Drop files here to upload'
-                  : 'Drag & drop files here, or click to browse'}
-            </p>
-            <p className="text-sm text-gray-500 mt-2">
-              Supports: JPEG, PNG, GIF, WebP, SVG (max 10MB each)
-            </p>
-            {!isUploading && (
-              <p className="text-xs text-gray-400 mt-1">You can select multiple files at once</p>
-            )}
-          </div>
-        </label>
+    <AdminPageWrapper
+      title={title || 'Media Library'}
+      description={description || 'Upload and manage your images and assets.'}
+      actionButton={
+        <Button
+          onClick={() => document.getElementById('file-upload').click()}
+          disabled={isUploading}
+          className="bg-black hover:bg-neutral-800 text-white rounded-xl px-6 py-2.5 flex items-center gap-2 shadow-sm transition-all active:scale-95 cursor-pointer"
+        >
+          {isUploading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Upload className="w-4 h-4" />
+          )}
+          {isUploading ? 'Uploading...' : 'Upload Images'}
+        </Button>
+      }
+    >
+      <div className="space-y-4">
+        {/* Upload Section (Hidden Input & Dropzone) */}
         <input
           id="file-upload"
           type="file"
@@ -897,794 +882,862 @@ export default function MediaLibraryClient({ initialAssets }) {
           accept="image/*"
           multiple
         />
-      </div>
 
-      {/* Upload Progress Section */}
-      {uploadProgress.size > 0 && (
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Upload Progress</h3>
-          <div className="space-y-3">
-            {Array.from(uploadProgress.entries()).map(([fileName, progress]) => (
-              <div key={fileName} className="flex items-center gap-3">
-                <div className="flex-1">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm text-gray-600 truncate" title={fileName}>
-                      {fileName}
-                    </span>
-                    <span className="text-sm text-gray-500">{progress}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${progress}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* AI Image Panel (Generate & Edit) */}
-      <div className="bg-white rounded-2xl border border-neutral-200/60 shadow-sm overflow-hidden">
-        <div className="p-6 sm:p-8 space-y-6">
-          <div className="pb-5 border-b border-neutral-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-semibold text-black mb-1 font-['Playfair_Display']">
-                AI Media Studio
-              </h3>
-              <p className="text-sm text-neutral-500">
-                {aiMode === 'generate'
-                  ? 'Generate new images from scratch.'
-                  : 'Edit existing images with AI instructions.'}
-              </p>
-            </div>
-
-            <div className="flex bg-neutral-100 p-1 rounded-xl w-fit self-start pointer-events-none opacity-60">
-              <div
-                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                  aiMode === 'generate' ? 'bg-white text-black shadow-sm' : 'text-neutral-500'
-                }`}
-              >
-                Generate
-              </div>
-              <div
-                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                  aiMode === 'edit' ? 'bg-white text-black shadow-sm' : 'text-neutral-500'
-                }`}
-              >
-                Edit
-              </div>
-            </div>
-          </div>
-
-          {/* Selected Assets for Editing Preview */}
-          {aiMode === 'edit' && (
-            <div
-              className={`p-4 rounded-xl border transition-all ${
-                selectedAssetsForEdit.length > 0
-                  ? 'bg-blue-50 border-blue-100'
-                  : 'bg-orange-50 border-orange-100'
-              }`}
-            >
-              {selectedAssetsForEdit.length > 0 ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-blue-900">
-                      {selectedAssetsForEdit.length} Image
-                      {selectedAssetsForEdit.length > 1 ? 's' : ''} Selected
-                    </p>
-                    <button
-                      onClick={() => setSelectedAssetsForEdit([])}
-                      className="text-xs text-blue-600 hover:text-blue-800 underline"
-                    >
-                      Clear All
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    {selectedAssetsForEdit.map((asset) => (
-                      <div key={asset._id} className="relative group">
-                        <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-blue-200 shadow-sm">
-                          <img
-                            src={asset.secure_url}
-                            alt="Selected"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <button
-                          onClick={() =>
-                            setSelectedAssetsForEdit((prev) =>
-                              prev.filter((a) => a._id !== asset._id)
-                            )
-                          }
-                          className="absolute -top-1.5 -right-1.5 bg-white text-red-500 rounded-full w-5 h-5 flex items-center justify-center shadow-md border border-neutral-100 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <i className="fas fa-times text-[10px]"></i>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3 text-orange-700">
-                  <i className="fas fa-info-circle"></i>
-                  <p className="text-sm font-medium">
-                    Please select one or more images from the gallery below to start editing.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Error Message */}
-          {generateError && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
-              <div className="p-1.5 rounded-full bg-red-100">
-                <i className="fas fa-exclamation-circle text-red-600 text-xs"></i>
-              </div>
-              <p className="text-red-800 text-sm font-medium">{generateError}</p>
-            </div>
-          )}
-
-          {/* Prompt Templates (Only for Generate) */}
-          {aiMode === 'generate' && (
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-neutral-800">
-                Quick Start Templates
-              </label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {promptTemplates.map((category) => (
-                  <div key={category.category} className="space-y-1.5">
-                    <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-                      {category.category}
-                    </div>
-                    {category.templates.map((template) => (
-                      <button
-                        key={template.name}
-                        onClick={() => handleTemplateSelect(template.prompt)}
-                        className="w-full text-left px-3 py-2 text-sm bg-neutral-50 border border-neutral-200 rounded-xl hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-all"
-                        disabled={isGenerating}
-                      >
-                        {template.name}
-                      </button>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Main Prompt Input */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-neutral-800">
-              {aiMode === 'generate' ? 'Describe Your Image' : 'Describe Changes'}
-            </label>
-            <div className="relative">
-              <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-none bg-neutral-50 text-sm"
-                placeholder={
-                  aiMode === 'generate'
-                    ? 'A majestic lion standing on a mountain peak at sunset...'
-                    : 'Combine these images into a collage, or change the background of all images...'
-                }
-                rows={3}
-                disabled={isGenerating || (aiMode === 'edit' && selectedAssetsForEdit.length === 0)}
-              />
-              {prompt && (
-                <div className="absolute bottom-2 right-3 text-[10px] text-neutral-400">
-                  {prompt.length} chars
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Controls */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5 bg-neutral-50/50 border border-neutral-200 rounded-2xl">
-            <div className="space-y-2">
-              <label className="block text-xs font-medium text-neutral-600">Provider</label>
-              <select
-                value={selectedProvider}
-                onChange={(e) => setSelectedProvider(e.target.value)}
-                className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                disabled={isGenerating}
-              >
-                {providers.length === 0 && <option value="">No providers configured</option>}
-                {providers.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="block text-xs font-medium text-neutral-600">Model</label>
-              <select
-                value={selectedModel}
-                onChange={(e) => {
-                  setSelectedModel(e.target.value);
-                  saveSelection('model', e.target.value);
-                }}
-                className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                disabled={isGenerating || fetchingModels}
-              >
-                {fetchingModels ? (
-                  <option value="">Loading models...</option>
-                ) : models.length === 0 ? (
-                  <option value="">No models available</option>
-                ) : (
-                  models.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="block text-xs font-medium text-neutral-600">Aspect Ratio</label>
-              <select
-                value={aspectRatio}
-                onChange={(e) => {
-                  setAspectRatio(e.target.value);
-                  saveSelection('aspectRatio', e.target.value);
-                }}
-                className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                disabled={isGenerating}
-              >
-                {aspectRatioOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Action Button */}
-          <button
-            onClick={handleAiAction}
-            disabled={
-              isGenerating ||
-              !prompt.trim() ||
-              (aiMode === 'edit' && selectedAssetsForEdit.length === 0)
-            }
-            className={`w-full py-3 px-6 rounded-xl transition-all text-sm font-medium flex items-center justify-center gap-2.5 ${
-              isGenerating ||
-              !prompt.trim() ||
-              (aiMode === 'edit' && selectedAssetsForEdit.length === 0)
-                ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed border border-neutral-200'
-                : aiMode === 'generate'
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/10'
-                  : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/10'
-            }`}
-          >
-            {isGenerating ? (
+        <div
+          className={`p-6 border-2 border-dashed rounded-lg transition-all duration-200 ${
+            isDragOver
+              ? 'border-blue-400 bg-blue-50 scale-102 shadow-lg shadow-blue-500/5'
+              : 'border-neutral-200 hover:border-neutral-300 bg-neutral-50/30'
+          } ${assets.length > 0 ? 'py-4' : 'py-12'}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          <div className="text-center">
+            {assets.length === 0 ? (
               <>
-                <div className="w-4 h-4 border-2 border-neutral-300 border-t-neutral-500 rounded-full animate-spin"></div>
-                {aiMode === 'generate' ? 'Generating...' : 'Editing...'}
+                <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-neutral-200">
+                  <Upload className="w-8 h-8 text-neutral-400" />
+                </div>
+                <p className="text-lg font-medium text-neutral-700">
+                  {isUploading
+                    ? 'Processing your files...'
+                    : 'Drag & drop files here, or click upload'}
+                </p>
+                <p className="text-sm text-neutral-500 mt-2">
+                  Supports JPEG, PNG, GIF, WebP, SVG (max 10MB each)
+                </p>
               </>
             ) : (
-              <>
-                <i
-                  className={`fas ${aiMode === 'generate' ? 'fa-sparkles' : 'fa-magic'} text-xs`}
-                ></i>
-                {aiMode === 'generate' ? 'Generate Image' : 'Apply AI Edits'}
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Search and Filter Section */}
-      <div className="bg-white p-4 rounded-lg border shadow-sm">
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Search Input */}
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search Assets</label>
-            <div className="relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by filename or AI prompt..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <i className="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-            </div>
-          </div>
-
-          {/* Filters Row */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Format Filter */}
-            <div className="min-w-0">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Format</label>
-              <select
-                value={formatFilter}
-                onChange={(e) => setFormatFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                name="formatFilter"
-              >
-                <option value="all">All Formats</option>
-                <option value="jpg">JPEG</option>
-                <option value="png">PNG</option>
-                <option value="gif">GIF</option>
-                <option value="webp">WebP</option>
-                <option value="svg">SVG</option>
-              </select>
-            </div>
-
-            {/* Source Filter */}
-            <div className="min-w-0">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Source</label>
-              <select
-                value={sourceFilter}
-                onChange={(e) => setSourceFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                name="sourceFilter"
-              >
-                <option value="all">All Sources</option>
-                <option value="upload">Uploaded</option>
-                <option value="gemini">AI Generated</option>
-              </select>
-            </div>
-
-            {/* Sort Options */}
-            <div className="min-w-0">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                name="sortBy"
-              >
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
-                <option value="name">Name A-Z</option>
-                <option value="size">Largest First</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Results Summary */}
-        <div className="mt-4 flex justify-between items-center text-sm text-gray-600">
-          <div>
-            Showing {startIndex + 1}-{Math.min(endIndex, totalFilteredAssets)} of{' '}
-            {totalFilteredAssets} assets
-            {totalFilteredAssets !== assets.length && ` (filtered from ${assets.length} total)`}
-          </div>
-          <div className="flex items-center gap-4">
-            {/* Items per page selector */}
-            <div className="flex items-center gap-2">
-              <span>Show:</span>
-              <select
-                value={itemsPerPage}
-                onChange={(e) => {
-                  setItemsPerPage(Number(e.target.value));
-                  setCurrentPage(1);
-                }}
-                className="text-sm border border-gray-300 rounded px-2 py-1"
-              >
-                <option value={12}>12</option>
-                <option value={24}>24</option>
-                <option value={48}>48</option>
-                <option value={96}>96</option>
-              </select>
-            </div>
-            {(searchQuery || formatFilter !== 'all' || sourceFilter !== 'all') && (
-              <button
-                onClick={() => {
-                  setSearchQuery('');
-                  setFormatFilter('all');
-                  setSourceFilter('all');
-                  setSortBy('newest');
-                  setCurrentPage(1);
-                }}
-                className="text-blue-600 hover:text-blue-800 underline"
-              >
-                Clear filters
-              </button>
+              <p className="text-sm text-neutral-500">
+                {isDragOver ? (
+                  <span className="text-blue-600 font-medium">Drop to add more files</span>
+                ) : (
+                  'Drag and drop more files here to add them to your library'
+                )}
+              </p>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Bulk Actions Toolbar */}
-      {selectedAssets.size > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-blue-800">
-              {selectedAssets.size} asset{selectedAssets.size !== 1 ? 's' : ''} selected
-            </span>
-            <button
-              onClick={() => setSelectedAssets(new Set())}
-              className="text-sm text-blue-600 hover:text-blue-800 underline"
-            >
-              Clear selection
-            </button>
+        {/* Upload Progress Section */}
+        {uploadProgress.size > 0 && (
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Upload Progress</h3>
+            <div className="space-y-3">
+              {Array.from(uploadProgress.entries()).map(([fileName, progress]) => (
+                <div key={fileName} className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm text-gray-600 truncate" title={fileName}>
+                        {fileName}
+                      </span>
+                      <span className="text-sm text-gray-500">{progress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${progress}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+        )}
+
+        {/* AI Image Panel (Generate & Edit) */}
+        <div className="bg-white rounded-2xl border border-neutral-200/60 shadow-sm overflow-hidden">
+          <div className="p-6 sm:p-8 space-y-6">
+            <div className="pb-5 border-b border-neutral-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold text-black mb-1 font-['Playfair_Display']">
+                  AI Media Studio
+                </h3>
+                <p className="text-sm text-neutral-500">
+                  {aiMode === 'generate'
+                    ? 'Generate new images from scratch.'
+                    : 'Edit existing images with AI instructions.'}
+                </p>
+              </div>
+
+              <div className="flex bg-neutral-100 p-1 rounded-xl w-fit self-start pointer-events-none opacity-60">
+                <div
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    aiMode === 'generate' ? 'bg-white text-black shadow-sm' : 'text-neutral-500'
+                  }`}
+                >
+                  Generate
+                </div>
+                <div
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    aiMode === 'edit' ? 'bg-white text-black shadow-sm' : 'text-neutral-500'
+                  }`}
+                >
+                  Edit
+                </div>
+              </div>
+            </div>
+
+            {/* Selected Assets for Editing Preview */}
+            {aiMode === 'edit' && (
+              <div
+                className={`p-4 rounded-xl border transition-all ${
+                  selectedAssetsForEdit.length > 0
+                    ? 'bg-blue-50 border-blue-100'
+                    : 'bg-orange-50 border-orange-100'
+                }`}
+              >
+                {selectedAssetsForEdit.length > 0 ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-blue-900">
+                        {selectedAssetsForEdit.length} Image
+                        {selectedAssetsForEdit.length > 1 ? 's' : ''} Selected
+                      </p>
+                      <button
+                        onClick={() => setSelectedAssetsForEdit([])}
+                        className="text-xs text-blue-600 hover:text-blue-800 underline"
+                      >
+                        Clear All
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      {selectedAssetsForEdit.map((asset) => (
+                        <div key={asset._id} className="relative group">
+                          <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-blue-200 shadow-sm">
+                            <img
+                              src={asset.secure_url}
+                              alt="Selected"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <button
+                            onClick={() =>
+                              setSelectedAssetsForEdit((prev) =>
+                                prev.filter((a) => a._id !== asset._id)
+                              )
+                            }
+                            className="absolute -top-1.5 -right-1.5 bg-white text-red-500 rounded-full w-5 h-5 flex items-center justify-center shadow-md border border-neutral-100 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <i className="fas fa-times text-[10px]"></i>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 text-orange-700">
+                    <i className="fas fa-info-circle"></i>
+                    <p className="text-sm font-medium">
+                      Please select one or more images from the gallery below to start editing.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Error Message */}
+            {generateError && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+                <div className="p-1.5 rounded-full bg-red-100">
+                  <i className="fas fa-exclamation-circle text-red-600 text-xs"></i>
+                </div>
+                <p className="text-red-800 text-sm font-medium">{generateError}</p>
+              </div>
+            )}
+
+            {/* Prompt Templates (Only for Generate) */}
+            {aiMode === 'generate' && (
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-neutral-800">
+                  Quick Start Templates
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {promptTemplates.map((category) => (
+                    <div key={category.category} className="space-y-1.5">
+                      <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                        {category.category}
+                      </div>
+                      {category.templates.map((template) => (
+                        <button
+                          key={template.name}
+                          onClick={() => handleTemplateSelect(template.prompt)}
+                          className="w-full text-left px-3 py-2 text-sm bg-neutral-50 border border-neutral-200 rounded-xl hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-all"
+                          disabled={isGenerating}
+                        >
+                          {template.name}
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Main Prompt Input */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-neutral-800">
+                {aiMode === 'generate' ? 'Describe Your Image' : 'Describe Changes'}
+              </label>
+              <div className="relative">
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-none bg-neutral-50 text-sm"
+                  placeholder={
+                    aiMode === 'generate'
+                      ? 'A majestic lion standing on a mountain peak at sunset...'
+                      : 'Combine these images into a collage, or change the background of all images...'
+                  }
+                  rows={3}
+                  disabled={
+                    isGenerating || (aiMode === 'edit' && selectedAssetsForEdit.length === 0)
+                  }
+                />
+                {prompt && (
+                  <div className="absolute bottom-2 right-3 text-[10px] text-neutral-400">
+                    {prompt.length} chars
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5 bg-neutral-50/50 border border-neutral-200 rounded-2xl">
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-neutral-600">Provider</label>
+                <select
+                  value={selectedProvider}
+                  onChange={(e) => setSelectedProvider(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  disabled={isGenerating}
+                >
+                  {providers.length === 0 && <option value="">No providers configured</option>}
+                  {providers.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-neutral-600">Model</label>
+                <select
+                  value={selectedModel}
+                  onChange={(e) => {
+                    setSelectedModel(e.target.value);
+                    saveSelection('model', e.target.value);
+                  }}
+                  className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  disabled={isGenerating || fetchingModels}
+                >
+                  {fetchingModels ? (
+                    <option value="">Loading models...</option>
+                  ) : models.length === 0 ? (
+                    <option value="">No models available</option>
+                  ) : (
+                    models.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-neutral-600">Aspect Ratio</label>
+                <select
+                  value={aspectRatio}
+                  onChange={(e) => {
+                    setAspectRatio(e.target.value);
+                    saveSelection('aspectRatio', e.target.value);
+                  }}
+                  className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  disabled={isGenerating}
+                >
+                  {aspectRatioOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Action Button */}
             <button
-              onClick={handleBulkDelete}
-              disabled={bulkActionLoading}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+              onClick={handleAiAction}
+              disabled={
+                isGenerating ||
+                !prompt.trim() ||
+                (aiMode === 'edit' && selectedAssetsForEdit.length === 0)
+              }
+              className={`w-full py-3 px-6 rounded-xl transition-all text-sm font-medium flex items-center justify-center gap-2.5 ${
+                isGenerating ||
+                !prompt.trim() ||
+                (aiMode === 'edit' && selectedAssetsForEdit.length === 0)
+                  ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed border border-neutral-200'
+                  : aiMode === 'generate'
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/10'
+                    : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/10'
+              }`}
             >
-              {bulkActionLoading ? (
+              {isGenerating ? (
                 <>
-                  <i className="fas fa-spinner fa-spin"></i>
-                  Deleting...
+                  <div className="w-4 h-4 border-2 border-neutral-300 border-t-neutral-500 rounded-full animate-spin"></div>
+                  {aiMode === 'generate' ? 'Generating...' : 'Editing...'}
                 </>
               ) : (
                 <>
-                  <i className="fas fa-trash"></i>
-                  Delete Selected
+                  <i
+                    className={`fas ${aiMode === 'generate' ? 'fa-sparkles' : 'fa-magic'} text-xs`}
+                  ></i>
+                  {aiMode === 'generate' ? 'Generate Image' : 'Apply AI Edits'}
                 </>
               )}
             </button>
           </div>
         </div>
-      )}
 
-      {/* Gallery Section */}
-      {paginatedAssets.length > 0 && (
-        <div className="flex flex-col gap-3 mb-4">
-          {/* AI Processing Banner (Moved here) */}
-          <div className="flex items-center gap-4 p-3 px-4 bg-blue-50/50 border border-blue-100 rounded-2xl">
-            <div className="flex -space-x-2 overflow-hidden">
-              {assets
-                .filter((a) => !a.aiDescription)
-                .slice(0, 3)
-                .map((asset, i) => (
-                  <img
-                    key={i}
-                    src={asset.secure_url}
-                    className="w-6 h-6 rounded-full border-2 border-white object-cover"
-                  />
-                ))}
-              {assets.filter((a) => !a.aiDescription).length > 3 && (
-                <div className="w-6 h-6 rounded-full bg-blue-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-blue-600">
-                  +{assets.filter((a) => !a.aiDescription).length - 3}
-                </div>
-              )}
-            </div>
+        {/* Search and Filter Section */}
+        <div className="bg-white p-4 rounded-lg border shadow-sm">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search Input */}
             <div className="flex-1">
-              <p className="text-xs font-medium text-blue-900">
-                {assets.filter((a) => !a.aiDescription).length} images need processing for AI search
-              </p>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Search Assets</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by filename or AI prompt..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <i className="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setIsAgentSettingsOpen(true)}
-                className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                title="Agent Settings"
-              >
-                <Settings className="w-4 h-4" />
-              </button>
-              <Button
-                onClick={handleProcessImages}
-                disabled={isProcessing}
-                className="bg-blue-600 hover:bg-blue-700 text-white border-none rounded-xl h-8 px-4 text-xs font-semibold shadow-sm flex items-center gap-2"
-              >
-                {isProcessing ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  <Bot className="w-3 h-3" />
-                )}
-                {isProcessing ? 'Processing...' : 'Process All'}
-              </Button>
+
+            {/* Filters Row */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Format Filter */}
+              <div className="min-w-0">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Format</label>
+                <select
+                  value={formatFilter}
+                  onChange={(e) => setFormatFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                  name="formatFilter"
+                >
+                  <option value="all">All Formats</option>
+                  <option value="jpg">JPEG</option>
+                  <option value="png">PNG</option>
+                  <option value="gif">GIF</option>
+                  <option value="webp">WebP</option>
+                  <option value="svg">SVG</option>
+                </select>
+              </div>
+
+              {/* Source Filter */}
+              <div className="min-w-0">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Source</label>
+                <select
+                  value={sourceFilter}
+                  onChange={(e) => setSourceFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                  name="sourceFilter"
+                >
+                  <option value="all">All Sources</option>
+                  <option value="upload">Uploaded</option>
+                  <option value="gemini">AI Generated</option>
+                </select>
+              </div>
+
+              {/* Sort Options */}
+              <div className="min-w-0">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                  name="sortBy"
+                >
+                  <option value="newest">Newest First</option>
+                  <option value="oldest">Oldest First</option>
+                  <option value="name">Name A-Z</option>
+                  <option value="size">Largest First</option>
+                </select>
+              </div>
             </div>
           </div>
 
-          {processingResults && (
-            <div className="p-3 px-4 bg-green-50 border border-green-100 rounded-2xl animate-in fade-in slide-in-from-top-2">
-              <p className="text-xs font-medium text-green-800">
-                {processingResults.message}
-                {processingResults.results &&
-                  ` ${processingResults.results.filter((r) => r.success).length} successful.`}
-              </p>
+          {/* Results Summary */}
+          <div className="mt-4 flex justify-between items-center text-sm text-gray-600">
+            <div>
+              Showing {startIndex + 1}-{Math.min(endIndex, totalFilteredAssets)} of{' '}
+              {totalFilteredAssets} assets
+              {totalFilteredAssets !== assets.length && ` (filtered from ${assets.length} total)`}
             </div>
-          )}
-
-          <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-2xl">
-            <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={
-                    paginatedAssets.length > 0 &&
-                    paginatedAssets.every((asset) => selectedAssets.has(asset._id))
-                  }
-                  onChange={(e) => handleSelectAll(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <span className="text-sm font-medium text-gray-700">
-                  Select All ({paginatedAssets.length} shown)
-                </span>
-              </label>
-            </div>
-            <div className="text-xs text-gray-500">
-              Click images to preview • Check boxes to select for bulk actions
+            <div className="flex items-center gap-4">
+              {/* Items per page selector */}
+              <div className="flex items-center gap-2">
+                <span>Show:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="text-sm border border-gray-300 rounded px-2 py-1"
+                >
+                  <option value={12}>12</option>
+                  <option value={24}>24</option>
+                  <option value={48}>48</option>
+                  <option value={96}>96</option>
+                </select>
+              </div>
+              {(searchQuery || formatFilter !== 'all' || sourceFilter !== 'all') && (
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setFormatFilter('all');
+                    setSourceFilter('all');
+                    setSortBy('newest');
+                    setCurrentPage(1);
+                  }}
+                  className="text-blue-600 hover:text-blue-800 underline"
+                >
+                  Clear filters
+                </button>
+              )}
             </div>
           </div>
         </div>
-      )}
-      <div className="w-full">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-          {paginatedAssets.length === 0 ? (
-            <div className="col-span-full text-center py-6 text-gray-500">
-              <i className="fas fa-image text-4xl mb-3"></i>
-              <p>
-                {assets.length === 0
-                  ? 'No assets uploaded yet. Upload some images to get started!'
-                  : 'No assets match your current filters. Try adjusting your search or filters.'}
-              </p>
+
+        {/* Bulk Actions Toolbar */}
+        {selectedAssets.size > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-medium text-blue-800">
+                {selectedAssets.size} asset{selectedAssets.size !== 1 ? 's' : ''} selected
+              </span>
+              <button
+                onClick={() => setSelectedAssets(new Set())}
+                className="text-sm text-blue-600 hover:text-blue-800 underline"
+              >
+                Clear selection
+              </button>
             </div>
-          ) : (
-            paginatedAssets.map((asset, index) => {
-              console.log('Rendering asset:', {
-                id: asset._id,
-                filename: asset.filename,
-                secure_url: asset.secure_url,
-                format: asset.format,
-                size: asset.size,
-              });
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleBulkDelete}
+                disabled={bulkActionLoading}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+              >
+                {bulkActionLoading ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin"></i>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-trash"></i>
+                    Delete Selected
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
 
-              return (
-                <div
-                  key={asset._id}
-                  className="relative flex flex-col border rounded-lg overflow-hidden bg-white shadow-sm cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group"
-                  onClick={() => openLightbox(index)}
-                >
-                  {/* Selection Checkbox Overlay */}
-                  <div className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <label className="flex items-center gap-1 bg-white bg-opacity-90 rounded px-2 py-1 shadow-sm">
-                      <input
-                        type="checkbox"
-                        checked={selectedAssets.has(asset._id)}
-                        onChange={(e) => {
-                          e.stopPropagation();
-                          handleSelectAsset(asset._id, e.target.checked);
-                        }}
-                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+        {/* Gallery Section */}
+        {paginatedAssets.length > 0 && (
+          <div className="flex flex-col gap-3 mb-4">
+            {/* AI Processing Banner (Only show if images need processing or is currently processing) */}
+            {(assets.filter((a) => !a.aiDescription).length > 0 || isProcessing) && (
+              <div className="flex items-center gap-4 p-3 px-4 bg-blue-50/50 border border-blue-100 rounded-2xl">
+                <div className="flex -space-x-2 overflow-hidden">
+                  {assets
+                    .filter((a) => !a.aiDescription)
+                    .slice(0, 3)
+                    .map((asset, i) => (
+                      <img
+                        key={i}
+                        src={asset.secure_url}
+                        className="w-6 h-6 rounded-full border-2 border-white object-cover"
                       />
-                    </label>
-                  </div>
-
-                  {/* Selected Indicator */}
-                  {selectedAssets.has(asset._id) && (
-                    <div className="absolute top-2 right-2 z-10">
-                      <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
-                        ✓
-                      </div>
+                    ))}
+                  {assets.filter((a) => !a.aiDescription).length > 3 && (
+                    <div className="w-6 h-6 rounded-full bg-blue-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-blue-600">
+                      +{assets.filter((a) => !a.aiDescription).length - 3}
                     </div>
                   )}
-
-                  {/* Image Section - Uniform height for clean grid layout */}
-                  <div
-                    className="relative bg-gray-100 overflow-hidden"
-                    style={{
-                      height: '180px', // Fixed height for all images
-                    }}
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-blue-900">
+                    {isProcessing
+                      ? 'AI Agent is currently analyzing your images...'
+                      : `${assets.filter((a) => !a.aiDescription).length} images need processing for AI search`}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setIsAgentSettingsOpen(true)}
+                    className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                    title="Agent Settings"
                   >
-                    {/* Loading skeleton */}
-                    <div className="absolute inset-0 bg-gray-200 animate-pulse z-1"></div>
-                    {/* Regular img tag for testing */}
-                    <img
-                      src={asset.secure_url}
-                      alt={asset.filename || 'Uploaded image'}
-                      className="absolute inset-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
-                      style={{ zIndex: 1 }}
-                      data-asset-id={asset._id}
-                      onLoad={() => {
-                        console.log('Regular img loaded successfully:', asset.secure_url);
-                        // Hide loading skeleton
-                        const skeleton = document
-                          .querySelector(`[data-asset-id="${asset._id}"]`)
-                          ?.parentElement?.querySelector('.animate-pulse');
-                        if (skeleton) skeleton.style.display = 'none';
-                      }}
-                      onError={(e) => {
-                        console.error('Regular img failed to load:', asset.secure_url);
-                        e.target.style.display = 'none';
-                      }}
-                    />
+                    <Settings className="w-4 h-4" />
+                  </button>
+                  <Button
+                    onClick={handleProcessImages}
+                    disabled={isProcessing}
+                    className="bg-blue-600 hover:bg-blue-700 text-white border-none rounded-xl h-8 px-4 text-xs font-semibold shadow-sm flex items-center gap-2"
+                  >
+                    {isProcessing ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Bot className="w-3 h-3" />
+                    )}
+                    {isProcessing ? 'Processing...' : 'Process All'}
+                  </Button>
+                </div>
+              </div>
+            )}
 
-                    {/* Next.js Image as overlay for optimization */}
-                    <Image
-                      src={asset.secure_url}
-                      alt={asset.filename || 'Uploaded image'}
-                      fill
-                      className="object-cover transition-all duration-300 group-hover:scale-105"
-                      style={{ zIndex: 2, opacity: 1 }}
-                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
-                      priority={false}
-                      quality={75}
-                      loading="lazy"
-                      onLoadStart={() =>
-                        console.log('Next.js Image load started:', asset.secure_url)
-                      }
-                      onLoad={() => {
-                        console.log('Next.js Image loaded successfully:', asset.secure_url);
-                        // Hide the regular img when Next.js image loads
-                        const regularImg = document.querySelector(`[data-asset-id="${asset._id}"]`);
-                        if (regularImg) regularImg.style.display = 'none';
-                        // Hide loading skeleton
-                        const skeleton = regularImg?.parentElement?.querySelector('.animate-pulse');
-                        if (skeleton) skeleton.style.display = 'none';
-                      }}
-                      onError={(e) => {
-                        console.error('Next.js Image failed to load:', asset.secure_url);
-                        // Show regular img if Next.js fails
-                        const regularImg = document.querySelector(`[data-asset-id="${asset._id}"]`);
-                        if (regularImg) regularImg.style.display = 'block';
-                      }}
-                    />
+            {processingResults && (
+              <div className="p-3 px-4 bg-green-50 border border-green-100 rounded-2xl animate-in fade-in slide-in-from-top-2">
+                <p className="text-xs font-medium text-green-800">
+                  {processingResults.message}
+                  {processingResults.results &&
+                    ` ${processingResults.results.filter((r) => r.success).length} successful.`}
+                </p>
+              </div>
+            )}
 
-                    {/* Source Badge */}
-                    {(asset.source === 'gemini' || asset.source === 'pollinations') && (
-                      <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full z-10">
-                        AI Generated
+            <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-2xl">
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={
+                      paginatedAssets.length > 0 &&
+                      paginatedAssets.every((asset) => selectedAssets.has(asset._id))
+                    }
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Select All ({paginatedAssets.length} shown)
+                  </span>
+                </label>
+              </div>
+              <div className="text-xs text-gray-500">
+                Click images to preview • Check boxes to select for bulk actions
+              </div>
+            </div>
+          </div>
+        )}
+        <div className="w-full">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {paginatedAssets.length === 0 ? (
+              <div className="col-span-full text-center py-6 text-gray-500">
+                <i className="fas fa-image text-4xl mb-3"></i>
+                <p>
+                  {assets.length === 0
+                    ? 'No assets uploaded yet. Upload some images to get started!'
+                    : 'No assets match your current filters. Try adjusting your search or filters.'}
+                </p>
+              </div>
+            ) : (
+              paginatedAssets.map((asset, index) => {
+                console.log('Rendering asset:', {
+                  id: asset._id,
+                  filename: asset.filename,
+                  secure_url: asset.secure_url,
+                  format: asset.format,
+                  size: asset.size,
+                });
+
+                return (
+                  <div
+                    key={asset._id}
+                    className="relative flex flex-col border rounded-lg overflow-hidden bg-white shadow-sm cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group"
+                    onClick={() => openLightbox(index)}
+                  >
+                    {/* Selection Checkbox Overlay */}
+                    <div className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <label className="flex items-center gap-1 bg-white bg-opacity-90 rounded px-2 py-1 shadow-sm">
+                        <input
+                          type="checkbox"
+                          checked={selectedAssets.has(asset._id)}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            handleSelectAsset(asset._id, e.target.checked);
+                          }}
+                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                      </label>
+                    </div>
+
+                    {/* Selected Indicator */}
+                    {selectedAssets.has(asset._id) && (
+                      <div className="absolute top-2 right-2 z-10">
+                        <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                          ✓
+                        </div>
                       </div>
                     )}
 
-                    {/* Delete Button Overlay */}
-                    <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigator.clipboard.writeText(asset.secure_url);
-                          // Optional: Show a toast or temporary success state
-                          const btn = e.currentTarget;
-                          const originalIcon = btn.innerHTML;
-                          btn.innerHTML = '<i class="fas fa-check"></i>';
-                          setTimeout(() => {
-                            btn.innerHTML = originalIcon;
-                          }, 2000);
+                    {/* Image Section - Uniform height for clean grid layout */}
+                    <div
+                      className="relative bg-gray-100 overflow-hidden"
+                      style={{
+                        height: '180px', // Fixed height for all images
+                      }}
+                    >
+                      {/* Loading skeleton */}
+                      <div className="absolute inset-0 bg-gray-200 animate-pulse z-1"></div>
+                      {/* Regular img tag for testing */}
+                      <img
+                        src={asset.secure_url}
+                        alt={asset.filename || 'Uploaded image'}
+                        className="absolute inset-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
+                        style={{ zIndex: 1 }}
+                        data-asset-id={asset._id}
+                        onLoad={() => {
+                          console.log('Regular img loaded successfully:', asset.secure_url);
+                          // Hide loading skeleton
+                          const skeleton = document
+                            .querySelector(`[data-asset-id="${asset._id}"]`)
+                            ?.parentElement?.querySelector('.animate-pulse');
+                          if (skeleton) skeleton.style.display = 'none';
                         }}
-                        className="bg-white hover:bg-gray-100 text-gray-700 rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium transition-colors shadow-lg"
-                        title="Copy URL"
-                      >
-                        <i className="fas fa-link"></i>
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedAssetsForEdit((prev) => {
-                            if (prev.some((a) => a._id === asset._id)) return prev;
-                            return [...prev, asset];
-                          });
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        onError={(e) => {
+                          console.error('Regular img failed to load:', asset.secure_url);
+                          e.target.style.display = 'none';
                         }}
-                        className="bg-black hover:bg-gray-900 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium transition-colors shadow-lg border border-white/20"
-                        title="Add to AI Edit"
-                      >
-                        <i className="fas fa-magic"></i>
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(asset._id);
-                        }}
-                        className="bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium transition-colors shadow-lg"
-                        title="Delete image"
-                      >
-                        <i className="fas fa-trash"></i>
-                      </button>
-                    </div>
+                      />
 
-                    {/* Prompt Tooltip for Generated Assets */}
-                    {(asset.source === 'gemini' || asset.source === 'pollinations') &&
-                      asset.prompt && (
-                        <div
-                          className="absolute bottom-0 left-0 right-0 bg-black/80 text-white text-[10px] p-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 backdrop-blur-sm"
-                          title={asset.prompt}
-                        >
-                          <p className="truncate font-medium">Prompt: {asset.prompt}</p>
+                      {/* Next.js Image as overlay for optimization */}
+                      <Image
+                        src={asset.secure_url}
+                        alt={asset.filename || 'Uploaded image'}
+                        fill
+                        className="object-cover transition-all duration-300 group-hover:scale-105"
+                        style={{ zIndex: 2, opacity: 1 }}
+                        sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
+                        priority={false}
+                        quality={75}
+                        loading="lazy"
+                        onLoadStart={() =>
+                          console.log('Next.js Image load started:', asset.secure_url)
+                        }
+                        onLoad={() => {
+                          console.log('Next.js Image loaded successfully:', asset.secure_url);
+                          // Hide the regular img when Next.js image loads
+                          const regularImg = document.querySelector(
+                            `[data-asset-id="${asset._id}"]`
+                          );
+                          if (regularImg) regularImg.style.display = 'none';
+                          // Hide loading skeleton
+                          const skeleton =
+                            regularImg?.parentElement?.querySelector('.animate-pulse');
+                          if (skeleton) skeleton.style.display = 'none';
+                        }}
+                        onError={(e) => {
+                          console.error('Next.js Image failed to load:', asset.secure_url);
+                          // Show regular img if Next.js fails
+                          const regularImg = document.querySelector(
+                            `[data-asset-id="${asset._id}"]`
+                          );
+                          if (regularImg) regularImg.style.display = 'block';
+                        }}
+                      />
+
+                      {/* Source Badge */}
+                      {(asset.source === 'gemini' || asset.source === 'pollinations') && (
+                        <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full z-10">
+                          AI Generated
                         </div>
                       )}
 
-                    {/* AI Description Overlay (New) */}
-                    {asset.aiDescription && (
-                      <div
-                        className="absolute bottom-0 left-0 right-0 bg-black/90 text-white text-[10px] p-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 backdrop-blur-sm border-t border-white/10"
-                        title={asset.aiDescription}
-                      >
-                        <p className="line-clamp-2 font-medium">AI: {asset.aiDescription}</p>
+                      {/* Delete Button Overlay */}
+                      <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigator.clipboard.writeText(asset.secure_url);
+                            // Optional: Show a toast or temporary success state
+                            const btn = e.currentTarget;
+                            const originalIcon = btn.innerHTML;
+                            btn.innerHTML = '<i class="fas fa-check"></i>';
+                            setTimeout(() => {
+                              btn.innerHTML = originalIcon;
+                            }, 2000);
+                          }}
+                          className="bg-white hover:bg-gray-100 text-gray-700 rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium transition-colors shadow-lg"
+                          title="Copy URL"
+                        >
+                          <i className="fas fa-link"></i>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedAssetsForEdit((prev) => {
+                              if (prev.some((a) => a._id === asset._id)) return prev;
+                              return [...prev, asset];
+                            });
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          className="bg-black hover:bg-gray-900 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium transition-colors shadow-lg border border-white/20"
+                          title="Add to AI Edit"
+                        >
+                          <i className="fas fa-magic"></i>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(asset._id);
+                          }}
+                          className="bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium transition-colors shadow-lg"
+                          title="Delete image"
+                        >
+                          <i className="fas fa-trash"></i>
+                        </button>
                       </div>
-                    )}
+
+                      {/* Prompt Tooltip for Generated Assets */}
+                      {(asset.source === 'gemini' || asset.source === 'pollinations') &&
+                        asset.prompt && (
+                          <div
+                            className="absolute bottom-0 left-0 right-0 bg-black/80 text-white text-[10px] p-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 backdrop-blur-sm"
+                            title={asset.prompt}
+                          >
+                            <p className="truncate font-medium">Prompt: {asset.prompt}</p>
+                          </div>
+                        )}
+
+                      {/* AI Description Overlay (New) */}
+                      {asset.aiDescription && (
+                        <div
+                          className="absolute bottom-0 left-0 right-0 bg-black/90 text-white text-[10px] p-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 backdrop-blur-sm border-t border-white/10"
+                          title={asset.aiDescription}
+                        >
+                          <p className="line-clamp-2 font-medium">AI: {asset.aiDescription}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
-
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div className="mt-4 flex justify-center">
-          <div className="flex items-center gap-2">
-            {/* Previous Button */}
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-2 text-sm border border-gray-300 rounded-l-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <i className="fas fa-chevron-left"></i>
-            </button>
-
-            {/* Page Numbers */}
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
-              if (pageNum > totalPages) return null;
-
-              return (
-                <button
-                  key={pageNum}
-                  onClick={() => setCurrentPage(pageNum)}
-                  className={`px-4 py-2 text-sm border border-gray-300 ${
-                    currentPage === pageNum
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'hover:bg-gray-50'
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
-
-            {/* Next Button */}
-            <button
-              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-2 text-sm border border-gray-300 rounded-r-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <i className="fas fa-chevron-right"></i>
-            </button>
+                );
+              })
+            )}
           </div>
         </div>
-      )}
 
-      {/* AI Result Preview Modal */}
-      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="sm:max-w-2xl bg-neutral-900 border-neutral-800 text-white">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-['Playfair_Display'] text-white">
-              {previewData?.mode === 'edit' ? 'AI Edit Result' : 'AI Generation Result'}
-            </DialogTitle>
-          </DialogHeader>
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="mt-4 flex justify-center">
+            <div className="flex items-center gap-2">
+              {/* Previous Button */}
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-2 text-sm border border-gray-300 rounded-l-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <i className="fas fa-chevron-left"></i>
+              </button>
 
-          <div className="mt-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar text-white">
-            {previewData?.mode === 'edit' && previewData?.befores?.length > 0 ? (
-              <div className="space-y-6">
-                <div className="space-y-4 text-white">
-                  <p className="text-sm text-neutral-400">
-                    {previewData.befores.length > 1
-                      ? 'You used multiple images as input. Here is the comparison with the primary image.'
-                      : 'Slide to compare the original and the AI-edited version.'}
-                  </p>
-                  <BeforeAfterSlider
-                    before={previewData.befores[0]}
-                    after={previewData.after}
-                    aspectRatio={previewData.aspectRatio}
-                  />
-                </div>
+              {/* Page Numbers */}
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+                if (pageNum > totalPages) return null;
 
-                {previewData.befores.length > 1 && (
-                  <div className="space-y-4 pt-4 border-t border-neutral-800">
-                    <p className="text-sm font-medium text-neutral-200">All Input Images</p>
-                    <MultiImagePreview
-                      images={previewData.befores}
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`px-4 py-2 text-sm border border-gray-300 ${
+                      currentPage === pageNum
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              {/* Next Button */}
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-2 text-sm border border-gray-300 rounded-r-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <i className="fas fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* AI Result Preview Modal */}
+        <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+          <DialogContent className="sm:max-w-2xl bg-neutral-900 border-neutral-800 text-white">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-['Playfair_Display'] text-white">
+                {previewData?.mode === 'edit' ? 'AI Edit Result' : 'AI Generation Result'}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="mt-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar text-white">
+              {previewData?.mode === 'edit' && previewData?.befores?.length > 0 ? (
+                <div className="space-y-6">
+                  <div className="space-y-4 text-white">
+                    <p className="text-sm text-neutral-400">
+                      {previewData.befores.length > 1
+                        ? 'You used multiple images as input. Here is the comparison with the primary image.'
+                        : 'Slide to compare the original and the AI-edited version.'}
+                    </p>
+                    <BeforeAfterSlider
+                      before={previewData.befores[0]}
+                      after={previewData.after}
                       aspectRatio={previewData.aspectRatio}
                     />
                   </div>
-                )}
 
-                <div className="space-y-4 pt-4 border-t border-neutral-800 text-white">
-                  <p className="text-sm font-medium text-neutral-200">Final Result</p>
+                  {previewData.befores.length > 1 && (
+                    <div className="space-y-4 pt-4 border-t border-neutral-800">
+                      <p className="text-sm font-medium text-neutral-200">All Input Images</p>
+                      <MultiImagePreview
+                        images={previewData.befores}
+                        aspectRatio={previewData.aspectRatio}
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-4 pt-4 border-t border-neutral-800 text-white">
+                    <p className="text-sm font-medium text-neutral-200">Final Result</p>
+                    <div
+                      className={`relative w-full overflow-hidden rounded-xl border border-neutral-800 ${
+                        previewData?.aspectRatio === '16:9'
+                          ? 'aspect-video'
+                          : previewData?.aspectRatio === '9:16'
+                            ? 'aspect-[9/16]'
+                            : 'aspect-square'
+                      }`}
+                    >
+                      <Image
+                        src={previewData?.after}
+                        alt="Generated Result"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4 text-white">
+                  <p className="text-sm text-neutral-400">Your new AI-generated image is ready.</p>
                   <div
                     className={`relative w-full overflow-hidden rounded-xl border border-neutral-800 ${
                       previewData?.aspectRatio === '16:9'
@@ -1702,60 +1755,40 @@ export default function MediaLibraryClient({ initialAssets }) {
                     />
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-4 text-white">
-                <p className="text-sm text-neutral-400">Your new AI-generated image is ready.</p>
-                <div
-                  className={`relative w-full overflow-hidden rounded-xl border border-neutral-800 ${
-                    previewData?.aspectRatio === '16:9'
-                      ? 'aspect-video'
-                      : previewData?.aspectRatio === '9:16'
-                        ? 'aspect-[9/16]'
-                        : 'aspect-square'
-                  }`}
-                >
-                  <Image
-                    src={previewData?.after}
-                    alt="Generated Result"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          <DialogFooter className="mt-6 flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsPreviewOpen(false)}
-              className="border-neutral-700 text-neutral-300 hover:bg-neutral-800 hover:text-white"
-            >
-              Close Preview
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter className="mt-6 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsPreviewOpen(false)}
+                className="border-neutral-700 text-neutral-300 hover:bg-neutral-800 hover:text-white"
+              >
+                Close Preview
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-      {/* Image Lightbox */}
-      <ImageLightbox
-        asset={paginatedAssets[currentImageIndex]}
-        isOpen={lightboxOpen}
-        onClose={closeLightbox}
-        onNext={goToNextImage}
-        onPrevious={goToPreviousImage}
-        currentIndex={currentImageIndex}
-        totalCount={paginatedAssets.length}
-      />
+        {/* Image Lightbox */}
+        <ImageLightbox
+          asset={paginatedAssets[currentImageIndex]}
+          isOpen={lightboxOpen}
+          onClose={closeLightbox}
+          onNext={goToNextImage}
+          onPrevious={goToPreviousImage}
+          currentIndex={currentImageIndex}
+          totalCount={paginatedAssets.length}
+        />
 
-      <MediaAgentSettingsModal
-        isOpen={isAgentSettingsOpen}
-        onClose={() => setIsAgentSettingsOpen(false)}
-        onSave={() => {
-          // Could show a toast here
-        }}
-      />
-    </div>
+        <MediaAgentSettingsModal
+          isOpen={isAgentSettingsOpen}
+          onClose={() => setIsAgentSettingsOpen(false)}
+          onSave={() => {
+            // Could show a toast here
+          }}
+        />
+      </div>
+    </AdminPageWrapper>
   );
 }
