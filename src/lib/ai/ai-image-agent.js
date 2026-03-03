@@ -36,6 +36,36 @@ class AIImageAgent {
     };
   }
 
+  async getEmbeddingSettings() {
+    await dbConnect();
+    const agentSettings = await MediaAgentSettings.findOne({});
+    const chatbotSettings = await ChatbotSettings.findOne({});
+
+    if (!chatbotSettings || !chatbotSettings.providers) {
+      throw new Error('No AI providers configured in Chatbot settings.');
+    }
+
+    const providerId = agentSettings?.embeddingProviderId || agentSettings?.providerId;
+    const model =
+      agentSettings?.embeddingModel ||
+      (providerId?.includes('google') ? 'embedding-001' : 'text-embedding-3-small');
+
+    const provider = chatbotSettings.providers.find((p) => p.id === providerId && p.isActive);
+
+    if (!provider) {
+      throw new Error('Selected embedding provider is inactive or not found.');
+    }
+
+    const apiKey = decrypt(provider.apiKey);
+
+    return {
+      apiKey,
+      baseUrl: provider.baseUrl,
+      model,
+      isGoogle: provider.baseUrl?.includes('googleapis'),
+    };
+  }
+
   async analyzeImage(base64Data, mimeType = 'image/jpeg') {
     const { apiKey, baseUrl, model, persona, isGoogle } = await this.getSettings();
 
@@ -44,6 +74,45 @@ class AIImageAgent {
     } else {
       return this.analyzeWithOpenAI(apiKey, baseUrl, model, persona, base64Data, mimeType);
     }
+  }
+
+  async generateEmbedding(text) {
+    const { apiKey, baseUrl, model, isGoogle } = await this.getEmbeddingSettings();
+
+    if (isGoogle) {
+      return this.embedWithGoogle(apiKey, model, text);
+    } else {
+      return this.embedWithOpenAI(apiKey, baseUrl, model, text);
+    }
+  }
+
+  async embedWithGoogle(apiKey, modelName, text) {
+    const ai = new GoogleGenAI({
+      apiKey: apiKey,
+    });
+    const selectedModel = modelName || 'gemini-embedding-001';
+    const response = await ai.models.embedContent({
+      model: selectedModel,
+      contents: [text],
+      outputDimensionality: 768,
+    });
+    // The SDK returns an array of embeddings when using 'contents'
+    return response.embeddings[0].values;
+  }
+
+  async embedWithOpenAI(apiKey, baseUrl, modelName, text) {
+    const openai = new OpenAI({
+      apiKey,
+      baseURL: baseUrl,
+    });
+
+    const response = await openai.embeddings.create({
+      model: modelName || 'text-embedding-3-small',
+      input: text,
+      dimensions: 768,
+    });
+
+    return response.data[0].embedding;
   }
 
   async analyzeWithGoogle(apiKey, modelName, persona, base64Data, mimeType) {

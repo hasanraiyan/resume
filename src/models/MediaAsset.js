@@ -14,6 +14,7 @@ const MediaAssetSchema = new mongoose.Schema(
     source: { type: String, enum: ['upload', 'pollinations', 'gemini'], default: 'upload' },
     prompt: { type: String },
     aiDescription: { type: String },
+    isIndexed: { type: Boolean, default: false },
     parentAssetIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'MediaAsset' }],
   },
   { timestamps: true }

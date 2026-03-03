@@ -26,6 +26,19 @@ const MediaAgentSettingsSchema = new mongoose.Schema(
     processingStartedAt: {
       type: Date,
     },
+    // Vector Search (Qdrant) Settings
+    embeddingProviderId: {
+      type: String,
+      default: '',
+    },
+    embeddingModel: {
+      type: String,
+      default: '',
+    },
+    qdrantCollection: {
+      type: String,
+      default: 'media_assets',
+    },
   },
   {
     timestamps: true,

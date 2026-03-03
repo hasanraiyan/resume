@@ -4,7 +4,11 @@
 import { v2 as cloudinary } from 'cloudinary';
 import dbConnect from '@/lib/dbConnect';
 import MediaAsset from '@/models/MediaAsset';
+import MediaAgentSettings from '@/models/MediaAgentSettings';
 import { revalidatePath } from 'next/cache';
+import { after } from 'next/server';
+import { aiImageAgent } from '@/lib/ai/ai-image-agent';
+import { qdrantClient, ensureCollection, mongoIdToUuid } from '@/lib/qdrant';
 
 // Configure Cloudinary with your credentials
 cloudinary.config({
@@ -122,6 +126,17 @@ export async function uploadAsset(formData) {
     await newAsset.save();
     console.log('Asset saved to database');
 
+    // Trigger background AI processing and indexing
+    if (typeof after === 'function') {
+      after(async () => {
+        try {
+          await processAndIndexAsset(newAsset);
+        } catch (err) {
+          console.error('[Background Indexing] Failed:', err);
+        }
+      });
+    }
+
     revalidatePath('/admin/media'); // Refresh the media library page
     console.log('Path revalidated');
 
@@ -209,6 +224,17 @@ export async function generateMedia({
 
     await newAsset.save();
     console.log('Generated asset saved to database');
+
+    // Trigger background indexing
+    if (typeof after === 'function') {
+      after(async () => {
+        try {
+          await processAndIndexAsset(newAsset);
+        } catch (err) {
+          console.error('[Background Indexing] Failed:', err);
+        }
+      });
+    }
 
     revalidatePath('/admin/media');
 
@@ -304,6 +330,18 @@ export async function editMedia({
     });
 
     await newAsset.save();
+
+    // Trigger background indexing
+    if (typeof after === 'function') {
+      after(async () => {
+        try {
+          await processAndIndexAsset(newAsset);
+        } catch (err) {
+          console.error('[Background Indexing] Failed:', err);
+        }
+      });
+    }
+
     revalidatePath('/admin/media');
 
     return {
@@ -417,7 +455,27 @@ export async function deleteAsset(assetId) {
 
     console.log('Cloudinary deletion status:', cloudinaryDeleted ? 'SUCCESS' : 'FAILED');
 
-    // 2. Delete from MongoDB (always do this, even if Cloudinary failed)
+    // 1.5. Delete from Qdrant (for semantic search)
+    try {
+      const settings = await MediaAgentSettings.findOne({});
+      const collectionName = settings?.qdrantCollection || 'media_assets';
+
+      console.log(
+        `[Qdrant] Attempting to delete vector from collection: ${collectionName} for ID: ${assetId}`
+      );
+
+      // Points in Qdrant are identified by the same ID as MongoDB (converted to UUID)
+      await qdrantClient.delete(collectionName, {
+        wait: true,
+        points: [mongoIdToUuid(assetId)],
+      });
+      console.log('[Qdrant] Vector deletion successful');
+    } catch (qdrantError) {
+      console.error('[Qdrant] Deletion failed or point not found:', qdrantError.message);
+      // We continue since Qdrant is additive/non-critical for existence of original file
+    }
+
+    // 2. Delete from MongoDB (always do this, even if Cloudinary or Qdrant failed)
     try {
       await MediaAsset.findByIdAndDelete(assetId);
       console.log('Database deletion successful');
@@ -444,5 +502,64 @@ export async function deleteAsset(assetId) {
   } catch (error) {
     console.error('Delete operation error details:', error);
     return { success: false, error: `Delete operation failed: ${error.message}` };
+  }
+}
+
+/**
+ * Shared utility to handle AI analysis and Qdrant indexing in the background
+ */
+export async function processAndIndexAsset(asset) {
+  try {
+    console.log(`[Background Indexing] Starting process for: ${asset.filename}`);
+
+    await dbConnect();
+    const settings = await MediaAgentSettings.findOne({});
+    const collectionName = settings?.qdrantCollection || 'media_assets';
+
+    // 1. Fetch image content
+    const imageResponse = await fetch(asset.secure_url || asset.url);
+    if (!imageResponse.ok) throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+
+    const arrayBuffer = await imageResponse.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64Data = buffer.toString('base64');
+    const mimeType = imageResponse.headers.get('content-type') || 'image/jpeg';
+
+    // 2. Analyze image for description
+    const description = await aiImageAgent.analyzeImage(base64Data, mimeType);
+
+    // 3. Generate embedding
+    const vector = await aiImageAgent.generateEmbedding(description);
+
+    // 4. Index in Qdrant
+    const isQdrantReady = await ensureCollection(collectionName, vector.length);
+    if (isQdrantReady) {
+      await qdrantClient.upsert(collectionName, {
+        points: [
+          {
+            id: mongoIdToUuid(asset._id),
+            vector: vector,
+            payload: {
+              id: asset._id.toString(),
+              filename: asset.filename,
+              description: description,
+              url: asset.secure_url || asset.url,
+            },
+          },
+        ],
+      });
+
+      // 5. Update Database
+      await MediaAsset.findByIdAndUpdate(asset._id, {
+        aiDescription: description,
+        isIndexed: true,
+      });
+
+      console.log(`[Background Indexing] Successfully indexed: ${asset.filename}`);
+      revalidatePath('/admin/media');
+    }
+  } catch (error) {
+    console.error('[Background Indexing] Error details:', error);
+    throw error;
   }
 }

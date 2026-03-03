@@ -19,7 +19,7 @@ import Button from '@/components/ui/Button';
 import MediaAgentSettingsModal from './MediaAgentSettingsModal';
 import { useRouter } from 'next/navigation';
 import AdminPageWrapper from './AdminPageWrapper';
-import { Settings, Zap, Play, Loader2, Bot, Plus, Upload } from 'lucide-react';
+import { Settings, Zap, Play, Loader2, Bot, Plus, Upload, Search, X } from 'lucide-react';
 
 // (This is a simplified version. You can add more features like search, filters, etc. later)
 export default function MediaLibraryClient({ initialAssets, title, description }) {
@@ -58,9 +58,7 @@ export default function MediaLibraryClient({ initialAssets, title, description }
 
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
-  const [formatFilter, setFormatFilter] = useState('all');
-  const [sourceFilter, setSourceFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('newest');
+  const [appliedSearchQuery, setAppliedSearchQuery] = useState('');
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -73,6 +71,11 @@ export default function MediaLibraryClient({ initialAssets, title, description }
 
   // AI Image Processing Agent state
   const [isAgentSettingsOpen, setIsAgentSettingsOpen] = useState(false);
+
+  // Semantic Search States
+  const [isSemanticSearch, setIsSemanticSearch] = useState(false);
+  const [semanticResults, setSemanticResults] = useState([]);
+  const [isSearchingSemantic, setIsSearchingSemantic] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingResults, setProcessingResults] = useState(null);
 
@@ -667,52 +670,71 @@ export default function MediaLibraryClient({ initialAssets, title, description }
   // Filter and sort assets
   const filteredAndSortedAssets = assets
     .filter((asset) => {
-      // Search filter
+      // Search filter - now uses appliedSearchQuery
       const matchesSearch =
-        searchQuery === '' ||
-        asset.filename?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        asset.prompt?.toLowerCase().includes(searchQuery.toLowerCase());
+        appliedSearchQuery === '' ||
+        asset.filename?.toLowerCase().includes(appliedSearchQuery.toLowerCase()) ||
+        asset.prompt?.toLowerCase().includes(appliedSearchQuery.toLowerCase()) ||
+        asset.aiDescription?.toLowerCase().includes(appliedSearchQuery.toLowerCase());
 
-      // Format filter
-      const matchesFormat =
-        formatFilter === 'all' || asset.format?.toLowerCase() === formatFilter.toLowerCase();
-
-      // Source filter
-      const matchesSource = sourceFilter === 'all' || asset.source === sourceFilter;
-
-      return matchesSearch && matchesFormat && matchesSource;
+      return matchesSearch;
     })
     .sort((a, b) => {
-      switch (sortBy) {
-        case 'newest':
-          return new Date(b.createdAt) - new Date(a.createdAt);
-        case 'oldest':
-          return new Date(a.createdAt) - new Date(b.createdAt);
-        case 'name':
-          return (a.filename || '').localeCompare(b.filename || '');
-        case 'size':
-          return (b.size || 0) - (a.size || 0);
-        default:
-          return 0;
-      }
+      // Default to newest first
+      return new Date(b.createdAt) - new Date(a.createdAt);
     });
 
   // Pagination calculations
-  const totalFilteredAssets = filteredAndSortedAssets.length;
+  const totalFilteredAssets = isSemanticSearch
+    ? semanticResults.length
+    : filteredAndSortedAssets.length;
   const totalPages = Math.ceil(totalFilteredAssets / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedAssets = filteredAndSortedAssets.slice(startIndex, endIndex);
+  const paginatedAssets = isSemanticSearch
+    ? semanticResults.slice(startIndex, endIndex)
+    : filteredAndSortedAssets.slice(startIndex, endIndex);
 
-  // Reset to first page when filters change
+  const handleSemanticSearch = async () => {
+    if (!searchQuery.trim()) {
+      setAppliedSearchQuery('');
+      setIsSemanticSearch(false);
+      return;
+    }
+
+    setAppliedSearchQuery(searchQuery);
+    setIsSearchingSemantic(true);
+    try {
+      const response = await fetch(
+        `/api/admin/media/search?query=${encodeURIComponent(searchQuery)}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setSemanticResults(data.results || []);
+        setIsSemanticSearch(true);
+        setCurrentPage(1);
+      }
+    } catch (error) {
+      console.error('Error performing semantic search:', error);
+    } finally {
+      setIsSearchingSemantic(false);
+    }
+  };
+
+  const clearSemanticSearch = () => {
+    setIsSemanticSearch(false);
+    setSemanticResults([]);
+  };
+
+  // Reset to first page when search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, formatFilter, sourceFilter, sortBy]);
+  }, [appliedSearchQuery]);
 
-  // Clear selections when page changes or assets change
+  // Clear selections when page changes or search changes
   useEffect(() => {
     setSelectedAssets(new Set());
-  }, [currentPage, searchQuery, formatFilter, sourceFilter, sortBy]);
+  }, [currentPage, appliedSearchQuery]);
 
   // Lightbox functions
   const openLightbox = (filteredIndex) => {
@@ -1201,117 +1223,102 @@ export default function MediaLibraryClient({ initialAssets, title, description }
           </div>
         </div>
 
-        {/* Search and Filter Section */}
-        <div className="bg-white p-4 rounded-lg border shadow-sm">
-          <div className="flex flex-col lg:flex-row gap-4">
-            {/* Search Input */}
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Search Assets</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by filename or AI prompt..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <i className="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-              </div>
+        {/* Search Section */}
+        <div className="max-w-3xl mx-auto">
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Search className="w-5 h-5 text-neutral-400 group-focus-within:text-blue-500 transition-colors" />
             </div>
-
-            {/* Filters Row */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              {/* Format Filter */}
-              <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Format</label>
-                <select
-                  value={formatFilter}
-                  onChange={(e) => setFormatFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                  name="formatFilter"
-                >
-                  <option value="all">All Formats</option>
-                  <option value="jpg">JPEG</option>
-                  <option value="png">PNG</option>
-                  <option value="gif">GIF</option>
-                  <option value="webp">WebP</option>
-                  <option value="svg">SVG</option>
-                </select>
-              </div>
-
-              {/* Source Filter */}
-              <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Source</label>
-                <select
-                  value={sourceFilter}
-                  onChange={(e) => setSourceFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                  name="sourceFilter"
-                >
-                  <option value="all">All Sources</option>
-                  <option value="upload">Uploaded</option>
-                  <option value="gemini">AI Generated</option>
-                </select>
-              </div>
-
-              {/* Sort Options */}
-              <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                  name="sortBy"
-                >
-                  <option value="newest">Newest First</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="name">Name A-Z</option>
-                  <option value="size">Largest First</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Results Summary */}
-          <div className="mt-4 flex justify-between items-center text-sm text-gray-600">
-            <div>
-              Showing {startIndex + 1}-{Math.min(endIndex, totalFilteredAssets)} of{' '}
-              {totalFilteredAssets} assets
-              {totalFilteredAssets !== assets.length && ` (filtered from ${assets.length} total)`}
-            </div>
-            <div className="flex items-center gap-4">
-              {/* Items per page selector */}
-              <div className="flex items-center gap-2">
-                <span>Show:</span>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="text-sm border border-gray-300 rounded px-2 py-1"
-                >
-                  <option value={12}>12</option>
-                  <option value={24}>24</option>
-                  <option value={48}>48</option>
-                  <option value={96}>96</option>
-                </select>
-              </div>
-              {(searchQuery || formatFilter !== 'all' || sourceFilter !== 'all') && (
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSemanticSearch();
+              }}
+              placeholder="Find any image using AI search (e.g. 'blue car', 'sunset'...)"
+              className="w-full pl-11 pr-32 py-3.5 bg-neutral-50 border border-neutral-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white transition-all text-neutral-800 placeholder:text-neutral-400"
+            />
+            <div className="absolute right-2 top-2 flex items-center gap-2">
+              {isSemanticSearch && (
                 <button
                   onClick={() => {
+                    clearSemanticSearch();
+                    setAppliedSearchQuery('');
                     setSearchQuery('');
-                    setFormatFilter('all');
-                    setSourceFilter('all');
-                    setSortBy('newest');
-                    setCurrentPage(1);
                   }}
-                  className="text-blue-600 hover:text-blue-800 underline"
+                  className="p-2 text-neutral-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                  title="Clear search"
                 >
-                  Clear filters
+                  <X className="w-5 h-5" />
                 </button>
               )}
+              <button
+                onClick={handleSemanticSearch}
+                disabled={isSearchingSemantic}
+                className={`flex items-center gap-2 px-6 py-2 rounded-xl font-bold text-sm transition-all shadow-md active:scale-95 ${
+                  isSearchingSemantic
+                    ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20'
+                }`}
+              >
+                {isSearchingSemantic ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Search className="w-4 h-4" />
+                    <span>Search</span>
+                  </>
+                )}
+              </button>
             </div>
+          </div>
+        </div>
+
+        {/* Results Summary */}
+        <div className="mt-4 flex justify-between items-center text-sm text-gray-600">
+          <div>
+            Showing {startIndex + 1}-{Math.min(endIndex, totalFilteredAssets)} of{' '}
+            {totalFilteredAssets} assets
+            {isSemanticSearch ? (
+              <span className="ml-2 px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full text-[10px] font-bold uppercase tracking-tight border border-blue-100 animate-pulse">
+                Semantic Results (from Qdrant)
+              </span>
+            ) : (
+              totalFilteredAssets !== assets.length && ` (filtered from ${assets.length} total)`
+            )}
+          </div>
+          <div className="flex items-center gap-4">
+            {/* Items per page selector */}
+            <div className="flex items-center gap-2">
+              <span>Show:</span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="text-sm border border-gray-300 rounded px-2 py-1"
+              >
+                <option value={12}>12</option>
+                <option value={24}>24</option>
+                <option value={48}>48</option>
+                <option value={96}>96</option>
+              </select>
+            </div>
+            {isSemanticSearch && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setAppliedSearchQuery('');
+                  clearSemanticSearch();
+                  setCurrentPage(1);
+                }}
+                className="text-blue-600 hover:text-blue-800 underline"
+              >
+                Clear search
+              </button>
+            )}
           </div>
         </div>
 
@@ -1355,11 +1362,12 @@ export default function MediaLibraryClient({ initialAssets, title, description }
         {paginatedAssets.length > 0 && (
           <div className="flex flex-col gap-3 mb-4">
             {/* AI Processing Banner (Only show if images need processing or is currently processing) */}
-            {(assets.filter((a) => !a.aiDescription).length > 0 || isProcessing) && (
+            {(assets.filter((a) => !a.aiDescription || !a.isIndexed).length > 0 ||
+              isProcessing) && (
               <div className="flex items-center gap-4 p-3 px-4 bg-blue-50/50 border border-blue-100 rounded-2xl">
                 <div className="flex -space-x-2 overflow-hidden">
                   {assets
-                    .filter((a) => !a.aiDescription)
+                    .filter((a) => !a.aiDescription || !a.isIndexed)
                     .slice(0, 3)
                     .map((asset, i) => (
                       <img
@@ -1368,17 +1376,17 @@ export default function MediaLibraryClient({ initialAssets, title, description }
                         className="w-6 h-6 rounded-full border-2 border-white object-cover"
                       />
                     ))}
-                  {assets.filter((a) => !a.aiDescription).length > 3 && (
+                  {assets.filter((a) => !a.aiDescription || !a.isIndexed).length > 3 && (
                     <div className="w-6 h-6 rounded-full bg-blue-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-blue-600">
-                      +{assets.filter((a) => !a.aiDescription).length - 3}
+                      +{assets.filter((a) => !a.aiDescription || !a.isIndexed).length - 3}
                     </div>
                   )}
                 </div>
                 <div className="flex-1">
                   <p className="text-xs font-medium text-blue-900">
                     {isProcessing
-                      ? 'AI Agent is currently analyzing your images...'
-                      : `${assets.filter((a) => !a.aiDescription).length} images need processing for AI search`}
+                      ? 'AI Agent is currently analyzing and indexing your images...'
+                      : `${assets.filter((a) => !a.aiDescription || !a.isIndexed).length} images need processing for AI search`}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">

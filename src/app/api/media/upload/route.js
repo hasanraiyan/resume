@@ -2,6 +2,8 @@
 import { v2 as cloudinary } from 'cloudinary';
 import dbConnect from '@/lib/dbConnect';
 import MediaAsset from '@/models/MediaAsset';
+import { processAndIndexAsset } from '@/app/actions/mediaActions';
+import { after } from 'next/server';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -115,6 +117,17 @@ export async function POST(request) {
 
     await newAsset.save();
     console.log('Asset saved to database in API route');
+
+    // Trigger background AI processing and indexing
+    if (typeof after === 'function') {
+      after(async () => {
+        try {
+          await processAndIndexAsset(newAsset);
+        } catch (err) {
+          console.error('[Background Indexing] Failed in API route:', err);
+        }
+      });
+    }
 
     return Response.json({
       success: true,
