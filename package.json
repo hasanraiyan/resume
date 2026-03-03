@@ -18,6 +18,7 @@
     "migrate-analytics": "node scripts/migrate-analytics-roles.js"
   },
   "dependencies": {
+    "@babel/runtime": "^7.28.6",
     "@fortawesome/fontawesome-svg-core": "^7.1.0",
     "@fortawesome/free-brands-svg-icons": "^7.1.0",
     "@fortawesome/free-regular-svg-icons": "^7.2.0",

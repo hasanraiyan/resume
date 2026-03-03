@@ -10,6 +10,7 @@ import Stats from '@/components/Stats';
 import Testimonials from '@/components/Testimonials';
 import Contact from '@/components/Contact';
 import Footer from '@/components/Footer';
+import AICreatorTeaser from '@/components/AICreatorTeaser';
 import HomepageLoaderManager from '@/components/HomepageLoaderManager';
 import dbConnect from '@/lib/dbConnect';
 import Project from '@/models/Project';
@@ -48,6 +49,7 @@ export default async function Home() {
       <Achievements />
       <Services services={services} />
       <FeaturedWorks featuredProjects={featuredProjects} />
+      <AICreatorTeaser />
       {/* Fix for CSS layout issue causing large right-side margin */}
       {/* overflow: 'hidden' clips any content extending beyond boundaries */}
       {/* width: '100%' ensures container takes full width of parent */}

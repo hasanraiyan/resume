@@ -20,6 +20,11 @@ import {
   Wrench,
   Server,
   Network,
+  Camera,
+  Bot,
+  ShieldAlert,
+  Wand2,
+  Loader2,
 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import LucideIconPicker from '@/components/admin/LucideIconPicker';
@@ -44,6 +49,7 @@ export default function ChatbotSettingsPage() {
     { id: 'persona', label: 'Personality', icon: UserCircle, desc: 'AI style & tone' },
     { id: 'knowledge', label: 'Knowledge', icon: BookOpen, desc: 'Base context & services' },
     { id: 'behavior', label: 'Behavior', icon: ShieldCheck, desc: 'Rules & instructions' },
+    { id: 'media', label: 'Media AI', icon: Camera, desc: 'Image generation & analysis' },
     { id: 'mcp', label: 'MCP', icon: Server, desc: 'Dynamic tool servers' },
   ];
 
@@ -83,6 +89,16 @@ export default function ChatbotSettingsPage() {
 
   const [modelsByProvider, setModelsByProvider] = useState({});
 
+  // Media AI Agent state
+  const [mediaSettings, setMediaSettings] = useState({
+    agents: [],
+    isActive: true,
+    qdrantCollection: 'media_assets',
+  });
+  const [mediaAgentModels, setMediaAgentModels] = useState({}); // { [agentId]: models[] }
+  const [fetchingMediaAgentModels, setFetchingMediaAgentModels] = useState({}); // { [agentId]: boolean }
+  const [mediaSaving, setMediaSaving] = useState(false);
+
   // Redirect if not admin
   useEffect(() => {
     if (status === 'loading') return;
@@ -100,6 +116,9 @@ export default function ChatbotSettingsPage() {
         setSettings(result);
         setFormData(result);
       }
+
+      // Also fetch media settings
+      await fetchMediaSettings();
     } catch (error) {
       console.error('Error fetching chatbot settings:', error);
       setMessage({ type: 'error', text: 'Failed to load chatbot settings' });
@@ -107,6 +126,42 @@ export default function ChatbotSettingsPage() {
       setLoading(false);
     }
   };
+
+  const fetchMediaSettings = async () => {
+    try {
+      const response = await fetch('/api/admin/media/settings');
+      if (response.ok) {
+        const data = await response.json();
+        setMediaSettings(data);
+        if (data.agents && data.agents.length > 0) {
+          data.agents.forEach((agent) => {
+            if (agent.providerId) {
+              fetchSpecificMediaModels(agent.providerId, agent.id);
+            }
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching media agent settings:', error);
+    }
+  };
+
+  const fetchSpecificMediaModels = useCallback(async (providerId, agentId) => {
+    if (!providerId || !agentId) return;
+    setFetchingMediaAgentModels((prev) => ({ ...prev, [agentId]: true }));
+
+    try {
+      const response = await fetch(`/api/media/models?providerId=${providerId}`);
+      const data = await response.json();
+      if (data.models) {
+        setMediaAgentModels((prev) => ({ ...prev, [agentId]: data.models }));
+      }
+    } catch (error) {
+      console.error(`Error fetching models for agent ${agentId}:`, error);
+    } finally {
+      setFetchingMediaAgentModels((prev) => ({ ...prev, [agentId]: false }));
+    }
+  }, []);
 
   const fetchMcpServers = async () => {
     try {
@@ -461,6 +516,62 @@ export default function ChatbotSettingsPage() {
     } catch (error) {
       console.error(error);
       setMessage({ type: 'error', text: 'Error deleting MCP server' });
+    }
+  };
+
+  const handleMediaSave = async () => {
+    setMediaSaving(true);
+    try {
+      // Clean settings to avoid Mongoose validation issues with system fields
+      const { _id, createdAt, updatedAt, __v, ...cleanSettings } = mediaSettings;
+
+      const response = await fetch('/api/admin/media/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cleanSettings),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.settings) setMediaSettings(result.settings);
+        setMessage({ type: 'success', text: 'Media agent settings saved successfully' });
+      } else {
+        setMessage({ type: 'error', text: 'Failed to save media settings' });
+      }
+    } catch (error) {
+      console.error('Error saving media settings:', error);
+      setMessage({ type: 'error', text: 'Error saving media settings' });
+    } finally {
+      setMediaSaving(false);
+    }
+  };
+
+  const handleMediaResetState = async () => {
+    if (
+      !confirm(
+        'Are you sure you want to reset the AI state of the media agent? This will clear any "Processing" status.'
+      )
+    )
+      return;
+
+    setMediaSaving(true);
+    try {
+      const response = await fetch('/api/admin/media/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isProcessing: false }),
+      });
+
+      if (response.ok) {
+        const updated = await response.json();
+        setMediaSettings(updated);
+        setMessage({ type: 'success', text: 'Media agent state reset successfully' });
+      }
+    } catch (error) {
+      console.error('Error resetting agent state:', error);
+      setMessage({ type: 'error', text: 'Error resetting agent state' });
+    } finally {
+      setMediaSaving(false);
     }
   };
 
@@ -992,6 +1103,247 @@ export default function ChatbotSettingsPage() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === 'media' && (
+            <div className="p-6 sm:p-8 space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-neutral-100">
+                <div>
+                  <h3 className="text-lg font-semibold text-black mb-1">Media AI Agent</h3>
+                  <p className="text-sm text-neutral-500">
+                    Configure AI analysis and vector search for your media assets and generation.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleMediaResetState}
+                    disabled={mediaSaving}
+                    className="px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl transition-colors text-sm font-medium flex items-center gap-2 border border-amber-200 shrink-0"
+                  >
+                    <ShieldAlert className="w-4 h-4" />
+                    Reset Agent State
+                  </button>
+                  <button
+                    onClick={handleMediaSave}
+                    disabled={mediaSaving}
+                    className="px-4 py-2 bg-black hover:bg-neutral-800 text-white rounded-xl transition-colors text-sm font-medium flex items-center gap-2 shrink-0 shadow-lg shadow-black/10"
+                  >
+                    {mediaSaving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    Save Media Config
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-8">
+                {/* Analysis Settings */}
+                <div className="space-y-6 p-6 bg-neutral-50 border border-neutral-200 rounded-2xl">
+                  <div>
+                    <h4 className="text-sm font-bold text-neutral-900 flex items-center gap-2 mb-1">
+                      <Sparkles className="w-4 h-4 text-blue-500" />
+                      Analysis Settings
+                    </h4>
+                    <p className="text-[11px] text-neutral-500">
+                      Used for auto-tagging and public generation.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <CustomDropdown
+                      label="Analysis Provider"
+                      value={mediaSettings.providerId}
+                      onChange={(e) => {
+                        const pid = e.target.value;
+                        setMediaSettings((prev) => ({ ...prev, providerId: pid, model: '' }));
+                        fetchSpecificMediaModels(pid, 'analysis');
+                      }}
+                      options={[
+                        { value: '', label: 'Select Provider' },
+                        ...formData.providers.map((p) => ({ value: p.id, label: p.name })),
+                      ]}
+                    />
+
+                    <CustomDropdown
+                      label="Analysis Model"
+                      value={mediaSettings.model}
+                      onChange={(e) =>
+                        setMediaSettings((prev) => ({ ...prev, model: e.target.value }))
+                      }
+                      isLoading={fetchingMediaAgentModels['analysis'] || false}
+                      disabled={!mediaSettings.providerId}
+                      options={[
+                        { value: '', label: 'Select Model' },
+                        ...(mediaAgentModels['analysis'] || []).map((m) => ({
+                          value: m,
+                          label: m,
+                        })),
+                      ]}
+                    />
+                  </div>
+                </div>
+
+                {/* Generation Settings */}
+                <div className="space-y-6 p-6 bg-neutral-50 border border-neutral-200 rounded-2xl">
+                  <div>
+                    <h4 className="text-sm font-bold text-neutral-900 flex items-center gap-2 mb-1">
+                      <Wand2 className="w-4 h-4 text-amber-500" />
+                      Generation Settings
+                    </h4>
+                    <p className="text-[11px] text-neutral-500">
+                      Used for the Image Playground & Homepage Teaser.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <CustomDropdown
+                      label="Generation Provider"
+                      value={mediaSettings.generationProviderId}
+                      onChange={(e) => {
+                        const pid = e.target.value;
+                        setMediaSettings((prev) => ({
+                          ...prev,
+                          generationProviderId: pid,
+                          generationModel: '',
+                        }));
+                        fetchSpecificMediaModels(pid, 'generation');
+                      }}
+                      options={[
+                        { value: '', label: 'Select Provider' },
+                        ...formData.providers.map((p) => ({ value: p.id, label: p.name })),
+                      ]}
+                    />
+
+                    <CustomDropdown
+                      label="Generation Model"
+                      value={mediaSettings.generationModel}
+                      onChange={(e) =>
+                        setMediaSettings((prev) => ({ ...prev, generationModel: e.target.value }))
+                      }
+                      isLoading={fetchingMediaAgentModels['generation'] || false}
+                      disabled={!mediaSettings.generationProviderId}
+                      options={[
+                        { value: '', label: 'Select Model' },
+                        ...(mediaAgentModels['generation'] || []).map((m) => ({
+                          value: m,
+                          label: m,
+                        })),
+                      ]}
+                    />
+                  </div>
+                </div>
+
+                {/* Semantic Settings */}
+                <div className="space-y-6 p-6 bg-neutral-50 border border-neutral-200 rounded-2xl">
+                  <div>
+                    <h4 className="text-sm font-bold text-neutral-900 flex items-center gap-2 mb-1">
+                      <Network className="w-4 h-4 text-purple-500" />
+                      Semantic Search (Qdrant)
+                    </h4>
+                    <p className="text-[11px] text-neutral-500">
+                      Used for visual search and finding similar images.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <CustomDropdown
+                      label="Embedding Provider"
+                      value={mediaSettings.embeddingProviderId}
+                      onChange={(e) => {
+                        const pid = e.target.value;
+                        setMediaSettings((prev) => ({
+                          ...prev,
+                          embeddingProviderId: pid,
+                          embeddingModel: '',
+                        }));
+                        fetchSpecificMediaModels(pid, 'embedding');
+                      }}
+                      options={[
+                        { value: '', label: 'Select Provider' },
+                        ...formData.providers.map((p) => ({ value: p.id, label: p.name })),
+                      ]}
+                    />
+
+                    <CustomDropdown
+                      label="Embedding Model"
+                      value={mediaSettings.embeddingModel}
+                      onChange={(e) =>
+                        setMediaSettings((prev) => ({ ...prev, embeddingModel: e.target.value }))
+                      }
+                      isLoading={fetchingMediaAgentModels['embedding'] || false}
+                      disabled={!mediaSettings.embeddingProviderId}
+                      options={[
+                        { value: '', label: 'Select Model' },
+                        ...(mediaAgentModels['embedding'] || []).map((m) => ({
+                          value: m,
+                          label: m,
+                        })),
+                      ]}
+                    />
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-neutral-700">
+                        Qdrant Collection Name
+                      </label>
+                      <input
+                        type="text"
+                        value={mediaSettings.qdrantCollection}
+                        onChange={(e) =>
+                          setMediaSettings((prev) => ({
+                            ...prev,
+                            qdrantCollection: e.target.value,
+                          }))
+                        }
+                        className="w-full p-2.5 bg-white border border-neutral-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20"
+                        placeholder="media_assets"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Persona Settings */}
+                <div className="sm:col-span-2 space-y-4 p-6 bg-white border border-neutral-200 rounded-2xl">
+                  <label className="text-sm font-semibold text-neutral-900 flex items-center gap-2">
+                    <Bot className="w-4 h-4 text-neutral-400" />
+                    Agent Persona & Instructions
+                  </label>
+                  <textarea
+                    value={mediaSettings.persona}
+                    onChange={(e) =>
+                      setMediaSettings((prev) => ({ ...prev, persona: e.target.value }))
+                    }
+                    rows={4}
+                    className="w-full p-4 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm leading-relaxed"
+                    placeholder="Tell the agent how to describe images..."
+                  />
+                  <div className="flex items-center gap-2 px-3 py-2 bg-blue-50/50 rounded-lg">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                    <p className="text-[11px] text-blue-700">
+                      This persona guides how the AI interprets images for alt-text, tags, and
+                      creative transformations.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Status Setting */}
+                <div className="sm:col-span-2 p-4 bg-neutral-50 border border-neutral-200 rounded-2xl flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-bold text-neutral-900">Agent Active Status</h4>
+                    <p className="text-[11px] text-neutral-500">
+                      Enable or disable background AI processing for new uploads.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={mediaSettings.isActive}
+                    onCheckedChange={(val) =>
+                      setMediaSettings((prev) => ({ ...prev, isActive: val }))
+                    }
+                  />
+                </div>
+              </div>
             </div>
           )}
 

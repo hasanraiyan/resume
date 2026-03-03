@@ -48,7 +48,7 @@ export async function POST(request) {
 
     let settings = await MediaAgentSettings.findOne({});
     if (settings) {
-      Object.assign(settings, body);
+      settings.set(body);
       await settings.save();
     } else {
       settings = new MediaAgentSettings(body);

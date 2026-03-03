@@ -16,7 +16,6 @@ import {
   DialogFooter,
 } from '@/components/ui/Dialog';
 import Button from '@/components/ui/Button';
-import MediaAgentSettingsModal from './MediaAgentSettingsModal';
 import { useRouter } from 'next/navigation';
 import AdminPageWrapper from './AdminPageWrapper';
 import { Settings, Zap, Play, Loader2, Bot, Plus, Upload, Search, X } from 'lucide-react';
@@ -1405,13 +1404,6 @@ export default function MediaLibraryClient({ initialAssets, title, description }
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setIsAgentSettingsOpen(true)}
-                    className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                    title="Agent Settings"
-                  >
-                    <Settings className="w-4 h-4" />
-                  </button>
                   <Button
                     onClick={handleProcessImages}
                     disabled={isProcessing}
@@ -1660,12 +1652,6 @@ export default function MediaLibraryClient({ initialAssets, title, description }
 
         {/* Sentinel element for Infinite Scroll */}
         <div ref={lastAssetElementRef} className="h-10 mt-8 mb-20 flex justify-center">
-          {currentPage < totalPages && (
-            <div className="flex items-center gap-2 text-neutral-400 animate-pulse">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span className="text-sm font-medium">Loading more treasures...</span>
-            </div>
-          )}
           {currentPage >= totalPages && totalFilteredAssets > 0 && (
             <span className="text-sm text-neutral-400 font-medium italic">
               ✨ You've reached the end of the library ✨
@@ -1772,14 +1758,6 @@ export default function MediaLibraryClient({ initialAssets, title, description }
           onPrevious={goToPreviousImage}
           currentIndex={currentImageIndex}
           totalCount={paginatedAssets.length}
-        />
-
-        <MediaAgentSettingsModal
-          isOpen={isAgentSettingsOpen}
-          onClose={() => setIsAgentSettingsOpen(false)}
-          onSave={() => {
-            // Could show a toast here
-          }}
         />
       </div>
     </AdminPageWrapper>

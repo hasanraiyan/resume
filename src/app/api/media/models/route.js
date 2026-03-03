@@ -9,10 +9,13 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const providerId = searchParams.get('providerId');
 
+    console.log('[Media Models API] Request received, providerId:', providerId);
+
     await dbConnect();
     const settings = await ChatbotSettings.findOne({});
 
     if (!settings || !settings.providers || settings.providers.length === 0) {
+      console.log('[Media Models API] No providers configured');
       return Response.json({ providers: [], models: [] });
     }
 
@@ -25,31 +28,49 @@ export async function GET(request) {
           name: p.name,
           isGoogle: p.baseUrl?.includes('googleapis'),
         }));
+      console.log('[Media Models API] Returning providers:', providers.length);
       return Response.json({ providers });
     }
 
     // Fetch models for a specific provider
+    console.log('[Media Models API] Looking for provider:', providerId);
     const provider = settings.providers.find((p) => p.id === providerId);
+
     if (!provider) {
+      console.log('[Media Models API] Provider not found:', providerId);
       return Response.json({ error: 'Provider not found' }, { status: 404 });
     }
 
+    console.log('[Media Models API] Provider found:', provider.name);
+
     const decryptedKey = decrypt(provider.apiKey);
     if (!decryptedKey) {
+      console.error('[Media Models API] Failed to decrypt API key');
       return Response.json({ error: 'Failed to decrypt API key' }, { status: 500 });
     }
 
-    const openai = new OpenAI({
-      apiKey: decryptedKey,
-      baseURL: provider.baseUrl,
-    });
+    try {
+      const openai = new OpenAI({
+        apiKey: decryptedKey,
+        baseURL: provider.baseUrl,
+      });
 
-    const response = await openai.models.list();
-    const models = response.data.map((m) => m.id);
+      console.log('[Media Models API] Fetching models from provider...');
+      const response = await openai.models.list();
+      const models = response.data.map((m) => m.id);
 
-    return Response.json({ models });
+      console.log('[Media Models API] Retrieved', models.length, 'models');
+      return Response.json({ models });
+    } catch (apiError) {
+      console.error('[Media Models API] OpenAI API error:', apiError.message);
+      // Return empty models array instead of error for better UX
+      return Response.json({ models: [], warning: 'Could not fetch models: ' + apiError.message });
+    }
   } catch (error) {
-    console.error('Error fetching media models:', error);
-    return Response.json({ error: 'Failed to fetch models' }, { status: 500 });
+    console.error('[Media Models API] Error fetching media models:', error);
+    return Response.json(
+      { error: 'Failed to fetch models', details: error.message },
+      { status: 500 }
+    );
   }
 }

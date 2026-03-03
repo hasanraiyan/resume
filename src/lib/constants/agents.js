@@ -1,0 +1,260 @@
+/**
+ * Agent System Constants
+ *
+ * Centralized definitions for all AI agents in the system.
+ * Use these constants for consistent agent identification and configuration.
+ */
+
+/**
+ * Unique Agent IDs
+ * Each agent must have a unique ID for tracking and configuration.
+ */
+export const AGENT_IDS = {
+  // Media & Image Agents
+  IMAGE_ANALYZER: 'image_analyzer',
+  IMAGE_GENERATOR: 'image_generator',
+  IMAGE_EDITOR: 'image_editor',
+  EMBEDDING_GENERATOR: 'embedding_generator',
+  VISUAL_SEARCH: 'visual_search',
+
+  // Chat & Conversation Agents
+  CHAT_ASSISTANT: 'chat_assistant',
+  CONTACT_FORM_ASSISTANT: 'contact_form_assistant',
+
+  // Content Agents
+  BLOG_WRITER: 'blog_writer',
+  CODE_REPORTER: 'code_reporter',
+  ISSUE_MANAGER: 'issue_manager',
+
+  // Analytics Agents
+  ANALYTICS_TRACKER: 'analytics_tracker',
+  ENGAGEMENT_ANALYZER: 'engagement_analyzer',
+};
+
+/**
+ * Agent Types
+ * Categories for grouping agents by functionality.
+ */
+export const AGENT_TYPES = {
+  MEDIA: 'media',
+  CHAT: 'chat',
+  CONTENT: 'content',
+  ANALYTICS: 'analytics',
+  UTILITY: 'utility',
+};
+
+/**
+ * Agent Categories
+ * More specific categorization within types.
+ */
+export const AGENT_CATEGORIES = {
+  // Media
+  IMAGE_PROCESSING: 'image_processing',
+  VECTOR_EMBEDDING: 'vector_embedding',
+  GENERATIVE_ART: 'generative_art',
+
+  // Chat
+  CONVERSATIONAL: 'conversational',
+  TASK_ORIENTED: 'task_oriented',
+
+  // Content
+  WRITING: 'writing',
+  CODE_ANALYSIS: 'code_analysis',
+  PROJECT_MANAGEMENT: 'project_management',
+
+  // Analytics
+  TRACKING: 'tracking',
+  INSIGHTS: 'insights',
+};
+
+/**
+ * Default Agent Configurations
+ * Baseline settings for each agent type.
+ */
+export const DEFAULT_AGENT_CONFIGS = {
+  [AGENT_IDS.IMAGE_ANALYZER]: {
+    name: 'Media Analyzer',
+    description: 'Analyzes and indexes images with AI-generated descriptions',
+    type: AGENT_TYPES.MEDIA,
+    category: AGENT_CATEGORIES.IMAGE_PROCESSING,
+    icon: 'Sparkles',
+    defaultModel: 'gemini-1.5-flash',
+    defaultProvider: 'google',
+    persona:
+      'You are an AI Image Analyzer. Describe visual elements for indexing and accessibility.',
+    maxTokens: 300,
+    isActive: true,
+  },
+  [AGENT_IDS.IMAGE_GENERATOR]: {
+    name: 'Creative Studio',
+    description: 'Generates images from text prompts',
+    type: AGENT_TYPES.MEDIA,
+    category: AGENT_CATEGORIES.GENERATIVE_ART,
+    icon: 'Wand2',
+    defaultModel: 'gemini-1.5-flash',
+    defaultProvider: 'google',
+    persona: 'You are a Creative AI. Focus on high-fidelity image generation.',
+    isActive: true,
+  },
+  [AGENT_IDS.IMAGE_EDITOR]: {
+    name: 'Image Editor',
+    description: 'Edits existing images based on text instructions',
+    type: AGENT_TYPES.MEDIA,
+    category: AGENT_CATEGORIES.IMAGE_PROCESSING,
+    icon: 'ImageEdit',
+    defaultModel: 'gemini-1.5-flash',
+    defaultProvider: 'google',
+    persona: 'You are an AI Image Editor. Make precise edits while preserving image quality.',
+    isActive: true,
+  },
+  [AGENT_IDS.EMBEDDING_GENERATOR]: {
+    name: 'Embedding Generator',
+    description: 'Generates vector embeddings for text and images',
+    type: AGENT_TYPES.MEDIA,
+    category: AGENT_CATEGORIES.VECTOR_EMBEDDING,
+    icon: 'Network',
+    defaultModel: 'text-embedding-3-small',
+    defaultProvider: 'openai',
+    isActive: true,
+  },
+  [AGENT_IDS.VISUAL_SEARCH]: {
+    name: 'Visual Search',
+    description: 'Enables semantic search across visual media',
+    type: AGENT_TYPES.MEDIA,
+    category: AGENT_CATEGORIES.VECTOR_EMBEDDING,
+    icon: 'Search',
+    defaultModel: 'text-embedding-3-small',
+    defaultProvider: 'openai',
+    isActive: true,
+  },
+  [AGENT_IDS.CHAT_ASSISTANT]: {
+    name: 'Chat Assistant',
+    description: 'Conversational AI assistant for user interactions',
+    type: AGENT_TYPES.CHAT,
+    category: AGENT_CATEGORIES.CONVERSATIONAL,
+    icon: 'Bot',
+    defaultModel: 'gpt-4o',
+    defaultProvider: 'openai',
+    isActive: true,
+  },
+  [AGENT_IDS.CONTACT_FORM_ASSISTANT]: {
+    name: 'Contact Assistant',
+    description: 'Helps users create and submit contact forms',
+    type: AGENT_TYPES.CHAT,
+    category: AGENT_CATEGORIES.TASK_ORIENTED,
+    icon: 'Mail',
+    defaultModel: 'gpt-4o',
+    defaultProvider: 'openai',
+    isActive: true,
+  },
+  [AGENT_IDS.BLOG_WRITER]: {
+    name: 'Blog Writer',
+    description: 'Assists in writing and structuring blog posts',
+    type: AGENT_TYPES.CONTENT,
+    category: AGENT_CATEGORIES.WRITING,
+    icon: 'PenTool',
+    defaultModel: 'gpt-4o',
+    defaultProvider: 'openai',
+    isActive: true,
+  },
+  [AGENT_IDS.CODE_REPORTER]: {
+    name: 'Code Reporter',
+    description: 'Analyzes code and generates reports',
+    type: AGENT_TYPES.CONTENT,
+    category: AGENT_CATEGORIES.CODE_ANALYSIS,
+    icon: 'FileCode',
+    defaultModel: 'gpt-4o',
+    defaultProvider: 'openai',
+    isActive: true,
+  },
+  [AGENT_IDS.ISSUE_MANAGER]: {
+    name: 'Issue Manager',
+    description: 'Manages and tracks project issues',
+    type: AGENT_TYPES.CONTENT,
+    category: AGENT_CATEGORIES.PROJECT_MANAGEMENT,
+    icon: 'CircleAlert',
+    defaultModel: 'gpt-4o',
+    defaultProvider: 'openai',
+    isActive: true,
+  },
+  [AGENT_IDS.ANALYTICS_TRACKER]: {
+    name: 'Analytics Tracker',
+    description: 'Tracks and records user interactions',
+    type: AGENT_TYPES.ANALYTICS,
+    category: AGENT_CATEGORIES.TRACKING,
+    icon: 'BarChart3',
+    isActive: true,
+  },
+  [AGENT_IDS.ENGAGEMENT_ANALYZER]: {
+    name: 'Engagement Analyzer',
+    description: 'Analyzes user engagement patterns',
+    type: AGENT_TYPES.ANALYTICS,
+    category: AGENT_CATEGORIES.INSIGHTS,
+    icon: 'TrendingUp',
+    isActive: true,
+  },
+};
+
+/**
+ * Agent Tools Mapping
+ * Defines which tools each agent has access to.
+ */
+export const AGENT_TOOLS = {
+  [AGENT_IDS.IMAGE_ANALYZER]: ['vision', 'tagging', 'description'],
+  [AGENT_IDS.IMAGE_GENERATOR]: ['image_generation', 'variation'],
+  [AGENT_IDS.IMAGE_EDITOR]: ['image_editing', 'inpainting', 'outpainting'],
+  [AGENT_IDS.EMBEDDING_GENERATOR]: ['text_embedding', 'image_embedding'],
+  [AGENT_IDS.VISUAL_SEARCH]: ['vector_search', 'similarity_match'],
+  [AGENT_IDS.CHAT_ASSISTANT]: ['conversation', 'tool_use', 'generative_ui'],
+  [AGENT_IDS.CONTACT_FORM_ASSISTANT]: ['form_handling', 'validation', 'submission'],
+  [AGENT_IDS.BLOG_WRITER]: ['writing', 'editing', 'seo_optimization'],
+  [AGENT_IDS.CODE_REPORTER]: ['code_analysis', 'documentation', 'reporting'],
+  [AGENT_IDS.ISSUE_MANAGER]: ['issue_tracking', 'template_generation', 'assignment'],
+  [AGENT_IDS.ANALYTICS_TRACKER]: ['event_tracking', 'session_management'],
+  [AGENT_IDS.ENGAGEMENT_ANALYZER]: ['pattern_recognition', 'insights_generation'],
+};
+
+/**
+ * Rate Limit Defaults
+ * Default rate limits per agent (requests per minute).
+ */
+export const RATE_LIMIT_DEFAULTS = {
+  [AGENT_IDS.IMAGE_ANALYZER]: { requests: 10, window: 60 },
+  [AGENT_IDS.IMAGE_GENERATOR]: { requests: 5, window: 60 },
+  [AGENT_IDS.IMAGE_EDITOR]: { requests: 5, window: 60 },
+  [AGENT_IDS.EMBEDDING_GENERATOR]: { requests: 20, window: 60 },
+  [AGENT_IDS.VISUAL_SEARCH]: { requests: 30, window: 60 },
+  [AGENT_IDS.CHAT_ASSISTANT]: { requests: 15, window: 60 },
+  [AGENT_IDS.CONTACT_FORM_ASSISTANT]: { requests: 10, window: 60 },
+  [AGENT_IDS.BLOG_WRITER]: { requests: 10, window: 60 },
+  [AGENT_IDS.CODE_REPORTER]: { requests: 10, window: 60 },
+  [AGENT_IDS.ISSUE_MANAGER]: { requests: 15, window: 60 },
+  [AGENT_IDS.ANALYTICS_TRACKER]: { requests: 100, window: 60 },
+  [AGENT_IDS.ENGAGEMENT_ANALYZER]: { requests: 30, window: 60 },
+};
+
+/**
+ * Helper to get all agent IDs
+ */
+export const getAllAgentIds = () => Object.values(AGENT_IDS);
+
+/**
+ * Helper to get all agent types
+ */
+export const getAllAgentTypes = () => Object.values(AGENT_TYPES);
+
+/**
+ * Helper to get default config for an agent
+ */
+export const getDefaultConfig = (agentId) => DEFAULT_AGENT_CONFIGS[agentId] || null;
+
+/**
+ * Helper to get tools for an agent
+ */
+export const getAgentTools = (agentId) => AGENT_TOOLS[agentId] || [];
+
+/**
+ * Helper to get rate limit for an agent
+ */
+export const getRateLimit = (agentId) =>
+  RATE_LIMIT_DEFAULTS[agentId] || { requests: 10, window: 60 };
