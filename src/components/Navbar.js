@@ -42,6 +42,39 @@ export default function Navbar() {
     socialLinks: heroData?.socialLinks || [],
   };
 
+  const [navVisible, setNavVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  // Hide navbar on scroll down, show on scroll up (desktop only)
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      if (currentY < 100) {
+        setNavVisible(true);
+      } else if (currentY > lastScrollY && currentY - lastScrollY > 10) {
+        setNavVisible(false);
+      } else if (lastScrollY - currentY > 10) {
+        setNavVisible(true);
+      }
+      setLastScrollY(currentY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
+  // Show navbar when mouse enters bottom zone
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (e.clientY > window.innerHeight - 60) {
+        setNavVisible(true);
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
   // Prevent body scroll when menu is open
   useEffect(() => {
     if (isMenuOpen) {
@@ -53,8 +86,22 @@ export default function Navbar() {
 
   return (
     <>
+      {/* Subtle indicator dot when navbar is hidden */}
+      <div
+        className={`hidden md:flex fixed bottom-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ${
+          navVisible ? 'opacity-0 scale-0' : 'opacity-40 scale-100'
+        }`}
+        aria-hidden="true"
+      >
+        <div className="w-8 h-1 rounded-full bg-black/30" />
+      </div>
+
       {/* FLOATING PILL CONTAINER (Desktop) */}
-      <nav className="hidden md:flex fixed bottom-8 left-1/2 -translate-x-1/2 z-50 items-center gap-1">
+      <nav
+        className={`hidden md:flex fixed bottom-8 left-1/2 -translate-x-1/2 z-50 items-center gap-1 transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${
+          navVisible ? 'translate-y-0 opacity-100' : 'translate-y-[calc(100%+3rem)] opacity-0'
+        }`}
+      >
         <div className="flex items-center gap-8 px-8 py-4 rounded-full premium-shadow shadow-[0_20px_60px_rgba(15,23,42,0.2)] transition-all duration-500 hover:scale-[1.02] bg-white">
           {/* Logo (Minimal) */}
           <Link
