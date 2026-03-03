@@ -1,0 +1,40 @@
+
+> resume@0.1.0 dev /app
+> next dev --turbopack
+
+   ▲ Next.js 15.5.9 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.2:3000
+   - Experiments (use with caution):
+     · serverActions
+
+ ✓ Starting...
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+ ○ Compiling middleware ...
+ ✓ Compiled middleware in 1199ms
+ ✓ Ready in 3.9s
+ ○ Compiling /tools/presentation ...
+ ✓ Compiled /tools/presentation in 26.8s
+ ⨯ Error: Please define the MONGODB_URI environment variable inside .env.local
+    at __TURBOPACK__module__evaluation__ (src/lib/dbConnect.js:30:9)
+    at __TURBOPACK__module__evaluation__ (src/app/actions/heroActions.js:9:1)
+    at __TURBOPACK__module__evaluation__ (.next-internal/server/app/tools/presentation/page/actions.js (server actions loader):1:1)
+    at __TURBOPACK__module__evaluation__ (.next/server/chunks/ssr/[root-of-the-server]__1a720874._.js:16:392)
+    at Object.<anonymous> (.next/server/app/tools/presentation/page.js:17:3)
+  28 |
+  29 | if (!MONGODB_URI) {
+> 30 |   throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
+     |         ^
+  31 | }
+  32 |
+  33 | /** {
+  page: '/tools/presentation'
+}
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 3.2s
+ GET /tools/presentation 500 in 31935ms
+ ✓ Compiled in 224ms
