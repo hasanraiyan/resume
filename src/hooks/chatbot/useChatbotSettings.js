@@ -1,9 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
+import { AGENT_IDS } from '@/lib/constants/agents';
 
 export function useChatbotSettings() {
   const [chatbotSettings, setChatbotSettings] = useState(null);
   const [settingsFetched, setSettingsFetched] = useState(false);
-  const [selectedModel, setSelectedModel] = useState(null);
+  const [selectedAgentId, setSelectedAgentId] = useState(AGENT_IDS.CHAT_FAST);
 
   const fetchSettings = useCallback(async () => {
     if (settingsFetched) return;
@@ -13,21 +14,17 @@ export function useChatbotSettings() {
       if (response.ok) {
         const settings = await response.json();
         setChatbotSettings(settings);
-        // Default logic: Priority to setting's defaultEngine, fall back to Fast, then Thinking, then Pro
+
+        // Default logic: Priority to setting's defaultEngine, fall back to Fast
         const defaultEngine = settings.defaultEngine || 'fast';
-        const defaultSlot = `${defaultEngine}Model`;
+        const agentId =
+          defaultEngine === 'thinking'
+            ? AGENT_IDS.CHAT_THINKING
+            : defaultEngine === 'pro'
+              ? AGENT_IDS.CHAT_PRO
+              : AGENT_IDS.CHAT_FAST;
 
-        const initialModel = settings[defaultSlot]?.model
-          ? settings[defaultSlot]
-          : settings.fastModel?.model
-            ? settings.fastModel
-            : settings.thinkingModel?.model
-              ? settings.thinkingModel
-              : settings.proModel?.model
-                ? settings.proModel
-                : null;
-
-        setSelectedModel(initialModel);
+        setSelectedAgentId(agentId);
       } else {
         setChatbotSettings({ isActive: false });
       }
@@ -40,5 +37,11 @@ export function useChatbotSettings() {
     fetchSettings();
   }, [fetchSettings]);
 
-  return { chatbotSettings, settingsFetched, selectedModel, setSelectedModel, fetchSettings };
+  return {
+    chatbotSettings,
+    settingsFetched,
+    selectedAgentId,
+    setSelectedAgentId,
+    fetchSettings,
+  };
 }

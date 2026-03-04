@@ -62,7 +62,7 @@ export function useChatStreaming() {
     setMessages,
     setStatus,
     activeMCPs = [],
-    selectedModel,
+    selectedAgentId,
   }) => {
     const analytics = getAnalytics();
     console.log('[useChatStreaming] Raw history:', history);
@@ -98,7 +98,7 @@ export function useChatStreaming() {
         sessionId: analytics.sessionId,
         path: window.location.pathname,
         activeMCPs: activeMCPs, // Pass array of IDs directly
-        selectedModel,
+        agentId: selectedAgentId,
       }),
     });
 
@@ -326,7 +326,7 @@ export function useChatStreaming() {
   };
 
   const send = useCallback(
-    async (content, activeQuote, activeMCPs, selectedModel, hidden = false) => {
+    async (content, activeQuote, activeMCPs, selectedAgentId, hidden = false) => {
       if ((!content.trim() && !activeQuote) || isLoading) return;
 
       const currentQuote = activeQuote;
@@ -351,7 +351,7 @@ export function useChatStreaming() {
           content: userMessage.content,
           history: messages,
           activeMCPs,
-          selectedModel,
+          selectedAgentId,
           setMessages,
           setStatus: setStatusMessage,
         });

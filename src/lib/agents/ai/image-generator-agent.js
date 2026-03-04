@@ -93,5 +93,4 @@ class ImageGeneratorAgent extends BaseAgent {
   }
 }
 
-export const imageGeneratorAgent = new ImageGeneratorAgent();
 export default ImageGeneratorAgent;

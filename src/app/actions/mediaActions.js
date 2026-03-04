@@ -8,6 +8,8 @@ import MediaAgentSettings from '@/models/MediaAgentSettings';
 import { revalidatePath } from 'next/cache';
 import { after } from 'next/server';
 import { qdrantClient, ensureCollection, mongoIdToUuid } from '@/lib/qdrant';
+import agentRegistry from '@/lib/agents/AgentRegistry';
+import { AGENT_IDS } from '@/lib/constants/agents';
 
 // Configure Cloudinary with your credentials
 cloudinary.config({
@@ -163,7 +165,7 @@ export async function generateMedia({
   prompt,
   aspectRatio = '1:1',
   providerId,
-  model = 'gemini-2.0-flash-preview-image-generation',
+  model = 'gemini-2.0-flash',
 }) {
   console.log('=== GENERATE MEDIA DEBUG ===');
   console.log('generateMedia called with:', { prompt, aspectRatio, providerId, model });
@@ -258,7 +260,7 @@ export async function editMedia({
   editPrompt,
   aspectRatio = '1:1',
   providerId,
-  model = 'gemini-3.1-flash-image-preview',
+  model = 'gemini-2.0-flash',
 }) {
   console.log('=== EDIT MEDIA DEBUG ===');
   console.log('editMedia called with:', { assetIds, editPrompt, aspectRatio, providerId, model });
@@ -537,10 +539,18 @@ export async function processAndIndexAsset(asset) {
     const mimeType = imageResponse.headers.get('content-type') || 'image/jpeg';
 
     // 2. Analyze image for description
-    const description = await aiImageAgent.analyzeImage(base64Data, mimeType);
+    const description = await agentRegistry.execute(AGENT_IDS.IMAGE_ANALYZER, {
+      base64Data,
+      mimeType,
+      action: 'analyze',
+    });
 
     // 3. Generate embedding
-    const vector = await aiImageAgent.generateEmbedding(description);
+    const embeddingResult = await agentRegistry.execute(AGENT_IDS.IMAGE_ANALYZER, {
+      text: description,
+      action: 'embedding',
+    });
+    const vector = embeddingResult.embedding;
 
     // 4. Index in Qdrant
     const isQdrantReady = await ensureCollection(collectionName, vector.length);

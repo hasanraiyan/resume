@@ -166,5 +166,4 @@ class AIImageAgent extends BaseAgent {
   }
 }
 
-export const aiImageAgent = new AIImageAgent();
 export default AIImageAgent;

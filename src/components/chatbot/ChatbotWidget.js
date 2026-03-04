@@ -33,7 +33,7 @@ export default function ChatbotWidget() {
   const inputRef = useRef(null);
 
   // Custom Hooks
-  const { chatbotSettings, settingsFetched, selectedModel, setSelectedModel, fetchSettings } =
+  const { chatbotSettings, settingsFetched, selectedAgentId, setSelectedAgentId, fetchSettings } =
     useChatbotSettings();
   const { selection, setSelection, activeQuote, setActiveQuote } = useSelectionAI();
   const { isListening, toggleListening } = useVoiceRecognition(
@@ -122,7 +122,7 @@ export default function ChatbotWidget() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    send(inputMessage, activeQuote, activeMCPs, selectedModel);
+    send(inputMessage, activeQuote, activeMCPs, selectedAgentId);
     setInputMessage('');
     setActiveQuote('');
     if (inputRef.current) {
@@ -131,7 +131,7 @@ export default function ChatbotWidget() {
   };
 
   const handlePromptClick = (text) => {
-    send(text, activeQuote, activeMCPs, selectedModel);
+    send(text, activeQuote, activeMCPs, selectedAgentId);
     setActiveQuote('');
   };
 
@@ -192,7 +192,7 @@ export default function ChatbotWidget() {
     }
 
     if (prompt) {
-      send(prompt, activeQuote, activeMCPs, selectedModel, true);
+      send(prompt, activeQuote, activeMCPs, selectedAgentId, true);
     }
   };
 
@@ -323,8 +323,8 @@ export default function ChatbotWidget() {
             isModelSelectorOpen={isModelSelectorOpen}
             setIsModelSelectorOpen={setIsModelSelectorOpen}
             chatbotSettings={chatbotSettings}
-            selectedModel={selectedModel}
-            setSelectedModel={setSelectedModel}
+            selectedAgentId={selectedAgentId}
+            setSelectedAgentId={setSelectedAgentId}
           />
         </div>
       </div>

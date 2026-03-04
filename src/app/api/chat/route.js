@@ -28,7 +28,7 @@ export async function POST(request) {
       sessionId: providedSessionId,
       path = '/',
       activeMCPs = [],
-      selectedModel,
+      agentId,
     } = await request.json();
 
     const sessionId =
@@ -46,14 +46,14 @@ export async function POST(request) {
       sessionId,
       path,
       activeMCPs,
-      selectedModel,
       isAdmin,
     };
 
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const events = agentRegistry.streamExecute(AGENT_IDS.CHAT_ASSISTANT, inputParams);
+          const targetAgentId = agentId || AGENT_IDS.CHAT_FAST;
+          const events = agentRegistry.streamExecute(targetAgentId, inputParams);
 
           for await (const event of events) {
             controller.enqueue(encodeEvent(event));

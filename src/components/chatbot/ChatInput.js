@@ -21,8 +21,8 @@ export default function ChatInput({
   isModelSelectorOpen,
   setIsModelSelectorOpen,
   chatbotSettings,
-  selectedModel,
-  setSelectedModel,
+  selectedAgentId,
+  setSelectedAgentId,
 }) {
   return (
     <div className="p-3 border-t border-neutral-200/50 bg-white shrink-0">
@@ -69,8 +69,8 @@ export default function ChatInput({
           <div className="flex items-center justify-end gap-2">
             <ModelSelector
               chatbotSettings={chatbotSettings}
-              selectedModel={selectedModel}
-              setSelectedModel={setSelectedModel}
+              selectedAgentId={selectedAgentId}
+              setSelectedAgentId={setSelectedAgentId}
               isModelSelectorOpen={isModelSelectorOpen}
               setIsModelSelectorOpen={setIsModelSelectorOpen}
               setIsToolsMenuOpen={setIsToolsMenuOpen}

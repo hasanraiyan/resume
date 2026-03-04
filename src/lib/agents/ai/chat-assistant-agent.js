@@ -88,7 +88,7 @@ PAGE CONTEXT: The user is currently on: "${path || '/'}"`,
   ];
 }
 
-class ChatAssistantAgent extends BaseAgent {
+class ChatAgent extends BaseAgent {
   constructor(agentId = AGENT_IDS.CHAT_ASSISTANT, config = {}) {
     super(agentId, config);
   }
@@ -121,6 +121,11 @@ class ChatAssistantAgent extends BaseAgent {
     let allTools = [...portfolioTools];
     let mcpClient = null;
 
+    const actualModel = {
+      providerId: this.config.providerId,
+      model: this.config.model,
+    };
+
     try {
       let context;
       try {
@@ -133,19 +138,10 @@ class ChatAssistantAgent extends BaseAgent {
         throw new Error('Chatbot is currently disabled');
       }
 
-      const actualModelSelection = selectedModel || {
-        providerId: this.config.providerId,
-        model: this.config.model,
-      };
-      const actualModel =
-        typeof actualModelSelection === 'string'
-          ? { providerId: this.config.providerId, model: actualModelSelection }
-          : actualModelSelection;
-
       const provider = await this.resolveProvider(actualModel.providerId);
 
       if (!provider || !actualModel.model) {
-        throw new Error('AI Chatbot is not fully configured.');
+        throw new Error(`AI Chatbot (${this.agentId}) is not fully configured.`);
       }
 
       const llm = resolveLangChainModel(actualModel, provider);
@@ -293,7 +289,7 @@ class ChatAssistantAgent extends BaseAgent {
         path,
         userMessage,
         aiResponse: assistantContent,
-        modelName: selectedModel?.model || 'unknown',
+        modelName: actualModel.model || 'unknown',
         conversationContext: [{ role: 'system', content: 'Context truncated for logs' }],
         toolsUsed,
         executionTime: Date.now() - startTime,
@@ -309,5 +305,4 @@ class ChatAssistantAgent extends BaseAgent {
   }
 }
 
-export const chatAssistantAgent = new ChatAssistantAgent();
-export default ChatAssistantAgent;
+export default ChatAgent;
