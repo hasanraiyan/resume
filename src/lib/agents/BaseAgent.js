@@ -65,6 +65,25 @@ class BaseAgent {
   }
 
   /**
+   * Sanitize input for logging — truncates long strings (e.g. base64 data)
+   * @private
+   */
+  _sanitizeLog(obj) {
+    if (!obj || typeof obj !== 'object') return obj;
+    const sanitized = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (typeof value === 'string' && value.length > 200) {
+        sanitized[key] = value.substring(0, 100) + `... (${value.length} chars)`;
+      } else if (Array.isArray(value)) {
+        sanitized[key] = `[Array(${value.length})]`;
+      } else {
+        sanitized[key] = value;
+      }
+    }
+    return sanitized;
+  }
+
+  /**
    * Initialize the agent and fetch database configurations
    * Override _onInitialize in subclasses instead of this method
    * @returns {Promise<boolean>} Success status
@@ -181,7 +200,7 @@ class BaseAgent {
       await this.initialize();
     }
 
-    this.logger.info('Executing agent with input:', input);
+    this.logger.info('Executing agent with input:', this._sanitizeLog(input));
     this.lastExecutedAt = new Date();
     this.executionCount++;
 
@@ -218,7 +237,7 @@ class BaseAgent {
       await this.initialize();
     }
 
-    this.logger.info('Executing agent stream with input:', input);
+    this.logger.info('Executing agent stream with input:', this._sanitizeLog(input));
     this.lastExecutedAt = new Date();
     this.executionCount++;
 
