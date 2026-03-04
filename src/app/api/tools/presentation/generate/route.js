@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { ChatOpenAI } from '@langchain/openai';
 import { PromptTemplate } from '@langchain/core/prompts';
-import { StructuredOutputParser } from 'langchain/output_parsers';
+import { StructuredOutputParser } from '@langchain/core/output_parsers';
 import dbConnect from '@/lib/dbConnect';
 import ChatbotSettings from '@/models/ChatbotSettings';
 import { decrypt } from '@/lib/crypto';
