@@ -69,6 +69,15 @@ export async function updateArticle(id, formData) {
 
   try {
     const articleData = processFormData(formData);
+
+    // If publishing an article, set publishedAt to now
+    if (articleData.status === 'published') {
+      const existingArticle = await Article.findById(id);
+      if (existingArticle && existingArticle.status !== 'published' && !articleData.publishedAt) {
+        articleData.publishedAt = new Date();
+      }
+    }
+
     const updatedArticle = await Article.findByIdAndUpdate(id, articleData, {
       new: true,
       runValidators: true,
@@ -264,6 +273,8 @@ export async function getAllPublishedArticles(
 
     const skip = (page - 1) * limit;
 
+    // Optimize: Only fetch tags if needed (for filter display), not on every request
+    // Cache or fetch tags separately if it's impacting performance
     const [articles, totalArticles] = await Promise.all([
       Article.find(query).sort({ publishedAt: -1 }).skip(skip).limit(limit).lean(),
       Article.countDocuments(query),

@@ -29,6 +29,7 @@ export async function POST(request) {
       path = '/',
       activeMCPs = [],
       agentId,
+      topic,
     } = await request.json();
 
     const sessionId =
@@ -47,6 +48,7 @@ export async function POST(request) {
       path,
       activeMCPs,
       isAdmin,
+      ...(topic && { topic }),
     };
 
     const stream = new ReadableStream({

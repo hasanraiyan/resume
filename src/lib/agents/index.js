@@ -34,6 +34,7 @@ import ImageGeneratorAgent from './ai/image-generator-agent';
 import ImageEditorAgent from './ai/image-editor-agent';
 import ImageEmbedderAgent from './ai/image-embedder-agent';
 import VisualSearchAgent from './ai/visual-search-agent';
+import BlogWriterAgent from './ai/blog-writer-agent';
 
 // Register agent classes into the registry
 agentRegistry.register(AGENT_IDS.IMAGE_ANALYZER, AIImageAgent);
@@ -45,6 +46,7 @@ agentRegistry.register(AGENT_IDS.IMAGE_GENERATOR, ImageGeneratorAgent);
 agentRegistry.register(AGENT_IDS.IMAGE_EDITOR, ImageEditorAgent);
 agentRegistry.register(AGENT_IDS.IMAGE_EMBEDDER, ImageEmbedderAgent);
 agentRegistry.register(AGENT_IDS.VISUAL_SEARCH, VisualSearchAgent);
+agentRegistry.register(AGENT_IDS.BLOG_WRITER, BlogWriterAgent);
 
 export {
   AIImageAgent,
@@ -53,5 +55,6 @@ export {
   ImageEditorAgent,
   ImageEmbedderAgent,
   VisualSearchAgent,
+  BlogWriterAgent,
 };
 export default agentRegistry;

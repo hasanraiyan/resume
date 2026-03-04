@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/Dialog';
 import Button from '@/components/ui/Button';
 import CustomDropdown from '@/components/CustomDropdown';
-import { Sparkles, Save, X, Bot, ShieldAlert, Cpu, Settings2, Webhook } from 'lucide-react';
+import { Sparkles, Save, X, Bot, ShieldAlert, Cpu, Settings2, Webhook, Plug } from 'lucide-react';
 
 export default function AgentConfigurationModal({ isOpen, onClose, agentData, providers, onSave }) {
   const [settings, setSettings] = useState({
@@ -19,11 +19,29 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
     persona: '',
     isActive: true,
     tools: [],
+    activeMCPs: [],
   });
 
   const [models, setModels] = useState([]);
   const [fetchingModels, setFetchingModels] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [mcpServers, setMcpServers] = useState([]);
+  const [fetchingMCPs, setFetchingMCPs] = useState(false);
+
+  const fetchMCPs = async () => {
+    setFetchingMCPs(true);
+    try {
+      const res = await fetch('/api/admin/chatbot/mcp');
+      if (res.ok) {
+        const data = await res.json();
+        setMcpServers(Array.isArray(data) ? data : []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch MCP servers:', error);
+    } finally {
+      setFetchingMCPs(false);
+    }
+  };
 
   useEffect(() => {
     if (isOpen && agentData) {
@@ -33,12 +51,14 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
         persona: agentData.persona || '',
         isActive: agentData.isActive ?? true,
         tools: agentData.tools || [],
+        activeMCPs: agentData.activeMCPs || [],
       });
       if (agentData.providerId) {
         fetchModels(agentData.providerId);
       } else {
         setModels([]);
       }
+      fetchMCPs();
     }
   }, [isOpen, agentData]);
 
@@ -99,6 +119,16 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
         return { ...prev, tools: currentTools.filter((t) => t !== toolName) };
       }
       return { ...prev, tools: [...currentTools, toolName] };
+    });
+  };
+
+  const toggleMCP = (mcpId) => {
+    setSettings((prev) => {
+      const current = prev.activeMCPs || [];
+      if (current.includes(mcpId)) {
+        return { ...prev, activeMCPs: current.filter((id) => id !== mcpId) };
+      }
+      return { ...prev, activeMCPs: [...current, mcpId] };
     });
   };
 
@@ -204,6 +234,75 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
               </div>
             </div>
           )}
+
+          {/* MCP Servers Section */}
+          <div className="space-y-3 pt-4 border-t border-neutral-100">
+            <h4 className="text-xs font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-2">
+              <Plug className="w-3 h-3" />
+              MCP Servers
+            </h4>
+            {fetchingMCPs ? (
+              <p className="text-xs text-neutral-400">Loading MCP servers...</p>
+            ) : mcpServers.length === 0 ? (
+              <p className="text-xs text-neutral-500">
+                No MCP servers configured.{' '}
+                <a href="/admin/chatbot" className="text-blue-600 hover:underline">
+                  Add one
+                </a>
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {mcpServers.map((mcp) => {
+                  const isAssigned = settings.activeMCPs.includes(mcp._id);
+                  return (
+                    <button
+                      key={mcp._id}
+                      type="button"
+                      onClick={() => toggleMCP(mcp._id)}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left border transition-colors ${
+                        isAssigned
+                          ? 'bg-blue-50 border-blue-200'
+                          : 'bg-white border-neutral-200 hover:bg-neutral-50'
+                      }`}
+                    >
+                      <div
+                        className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                          isAssigned ? 'bg-blue-600 border-blue-600' : 'border-neutral-300'
+                        }`}
+                      >
+                        {isAssigned && (
+                          <svg
+                            className="w-2.5 h-2.5 text-white"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={3}
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className={`text-xs font-medium truncate ${isAssigned ? 'text-blue-700' : 'text-neutral-700'}`}
+                        >
+                          {mcp.name}
+                        </p>
+                        {mcp.description && (
+                          <p className="text-[10px] text-neutral-400 truncate">{mcp.description}</p>
+                        )}
+                      </div>
+                      {!mcp.isActive && (
+                        <span className="text-[9px] uppercase font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">
+                          Offline
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           <div className="space-y-2 pt-4 border-t border-neutral-100">
             <label className="text-sm font-medium text-neutral-800 flex items-center gap-2">
