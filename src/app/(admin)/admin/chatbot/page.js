@@ -353,24 +353,23 @@ export default function ChatbotSettingsPage() {
   }
 
   return (
-    <AdminPageWrapper>
-      <div className="max-w-5xl  mx-auto pb-24">
-        {/* Header */}
-        <div className="mb-8 items-start flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
-              <h1 className="text-3xl font-bold text-black font-['Playfair_Display']">
-                AI Assistant Configuration
-              </h1>
-            </div>
-            <p className="text-neutral-600 max-w-2xl">
-              Configure your AI assistant's personality, knowledge base, and behavior. These
-              settings control how the chatbot interacts with visitors on your portfolio.
-            </p>
+    <div className="space-y-8 pb-24">
+      {/* Page Header */}
+      <div className="border-b border-neutral-200 pb-8">
+        <h1 className="text-4xl font-bold text-black font-['Playfair_Display'] mb-4 flex items-center gap-4">
+          <div className="relative flex items-center justify-center w-6 h-6">
+            <div className="absolute w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_12px_rgba(34,197,94,0.6)]"></div>
+            <div className="absolute w-3 h-3 bg-green-500 rounded-full opacity-50"></div>
           </div>
-        </div>
+          AI Assistant Configuration
+        </h1>
+        <p className="text-neutral-600 max-w-2xl text-lg">
+          Configure your AI assistant's personality, knowledge base, and behavior. These settings
+          control how the chatbot interacts with visitors on your portfolio.
+        </p>
+      </div>
 
+      <div className="max-w-6xl mx-auto space-y-12">
         {/* Success/Error Messages */}
         {message.text && (
           <div
@@ -392,36 +391,31 @@ export default function ChatbotSettingsPage() {
         )}
 
         {/* Tab Navigation */}
-        <div className="flex space-x-2 bg-neutral-100/70 p-1.5 rounded-2xl mb-8 border border-neutral-200/50 overflow-x-auto custom-scrollbar">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-medium transition-all flex-1 justify-center sm:justify-start min-w-[140px] outline-none ${
-                activeTab === tab.id
-                  ? 'bg-white text-black shadow-sm ring-1 ring-neutral-200/50 scale-[1.02]'
-                  : 'text-neutral-500 hover:text-neutral-800 hover:bg-neutral-200/50 hover:scale-[1.01]'
-              }`}
-            >
-              <div
-                className={`p-1.5 rounded-lg transition-colors ${activeTab === tab.id ? 'bg-blue-50 text-blue-600' : 'bg-transparent text-neutral-400'}`}
-              >
-                <tab.icon className="w-4 h-4" />
-              </div>
-              <div className="flex flex-col items-start hidden sm:block text-left">
-                <span className="block leading-none mb-1">{tab.label}</span>
-                {/* <span
-                  className={`text-[10px] font-normal leading-none ${activeTab === tab.id ? 'text-neutral-500' : 'text-neutral-400'}`}
+        <div className="flex justify-center border-b border-neutral-200 overflow-x-auto custom-scrollbar">
+          <div className="flex gap-2 sm:gap-8 px-2 sm:px-0">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 py-4 text-sm font-semibold transition-colors relative px-2 whitespace-nowrap ${
+                    activeTab === tab.id ? 'text-black' : 'text-neutral-500 hover:text-neutral-800'
+                  }`}
                 >
-                  {tab.desc}
-                </span> */}
-              </div>
-            </button>
-          ))}
+                  <Icon className="w-4 h-4" />
+                  <span>{tab.label}</span>
+                  {activeTab === tab.id && (
+                    <span className="absolute bottom-0 left-0 w-full h-[3px] bg-black"></span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Form Content */}
-        <div className="bg-white rounded-3xl border border-neutral-200/60 shadow-sm min-h-[400px]">
+        <div className="bg-white rounded-3xl border-2 border-neutral-100 shadow-sm min-h-[400px] overflow-hidden">
           {activeTab === 'general' && (
             <div className="p-6 sm:p-8 space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
               <div className="pb-6 border-b border-neutral-100">
@@ -440,7 +434,7 @@ export default function ChatbotSettingsPage() {
                     type="text"
                     value={formData.aiName}
                     onChange={(e) => handleInputChange('aiName', e.target.value)}
-                    className="w-full px-4 border border-neutral-200 rounded-xl focus:ring-2 bg-neutral-50 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm h-[50px]"
+                    className="w-full px-4 bg-white border-2 border-neutral-800 rounded-xl focus:ring-0 focus:border-black outline-none transition-all text-sm h-[50px]"
                     placeholder="e.g., Kiro"
                   />
                   <p className="text-xs text-neutral-500">
@@ -492,7 +486,7 @@ export default function ChatbotSettingsPage() {
                     value={formData.persona}
                     onChange={(e) => handleInputChange('persona', e.target.value)}
                     rows={6}
-                    className="w-full p-4 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm leading-relaxed resize-y min-h-[120px]"
+                    className="w-full p-4 bg-neutral-50 border-2 border-neutral-800 rounded-xl focus:ring-0 focus:border-black outline-none transition-all text-sm leading-relaxed resize-y min-h-[120px]"
                     placeholder="Describe how the AI should behave and communicate..."
                   />
                 </div>
@@ -509,7 +503,7 @@ export default function ChatbotSettingsPage() {
                     value={formData.callToAction}
                     onChange={(e) => handleInputChange('callToAction', e.target.value)}
                     rows={3}
-                    className="w-full p-4 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm leading-relaxed resize-y"
+                    className="w-full p-4 bg-neutral-50 border-2 border-neutral-800 rounded-xl focus:ring-0 focus:border-black outline-none transition-all text-sm leading-relaxed resize-y"
                     placeholder="What should the AI say to encourage contact..."
                   />
                 </div>
@@ -526,7 +520,7 @@ export default function ChatbotSettingsPage() {
                     value={formData.welcomeMessage}
                     onChange={(e) => handleInputChange('welcomeMessage', e.target.value)}
                     rows={3}
-                    className="w-full p-4 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm leading-relaxed resize-y"
+                    className="w-full p-4 bg-neutral-50 border-2 border-neutral-800 rounded-xl focus:ring-0 focus:border-black outline-none transition-all text-sm leading-relaxed resize-y"
                     placeholder="e.g., Hi! I'm Kiro. How can I help you today?"
                   />
                 </div>
@@ -553,7 +547,7 @@ export default function ChatbotSettingsPage() {
                     value={formData.baseKnowledge}
                     onChange={(e) => handleInputChange('baseKnowledge', e.target.value)}
                     rows={4}
-                    className="w-full p-4 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm leading-relaxed resize-y"
+                    className="w-full p-4 bg-neutral-50 border-2 border-neutral-800 rounded-xl focus:ring-0 focus:border-black outline-none transition-all text-sm leading-relaxed resize-y"
                     placeholder="General information about you and your work..."
                   />
                 </div>
@@ -569,7 +563,7 @@ export default function ChatbotSettingsPage() {
                     value={formData.servicesOffered}
                     onChange={(e) => handleInputChange('servicesOffered', e.target.value)}
                     rows={5}
-                    className="w-full p-4 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm leading-relaxed whitespace-pre-wrap resize-y font-mono"
+                    className="w-full p-4 bg-neutral-50 border-2 border-neutral-800 rounded-xl focus:ring-0 focus:border-black outline-none transition-all text-sm leading-relaxed whitespace-pre-wrap resize-y font-mono"
                     placeholder="List your services, one per line..."
                   />
                 </div>
@@ -648,7 +642,7 @@ export default function ChatbotSettingsPage() {
                           value={rule}
                           onChange={(e) => handleRuleChange(index, e.target.value)}
                           rows={2}
-                          className="w-full p-3 border border-neutral-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-y"
+                          className="w-full p-3 bg-white border-2 border-neutral-800 rounded-xl focus:ring-0 focus:border-black outline-none transition-all resize-y"
                           placeholder={`Rule ${index + 1}...`}
                         />
                       </div>
@@ -699,7 +693,7 @@ export default function ChatbotSettingsPage() {
                           type="text"
                           value={prompt}
                           onChange={(e) => handlePromptChange(index, e.target.value)}
-                          className="w-full p-3 border border-neutral-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                          className="w-full p-3 bg-white border-2 border-neutral-800 rounded-xl focus:ring-0 focus:border-black outline-none transition-all"
                           placeholder={`Suggested question ${index + 1}...`}
                         />
                       </div>
@@ -852,7 +846,7 @@ export default function ChatbotSettingsPage() {
                   type="text"
                   value={mcpFormData.name}
                   onChange={(e) => setMcpFormData((p) => ({ ...p, name: e.target.value }))}
-                  className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
+                  className="w-full p-3 border-2 border-neutral-800 rounded-xl focus:ring-0 focus:border-black outline-none transition-colors"
                   placeholder="e.g. Memory Service"
                 />
               </div>
@@ -862,7 +856,7 @@ export default function ChatbotSettingsPage() {
                   type="text"
                   value={mcpFormData.url}
                   onChange={(e) => setMcpFormData((p) => ({ ...p, url: e.target.value }))}
-                  className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-mono"
+                  className="w-full p-3 border-2 border-neutral-800 rounded-xl focus:ring-0 focus:border-black outline-none transition-colors font-mono"
                   placeholder="http://localhost:3001/mcp/sse"
                 />
               </div>
@@ -874,23 +868,23 @@ export default function ChatbotSettingsPage() {
                   value={mcpFormData.description}
                   onChange={(e) => setMcpFormData((p) => ({ ...p, description: e.target.value }))}
                   rows={2}
-                  className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm resize-y"
+                  className="w-full p-3 border-2 border-neutral-800 rounded-xl focus:ring-0 focus:border-black outline-none transition-colors resize-y"
                   placeholder="What tools does this server provide?"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4 items-start">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-neutral-700">Icon</label>
+                  <label className="text-sm font-medium text-neutral-700 block mb-1">Icon</label>
                   <LucideIconPicker
                     value={mcpFormData.icon}
                     onChange={(val) => setMcpFormData((p) => ({ ...p, icon: val }))}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-neutral-800">
+                  <label className="block text-sm font-medium text-neutral-800 mb-1">
                     Active Status
                   </label>
-                  <div className="px-4 h-[42px] bg-neutral-50 border border-neutral-200 rounded-xl flex items-center justify-between w-full">
+                  <div className="px-4 h-[42px] border border-neutral-200 rounded-xl flex items-center justify-between w-full">
                     <span className="text-sm text-neutral-600">
                       {mcpFormData.isActive ? 'Enabled' : 'Disabled'}
                     </span>
@@ -904,7 +898,7 @@ export default function ChatbotSettingsPage() {
                 </div>
               </div>
 
-              <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-2xl flex items-center justify-between">
+              <div className="p-4 bg-blue-50/20 border border-blue-100 rounded-2xl flex items-center justify-between">
                 <div>
                   <label className="text-sm font-semibold text-blue-900 block flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4" /> Admin Only Tool
@@ -919,7 +913,7 @@ export default function ChatbotSettingsPage() {
                 />
               </div>
 
-              <div className="p-4 bg-purple-50/50 border border-purple-100 rounded-2xl flex items-center justify-between">
+              <div className="p-4 bg-purple-50/20 border border-purple-100 rounded-2xl flex items-center justify-between">
                 <div>
                   <label className="text-sm font-semibold text-purple-900 block flex items-center gap-2">
                     <Server className="w-4 h-4" /> Always Enable (Default)
@@ -935,18 +929,18 @@ export default function ChatbotSettingsPage() {
                 />
               </div>
 
-              <div className="mt-8 flex gap-3 justify-end">
+              <div className="mt-8 flex gap-3 pt-4">
                 <button
                   disabled={mcpSaving}
                   onClick={() => setIsMcpModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl border border-neutral-200 text-sm font-medium hover:bg-neutral-50 transition-colors disabled:opacity-50"
+                  className="flex-1 py-3 rounded-xl border border-neutral-300 hover:border-black hover:bg-neutral-50 transition-colors font-medium text-black disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   disabled={mcpSaving}
                   onClick={handleSaveMcp}
-                  className="px-5 py-2.5 rounded-xl bg-black text-white text-sm font-medium hover:bg-neutral-800 transition-colors shadow-lg shadow-black/10 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="flex-1 py-3 rounded-xl bg-black hover:bg-neutral-900 transition-colors text-white font-medium flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   {mcpSaving && (
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -965,7 +959,7 @@ export default function ChatbotSettingsPage() {
 
       {/* Sticky Action Footer */}
       <div className="fixed bottom-0 left-0 lg:left-64 right-0 p-4 bg-white/80 backdrop-blur-xl border-t border-neutral-200/60 z-40 transform transition-transform shadow-[0_-10px_40px_rgba(0,0,0,0.03)]">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
+        <div className="max-w-6xl mx-auto flex items-center justify-between px-6">
           <div className="flex items-center gap-2 text-xs text-neutral-500 hidden sm:flex">
             <span className="font-medium">Shortcut:</span>
             <code className="px-1.5 py-0.5 bg-neutral-100 border border-neutral-200 rounded font-mono text-neutral-600">
@@ -990,6 +984,6 @@ export default function ChatbotSettingsPage() {
           </div>
         </div>
       </div>
-    </AdminPageWrapper>
+    </div>
   );
 }
