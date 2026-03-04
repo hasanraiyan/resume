@@ -193,6 +193,9 @@ export async function POST(request) {
     // Handle both single event objects and arrays of events
     const events = Array.isArray(body) ? body : [body];
 
+    // Connect to database (only once for all events)
+    await dbConnect();
+
     for (let i = 0; i < events.length; i++) {
       const event = events[i];
 
@@ -209,11 +212,6 @@ export async function POST(request) {
       // Filter out bot traffic
       if (isBot(userAgent)) {
         continue; // Skip this event but continue processing others
-      }
-
-      // Connect to database (only once for all events)
-      if (i === 0) {
-        await dbConnect();
       }
 
       // Get client IP (for geographical analysis, not stored as PII)
