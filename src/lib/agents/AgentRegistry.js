@@ -20,6 +20,8 @@ class AgentRegistry {
     this._agentClasses = new Map();
     /** @private */
     this._initialized = false;
+    /** @private */
+    this._creationPromises = new Map();
 
     AgentRegistry.instance = this;
   }
@@ -65,12 +67,24 @@ class AgentRegistry {
       return this._agents.get(agentId);
     }
 
+    // If already being created, return the instance once ready (actually we can just return a promise if we wanted,
+    // but the API is synchronous. For now, we use a simple sync block/last-check pattern or just accept
+    // that the first one to finish constructor wins. Wait, constructor is sync.)
+
     // Create new instance if class is registered
     const registration = this._agentClasses.get(agentId);
     if (registration) {
       const { AgentClass, config: defaultConfig } = registration;
       const mergedConfig = { ...defaultConfig, ...config };
+
+      // Double-check pattern to prevent race condition between .has and .set
       const agent = new AgentClass(agentId, mergedConfig);
+
+      // If someone else beat us to it while we were calling 'new', use theirs
+      if (this._agents.has(agentId)) {
+        return this._agents.get(agentId);
+      }
+
       this._agents.set(agentId, agent);
       console.log(`[AgentRegistry] Created new instance for agent: ${agentId}`);
       return agent;
