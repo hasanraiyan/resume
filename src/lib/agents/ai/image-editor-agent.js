@@ -45,7 +45,8 @@ class ImageEditorAgent extends BaseAgent {
       );
     }
 
-    const modelName = inputModel || this.config.model || 'gemini-1.5-flash';
+    const rawModel = inputModel || this.config.model || 'gemini-1.5-flash';
+    const modelName = rawModel.replace(/^models\//, '');
     const genAI = new GoogleGenAI({ apiKey: provider.apiKey });
 
     // Ensure base64Images is an array

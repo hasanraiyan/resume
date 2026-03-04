@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import MediaAsset from '@/models/MediaAsset';
 import MediaAgentSettings from '@/models/MediaAgentSettings';
-import agentRegistry from '@/lib/agents/AgentRegistry';
+import agentRegistry from '@/lib/agents';
 import { AGENT_IDS } from '@/lib/constants/agents';
 import { getServerSession } from 'next-auth';
 
@@ -85,9 +85,9 @@ export async function POST(request) {
           let vector = null;
           let indexedInQdrant = false;
           try {
-            const embeddingResult = await agentRegistry.execute(AGENT_IDS.IMAGE_ANALYZER, {
+            const embeddingResult = await agentRegistry.execute(AGENT_IDS.IMAGE_EMBEDDER, {
               text: description,
-              taskType: 'embedding',
+              taskType: 'embed',
             });
             vector = embeddingResult.embedding;
 

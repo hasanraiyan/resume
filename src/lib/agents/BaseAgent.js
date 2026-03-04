@@ -112,9 +112,31 @@ class BaseAgent {
       provider = await ProviderSettings.findById(providerId).lean();
     }
 
-    // Fallback for any legacy 'id' field if it exists
+    // Fallback for any legacy 'id' field
     if (!provider) {
       provider = await ProviderSettings.findOne({ id: providerId }).lean();
+    }
+
+    // NEW: Smart Fallback for default slugs ('google', 'openai')
+    const slug = providerId?.toLowerCase();
+    if (!provider && (slug === 'google' || slug === 'openai')) {
+      this.logger.info(
+        `Provider ID "${providerId}" not found. Attempting fuzzy fallback search...`
+      );
+      const searchTerms = slug === 'google' ? ['google', 'gemini', 'googleapis'] : ['openai'];
+
+      provider = await ProviderSettings.findOne({
+        isActive: true,
+        $or: [
+          { name: { $regex: searchTerms.join('|'), $options: 'i' } },
+          { baseUrl: { $regex: searchTerms.join('|'), $options: 'i' } },
+          { providerId: { $regex: searchTerms.join('|'), $options: 'i' } },
+        ],
+      }).lean();
+
+      if (provider) {
+        this.logger.info(`Resolved fallback provider: ${provider.name} (${provider.providerId})`);
+      }
     }
 
     if (provider && provider.apiKey) {

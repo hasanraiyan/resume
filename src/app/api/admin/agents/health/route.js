@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import agentManager from '@/lib/agents/AgentManager';
-import agentRegistry from '@/lib/agents/AgentRegistry';
+import agentRegistry from '@/lib/agents';
 
 export async function GET() {
   try {

@@ -1,7 +1,7 @@
 // src/app/api/media/public-edit/route.js
 import dbConnect from '@/lib/dbConnect';
 import MediaAgentSettings from '@/models/MediaAgentSettings';
-import agentRegistry from '@/lib/agents/AgentRegistry';
+import agentRegistry from '@/lib/agents';
 import { NextResponse } from 'next/server';
 import { AGENT_IDS } from '@/lib/constants/agents';
 

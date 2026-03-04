@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { deleteAsset } from '@/app/actions/mediaActions';
+import { deleteAsset, resetMediaAI } from '@/app/actions/mediaActions';
 import Image from 'next/image';
 import imageCompression from 'browser-image-compression';
 import ImageLightbox from '@/components/ui/ImageLightbox';
@@ -76,6 +76,7 @@ export default function MediaLibraryClient({ initialAssets, title, description }
   const [semanticResults, setSemanticResults] = useState([]);
   const [isSearchingSemantic, setIsSearchingSemantic] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [processingResults, setProcessingResults] = useState(null);
 
   // Infinite Scroll Observer Ref
@@ -669,22 +670,10 @@ export default function MediaLibraryClient({ initialAssets, title, description }
     fetchModelsForProvider();
   }, [selectedProvider]);
 
-  // Filter and sort assets
-  const filteredAndSortedAssets = assets
-    .filter((asset) => {
-      // Search filter - now uses appliedSearchQuery
-      const matchesSearch =
-        appliedSearchQuery === '' ||
-        asset.filename?.toLowerCase().includes(appliedSearchQuery.toLowerCase()) ||
-        asset.prompt?.toLowerCase().includes(appliedSearchQuery.toLowerCase()) ||
-        asset.aiDescription?.toLowerCase().includes(appliedSearchQuery.toLowerCase());
-
-      return matchesSearch;
-    })
-    .sort((a, b) => {
-      // Default to newest first
-      return new Date(b.createdAt) - new Date(a.createdAt);
-    });
+  // Sort assets by newest first
+  const filteredAndSortedAssets = assets.sort((a, b) => {
+    return new Date(b.createdAt) - new Date(a.createdAt);
+  });
 
   // Pagination calculations
   const totalFilteredAssets = isSemanticSearch
@@ -1294,12 +1283,11 @@ export default function MediaLibraryClient({ initialAssets, title, description }
           <div>
             Showing 1-{Math.min(currentPage * itemsPerPage, totalFilteredAssets)} of{' '}
             {totalFilteredAssets} assets
-            {isSemanticSearch ? (
-              <span className="ml-2 px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full text-[10px] font-bold uppercase tracking-tight border border-blue-100 animate-pulse">
-                Semantic Results (from Qdrant)
+            {isSemanticSearch && (
+              <span className="ml-2 px-2 py-0.5 bg-blue-600 text-white rounded-full text-[10px] font-bold uppercase tracking-tight flex items-center gap-1 shadow-sm">
+                <Bot className="w-2.5 h-2.5" />
+                Visual Search Agent
               </span>
-            ) : (
-              totalFilteredAssets !== assets.length && ` (filtered from ${assets.length} total)`
             )}
           </div>
           <div className="flex items-center gap-4">
@@ -1375,9 +1363,8 @@ export default function MediaLibraryClient({ initialAssets, title, description }
         {/* Gallery Section */}
         {paginatedAssets.length > 0 && (
           <div className="flex flex-col gap-3 mb-4">
-            {/* AI Processing Banner (Only show if images need processing or is currently processing) */}
-            {(assets.filter((a) => !a.aiDescription || !a.isIndexed).length > 0 ||
-              isProcessing) && (
+            {/* AI Action Banner */}
+            {assets.length > 0 && (
               <div className="flex items-center gap-4 p-3 px-4 bg-blue-50/50 border border-blue-100 rounded-2xl">
                 <div className="flex -space-x-2 overflow-hidden">
                   {assets
@@ -1405,8 +1392,42 @@ export default function MediaLibraryClient({ initialAssets, title, description }
                 </div>
                 <div className="flex items-center gap-3">
                   <Button
+                    onClick={async () => {
+                      if (
+                        confirm(
+                          'Are you sure you want to RESET the entire AI Index? This will clear all semantic search data and require re-analysis of all images.'
+                        )
+                      ) {
+                        setIsResetting(true);
+                        try {
+                          const result = await resetMediaAI();
+                          if (result.success) {
+                            alert(result.message);
+                            router.refresh();
+                          } else {
+                            alert('Reset failed: ' + result.error);
+                          }
+                        } catch (err) {
+                          alert('Reset failed: ' + err.message);
+                        } finally {
+                          setIsResetting(false);
+                        }
+                      }
+                    }}
+                    disabled={isProcessing || isResetting}
+                    variant="outline"
+                    className="border-red-200 text-red-600 hover:bg-red-50 rounded-xl h-8 px-4 text-xs font-semibold shadow-sm flex items-center gap-2"
+                  >
+                    {isResetting ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <i className="fas fa-trash-alt text-[10px]"></i>
+                    )}
+                    {isResetting ? 'Resetting...' : 'Reset AI Index'}
+                  </Button>
+                  <Button
                     onClick={handleProcessImages}
-                    disabled={isProcessing}
+                    disabled={isProcessing || isResetting}
                     className="bg-blue-600 hover:bg-blue-700 text-white border-none rounded-xl h-8 px-4 text-xs font-semibold shadow-sm flex items-center gap-2"
                   >
                     {isProcessing ? (
@@ -1455,14 +1476,27 @@ export default function MediaLibraryClient({ initialAssets, title, description }
         )}
         <div className="w-full">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {paginatedAssets.length === 0 ? (
-              <div className="col-span-full text-center py-6 text-gray-500">
-                <i className="fas fa-image text-4xl mb-3"></i>
-                <p>
-                  {assets.length === 0
-                    ? 'No assets uploaded yet. Upload some images to get started!'
-                    : 'No assets match your current filters. Try adjusting your search or filters.'}
-                </p>
+            {isSearchingSemantic ? (
+              // Shimmer Loading State
+              Array.from({ length: 10 }).map((_, i) => (
+                <div
+                  key={`skeleton-${i}`}
+                  className="relative flex flex-col border rounded-xl overflow-hidden bg-white shadow-sm animate-pulse"
+                >
+                  <div className="bg-gray-200" style={{ height: '180px' }}></div>
+                  <div className="p-3 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                </div>
+              ))
+            ) : paginatedAssets.length === 0 ? (
+              <div className="col-span-full text-center py-12 text-gray-500 bg-neutral-50 rounded-3xl border-2 border-dashed border-neutral-100">
+                <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Search className="w-8 h-8 text-neutral-300" />
+                </div>
+                <p className="font-medium text-neutral-800">No images found</p>
+                <p className="text-sm">Try a different search query or upload more images.</p>
               </div>
             ) : (
               paginatedAssets.map((asset, index) => {
@@ -1570,12 +1604,20 @@ export default function MediaLibraryClient({ initialAssets, title, description }
                         }}
                       />
 
-                      {/* Source Badge */}
-                      {(asset.source === 'gemini' || asset.source === 'pollinations') && (
-                        <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full z-10">
-                          AI Generated
-                        </div>
-                      )}
+                      {/* Source & Score Badge */}
+                      <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
+                        {(asset.source === 'gemini' || asset.source === 'pollinations') && (
+                          <div className="bg-blue-600 text-white text-[10px] px-2 py-1 rounded-full shadow-sm font-bold">
+                            AI Generated
+                          </div>
+                        )}
+                        {asset.score && (
+                          <div className="bg-emerald-600 text-white text-[10px] px-2 py-1 rounded-full shadow-sm font-bold flex items-center gap-1">
+                            <Zap className="w-2 h-2" />
+                            {Math.round(asset.score * 100)}% Match
+                          </div>
+                        )}
+                      </div>
 
                       {/* Delete Button Overlay */}
                       <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-2">

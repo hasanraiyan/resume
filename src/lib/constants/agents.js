@@ -14,7 +14,7 @@ export const AGENT_IDS = {
   IMAGE_ANALYZER: 'image_analyzer',
   IMAGE_GENERATOR: 'image_generator',
   IMAGE_EDITOR: 'image_editor',
-  EMBEDDING_GENERATOR: 'embedding_generator',
+  IMAGE_EMBEDDER: 'image_embedder',
   VISUAL_SEARCH: 'visual_search',
 
   // Chat & Conversation Agents
@@ -84,8 +84,8 @@ export const DEFAULT_AGENT_CONFIGS = {
     defaultModel: 'gemini-1.5-flash',
     defaultProvider: 'google',
     persona:
-      'You are an AI Image Analyzer. Describe visual elements for indexing and accessibility.',
-    maxTokens: 300,
+      'You are a Professional Visual Content Analyst. Provide a highly detailed, comprehensive description of this image. For maximum semantic search (RAG) performance, include: 1. Core Subject: Exactly what is in the image. 2. Style: Is it a photo, anime, 3D render, oil painting, or sketch? 3. Composition: Foreground/background elements, lighting, and camera angle. 4. Color Palette: Dominant and accent colors. 5. Mood/Atmosphere: Vibrant, dark, futuristic, calm, etc. 6. Fine Details: Textures, materials, and any specific text or symbols visible. Aim for a rich narrative that captures the essence of the visual.',
+    maxTokens: 800,
     isActive: true,
   },
   [AGENT_IDS.IMAGE_GENERATOR]: {
@@ -110,14 +110,14 @@ export const DEFAULT_AGENT_CONFIGS = {
     persona: 'You are an AI Image Editor. Make precise edits while preserving image quality.',
     isActive: true,
   },
-  [AGENT_IDS.EMBEDDING_GENERATOR]: {
-    name: 'Embedding Generator',
+  [AGENT_IDS.IMAGE_EMBEDDER]: {
+    name: 'Image Embedder',
     description: 'Generates vector embeddings for text and images',
     type: AGENT_TYPES.MEDIA,
     category: AGENT_CATEGORIES.VECTOR_EMBEDDING,
     icon: 'Network',
-    defaultModel: 'text-embedding-3-small',
-    defaultProvider: 'openai',
+    defaultModel: 'gemini-embedding-001',
+    defaultProvider: 'google',
     isActive: true,
   },
   [AGENT_IDS.VISUAL_SEARCH]: {
@@ -236,7 +236,7 @@ export const AGENT_TOOLS = {
   [AGENT_IDS.IMAGE_ANALYZER]: ['vision', 'tagging', 'description'],
   [AGENT_IDS.IMAGE_GENERATOR]: ['image_generation', 'variation'],
   [AGENT_IDS.IMAGE_EDITOR]: ['image_editing', 'inpainting', 'outpainting'],
-  [AGENT_IDS.EMBEDDING_GENERATOR]: ['text_embedding', 'image_embedding'],
+  [AGENT_IDS.IMAGE_EMBEDDER]: ['text_embedding', 'image_embedding'],
   [AGENT_IDS.VISUAL_SEARCH]: ['vector_search', 'similarity_match'],
   [AGENT_IDS.CHAT_ASSISTANT]: ['conversation', 'tool_use', 'generative_ui'],
   [AGENT_IDS.CHAT_FAST]: ['conversation', 'tool_use', 'generative_ui'],
@@ -258,7 +258,7 @@ export const RATE_LIMIT_DEFAULTS = {
   [AGENT_IDS.IMAGE_ANALYZER]: { requests: 10, window: 60 },
   [AGENT_IDS.IMAGE_GENERATOR]: { requests: 5, window: 60 },
   [AGENT_IDS.IMAGE_EDITOR]: { requests: 5, window: 60 },
-  [AGENT_IDS.EMBEDDING_GENERATOR]: { requests: 20, window: 60 },
+  [AGENT_IDS.IMAGE_EMBEDDER]: { requests: 20, window: 60 },
   [AGENT_IDS.VISUAL_SEARCH]: { requests: 30, window: 60 },
   [AGENT_IDS.CHAT_ASSISTANT]: { requests: 15, window: 60 },
   [AGENT_IDS.CHAT_FAST]: { requests: 20, window: 60 },

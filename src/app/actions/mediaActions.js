@@ -8,8 +8,10 @@ import MediaAgentSettings from '@/models/MediaAgentSettings';
 import { revalidatePath } from 'next/cache';
 import { after } from 'next/server';
 import { qdrantClient, ensureCollection, mongoIdToUuid } from '@/lib/qdrant';
-import agentRegistry from '@/lib/agents/AgentRegistry';
+import agentRegistry from '@/lib/agents';
 import { AGENT_IDS } from '@/lib/constants/agents';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 // Configure Cloudinary with your credentials
 cloudinary.config({
@@ -546,9 +548,9 @@ export async function processAndIndexAsset(asset) {
     });
 
     // 3. Generate embedding
-    const embeddingResult = await agentRegistry.execute(AGENT_IDS.IMAGE_ANALYZER, {
+    const embeddingResult = await agentRegistry.execute(AGENT_IDS.IMAGE_EMBEDDER, {
       text: description,
-      action: 'embedding',
+      action: 'embed',
     });
     const vector = embeddingResult.embedding;
 
@@ -582,5 +584,63 @@ export async function processAndIndexAsset(asset) {
   } catch (error) {
     console.error('[Background Indexing] Error details:', error);
     throw error;
+  }
+}
+/**
+ * Resets the entire Media AI system
+ * 1. Deletes and recreates the Qdrant collection
+ * 2. Resets all assets to unindexed state in MongoDB
+ */
+export async function resetMediaAI() {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user?.role !== 'admin') {
+      throw new Error('Unauthorized');
+    }
+
+    await dbConnect();
+    const settings = await MediaAgentSettings.findOne({});
+    const collectionName = settings?.qdrantCollection || 'media_assets';
+
+    console.log(`[Reset AI] Starting full reset for collection: ${collectionName}`);
+
+    // 1. Reset Qdrant (Delete collection if it exists)
+    try {
+      const collections = await qdrantClient.getCollections();
+      const exists = collections.collections.some((c) => c.name === collectionName);
+
+      if (exists) {
+        await qdrantClient.deleteCollection(collectionName);
+        console.log(`[Reset AI] Deleted Qdrant collection: ${collectionName}`);
+      }
+    } catch (qdrantError) {
+      console.warn(
+        '[Reset AI] Qdrant collection deletion failed (might not exist):',
+        qdrantError.message
+      );
+    }
+
+    // 2. Reset MongoDB Assets
+    const result = await MediaAsset.updateMany(
+      {},
+      {
+        $set: {
+          isIndexed: false,
+          aiDescription: '', // Reset descriptions too to force re-analysis
+        },
+      }
+    );
+
+    console.log(`[Reset AI] Reset ${result.modifiedCount} assets in MongoDB`);
+
+    revalidatePath('/admin/media');
+
+    return {
+      success: true,
+      message: `System reset successful. ${result.modifiedCount} assets are ready for re-indexing. Qdrant collection ${collectionName} has been cleared.`,
+    };
+  } catch (error) {
+    console.error('[Reset AI] Error during system reset:', error);
+    return { success: false, error: error.message };
   }
 }

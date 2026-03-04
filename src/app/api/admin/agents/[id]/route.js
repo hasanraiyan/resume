@@ -6,7 +6,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import agentRegistry from '@/lib/agents/AgentRegistry';
+import agentRegistry from '@/lib/agents';
 import agentManager from '@/lib/agents/AgentManager';
 import dbConnect from '@/lib/dbConnect';
 import AgentConfig from '@/models/AgentConfig';

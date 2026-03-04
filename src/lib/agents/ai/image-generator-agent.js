@@ -9,9 +9,6 @@
 import { AGENT_IDS } from '@/lib/constants/agents';
 import BaseAgent from '../BaseAgent';
 import { GoogleGenAI } from '@google/genai';
-import dbConnect from '@/lib/dbConnect';
-import ChatbotSettings from '@/models/ChatbotSettings';
-import { decrypt } from '@/lib/crypto';
 
 class ImageGeneratorAgent extends BaseAgent {
   constructor(agentId = AGENT_IDS.IMAGE_GENERATOR, config = {}) {
@@ -46,7 +43,8 @@ class ImageGeneratorAgent extends BaseAgent {
       );
     }
 
-    const modelName = inputModel || this.config.model || 'gemini-2.0-flash-exp';
+    const rawModel = inputModel || this.config.model || 'gemini-2.0-flash-exp';
+    const modelName = rawModel.replace(/^models\//, '');
     const genAI = new GoogleGenAI({ apiKey: provider.apiKey });
 
     this.logger.info(`Generating with model: ${modelName}, aspect ratio: ${aspectRatio}`);

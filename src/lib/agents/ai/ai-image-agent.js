@@ -25,78 +25,29 @@ class AIImageAgent extends BaseAgent {
     );
     if (!provider) throw new Error('No provider found for AIImageAgent');
 
-    const { apiKey, baseUrl, model } = provider;
+    const { apiKey, baseUrl, model: providerModel } = provider;
     const isGoogle = baseUrl?.includes('googleapis');
-    const persona = this.config.persona || 'Describe this image clearly and concisely.';
+    const persona =
+      this.config.persona ||
+      'You are a Professional Visual Content Analyst. Provide a highly detailed, comprehensive description of this image. For maximum semantic search (RAG) performance, include: 1. Core Subject: Exactly what is in the image. 2. Style: Is it a photo, anime, 3D render, oil painting, or sketch? 3. Composition: Foreground/background elements, lighting, and camera angle. 4. Color Palette: Dominant and accent colors. 5. Mood/Atmosphere: Vibrant, dark, futuristic, calm, etc. 6. Fine Details: Textures, materials, and any specific text or symbols visible. Aim for a rich narrative that captures the essence of the visual.';
+
+    // Prioritize Agent Config model over Provider default model
+    const rawModel =
+      this.config.model || providerModel || (isGoogle ? 'gemini-1.5-flash' : 'gpt-4o');
+    const modelName = rawModel.replace(/^models\//, '');
+
+    this.logger.info('Analyzing image with:', {
+      provider: provider.name,
+      rawModel,
+      resolvedModel: modelName,
+      isGoogle,
+    });
 
     if (isGoogle) {
-      return this.analyzeWithGoogle(
-        apiKey,
-        model || 'gemini-1.5-flash',
-        persona,
-        base64Data,
-        mimeType
-      );
+      return this.analyzeWithGoogle(apiKey, modelName, persona, base64Data, mimeType);
     } else {
-      return this.analyzeWithOpenAI(
-        apiKey,
-        baseUrl,
-        model || 'gpt-4o',
-        persona,
-        base64Data,
-        mimeType
-      );
+      return this.analyzeWithOpenAI(apiKey, baseUrl, modelName, persona, base64Data, mimeType);
     }
-  }
-
-  async generateEmbedding(text) {
-    const provider = await this.resolveProvider(
-      this.config.providerId || this.config.defaultProvider
-    );
-    if (!provider) throw new Error('No provider found for AIImageAgent');
-
-    const { apiKey, baseUrl } = provider;
-    const isGoogle = baseUrl?.includes('googleapis');
-
-    const defaultGoogleEmb = 'gemini-embedding-001';
-    const defaultOpenAIEmb = 'text-embedding-3-small';
-
-    if (isGoogle) {
-      return this.embedWithGoogle(apiKey, this.config.model || defaultGoogleEmb, text);
-    } else {
-      return this.embedWithOpenAI(apiKey, baseUrl, this.config.model || defaultOpenAIEmb, text);
-    }
-  }
-
-  async embedWithGoogle(apiKey, modelName, text) {
-    const genAI = new GoogleGenAI({ apiKey });
-    const selectedModel =
-      modelName && typeof modelName === 'string' && modelName.includes('embed')
-        ? modelName
-        : 'text-embedding-004';
-
-    const result = await genAI.models.embedContent({
-      model: selectedModel,
-      contents: [{ parts: [{ text }] }],
-      config: {
-        outputDimensionality: 768,
-      },
-    });
-    return result.embeddings[0].values;
-  }
-
-  async embedWithOpenAI(apiKey, baseUrl, modelName, text) {
-    const openai = new OpenAI({ apiKey, baseURL: baseUrl });
-    const selectedModel =
-      modelName && typeof modelName === 'string' && modelName.includes('embed')
-        ? modelName
-        : 'text-embedding-3-small';
-    const response = await openai.embeddings.create({
-      model: selectedModel,
-      input: text,
-      dimensions: 768,
-    });
-    return response.data[0].embedding;
   }
 
   async analyzeWithGoogle(apiKey, modelName, persona, base64Data, mimeType) {
@@ -113,7 +64,10 @@ class AIImageAgent extends BaseAgent {
     });
 
     const response = result;
-    // In the new SDK, use candidates[0].content.parts[0].text or helper methods
+    // In @google/genai, result contains candidates
+    if (!response.candidates?.[0]?.content?.parts?.[0]?.text) {
+      throw new Error('No text returned from Gemini analysis');
+    }
     return response.candidates[0].content.parts[0].text.trim();
   }
 
@@ -150,11 +104,6 @@ class AIImageAgent extends BaseAgent {
   async _onExecute(input) {
     const action = input.taskType || input.action;
     const base64 = input.base64Image || input.base64Data;
-
-    if (action === 'embedding' || action === 'embed' || input.text) {
-      const embedding = await this.generateEmbedding(input.text);
-      return { embedding };
-    }
 
     if (action === 'analyze' || base64) {
       return await this.analyzeImage(base64, input.mimeType || 'image/jpeg');
