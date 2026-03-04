@@ -32,6 +32,8 @@ class BaseAgent {
     this.lastExecutedAt = null;
     this.executionCount = 0;
     this.logger = this._createLogger();
+    /** @private */
+    this._initPromise = null;
   }
 
   /**
@@ -89,32 +91,42 @@ class BaseAgent {
    * @returns {Promise<boolean>} Success status
    */
   async initialize() {
-    this.logger.info('Initializing agent configurations from DB...');
+    if (this.isInitialized) return true;
+    if (this._initPromise) return this._initPromise;
 
-    try {
-      await dbConnect();
+    this._initPromise = (async () => {
+      this.logger.info('Initializing agent configurations from DB...');
 
-      // 1. Fetch Agent Specific Configuration
-      const dbConfig = await AgentConfig.findOne({ agentId: this.agentId }).lean();
-      if (dbConfig) {
-        this.config = this._mergeConfig({ ...this.config, ...dbConfig });
-        this.isActive = this.config.isActive ?? true;
+      try {
+        await dbConnect();
+
+        // 1. Fetch Agent Specific Configuration
+        const dbConfig = await AgentConfig.findOne({ agentId: this.agentId }).lean();
+        if (dbConfig) {
+          this.config = this._mergeConfig({ ...this.config, ...dbConfig });
+          this.isActive = this.config.isActive ?? true;
+        }
+
+        // 2. Resolve default provider if configured
+        // Support BOTH providerId (DB/Config) AND defaultProvider (Constants)
+        const providerId = this.config.providerId || this.config.defaultProvider;
+        if (providerId) {
+          this.config.provider = await this.resolveProvider(providerId);
+        }
+
+        await this._onInitialize();
+        this.isInitialized = true;
+        this.logger.info('Agent initialized successfully');
+        return true;
+      } catch (error) {
+        this.logger.error('Failed to initialize agent:', error);
+        this.isInitialized = false;
+        this._initPromise = null; // Allow retry on failure
+        return false;
       }
+    })();
 
-      // 2. Resolve default provider if configured
-      if (this.config.providerId) {
-        this.config.provider = await this.resolveProvider(this.config.providerId);
-      }
-
-      await this._onInitialize();
-      this.isInitialized = true;
-      this.logger.info('Agent initialized successfully');
-      return true;
-    } catch (error) {
-      this.logger.error('Failed to initialize agent:', error);
-      this.isInitialized = false;
-      return false;
-    }
+    return this._initPromise;
   }
 
   /**

@@ -11,6 +11,7 @@ import Testimonials from '@/components/Testimonials';
 import Contact from '@/components/Contact';
 import Footer from '@/components/Footer';
 import AICreatorTeaser from '@/components/AICreatorTeaser';
+import PPTCreatorTeaser from '@/components/PPTCreatorTeaser';
 import HomepageLoaderManager from '@/components/HomepageLoaderManager';
 import dbConnect from '@/lib/dbConnect';
 import Project from '@/models/Project';
@@ -50,12 +51,11 @@ export default async function Home() {
       <Services services={services} />
       <FeaturedWorks featuredProjects={featuredProjects} />
       <AICreatorTeaser />
-      {/* Fix for CSS layout issue causing large right-side margin */}
-      {/* overflow: 'hidden' clips any content extending beyond boundaries */}
-      {/* width: '100%' ensures container takes full width of parent */}
       <div style={{ overflow: 'hidden', width: '100%' }}>
         <Stats />
       </div>
+      <PPTCreatorTeaser />
+
       <Testimonials />
       <Contact />
       <Footer />
