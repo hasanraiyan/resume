@@ -21,6 +21,7 @@ export default function NewArticlePage() {
   const [topic, setTopic] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [currentStatus, setCurrentStatus] = useState('');
   const [error, setError] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const abortRef = useRef(null);
@@ -88,6 +89,9 @@ export default function NewArticlePage() {
             if (event.type === 'progress') {
               setProgress(event.percent || 0);
               if (event.articleId) articleId = event.articleId;
+            } else if (event.type === 'status') {
+              // Update live status messages
+              setCurrentStatus(event.message || '');
             }
           } catch {
             // skip non-JSON lines
@@ -354,6 +358,9 @@ export default function NewArticlePage() {
                   if (i < currentStepIndex) status = 'done';
                   else if (i === currentStepIndex && progress > 0) status = 'active';
 
+                  // Show live status message for active step
+                  const showStatus = status === 'active' && currentStatus;
+
                   return (
                     <div
                       key={step.id}
@@ -379,7 +386,7 @@ export default function NewArticlePage() {
                               : 'text-neutral-300'
                         }`}
                       >
-                        {step.label}
+                        {status === 'active' && currentStatus ? currentStatus : step.label}
                       </span>
                     </div>
                   );

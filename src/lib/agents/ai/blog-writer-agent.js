@@ -18,6 +18,10 @@ cloudinary.config({
   secure: true,
 });
 
+// Current date context for time-sensitive research
+const CURRENT_DATE = 'March 2026';
+const CURRENT_YEAR = '2026';
+
 // Helper for stream upload
 const uploadToCloudinary = async (buffer, mimeType, folder = 'blog_assets') => {
   return new Promise((resolve, reject) => {
@@ -62,7 +66,14 @@ class BlogWriterAgent extends BaseAgent {
     const self = this;
 
     // Node tracking for progress calculation
-    const nodeOrder = ['planTopic', 'writeDraft', 'generateImages', 'assemblePost', 'saveDraft'];
+    const nodeOrder = [
+      'researchTopic',
+      'planOutline',
+      'writeDraft',
+      'generateImages',
+      'assemblePost',
+      'saveDraft',
+    ];
     const totalNodes = nodeOrder.length;
     let completedNodes = 0;
 
@@ -98,17 +109,22 @@ class BlogWriterAgent extends BaseAgent {
       };
     };
 
-    const planTopic = async (state) => {
-      self.logger.info(`Planning topic: ${state.topic}`);
-      // No status messages - progress events only
+    // ─── Node 1: Research using MCP tools (web search) ───
+    const researchTopic = async (state) => {
+      self.logger.info(`Researching topic: ${state.topic}`);
 
-      // Gather tools from configured MCP servers
+      // Emit status about starting research
+      if (emitStatus) {
+        emitStatus({ type: 'status', message: '🔍 Researching topic with live web search...' });
+      }
+
       let allTools = [];
       let mcpClient = null;
+      let mcpToolsAvailable = false;
 
       try {
         const activeMCPIds = self.config.activeMCPs || [];
-        const backendMCPs = await getBackendMCPConfig(true); // true = isAdmin
+        const backendMCPs = await getBackendMCPConfig(true);
         const selectedMCPConfigs = backendMCPs.filter((m) => activeMCPIds.includes(m.id));
 
         if (selectedMCPConfigs.length > 0) {
@@ -121,87 +137,181 @@ class BlogWriterAgent extends BaseAgent {
           if (Object.keys(mcpServerConfig).length > 0) {
             mcpClient = new MultiServerMCPClient(mcpServerConfig);
             allTools = await mcpClient.getTools();
+            mcpToolsAvailable = allTools.length > 0;
+            self.logger.info(`Loaded ${allTools.length} MCP tools for research`);
+
+            if (emitStatus && mcpToolsAvailable) {
+              emitStatus({
+                type: 'status',
+                message: `📡 Connected to ${allTools.length} live data sources`,
+              });
+            }
           }
         }
       } catch (e) {
-        self.logger.warn('Failed to load MCP tools for planning:', e);
+        self.logger.warn('Failed to load MCP tools for research:', e);
+        if (emitStatus) {
+          emitStatus({
+            type: 'status',
+            message: '⚠️ MCP connection failed, using fallback research',
+          });
+        }
+      }
+
+      const llm = await self.createChatModel({ temperature: 0.3 });
+
+      // Enhanced system prompt with explicit date context and live info requirements
+      const systemPrompt = `You are an expert technical researcher with access to live web search tools. Your job is to research topics thoroughly and provide CURRENT, UP-TO-DATE information.
+
+CURRENT DATE: ${CURRENT_DATE} (this is critical - prioritize information from ${CURRENT_YEAR} and late ${parseInt(CURRENT_YEAR) - 1})
+
+TOPIC: "${state.topic}"
+
+RESEARCH REQUIREMENTS - You MUST find:
+1. **Latest Updates & News** - What happened in ${CURRENT_YEAR}? Any recent releases, major updates, or breaking news?
+2. **Current Versions & Releases** - What are the latest stable versions? When were they released?
+3. **Trending Discussions** - What are developers talking about right now? Hot takes, debates, controversies?
+4. **Real-world Adoption** - Who is using this technology in production? Any notable case studies from ${CURRENT_YEAR}?
+5. **Performance Benchmarks** - Any new benchmarks or performance comparisons from recent months?
+6. **Future Roadmap** - What are the maintainers planning? Any RFCs, proposals, or upcoming features?
+
+CRITICAL INSTRUCTIONS:
+- PRIORITIZE information from ${CURRENT_YEAR} and late ${parseInt(CURRENT_YEAR) - 1}
+- If search results show outdated info (${parseInt(CURRENT_YEAR) - 2} or earlier), note that and try to find newer sources
+- Include specific dates, version numbers, and release notes when available
+- Look for official blog posts, GitHub releases, and conference talks from ${CURRENT_YEAR}
+- Search for "What's new in [topic] ${CURRENT_YEAR}" or "[topic] ${CURRENT_YEAR} roadmap"
+
+IMPORTANT: Make multiple search queries to cover different angles. Don't stop at one search.
+
+Output a comprehensive research summary with all your findings, including source URLs and dates where relevant.`;
+
+      let researchNotes = '';
+
+      if (allTools.length > 0) {
+        if (emitStatus) {
+          emitStatus({ type: 'status', message: '🌐 Searching the web for latest information...' });
+        }
+
+        try {
+          const researchAgent = createReactAgent({ llm, tools: allTools });
+          const result = await researchAgent.invoke({
+            messages: [
+              { role: 'system', content: systemPrompt },
+              {
+                role: 'user',
+                content: `Research this topic thoroughly using web search. Make multiple searches to get the most CURRENT information. Search for: "${state.topic} ${CURRENT_YEAR}", "${state.topic} latest version", "${state.topic} news ${CURRENT_YEAR}", and related queries.`,
+              },
+            ],
+          });
+          researchNotes = result.messages[result.messages.length - 1].content;
+
+          if (emitStatus) {
+            emitStatus({
+              type: 'status',
+              message: '✅ Web research complete, analyzing results...',
+            });
+          }
+        } catch (e) {
+          self.logger.warn('MCP research failed, falling back to LLM knowledge:', e);
+          if (emitStatus) {
+            emitStatus({
+              type: 'status',
+              message: '🔄 Web search unavailable, using LLM knowledge base...',
+            });
+          }
+          const result = await llm.invoke([
+            { role: 'system', content: systemPrompt },
+            {
+              role: 'user',
+              content: `Research: ${state.topic}. Note: The current date is ${CURRENT_DATE}. Prioritize information from ${CURRENT_YEAR} and late ${parseInt(CURRENT_YEAR) - 1}.`,
+            },
+          ]);
+          researchNotes = result.content;
+        }
+      } else {
+        self.logger.info('No MCP tools available, using LLM knowledge for research');
+        if (emitStatus) {
+          emitStatus({ type: 'status', message: '🤖 Researching using AI knowledge base...' });
+        }
+        const result = await llm.invoke([
+          {
+            role: 'system',
+            content: `You are an expert technical researcher. Provide a comprehensive research summary about the topic. IMPORTANT: The current date is ${CURRENT_DATE}. Focus on information from ${CURRENT_YEAR} and late ${parseInt(CURRENT_YEAR) - 1}. Include specific APIs, libraries, best practices, common pitfalls, and real-world examples. Note any recent updates or breaking changes.`,
+          },
+          {
+            role: 'user',
+            content: `Research: ${state.topic}. Provide the most current information as of ${CURRENT_DATE}.`,
+          },
+        ]);
+        researchNotes = result.content;
+      }
+
+      return { researchNotes, status: 'Research complete' };
+    };
+
+    // ─── Node 2: Plan outline from research ───
+    const planOutline = async (state) => {
+      self.logger.info(`Planning outline from research...`);
+
+      if (emitStatus) {
+        emitStatus({
+          type: 'status',
+          message: '📝 Creating article outline based on latest research...',
+        });
+      }
+
+      if (emitStatus) {
+        emitStatus({
+          type: 'status',
+          message: '📝 Creating article outline based on latest research...',
+        });
       }
 
       const llm = await self.createChatModel({ temperature: 0.4 });
 
-      const systemPrompt = `You are an expert technical researcher and blog planner for a developer portfolio blog.
+      const prompt = `You are an expert blog planner for a developer portfolio blog. Based on the research below (gathered in ${CURRENT_DATE}), create a detailed article outline that highlights the MOST CURRENT information.
 
-YOUR TASK:
-Research the topic "${state.topic}" thoroughly and produce two things:
-1. A deep research summary with specific technical findings, APIs, mechanisms, real-world examples, and data points.
-2. A detailed article outline following this exact structure:
+TOPIC: ${state.topic}
 
-REQUIRED OUTLINE STRUCTURE:
-- Title: Clear, compelling, specific (not generic)
-- Opening hook (2-3 paragraphs with a relatable scenario or provocative question)
-- Section 1: The Problem / Context (why this matters)
-- Sections 2-5: Core Content (deep technical sections with planned code examples and comparisons)
-- Section N-1: Practical Application / Common Mistakes (real-world tips)
+RESEARCH NOTES (${CURRENT_DATE}):
+${state.researchNotes}
+
+CREATE A DETAILED OUTLINE following this exact structure:
+- Title: Clear, compelling, specific (not generic) - should reflect current state of topic
+- Opening hook (2-3 paragraphs with a relatable scenario or provocative question about ${CURRENT_YEAR})
+- Section 1: The Problem / Context (why this matters NOW in ${CURRENT_YEAR})
+- Sections 2-5: Core Content (deep technical sections — specify what code examples, comparisons, and tables go where)
+- Section N-1: Practical Application / Common Mistakes (real-world tips for ${CURRENT_YEAR})
 - Final Thoughts (2-3 paragraph conclusion with key insight)
-- Further Reading (3-4 real, relevant URLs)
+- Further Reading (3-4 real, relevant URLs from the research)
 
-RESEARCH REQUIREMENTS:
-- Identify specific APIs, libraries, or specifications relevant to the topic
-- Find how leading companies or projects use this technology
-- Gather at least one strong real-world analogy that maps to the technical concept
-- Note opportunities for comparison tables (e.g., old approach vs new approach)
-- Identify 2-3 real, runnable code examples to include
+For each section, note:
+- The key points to cover
+- Which research findings to reference
+- Where to place code examples (specify what the code should demonstrate)
+- Where to place comparison tables
+- Where to use the real-world analogy
 
-If you have tools available, use them to find the latest information.
+IMPORTANT: Ensure the outline reflects that this article is being written in ${CURRENT_DATE}.`;
 
-Output format:
-RESEARCH NOTES: <your detailed findings>
----
-OUTLINE: <your detailed section-by-section outline>`;
+      const result = await llm.invoke([{ role: 'user', content: prompt }]);
 
-      let notesAndOutline = '';
-
-      if (allTools.length > 0) {
-        try {
-          const plannerAgent = createReactAgent({ llm, tools: allTools });
-          // Use invoke (not stream) to avoid emitting intermediate tool calls
-          const result = await plannerAgent.invoke({
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: `Research and plan: ${state.topic}` },
-            ],
-          });
-          notesAndOutline = result.messages[result.messages.length - 1].content;
-        } catch (e) {
-          // Silently fall back to LLM if tools fail
-          self.logger.warn('MCP tools failed for planning:', e);
-          const result = await llm.invoke([
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: `Plan: ${state.topic}` },
-          ]);
-          notesAndOutline = result.content;
-        }
-      } else {
-        const result = await llm.invoke([
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Plan: ${state.topic}` },
-        ]);
-        notesAndOutline = result.content;
-      }
-
-      const parts = notesAndOutline.split('---');
-      const researchNotes = parts[0]?.replace('RESEARCH NOTES:', '').trim() || '';
-      const outline = parts[1]?.replace('OUTLINE:', '').trim() || notesAndOutline;
-
-      return { researchNotes, outline, status: 'Topic planned' };
+      return { outline: result.content, status: 'Outline planned' };
     };
 
     const writeDraft = async (state) => {
       self.logger.info(`Writing draft...`);
       // No status messages - progress events only
 
+      if (emitStatus) {
+        emitStatus({ type: 'status', message: '✍️ Writing article with latest information...' });
+      }
+
       const llm = await self.createChatModel({ temperature: 0.7 });
-      const prompt = `You are an expert technical writer for a developer portfolio blog. Write a professional, high-quality blog post.
+      const prompt = `You are an expert technical writer for a developer portfolio blog. Write a professional, high-quality blog post with UP-TO-DATE information.
+
+CURRENT DATE: ${CURRENT_DATE} (this article is being written in ${CURRENT_YEAR})
 
 Topic: ${state.topic}
 Research Notes: ${state.researchNotes}
@@ -212,9 +322,9 @@ ARTICLE STRUCTURE (follow this exactly):
 2. Add an italic subtitle/hook — one line that makes the reader care
 3. Add a --- separator
 4. Opening hook: 2-3 paragraphs that draw the reader in with a relatable scenario or provocative question
-5. ## Section 1: The Problem / Context — set up why this topic matters
+5. ## Section 1: The Problem / Context — set up why this topic matters in ${CURRENT_YEAR}
 6. ## Sections 2-5: Core Content — deep, well-structured sections with code examples, comparisons, and visuals
-7. ## Practical Application / Common Mistakes — real-world tips and mistakes to avoid
+7. ## Practical Application / Common Mistakes — real-world tips and mistakes to avoid in ${CURRENT_YEAR}
 8. ## Final Thoughts — 2-3 paragraph conclusion summarizing the key insight
 9. Add a --- separator
 10. End with a "**Further Reading:**" section with 3-4 relevant linked resources
@@ -229,6 +339,8 @@ WRITING RULES:
 - Subheadings: Use ## and ### liberally. No section should exceed 4-5 paragraphs without a heading break.
 - Bold key terms: Use **bold** for important concepts on first mention.
 - Use double quotes for all strings.
+
+DATE CONTEXT: Mention when relevant that information is current as of ${CURRENT_DATE}. If discussing trends, note they are ${CURRENT_YEAR} trends.
 
 IMAGE RULES:
 Insert 2-4 images at key points using this exact markdown format:
@@ -299,6 +411,10 @@ Provide 5-8 lowercase tags. The first tag should be the primary category (e.g., 
       self.logger.info(`Generating images...`);
       // No status messages - progress events only
 
+      if (emitStatus) {
+        emitStatus({ type: 'status', message: '🎨 Generating custom illustrations...' });
+      }
+
       const generatedImages = {};
 
       if (state.imagePrompts && state.imagePrompts.length > 0) {
@@ -328,6 +444,10 @@ Provide 5-8 lowercase tags. The first tag should be the primary category (e.g., 
       self.logger.info(`Assembling final post...`);
       // No status messages - progress events only
 
+      if (emitStatus) {
+        emitStatus({ type: 'status', message: '✨ Assembling final article...' });
+      }
+
       let finalContent = state.rawContent;
       let coverImage = null;
 
@@ -348,6 +468,10 @@ Provide 5-8 lowercase tags. The first tag should be the primary category (e.g., 
     const saveDraft = async (state) => {
       self.logger.info(`Saving draft...`);
       // No status messages - progress events only
+
+      if (emitStatus) {
+        emitStatus({ type: 'status', message: '💾 Saving article draft...' });
+      }
 
       let slug = state.metadata.slug;
 
@@ -379,13 +503,15 @@ Provide 5-8 lowercase tags. The first tag should be the primary category (e.g., 
     };
 
     const graph = new StateGraph(BlogGenState)
-      .addNode('planTopic', wrapNode('planTopic', planTopic))
+      .addNode('researchTopic', wrapNode('researchTopic', researchTopic))
+      .addNode('planOutline', wrapNode('planOutline', planOutline))
       .addNode('writeDraft', wrapNode('writeDraft', writeDraft))
       .addNode('generateImages', wrapNode('generateImages', generateImages))
       .addNode('assemblePost', wrapNode('assemblePost', assemblePost))
       .addNode('saveDraft', wrapNode('saveDraft', saveDraft))
-      .addEdge(START, 'planTopic')
-      .addEdge('planTopic', 'writeDraft')
+      .addEdge(START, 'researchTopic')
+      .addEdge('researchTopic', 'planOutline')
+      .addEdge('planOutline', 'writeDraft')
       .addEdge('writeDraft', 'generateImages')
       .addEdge('generateImages', 'assemblePost')
       .addEdge('assemblePost', 'saveDraft')
