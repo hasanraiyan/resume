@@ -23,7 +23,6 @@ import {
   Image as ImageIcon,
   CheckCircle2,
 } from 'lucide-react';
-import { uploadFiles } from '@/utils/uploadthing';
 import Link from 'next/link';
 
 // ─── Slide Thumbnail ─────────────────────────────────────────────────────────
@@ -159,59 +158,9 @@ export default function PresentationGenerator() {
       if (!res.ok) throw new Error(data.error || 'Failed to generate visuals');
       setSlides(data.slides);
       setActiveSlideIndex(0);
-      if (data.slides.some((s) => s.needsUpload)) {
-        setStatus('uploading');
-        await handleGuestUploads(data.slides, data.presentationId);
-      } else {
-        setStatus('complete');
-      }
-    } catch (e) {
-      setErrorMsg(e.message);
-      setStatus('error');
-    }
-  };
-
-  const handleGuestUploads = async (rawSlides, pId) => {
-    try {
-      const validSlides = [];
-      const filesToUpload = [];
-      rawSlides.forEach((s, idx) => {
-        if (s.imageUrl && s.imageUrl !== 'error' && s.imageUrl.startsWith('data:image')) {
-          const base64Data = s.imageUrl.split(',')[1];
-          const byteCharacters = atob(base64Data);
-          const byteNumbers = new Array(byteCharacters.length);
-          for (let i = 0; i < byteCharacters.length; i++)
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-          const byteArray = new Uint8Array(byteNumbers);
-          const blob = new Blob([byteArray], { type: 'image/png' });
-          const file = new File([blob], `slide-${idx}.png`, { type: 'image/png' });
-          validSlides.push({ index: idx, slide: s });
-          filesToUpload.push(file);
-        }
-      });
-      let uploadRes = [];
-      if (filesToUpload.length > 0) {
-        uploadRes = await uploadFiles('publicPresentationUploader', { files: filesToUpload });
-      }
-      const updatedSlides = [...rawSlides];
-      validSlides.forEach((validSlide, i) => {
-        if (uploadRes[i]) updatedSlides[validSlide.index].imageUrl = uploadRes[i].url;
-        updatedSlides[validSlide.index].needsUpload = false;
-      });
-      updatedSlides.forEach((s) => {
-        s.needsUpload = false;
-      });
-      const finalizeRes = await fetch('/api/tools/presentation/generate', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ presentationId: pId, slides: updatedSlides }),
-      });
-      const fd = await finalizeRes.json();
-      setSlides(fd.presentation?.slides || updatedSlides);
       setStatus('complete');
     } catch (e) {
-      console.warn('Guest upload failed.', e);
-      setErrorMsg('Failed to finalize image uploads.');
+      setErrorMsg(e.message);
       setStatus('error');
     }
   };
@@ -229,7 +178,7 @@ export default function PresentationGenerator() {
   };
 
   // ─── Navigation ──────────────────────────────────────────────────────────
-  const totalSlides = slides?.length || outline?.length || 0;
+  const totalSlides = slides?.length || outline?.slides?.length || 0;
   const goNext = useCallback(
     () => setActiveSlideIndex((i) => Math.min(i + 1, totalSlides - 1)),
     [totalSlides]
@@ -257,7 +206,7 @@ export default function PresentationGenerator() {
 
   // ─── Determine current active slide data ─────────────────────────────────
   const activeSlide = slides?.[activeSlideIndex] || null;
-  const activeOutlineSlide = outline?.[activeSlideIndex] || null;
+  const activeOutlineSlide = outline?.slides?.[activeSlideIndex] || null;
 
   // ─── Fullscreen Slideshow Mode ───────────────────────────────────────────
   if (isFullscreen && slides) {
@@ -376,11 +325,7 @@ export default function PresentationGenerator() {
         </div>
         <div>
           <h3 className="text-xl font-bold text-neutral-800">
-            {status === 'drafting'
-              ? 'Researching & Structuring...'
-              : status === 'uploading'
-                ? 'Finalizing Assets...'
-                : 'Generating Visual Slides...'}
+            {status === 'drafting' ? 'Researching & Structuring...' : 'Generating Visual Slides...'}
           </h3>
           <p className="text-neutral-500 text-sm mt-2 max-w-sm mx-auto">
             {status === 'drafting'
@@ -406,7 +351,7 @@ export default function PresentationGenerator() {
         </div>
 
         <div className="space-y-4">
-          {outline.map((slide, idx) => (
+          {outline.slides.map((slide, idx) => (
             <div
               key={idx}
               className="bg-white rounded-2xl border border-neutral-200 p-5 flex gap-5 hover:shadow-sm transition-shadow"
@@ -424,8 +369,9 @@ export default function PresentationGenerator() {
                     </li>
                   ))}
                 </ul>
-                <div className="text-xs bg-blue-50/70 text-blue-700 p-3 rounded-xl border border-blue-100 font-mono leading-relaxed">
-                  <span className="font-bold text-blue-800">Visual:</span> {slide.visualPrompt}
+                <div className="text-xs bg-blue-50/70 text-blue-700 p-3 rounded-xl border border-blue-100 font-mono leading-relaxed max-h-32 overflow-y-auto">
+                  <span className="font-bold text-blue-800">Design Brief:</span>{' '}
+                  {slide.slideDesignBrief}
                 </div>
               </div>
             </div>
@@ -478,11 +424,9 @@ export default function PresentationGenerator() {
                     ? 'Outline ready for review'
                     : status === 'generating'
                       ? 'Generating visuals...'
-                      : status === 'uploading'
-                        ? 'Uploading assets...'
-                        : status === 'complete'
-                          ? `${slides?.length || 0} slides`
-                          : 'Error'}
+                      : status === 'complete'
+                        ? `${slides?.length || 0} slides`
+                        : 'Error'}
             </p>
           </div>
         </div>
@@ -584,8 +528,7 @@ export default function PresentationGenerator() {
           )}
 
           {/* Drafting / Generating / Uploading */}
-          {(status === 'drafting' || status === 'generating' || status === 'uploading') &&
-            renderLoading()}
+          {(status === 'drafting' || status === 'generating') && renderLoading()}
 
           {/* Outline Review */}
           {status === 'review' && outline && renderOutlineReview()}
