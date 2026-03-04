@@ -527,24 +527,13 @@ export default function PresentationGenerator() {
               </div>
               <div className="flex-1 min-w-0 space-y-4">
                 <h4 className="text-xl font-bold text-black font-['Playfair_Display'] tracking-tight">
-                  {slide.title}
+                  Slide {(idx + 1).toString().padStart(2, '0')}
                 </h4>
-                <ul className="space-y-2">
-                  {slide.points.map((p, i) => (
-                    <li
-                      key={i}
-                      className="flex gap-3 text-sm text-neutral-600 font-medium leading-relaxed"
-                    >
-                      <span className="text-black mt-[5px] w-1.5 h-1.5 rounded-full bg-black shrink-0" />
-                      <span>{p}</span>
-                    </li>
-                  ))}
-                </ul>
                 <div className="mt-4 text-xs bg-neutral-50 text-neutral-600 p-4 rounded-xl border border-neutral-200 font-mono leading-relaxed max-h-32 overflow-y-auto">
                   <span className="font-bold text-black uppercase tracking-widest mr-2">
-                    Design Brief:
+                    Visual Prompt:
                   </span>
-                  {slide.slideDesignBrief}
+                  {slide.visualPrompt}
                 </div>
               </div>
             </div>
