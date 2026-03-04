@@ -85,6 +85,13 @@ ArticleSchema.index({
   tags: 'text',
 });
 
+// Create compound index for blog listing queries (status + publishedAt)
+ArticleSchema.index({
+  status: 1,
+  visibility: 1,
+  publishedAt: -1,
+});
+
 // Set publishedAt when status changes to published
 ArticleSchema.pre('save', function (next) {
   if (this.isModified('status') && this.status === 'published' && !this.publishedAt) {

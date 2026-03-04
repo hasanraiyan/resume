@@ -52,6 +52,7 @@ export default function MessageList({
             <div
               className={`flex-1 min-w-0 ${message.role === 'user' ? 'max-w-[85%]' : 'max-w-[95%]'} flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}
             >
+              {/* Show tool history for agents */}
               {isAssistant && message.steps?.length > 0 && (
                 <StepHistory
                   steps={message.steps}

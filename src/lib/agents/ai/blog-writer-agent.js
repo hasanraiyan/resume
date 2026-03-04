@@ -7,10 +7,14 @@ import { getBackendMCPConfig } from '@/lib/mcpConfig';
 import agentRegistry from '../AgentRegistry';
 import Article from '@/models/Article';
 import { v2 as cloudinary } from 'cloudinary';
+import { revalidatePath } from 'next/cache';
 
 // Configure Cloudinary
-// It will automatically pick up process.env.CLOUDINARY_URL
+// Use explicit env vars if CLOUDINARY_URL is not set
 cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
   secure: true,
 });
 
@@ -58,10 +62,53 @@ class BlogWriterAgent extends BaseAgent {
   _buildGraph(emitStatus) {
     const self = this;
 
+    // Node tracking for progress calculation
+    const nodeOrder = [
+      'fetchExisting',
+      'planTopic',
+      'writeDraft',
+      'generateImages',
+      'assemblePost',
+      'saveDraft',
+    ];
+    const totalNodes = nodeOrder.length;
+    let completedNodes = 0;
+
+    // Wrapper to emit progress events
+    const wrapNode = (nodeId, nodeFunc) => {
+      return async (state) => {
+        try {
+          const result = await nodeFunc(state);
+
+          // Calculate and emit progress
+          completedNodes++;
+          const progressPercent = Math.round((completedNodes / totalNodes) * 100);
+
+          if (emitStatus) {
+            const progressEvent = {
+              type: 'progress',
+              percent: progressPercent,
+            };
+
+            // Include article ID in final progress event
+            if (result.articleId) {
+              progressEvent.articleId = result.articleId;
+            }
+
+            emitStatus(progressEvent);
+          }
+
+          return result;
+        } catch (error) {
+          self.logger.error(`Error in node ${nodeId}:`, error);
+          throw error;
+        }
+      };
+    };
+
     const fetchExisting = async (state) => {
       self.logger.info(`Fetching existing articles to avoid duplicates...`);
-      if (emitStatus)
-        emitStatus({ type: 'status', message: '🔍 Checking existing articles...' });
+      // No status messages - progress events only
 
       const articles = await Article.find({}, 'title slug').lean();
       return { existingArticles: articles, status: 'Existing articles fetched' };
@@ -69,8 +116,7 @@ class BlogWriterAgent extends BaseAgent {
 
     const planTopic = async (state) => {
       self.logger.info(`Planning topic: ${state.topic}`);
-      if (emitStatus)
-        emitStatus({ type: 'status', message: '📚 Researching topic...' });
+      // No status messages - progress events only
 
       // Gather tools from configured MCP servers
       let allTools = [];
@@ -113,14 +159,25 @@ OUTLINE: <your detailed outline>`;
       let notesAndOutline = '';
 
       if (allTools.length > 0) {
-        const plannerAgent = createReactAgent({ llm, tools: allTools });
-        const result = await plannerAgent.invoke({
-          messages: [
+        try {
+          const plannerAgent = createReactAgent({ llm, tools: allTools });
+          // Use invoke (not stream) to avoid emitting intermediate tool calls
+          const result = await plannerAgent.invoke({
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: `Research and plan: ${state.topic}` },
+            ],
+          });
+          notesAndOutline = result.messages[result.messages.length - 1].content;
+        } catch (e) {
+          // Silently fall back to LLM if tools fail
+          self.logger.warn('MCP tools failed for planning:', e);
+          const result = await llm.invoke([
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: `Research and plan: ${state.topic}` },
-          ],
-        });
-        notesAndOutline = result.messages[result.messages.length - 1].content;
+            { role: 'user', content: `Plan: ${state.topic}` },
+          ]);
+          notesAndOutline = result.content;
+        }
       } else {
         const result = await llm.invoke([
           { role: 'system', content: systemPrompt },
@@ -138,8 +195,7 @@ OUTLINE: <your detailed outline>`;
 
     const writeDraft = async (state) => {
       self.logger.info(`Writing draft...`);
-      if (emitStatus)
-        emitStatus({ type: 'status', message: '✍️ Writing draft...' });
+      // No status messages - progress events only
 
       const llm = await self.createChatModel({ temperature: 0.7 });
       const prompt = `You are an expert technical writer. Write a comprehensive, highly engaging, and SEO-optimized blog post based on the following:
@@ -152,11 +208,11 @@ RULES:
 1. Write in a clear, authoritative, yet accessible tone.
 2. Use markdown formatting (headers, lists, bold text).
 3. The post should be at least 1000 words.
-4. IMPORTANT: Determine points where an image would be beneficial. At exactly these points, insert an image placeholder like so:
-   IMAGE_URL_0: [Prompt for a conceptual hero image about the topic, 16:9]
-   IMAGE_URL_1: [Prompt for a technical diagram or illustration, 16:9]
-   IMAGE_URL_n: [Prompt...]
-   Do NOT use standard markdown image tags yet. Just output the placeholder lines on their own lines.
+4. IMPORTANT: Determine points where an image would be beneficial. At exactly these points, insert an image in markdown format like so:
+   ![Prompt for a conceptual hero image about the topic](IMAGE_0)
+   ![Prompt for a technical diagram or illustration](IMAGE_1)
+   ![Prompt description](IMAGE_n)
+   The image IDs (IMAGE_0, IMAGE_1, etc.) will be automatically replaced with generated image URLs.
 
 5. At the very end of your response, output a JSON block wrapped in \`\`\`json containing metadata:
    { "title": "...", "slug": "...", "excerpt": "...", "tags": ["tag1", "tag2"] }`;
@@ -186,15 +242,19 @@ RULES:
 
       const cleanContent = content.replace(/```json\n[\s\S]*?\n```/, '').trim();
 
-      // Extract Image Prompts
+      // Extract Image Prompts from markdown format: ![description](IMAGE_0)
       const imagePrompts = [];
-      const imageRegex = /IMAGE_URL_(\d+):\s*\[(.*?)\]/g;
+      const imageRegex = /!\[(.*?)\]\((IMAGE_\d+)\)/g;
       let match;
       while ((match = imageRegex.exec(cleanContent)) !== null) {
-        const parts = match[2].split(',');
-        const p = parts[0].trim();
-        const aspect = parts[1] ? parts[1].trim() : '16:9';
-        imagePrompts.push({ id: `IMAGE_URL_${match[1]}`, prompt: p, aspect });
+        const description = match[1].trim();
+        const imageId = match[2].trim();
+
+        imagePrompts.push({
+          id: imageId,
+          prompt: description,
+          aspect: '16:9', // Default to 16:9 for all blog images
+        });
       }
 
       return { rawContent: cleanContent, imagePrompts, metadata, status: 'Draft written' };
@@ -202,6 +262,7 @@ RULES:
 
     const generateImages = async (state) => {
       self.logger.info(`Generating images...`);
+      // No status messages - progress events only
 
       const generatedImages = {};
 
@@ -209,11 +270,7 @@ RULES:
         const imageGenerator = agentRegistry.get(AGENT_IDS.IMAGE_GENERATOR);
 
         for (const [index, img] of state.imagePrompts.entries()) {
-          if (emitStatus)
-            emitStatus({
-              type: 'status',
-              message: `🎨 Visualizing... (${index + 1}/${state.imagePrompts.length})`,
-            });
+          // Silently generate images, no status updates
           try {
             const result = await imageGenerator.execute({
               prompt: img.prompt,
@@ -234,17 +291,17 @@ RULES:
 
     const assemblePost = async (state) => {
       self.logger.info(`Assembling final post...`);
-      if (emitStatus)
-        emitStatus({ type: 'status', message: '⚙️ Assembling post...' });
+      // No status messages - progress events only
 
       let finalContent = state.rawContent;
       let coverImage = null;
 
-      // Replace placeholders
+      // Replace placeholders in markdown format: ![description](IMAGE_0) -> ![description](url)
       for (const [id, url] of Object.entries(state.generatedImages)) {
         if (!coverImage) coverImage = url; // first image becomes cover
-        const regex = new RegExp(`${id}:\\s*\\[.*?\\]`, 'g');
-        finalContent = finalContent.replace(regex, `![Image](${url})`);
+        // Replace IMAGE_0, IMAGE_1, etc. with actual URLs
+        const regex = new RegExp(`\\(${id}\\)`, 'g');
+        finalContent = finalContent.replace(regex, `(${url})`);
       }
 
       const finalMeta = { ...state.metadata };
@@ -255,7 +312,7 @@ RULES:
 
     const saveDraft = async (state) => {
       self.logger.info(`Saving draft...`);
-      if (emitStatus) emitStatus({ type: 'status', message: '💾 Saving draft...' });
+      // No status messages - progress events only
 
       let slug = state.metadata.slug;
 
@@ -276,23 +333,23 @@ RULES:
         coverImage: state.metadata.coverImage || '',
         tags: state.metadata.tags || [],
         status: 'draft',
+        visibility: 'public',
       });
 
       await article.save();
 
-      if (emitStatus)
-        emitStatus({ type: 'status', message: `✅ Draft saved successfully!` });
+      // No status messages - progress events only (emitted by wrapNode)
 
       return { articleId: article._id.toString(), status: 'Done' };
     };
 
     const graph = new StateGraph(BlogGenState)
-      .addNode('fetchExisting', fetchExisting)
-      .addNode('planTopic', planTopic)
-      .addNode('writeDraft', writeDraft)
-      .addNode('generateImages', generateImages)
-      .addNode('assemblePost', assemblePost)
-      .addNode('saveDraft', saveDraft)
+      .addNode('fetchExisting', wrapNode('fetchExisting', fetchExisting))
+      .addNode('planTopic', wrapNode('planTopic', planTopic))
+      .addNode('writeDraft', wrapNode('writeDraft', writeDraft))
+      .addNode('generateImages', wrapNode('generateImages', generateImages))
+      .addNode('assemblePost', wrapNode('assemblePost', assemblePost))
+      .addNode('saveDraft', wrapNode('saveDraft', saveDraft))
       .addEdge(START, 'fetchExisting')
       .addEdge('fetchExisting', 'planTopic')
       .addEdge('planTopic', 'writeDraft')
@@ -345,16 +402,12 @@ RULES:
       if (eventsQueue.length > 0) {
         const event = eventsQueue.shift();
         if (event.type === 'done') {
-          const finalUrl = `/admin/articles/${event.result.articleId}/edit`;
-          yield {
-            type: 'content',
-            message: `I have successfully researched, written, and generated images for the blog post! It is currently saved as a draft.\n\n[Click here to review and publish the draft](${finalUrl})`,
-          };
+          // Don't send content message - just let progress bar handle it
           break;
         } else if (event.type === 'error') {
           throw new Error(event.error);
         } else {
-          yield event;
+          yield event; // Only yield progress events
         }
       } else {
         await new Promise((resolve) => {

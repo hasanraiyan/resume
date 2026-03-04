@@ -112,6 +112,7 @@ export function useChatStreaming() {
       content: '',
       steps: [], // interleaved list of tool actions and UI blocks
       timestamp: new Date(),
+      agentId: selectedAgentId, // Track which agent is responding
     };
     let messageAdded = false;
     let buffer = '';
@@ -134,7 +135,11 @@ export function useChatStreaming() {
           try {
             data = JSON.parse(line);
           } catch {
-            // Raw text fallback
+            // Skip raw text for blog_writer agent
+            if (selectedAgentId === 'blog_writer') {
+              continue;
+            }
+            // Raw text fallback for other agents
             assistantMessage.content += line;
             if (!messageAdded) {
               setMessages((prev) => [
@@ -152,7 +157,17 @@ export function useChatStreaming() {
             continue;
           }
 
+          // Skip progress events - blog_writer runs silently
+          if (data.type === 'progress') {
+            continue;
+          }
+
           if (data.type === 'status' || data.type === 'node_status') {
+            // Skip tool actions for blog_writer agent (only show progress)
+            if (assistantMessage.agentId === 'blog_writer') {
+              continue;
+            }
+
             // Detect which tool this is
             const toolName = parseToolFromStatus(data.message);
             const { label, Icon } = getToolMetadata(toolName, data.message);
@@ -183,30 +198,33 @@ export function useChatStreaming() {
               );
             }
 
-            const toolMsgId = Date.now() + Math.random();
-            activeToolMsgId = toolMsgId;
+            // Only add tool steps for non-blog_writer agents
+            if (selectedAgentId !== 'blog_writer') {
+              const toolMsgId = Date.now() + Math.random();
+              activeToolMsgId = toolMsgId;
 
-            setMessages((prev) => [
-              ...prev,
-              {
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: toolMsgId,
+                  role: 'tool_action',
+                  toolName, // Track the machine name for later
+                  label,
+                  Icon,
+                  done: false,
+                  timestamp: new Date(),
+                },
+              ]);
+
+              // Save metadata into ordered steps
+              assistantMessage.steps.push({
+                type: 'tool',
                 id: toolMsgId,
-                role: 'tool_action',
-                toolName, // Track the machine name for later
                 label,
                 Icon,
                 done: false,
-                timestamp: new Date(),
-              },
-            ]);
-
-            // Save metadata into ordered steps
-            assistantMessage.steps.push({
-              type: 'tool',
-              id: toolMsgId,
-              label,
-              Icon,
-              done: false,
-            });
+              });
+            }
             // Save tool_calls to the assistant message so it can be sent in history later
             if (!assistantMessage.tool_calls) {
               assistantMessage.tool_calls = [];
@@ -271,26 +289,38 @@ export function useChatStreaming() {
             );
             activeToolMsgId = null;
 
-            assistantMessage.content += data.message;
+            // Skip content from blog_writer agent (only show progress UI)
+            if (assistantMessage.agentId !== 'blog_writer') {
+              assistantMessage.content += data.message;
 
-            if (!messageAdded) {
-              setMessages((prev) => [
-                ...prev,
-                { ...assistantMessage, steps: [...assistantMessage.steps] },
-              ]);
-              messageAdded = true;
+              if (!messageAdded) {
+                setMessages((prev) => [
+                  ...prev,
+                  { ...assistantMessage, steps: [...assistantMessage.steps] },
+                ]);
+                messageAdded = true;
+              } else {
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantMessage.id
+                      ? {
+                          ...m,
+                          content: assistantMessage.content,
+                          steps: [...assistantMessage.steps],
+                        }
+                      : m
+                  )
+                );
+              }
             } else {
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantMessage.id
-                    ? {
-                        ...m,
-                        content: assistantMessage.content,
-                        steps: [...assistantMessage.steps],
-                      }
-                    : m
-                )
-              );
+              // For blog_writer, ensure message is added but keep content empty
+              if (!messageAdded) {
+                setMessages((prev) => [
+                  ...prev,
+                  { ...assistantMessage, steps: [...assistantMessage.steps] },
+                ]);
+                messageAdded = true;
+              }
             }
           }
         } // end for lines
