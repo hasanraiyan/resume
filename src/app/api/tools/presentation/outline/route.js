@@ -5,8 +5,12 @@ import dbConnect from '@/lib/dbConnect';
 import Presentation from '@/models/Presentation';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { rateLimit } from '@/lib/rateLimit';
 
 export async function POST(req) {
+  const limitResponse = rateLimit(req, 10, 3600000);
+  if (limitResponse) return limitResponse;
+
   try {
     const session = await getServerSession(authOptions);
     const isAdmin = session?.user?.role === 'admin';

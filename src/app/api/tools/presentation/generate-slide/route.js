@@ -5,6 +5,7 @@ import dbConnect from '@/lib/dbConnect';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { v2 as cloudinary } from 'cloudinary';
+import { rateLimit } from '@/lib/rateLimit';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -33,6 +34,10 @@ async function uploadToCloudinary(base64Image) {
 }
 
 export async function POST(req) {
+  // Allow more requests for generate-slide because multiple slides are generated per presentation
+  const limitResponse = rateLimit(req, 30, 3600000);
+  if (limitResponse) return limitResponse;
+
   try {
     const session = await getServerSession(authOptions);
     const isAdmin = session?.user?.role === 'admin';
