@@ -73,6 +73,7 @@ Additional Instructions: ${extraInstructions}
 2. DIAGRAMS ARE MANDATORY: Every content slide MUST feature a rich visual — process flowcharts, isometric 3D infographics, comparison tables, radial diagrams, timelines, data charts, layered architecture diagrams, or icon grids. Plain text-only slides are FORBIDDEN.
 3. STRICT CONSISTENCY: Same background, same fonts, same color palette on EVERY slide. Only content and layout composition change. Think Google Slides master template.
 4. TEXT EMBEDDED IN VISUAL: The image generator can draw text, so you MUST include the exact text you want to appear on the slide (title, bullet points, labels) directly inside your visual prompt. Describe exactly where and how this text should be written.
+5. POWERPOINT AESTHETIC: The visual prompt MUST explicitly instruct the image generator to create an "amazing, modern, high-end corporate PowerPoint presentation slide". Include keywords like "sleek keynote aesthetic", "professional deck layout", "clean typography", "subtle gradients", and "proper slide margins". The result should look like a beautifully designed slide from a premium presentation template.
 
 ━━━ JSON FORMAT ━━━
 {
@@ -128,12 +129,12 @@ Generate 6-8 slides with a clear arc: Title → Context → Deep Dives (with dia
   async generateSlideImage(slide) {
     if (!this.isInitialized) await this.initialize();
 
-    const fullPrompt = `Generate a single, production-ready presentation slide as a flat 16:9 image.
+    const fullPrompt = `Generate a single, high-end, amazing PowerPoint presentation slide as a flat 16:9 image.
 
 SLIDE VISUAL PROMPT:
 ${slide.visualPrompt}
 
-Rules: razor-sharp legible text, rich detailed visuals, consistent with the design system described. No borders, no UI chrome, no slide frames. Single flat image only.`;
+Rules: The output MUST look like a professionally designed, sleek corporate keynote or PowerPoint deck. Ensure proper slide margins, clean layout, razor-sharp legible text, and rich detailed visuals consistent with the design system described. No borders, no UI chrome, no application window frames. Single flat image only.`;
 
     this.logger.info(`Generating slide using IMAGE_GENERATOR from visual prompt...`);
 
