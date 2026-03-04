@@ -107,6 +107,69 @@ export default function AICreatorTeaser() {
                     alt="AI Generated Artwork"
                     className="w-full h-full object-cover animate-in fade-in zoom-in duration-1000"
                   />
+                ) : isGenerating ? (
+                  <div className="w-full h-full relative">
+                    {/* Animated Mesh Gradient */}
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        background:
+                          'linear-gradient(135deg, #fef0e7 0%, #fce4ec 25%, #f3e5f5 50%, #ede7f6 75%, #fef0e7 100%)',
+                        backgroundSize: '400% 400%',
+                        animation: 'meshGradient 6s ease infinite',
+                      }}
+                    />
+                    {/* Floating orbs for depth */}
+                    <div
+                      className="absolute w-[60%] h-[60%] rounded-full blur-[80px] opacity-60"
+                      style={{
+                        background: 'radial-gradient(circle, #f8bbd0 0%, transparent 70%)',
+                        animation: 'orbFloat1 8s ease-in-out infinite',
+                        top: '10%',
+                        left: '10%',
+                      }}
+                    />
+                    <div
+                      className="absolute w-[50%] h-[50%] rounded-full blur-[70px] opacity-50"
+                      style={{
+                        background: 'radial-gradient(circle, #e1bee7 0%, transparent 70%)',
+                        animation: 'orbFloat2 10s ease-in-out infinite',
+                        bottom: '10%',
+                        right: '5%',
+                      }}
+                    />
+                    <div
+                      className="absolute w-[40%] h-[40%] rounded-full blur-[60px] opacity-40"
+                      style={{
+                        background: 'radial-gradient(circle, #ffe0b2 0%, transparent 70%)',
+                        animation: 'orbFloat3 7s ease-in-out infinite',
+                        top: '40%',
+                        left: '50%',
+                      }}
+                    />
+                    {/* Centered label */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center space-y-3">
+                        <p className="text-sm font-medium text-gray-600/80 tracking-wide">
+                          Creating image
+                        </p>
+                        <div className="flex gap-1 justify-center">
+                          <span
+                            className="w-1.5 h-1.5 bg-gray-400/60 rounded-full"
+                            style={{ animation: 'dotPulse 1.4s ease-in-out infinite' }}
+                          />
+                          <span
+                            className="w-1.5 h-1.5 bg-gray-400/60 rounded-full"
+                            style={{ animation: 'dotPulse 1.4s ease-in-out 0.2s infinite' }}
+                          />
+                          <span
+                            className="w-1.5 h-1.5 bg-gray-400/60 rounded-full"
+                            style={{ animation: 'dotPulse 1.4s ease-in-out 0.4s infinite' }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center space-y-6">
                     <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-md">
@@ -116,16 +179,6 @@ export default function AICreatorTeaser() {
                       <h4 className="text-neutral-900 font-medium mb-2">Manifest Imagination</h4>
                       <p className="text-neutral-500 text-sm">Your generation will appear here.</p>
                     </div>
-                    {isGenerating && (
-                      <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center">
-                        <div className="text-center space-y-4">
-                          <div className="w-12 h-12 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
-                          <p className="text-blue-600 text-sm font-bold uppercase tracking-widest">
-                            Generating...
-                          </p>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
@@ -137,6 +190,72 @@ export default function AICreatorTeaser() {
           </div>
         </div>
       </div>
+
+      {/* Keyframe Animations */}
+      <style jsx>{`
+        @keyframes meshGradient {
+          0% {
+            background-position: 0% 50%;
+          }
+          25% {
+            background-position: 100% 0%;
+          }
+          50% {
+            background-position: 100% 100%;
+          }
+          75% {
+            background-position: 0% 100%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+        @keyframes orbFloat1 {
+          0%,
+          100% {
+            transform: translate(0, 0) scale(1);
+          }
+          33% {
+            transform: translate(30%, 20%) scale(1.1);
+          }
+          66% {
+            transform: translate(-10%, 30%) scale(0.95);
+          }
+        }
+        @keyframes orbFloat2 {
+          0%,
+          100% {
+            transform: translate(0, 0) scale(1);
+          }
+          33% {
+            transform: translate(-25%, -15%) scale(1.05);
+          }
+          66% {
+            transform: translate(15%, -25%) scale(1.1);
+          }
+        }
+        @keyframes orbFloat3 {
+          0%,
+          100% {
+            transform: translate(0, 0) scale(1);
+          }
+          50% {
+            transform: translate(-30%, 20%) scale(1.15);
+          }
+        }
+        @keyframes dotPulse {
+          0%,
+          80%,
+          100% {
+            opacity: 0.3;
+            transform: scale(0.8);
+          }
+          40% {
+            opacity: 1;
+            transform: scale(1.2);
+          }
+        }
+      `}</style>
     </section>
   );
 }

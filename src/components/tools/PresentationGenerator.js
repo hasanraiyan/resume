@@ -30,38 +30,43 @@ function SlideThumbnail({ slide, index, isActive, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`group w-full flex items-start gap-3 p-2 rounded-xl transition-all duration-200 ${
-        isActive ? 'bg-blue-50 ring-2 ring-blue-500' : 'hover:bg-neutral-100'
+      className={`group w-full flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-300 ${
+        isActive ? 'bg-neutral-100' : 'hover:bg-neutral-50'
       }`}
     >
-      <span
-        className={`text-[11px] font-mono mt-1 w-5 text-right flex-shrink-0 ${
-          isActive ? 'text-blue-600 font-bold' : 'text-neutral-400'
-        }`}
-      >
-        {index + 1}
-      </span>
       <div
-        className={`w-full aspect-video rounded-lg overflow-hidden border ${
-          isActive ? 'border-blue-300 shadow-sm' : 'border-neutral-200'
+        className={`w-full aspect-video rounded-lg overflow-hidden border-2 transition-all ${
+          isActive
+            ? 'border-black shadow-md scale-100'
+            : 'border-neutral-200 scale-95 opacity-80 group-hover:opacity-100 group-hover:scale-100'
         }`}
       >
         {slide.imageUrl && slide.imageUrl !== 'error' ? (
           <img
             src={slide.imageUrl}
             alt={slide.fallbackText || `Slide ${index + 1}`}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover animate-in fade-in duration-500"
           />
         ) : slide.status === 'failed' ? (
           <div className="w-full h-full bg-red-50 flex items-center justify-center">
-            <XCircle className="w-4 h-4 text-red-300" />
+            <XCircle className="w-5 h-5 text-red-400" />
           </div>
         ) : (
-          <div className="w-full h-full bg-neutral-100 flex items-center justify-center">
-            <ImageIcon className="w-4 h-4 text-neutral-300" />
+          <div className="w-full h-full bg-neutral-100 flex items-center justify-center relative">
+            <div className="absolute inset-0 bg-neutral-200 animate-pulse" />
+            <Loader2 className="w-5 h-5 text-neutral-400 rotate-180 animate-spin relative z-10" />
           </div>
         )}
       </div>
+      <span
+        className={`text-[10px] font-mono tracking-widest uppercase transition-colors ${
+          isActive
+            ? 'text-black font-bold'
+            : 'text-neutral-400 font-medium group-hover:text-neutral-600'
+        }`}
+      >
+        Slide {(index + 1).toString().padStart(2, '0')}
+      </span>
     </button>
   );
 }
@@ -146,23 +151,70 @@ export default function PresentationGenerator() {
   };
 
   const handleGenerateSlides = async () => {
+    if (!outline || !outline.slides) return;
+
     setStatus('generating');
     setErrorMsg('');
-    try {
-      const res = await fetch('/api/tools/presentation/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ presentationId, outline }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to generate visuals');
-      setSlides(data.slides);
-      setActiveSlideIndex(0);
-      setStatus('complete');
-    } catch (e) {
-      setErrorMsg(e.message);
-      setStatus('error');
-    }
+
+    // Initialize slides array with placeholders
+    const initialSlides = outline.slides.map((s) => ({
+      status: 'pending',
+      title: s.title,
+      fallbackText: s.title,
+      prompt: s.slideDesignBrief,
+    }));
+    setSlides(initialSlides);
+    setActiveSlideIndex(0);
+
+    let completedCount = 0;
+    const totalCount = outline.slides.length;
+
+    // Generate slides in parallel (with slight stagger for UX)
+    outline.slides.forEach(async (slideData, idx) => {
+      try {
+        // Subtle delay for staggered start
+        await new Promise((r) => setTimeout(r, idx * 300));
+
+        const res = await fetch('/api/tools/presentation/generate-slide', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            slide: slideData,
+            presentationTheme: outline.presentationTheme,
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to generate slide');
+
+        setSlides((prev) => {
+          const newSlides = [...prev];
+          newSlides[idx] = { ...data.slide, status: 'complete' };
+          return newSlides;
+        });
+
+        completedCount++;
+
+        // As soon as the FIRST slide is ready, switch to editing mode to be responsive
+        if (completedCount === 1) {
+          setStatus('complete');
+        }
+      } catch (e) {
+        console.error(`Slide ${idx} generation failed:`, e);
+        setSlides((prev) => {
+          const newSlides = [...prev];
+          newSlides[idx] = {
+            status: 'failed',
+            error: e.message,
+            title: slideData.title,
+            fallbackText: `Failed: ${slideData.title}`,
+          };
+          return newSlides;
+        });
+        completedCount++;
+        if (completedCount === 1) setStatus('complete');
+      }
+    });
   };
 
   const handleReset = () => {
@@ -242,67 +294,74 @@ export default function PresentationGenerator() {
 
   // ─── "New Presentation" Modal (Google Slides Inspired) ───────────────────
   const renderModal = () => (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+    <div className="fixed inset-0 z-50 bg-neutral-900/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
+      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border-2 border-neutral-800 overflow-hidden animate-in zoom-in-95 duration-300">
         {/* Header */}
-        <div className="px-8 pt-8 pb-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-              <LayoutGrid className="w-5 h-5 text-white" />
+        <div className="px-8 pt-8 pb-6 border-b border-neutral-100 flex items-center justify-between bg-neutral-50">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center shadow-md">
+              <LayoutGrid className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-neutral-800">
-                <span className="text-blue-600">Hello.</span> Let&apos;s start creating.
+              <h2 className="text-2xl font-bold text-black font-['Playfair_Display'] tracking-tight">
+                Presentation <span className="italic text-neutral-500">Synthesizer</span>
               </h2>
+              <p className="text-xs text-neutral-500 uppercase tracking-widest font-semibold mt-1">
+                AI-Powered Deck Creation
+              </p>
             </div>
           </div>
           <button
             onClick={() => setShowModal(false)}
-            className="text-neutral-400 hover:text-neutral-600 transition-colors"
+            className="p-2 text-neutral-400 hover:text-black hover:bg-neutral-200 rounded-xl transition-all"
+            aria-label="Close modal"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="px-8 pb-8 space-y-5">
+        <div className="p-8 space-y-6 bg-white">
           <div>
-            <label className="block text-xs font-semibold text-neutral-500 mb-2 uppercase tracking-wider">
-              Topic or Research Area
+            <label className="block text-xs font-bold text-black mb-3 uppercase tracking-widest">
+              Topic or Research Area <span className="text-red-500">*</span>
             </label>
             <textarea
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               placeholder="e.g. The impact of Generative AI on Enterprise Architecture..."
-              rows={3}
-              className="w-full bg-neutral-50 border border-neutral-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl p-4 text-sm resize-none transition-all outline-none"
+              rows={4}
+              className="w-full bg-white border-2 border-neutral-200 focus:border-black focus:ring-0 rounded-xl p-5 text-base resize-none transition-all outline-none font-medium text-black placeholder-neutral-400 shadow-sm"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-neutral-500 mb-2 uppercase tracking-wider">
-              Creative Direction <span className="text-neutral-300">(Optional)</span>
+            <label className="block text-xs font-bold text-black mb-3 uppercase tracking-widest">
+              Creative Direction{' '}
+              <span className="text-neutral-400 font-normal ml-1">(Optional)</span>
             </label>
             <input
               type="text"
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
               placeholder="e.g. Dark futuristic aesthetic, strictly 5 slides"
-              className="w-full bg-neutral-50 border border-neutral-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl px-4 py-3 text-sm transition-all outline-none"
+              className="w-full bg-white border-2 border-neutral-200 focus:border-black focus:ring-0 rounded-xl px-5 py-4 text-base transition-all outline-none font-medium text-black placeholder-neutral-400 shadow-sm"
             />
           </div>
           {errorMsg && (
-            <div className="p-3 bg-red-50 text-red-600 border border-red-200 rounded-xl flex items-center gap-2 text-sm">
-              <XCircle className="w-4 h-4 flex-shrink-0" /> {errorMsg}
+            <div className="p-4 bg-red-50 text-red-600 border-2 border-red-200 rounded-xl flex items-center gap-3 text-sm font-medium">
+              <XCircle className="w-5 h-5 flex-shrink-0" /> {errorMsg}
             </div>
           )}
-          <button
-            onClick={handleDraftOutline}
-            disabled={!topic.trim()}
-            className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold text-sm hover:shadow-lg hover:shadow-blue-200 active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:shadow-none flex items-center justify-center gap-2"
-          >
-            <Sparkles className="w-4 h-4" />
-            Synthesize Outline
-          </button>
+          <div className="pt-2">
+            <button
+              onClick={handleDraftOutline}
+              disabled={!topic.trim()}
+              className="w-full py-5 bg-black text-white rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-neutral-800 hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:shadow-none disabled:hover:translate-y-0 flex items-center justify-center gap-3 group"
+            >
+              <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+              Synthesize Outline
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -310,87 +369,186 @@ export default function PresentationGenerator() {
 
   // ─── Loading State ───────────────────────────────────────────────────────
   const renderLoading = () => (
-    <div className="flex-1 flex items-center justify-center">
-      <div className="text-center space-y-6 animate-in fade-in duration-500">
-        <div className="relative w-24 h-24 mx-auto">
-          <div className="absolute inset-0 border-[3px] border-neutral-100 rounded-full" />
-          <div className="absolute inset-0 border-[3px] border-blue-500 border-t-transparent rounded-full animate-spin" />
+    <div className="flex-1 flex items-center justify-center bg-[#f5f5f5] overflow-hidden">
+      <div className="relative w-full max-w-4xl aspect-video mx-auto px-8">
+        {/* Animated Mesh Gradient background for the "Slide Preview" look */}
+        <div className="absolute inset-0 bg-white rounded-3xl border-2 border-neutral-200 overflow-hidden shadow-2xl scale-[0.95] animate-in fade-in zoom-in-95 duration-1000">
+          {/* Animated Mesh Gradient */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'linear-gradient(135deg, #fef0e7 0%, #fce4ec 25%, #f3e5f5 50%, #ede7f6 75%, #fef0e7 100%)',
+              backgroundSize: '400% 400%',
+              animation: 'meshGradient 6s ease infinite',
+            }}
+          />
+          {/* Orbs */}
+          <div
+            className="absolute w-[60%] h-[60%] rounded-full blur-[80px] opacity-60 top-[10%] left-[10%]"
+            style={{
+              background: 'radial-gradient(circle, #f8bbd0 0%, transparent 70%)',
+              animation: 'orbFloat1 8s ease-in-out infinite',
+            }}
+          />
+          <div
+            className="absolute w-[50%] h-[50%] rounded-full blur-[70px] opacity-50 bottom-[10%] right-[5%]"
+            style={{
+              background: 'radial-gradient(circle, #e1bee7 0%, transparent 70%)',
+              animation: 'orbFloat2 10s ease-in-out infinite',
+            }}
+          />
+
           <div className="absolute inset-0 flex items-center justify-center">
-            {status === 'drafting' ? (
-              <Brain className="w-7 h-7 text-blue-500" />
-            ) : (
-              <Wand2 className="w-7 h-7 text-blue-500" />
-            )}
+            <div className="text-center space-y-8 p-12 bg-white/30 backdrop-blur-xl rounded-3xl border border-white/50 shadow-2xl mx-4">
+              <div className="relative w-24 h-24 mx-auto">
+                <div className="absolute inset-0 border-[3px] border-black/10 rounded-full" />
+                <div className="absolute inset-0 border-[3px] border-black border-t-transparent rounded-full animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center bg-white rounded-full m-1.5 shadow-sm">
+                  {status === 'drafting' ? (
+                    <Brain className="w-8 h-8 text-black" />
+                  ) : (
+                    <Wand2 className="w-8 h-8 text-black" />
+                  )}
+                </div>
+              </div>
+              <div>
+                <h3 className="text-4xl font-bold text-black font-['Playfair_Display'] tracking-tight">
+                  {status === 'drafting' ? 'Synthesizing Narrative' : 'Rendering Visuals'}
+                </h3>
+                <div className="mt-4 flex flex-col items-center gap-3">
+                  <p className="text-neutral-600/80 text-sm max-w-md mx-auto font-medium leading-relaxed">
+                    {status === 'drafting'
+                      ? 'The AI agent is researching your topic and constructing a logical, high-impact narrative flow.'
+                      : `Initializing parallel diffusion models. Just a moment while we render your first slide...`}
+                  </p>
+
+                  {status === 'generating' && slides && (
+                    <div className="w-full max-w-xs bg-black/5 rounded-full h-1.5 mt-2 overflow-hidden">
+                      <div
+                        className="bg-black h-full transition-all duration-1000 ease-out"
+                        style={{
+                          width: `${(slides.filter((s) => s.status === 'complete').length / slides.length) * 100}%`,
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        <div>
-          <h3 className="text-xl font-bold text-neutral-800">
-            {status === 'drafting' ? 'Researching & Structuring...' : 'Generating Visual Slides...'}
-          </h3>
-          <p className="text-neutral-500 text-sm mt-2 max-w-sm mx-auto">
-            {status === 'drafting'
-              ? 'The AI agent is researching your topic and constructing a logical narrative flow.'
-              : 'Deploying parallel image models to render your presentation deck.'}
-          </p>
-        </div>
       </div>
+
+      <style jsx>{`
+        @keyframes meshGradient {
+          0% {
+            background-position: 0% 50%;
+          }
+          25% {
+            background-position: 100% 0%;
+          }
+          50% {
+            background-position: 100% 100%;
+          }
+          75% {
+            background-position: 0% 100%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+        @keyframes orbFloat1 {
+          0%,
+          100% {
+            transform: translate(0, 0) scale(1);
+          }
+          33% {
+            transform: translate(30%, 20%) scale(1.1);
+          }
+          66% {
+            transform: translate(-10%, 30%) scale(0.95);
+          }
+        }
+        @keyframes orbFloat2 {
+          0%,
+          100% {
+            transform: translate(0, 0) scale(1);
+          }
+          33% {
+            transform: translate(-25%, -15%) scale(1.05);
+          }
+          66% {
+            transform: translate(15%, -25%) scale(1.1);
+          }
+        }
+      `}</style>
     </div>
   );
 
   // ─── Outline Review (replaces main canvas area) ──────────────────────────
   const renderOutlineReview = () => (
-    <div className="flex-1 overflow-y-auto p-6 lg:p-10">
-      <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="flex items-center justify-between mb-2">
+    <div className="flex-1 overflow-y-auto p-6 lg:p-12 bg-[#f5f5f5]">
+      <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b-2 border-black pb-6">
           <div>
-            <h3 className="text-2xl font-bold text-neutral-800">Review Your Outline</h3>
-            <p className="text-sm text-neutral-500 mt-1">
-              Verify the narrative flow. When ready, approve to start visual generation.
+            <h3 className="text-4xl font-bold text-black font-['Playfair_Display'] tracking-tight">
+              Review Outline
+            </h3>
+            <p className="text-sm font-medium text-neutral-500 mt-2 uppercase tracking-widest">
+              Verify narrative flow before visual rendering
             </p>
+          </div>
+          <div className="flex gap-3 shrink-0">
+            <button
+              onClick={handleReset}
+              className="px-6 py-3 text-xs font-bold text-neutral-500 hover:text-black hover:bg-neutral-200 bg-neutral-100 rounded-xl uppercase tracking-widest transition-all"
+            >
+              Start Over
+            </button>
+            <button
+              onClick={handleGenerateSlides}
+              className="px-6 py-3 bg-black text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-neutral-800 hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.98] transition-all flex items-center gap-2 group"
+            >
+              <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" /> Render
+              Visuals
+            </button>
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           {outline.slides.map((slide, idx) => (
             <div
               key={idx}
-              className="bg-white rounded-2xl border border-neutral-200 p-5 flex gap-5 hover:shadow-sm transition-shadow"
+              className="bg-white rounded-2xl border-2 border-neutral-200 p-6 flex flex-col sm:flex-row gap-6 hover:border-black hover:shadow-xl transition-all duration-300 group"
             >
-              <div className="text-neutral-300 font-mono font-bold text-lg leading-none pt-1">
+              <div className="text-neutral-300 font-mono font-bold text-3xl leading-none pt-1 group-hover:text-black transition-colors">
                 {(idx + 1).toString().padStart(2, '0')}
               </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-neutral-800 mb-2">{slide.title}</h4>
-                <ul className="space-y-1.5 mb-3">
+              <div className="flex-1 min-w-0 space-y-4">
+                <h4 className="text-xl font-bold text-black font-['Playfair_Display'] tracking-tight">
+                  {slide.title}
+                </h4>
+                <ul className="space-y-2">
                   {slide.points.map((p, i) => (
-                    <li key={i} className="flex gap-2 text-sm text-neutral-600 leading-relaxed">
-                      <span className="text-blue-400 mt-[3px]">•</span>
+                    <li
+                      key={i}
+                      className="flex gap-3 text-sm text-neutral-600 font-medium leading-relaxed"
+                    >
+                      <span className="text-black mt-[5px] w-1.5 h-1.5 rounded-full bg-black shrink-0" />
                       <span>{p}</span>
                     </li>
                   ))}
                 </ul>
-                <div className="text-xs bg-blue-50/70 text-blue-700 p-3 rounded-xl border border-blue-100 font-mono leading-relaxed max-h-32 overflow-y-auto">
-                  <span className="font-bold text-blue-800">Design Brief:</span>{' '}
+                <div className="mt-4 text-xs bg-neutral-50 text-neutral-600 p-4 rounded-xl border border-neutral-200 font-mono leading-relaxed max-h-32 overflow-y-auto">
+                  <span className="font-bold text-black uppercase tracking-widest mr-2">
+                    Design Brief:
+                  </span>
                   {slide.slideDesignBrief}
                 </div>
               </div>
             </div>
           ))}
-        </div>
-
-        <div className="flex justify-end gap-3 pt-4 border-t border-neutral-100">
-          <button
-            onClick={handleReset}
-            className="px-5 py-2.5 text-sm text-neutral-500 hover:text-black font-medium transition-colors"
-          >
-            Start Over
-          </button>
-          <button
-            onClick={handleGenerateSlides}
-            className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-blue-200 active:scale-[0.98] transition-all flex items-center gap-2"
-          >
-            <Sparkles className="w-4 h-4" /> Approve & Generate Visuals
-          </button>
         </div>
       </div>
     </div>
@@ -400,22 +558,26 @@ export default function PresentationGenerator() {
   const isEditorView = status === 'complete' && slides;
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-[#f8f9fa] font-sans selection:bg-blue-500/30 overflow-hidden">
+    <div className="h-screen w-screen flex flex-col bg-[#f5f5f5] font-sans selection:bg-black/10 overflow-hidden">
       {/* ── Top Toolbar ──────────────────────────────────────────────── */}
       <header className="h-14 bg-white border-b border-neutral-200 flex items-center justify-between px-4 flex-shrink-0 z-20">
         {/* Left */}
-        <div className="flex items-center gap-3">
-          <Link href="/tools" className="text-neutral-400 hover:text-neutral-600 transition-colors">
+        <div className="flex items-center gap-4">
+          <Link
+            href="/tools"
+            className="text-neutral-400 hover:text-black transition-colors"
+            aria-label="Back to tools"
+          >
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center">
             <LayoutGrid className="w-4 h-4 text-white" />
           </div>
-          <div className="hidden sm:block">
-            <h1 className="text-sm font-bold text-neutral-800 leading-tight">
+          <div className="hidden sm:block max-w-[200px] lg:max-w-md">
+            <h1 className="text-sm font-bold text-black font-['Playfair_Display'] tracking-wide truncate">
               {topic || 'Untitled Presentation'}
             </h1>
-            <p className="text-[11px] text-neutral-400">
+            <p className="text-[11px] text-neutral-500 uppercase tracking-wider font-semibold truncate">
               {status === 'idle'
                 ? 'Ready'
                 : status === 'drafting'
@@ -433,21 +595,23 @@ export default function PresentationGenerator() {
 
         {/* Center */}
         {isEditorView && (
-          <div className="hidden md:flex items-center gap-1 bg-neutral-100 rounded-lg p-1">
+          <div className="hidden md:flex items-center gap-1 bg-neutral-100 rounded-xl p-1 border border-neutral-200">
             <button
               onClick={goPrev}
               disabled={activeSlideIndex === 0}
-              className="p-1.5 rounded-md hover:bg-white disabled:opacity-30 transition-all"
+              className="p-1.5 rounded-lg hover:bg-white disabled:opacity-30 transition-all text-neutral-600 hover:text-black hover:shadow-sm"
+              aria-label="Previous slide"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="text-xs font-mono text-neutral-600 px-2 min-w-[60px] text-center">
+            <span className="text-xs font-mono font-bold text-neutral-800 px-3 min-w-[70px] text-center tracking-wider">
               {activeSlideIndex + 1} / {slides.length}
             </span>
             <button
               onClick={goNext}
               disabled={activeSlideIndex === slides.length - 1}
-              className="p-1.5 rounded-md hover:bg-white disabled:opacity-30 transition-all"
+              className="p-1.5 rounded-lg hover:bg-white disabled:opacity-30 transition-all text-neutral-600 hover:text-black hover:shadow-sm"
+              aria-label="Next slide"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -455,20 +619,22 @@ export default function PresentationGenerator() {
         )}
 
         {/* Right */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {isEditorView && (
             <>
               <button
                 onClick={toggleFullscreen}
-                className="p-2 rounded-lg hover:bg-neutral-100 text-neutral-500 hover:text-neutral-800 transition-all"
+                className="p-2.5 rounded-xl hover:bg-neutral-100 text-neutral-500 hover:text-black transition-all border border-transparent hover:border-neutral-200"
                 title="Slideshow"
+                aria-label="Enter slideshow mode"
               >
                 <Play className="w-4 h-4" />
               </button>
               <button
                 onClick={handleReset}
-                className="p-2 rounded-lg hover:bg-neutral-100 text-neutral-500 hover:text-neutral-800 transition-all"
+                className="p-2.5 rounded-xl hover:bg-neutral-100 text-neutral-500 hover:text-black transition-all border border-transparent hover:border-neutral-200"
                 title="New Presentation"
+                aria-label="Start new presentation"
               >
                 <PlusCircle className="w-4 h-4" />
               </button>
@@ -477,9 +643,9 @@ export default function PresentationGenerator() {
           {status === 'error' && (
             <button
               onClick={handleReset}
-              className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-lg border border-red-200 hover:bg-red-100 transition-colors flex items-center gap-1.5"
+              className="px-4 py-2 text-xs font-bold text-red-600 bg-red-50 rounded-xl border border-red-200 hover:bg-red-100 transition-colors flex items-center gap-2 uppercase tracking-wider"
             >
-              <RotateCcw className="w-3 h-3" /> Reset
+              <RotateCcw className="w-3.5 h-3.5" /> Reset
             </button>
           )}
         </div>
@@ -493,36 +659,42 @@ export default function PresentationGenerator() {
       )}
 
       {/* ── Main Body ────────────────────────────────────────────────── */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Sidebar: Slide Thumbnails */}
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+        {/* Sidebar / Topbar for Thumbnails */}
         {isEditorView && (
-          <aside className="w-[140px] lg:w-[180px] bg-white border-r border-neutral-200 overflow-y-auto p-3 space-y-1 flex-shrink-0">
+          <aside className="md:w-[140px] lg:w-[180px] bg-white md:border-r border-b md:border-b-0 border-neutral-200 overflow-x-auto md:overflow-y-auto p-3 md:p-4 flex md:flex-col gap-3 md:gap-2 flex-shrink-0 custom-chat-scrollbar">
             {slides.map((slide, idx) => (
-              <SlideThumbnail
-                key={idx}
-                slide={slide}
-                index={idx}
-                isActive={idx === activeSlideIndex}
-                onClick={() => setActiveSlideIndex(idx)}
-              />
+              <div key={idx} className="w-[120px] md:w-full flex-shrink-0">
+                <SlideThumbnail
+                  slide={slide}
+                  index={idx}
+                  isActive={idx === activeSlideIndex}
+                  onClick={() => setActiveSlideIndex(idx)}
+                />
+              </div>
             ))}
           </aside>
         )}
 
         {/* Main Canvas Area */}
-        <main ref={canvasRef} className="flex-1 flex flex-col overflow-hidden">
+        <main
+          ref={canvasRef}
+          className="flex-1 flex flex-col min-h-0 bg-[#f5f5f5] overflow-y-auto md:overflow-hidden"
+        >
           {/* Idle (show modal) */}
           {(status === 'idle' || status === 'error') && showModal && renderModal()}
           {(status === 'idle' || status === 'error') && !showModal && (
             <div className="flex-1 flex items-center justify-center">
               <button
                 onClick={() => setShowModal(true)}
-                className="flex flex-col items-center gap-4 text-neutral-400 hover:text-blue-500 transition-colors group"
+                className="flex flex-col items-center gap-4 text-neutral-400 hover:text-black transition-colors group"
               >
-                <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-neutral-200 group-hover:border-blue-300 flex items-center justify-center transition-colors">
-                  <PlusCircle className="w-8 h-8" />
+                <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-neutral-300 group-hover:border-black group-hover:shadow-xl group-hover:-translate-y-1 flex items-center justify-center transition-all">
+                  <PlusCircle className="w-10 h-10 group-hover:rotate-90 transition-transform duration-500" />
                 </div>
-                <span className="text-sm font-medium">Create a Presentation</span>
+                <span className="text-sm font-bold uppercase tracking-widest">
+                  Create a Presentation
+                </span>
               </button>
             </div>
           )}
@@ -535,22 +707,22 @@ export default function PresentationGenerator() {
 
           {/* Complete: Slide Viewer */}
           {isEditorView && activeSlide && (
-            <div className="flex-1 flex items-center justify-center p-6 lg:p-10 bg-[#f0f0f0]">
-              <div className="w-full max-w-5xl aspect-video bg-white rounded-xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] overflow-hidden relative group">
+            <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative">
+              <div className="w-full max-w-6xl aspect-video bg-white rounded-2xl shadow-2xl border-2 border-black overflow-hidden relative group">
                 {activeSlide.imageUrl && activeSlide.imageUrl !== 'error' ? (
                   <img
                     src={activeSlide.imageUrl}
                     alt={activeSlide.fallbackText}
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-contain bg-neutral-50"
                   />
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-neutral-400 gap-3 bg-neutral-50">
-                    <XCircle className="w-12 h-12 text-red-300" />
-                    <p className="text-sm font-medium text-red-400">
-                      Failed to generate this slide
+                  <div className="w-full h-full flex flex-col items-center justify-center text-neutral-400 gap-4 bg-neutral-50 p-6 text-center">
+                    <XCircle className="w-16 h-16 text-red-400" />
+                    <p className="text-lg font-bold text-red-500 font-['Playfair_Display']">
+                      Failed to Generate Slide
                     </p>
                     {activeSlide.error && (
-                      <p className="text-xs text-neutral-400 max-w-sm text-center">
+                      <p className="text-xs font-mono bg-red-50 text-red-600 p-4 rounded-xl border border-red-200 max-w-md">
                         {activeSlide.error}
                       </p>
                     )}
@@ -558,8 +730,8 @@ export default function PresentationGenerator() {
                 )}
 
                 {/* Slide overlay badge */}
-                <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-lg text-[11px] font-mono font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                  Slide {activeSlideIndex + 1}
+                <div className="absolute top-6 left-6 bg-black/80 backdrop-blur-md text-white px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                  Slide {(activeSlideIndex + 1).toString().padStart(2, '0')}
                 </div>
               </div>
             </div>
@@ -567,22 +739,22 @@ export default function PresentationGenerator() {
 
           {/* Bottom: Slide details strip for editors */}
           {isEditorView && activeSlide && (
-            <div className="h-12 bg-white border-t border-neutral-200 flex items-center justify-between px-4 flex-shrink-0">
+            <div className="h-16 bg-white border-t border-neutral-200 flex items-center justify-between px-6 flex-shrink-0 z-10">
               <p
-                className="text-xs text-neutral-400 font-mono truncate max-w-lg"
+                className="text-xs text-neutral-500 font-mono truncate max-w-2xl"
                 title={activeSlide.prompt || activeSlide.fallbackText}
               >
-                {activeSlide.fallbackText || 'No description'}
+                {activeSlide.fallbackText || 'No description available'}
               </p>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 {activeSlide.imageUrl && activeSlide.imageUrl !== 'error' && (
                   <a
                     href={activeSlide.imageUrl}
                     download={`slide-${activeSlideIndex + 1}.png`}
-                    className="p-1.5 rounded-md hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-all"
+                    className="px-4 py-2 bg-neutral-100 hover:bg-black hover:text-white rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 border border-neutral-200 hover:border-black"
                     title="Download Slide"
                   >
-                    <Download className="w-3.5 h-3.5" />
+                    <Download className="w-4 h-4" /> Download
                   </a>
                 )}
               </div>
