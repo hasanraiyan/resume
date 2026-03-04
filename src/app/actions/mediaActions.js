@@ -541,17 +541,25 @@ export async function processAndIndexAsset(asset) {
     const mimeType = imageResponse.headers.get('content-type') || 'image/jpeg';
 
     // 2. Analyze image for description
-    const description = await agentRegistry.execute(AGENT_IDS.IMAGE_ANALYZER, {
-      base64Data,
-      mimeType,
-      action: 'analyze',
-    });
+    const description = await agentRegistry.execute(
+      AGENT_IDS.IMAGE_ANALYZER,
+      {
+        base64Data,
+        mimeType,
+        action: 'analyze',
+      },
+      { bypassRateLimit: true }
+    );
 
     // 3. Generate embedding
-    const embeddingResult = await agentRegistry.execute(AGENT_IDS.IMAGE_EMBEDDER, {
-      text: description,
-      action: 'embed',
-    });
+    const embeddingResult = await agentRegistry.execute(
+      AGENT_IDS.IMAGE_EMBEDDER,
+      {
+        text: description,
+        action: 'embed',
+      },
+      { bypassRateLimit: true }
+    );
     const vector = embeddingResult.embedding;
 
     // 4. Index in Qdrant

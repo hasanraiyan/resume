@@ -71,10 +71,14 @@ export async function POST(request) {
             const base64Data = buffer.toString('base64');
             const mimeType = imageResponse.headers.get('content-type') || 'image/jpeg';
 
-            description = await agentRegistry.execute(AGENT_IDS.IMAGE_ANALYZER, {
-              base64Image: base64Data,
-              mimeType,
-            });
+            description = await agentRegistry.execute(
+              AGENT_IDS.IMAGE_ANALYZER,
+              {
+                base64Image: base64Data,
+                mimeType,
+              },
+              { bypassRateLimit: true }
+            );
           } else {
             console.log(
               `[Background] Re-using existing description for indexing: ${asset.filename}`
@@ -85,10 +89,14 @@ export async function POST(request) {
           let vector = null;
           let indexedInQdrant = false;
           try {
-            const embeddingResult = await agentRegistry.execute(AGENT_IDS.IMAGE_EMBEDDER, {
-              text: description,
-              taskType: 'embed',
-            });
+            const embeddingResult = await agentRegistry.execute(
+              AGENT_IDS.IMAGE_EMBEDDER,
+              {
+                text: description,
+                taskType: 'embed',
+              },
+              { bypassRateLimit: true }
+            );
             vector = embeddingResult.embedding;
 
             // 3. Ensure Qdrant collection and upsert

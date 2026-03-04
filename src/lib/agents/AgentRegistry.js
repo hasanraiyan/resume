@@ -92,17 +92,20 @@ class AgentRegistry {
    * Execute an agent by ID
    * @param {string} agentId - The agent ID
    * @param {Object} input - Input data for the agent
-   * @param {Object} config - Optional configuration overrides
+   * @param {Object} options - Optional execution settings
+   * @param {boolean} options.bypassRateLimit - If true, ignore rate limits
+   * @param {Object} options.config - Optional configuration overrides for the instance
    * @returns {Promise<Object>} Agent execution result
    */
-  async execute(agentId, input, config = {}) {
+  async execute(agentId, input, options = {}) {
+    const { bypassRateLimit = false, config = {} } = options;
     const agent = this.get(agentId, config);
 
     if (!agent) {
       throw new Error(`Agent ${agentId} not found`);
     }
 
-    if (!agent.canExecute()) {
+    if (!agent.canExecute(bypassRateLimit)) {
       throw new Error(`Agent ${agentId} is rate limited`);
     }
 
@@ -114,17 +117,20 @@ class AgentRegistry {
    * Execute an agent by ID as a stream
    * @param {string} agentId - The agent ID
    * @param {Object} input - Input data for the agent
-   * @param {Object} config - Optional configuration overrides
+   * @param {Object} options - Optional execution settings
+   * @param {boolean} options.bypassRateLimit - If true, ignore rate limits
+   * @param {Object} options.config - Optional configuration overrides for the instance
    * @returns {AsyncGenerator<Object>} Agent streaming execution result
    */
-  async *streamExecute(agentId, input, config = {}) {
+  async *streamExecute(agentId, input, options = {}) {
+    const { bypassRateLimit = false, config = {} } = options;
     const agent = this.get(agentId, config);
 
     if (!agent) {
       throw new Error(`Agent ${agentId} not found`);
     }
 
-    if (!agent.canExecute()) {
+    if (!agent.canExecute(bypassRateLimit)) {
       throw new Error(`Agent ${agentId} is rate limited`);
     }
 

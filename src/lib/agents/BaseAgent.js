@@ -249,11 +249,16 @@ class BaseAgent {
 
   /**
    * Check if the agent can execute based on rate limits
+   * @param {boolean} bypass - If true, ignore rate limits (for admin/system actions)
    * @returns {boolean} True if execution is allowed
    */
-  canExecute() {
+  canExecute(bypass = false) {
     if (!this.isActive) {
       return false;
+    }
+
+    if (bypass) {
+      return true;
     }
 
     const { requests, window } = this.config.rateLimit;
