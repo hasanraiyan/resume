@@ -13,9 +13,6 @@ import ChatLog from '@/models/ChatLog';
 import { getToolStatusMessage } from '../utils/chatbot-utils';
 import { getBackendMCPConfig } from '@/lib/mcpConfig';
 import { portfolioTools } from '../utils/portfolio-tools';
-import { ChatOpenAI } from '@langchain/openai';
-import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
-import { tool } from '@langchain/core/tools';
 import { MultiServerMCPClient } from '@langchain/mcp-adapters';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import {
@@ -32,24 +29,8 @@ function sanitizeMessages(messages) {
   return messages.filter((msg) => !(msg instanceof AIMessageChunk));
 }
 
-// Convert DB provider to a LangChain Chat Model
-function resolveLangChainModel(actualModel, provider) {
-  const modelName = (actualModel.model || '').replace(/^models\//, '');
-  const isGoogle = provider.baseUrl?.includes('googleapis');
-
-  if (isGoogle) {
-    return new ChatGoogleGenerativeAI({
-      model: modelName,
-      apiKey: provider.apiKey,
-    });
-  }
-
-  return new ChatOpenAI({
-    modelName,
-    openAIApiKey: provider.apiKey,
-    configuration: { baseURL: provider.baseUrl },
-  });
-}
+// System message builder moved to a static or instance method if preferred,
+// but keeping it as a standalone function for now.
 
 export function buildSystemMessages(context, path) {
   const { chatbotSettings } = context || {};
@@ -138,13 +119,7 @@ class ChatAgent extends BaseAgent {
         throw new Error('Chatbot is currently disabled');
       }
 
-      const provider = await this.resolveProvider(actualModel.providerId);
-
-      if (!provider || !actualModel.model) {
-        throw new Error(`AI Chatbot (${this.agentId}) is not fully configured.`);
-      }
-
-      const llm = resolveLangChainModel(actualModel, provider);
+      const llm = await this.createChatModel();
       const systemMessages = buildSystemMessages(context, path);
 
       const filteredHistory = chatHistory.filter((msg) => msg && msg.role);
@@ -218,7 +193,7 @@ class ChatAgent extends BaseAgent {
       }
 
       // Disable tools if provider requires it
-      const finalTools = provider.supportsTools !== false ? allTools : [];
+      const finalTools = this.config.provider?.supportsTools !== false ? allTools : [];
 
       const safeMessageModifier = async (msgs) => {
         return sanitizeMessages(msgs);

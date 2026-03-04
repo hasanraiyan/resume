@@ -1,22 +1,117 @@
 /**
  * Image Editor Agent
  *
- * Edits existing images from descriptions using Google's generative models.
- * Replaces the legacy image-service.js `editImage`.
+ * Edits existing images from descriptions using a LangGraph StateGraph workflow.
+ * Uses Google's generative models with IMAGE response modality.
  * Extends BaseAgent.
  */
 
 import { AGENT_IDS } from '@/lib/constants/agents';
 import BaseAgent from '../BaseAgent';
-import { GoogleGenAI } from '@google/genai';
+import { StateGraph, END, START } from '@langchain/langgraph';
+import { Annotation } from '@langchain/langgraph';
+
+// Define the state schema for the image editing workflow
+const ImageEditState = Annotation.Root({
+  base64Images: Annotation({ reducer: (_, b) => b, default: () => [] }),
+  editPrompt: Annotation({ reducer: (_, b) => b, default: () => '' }),
+  aspectRatio: Annotation({ reducer: (_, b) => b, default: () => '1:1' }),
+  modelOverride: Annotation({ reducer: (_, b) => b, default: () => null }),
+  buffer: Annotation({ reducer: (_, b) => b, default: () => null }),
+  mimeType: Annotation({ reducer: (_, b) => b, default: () => null }),
+  extension: Annotation({ reducer: (_, b) => b, default: () => null }),
+  error: Annotation({ reducer: (_, b) => b, default: () => null }),
+});
 
 class ImageEditorAgent extends BaseAgent {
   constructor(agentId = AGENT_IDS.IMAGE_EDITOR, config = {}) {
     super(agentId, config);
+    this._graph = null;
   }
 
   async _onInitialize() {
-    this.logger.info('Image Editor Initialized');
+    this.logger.info('Image Editor Initialized (LangGraph)');
+  }
+
+  _buildGraph() {
+    const self = this;
+
+    const editNode = async (state) => {
+      const { client, modelName } = await self.createGoogleGenAI({
+        model: state.modelOverride || undefined,
+      });
+
+      // Ensure base64Images is an array
+      const imagesArray = Array.isArray(state.base64Images)
+        ? state.base64Images
+        : [state.base64Images];
+
+      self.logger.info(
+        `Editing image(s) with model: ${modelName}, count: ${imagesArray.length}, aspect ratio: ${state.aspectRatio}`
+      );
+
+      const contents = [
+        {
+          role: 'user',
+          parts: [
+            ...imagesArray.map((base64) => ({
+              inlineData: {
+                data: base64,
+                mimeType: 'image/jpeg',
+              },
+            })),
+            {
+              text: state.editPrompt.trim(),
+            },
+          ],
+        },
+      ];
+
+      const result = await client.models.generateContent({
+        model: modelName,
+        contents,
+        config: {
+          responseModalities: ['IMAGE'],
+          imageConfig: {
+            aspectRatio: state.aspectRatio,
+          },
+        },
+      });
+
+      const candidates = result.candidates;
+
+      if (
+        !candidates ||
+        candidates.length === 0 ||
+        !candidates[0].content ||
+        !candidates[0].content.parts ||
+        candidates[0].content.parts.length === 0
+      ) {
+        return {
+          error:
+            "No image was generated. The response may have been blocked or the model didn't return an image.",
+        };
+      }
+
+      const part = candidates[0].content.parts[0];
+      if (!part.inlineData) {
+        return { error: 'No image data found in the response part.' };
+      }
+
+      const inlineData = part.inlineData;
+      return {
+        buffer: Buffer.from(inlineData.data, 'base64'),
+        mimeType: inlineData.mimeType,
+        extension: inlineData.mimeType?.split('/')[1] || 'png',
+      };
+    };
+
+    const graph = new StateGraph(ImageEditState)
+      .addNode('edit', editNode)
+      .addEdge(START, 'edit')
+      .addEdge('edit', END);
+
+    return graph.compile();
   }
 
   async _validateInput(input) {
@@ -33,84 +128,28 @@ class ImageEditorAgent extends BaseAgent {
   }
 
   async _onExecute(input) {
-    const { base64Images, editPrompt, aspectRatio = '1:1', providerId, model: inputModel } = input;
+    const { base64Images, editPrompt, aspectRatio = '1:1', model: inputModel } = input;
 
-    // Use the new configuration system via BaseAgent's resolveProvider
-    const resolvedProviderId = providerId || this.config.providerId;
-    const provider = await this.resolveProvider(resolvedProviderId);
-
-    if (!provider || !provider.apiKey) {
-      throw new Error(
-        'AI Provider is not configured or missing API key. Please check Admin > AI Command Hub.'
-      );
+    if (!this._graph) {
+      this._graph = this._buildGraph();
     }
 
-    const rawModel = inputModel || this.config.model || 'gemini-1.5-flash';
-    const modelName = rawModel.replace(/^models\//, '');
-    const genAI = new GoogleGenAI({ apiKey: provider.apiKey });
-
-    // Ensure base64Images is an array
-    const imagesArray = Array.isArray(base64Images) ? base64Images : [base64Images];
-
-    this.logger.info(
-      `Editing image(s) with model: ${modelName}, count: ${imagesArray.length}, aspect ratio: ${aspectRatio}`
-    );
-
-    const contents = [
-      {
-        role: 'user',
-        parts: [
-          ...imagesArray.map((base64) => ({
-            inlineData: {
-              data: base64,
-              mimeType: 'image/jpeg',
-            },
-          })),
-          {
-            text: editPrompt.trim(),
-          },
-        ],
-      },
-    ];
-
-    const result = await genAI.models.generateContent({
-      model: modelName,
-      contents,
-      config: {
-        responseModalities: ['IMAGE'],
-        // @ts-ignore
-        imageConfig: {
-          aspectRatio: aspectRatio,
-        },
-      },
+    const result = await this._graph.invoke({
+      base64Images,
+      editPrompt,
+      aspectRatio,
+      modelOverride: inputModel || null,
     });
 
-    const response = result;
-    const candidates = response.candidates;
-
-    if (
-      !candidates ||
-      candidates.length === 0 ||
-      !candidates[0].content ||
-      !candidates[0].content.parts ||
-      candidates[0].content.parts.length === 0
-    ) {
-      throw new Error(
-        "No image was generated in the response. The response may have been blocked or the model didn't return an image."
-      );
+    if (result.error) {
+      throw new Error(result.error);
     }
 
-    const part = candidates[0].content.parts[0];
-    if (!part.inlineData) {
-      throw new Error('No image data found in the response part.');
-    }
-
-    const inlineData = part.inlineData;
-    const buffer = Buffer.from(inlineData.data, 'base64');
-    const mimeType = inlineData.mimeType;
-    const extension = mimeType?.split('/')[1] || 'png';
-
-    return { buffer, mimeType, extension };
+    return {
+      buffer: result.buffer,
+      mimeType: result.mimeType,
+      extension: result.extension,
+    };
   }
 }
 

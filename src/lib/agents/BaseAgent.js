@@ -10,6 +10,9 @@ import dbConnect from '@/lib/dbConnect';
 import AgentConfig from '@/models/AgentConfig';
 import ProviderSettings from '@/models/ProviderSettings';
 import { decrypt } from '@/lib/crypto';
+import { ChatOpenAI, OpenAIEmbeddings } from '@langchain/openai';
+import { ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
+import { GoogleGenAI } from '@google/genai';
 
 class BaseAgent {
   /**
@@ -345,6 +348,127 @@ class BaseAgent {
       icon: this.config.icon,
       isActive: this.isActive,
     };
+  }
+
+  /**
+   * Create a LangChain Chat Model based on current provider and config
+   * @param {Object} overrides - Optional overrides for model/temperature etc.
+   * @returns {Promise<ChatOpenAI|ChatGoogleGenerativeAI>}
+   */
+  async createChatModel(overrides = {}) {
+    if (!this.isInitialized) await this.initialize();
+
+    const provider = this.config.provider;
+    if (!provider) throw new Error(`No provider resolved for agent ${this.agentId}`);
+
+    const modelName = (overrides.model || this.config.model || provider.model || '').replace(
+      /^models\//,
+      ''
+    );
+
+    if (!modelName) {
+      throw new Error(
+        `Chat model name is missing for agent ${this.agentId}. Please configure it in Agent Settings or Provider Settings.`
+      );
+    }
+
+    const temperature = overrides.temperature ?? this.config.temperature ?? 0.7;
+    const maxTokens = overrides.maxTokens ?? this.config.maxTokens;
+
+    if (provider.baseUrl?.includes('googleapis') || provider.providerId === 'google') {
+      return new ChatGoogleGenerativeAI({
+        apiKey: provider.apiKey,
+        model: modelName, // LangChain Google provider uses 'model'
+        maxOutputTokens: maxTokens,
+        temperature,
+      });
+    }
+
+    // Default to OpenAI compatible
+    return new ChatOpenAI({
+      openAIApiKey: provider.apiKey,
+      modelName: modelName, // OpenAI provider supports modelName or model
+      configuration: {
+        baseURL: provider.baseUrl,
+      },
+      maxTokens,
+      temperature,
+    });
+  }
+
+  /**
+   * Create LangChain Embeddings based on current provider and config
+   * @param {Object} overrides - Optional overrides
+   * @returns {Promise<OpenAIEmbeddings|GoogleGenerativeAIEmbeddings>}
+   */
+  async createEmbeddings(overrides = {}) {
+    if (!this.isInitialized) await this.initialize();
+
+    const provider = this.config.provider;
+    if (!provider) throw new Error(`No provider resolved for agent ${this.agentId}`);
+
+    const modelName = (overrides.model || this.config.model || provider.model || '').replace(
+      /^models\//,
+      ''
+    );
+
+    if (!modelName) {
+      throw new Error(
+        `Embedding model name is missing for agent ${this.agentId}. Please configure it in Agent Settings or Provider Settings.`
+      );
+    }
+
+    const dimensions = overrides.dimensions ?? this.config.embeddingDimensions ?? 3072;
+
+    if (provider.baseUrl?.includes('googleapis') || provider.providerId === 'google') {
+      return new GoogleGenerativeAIEmbeddings({
+        apiKey: provider.apiKey,
+        model: modelName,
+        taskType: overrides.taskType,
+      });
+    }
+
+    return new OpenAIEmbeddings({
+      openAIApiKey: provider.apiKey,
+      modelName: modelName,
+      dimensions: dimensions,
+      configuration: {
+        baseURL: provider.baseUrl,
+      },
+    });
+  }
+
+  /**
+   * Create a raw Google GenAI client for specialized tasks (image generation/editing)
+   * that require features not supported by LangChain abstractions.
+   * @param {Object} overrides - Optional overrides
+   * @returns {Promise<{client: GoogleGenAI, modelName: string}>}
+   */
+  async createGoogleGenAI(overrides = {}) {
+    if (!this.isInitialized) await this.initialize();
+
+    const provider = this.config.provider;
+    if (!provider) throw new Error(`No provider resolved for agent ${this.agentId}`);
+
+    if (!provider.apiKey) {
+      throw new Error(
+        `AI Provider API key is missing for agent ${this.agentId}. Please check Admin > AI Command Hub.`
+      );
+    }
+
+    const modelName = (overrides.model || this.config.model || provider.model || '').replace(
+      /^models\//,
+      ''
+    );
+
+    if (!modelName) {
+      throw new Error(
+        `Model name is missing for agent ${this.agentId}. Please configure it in Agent Settings or Provider Settings.`
+      );
+    }
+
+    const client = new GoogleGenAI({ apiKey: provider.apiKey });
+    return { client, modelName };
   }
 }
 
