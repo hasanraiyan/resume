@@ -36,6 +36,11 @@ const AgentConfigSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    // Allows assigning specific MCP servers to the agent
+    activeMCPs: {
+      type: [String],
+      default: [],
+    },
     // Optional Override settings
     rateLimitSettings: {
       requests: { type: Number },

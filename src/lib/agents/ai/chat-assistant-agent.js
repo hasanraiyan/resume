@@ -13,6 +13,7 @@ import ChatLog from '@/models/ChatLog';
 import { getToolStatusMessage } from '../utils/chatbot-utils';
 import { getBackendMCPConfig } from '@/lib/mcpConfig';
 import { portfolioTools } from '../utils/portfolio-tools';
+import { createAdminTools } from '../utils/admin-tools';
 import { MultiServerMCPClient } from '@langchain/mcp-adapters';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import {
@@ -168,6 +169,10 @@ class ChatAgent extends BaseAgent {
       const selectedMCPConfigs = backendMCPs.filter((m) => activeMCPs.includes(m.id));
       const allActiveConfigs = [...new Set([...defaultMCPConfigs, ...selectedMCPConfigs])];
 
+      if (isAdmin) {
+        allTools.push(...createAdminTools());
+      }
+
       if (allActiveConfigs.length > 0) {
         yield { type: 'status', message: '🔌 Connecting to tools...' };
 
@@ -209,6 +214,10 @@ class ChatAgent extends BaseAgent {
 
       for await (const event of eventStream) {
         const { event: type, data, name } = event;
+
+        if (type === 'on_custom_event' && name === 'blog_status') {
+          yield { type: 'status', message: data.message };
+        }
 
         if (type === 'on_chat_model_stream') {
           if (data.chunk?.content) {
