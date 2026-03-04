@@ -353,24 +353,23 @@ export default function ChatbotSettingsPage() {
   }
 
   return (
-    <AdminPageWrapper>
-      <div className="max-w-5xl  mx-auto pb-24">
-        {/* Header */}
-        <div className="mb-8 items-start flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
-              <h1 className="text-3xl font-bold text-black font-['Playfair_Display']">
-                AI Assistant Configuration
-              </h1>
-            </div>
-            <p className="text-neutral-600 max-w-2xl">
-              Configure your AI assistant's personality, knowledge base, and behavior. These
-              settings control how the chatbot interacts with visitors on your portfolio.
-            </p>
+    <div className="space-y-8 pb-24">
+      {/* Page Header */}
+      <div className="border-b border-neutral-200 pb-8">
+        <h1 className="text-4xl font-bold text-black font-['Playfair_Display'] mb-4 flex items-center gap-4">
+          <div className="relative flex items-center justify-center w-6 h-6">
+            <div className="absolute w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_12px_rgba(34,197,94,0.6)]"></div>
+            <div className="absolute w-3 h-3 bg-green-500 rounded-full opacity-50"></div>
           </div>
-        </div>
+          AI Assistant Configuration
+        </h1>
+        <p className="text-neutral-600 max-w-2xl text-lg">
+          Configure your AI assistant's personality, knowledge base, and behavior. These settings
+          control how the chatbot interacts with visitors on your portfolio.
+        </p>
+      </div>
 
+      <div className="max-w-6xl mx-auto space-y-12">
         {/* Success/Error Messages */}
         {message.text && (
           <div
@@ -392,36 +391,31 @@ export default function ChatbotSettingsPage() {
         )}
 
         {/* Tab Navigation */}
-        <div className="flex space-x-2 bg-neutral-100/70 p-1.5 rounded-2xl mb-8 border border-neutral-200/50 overflow-x-auto custom-scrollbar">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-medium transition-all flex-1 justify-center sm:justify-start min-w-[140px] outline-none ${
-                activeTab === tab.id
-                  ? 'bg-white text-black shadow-sm ring-1 ring-neutral-200/50 scale-[1.02]'
-                  : 'text-neutral-500 hover:text-neutral-800 hover:bg-neutral-200/50 hover:scale-[1.01]'
-              }`}
-            >
-              <div
-                className={`p-1.5 rounded-lg transition-colors ${activeTab === tab.id ? 'bg-blue-50 text-blue-600' : 'bg-transparent text-neutral-400'}`}
-              >
-                <tab.icon className="w-4 h-4" />
-              </div>
-              <div className="flex flex-col items-start hidden sm:block text-left">
-                <span className="block leading-none mb-1">{tab.label}</span>
-                {/* <span
-                  className={`text-[10px] font-normal leading-none ${activeTab === tab.id ? 'text-neutral-500' : 'text-neutral-400'}`}
+        <div className="flex border-b border-neutral-200 overflow-x-auto custom-scrollbar">
+          <div className="flex gap-2 sm:gap-8 px-2 sm:px-0">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 py-4 text-sm font-semibold transition-colors relative px-2 whitespace-nowrap ${
+                    activeTab === tab.id ? 'text-black' : 'text-neutral-500 hover:text-neutral-800'
+                  }`}
                 >
-                  {tab.desc}
-                </span> */}
-              </div>
-            </button>
-          ))}
+                  <Icon className="w-4 h-4" />
+                  <span>{tab.label}</span>
+                  {activeTab === tab.id && (
+                    <span className="absolute bottom-0 left-0 w-full h-[3px] bg-black"></span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Form Content */}
-        <div className="bg-white rounded-3xl border border-neutral-200/60 shadow-sm min-h-[400px]">
+        <div className="bg-white rounded-3xl border-2 border-neutral-100 shadow-sm min-h-[400px] overflow-hidden">
           {activeTab === 'general' && (
             <div className="p-6 sm:p-8 space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
               <div className="pb-6 border-b border-neutral-100">
@@ -965,7 +959,7 @@ export default function ChatbotSettingsPage() {
 
       {/* Sticky Action Footer */}
       <div className="fixed bottom-0 left-0 lg:left-64 right-0 p-4 bg-white/80 backdrop-blur-xl border-t border-neutral-200/60 z-40 transform transition-transform shadow-[0_-10px_40px_rgba(0,0,0,0.03)]">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
+        <div className="max-w-6xl mx-auto flex items-center justify-between px-6">
           <div className="flex items-center gap-2 text-xs text-neutral-500 hidden sm:flex">
             <span className="font-medium">Shortcut:</span>
             <code className="px-1.5 py-0.5 bg-neutral-100 border border-neutral-200 rounded font-mono text-neutral-600">
@@ -990,6 +984,6 @@ export default function ChatbotSettingsPage() {
           </div>
         </div>
       </div>
-    </AdminPageWrapper>
+    </div>
   );
 }

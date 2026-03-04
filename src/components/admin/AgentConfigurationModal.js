@@ -10,9 +10,20 @@ import {
 } from '@/components/ui/Dialog';
 import Button from '@/components/ui/Button';
 import CustomDropdown from '@/components/CustomDropdown';
-import { Sparkles, Save, X, Bot, ShieldAlert, Cpu, Settings2, Webhook, Plug } from 'lucide-react';
+import {
+  Save,
+  X,
+  Bot,
+  Cpu,
+  Settings2,
+  Webhook,
+  Plug,
+  CheckCircle2,
+  AlertCircle,
+} from 'lucide-react';
 
 export default function AgentConfigurationModal({ isOpen, onClose, agentData, providers, onSave }) {
+  const [activeTab, setActiveTab] = useState('engine'); // 'engine', 'tools', 'mcp', 'persona'
   const [settings, setSettings] = useState({
     providerId: '',
     model: '',
@@ -59,6 +70,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
         setModels([]);
       }
       fetchMCPs();
+      setActiveTab('engine'); // Reset tab on open
     }
   }, [isOpen, agentData]);
 
@@ -134,208 +146,264 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
 
   if (!agentData) return null;
 
+  const tabs = [
+    { id: 'engine', label: 'Engine', icon: Bot },
+    { id: 'tools', label: 'Tools', icon: Webhook },
+    { id: 'mcp', label: 'MCP', icon: Plug },
+    { id: 'persona', label: 'Persona', icon: Settings2 },
+  ];
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
-              <Cpu className="w-5 h-5" />
+      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden bg-white gap-0">
+        {/* Header Section */}
+        <div className="bg-neutral-50 px-6 py-5 border-b border-neutral-200">
+          <DialogHeader className="mb-0">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-4">
+                <div
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm border ${settings.isActive ? 'bg-black text-white border-black' : 'bg-white text-neutral-400 border-neutral-200'}`}
+                >
+                  <Cpu className="w-6 h-6" />
+                </div>
+                <div>
+                  <DialogTitle className="text-xl font-bold font-['Playfair_Display'] text-neutral-900">
+                    {agentData.name}
+                  </DialogTitle>
+                  <p className="text-sm text-neutral-500 mt-1 line-clamp-1">
+                    {agentData.description}
+                  </p>
+                </div>
+              </div>
+              <label
+                className="relative inline-flex items-center cursor-pointer"
+                aria-label="Toggle Agent Status"
+              >
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={settings.isActive}
+                  onChange={(e) => setSettings({ ...settings, isActive: e.target.checked })}
+                />
+                <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                <span className="ml-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+                  {settings.isActive ? 'Active' : 'Offline'}
+                </span>
+              </label>
             </div>
-            <div>
-              <DialogTitle className="text-xl font-bold font-['Playfair_Display']">
-                {agentData.name}
-              </DialogTitle>
-              <p className="text-xs text-neutral-500 mt-1">{agentData.description}</p>
-            </div>
-          </div>
-        </DialogHeader>
+          </DialogHeader>
+        </div>
 
-        <div className="py-2 space-y-6">
-          <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-xl border">
-            <div>
-              <h4 className="text-sm font-semibold">Agent Status</h4>
-              <p className="text-xs text-neutral-500 mt-0.5">
-                Toggle whether this agent can execute commands.
-              </p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                className="sr-only peer"
-                checked={settings.isActive}
-                onChange={(e) => setSettings({ ...settings, isActive: e.target.checked })}
-              />
-              <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
-          </div>
+        {/* Navigation Tabs */}
+        <div className="flex border-b border-neutral-200 px-2 bg-neutral-50/50">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors relative ${
+                  isActive ? 'text-black' : 'text-neutral-500 hover:text-neutral-800'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {tab.label}
+                {isActive && (
+                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-black rounded-t-full"></span>
+                )}
+              </button>
+            );
+          })}
+        </div>
 
-          <div className="space-y-4 pt-2">
-            <h4 className="text-xs font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-2">
-              <Bot className="w-3 h-3" />
-              Engine Configuration
-            </h4>
-            <CustomDropdown
-              label="API Provider"
-              value={settings.providerId}
-              onChange={handleProviderChange}
-              options={[
-                { value: '', label: 'Inherit Default' },
-                ...providers.map((p) => ({ value: p.providerId, label: p.name })),
-              ]}
-            />
+        {/* Tab Content Areas */}
+        <div className="p-6 min-h-[320px] max-h-[60vh] overflow-y-auto">
+          {/* Engine Tab */}
+          {activeTab === 'engine' && (
+            <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
+              <div className="space-y-4">
+                <CustomDropdown
+                  label="API Provider"
+                  value={settings.providerId}
+                  onChange={handleProviderChange}
+                  options={[
+                    { value: '', label: 'Inherit Default' },
+                    ...providers.map((p) => ({ value: p.providerId, label: p.name })),
+                  ]}
+                />
 
-            <div className="space-y-1">
-              <CustomDropdown
-                label="Execution Model"
-                value={settings.model}
-                onChange={(e) => setSettings((prev) => ({ ...prev, model: e.target.value }))}
-                isLoading={fetchingModels}
-                disabled={!settings.providerId}
-                options={[
-                  {
-                    value: '',
-                    label: settings.providerId ? 'Select Model' : 'Select provider first',
-                  },
-                  ...models.map((m) => ({ value: m, label: m })),
-                ]}
-              />
-              {settings.providerId && models.length === 0 && !fetchingModels && (
-                <p className="text-[10px] text-amber-600">
-                  No models loaded. Is the API Key correct?
-                </p>
-              )}
-            </div>
-          </div>
-
-          {agentData.tools && agentData.tools.length > 0 && (
-            <div className="space-y-3 pt-4 border-t border-neutral-100">
-              <h4 className="text-xs font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-2">
-                <Webhook className="w-3 h-3" />
-                Tool Permissions
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {agentData.tools.map((tool) => {
-                  const isEnabled = settings.tools.includes(tool);
-                  return (
-                    <button
-                      key={tool}
-                      onClick={() => toggleTool(tool)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                        isEnabled
-                          ? 'bg-blue-50 border-blue-200 text-blue-700'
-                          : 'bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50'
-                      }`}
-                    >
-                      {tool}
-                    </button>
-                  );
-                })}
+                <div className="space-y-1">
+                  <CustomDropdown
+                    label="Execution Model"
+                    value={settings.model}
+                    onChange={(e) => setSettings((prev) => ({ ...prev, model: e.target.value }))}
+                    isLoading={fetchingModels}
+                    disabled={!settings.providerId}
+                    options={[
+                      {
+                        value: '',
+                        label: settings.providerId ? 'Select Model' : 'Select provider first',
+                      },
+                      ...models.map((m) => ({ value: m, label: m })),
+                    ]}
+                  />
+                  {settings.providerId && models.length === 0 && !fetchingModels && (
+                    <div className="flex items-center gap-1.5 mt-2 text-amber-600 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+                      <AlertCircle className="w-4 h-4" />
+                      <p className="text-xs font-medium">
+                        No models loaded. Please check the API Key configuration for this provider.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
 
-          {/* MCP Servers Section */}
-          <div className="space-y-3 pt-4 border-t border-neutral-100">
-            <h4 className="text-xs font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-2">
-              <Plug className="w-3 h-3" />
-              MCP Servers
-            </h4>
-            {fetchingMCPs ? (
-              <p className="text-xs text-neutral-400">Loading MCP servers...</p>
-            ) : mcpServers.length === 0 ? (
-              <p className="text-xs text-neutral-500">
-                No MCP servers configured.{' '}
-                <a href="/admin/chatbot" className="text-blue-600 hover:underline">
-                  Add one
-                </a>
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {mcpServers.map((mcp) => {
-                  const isAssigned = settings.activeMCPs.includes(mcp._id);
-                  return (
-                    <button
-                      key={mcp._id}
-                      type="button"
-                      onClick={() => toggleMCP(mcp._id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left border transition-colors ${
-                        isAssigned
-                          ? 'bg-blue-50 border-blue-200'
-                          : 'bg-white border-neutral-200 hover:bg-neutral-50'
-                      }`}
-                    >
-                      <div
-                        className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                          isAssigned ? 'bg-blue-600 border-blue-600' : 'border-neutral-300'
+          {/* Tools Tab */}
+          {activeTab === 'tools' && (
+            <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
+              {!agentData.tools || agentData.tools.length === 0 ? (
+                <div className="text-center p-8 border border-dashed border-neutral-200 rounded-2xl bg-neutral-50 flex flex-col items-center">
+                  <Webhook className="w-8 h-8 text-neutral-300 mb-3" />
+                  <p className="text-sm text-neutral-500">
+                    This agent has no built-in tools configured.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {agentData.tools.map((tool) => {
+                    const isEnabled = settings.tools.includes(tool);
+                    return (
+                      <button
+                        key={tool}
+                        onClick={() => toggleTool(tool)}
+                        className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all text-left ${
+                          isEnabled
+                            ? 'bg-neutral-900 border-black text-white shadow-sm'
+                            : 'bg-white border-neutral-200 text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50'
                         }`}
                       >
-                        {isAssigned && (
-                          <svg
-                            className="w-2.5 h-2.5 text-white"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={3}
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className={`text-xs font-medium truncate ${isAssigned ? 'text-blue-700' : 'text-neutral-700'}`}
-                        >
-                          {mcp.name}
-                        </p>
-                        {mcp.description && (
-                          <p className="text-[10px] text-neutral-400 truncate">{mcp.description}</p>
-                        )}
-                      </div>
-                      {!mcp.isActive && (
-                        <span className="text-[9px] uppercase font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">
-                          Offline
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                        <span className="text-sm font-medium font-mono">{tool}</span>
+                        {isEnabled && <CheckCircle2 className="w-4 h-4 text-white" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
-          <div className="space-y-2 pt-4 border-t border-neutral-100">
-            <label className="text-sm font-medium text-neutral-800 flex items-center gap-2">
-              <Settings2 className="w-4 h-4 text-neutral-400" />
-              System Persona Instructions
-            </label>
-            <textarea
-              value={settings.persona}
-              onChange={(e) => setSettings((prev) => ({ ...prev, persona: e.target.value }))}
-              rows={4}
-              className="w-full p-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm leading-relaxed"
-              placeholder="Optional system string injected into the agent's context..."
-            />
-          </div>
+          {/* MCP Tab */}
+          {activeTab === 'mcp' && (
+            <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
+              {fetchingMCPs ? (
+                <div className="text-center p-8 text-sm text-neutral-500">Loading servers...</div>
+              ) : mcpServers.length === 0 ? (
+                <div className="text-center p-8 border border-dashed border-neutral-200 rounded-2xl bg-neutral-50 flex flex-col items-center">
+                  <Plug className="w-8 h-8 text-neutral-300 mb-3" />
+                  <p className="text-sm text-neutral-600 mb-2">No MCP servers available.</p>
+                  <a
+                    href="/admin/chatbot"
+                    className="text-sm font-medium text-black underline underline-offset-4 hover:text-neutral-600"
+                  >
+                    Configure one in Chatbot settings
+                  </a>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {mcpServers.map((mcp) => {
+                    const isAssigned = settings.activeMCPs.includes(mcp._id);
+                    return (
+                      <button
+                        key={mcp._id}
+                        type="button"
+                        onClick={() => toggleMCP(mcp._id)}
+                        className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-left border transition-all ${
+                          isAssigned
+                            ? 'bg-neutral-900 border-black text-white shadow-sm'
+                            : 'bg-white border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
+                        }`}
+                      >
+                        <div
+                          className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-colors ${
+                            isAssigned
+                              ? 'bg-white text-black'
+                              : 'border-2 border-neutral-300 bg-transparent'
+                          }`}
+                        >
+                          {isAssigned && <CheckCircle2 className="w-5 h-5" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p
+                              className={`text-sm font-semibold truncate ${isAssigned ? 'text-white' : 'text-neutral-900'}`}
+                            >
+                              {mcp.name}
+                            </p>
+                            {!mcp.isActive && (
+                              <span className="text-[10px] uppercase font-bold text-red-500 bg-red-50/10 border border-red-500/20 px-1.5 py-0.5 rounded">
+                                Offline
+                              </span>
+                            )}
+                          </div>
+                          {mcp.description && (
+                            <p
+                              className={`text-xs truncate mt-0.5 ${isAssigned ? 'text-neutral-300' : 'text-neutral-500'}`}
+                            >
+                              {mcp.description}
+                            </p>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Persona Tab */}
+          {activeTab === 'persona' && (
+            <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200 h-full flex flex-col">
+              <div>
+                <p className="text-sm text-neutral-600 mb-3">
+                  Define specialized instructions that will be injected into this agent's system
+                  prompt context. Use this to guide behavior, tone, or specific operational
+                  constraints.
+                </p>
+              </div>
+              <textarea
+                value={settings.persona}
+                onChange={(e) => setSettings((prev) => ({ ...prev, persona: e.target.value }))}
+                className="flex-1 min-h-[150px] w-full p-4 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-black/5 focus:border-black outline-none transition-all text-sm leading-relaxed text-neutral-800 resize-y shadow-sm"
+                placeholder="e.g., 'You are a strict code reviewer. Always focus on performance and security. Do not provide code examples unless explicitly requested...'"
+              />
+            </div>
+          )}
         </div>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2 mt-4">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={saving}
-            className="rounded-xl flex-1"
-          >
-            <X className="w-4 h-4 mr-2" /> Cancel
-          </Button>
-          <Button
-            onClick={handleSave}
-            isLoading={saving}
-            className="rounded-xl bg-black hover:bg-neutral-800 text-white flex-1"
-          >
-            <Save className="w-4 h-4 mr-2" /> Save Changes
-          </Button>
-        </DialogFooter>
+        {/* Footer */}
+        <div className="px-6 py-4 bg-neutral-50 border-t border-neutral-200">
+          <DialogFooter className="flex-col sm:flex-row gap-3">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              disabled={saving}
+              className="rounded-xl flex-1 justify-center bg-white"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSave}
+              isLoading={saving}
+              className="rounded-xl bg-black hover:bg-neutral-800 text-white flex-1 justify-center shadow-md"
+            >
+              <Save className="w-4 h-4 mr-2" /> Save Configuration
+            </Button>
+          </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

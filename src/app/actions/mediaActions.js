@@ -256,6 +256,94 @@ export async function generateMedia({
     return { success: false, error: `Generation failed: ${error.message}` };
   }
 }
+
+// --- ACTION 3B: UPLOAD GENERATED IMAGE BUFFER (for blog writer agent) ---
+// This function uploads an already-generated image buffer and saves it to the media library
+// Used by agents that generate images internally (like blog-writer-agent)
+export async function uploadGeneratedImage({
+  buffer,
+  mimeType,
+  filename,
+  prompt,
+  source = 'blog_writer',
+}) {
+  console.log('=== UPLOAD GENERATED IMAGE DEBUG ===');
+  console.log('uploadGeneratedImage called with:', { mimeType, filename, prompt, source });
+
+  if (!buffer || !Buffer.isBuffer(buffer)) {
+    return { success: false, error: 'Valid buffer is required.' };
+  }
+
+  if (!mimeType || !mimeType.startsWith('image/')) {
+    return { success: false, error: 'Valid image mime type is required.' };
+  }
+
+  try {
+    const extension = mimeType.split('/')[1] || 'png';
+
+    // Upload the generated image buffer to Cloudinary
+    const uploadResult = await new Promise((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream(
+          {
+            resource_type: 'image',
+            folder: 'blog_assets',
+            format: extension,
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        )
+        .end(buffer);
+    });
+
+    console.log('Cloudinary upload successful:', uploadResult.public_id);
+
+    // Save to database
+    await dbConnect();
+    console.log('Database connected for generated image upload');
+
+    const assetFilename = filename || `generated_${Date.now()}.${extension}`;
+
+    const newAsset = new MediaAsset({
+      public_id: uploadResult.public_id,
+      url: uploadResult.url,
+      secure_url: uploadResult.secure_url,
+      filename: assetFilename,
+      format: uploadResult.format,
+      size: uploadResult.bytes,
+      width: uploadResult.width,
+      height: uploadResult.height,
+      source: source,
+      prompt: prompt || '',
+    });
+
+    await newAsset.save();
+    console.log('Generated image asset saved to database:', newAsset._id);
+
+    // Trigger background indexing
+    if (typeof after === 'function') {
+      after(async () => {
+        try {
+          await processAndIndexAsset(newAsset);
+        } catch (err) {
+          console.error('[Background Indexing] Failed:', err);
+        }
+      });
+    }
+
+    revalidatePath('/admin/media');
+
+    return {
+      success: true,
+      asset: JSON.parse(JSON.stringify(newAsset)),
+    };
+  } catch (error) {
+    console.error('Upload generated image error details:', error);
+    return { success: false, error: `Upload failed: ${error.message}` };
+  }
+}
 // --- ACTION 4: EDIT MEDIA VIA GEMINI ---
 export async function editMedia({
   assetIds,

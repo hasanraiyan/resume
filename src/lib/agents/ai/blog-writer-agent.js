@@ -6,39 +6,12 @@ import { MultiServerMCPClient } from '@langchain/mcp-adapters';
 import { getBackendMCPConfig } from '@/lib/mcpConfig';
 import agentRegistry from '../AgentRegistry';
 import Article from '@/models/Article';
-import { v2 as cloudinary } from 'cloudinary';
+import { uploadGeneratedImage } from '@/app/actions/mediaActions';
 import { revalidatePath } from 'next/cache';
-
-// Configure Cloudinary
-// Use explicit env vars if CLOUDINARY_URL is not set
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true,
-});
 
 // Current date context for time-sensitive research
 const CURRENT_DATE = 'March 2026';
 const CURRENT_YEAR = '2026';
-
-// Helper for stream upload
-const uploadToCloudinary = async (buffer, mimeType, folder = 'blog_assets') => {
-  return new Promise((resolve, reject) => {
-    const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        folder,
-        resource_type: 'image',
-        format: mimeType ? mimeType.split('/')[1] : 'png',
-      },
-      (error, result) => {
-        if (error) reject(error);
-        else resolve(result);
-      }
-    );
-    uploadStream.end(buffer);
-  });
-};
 
 const BlogGenState = Annotation.Root({
   topic: Annotation({ reducer: (_, b) => b, default: () => '' }),
@@ -428,8 +401,17 @@ Provide 5-8 lowercase tags. The first tag should be the primary category (e.g., 
               aspectRatio: img.aspect,
             });
             if (result && result.buffer) {
-              const uploadRes = await uploadToCloudinary(result.buffer, result.mimeType);
-              generatedImages[img.id] = uploadRes.secure_url;
+              // Use the shared upload function that also saves to media library
+              const uploadRes = await uploadGeneratedImage({
+                buffer: result.buffer,
+                mimeType: result.mimeType,
+                filename: `blog_${img.id}_${Date.now()}.${result.mimeType.split('/')[1]}`,
+                prompt: img.prompt,
+                source: 'blog_writer',
+              });
+              if (uploadRes.success) {
+                generatedImages[img.id] = uploadRes.asset.secure_url;
+              }
             }
           } catch (e) {
             self.logger.error(`Failed to generate/upload image for ${img.id}:`, e);

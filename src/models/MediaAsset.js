@@ -11,7 +11,11 @@ const MediaAssetSchema = new mongoose.Schema(
     size: { type: Number }, // in bytes
     width: { type: Number },
     height: { type: Number },
-    source: { type: String, enum: ['upload', 'pollinations', 'gemini'], default: 'upload' },
+    source: {
+      type: String,
+      enum: ['upload', 'pollinations', 'gemini', 'blog-writer', 'blog_writer'],
+      default: 'upload',
+    },
     prompt: { type: String },
     aiDescription: { type: String },
     isIndexed: { type: Boolean, default: false },
