@@ -1,6 +1,6 @@
 // src/app/api/media/models/route.js
 import dbConnect from '@/lib/dbConnect';
-import ChatbotSettings from '@/models/ChatbotSettings';
+import ProviderSettings from '@/models/ProviderSettings';
 import { decrypt } from '@/lib/crypto';
 import OpenAI from 'openai';
 
@@ -12,19 +12,19 @@ export async function GET(request) {
     console.log('[Media Models API] Request received, providerId:', providerId);
 
     await dbConnect();
-    const settings = await ChatbotSettings.findOne({});
+    const providersList = await ProviderSettings.find({}).lean();
 
-    if (!settings || !settings.providers || settings.providers.length === 0) {
+    if (!providersList || providersList.length === 0) {
       console.log('[Media Models API] No providers configured');
       return Response.json({ providers: [], models: [] });
     }
 
     // Return list of active providers if no providerId specified
     if (!providerId) {
-      const providers = settings.providers
+      const providers = providersList
         .filter((p) => p.isActive)
         .map((p) => ({
-          id: p.id,
+          id: p.providerId,
           name: p.name,
           isGoogle: p.baseUrl?.includes('googleapis'),
         }));
@@ -34,7 +34,7 @@ export async function GET(request) {
 
     // Fetch models for a specific provider
     console.log('[Media Models API] Looking for provider:', providerId);
-    const provider = settings.providers.find((p) => p.id === providerId);
+    const provider = providersList.find((p) => p.providerId === providerId);
 
     if (!provider) {
       console.log('[Media Models API] Provider not found:', providerId);

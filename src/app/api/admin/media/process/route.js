@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import MediaAsset from '@/models/MediaAsset';
 import MediaAgentSettings from '@/models/MediaAgentSettings';
-import { aiImageAgent } from '@/lib/ai/ai-image-agent';
+import agentRegistry from '@/lib/agents/AgentRegistry';
+import { AGENT_IDS } from '@/lib/constants/agents';
 import { getServerSession } from 'next-auth';
+
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { revalidatePath } from 'next/cache';
 import { after } from 'next/server';
@@ -69,7 +71,10 @@ export async function POST(request) {
             const base64Data = buffer.toString('base64');
             const mimeType = imageResponse.headers.get('content-type') || 'image/jpeg';
 
-            description = await aiImageAgent.analyzeImage(base64Data, mimeType);
+            description = await agentRegistry.execute(AGENT_IDS.IMAGE_ANALYZER, {
+              base64Image: base64Data,
+              mimeType,
+            });
           } else {
             console.log(
               `[Background] Re-using existing description for indexing: ${asset.filename}`
@@ -80,7 +85,11 @@ export async function POST(request) {
           let vector = null;
           let indexedInQdrant = false;
           try {
-            vector = await aiImageAgent.generateEmbedding(description);
+            const embeddingResult = await agentRegistry.execute(AGENT_IDS.IMAGE_ANALYZER, {
+              text: description,
+              taskType: 'embedding',
+            });
+            vector = embeddingResult.embedding;
 
             // 3. Ensure Qdrant collection and upsert
             const isQdrantReady = await ensureCollection(collectionName, vector.length);

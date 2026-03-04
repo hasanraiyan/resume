@@ -1,9 +1,12 @@
 // src/app/api/media/public-edit/route.js
 import dbConnect from '@/lib/dbConnect';
 import MediaAgentSettings from '@/models/MediaAgentSettings';
-import imageService from '@/lib/image-service';
+import agentRegistry from '@/lib/agents/AgentRegistry';
 import { NextResponse } from 'next/server';
 import { AGENT_IDS } from '@/lib/constants/agents';
+
+// Ensure agents are registered
+import '@/lib/agents';
 
 export async function POST(request) {
   try {
@@ -23,40 +26,24 @@ export async function POST(request) {
       );
     }
 
-    // Connect to DB to get settings
-    await dbConnect();
-
-    // Fetch pre-selected model and provider from Admin settings
-    const settings = await MediaAgentSettings.findOne({});
-
     // Use agent ID from constants for tracking
     const agentId = AGENT_IDS.IMAGE_EDITOR;
 
-    // For editing, we check if there's a specific edit model or use the general one
-    // In our case we use the model from settings which is intended for analysis/generation
-    // Note: Some models support editing better than others.
-    const providerId = settings?.generationProviderId || settings?.providerId;
-    const model = settings?.generationModel || settings?.model || 'gemini-1.5-flash';
-
-    console.log('[Public Edit] Using Agent:', {
+    console.log('[Public Edit] Executing Agent:', {
       agentId,
-      source: settings?.generationProviderId ? 'Generation Config' : 'Analysis Fallback',
-      providerId,
-      model,
       aspectRatio,
     });
 
     // Ensure the image string is just base64 data (strip prefix if exists)
     const base64Data = image.includes('base64,') ? image.split('base64,')[1] : image;
 
-    // Use imageService to edit the image
-    const { buffer, mimeType } = await imageService.editImage(
-      [base64Data], // Pass as array
-      prompt.trim(),
+    // Use agentRegistry to edit the image
+    // We let the Agent handle its own configuration (provider, model) from DB/Registry
+    const { buffer, mimeType } = await agentRegistry.execute(agentId, {
+      base64Images: [base64Data],
+      editPrompt: prompt.trim(),
       aspectRatio,
-      providerId,
-      model
-    );
+    });
 
     // Convert back to base64 for direct display
     const resultBase64 = `data:${mimeType};base64,${buffer.toString('base64')}`;

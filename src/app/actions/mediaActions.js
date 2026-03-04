@@ -7,7 +7,6 @@ import MediaAsset from '@/models/MediaAsset';
 import MediaAgentSettings from '@/models/MediaAgentSettings';
 import { revalidatePath } from 'next/cache';
 import { after } from 'next/server';
-import { aiImageAgent } from '@/lib/ai/ai-image-agent';
 import { qdrantClient, ensureCollection, mongoIdToUuid } from '@/lib/qdrant';
 
 // Configure Cloudinary with your credentials
@@ -175,16 +174,22 @@ export async function generateMedia({
   }
 
   try {
-    const { default: imageService } = await import('@/lib/image-service');
+    const { default: agentRegistry } = await import('@/lib/agents/AgentRegistry');
+    const { AGENT_IDS } = await import('@/lib/constants/agents');
 
-    const { buffer, mimeType, extension } = await imageService.generateImage(
-      prompt.trim(),
+    // Ensure agents are registered
+    await import('@/lib/agents');
+
+    const result = await agentRegistry.execute(AGENT_IDS.IMAGE_GENERATOR, {
+      prompt: prompt.trim(),
       aspectRatio,
       providerId,
-      model
-    );
+      model,
+    });
 
-    console.log('Gemini image generated, uploading to Cloudinary...');
+    const { buffer, mimeType, extension } = result;
+
+    console.log('Agent image generated, uploading to Cloudinary...');
 
     // Upload the generated image buffer to Cloudinary
     const uploadResult = await new Promise((resolve, reject) => {
@@ -286,17 +291,23 @@ export async function editMedia({
       })
     );
 
-    const { default: imageService } = await import('@/lib/image-service');
+    const { default: agentRegistry } = await import('@/lib/agents/AgentRegistry');
+    const { AGENT_IDS } = await import('@/lib/constants/agents');
 
-    const { buffer, mimeType, extension } = await imageService.editImage(
+    // Ensure agents are registered
+    await import('@/lib/agents');
+
+    const result = await agentRegistry.execute(AGENT_IDS.IMAGE_EDITOR, {
       base64Images,
-      editPrompt.trim(),
+      editPrompt: editPrompt.trim(),
       aspectRatio,
       providerId,
-      model
-    );
+      model,
+    });
 
-    console.log('Gemini image edited, uploading to Cloudinary...');
+    const { buffer, mimeType, extension } = result;
+
+    console.log('Agent image edited, uploading to Cloudinary...');
 
     // Upload the edited image buffer to Cloudinary
     const uploadResult = await new Promise((resolve, reject) => {

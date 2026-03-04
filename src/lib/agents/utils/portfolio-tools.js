@@ -7,7 +7,7 @@ import {
   getArticleDetails,
   searchPortfolio,
   submitContactForm,
-} from '../chatbot-utils';
+} from './chatbot-utils';
 
 export const portfolioTools = [
   tool(

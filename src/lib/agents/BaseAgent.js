@@ -6,6 +6,10 @@
  */
 
 import { AGENT_IDS, DEFAULT_AGENT_CONFIGS, RATE_LIMIT_DEFAULTS } from '@/lib/constants/agents';
+import dbConnect from '@/lib/dbConnect';
+import AgentConfig from '@/models/AgentConfig';
+import ProviderSettings from '@/models/ProviderSettings';
+import { decrypt } from '@/lib/crypto';
 
 class BaseAgent {
   /**
@@ -58,14 +62,28 @@ class BaseAgent {
   }
 
   /**
-   * Initialize the agent
-   * Override this method in subclasses to perform setup
+   * Initialize the agent and fetch database configurations
+   * Override _onInitialize in subclasses instead of this method
    * @returns {Promise<boolean>} Success status
    */
   async initialize() {
-    this.logger.info('Initializing agent...');
+    this.logger.info('Initializing agent configurations from DB...');
 
     try {
+      await dbConnect();
+
+      // 1. Fetch Agent Specific Configuration
+      const dbConfig = await AgentConfig.findOne({ agentId: this.agentId }).lean();
+      if (dbConfig) {
+        this.config = this._mergeConfig({ ...this.config, ...dbConfig });
+        this.isActive = this.config.isActive ?? true;
+      }
+
+      // 2. Resolve default provider if configured
+      if (this.config.providerId) {
+        this.config.provider = await this.resolveProvider(this.config.providerId);
+      }
+
       await this._onInitialize();
       this.isInitialized = true;
       this.logger.info('Agent initialized successfully');
@@ -75,6 +93,45 @@ class BaseAgent {
       this.isInitialized = false;
       return false;
     }
+  }
+
+  /**
+   * Helper to fetch and decrypt a Provider securely by ID
+   * @param {string} providerId
+   * @returns {Promise<Object>} The securely decrypted provider configuration
+   */
+  async resolveProvider(providerId) {
+    if (!providerId) return null;
+    await dbConnect();
+
+    // Try the specific providerId field first (standard for our system)
+    let provider = await ProviderSettings.findOne({ providerId }).lean();
+
+    // If not found, try by ID, but only if it looks like a valid ObjectId to avoid CastError
+    if (!provider && /^[0-9a-fA-F]{24}$/.test(providerId)) {
+      provider = await ProviderSettings.findById(providerId).lean();
+    }
+
+    // Fallback for any legacy 'id' field if it exists
+    if (!provider) {
+      provider = await ProviderSettings.findOne({ id: providerId }).lean();
+    }
+
+    if (provider && provider.apiKey) {
+      try {
+        provider.apiKey = decrypt(provider.apiKey);
+        if (!provider.apiKey) {
+          this.logger.error(
+            `Decryption failed for provider ${providerId}. Check ENCRYPTION_SECRET.`
+          );
+        }
+      } catch (e) {
+        this.logger.error(`Failed to decrypt API key for provider ${providerId}`, e);
+        provider.apiKey = null;
+      }
+    }
+
+    return provider;
   }
 
   /**
@@ -120,6 +177,42 @@ class BaseAgent {
    */
   async _onExecute(input) {
     throw new Error('_onExecute must be implemented by subclass');
+  }
+
+  /**
+   * Execute the agent's primary function as a stream
+   * @param {Object} input - Input data for the agent
+   * @returns {AsyncGenerator<Object>} Stream of agent execution results
+   */
+  async *streamExecute(input) {
+    if (!this.isActive) {
+      throw new Error(`Agent ${this.agentId} is currently inactive.`);
+    }
+
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+
+    this.logger.info('Executing agent stream with input:', input);
+    this.lastExecutedAt = new Date();
+    this.executionCount++;
+
+    try {
+      await this._validateInput(input);
+      yield* this._onStreamExecute(input);
+      this.logger.info('Agent stream execution completed successfully');
+    } catch (error) {
+      this.logger.error('Agent stream execution failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Override this method for agent-specific streaming execution logic
+   * @protected
+   */
+  async *_onStreamExecute(input) {
+    throw new Error('_onStreamExecute must be implemented by subclass for streaming');
   }
 
   /**

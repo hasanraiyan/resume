@@ -34,6 +34,7 @@ function AdminLayoutContent({ children }) {
 
   const navigation = [
     { name: 'Analytics', href: '/admin/analytics', icon: 'fas fa-chart-line' },
+    { name: 'AI Command Hub', href: '/admin/agents', icon: 'fas fa-brain' },
     { name: 'Articles', href: '/admin/articles', icon: 'fas fa-newspaper' },
     { name: 'Chat Logs', href: '/admin/chatbot/logs', icon: 'fas fa-comments' },
     { name: 'Chatbot Settings', href: '/admin/chatbot', icon: 'fas fa-robot' },

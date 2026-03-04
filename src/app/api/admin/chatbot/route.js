@@ -70,36 +70,6 @@ export async function GET() {
       await settings.save();
     }
 
-    // Migration: Migrate string values to object slots
-    let isModified = false;
-    const migrateSlot = (slotData) => {
-      if (typeof slotData === 'string') {
-        isModified = true;
-        // Map old strings to the default OpenAI ID if they existed, but with no model default
-        return { providerId: 'default-openai', model: slotData || '' };
-      }
-      return slotData;
-    };
-
-    settings.modelName = migrateSlot(settings.modelName);
-    settings.fastModel = migrateSlot(settings.fastModel);
-    settings.thinkingModel = migrateSlot(settings.thinkingModel);
-    settings.proModel = migrateSlot(settings.proModel);
-
-    if (isModified) {
-      await settings.save();
-    }
-
-    // Mask API keys for frontend
-    const sanitizedProviders = settings.providers.map((p) => ({
-      id: p.id,
-      name: p.name,
-      baseUrl: p.baseUrl,
-      apiKey: p.apiKey ? '********' : '',
-      isActive: p.isActive,
-      supportsTools: p.supportsTools,
-    }));
-
     return NextResponse.json({
       aiName: settings.aiName,
       persona: settings.persona,
@@ -110,12 +80,6 @@ export async function GET() {
       welcomeMessage: settings.welcomeMessage || '',
       rules: settings.rules,
       isActive: settings.isActive,
-      modelName: settings.modelName,
-      fastModel: settings.fastModel,
-      thinkingModel: settings.thinkingModel,
-      proModel: settings.proModel,
-      defaultEngine: settings.defaultEngine || 'fast',
-      providers: sanitizedProviders,
     });
   } catch (error) {
     console.error('Error fetching chatbot settings:', error);
@@ -208,15 +172,6 @@ export async function POST(request) {
       welcomeMessage = '',
       rules,
       isActive = true,
-      modelName = {
-        providerId: '',
-        model: '',
-      },
-      fastModel = { providerId: '', model: '' },
-      thinkingModel = { providerId: '', model: '' },
-      proModel = { providerId: '', model: '' },
-      defaultEngine = 'fast',
-      providers = [],
     } = body;
 
     // Validate required fields
@@ -230,32 +185,6 @@ export async function POST(request) {
     // Find existing settings or create new one
     let settings = await ChatbotSettings.findOne({});
 
-    // Process providers: encrypt API keys if they are newly provided or updated
-    let updatedProviders = [];
-    if (providers && Array.isArray(providers)) {
-      updatedProviders = providers.map((p) => {
-        let encryptedKey = p.apiKey;
-        // If the key is '********', it means the user didn't update it, so we retain the old one
-        if (p.apiKey === '********' && settings && settings.providers) {
-          const existingProvider = settings.providers.find((ep) => ep.id === p.id);
-          if (existingProvider) {
-            encryptedKey = existingProvider.apiKey;
-          }
-        } else if (p.apiKey && p.apiKey !== '********') {
-          encryptedKey = encrypt(p.apiKey);
-        }
-
-        return {
-          id: p.id,
-          name: p.name,
-          baseUrl: p.baseUrl,
-          apiKey: encryptedKey,
-          isActive: p.isActive,
-          supportsTools: p.supportsTools,
-        };
-      });
-    }
-
     if (settings) {
       // Update existing settings
       settings.aiName = aiName;
@@ -267,12 +196,6 @@ export async function POST(request) {
       settings.welcomeMessage = welcomeMessage;
       settings.rules = filteredRules;
       settings.isActive = isActive;
-      settings.modelName = modelName;
-      settings.fastModel = fastModel;
-      settings.thinkingModel = thinkingModel;
-      settings.proModel = proModel;
-      settings.defaultEngine = defaultEngine;
-      settings.providers = updatedProviders;
 
       await settings.save();
     } else {
@@ -287,12 +210,6 @@ export async function POST(request) {
         welcomeMessage,
         rules: filteredRules,
         isActive,
-        modelName,
-        fastModel,
-        thinkingModel,
-        proModel,
-        defaultEngine,
-        providers: updatedProviders,
       });
 
       await settings.save();
@@ -306,16 +223,6 @@ export async function POST(request) {
       console.error('[Admin API] Revalidation failed:', revalidateError);
     }
 
-    // Mask API keys for response
-    const sanitizedProviders = settings.providers.map((p) => ({
-      id: p.id,
-      name: p.name,
-      baseUrl: p.baseUrl,
-      apiKey: p.apiKey ? '********' : '',
-      isActive: p.isActive,
-      supportsTools: p.supportsTools,
-    }));
-
     return NextResponse.json({
       message: 'Chatbot settings saved successfully',
       settings: {
@@ -328,12 +235,6 @@ export async function POST(request) {
         welcomeMessage: settings.welcomeMessage,
         rules: settings.rules,
         isActive: settings.isActive,
-        modelName: settings.modelName,
-        fastModel: settings.fastModel,
-        thinkingModel: settings.thinkingModel,
-        proModel: settings.proModel,
-        defaultEngine: settings.defaultEngine,
-        providers: sanitizedProviders,
       },
     });
   } catch (error) {

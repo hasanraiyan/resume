@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import MediaAsset from '@/models/MediaAsset';
 import MediaAgentSettings from '@/models/MediaAgentSettings';
-import { aiImageAgent } from '@/lib/ai/ai-image-agent';
+import { aiImageAgent } from '@/lib/agents';
 import { qdrantClient } from '@/lib/qdrant';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';

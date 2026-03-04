@@ -111,6 +111,28 @@ class AgentRegistry {
   }
 
   /**
+   * Execute an agent by ID as a stream
+   * @param {string} agentId - The agent ID
+   * @param {Object} input - Input data for the agent
+   * @param {Object} config - Optional configuration overrides
+   * @returns {AsyncGenerator<Object>} Agent streaming execution result
+   */
+  async *streamExecute(agentId, input, config = {}) {
+    const agent = this.get(agentId, config);
+
+    if (!agent) {
+      throw new Error(`Agent ${agentId} not found`);
+    }
+
+    if (!agent.canExecute()) {
+      throw new Error(`Agent ${agentId} is rate limited`);
+    }
+
+    agent._recordExecution();
+    yield* agent.streamExecute(input);
+  }
+
+  /**
    * Check if an agent is registered
    * @param {string} agentId - The agent ID
    * @returns {boolean} True if registered

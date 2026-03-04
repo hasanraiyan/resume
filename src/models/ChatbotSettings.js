@@ -58,7 +58,6 @@ import mongoose from 'mongoose';
  * @property {string} callToAction - Standard CTA message to guide users toward contact
  * @property {string[]} rules - Array of behavioral rules and guidelines for the AI
  * @property {boolean} [isActive=true] - Whether the chatbot system is currently active
- * @property {string} modelName - AI model identifier for API requests
  * @property {Date} createdAt - Auto-generated creation timestamp
  * @property {Date} updatedAt - Auto-generated update timestamp
  */
@@ -125,55 +124,6 @@ const ChatbotSettingsSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true,
-    },
-    modelName: {
-      type: {
-        providerId: { type: String, default: '' },
-        model: { type: String, default: '' },
-      },
-      default: {
-        providerId: '',
-        model: '',
-      },
-    },
-    fastModel: {
-      type: {
-        providerId: { type: String, default: '' },
-        model: { type: String, default: '' },
-      },
-      default: { providerId: '', model: '' },
-    },
-    thinkingModel: {
-      type: {
-        providerId: { type: String, default: '' },
-        model: { type: String, default: '' },
-      },
-      default: { providerId: '', model: '' },
-    },
-    proModel: {
-      type: {
-        providerId: { type: String, default: '' },
-        model: { type: String, default: '' },
-      },
-      default: { providerId: '', model: '' },
-    },
-    defaultEngine: {
-      type: String,
-      enum: ['fast', 'thinking', 'pro'],
-      default: 'fast',
-    },
-    providers: {
-      type: [
-        {
-          id: { type: String, required: true },
-          name: { type: String, required: true },
-          baseUrl: { type: String, required: true },
-          apiKey: { type: String, required: true }, // Encrypted
-          isActive: { type: Boolean, default: true },
-          supportsTools: { type: Boolean, default: true },
-        },
-      ],
-      default: [],
     },
   },
   {
