@@ -71,6 +71,7 @@ export async function PUT(request, { params }) {
     if (body.model !== undefined) updates.model = body.model;
     if (body.persona !== undefined) updates.persona = body.persona;
     if (body.tools !== undefined) updates.tools = body.tools;
+    if (body.activeMCPs !== undefined) updates.activeMCPs = body.activeMCPs;
     if (body.rateLimit !== undefined) updates.rateLimit = body.rateLimit;
 
     // Persist to database

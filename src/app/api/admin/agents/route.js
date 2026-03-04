@@ -38,6 +38,7 @@ export async function GET() {
           persona: agent.persona || '',
           isActive: agent.isActive,
           tools: agent.tools || [],
+          activeMCPs: agent.activeMCPs || [],
         });
       });
     }

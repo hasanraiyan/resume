@@ -136,7 +136,7 @@ export default function NewArticlePage() {
                     backgroundSize: '20px 20px',
                   }}
                 />
-                <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center group-hover:shadow-md group-hover:scale-110 transition-all duration-300">
+                <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center group-hover:scale-110 transition-all duration-300">
                   <i className="fas fa-pen-fancy text-2xl text-neutral-700"></i>
                 </div>
               </div>
@@ -161,7 +161,7 @@ export default function NewArticlePage() {
             <Card className="p-0 overflow-hidden border-2 border-neutral-100 hover:border-blue-600 transition-all duration-300 h-full relative">
               {/* Badge */}
               <div className="absolute top-4 right-4 z-10">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-600 text-white text-[10px] font-bold tracking-wider uppercase shadow-sm">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-600 text-white text-[10px] font-bold tracking-wider uppercase">
                   <i className="fas fa-sparkles text-[8px]"></i> AI
                 </span>
               </div>
@@ -268,7 +268,7 @@ export default function NewArticlePage() {
                   disabled={!topic.trim()}
                   className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
                     topic.trim()
-                      ? 'bg-black text-white hover:bg-neutral-800 shadow-sm hover:shadow-md'
+                      ? 'bg-black text-white hover:bg-neutral-800'
                       : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
                   }`}
                 >
