@@ -38,7 +38,6 @@ const uploadToCloudinary = async (buffer, mimeType, folder = 'blog_assets') => {
 
 const BlogGenState = Annotation.Root({
   topic: Annotation({ reducer: (_, b) => b, default: () => '' }),
-  existingArticles: Annotation({ reducer: (_, b) => b, default: () => [] }),
   researchNotes: Annotation({ reducer: (_, b) => b, default: () => '' }),
   outline: Annotation({ reducer: (_, b) => b, default: () => '' }),
   rawContent: Annotation({ reducer: (_, b) => b, default: () => '' }),
@@ -63,14 +62,7 @@ class BlogWriterAgent extends BaseAgent {
     const self = this;
 
     // Node tracking for progress calculation
-    const nodeOrder = [
-      'fetchExisting',
-      'planTopic',
-      'writeDraft',
-      'generateImages',
-      'assemblePost',
-      'saveDraft',
-    ];
+    const nodeOrder = ['planTopic', 'writeDraft', 'generateImages', 'assemblePost', 'saveDraft'];
     const totalNodes = nodeOrder.length;
     let completedNodes = 0;
 
@@ -106,14 +98,6 @@ class BlogWriterAgent extends BaseAgent {
       };
     };
 
-    const fetchExisting = async (state) => {
-      self.logger.info(`Fetching existing articles to avoid duplicates...`);
-      // No status messages - progress events only
-
-      const articles = await Article.find({}, 'title slug').lean();
-      return { existingArticles: articles, status: 'Existing articles fetched' };
-    };
-
     const planTopic = async (state) => {
       self.logger.info(`Planning topic: ${state.topic}`);
       // No status messages - progress events only
@@ -145,16 +129,35 @@ class BlogWriterAgent extends BaseAgent {
 
       const llm = await self.createChatModel({ temperature: 0.4 });
 
-      const systemPrompt = `You are an expert technical researcher and blog planner.
-Your goal is to research the topic "${state.topic}" and produce a comprehensive research summary and an outline for a highly engaging, SEO-optimized blog post.
-Existing articles on our site: ${JSON.stringify(state.existingArticles)}. Ensure your angle is unique.
+      const systemPrompt = `You are an expert technical researcher and blog planner for a developer portfolio blog.
+
+YOUR TASK:
+Research the topic "${state.topic}" thoroughly and produce two things:
+1. A deep research summary with specific technical findings, APIs, mechanisms, real-world examples, and data points.
+2. A detailed article outline following this exact structure:
+
+REQUIRED OUTLINE STRUCTURE:
+- Title: Clear, compelling, specific (not generic)
+- Opening hook (2-3 paragraphs with a relatable scenario or provocative question)
+- Section 1: The Problem / Context (why this matters)
+- Sections 2-5: Core Content (deep technical sections with planned code examples and comparisons)
+- Section N-1: Practical Application / Common Mistakes (real-world tips)
+- Final Thoughts (2-3 paragraph conclusion with key insight)
+- Further Reading (3-4 real, relevant URLs)
+
+RESEARCH REQUIREMENTS:
+- Identify specific APIs, libraries, or specifications relevant to the topic
+- Find how leading companies or projects use this technology
+- Gather at least one strong real-world analogy that maps to the technical concept
+- Note opportunities for comparison tables (e.g., old approach vs new approach)
+- Identify 2-3 real, runnable code examples to include
 
 If you have tools available, use them to find the latest information.
 
 Output format:
-RESEARCH NOTES: <your findings>
+RESEARCH NOTES: <your detailed findings>
 ---
-OUTLINE: <your detailed outline>`;
+OUTLINE: <your detailed section-by-section outline>`;
 
       let notesAndOutline = '';
 
@@ -198,24 +201,56 @@ OUTLINE: <your detailed outline>`;
       // No status messages - progress events only
 
       const llm = await self.createChatModel({ temperature: 0.7 });
-      const prompt = `You are an expert technical writer. Write a comprehensive, highly engaging, and SEO-optimized blog post based on the following:
+      const prompt = `You are an expert technical writer for a developer portfolio blog. Write a professional, high-quality blog post.
 
 Topic: ${state.topic}
 Research Notes: ${state.researchNotes}
 Outline: ${state.outline}
 
-RULES:
-1. Write in a clear, authoritative, yet accessible tone.
-2. Use markdown formatting (headers, lists, bold text).
-3. The post should be at least 1000 words.
-4. IMPORTANT: Determine points where an image would be beneficial. At exactly these points, insert an image in markdown format like so:
-   ![Prompt for a conceptual hero image about the topic](IMAGE_0)
-   ![Prompt for a technical diagram or illustration](IMAGE_1)
-   ![Prompt description](IMAGE_n)
-   The image IDs (IMAGE_0, IMAGE_1, etc.) will be automatically replaced with generated image URLs.
+ARTICLE STRUCTURE (follow this exactly):
+1. Start with a compelling, specific title as # heading
+2. Add an italic subtitle/hook — one line that makes the reader care
+3. Add a --- separator
+4. Opening hook: 2-3 paragraphs that draw the reader in with a relatable scenario or provocative question
+5. ## Section 1: The Problem / Context — set up why this topic matters
+6. ## Sections 2-5: Core Content — deep, well-structured sections with code examples, comparisons, and visuals
+7. ## Practical Application / Common Mistakes — real-world tips and mistakes to avoid
+8. ## Final Thoughts — 2-3 paragraph conclusion summarizing the key insight
+9. Add a --- separator
+10. End with a "**Further Reading:**" section with 3-4 relevant linked resources
 
-5. At the very end of your response, output a JSON block wrapped in \`\`\`json containing metadata:
-   { "title": "...", "slug": "...", "excerpt": "...", "tags": ["tag1", "tag2"] }`;
+WRITING RULES:
+- Tone: Conversational but authoritative. Like explaining to a smart colleague, not lecturing.
+- Length: 1,800-2,800 words (6-9 min read). NEVER under 1,500 words.
+- Code examples: MUST include real, runnable code. Not pseudocode. Well-commented.
+- Analogies: Use at least one strong real-world analogy.
+- Tables: Use at least one comparison table when contrasting concepts.
+- No fluff: Every paragraph must teach something. Cut sentences that don't add value.
+- Subheadings: Use ## and ### liberally. No section should exceed 4-5 paragraphs without a heading break.
+- Bold key terms: Use **bold** for important concepts on first mention.
+- Use double quotes for all strings.
+
+IMAGE RULES:
+Insert 2-4 images at key points using this exact markdown format:
+  ![A clean, minimal infographic-style illustration on a white background. DETAILED DESCRIPTION HERE. Soft pastel colors, geometric shapes, modern editorial style. No text.](IMAGE_0)
+  ![A clean, minimal infographic-style illustration on a white background. DETAILED DESCRIPTION HERE. Soft pastel colors, geometric shapes, modern editorial style. No text.](IMAGE_1)
+
+Image prompt requirements:
+- ALWAYS specify "white background" and "no text" in every prompt
+- Be EXTREMELY specific and detailed about what objects, actions, and layout to show
+- Style: clean, minimal, infographic-style illustration with soft pastel colors
+- The first image should be a cover/hero image about the overall topic
+
+METADATA (output at the very end as a JSON code block):
+\`\`\`json
+{
+  "title": "Exact title from the article",
+  "slug": "lowercase-hyphenated-version",
+  "excerpt": "Compelling 2-sentence summary, 150-200 characters",
+  "tags": ["primary-category", "tag2", "tag3", "tag4", "tag5"]
+}
+\`\`\`
+Provide 5-8 lowercase tags. The first tag should be the primary category (e.g., "javascript", "react", "architecture").`;
 
       const result = await llm.invoke([{ role: 'user', content: prompt }]);
       const content = result.content;
@@ -344,14 +379,12 @@ RULES:
     };
 
     const graph = new StateGraph(BlogGenState)
-      .addNode('fetchExisting', wrapNode('fetchExisting', fetchExisting))
       .addNode('planTopic', wrapNode('planTopic', planTopic))
       .addNode('writeDraft', wrapNode('writeDraft', writeDraft))
       .addNode('generateImages', wrapNode('generateImages', generateImages))
       .addNode('assemblePost', wrapNode('assemblePost', assemblePost))
       .addNode('saveDraft', wrapNode('saveDraft', saveDraft))
-      .addEdge(START, 'fetchExisting')
-      .addEdge('fetchExisting', 'planTopic')
+      .addEdge(START, 'planTopic')
       .addEdge('planTopic', 'writeDraft')
       .addEdge('writeDraft', 'generateImages')
       .addEdge('generateImages', 'assemblePost')

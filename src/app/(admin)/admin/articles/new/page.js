@@ -8,7 +8,6 @@ import { Card } from '@/components/ui';
 import { AGENT_IDS } from '@/lib/constants/agents';
 
 const AI_STEPS = [
-  { id: 'fetchExisting', label: 'Scanning existing articles', icon: 'fa-database' },
   { id: 'planTopic', label: 'Researching & planning outline', icon: 'fa-magnifying-glass' },
   { id: 'writeDraft', label: 'Writing SEO-optimized draft', icon: 'fa-pen-nib' },
   { id: 'generateImages', label: 'Generating images', icon: 'fa-image' },
