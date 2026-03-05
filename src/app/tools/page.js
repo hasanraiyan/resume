@@ -5,34 +5,65 @@ import { Card } from '@/components/ui';
 
 export const metadata = {
   title: 'AI Tools | Raiyan Hasan',
-  description: 'Explore my custom-built AI tools including Image Generation and Presentation Synthesis.',
+  description:
+    'Explore my custom-built AI tools including Image Generation and Presentation Synthesis.',
 };
 
 const aiTools = [
   {
     id: 'image-ai',
     title: 'Image Generator & Editor',
-    description: 'Unleash your creativity with our Gemini-powered AI Image Playground. Generate stunning art from text or transform existing photos instantly.',
+    description:
+      'Unleash your creativity with our Gemini-powered AI Image Playground. Generate stunning art from text or transform existing photos instantly.',
     href: '/tools/image-ai',
     icon: (
       <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+        />
       </svg>
     ),
-    color: 'blue'
+    color: 'blue',
   },
   {
     id: 'presentation',
     title: 'Presentation Synthesizer',
-    description: 'Generate complete professional presentations from a single prompt using AI. Includes detailed slide outlines and auto-generated visuals.',
+    description:
+      'Generate complete professional presentations from a single prompt using AI. Includes detailed slide outlines and auto-generated visuals.',
     href: '/tools/presentation',
     icon: (
       <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
+        />
       </svg>
     ),
-    color: 'purple'
-  }
+    color: 'purple',
+  },
+  {
+    id: 'meet',
+    title: 'Secure Video Meet',
+    description:
+      'A private, peer-to-peer 2-person video calling tool with passcode protection and encrypted signalling.',
+    href: '/tools/meet',
+    icon: (
+      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+        />
+      </svg>
+    ),
+    color: 'green',
+  },
 ];
 
 export default function ToolsIndexPage() {
@@ -47,7 +78,8 @@ export default function ToolsIndexPage() {
             AI Tools
           </h1>
           <p className="text-lg md:text-xl text-neutral-600 max-w-2xl font-sans">
-            Explore my experimental AI playground. These tools are powered by LangGraph, OpenAI, and custom fine-tuned models to demonstrate advanced generative capabilities.
+            Explore my experimental AI playground. These tools are powered by LangGraph, OpenAI, and
+            custom fine-tuned models to demonstrate advanced generative capabilities.
           </p>
         </div>
 
@@ -58,9 +90,11 @@ export default function ToolsIndexPage() {
               <Card
                 className={`h-full p-8 md:p-10 transition-all duration-300 border-2 border-neutral-200 hover:border-neutral-900 bg-white group-hover:shadow-[8px_8px_0px_0px_rgba(23,23,23,1)] flex flex-col`}
               >
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-8 transition-transform group-hover:scale-110
+                <div
+                  className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-8 transition-transform group-hover:scale-110
                   ${tool.color === 'blue' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}
-                `}>
+                `}
+                >
                   {tool.icon}
                 </div>
 
@@ -74,8 +108,18 @@ export default function ToolsIndexPage() {
 
                 <div className="flex items-center text-sm font-bold uppercase tracking-widest text-neutral-900 group-hover:translate-x-2 transition-transform">
                   Launch Tool
-                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  <svg
+                    className="w-4 h-4 ml-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 8l4 4m0 0l-4 4m4-4H3"
+                    />
                   </svg>
                 </div>
               </Card>

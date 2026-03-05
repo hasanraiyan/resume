@@ -269,6 +269,7 @@ export default function PresentationGenerator() {
   const [presentationId, setPresentationId] = useState(null);
   const [outline, setOutline] = useState(null);
   const [slides, setSlides] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showModal, setShowModal] = useState(true);
@@ -754,6 +755,55 @@ export default function PresentationGenerator() {
     return () => window.removeEventListener('keydown', handler);
   }, [goNext, goPrev, isFullscreen]);
 
+  const handleExportPDF = async () => {
+    if (!slides || slides.length === 0) return;
+
+    setIsExporting(true);
+    try {
+      const imageUrls = slides
+        .filter((s) => s.imageUrl && s.imageUrl !== 'error')
+        .map((s) => s.imageUrl);
+
+      if (imageUrls.length === 0) {
+        toast.error('No generated slides to export');
+        setIsExporting(false);
+        return;
+      }
+
+      const response = await fetch('https://pdfservice.pyqdeck.in/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          images: imageUrls,
+          title: topic || 'Presentation',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('PDF service error');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(topic || 'presentation').replace(/\s+/g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success('Presentation exported as PDF!');
+    } catch (error) {
+      console.error('Export Error:', error);
+      toast.error('Failed to export PDF');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const toggleFullscreen = () => {
     if (!isFullscreen) {
       canvasRef.current?.requestFullscreen?.();
@@ -1099,6 +1149,19 @@ export default function PresentationGenerator() {
                 title="Add Slide"
               >
                 <PlusCircle className="w-3.5 h-3.5" /> Add Slide
+              </button>
+              <button
+                onClick={handleExportPDF}
+                disabled={isExporting}
+                className="px-3 py-1.5 rounded-lg hover:bg-neutral-100 text-xs font-bold uppercase tracking-widest text-neutral-600 hover:text-black transition-all border border-neutral-200 hover:border-black flex items-center gap-1.5 disabled:opacity-50"
+                title="Export as PDF"
+              >
+                {isExporting ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5" />
+                )}
+                {isExporting ? 'Exporting...' : 'Export'}
               </button>
               <button
                 onClick={toggleFullscreen}
