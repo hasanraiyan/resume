@@ -50,6 +50,7 @@ class ImageGeneratorAgent extends BaseAgent {
           imageConfig: {
             aspectRatio: state.aspectRatio,
           },
+          tools: [{ googleSearch: { searchTypes: { imageSearch: {} } } }],
         },
       });
 
