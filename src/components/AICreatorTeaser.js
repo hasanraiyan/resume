@@ -3,9 +3,8 @@
 
 import { useState } from 'react';
 import { Wand2, ArrowRight, Sparkles, RefreshCw } from 'lucide-react';
-import Button from '@/components/ui/Button';
-import { cn } from '@/utils/classNames';
 import Link from 'next/link';
+import { pushImageHistory } from '@/lib/imageHistoryStorage';
 
 export default function AICreatorTeaser() {
   const [prompt, setPrompt] = useState('');
@@ -29,6 +28,14 @@ export default function AICreatorTeaser() {
       const data = await response.json();
       if (data.success) {
         setResultImage(data.image);
+        await pushImageHistory({
+          imageDataUrl: data.image,
+          prompt: prompt.trim(),
+          mode: 'generate',
+          aspectRatio: '1:1',
+          source: 'teaser',
+          createdAt: Date.now(),
+        });
       } else {
         setError(data.error || 'Failed to generate.');
       }

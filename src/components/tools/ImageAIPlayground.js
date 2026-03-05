@@ -1,21 +1,10 @@
 // src/components/tools/ImageAIPlayground.js
 'use client';
 
-import { useState, useRef } from 'react';
-import {
-  Upload,
-  Plus,
-  Trash2,
-  Camera,
-  Wand2,
-  RefreshCw,
-  Download,
-  Sparkles,
-  X,
-  ChevronRight,
-} from 'lucide-react';
-import Button from '@/components/ui/Button';
+import { useEffect, useRef, useState } from 'react';
+import { Plus, Camera, Wand2, RefreshCw, Download, Sparkles, X } from 'lucide-react';
 import { cn } from '@/utils/classNames';
+import { clearImageHistory, pushImageHistory, readImageHistory } from '@/lib/imageHistoryStorage';
 
 export default function ImageAIPlayground() {
   const [prompt, setPrompt] = useState('');
@@ -23,8 +12,47 @@ export default function ImageAIPlayground() {
   const [resultImage, setResultImage] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [aspectRatio, setAspectRatio] = useState('1:1');
+  const [previewAspectRatio, setPreviewAspectRatio] = useState('1 / 1');
+  const [isPreviewPortrait, setIsPreviewPortrait] = useState(false);
   const [error, setError] = useState('');
+  const [historyItems, setHistoryItems] = useState([]);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (!resultImage) {
+      setPreviewAspectRatio('1 / 1');
+      setIsPreviewPortrait(false);
+      return;
+    }
+
+    const image = new window.Image();
+    image.onload = () => {
+      const width = image.naturalWidth || 1;
+      const height = image.naturalHeight || 1;
+      setPreviewAspectRatio(`${width} / ${height}`);
+      setIsPreviewPortrait(width < height);
+    };
+    image.onerror = () => {
+      setPreviewAspectRatio('1 / 1');
+      setIsPreviewPortrait(false);
+    };
+    image.src = resultImage;
+  }, [resultImage]);
+
+  useEffect(() => {
+    const storedHistory = readImageHistory();
+    setHistoryItems(storedHistory);
+
+    if (!resultImage && storedHistory.length > 0) {
+      const latest = storedHistory[0];
+      setResultImage(latest.imageDataUrl);
+      if (latest.prompt) setPrompt(latest.prompt);
+      if (latest.aspectRatio && latest.aspectRatio !== 'n/a') {
+        setAspectRatio(latest.aspectRatio);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -39,18 +67,20 @@ export default function ImageAIPlayground() {
   };
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) {
+    const trimmedPrompt = prompt.trim();
+    if (!trimmedPrompt) {
       setError('Please describe what you want to create.');
       return;
     }
 
     setIsGenerating(true);
     setError('');
+    const generationMode = sourceImage ? 'edit' : 'generate';
 
     const endpoint = sourceImage ? '/api/media/public-edit' : '/api/media/public-generate';
     const body = sourceImage
-      ? { image: sourceImage, prompt, aspectRatio }
-      : { prompt, aspectRatio };
+      ? { image: sourceImage, prompt: trimmedPrompt, aspectRatio }
+      : { prompt: trimmedPrompt, aspectRatio };
 
     try {
       const response = await fetch(endpoint, {
@@ -62,6 +92,15 @@ export default function ImageAIPlayground() {
       const data = await response.json();
       if (data.success) {
         setResultImage(data.image);
+        const updatedHistory = await pushImageHistory({
+          imageDataUrl: data.image,
+          prompt: trimmedPrompt,
+          mode: generationMode,
+          aspectRatio: generationMode === 'edit' ? 'n/a' : aspectRatio,
+          source: 'playground',
+          createdAt: Date.now(),
+        });
+        setHistoryItems(updatedHistory);
       } else {
         setError(
           data.error || 'The AI engine encountered an issue. Please try a different prompt.'
@@ -89,6 +128,21 @@ export default function ImageAIPlayground() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleSelectHistoryItem = (item) => {
+    setResultImage(item.imageDataUrl);
+    setPrompt(item.prompt || '');
+    setSourceImage(null);
+    if (item.aspectRatio && item.aspectRatio !== 'n/a') {
+      setAspectRatio(item.aspectRatio);
+    }
+    setError('');
+  };
+
+  const handleClearHistory = () => {
+    clearImageHistory();
+    setHistoryItems([]);
   };
 
   return (
@@ -221,11 +275,21 @@ export default function ImageAIPlayground() {
           <div className="absolute inset-0 bg-neutral-50 rounded-[3rem] border-4 border-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] overflow-hidden group">
             {resultImage ? (
               <>
-                <img
-                  src={resultImage}
-                  alt="AI Result"
-                  className="w-full h-full object-cover animate-in fade-in duration-1000"
-                />
+                <div className="absolute inset-0 p-6 sm:p-8 flex items-center justify-center">
+                  <div
+                    className={cn(
+                      'relative rounded-[2rem] overflow-hidden bg-neutral-100 border border-white/70 shadow-[0_20px_40px_-24px_rgba(0,0,0,0.35)]',
+                      isPreviewPortrait ? 'h-full max-h-full max-w-full' : 'w-full max-w-full'
+                    )}
+                    style={{ aspectRatio: previewAspectRatio }}
+                  >
+                    <img
+                      src={resultImage}
+                      alt="AI Result"
+                      className="w-full h-full object-contain animate-in fade-in duration-1000"
+                    />
+                  </div>
+                </div>
                 {/* Quick Actions Overlay */}
                 <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-4 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">
                   <button
@@ -242,9 +306,6 @@ export default function ImageAIPlayground() {
                     <RefreshCw className="w-5 h-5" />
                   </button>
                 </div>
-                <div className="absolute top-8 left-8 bg-blue-600/90 backdrop-blur-md text-white px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-lg">
-                  Masterpiece Manifested
-                </div>
               </>
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center">
@@ -258,25 +319,68 @@ export default function ImageAIPlayground() {
                   Your generated assets are processed in real-time and never leave this session
                   unless you save them.
                 </p>
+              </div>
+            )}
 
-                {isGenerating && (
-                  <div className="absolute inset-0 bg-white/80 backdrop-blur-md flex items-center justify-center z-20">
-                    <div className="flex flex-col items-center gap-6">
-                      <div className="relative">
-                        <div className="w-20 h-20 border-4 border-blue-100 rounded-full" />
-                        <div className="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-blue-600 font-['Playfair_Display'] italic text-3xl">
-                          Igniting...
-                        </p>
-                        <p className="text-[10px] text-neutral-400 font-black uppercase tracking-[0.2em]">
-                          Consulting the neural network
-                        </p>
-                      </div>
+            {isGenerating && (
+              <div className="absolute inset-0 z-20">
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      'linear-gradient(135deg, #fef0e7 0%, #fce4ec 25%, #f3e5f5 50%, #ede7f6 75%, #fef0e7 100%)',
+                    backgroundSize: '400% 400%',
+                    animation: 'meshGradient 6s ease infinite',
+                  }}
+                />
+                <div
+                  className="absolute w-[60%] h-[60%] rounded-full blur-[80px] opacity-60"
+                  style={{
+                    background: 'radial-gradient(circle, #f8bbd0 0%, transparent 70%)',
+                    animation: 'orbFloat1 8s ease-in-out infinite',
+                    top: '10%',
+                    left: '10%',
+                  }}
+                />
+                <div
+                  className="absolute w-[50%] h-[50%] rounded-full blur-[70px] opacity-50"
+                  style={{
+                    background: 'radial-gradient(circle, #e1bee7 0%, transparent 70%)',
+                    animation: 'orbFloat2 10s ease-in-out infinite',
+                    bottom: '10%',
+                    right: '5%',
+                  }}
+                />
+                <div
+                  className="absolute w-[40%] h-[40%] rounded-full blur-[60px] opacity-40"
+                  style={{
+                    background: 'radial-gradient(circle, #ffe0b2 0%, transparent 70%)',
+                    animation: 'orbFloat3 7s ease-in-out infinite',
+                    top: '40%',
+                    left: '50%',
+                  }}
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center space-y-3">
+                    <p className="text-sm font-medium text-gray-700/80 tracking-wide">
+                      {sourceImage ? 'Transforming image' : 'Creating image'}
+                    </p>
+                    <div className="flex gap-1 justify-center">
+                      <span
+                        className="w-1.5 h-1.5 bg-gray-500/60 rounded-full"
+                        style={{ animation: 'dotPulse 1.4s ease-in-out infinite' }}
+                      />
+                      <span
+                        className="w-1.5 h-1.5 bg-gray-500/60 rounded-full"
+                        style={{ animation: 'dotPulse 1.4s ease-in-out 0.2s infinite' }}
+                      />
+                      <span
+                        className="w-1.5 h-1.5 bg-gray-500/60 rounded-full"
+                        style={{ animation: 'dotPulse 1.4s ease-in-out 0.4s infinite' }}
+                      />
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             )}
           </div>
@@ -287,15 +391,134 @@ export default function ImageAIPlayground() {
         </div>
       </div>
 
+      {historyItems.length > 0 && (
+        <div className="mt-12">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-black uppercase tracking-[0.2em] text-neutral-500">
+              Recent Generations
+            </h2>
+            <button
+              onClick={handleClearHistory}
+              className="text-[10px] font-black uppercase tracking-[0.18em] text-neutral-400 hover:text-red-500 transition-colors"
+            >
+              Clear History
+            </button>
+          </div>
+
+          <div className="flex gap-4 overflow-x-auto pb-2 custom-chat-scrollbar">
+            {historyItems.map((item) => {
+              const isActive = resultImage === item.imageDataUrl;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleSelectHistoryItem(item)}
+                  className={cn(
+                    'shrink-0 w-[116px] text-left transition-all',
+                    isActive ? 'scale-[1.02]' : 'hover:scale-[1.02]'
+                  )}
+                  title={item.prompt || 'Untitled generation'}
+                >
+                  <div
+                    className={cn(
+                      'w-full aspect-square rounded-2xl overflow-hidden border-2 shadow-sm',
+                      isActive
+                        ? 'border-blue-500 shadow-blue-200'
+                        : 'border-neutral-200 hover:border-neutral-300'
+                    )}
+                  >
+                    <img
+                      src={item.imageDataUrl}
+                      alt={item.prompt || 'Generated image'}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="mt-2 px-0.5">
+                    <p className="text-[10px] uppercase tracking-widest font-black text-neutral-400">
+                      {item.mode === 'edit' ? 'Edit' : item.aspectRatio}
+                    </p>
+                    <p className="text-xs text-neutral-500 truncate">{item.prompt || 'Untitled'}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Note Section */}
       <div className="mt-24 max-w-2xl mx-auto flex items-center gap-6 p-6 bg-blue-50/50 rounded-3xl border border-blue-100/50 text-neutral-400 text-xs italic">
         <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
         <p>
-          Note: This playground follows a strict "No-Trace" policy. Images generated here are
-          transient and will be permanently cleared from memory upon browser refresh. Please use the
-          'Save' button for anything you wish to retain.
+          Note: Generated images are now persisted in your recent history and hosted via
+          UploadThing. Use the Save button to download a copy, or use Clear History to remove local
+          history from this browser.
         </p>
       </div>
+
+      <style jsx>{`
+        @keyframes meshGradient {
+          0% {
+            background-position: 0% 50%;
+          }
+          25% {
+            background-position: 100% 0%;
+          }
+          50% {
+            background-position: 100% 100%;
+          }
+          75% {
+            background-position: 0% 100%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+        @keyframes orbFloat1 {
+          0%,
+          100% {
+            transform: translate(0, 0) scale(1);
+          }
+          33% {
+            transform: translate(30%, 20%) scale(1.1);
+          }
+          66% {
+            transform: translate(-10%, 30%) scale(0.95);
+          }
+        }
+        @keyframes orbFloat2 {
+          0%,
+          100% {
+            transform: translate(0, 0) scale(1);
+          }
+          33% {
+            transform: translate(-25%, -15%) scale(1.05);
+          }
+          66% {
+            transform: translate(15%, -25%) scale(1.1);
+          }
+        }
+        @keyframes orbFloat3 {
+          0%,
+          100% {
+            transform: translate(0, 0) scale(1);
+          }
+          50% {
+            transform: translate(-30%, 20%) scale(1.15);
+          }
+        }
+        @keyframes dotPulse {
+          0%,
+          80%,
+          100% {
+            opacity: 0.3;
+            transform: scale(0.8);
+          }
+          40% {
+            opacity: 1;
+            transform: scale(1.2);
+          }
+        }
+      `}</style>
     </div>
   );
 }
