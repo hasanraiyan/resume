@@ -2,6 +2,7 @@
 'use server';
 
 import { v2 as cloudinary } from 'cloudinary';
+import { mediaService } from '@/lib/services/MediaService';
 import dbConnect from '@/lib/dbConnect';
 import MediaAsset from '@/models/MediaAsset';
 import MediaAgentSettings from '@/models/MediaAgentSettings';
@@ -74,93 +75,13 @@ export async function uploadAsset(formData) {
 
   console.log('File validation passed, proceeding with upload...');
 
-  // Convert file to a buffer to stream to Cloudinary
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
+  const result = await mediaService.uploadFileToCloudinary(file);
 
-  console.log('File converted to buffer, size:', buffer.length);
-
-  try {
-    const uploadResult = await new Promise((resolve, reject) => {
-      console.log('Starting Cloudinary upload...');
-      cloudinary.uploader
-        .upload_stream(
-          {
-            resource_type: 'auto', // Automatically detect if it's an image or video
-            folder: 'portfolio_assets', // Organize uploads in Cloudinary
-          },
-          (error, result) => {
-            if (error) {
-              console.error('Cloudinary upload error:', error);
-              reject(error);
-            } else {
-              console.log('Cloudinary upload successful:', {
-                public_id: result.public_id,
-                url: result.url,
-                size: result.bytes,
-                format: result.format,
-              });
-              resolve(result);
-            }
-          }
-        )
-        .end(buffer);
-    });
-
-    console.log('Cloudinary upload completed, saving to database...');
-
-    // Save metadata to our MongoDB
-    await dbConnect();
-    console.log('Database connected');
-
-    const newAsset = new MediaAsset({
-      public_id: uploadResult.public_id,
-      url: uploadResult.url,
-      secure_url: uploadResult.secure_url,
-      filename: file.name,
-      format: uploadResult.format,
-      size: uploadResult.bytes,
-      width: uploadResult.width,
-      height: uploadResult.height,
-    });
-
-    console.log('Asset object created:', newAsset);
-
-    await newAsset.save();
-    console.log('Asset saved to database');
-
-    // Trigger background AI processing and indexing
-    if (typeof after === 'function') {
-      after(async () => {
-        try {
-          await processAndIndexAsset(newAsset);
-        } catch (err) {
-          console.error('[Background Indexing] Failed:', err);
-        }
-      });
-    }
-
-    revalidatePath('/admin/media'); // Refresh the media library page
-    console.log('Path revalidated');
-
-    return { success: true, asset: JSON.parse(JSON.stringify(newAsset)) };
-  } catch (error) {
-    console.error('Upload error details:', error);
-
-    // Provide more specific error messages based on error type
-    let errorMessage = error.message || 'Upload failed due to unknown error';
-
-    if (error.http_code === 413) {
-      errorMessage =
-        'File too large for Cloudinary processing. Try a smaller file or compress your image.';
-    } else if (error.message?.includes('Invalid image file')) {
-      errorMessage = 'Invalid image file. Please ensure the file is not corrupted and try again.';
-    } else if (error.message?.includes('authentication')) {
-      errorMessage = 'Authentication failed. Please check your Cloudinary credentials.';
-    }
-
-    return { success: false, error: errorMessage };
+  if (result.success) {
+    revalidatePath('/admin/media');
   }
+
+  return result;
 }
 // --- ACTION 3: GENERATE MEDIA VIA GEMINI ---
 export async function generateMedia({
@@ -193,64 +114,21 @@ export async function generateMedia({
 
     const { buffer, mimeType, extension } = result;
 
-    console.log('Agent image generated, uploading to Cloudinary...');
+    console.log('Agent image generated, uploading to Cloudinary via MediaService...');
 
-    // Upload the generated image buffer to Cloudinary
-    const uploadResult = await new Promise((resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream(
-          {
-            resource_type: 'image',
-            folder: 'portfolio_assets',
-            format: extension,
-          },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result);
-          }
-        )
-        .end(buffer);
-    });
-
-    console.log('Cloudinary upload successful:', uploadResult.public_id);
-
-    // Save to database
-    await dbConnect();
-    console.log('Database connected for media generation');
-
-    const newAsset = new MediaAsset({
-      public_id: uploadResult.public_id,
-      url: uploadResult.url,
-      secure_url: uploadResult.secure_url,
+    const uploadResult = await mediaService.uploadBufferToCloudinary({
+      buffer,
       filename: `generated_${prompt.slice(0, 50).replace(/[^a-zA-Z0-9]/g, '_')}.${extension}`,
-      format: uploadResult.format,
-      size: uploadResult.bytes,
-      width: uploadResult.width,
-      height: uploadResult.height,
+      extension,
       source: 'gemini',
-      prompt: prompt.trim(),
+      prompt: prompt.trim()
     });
 
-    await newAsset.save();
-    console.log('Generated asset saved to database');
-
-    // Trigger background indexing
-    if (typeof after === 'function') {
-      after(async () => {
-        try {
-          await processAndIndexAsset(newAsset);
-        } catch (err) {
-          console.error('[Background Indexing] Failed:', err);
-        }
-      });
+    if (uploadResult.success) {
+      revalidatePath('/admin/media');
     }
 
-    revalidatePath('/admin/media');
-
-    return {
-      success: true,
-      asset: JSON.parse(JSON.stringify(newAsset)),
-    };
+    return uploadResult;
   } catch (error) {
     console.error('Media generation error details:', error);
     return { success: false, error: `Generation failed: ${error.message}` };
@@ -280,65 +158,22 @@ export async function uploadGeneratedImage({
 
   try {
     const extension = mimeType.split('/')[1] || 'png';
-
-    // Upload the generated image buffer to Cloudinary
-    const uploadResult = await new Promise((resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream(
-          {
-            resource_type: 'image',
-            folder: 'blog_assets',
-            format: extension,
-          },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result);
-          }
-        )
-        .end(buffer);
-    });
-
-    console.log('Cloudinary upload successful:', uploadResult.public_id);
-
-    // Save to database
-    await dbConnect();
-    console.log('Database connected for generated image upload');
-
     const assetFilename = filename || `generated_${Date.now()}.${extension}`;
 
-    const newAsset = new MediaAsset({
-      public_id: uploadResult.public_id,
-      url: uploadResult.url,
-      secure_url: uploadResult.secure_url,
+    const uploadResult = await mediaService.uploadBufferToCloudinary({
+      buffer,
       filename: assetFilename,
-      format: uploadResult.format,
-      size: uploadResult.bytes,
-      width: uploadResult.width,
-      height: uploadResult.height,
-      source: source,
-      prompt: prompt || '',
+      extension,
+      folder: 'blog_assets',
+      source,
+      prompt: prompt || ''
     });
 
-    await newAsset.save();
-    console.log('Generated image asset saved to database:', newAsset._id);
-
-    // Trigger background indexing
-    if (typeof after === 'function') {
-      after(async () => {
-        try {
-          await processAndIndexAsset(newAsset);
-        } catch (err) {
-          console.error('[Background Indexing] Failed:', err);
-        }
-      });
+    if (uploadResult.success) {
+      revalidatePath('/admin/media');
     }
 
-    revalidatePath('/admin/media');
-
-    return {
-      success: true,
-      asset: JSON.parse(JSON.stringify(newAsset)),
-    };
+    return uploadResult;
   } catch (error) {
     console.error('Upload generated image error details:', error);
     return { success: false, error: `Upload failed: ${error.message}` };
@@ -399,58 +234,22 @@ export async function editMedia({
 
     const { buffer, mimeType, extension } = result;
 
-    console.log('Agent image edited, uploading to Cloudinary...');
+    console.log('Agent image edited, uploading to Cloudinary via MediaService...');
 
-    // Upload the edited image buffer to Cloudinary
-    const uploadResult = await new Promise((resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream(
-          {
-            resource_type: 'image',
-            folder: 'portfolio_assets',
-            format: extension,
-          },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result);
-          }
-        )
-        .end(buffer);
-    });
-
-    const newAsset = new MediaAsset({
-      public_id: uploadResult.public_id,
-      url: uploadResult.url,
-      secure_url: uploadResult.secure_url,
+    const uploadResult = await mediaService.uploadBufferToCloudinary({
+      buffer,
       filename: `edited_multi_${Date.now()}.${extension}`,
-      format: uploadResult.format,
-      size: uploadResult.bytes,
-      width: uploadResult.width,
-      height: uploadResult.height,
+      extension,
       source: 'gemini',
       prompt: editPrompt.trim(),
-      parentAssetIds: ids,
+      parentAssetIds: ids
     });
 
-    await newAsset.save();
-
-    // Trigger background indexing
-    if (typeof after === 'function') {
-      after(async () => {
-        try {
-          await processAndIndexAsset(newAsset);
-        } catch (err) {
-          console.error('[Background Indexing] Failed:', err);
-        }
-      });
+    if (uploadResult.success) {
+      revalidatePath('/admin/media');
     }
 
-    revalidatePath('/admin/media');
-
-    return {
-      success: true,
-      asset: JSON.parse(JSON.stringify(newAsset)),
-    };
+    return uploadResult;
   } catch (error) {
     console.error('Media editing error details:', error);
     return { success: false, error: `Editing failed: ${error.message}` };
