@@ -14,7 +14,7 @@ class PresentationAgent extends BaseAgent {
     this.logger.info('Presentation Agent Initialized');
   }
 
-  async draftOutline(topic, extraInstructions = '', isAdmin = false) {
+  async draftOutline(topic, extraInstructions = '', isAdmin = false, slideCount = 7) {
     if (!this.isInitialized) await this.initialize();
     this.logger.info(`Drafting outline for topic: ${topic}`);
 
@@ -114,7 +114,7 @@ TITLE SLIDE EXAMPLE:
 CONTENT SLIDE EXAMPLE:
 "A ultra-premium 16:9 presentation slide, rendered in stunning 4K quality, inspired by Stripe's deck design. Same deep midnight navy to dark indigo gradient background. On the left 55% of the slide: the title 'Market Opportunity' is positioned at the top-left in bold white sans-serif text. Below it, three key points are displayed inside stacked horizontal glassmorphism cards — semi-transparent frosted glass rectangles with 1px soft white borders and rounded corners. Each card contains a glowing cyan dot bullet followed by text in light gray: '1. Global TAM reaches $4.2T by 2028', '2. 67% of enterprises actively adopting', '3. Cost reduction averaging 40% in Year 1'. The cards have subtle backdrop blur and a faint inner glow. On the right 45%, a large 3D isometric bar chart floats with four gradient-filled bars (cyan to purple gradient) of different heights, sitting on a thin translucent glass platform. Each bar has a soft glow at its base and a small floating label above it. Tiny glowing particles drift upward from the tallest bar. Subtle grid lines in very faint white (5% opacity) add depth to the background."
 
-Generate 7-9 slides: Title → Problem/Context → 3-4 Deep Content Slides with rich visuals → Key Insight/Data → Closing/CTA.
+Generate exactly ${slideCount} slides with a clear arc: Title → Context → Deep Dives (with diagrams) → Key Insights → Conclusion/CTA.
 Each visualPrompt must be 150-200 words. Short prompts produce garbage — be DENSE and SPECIFIC.`;
 
     const agent = createReactAgent({ llm, tools });
@@ -218,11 +218,11 @@ ${qualitySuffix}`;
   }
 
   async _onExecute(input) {
-    const { action, topic, instructions, outlineData, isAdmin } = input;
+    const { action, topic, instructions, outlineData, isAdmin, slideCount = 7 } = input;
 
     if (action === 'draft_outline') {
       if (!topic) throw new Error('Topic is required.');
-      return await this.draftOutline(topic, instructions, isAdmin);
+      return await this.draftOutline(topic, instructions, isAdmin, slideCount);
     }
 
     if (action === 'generate_visuals') {

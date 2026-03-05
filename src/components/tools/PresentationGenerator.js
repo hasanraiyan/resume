@@ -30,14 +30,16 @@ function SlideThumbnail({ slide, index, isActive, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`group w-full flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-300 ${isActive ? 'bg-neutral-100' : 'hover:bg-neutral-50'
-        }`}
+      className={`group w-full flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-300 ${
+        isActive ? 'bg-neutral-100' : 'hover:bg-neutral-50'
+      }`}
     >
       <div
-        className={`w-full aspect-video rounded-lg overflow-hidden border-2 transition-all ${isActive
-          ? 'border-black shadow-md scale-100'
-          : 'border-neutral-200 scale-95 opacity-80 group-hover:opacity-100 group-hover:scale-100'
-          }`}
+        className={`w-full aspect-video rounded-lg overflow-hidden border-2 transition-all ${
+          isActive
+            ? 'border-black shadow-md scale-100'
+            : 'border-neutral-200 scale-95 opacity-80 group-hover:opacity-100 group-hover:scale-100'
+        }`}
       >
         {slide.imageUrl && slide.imageUrl !== 'error' ? (
           <img
@@ -57,10 +59,11 @@ function SlideThumbnail({ slide, index, isActive, onClick }) {
         )}
       </div>
       <span
-        className={`text-[10px] font-mono tracking-widest uppercase transition-colors ${isActive
-          ? 'text-black font-bold'
-          : 'text-neutral-400 font-medium group-hover:text-neutral-600'
-          }`}
+        className={`text-[10px] font-mono tracking-widest uppercase transition-colors ${
+          isActive
+            ? 'text-black font-bold'
+            : 'text-neutral-400 font-medium group-hover:text-neutral-600'
+        }`}
       >
         Slide {(index + 1).toString().padStart(2, '0')}
       </span>
@@ -72,6 +75,7 @@ function SlideThumbnail({ slide, index, isActive, onClick }) {
 export default function PresentationGenerator() {
   const [topic, setTopic] = useState('');
   const [instructions, setInstructions] = useState('');
+  const [slideCount, setSlideCount] = useState(7);
   const [status, setStatus] = useState('idle');
   const [errorMsg, setErrorMsg] = useState('');
   const [presentationId, setPresentationId] = useState(null);
@@ -113,7 +117,7 @@ export default function PresentationGenerator() {
       const res = await fetch('/api/tools/presentation/outline', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: teaserTopic, instructions: '' }),
+        body: JSON.stringify({ topic: teaserTopic, instructions: '', slideCount }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to draft outline');
@@ -139,7 +143,7 @@ export default function PresentationGenerator() {
       const res = await fetch('/api/tools/presentation/outline', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, instructions }),
+        body: JSON.stringify({ topic, instructions, slideCount }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to draft outline');
@@ -222,6 +226,7 @@ export default function PresentationGenerator() {
   const handleReset = () => {
     setTopic('');
     setInstructions('');
+    setSlideCount(7);
     setOutline(null);
     setSlides(null);
     setPresentationId(null);
@@ -290,7 +295,11 @@ export default function PresentationGenerator() {
       setActiveSlideIndex(index);
     } else if (direction === 'down' && index < slides.length - 1 && activeSlideIndex === index) {
       setActiveSlideIndex(index + 1);
-    } else if (direction === 'down' && index < slides.length - 1 && activeSlideIndex === index + 1) {
+    } else if (
+      direction === 'down' &&
+      index < slides.length - 1 &&
+      activeSlideIndex === index + 1
+    ) {
       setActiveSlideIndex(index);
     }
   };
@@ -321,7 +330,7 @@ export default function PresentationGenerator() {
         fallbackText: newSlideData.title,
         prompt: newSlideData.visualPrompt,
         visualPrompt: newSlideData.visualPrompt,
-      }
+      },
     ]);
     const newIndex = slides.length;
     setActiveSlideIndex(newIndex);
@@ -332,7 +341,7 @@ export default function PresentationGenerator() {
 
   const handleGenerateSingleSlide = async (slideData, theme, idx) => {
     try {
-      setSlides(prev => {
+      setSlides((prev) => {
         const arr = [...prev];
         arr[idx] = { ...arr[idx], status: 'generating' };
         return arr;
@@ -378,19 +387,23 @@ export default function PresentationGenerator() {
     if (!slideToRegen || !slideToRegen.visualPrompt) return;
 
     // Prompt the user for a new visual prompt or use the existing one
-    const updatedPrompt = window.prompt("Edit visual prompt before regenerating:", slideToRegen.visualPrompt);
+    const updatedPrompt = window.prompt(
+      'Edit visual prompt before regenerating:',
+      slideToRegen.visualPrompt
+    );
     if (updatedPrompt === null) return; // User cancelled
 
     const slideDataForApi = {
       title: slideToRegen.title || 'Slide',
-      visualPrompt: updatedPrompt
+      visualPrompt: updatedPrompt,
     };
 
     handleGenerateSingleSlide(slideDataForApi, outline?.presentationTheme, index);
   };
 
   const handleEditImageSubmit = async () => {
-    if (!editImagePrompt.trim() || !slides[activeSlideIndex] || !slides[activeSlideIndex].imageUrl) return;
+    if (!editImagePrompt.trim() || !slides[activeSlideIndex] || !slides[activeSlideIndex].imageUrl)
+      return;
 
     setIsEditGenerating(true);
     const targetIndex = activeSlideIndex;
@@ -408,19 +421,19 @@ export default function PresentationGenerator() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to edit slide');
 
-      setSlides(prev => {
+      setSlides((prev) => {
         const arr = [...prev];
         arr[targetIndex] = {
           ...arr[targetIndex],
           imageUrl: data.slide.imageUrl,
-          prompt: `${arr[targetIndex].prompt}\n[Edited: ${data.slide.editPrompt}]`
+          prompt: `${arr[targetIndex].prompt}\n[Edited: ${data.slide.editPrompt}]`,
         };
         return arr;
       });
       setIsEditingImage(false);
       setEditImagePrompt('');
     } catch (e) {
-      alert("Failed to edit image: " + e.message);
+      alert('Failed to edit image: ' + e.message);
     } finally {
       setIsEditGenerating(false);
     }
@@ -549,6 +562,22 @@ export default function PresentationGenerator() {
               className="w-full bg-white border-2 border-neutral-200 focus:border-black focus:ring-0 rounded-xl px-5 py-4 text-base transition-all outline-none font-medium text-black placeholder-neutral-400 shadow-sm"
             />
           </div>
+          <div>
+            <label className="block text-xs font-bold text-black mb-3 uppercase tracking-widest">
+              Slide Count
+            </label>
+            <select
+              value={slideCount}
+              onChange={(e) => setSlideCount(Number(e.target.value))}
+              className="w-full bg-white border-2 border-neutral-200 focus:border-black focus:ring-0 rounded-xl px-5 py-4 text-base transition-all outline-none font-medium text-black shadow-sm"
+            >
+              {[5, 7, 10, 12].map((count) => (
+                <option key={count} value={count}>
+                  {count} slides
+                </option>
+              ))}
+            </select>
+          </div>
           {errorMsg && (
             <div className="p-4 bg-red-50 text-red-600 border-2 border-red-200 rounded-xl flex items-center gap-3 text-sm font-medium">
               <XCircle className="w-5 h-5 flex-shrink-0" /> {errorMsg}
@@ -619,9 +648,7 @@ export default function PresentationGenerator() {
       <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
           <div>
-            <h3 className="text-2xl font-semibold text-neutral-800 tracking-tight">
-              Outline
-            </h3>
+            <h3 className="text-2xl font-semibold text-neutral-800 tracking-tight">Outline</h3>
           </div>
           <div className="flex gap-3 shrink-0">
             <button
@@ -634,7 +661,8 @@ export default function PresentationGenerator() {
               onClick={handleGenerateSlides}
               className="px-6 py-2.5 bg-black text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-neutral-800 hover:shadow-md transition-all flex items-center gap-2 group"
             >
-              <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" /> Render Visuals
+              <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" /> Render
+              Visuals
             </button>
           </div>
         </div>
@@ -647,9 +675,7 @@ export default function PresentationGenerator() {
             >
               {/* Left indicator block */}
               <div className="w-14 shrink-0 bg-[#fdf5fa] flex items-center justify-center border-r border-neutral-200">
-                <span className="text-[#6c5dd3] font-bold text-lg font-mono">
-                  {idx + 1}
-                </span>
+                <span className="text-[#6c5dd3] font-bold text-lg font-mono">{idx + 1}</span>
               </div>
 
               {/* Editable Content */}
@@ -831,7 +857,10 @@ export default function PresentationGenerator() {
                 {/* Editor Sidebar Hover Controls */}
                 <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1 bg-white/90 backdrop-blur-sm p-1 rounded-md shadow-sm border border-neutral-200 z-10">
                   <button
-                    onClick={(e) => { e.stopPropagation(); moveEditorSlide(idx, 'up'); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      moveEditorSlide(idx, 'up');
+                    }}
                     disabled={idx === 0}
                     className="p-1 hover:bg-neutral-100 rounded text-neutral-500 hover:text-black disabled:opacity-30"
                     title="Move slide up"
@@ -839,7 +868,10 @@ export default function PresentationGenerator() {
                     <ChevronLeft className="w-3 h-3 rotate-90" />
                   </button>
                   <button
-                    onClick={(e) => { e.stopPropagation(); moveEditorSlide(idx, 'down'); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      moveEditorSlide(idx, 'down');
+                    }}
                     disabled={idx === slides.length - 1}
                     className="p-1 hover:bg-neutral-100 rounded text-neutral-500 hover:text-black disabled:opacity-30"
                     title="Move slide down"
@@ -847,12 +879,14 @@ export default function PresentationGenerator() {
                     <ChevronRight className="w-3 h-3 rotate-90" />
                   </button>
                   <button
-                    onClick={(e) => { e.stopPropagation(); deleteEditorSlide(idx); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteEditorSlide(idx);
+                    }}
                     disabled={slides.length <= 1}
                     className="p-1 hover:bg-red-50 rounded text-red-500 hover:text-red-700 disabled:opacity-30 ml-auto"
                     title="Delete slide"
-                  >
-                  </button>
+                  ></button>
                 </div>
               </div>
             ))}
@@ -973,13 +1007,19 @@ export default function PresentationGenerator() {
           {isEditorView && activeSlide && isEditingImage && (
             <div className="absolute bottom-20 right-6 w-80 bg-white rounded-xl shadow-2xl border border-neutral-200 p-4 z-50 animate-in slide-in-from-bottom-5">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-bold uppercase tracking-widest text-black">Edit Visuals</h4>
-                <button onClick={() => setIsEditingImage(false)} className="text-neutral-400 hover:text-black">
+                <h4 className="text-sm font-bold uppercase tracking-widest text-black">
+                  Edit Visuals
+                </h4>
+                <button
+                  onClick={() => setIsEditingImage(false)}
+                  className="text-neutral-400 hover:text-black"
+                >
                   <X className="w-4 h-4" />
                 </button>
               </div>
               <p className="text-xs text-neutral-500 mb-3 leading-relaxed">
-                Describe the visual change you want (e.g., "Make the background pure white", "Change accents to deep blue").
+                Describe the visual change you want (e.g., "Make the background pure white", "Change
+                accents to deep blue").
               </p>
               <textarea
                 value={editImagePrompt}
@@ -994,15 +1034,19 @@ export default function PresentationGenerator() {
                 className="w-full py-2 bg-black text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-neutral-800 transition-all disabled:opacity-50 disabled:hover:bg-black flex items-center justify-center gap-2"
               >
                 {isEditGenerating ? (
-                  <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing...</>
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing...
+                  </>
                 ) : (
-                  <><Sparkles className="w-3.5 h-3.5" /> Apply Edit</>
+                  <>
+                    <Sparkles className="w-3.5 h-3.5" /> Apply Edit
+                  </>
                 )}
               </button>
             </div>
           )}
         </main>
       </div>
-    </div >
+    </div>
   );
 }

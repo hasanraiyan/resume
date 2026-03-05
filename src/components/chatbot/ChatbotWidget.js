@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { CornerDownRight, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { usePathname } from 'next/navigation';
 import getAnalytics from '@/lib/analytics';
 
 // Hooks
@@ -22,6 +23,7 @@ import OfflineState from './OfflineState';
 // No default prompts here - use database settings instead.
 
 export default function ChatbotWidget() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const [activeMCPs, setActiveMCPs] = useState([]);
@@ -209,6 +211,10 @@ export default function ChatbotWidget() {
   }, [selection.text, isOpen, settingsFetched, fetchSettings, setActiveQuote, setSelection]);
 
   const suggestedPrompts = (chatbotSettings?.suggestedPrompts || []).map((t) => ({ text: t }));
+
+  if (pathname === '/tools/presentation') {
+    return null;
+  }
 
   // 1. FAB (closed state)
   if (!isOpen) {

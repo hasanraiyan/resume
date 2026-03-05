@@ -17,7 +17,10 @@ export async function POST(req) {
     const authorId = isAdmin ? session.user.id || session.user._id : null;
 
     const body = await req.json();
-    const { topic, instructions } = body;
+    const { topic, instructions, slideCount = 7 } = body;
+    const normalizedSlideCount = Number.parseInt(slideCount, 10);
+    const finalSlideCount =
+      Number.isFinite(normalizedSlideCount) && normalizedSlideCount > 0 ? normalizedSlideCount : 7;
 
     if (!topic || topic.trim() === '') {
       return NextResponse.json({ error: 'Topic is required' }, { status: 400 });
@@ -27,7 +30,13 @@ export async function POST(req) {
     const presentationAgent = agentRegistry.get(AGENT_IDS.PRESENTATION_SYNTHESIZER);
 
     // Draft the outline
-    const outline = await presentationAgent.execute({ action: 'draft_outline', topic, instructions, isAdmin });
+    const outline = await presentationAgent.execute({
+      action: 'draft_outline',
+      topic,
+      instructions,
+      isAdmin,
+      slideCount: finalSlideCount,
+    });
 
     await dbConnect();
 
@@ -36,19 +45,21 @@ export async function POST(req) {
       topic,
       outline,
       status: 'draft',
-      authorId
+      authorId,
     });
 
     await presentation.save();
 
     return NextResponse.json({
-       success: true,
-       presentationId: presentation._id,
-       outline
+      success: true,
+      presentationId: presentation._id,
+      outline,
     });
-
   } catch (error) {
     console.error('Presentation Outline Gen Error:', error);
-    return NextResponse.json({ error: error.message || 'Failed to generate outline' }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || 'Failed to generate outline' },
+      { status: 500 }
+    );
   }
 }

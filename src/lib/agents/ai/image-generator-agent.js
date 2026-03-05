@@ -10,6 +10,7 @@ import { AGENT_IDS } from '@/lib/constants/agents';
 import BaseAgent from '../BaseAgent';
 import { StateGraph, END, START } from '@langchain/langgraph';
 import { Annotation } from '@langchain/langgraph';
+import { ThinkingLevel } from '@google/genai';
 
 // Define the state schema for the image generation workflow
 const ImageGenState = Annotation.Root({
@@ -46,11 +47,14 @@ class ImageGeneratorAgent extends BaseAgent {
         model: modelName,
         contents: [{ role: 'user', parts: [{ text: state.prompt.trim() }] }],
         config: {
+          thinkingConfig: {
+            thinkingLevel: ThinkingLevel.HIGH,
+          },
           responseModalities: ['IMAGE'],
           imageConfig: {
             aspectRatio: state.aspectRatio,
           },
-          tools: [{ googleSearch: { searchTypes: { imageSearch: {} } } }],
+          tools: [{ googleSearch: { searchTypes: { imageSearch: {}, webSearch: {} } } }],
         },
       });
 

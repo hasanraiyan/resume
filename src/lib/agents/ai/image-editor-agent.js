@@ -10,6 +10,7 @@ import { AGENT_IDS } from '@/lib/constants/agents';
 import BaseAgent from '../BaseAgent';
 import { StateGraph, END, START } from '@langchain/langgraph';
 import { Annotation } from '@langchain/langgraph';
+import { ThinkingLevel } from '@google/genai';
 
 // Define the state schema for the image editing workflow
 const ImageEditState = Annotation.Root({
@@ -71,11 +72,14 @@ class ImageEditorAgent extends BaseAgent {
         model: modelName,
         contents,
         config: {
+          thinkingConfig: {
+            thinkingLevel: ThinkingLevel.HIGH,
+          },
           responseModalities: ['IMAGE'],
           imageConfig: {
             aspectRatio: state.aspectRatio,
           },
-          tools: [{ googleSearch: { searchTypes: { imageSearch: {} } } }],
+          tools: [{ googleSearch: { searchTypes: { imageSearch: {}, webSearch: {} } } }],
         },
       });
 
