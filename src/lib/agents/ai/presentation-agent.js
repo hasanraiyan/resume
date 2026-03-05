@@ -150,6 +150,90 @@ Each visualPrompt must be 150-200 words. Short prompts produce garbage — be DE
     }
   }
 
+  async draftContinuationSlide({
+    topic,
+    slideBrief,
+    existingSlides = [],
+    insertionIndex = 0,
+    designSystem,
+  }) {
+    if (!this.isInitialized) await this.initialize();
+
+    this.logger.info(`Drafting continuation slide for topic: ${topic}`);
+
+    const llm = await this.createChatModel({ temperature: 0.4 });
+    const surroundingSlides = existingSlides
+      .map((slide, index) => {
+        const title = slide?.title || slide?.fallbackText || `Slide ${index + 1}`;
+        const visualPrompt = slide?.visualPrompt || 'No visual prompt provided.';
+        return `${index + 1}. ${title}\nVisual intent: ${visualPrompt}`;
+      })
+      .join('\n\n');
+
+    const systemPrompt = `You are extending an existing premium presentation deck with one new slide.
+
+Return ONLY valid JSON with this exact shape:
+{
+  "title": "short slide title",
+  "visualPrompt": "150-200 word dense visual prompt"
+}
+
+Requirements:
+- The new slide will be inserted at position ${insertionIndex + 1} in the deck.
+- The slide MUST feel like a natural continuation of the existing deck narrative and avoid duplicating earlier slides.
+- The slide MUST preserve the locked design system.
+- The visualPrompt must describe exact visible text, layout, hierarchy, and visual elements in one dense paragraph.
+- Keep the same background gradient direction, accent color, and font treatment.
+
+Topic: ${topic}
+Requested slide brief: ${slideBrief}
+Locked design system:
+- Background gradient: ${designSystem?.backgroundGradient || 'Use the existing deck gradient'}
+- Accent color: ${designSystem?.accentColor || 'Use the existing deck accent color'}
+- Font style: ${designSystem?.fontStyle || 'Use the existing deck font style'}
+
+Existing slides:
+${surroundingSlides || 'No previous slides were provided.'}`;
+
+    try {
+      const response = await llm.invoke([
+        { role: 'system', content: systemPrompt },
+        {
+          role: 'user',
+          content: `Create the next presentation slide for this brief: ${slideBrief}`,
+        },
+      ]);
+
+      let text = Array.isArray(response.content)
+        ? response.content
+            .map((part) => (typeof part === 'string' ? part : part?.text || ''))
+            .join('')
+        : response.content;
+
+      text = text
+        .replace(/^```json\s*/i, '')
+        .replace(/^```\s*/i, '')
+        .replace(/\s*```$/i, '');
+
+      const slideData = JSON.parse(text.trim());
+
+      if (!slideData.visualPrompt || typeof slideData.visualPrompt !== 'string') {
+        throw new Error('LLM did not return a valid continuation slide prompt.');
+      }
+
+      const fallbackTitle = slideBrief.trim().split(/[.!?]/)[0].trim() || 'New Slide';
+
+      return {
+        title: slideData.title?.trim() || fallbackTitle.slice(0, 80),
+        fallbackText: slideData.title?.trim() || fallbackTitle.slice(0, 80),
+        visualPrompt: slideData.visualPrompt.trim(),
+      };
+    } catch (error) {
+      this.logger.error('Failed to generate continuation slide:', error);
+      throw new Error('Failed to generate continuation slide.');
+    }
+  }
+
   async generateSlideImage(slide, designSystem) {
     if (!this.isInitialized) await this.initialize();
 
@@ -183,6 +267,8 @@ ${qualitySuffix}`;
       const base64Data = `data:${result.mimeType};base64,${result.buffer.toString('base64')}`;
 
       return {
+        title: slide.title || slide.fallbackText || 'Slide',
+        fallbackText: slide.fallbackText || slide.title || 'Slide',
         imageUrl: base64Data,
         prompt: fullPrompt,
         visualPrompt: slide.visualPrompt,
@@ -210,8 +296,11 @@ ${qualitySuffix}`;
       }
       this.logger.error(`Slide ${index} failed:`, result.reason);
       return {
+        title: slides[index].title || slides[index].fallbackText || `Slide ${index + 1}`,
+        fallbackText: slides[index].fallbackText || slides[index].title || `Slide ${index + 1}`,
         imageUrl: null,
         visualPrompt: slides[index].visualPrompt,
+        prompt: slides[index].visualPrompt,
         error: result.reason.message,
       };
     });

@@ -3,6 +3,14 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/Dialog';
+import {
   Sparkles,
   Brain,
   Wand2,
@@ -24,6 +32,122 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import Link from 'next/link';
+
+const getDefaultSlideTitle = (index) => `Slide ${index + 1}`;
+
+function normalizeOutlineSlide(slide = {}, index = 0) {
+  const fallbackTitle =
+    (typeof slide.title === 'string' && slide.title.trim()) ||
+    (typeof slide.fallbackText === 'string' && slide.fallbackText.trim()) ||
+    getDefaultSlideTitle(index);
+
+  const visualPrompt =
+    (typeof slide.visualPrompt === 'string' && slide.visualPrompt.trim()) ||
+    (typeof slide.prompt === 'string' && slide.prompt.trim()) ||
+    '';
+
+  return {
+    title: fallbackTitle,
+    visualPrompt,
+  };
+}
+
+function normalizeRenderedSlide(slide = {}, index = 0) {
+  const outlineSlide = normalizeOutlineSlide(slide, index);
+  const fallbackText =
+    (typeof slide.fallbackText === 'string' && slide.fallbackText.trim()) || outlineSlide.title;
+  const prompt =
+    (typeof slide.prompt === 'string' && slide.prompt.trim()) || outlineSlide.visualPrompt;
+
+  return {
+    title: outlineSlide.title,
+    fallbackText,
+    visualPrompt: outlineSlide.visualPrompt,
+    prompt,
+    imageUrl: slide.imageUrl || null,
+    status: slide.status || (slide.imageUrl ? 'complete' : 'pending'),
+    ...(slide.error ? { error: slide.error } : {}),
+  };
+}
+
+function normalizePresentationOutline(outline) {
+  if (!outline) return null;
+
+  return {
+    ...outline,
+    designSystem: outline.designSystem ?? null,
+    slides: Array.isArray(outline.slides) ? outline.slides.map(normalizeOutlineSlide) : [],
+  };
+}
+
+function insertItemAtIndex(items, index, item) {
+  return [...items.slice(0, index), item, ...items.slice(index)];
+}
+
+function replaceItemAtIndex(items, index, item) {
+  return items.map((currentItem, currentIndex) => (currentIndex === index ? item : currentItem));
+}
+
+function removeItemAtIndex(items, index) {
+  return items.filter((_, currentIndex) => currentIndex !== index);
+}
+
+function moveItem(items, index, direction) {
+  const nextItems = [...items];
+
+  if (direction === 'up' && index > 0) {
+    [nextItems[index - 1], nextItems[index]] = [nextItems[index], nextItems[index - 1]];
+  } else if (direction === 'down' && index < nextItems.length - 1) {
+    [nextItems[index + 1], nextItems[index]] = [nextItems[index], nextItems[index + 1]];
+  }
+
+  return nextItems;
+}
+
+function getMovedActiveIndex(currentIndex, movedIndex, direction) {
+  if (direction === 'up' && movedIndex > 0) {
+    if (currentIndex === movedIndex) return movedIndex - 1;
+    if (currentIndex === movedIndex - 1) return movedIndex;
+  }
+
+  if (direction === 'down') {
+    if (currentIndex === movedIndex) return movedIndex + 1;
+    if (currentIndex === movedIndex + 1) return movedIndex;
+  }
+
+  return currentIndex;
+}
+
+function buildDeckContextSlides(outlineSlides = [], renderedSlides = []) {
+  return outlineSlides.map((outlineSlide, index) => {
+    const renderedSlide = renderedSlides[index];
+    const normalizedContextSlide = normalizeOutlineSlide(
+      {
+        ...renderedSlide,
+        ...outlineSlide,
+        title: outlineSlide?.title || renderedSlide?.title || renderedSlide?.fallbackText,
+      },
+      index
+    );
+
+    return {
+      title: normalizedContextSlide.title,
+      fallbackText: renderedSlide?.fallbackText || normalizedContextSlide.title,
+      visualPrompt: normalizedContextSlide.visualPrompt,
+    };
+  });
+}
+
+function getDerivedSlideTitle(slideBrief, fallbackIndex) {
+  const compactBrief = slideBrief.trim().replace(/\s+/g, ' ');
+
+  if (!compactBrief) {
+    return getDefaultSlideTitle(fallbackIndex);
+  }
+
+  const firstSentence = compactBrief.split(/[.!?]/)[0].trim();
+  return (firstSentence || compactBrief).slice(0, 80);
+}
 
 // ─── Slide Thumbnail ─────────────────────────────────────────────────────────
 function SlideThumbnail({ slide, index, isActive, onClick }) {
@@ -72,6 +196,70 @@ function SlideThumbnail({ slide, index, isActive, onClick }) {
 }
 
 // ─── Main Component ──────────────────────────────────────────────────────────
+function SlideGenerationPlaceholder({ label = 'Generating Slide...' }) {
+  return (
+    <div className="relative w-full h-full overflow-hidden bg-neutral-50">
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            'linear-gradient(135deg, #fef0e7 0%, #fce4ec 25%, #f3e5f5 50%, #ede7f6 75%, #fef0e7 100%)',
+          backgroundSize: '400% 400%',
+          animation: 'presentationMeshGradient 6s ease infinite',
+        }}
+      />
+      <div
+        className="absolute w-[60%] h-[60%] rounded-full blur-[80px] opacity-60"
+        style={{
+          background: 'radial-gradient(circle, #f8bbd0 0%, transparent 70%)',
+          animation: 'presentationOrbFloat1 8s ease-in-out infinite',
+          top: '8%',
+          left: '10%',
+        }}
+      />
+      <div
+        className="absolute w-[50%] h-[50%] rounded-full blur-[70px] opacity-50"
+        style={{
+          background: 'radial-gradient(circle, #e1bee7 0%, transparent 70%)',
+          animation: 'presentationOrbFloat2 10s ease-in-out infinite',
+          bottom: '10%',
+          right: '6%',
+        }}
+      />
+      <div
+        className="absolute w-[38%] h-[38%] rounded-full blur-[60px] opacity-40"
+        style={{
+          background: 'radial-gradient(circle, #ffe0b2 0%, transparent 70%)',
+          animation: 'presentationOrbFloat3 7s ease-in-out infinite',
+          top: '42%',
+          left: '48%',
+        }}
+      />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="px-6 text-center space-y-4">
+          <p className="text-xs md:text-sm font-bold uppercase tracking-[0.35em] text-neutral-600/80">
+            {label}
+          </p>
+          <div className="flex justify-center gap-1.5">
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-neutral-500/60"
+              style={{ animation: 'presentationDotPulse 1.4s ease-in-out infinite' }}
+            />
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-neutral-500/60"
+              style={{ animation: 'presentationDotPulse 1.4s ease-in-out 0.2s infinite' }}
+            />
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-neutral-500/60"
+              style={{ animation: 'presentationDotPulse 1.4s ease-in-out 0.4s infinite' }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PresentationGenerator() {
   const [topic, setTopic] = useState('');
   const [instructions, setInstructions] = useState('');
@@ -84,6 +272,9 @@ export default function PresentationGenerator() {
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showModal, setShowModal] = useState(true);
+  const [isAddSlideDialogOpen, setIsAddSlideDialogOpen] = useState(false);
+  const [addSlideBrief, setAddSlideBrief] = useState('');
+  const [isAddSlideGenerating, setIsAddSlideGenerating] = useState(false);
 
   // State for image editing modal
   const [isEditingImage, setIsEditingImage] = useState(false);
@@ -122,7 +313,7 @@ export default function PresentationGenerator() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to draft outline');
       setPresentationId(data.presentationId);
-      setOutline(data.outline);
+      setOutline(normalizePresentationOutline(data.outline));
       setStatus('review');
     } catch (e) {
       setErrorMsg(e.message);
@@ -148,7 +339,7 @@ export default function PresentationGenerator() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to draft outline');
       setPresentationId(data.presentationId);
-      setOutline(data.outline);
+      setOutline(normalizePresentationOutline(data.outline));
       setStatus('review');
     } catch (e) {
       setErrorMsg(e.message);
@@ -161,22 +352,29 @@ export default function PresentationGenerator() {
 
     setStatus('generating');
     setErrorMsg('');
+    const normalizedOutline = normalizePresentationOutline(outline);
+    setOutline(normalizedOutline);
 
     // Initialize slides array with placeholders
-    const initialSlides = outline.slides.map((s) => ({
-      status: 'pending',
-      title: s.title,
-      fallbackText: s.title,
-      prompt: s.slideDesignBrief,
-    }));
+    const initialSlides = normalizedOutline.slides.map((slide, index) =>
+      normalizeRenderedSlide(
+        {
+          title: slide.title,
+          fallbackText: slide.title,
+          visualPrompt: slide.visualPrompt,
+          prompt: slide.visualPrompt,
+          status: 'pending',
+        },
+        index
+      )
+    );
     setSlides(initialSlides);
     setActiveSlideIndex(0);
 
     let completedCount = 0;
-    const totalCount = outline.slides.length;
 
     // Generate slides in parallel (with slight stagger for UX)
-    outline.slides.forEach(async (slideData, idx) => {
+    normalizedOutline.slides.forEach(async (slideData, idx) => {
       try {
         // Subtle delay for staggered start
         await new Promise((r) => setTimeout(r, idx * 300));
@@ -186,18 +384,14 @@ export default function PresentationGenerator() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             slide: slideData,
-            presentationTheme: outline.presentationTheme,
+            designSystem: normalizedOutline.designSystem,
           }),
         });
 
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to generate slide');
 
-        setSlides((prev) => {
-          const newSlides = [...prev];
-          newSlides[idx] = { ...data.slide, status: 'complete' };
-          return newSlides;
-        });
+        setSlides((prev) => replaceItemAtIndex(prev, idx, normalizeRenderedSlide(data.slide, idx)));
 
         completedCount++;
 
@@ -207,16 +401,23 @@ export default function PresentationGenerator() {
         }
       } catch (e) {
         console.error(`Slide ${idx} generation failed:`, e);
-        setSlides((prev) => {
-          const newSlides = [...prev];
-          newSlides[idx] = {
-            status: 'failed',
-            error: e.message,
-            title: slideData.title,
-            fallbackText: `Failed: ${slideData.title}`,
-          };
-          return newSlides;
-        });
+        setSlides((prev) =>
+          replaceItemAtIndex(
+            prev,
+            idx,
+            normalizeRenderedSlide(
+              {
+                status: 'failed',
+                error: e.message,
+                title: slideData.title,
+                fallbackText: `Failed: ${slideData.title}`,
+                visualPrompt: slideData.visualPrompt,
+                prompt: slideData.visualPrompt,
+              },
+              idx
+            )
+          )
+        );
         completedCount++;
         if (completedCount === 1) setStatus('complete');
       }
@@ -234,6 +435,9 @@ export default function PresentationGenerator() {
     setErrorMsg('');
     setActiveSlideIndex(0);
     setShowModal(true);
+    setIsAddSlideDialogOpen(false);
+    setAddSlideBrief('');
+    setIsAddSlideGenerating(false);
   };
 
   // ─── Outline Mutators ────────────────────────────────────────────────────
@@ -279,72 +483,58 @@ export default function PresentationGenerator() {
 
   // ─── Editor Phase Mutators ───────────────────────────────────────────────
   const moveEditorSlide = (index, direction) => {
-    setSlides((prev) => {
-      const newSlides = [...prev];
-      if (direction === 'up' && index > 0) {
-        [newSlides[index - 1], newSlides[index]] = [newSlides[index], newSlides[index - 1]];
-      } else if (direction === 'down' && index < newSlides.length - 1) {
-        [newSlides[index + 1], newSlides[index]] = [newSlides[index], newSlides[index + 1]];
-      }
-      return newSlides;
-    });
-    // keep active index tracking the same slide data
-    if (direction === 'up' && index > 0 && activeSlideIndex === index) {
-      setActiveSlideIndex(index - 1);
-    } else if (direction === 'up' && index > 0 && activeSlideIndex === index - 1) {
-      setActiveSlideIndex(index);
-    } else if (direction === 'down' && index < slides.length - 1 && activeSlideIndex === index) {
-      setActiveSlideIndex(index + 1);
-    } else if (
-      direction === 'down' &&
-      index < slides.length - 1 &&
-      activeSlideIndex === index + 1
-    ) {
-      setActiveSlideIndex(index);
-    }
+    setSlides((prev) => moveItem(prev, index, direction));
+    setOutline((prev) =>
+      prev
+        ? {
+            ...prev,
+            slides: moveItem(prev.slides, index, direction),
+          }
+        : prev
+    );
+    setActiveSlideIndex((currentIndex) => getMovedActiveIndex(currentIndex, index, direction));
   };
 
   const deleteEditorSlide = (index) => {
     setSlides((prev) => {
-      const newSlides = [...prev];
-      if (newSlides.length <= 1) return prev;
-      newSlides.splice(index, 1);
-      return newSlides;
+      if (prev.length <= 1) return prev;
+      return removeItemAtIndex(prev, index);
     });
-    if (activeSlideIndex >= index && activeSlideIndex > 0) {
-      setActiveSlideIndex((i) => i - 1);
-    }
+    setOutline((prev) =>
+      prev && prev.slides.length > 1
+        ? {
+            ...prev,
+            slides: removeItemAtIndex(prev.slides, index),
+          }
+        : prev
+    );
+    setActiveSlideIndex((currentIndex) => {
+      if (currentIndex >= index && currentIndex > 0) {
+        return currentIndex - 1;
+      }
+
+      return currentIndex;
+    });
   };
 
-  const addEditorSlide = () => {
-    const newSlideData = {
-      title: 'New Slide',
-      visualPrompt: 'A brand new sleek slide design...',
-    };
-
-    setSlides((prev) => [
-      ...prev,
-      {
-        status: 'pending',
-        title: newSlideData.title,
-        fallbackText: newSlideData.title,
-        prompt: newSlideData.visualPrompt,
-        visualPrompt: newSlideData.visualPrompt,
-      },
-    ]);
-    const newIndex = slides.length;
-    setActiveSlideIndex(newIndex);
-
-    // Auto-trigger generation for this new slide
-    handleGenerateSingleSlide(newSlideData, outline?.presentationTheme, newIndex);
+  const openAddSlideDialog = () => {
+    setAddSlideBrief('');
+    setIsAddSlideDialogOpen(true);
   };
 
-  const handleGenerateSingleSlide = async (slideData, theme, idx) => {
+  const handleGenerateSingleSlide = async (slideData, designSystem, idx) => {
     try {
       setSlides((prev) => {
-        const arr = [...prev];
-        arr[idx] = { ...arr[idx], status: 'generating' };
-        return arr;
+        if (!prev[idx]) return prev;
+        return replaceItemAtIndex(prev, idx, {
+          ...prev[idx],
+          title: slideData.title || prev[idx].title,
+          fallbackText: slideData.title || prev[idx].fallbackText,
+          visualPrompt: slideData.visualPrompt,
+          prompt: slideData.visualPrompt,
+          status: 'generating',
+          error: undefined,
+        });
       });
 
       const res = await fetch('/api/tools/presentation/generate-slide', {
@@ -352,7 +542,7 @@ export default function PresentationGenerator() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           slide: slideData,
-          presentationTheme: theme,
+          designSystem,
         }),
       });
 
@@ -360,25 +550,113 @@ export default function PresentationGenerator() {
       if (!res.ok) throw new Error(data.error || 'Failed to generate slide');
 
       setSlides((prev) => {
-        const newSlides = [...prev];
-        if (newSlides[idx]) {
-          newSlides[idx] = { ...data.slide, status: 'complete' };
-        }
-        return newSlides;
+        if (!prev[idx]) return prev;
+        return replaceItemAtIndex(prev, idx, normalizeRenderedSlide(data.slide, idx));
       });
+      setOutline((prev) =>
+        prev
+          ? {
+              ...prev,
+              slides: replaceItemAtIndex(prev.slides, idx, normalizeOutlineSlide(data.slide, idx)),
+            }
+          : prev
+      );
     } catch (e) {
       console.error(`Slide ${idx} generation failed:`, e);
       setSlides((prev) => {
-        const newSlides = [...prev];
-        if (newSlides[idx]) {
-          newSlides[idx] = {
-            ...newSlides[idx],
-            status: 'failed',
-            error: e.message,
-          };
-        }
-        return newSlides;
+        if (!prev[idx]) return prev;
+        return replaceItemAtIndex(prev, idx, {
+          ...prev[idx],
+          status: 'failed',
+          error: e.message,
+        });
       });
+    }
+  };
+
+  const handleAddEditorSlide = async () => {
+    if (!addSlideBrief.trim() || !outline) return;
+
+    const insertionIndex = activeSlideIndex + 1;
+    const slideBrief = addSlideBrief.trim();
+    const placeholderTitle = getDerivedSlideTitle(slideBrief, insertionIndex);
+    const placeholderOutlineSlide = normalizeOutlineSlide(
+      {
+        title: placeholderTitle,
+        visualPrompt: slideBrief,
+      },
+      insertionIndex
+    );
+    const placeholderRenderedSlide = normalizeRenderedSlide(
+      {
+        title: placeholderTitle,
+        fallbackText: placeholderTitle,
+        visualPrompt: slideBrief,
+        prompt: slideBrief,
+        status: 'generating',
+      },
+      insertionIndex
+    );
+    const existingSlides = buildDeckContextSlides(outline.slides, slides || []);
+
+    setErrorMsg('');
+    setIsAddSlideGenerating(true);
+    setIsAddSlideDialogOpen(false);
+    setAddSlideBrief('');
+    setSlides((prev) => insertItemAtIndex(prev, insertionIndex, placeholderRenderedSlide));
+    setOutline((prev) =>
+      prev
+        ? {
+            ...prev,
+            slides: insertItemAtIndex(prev.slides, insertionIndex, placeholderOutlineSlide),
+          }
+        : prev
+    );
+    setActiveSlideIndex(insertionIndex);
+
+    try {
+      const res = await fetch('/api/tools/presentation/generate-slide', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slideBrief,
+          topic: topic || 'Untitled Presentation',
+          designSystem: outline.designSystem,
+          existingSlides,
+          insertionIndex,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to generate continuation slide');
+
+      setSlides((prev) =>
+        replaceItemAtIndex(prev, insertionIndex, normalizeRenderedSlide(data.slide, insertionIndex))
+      );
+      setOutline((prev) =>
+        prev
+          ? {
+              ...prev,
+              slides: replaceItemAtIndex(
+                prev.slides,
+                insertionIndex,
+                normalizeOutlineSlide(data.slide, insertionIndex)
+              ),
+            }
+          : prev
+      );
+    } catch (e) {
+      console.error('Add slide generation failed:', e);
+      setErrorMsg(e.message);
+      setSlides((prev) =>
+        replaceItemAtIndex(prev, insertionIndex, {
+          ...placeholderRenderedSlide,
+          status: 'failed',
+          error: e.message,
+        })
+      );
+    } finally {
+      setIsAddSlideGenerating(false);
     }
   };
 
@@ -392,13 +670,32 @@ export default function PresentationGenerator() {
       slideToRegen.visualPrompt
     );
     if (updatedPrompt === null) return; // User cancelled
+    if (!updatedPrompt.trim()) return;
 
     const slideDataForApi = {
-      title: slideToRegen.title || 'Slide',
-      visualPrompt: updatedPrompt,
+      title: slideToRegen.title || slideToRegen.fallbackText || 'Slide',
+      visualPrompt: updatedPrompt.trim(),
     };
 
-    handleGenerateSingleSlide(slideDataForApi, outline?.presentationTheme, index);
+    setSlides((prev) =>
+      replaceItemAtIndex(prev, index, {
+        ...prev[index],
+        title: slideDataForApi.title,
+        fallbackText: slideDataForApi.title,
+        visualPrompt: slideDataForApi.visualPrompt,
+        prompt: slideDataForApi.visualPrompt,
+      })
+    );
+    setOutline((prev) =>
+      prev
+        ? {
+            ...prev,
+            slides: replaceItemAtIndex(prev.slides, index, slideDataForApi),
+          }
+        : prev
+    );
+
+    handleGenerateSingleSlide(slideDataForApi, outline?.designSystem, index);
   };
 
   const handleEditImageSubmit = async () => {
@@ -498,9 +795,8 @@ export default function PresentationGenerator() {
             <p>Slide generation failed</p>
           </div>
         ) : (
-          <div className="text-white/50 text-center">
-            <Loader2 className="w-16 h-16 mx-auto mb-4 animate-spin" />
-            <p>Generating slide...</p>
+          <div className="w-[90vw] max-w-6xl aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+            <SlideGenerationPlaceholder label="Generating Slide..." />
           </div>
         )}
       </div>
@@ -798,9 +1094,9 @@ export default function PresentationGenerator() {
           {isEditorView && (
             <>
               <button
-                onClick={addEditorSlide}
+                onClick={openAddSlideDialog}
                 className="px-3 py-1.5 rounded-lg hover:bg-neutral-100 text-xs font-bold uppercase tracking-widest text-neutral-600 hover:text-black transition-all border border-neutral-200 hover:border-black flex items-center gap-1.5"
-                title="Add New Blank Slide"
+                title="Add Slide"
               >
                 <PlusCircle className="w-3.5 h-3.5" /> Add Slide
               </button>
@@ -945,12 +1241,7 @@ export default function PresentationGenerator() {
                     )}
                   </div>
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-neutral-400 gap-4 bg-neutral-50 p-6 text-center">
-                    <Loader2 className="w-12 h-12 text-neutral-400 animate-spin" />
-                    <p className="text-sm font-bold uppercase tracking-widest text-neutral-500">
-                      Generating Slide...
-                    </p>
-                  </div>
+                  <SlideGenerationPlaceholder label="Generating Slide..." />
                 )}
 
                 {/* Slide overlay badge */}
@@ -1045,6 +1336,121 @@ export default function PresentationGenerator() {
               </button>
             </div>
           )}
+
+          <Dialog open={isAddSlideDialogOpen} onOpenChange={setIsAddSlideDialogOpen}>
+            <DialogContent className="sm:max-w-xl">
+              <DialogHeader>
+                <DialogTitle className="text-xl font-['Playfair_Display'] tracking-tight text-black">
+                  Add a Related Slide
+                </DialogTitle>
+                <DialogDescription>
+                  Describe what this slide should cover. It will be inserted after the current slide
+                  and generated with the existing deck context and design system.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-3">
+                <label className="block text-xs font-bold uppercase tracking-widest text-neutral-600">
+                  Slide Brief
+                </label>
+                <textarea
+                  value={addSlideBrief}
+                  onChange={(e) => setAddSlideBrief(e.target.value)}
+                  placeholder="e.g. Add a market adoption slide that connects this section to enterprise demand."
+                  className="w-full min-h-32 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-black outline-none transition-colors focus:border-black focus:bg-white resize-none"
+                  disabled={isAddSlideGenerating}
+                />
+              </div>
+
+              <DialogFooter className="gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddSlideDialogOpen(false)}
+                  className="px-4 py-2 rounded-lg border border-neutral-200 bg-white text-xs font-bold uppercase tracking-widest text-neutral-600 transition-colors hover:border-black hover:text-black"
+                  disabled={isAddSlideGenerating}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddEditorSlide}
+                  className="px-4 py-2 rounded-lg bg-black text-white text-xs font-bold uppercase tracking-widest transition-colors hover:bg-neutral-800 disabled:opacity-50"
+                  disabled={!addSlideBrief.trim() || isAddSlideGenerating}
+                >
+                  {isAddSlideGenerating ? 'Generating...' : 'Generate Slide'}
+                </button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <style jsx>{`
+            @keyframes presentationMeshGradient {
+              0% {
+                background-position: 0% 50%;
+              }
+              25% {
+                background-position: 100% 0%;
+              }
+              50% {
+                background-position: 100% 100%;
+              }
+              75% {
+                background-position: 0% 100%;
+              }
+              100% {
+                background-position: 0% 50%;
+              }
+            }
+
+            @keyframes presentationOrbFloat1 {
+              0%,
+              100% {
+                transform: translate(0, 0) scale(1);
+              }
+              33% {
+                transform: translate(30%, 20%) scale(1.1);
+              }
+              66% {
+                transform: translate(-10%, 30%) scale(0.95);
+              }
+            }
+
+            @keyframes presentationOrbFloat2 {
+              0%,
+              100% {
+                transform: translate(0, 0) scale(1);
+              }
+              33% {
+                transform: translate(-25%, -15%) scale(1.05);
+              }
+              66% {
+                transform: translate(15%, -25%) scale(1.1);
+              }
+            }
+
+            @keyframes presentationOrbFloat3 {
+              0%,
+              100% {
+                transform: translate(0, 0) scale(1);
+              }
+              50% {
+                transform: translate(-30%, 20%) scale(1.15);
+              }
+            }
+
+            @keyframes presentationDotPulse {
+              0%,
+              80%,
+              100% {
+                opacity: 0.3;
+                transform: scale(0.8);
+              }
+              40% {
+                opacity: 1;
+                transform: scale(1.2);
+              }
+            }
+          `}</style>
         </main>
       </div>
     </div>
