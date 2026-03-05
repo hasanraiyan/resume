@@ -149,3 +149,22 @@ export const clearImageHistory = () => {
     // Non-fatal: ignore storage errors for UX continuity.
   }
 };
+
+export const removeImageHistoryItem = (itemId) => {
+  if (typeof window === 'undefined') return [];
+  if (typeof itemId !== 'string' || !itemId) return readImageHistory();
+
+  const existing = readImageHistory();
+  const nextItems = existing.filter((entry) => entry.id !== itemId);
+
+  try {
+    if (nextItems.length === 0) {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } else {
+      writeHistory(nextItems);
+    }
+    return nextItems;
+  } catch {
+    return existing;
+  }
+};

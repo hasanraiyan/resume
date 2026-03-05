@@ -4,7 +4,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Plus, Camera, Wand2, RefreshCw, Download, Sparkles, X } from 'lucide-react';
 import { cn } from '@/utils/classNames';
-import { clearImageHistory, pushImageHistory, readImageHistory } from '@/lib/imageHistoryStorage';
+import {
+  clearImageHistory,
+  pushImageHistory,
+  readImageHistory,
+  removeImageHistoryItem,
+} from '@/lib/imageHistoryStorage';
 
 export default function ImageAIPlayground() {
   const [prompt, setPrompt] = useState('');
@@ -143,6 +148,27 @@ export default function ImageAIPlayground() {
   const handleClearHistory = () => {
     clearImageHistory();
     setHistoryItems([]);
+  };
+
+  const handleDeleteHistoryItem = (itemId) => {
+    const deletedItem = historyItems.find((entry) => entry.id === itemId);
+    const updatedHistory = removeImageHistoryItem(itemId);
+    setHistoryItems(updatedHistory);
+
+    if (!deletedItem || resultImage !== deletedItem.imageDataUrl) return;
+
+    if (updatedHistory.length === 0) {
+      setResultImage(null);
+      setPrompt('');
+      return;
+    }
+
+    const latest = updatedHistory[0];
+    setResultImage(latest.imageDataUrl);
+    setPrompt(latest.prompt || '');
+    if (latest.aspectRatio && latest.aspectRatio !== 'n/a') {
+      setAspectRatio(latest.aspectRatio);
+    }
   };
 
   return (
@@ -405,40 +431,47 @@ export default function ImageAIPlayground() {
             </button>
           </div>
 
-          <div className="flex gap-4 overflow-x-auto pb-2 custom-chat-scrollbar">
+          <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 xl:columns-6 gap-4 pb-2">
             {historyItems.map((item) => {
               const isActive = resultImage === item.imageDataUrl;
               return (
-                <button
+                <div
                   key={item.id}
-                  onClick={() => handleSelectHistoryItem(item)}
                   className={cn(
-                    'shrink-0 w-[116px] text-left transition-all',
+                    'group relative w-full mb-4 break-inside-avoid',
                     isActive ? 'scale-[1.02]' : 'hover:scale-[1.02]'
                   )}
-                  title={item.prompt || 'Untitled generation'}
                 >
-                  <div
-                    className={cn(
-                      'w-full aspect-square rounded-2xl overflow-hidden border-2 shadow-sm',
-                      isActive
-                        ? 'border-blue-500 shadow-blue-200'
-                        : 'border-neutral-200 hover:border-neutral-300'
-                    )}
+                  <button
+                    onClick={() => handleSelectHistoryItem(item)}
+                    className="w-full text-left block"
+                    title={item.prompt || 'Untitled generation'}
                   >
-                    <img
-                      src={item.imageDataUrl}
-                      alt={item.prompt || 'Generated image'}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="mt-2 px-0.5">
-                    <p className="text-[10px] uppercase tracking-widest font-black text-neutral-400">
-                      {item.mode === 'edit' ? 'Edit' : item.aspectRatio}
-                    </p>
-                    <p className="text-xs text-neutral-500 truncate">{item.prompt || 'Untitled'}</p>
-                  </div>
-                </button>
+                    <div
+                      className={cn(
+                        'w-full rounded-2xl overflow-hidden border-2 shadow-sm',
+                        isActive
+                          ? 'border-blue-500 shadow-blue-200'
+                          : 'border-neutral-200 hover:border-neutral-300'
+                      )}
+                    >
+                      <img
+                        src={item.imageDataUrl}
+                        alt={item.prompt || 'Generated image'}
+                        className="block w-full h-auto"
+                        loading="lazy"
+                      />
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => handleDeleteHistoryItem(item.id)}
+                    className="absolute top-2 right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-neutral-500 border border-neutral-200 shadow-sm transition-all hover:text-red-500 hover:border-red-200 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                    title="Remove from history"
+                    aria-label="Remove from history"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               );
             })}
           </div>
