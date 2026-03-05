@@ -22,6 +22,7 @@ import {
   X,
   Image as ImageIcon,
   CheckCircle2,
+  Edit2,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -83,6 +84,12 @@ export default function PresentationGenerator() {
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showModal, setShowModal] = useState(true);
+
+  // Edit Mode States
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editPrompt, setEditPrompt] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedImage, setEditedImage] = useState(null);
 
   const canvasRef = useRef(null);
   const searchParams = useSearchParams();
@@ -227,6 +234,64 @@ export default function PresentationGenerator() {
     setErrorMsg('');
     setActiveSlideIndex(0);
     setShowModal(true);
+    resetEditStates();
+  };
+
+  // ─── Edit Handlers ───────────────────────────────────────────────────────
+  const resetEditStates = () => {
+    setIsEditModalOpen(false);
+    setEditPrompt('');
+    setIsEditing(false);
+    setEditedImage(null);
+    setErrorMsg('');
+  };
+
+  const handleOpenEditModal = () => {
+    resetEditStates();
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSlide = async () => {
+    if (!editPrompt.trim() || !activeSlide?.imageUrl) return;
+
+    setIsEditing(true);
+    setErrorMsg('');
+
+    try {
+      const res = await fetch('/api/tools/presentation/edit-slide', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageUrl: activeSlide.imageUrl,
+          prompt: editPrompt,
+          aspectRatio: '16:9',
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to edit slide');
+
+      setEditedImage(data.imageUrl);
+    } catch (e) {
+      setErrorMsg(e.message);
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  const handleConfirmEdit = () => {
+    if (!editedImage) return;
+
+    setSlides((prev) => {
+      const newSlides = [...prev];
+      newSlides[activeSlideIndex] = {
+        ...newSlides[activeSlideIndex],
+        imageUrl: editedImage,
+      };
+      return newSlides;
+    });
+
+    resetEditStates();
   };
 
   // ─── Navigation ──────────────────────────────────────────────────────────
@@ -291,6 +356,111 @@ export default function PresentationGenerator() {
       </div>
     );
   }
+
+  // ─── "Edit Slide" Modal ────────────────────────────────────────────────
+  const renderEditModal = () => (
+    <div className="fixed inset-0 z-50 bg-neutral-900/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
+      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border-2 border-neutral-800 overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="px-8 pt-8 pb-6 border-b border-neutral-100 flex items-center justify-between bg-neutral-50 shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center shadow-md">
+              <Wand2 className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-black font-['Playfair_Display'] tracking-tight">
+                Edit <span className="italic text-neutral-500">Slide</span>
+              </h2>
+              <p className="text-xs text-neutral-500 uppercase tracking-widest font-semibold mt-1">
+                AI Image Editor
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={resetEditStates}
+            className="p-2 text-neutral-400 hover:text-black hover:bg-neutral-200 rounded-xl transition-all"
+            aria-label="Close edit modal"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-8 space-y-6 bg-white overflow-y-auto">
+          {!editedImage ? (
+            <>
+              <div>
+                <label className="block text-xs font-bold text-black mb-3 uppercase tracking-widest">
+                  Edit Prompt <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={editPrompt}
+                  onChange={(e) => setEditPrompt(e.target.value)}
+                  placeholder="e.g. Change the background to a dark futuristic aesthetic..."
+                  rows={4}
+                  className="w-full bg-white border-2 border-neutral-200 focus:border-black focus:ring-0 rounded-xl p-5 text-base resize-none transition-all outline-none font-medium text-black placeholder-neutral-400 shadow-sm"
+                  disabled={isEditing}
+                />
+              </div>
+              {errorMsg && (
+                <div className="p-4 bg-red-50 text-red-600 border-2 border-red-200 rounded-xl flex items-center gap-3 text-sm font-medium">
+                  <XCircle className="w-5 h-5 flex-shrink-0" /> {errorMsg}
+                </div>
+              )}
+              <div className="pt-2">
+                <button
+                  onClick={handleEditSlide}
+                  disabled={!editPrompt.trim() || isEditing}
+                  className="w-full py-5 bg-black text-white rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-neutral-800 hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:shadow-none disabled:hover:translate-y-0 flex items-center justify-center gap-3 group"
+                >
+                  {isEditing ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" /> Editing...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+                      Apply Edit
+                    </>
+                  )}
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="space-y-6">
+              <div className="text-center">
+                <h3 className="text-xl font-bold text-black font-['Playfair_Display'] mb-2">
+                  Review Edited Slide
+                </h3>
+                <p className="text-sm text-neutral-500">
+                  Are you sure you want to replace the current slide image with this new one?
+                </p>
+              </div>
+
+              <div className="rounded-xl overflow-hidden border-2 border-neutral-200 shadow-sm aspect-video bg-neutral-50">
+                <img src={editedImage} alt="Edited preview" className="w-full h-full object-contain" />
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  onClick={() => setEditedImage(null)}
+                  className="flex-1 py-4 text-xs font-bold text-neutral-600 bg-neutral-100 rounded-xl uppercase tracking-widest hover:bg-neutral-200 transition-all"
+                >
+                  Cancel / Retry
+                </button>
+                <button
+                  onClick={handleConfirmEdit}
+                  className="flex-1 py-4 bg-black text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-neutral-800 transition-all flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 className="w-4 h-4" /> Replace Image
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 
   // ─── "New Presentation" Modal (Google Slides Inspired) ───────────────────
   const renderModal = () => (
@@ -694,6 +864,9 @@ export default function PresentationGenerator() {
           {/* Outline Review */}
           {status === 'review' && outline && renderOutlineReview()}
 
+          {/* Edit Modal Overlay */}
+          {isEditModalOpen && renderEditModal()}
+
           {/* Complete: Slide Viewer */}
           {isEditorView && activeSlide && (
             <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative">
@@ -737,14 +910,23 @@ export default function PresentationGenerator() {
               </p>
               <div className="flex items-center gap-3">
                 {activeSlide.imageUrl && activeSlide.imageUrl !== 'error' && (
-                  <a
-                    href={activeSlide.imageUrl}
-                    download={`slide-${activeSlideIndex + 1}.png`}
-                    className="px-4 py-2 bg-neutral-100 hover:bg-black hover:text-white rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 border border-neutral-200 hover:border-black"
-                    title="Download Slide"
-                  >
-                    <Download className="w-4 h-4" /> Download
-                  </a>
+                  <>
+                    <button
+                      onClick={handleOpenEditModal}
+                      className="px-4 py-2 bg-neutral-100 hover:bg-black hover:text-white rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 border border-neutral-200 hover:border-black"
+                      title="Edit Slide Image"
+                    >
+                      <Edit2 className="w-4 h-4" /> Edit
+                    </button>
+                    <a
+                      href={activeSlide.imageUrl}
+                      download={`slide-${activeSlideIndex + 1}.png`}
+                      className="px-4 py-2 bg-neutral-100 hover:bg-black hover:text-white rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 border border-neutral-200 hover:border-black"
+                      title="Download Slide"
+                    >
+                      <Download className="w-4 h-4" /> Download
+                    </a>
+                  </>
                 )}
               </div>
             </div>
