@@ -30,16 +30,14 @@ function SlideThumbnail({ slide, index, isActive, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`group w-full flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-300 ${
-        isActive ? 'bg-neutral-100' : 'hover:bg-neutral-50'
-      }`}
+      className={`group w-full flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-300 ${isActive ? 'bg-neutral-100' : 'hover:bg-neutral-50'
+        }`}
     >
       <div
-        className={`w-full aspect-video rounded-lg overflow-hidden border-2 transition-all ${
-          isActive
-            ? 'border-black shadow-md scale-100'
-            : 'border-neutral-200 scale-95 opacity-80 group-hover:opacity-100 group-hover:scale-100'
-        }`}
+        className={`w-full aspect-video rounded-lg overflow-hidden border-2 transition-all ${isActive
+          ? 'border-black shadow-md scale-100'
+          : 'border-neutral-200 scale-95 opacity-80 group-hover:opacity-100 group-hover:scale-100'
+          }`}
       >
         {slide.imageUrl && slide.imageUrl !== 'error' ? (
           <img
@@ -47,7 +45,7 @@ function SlideThumbnail({ slide, index, isActive, onClick }) {
             alt={slide.fallbackText || `Slide ${index + 1}`}
             className="w-full h-full object-cover animate-in fade-in duration-500"
           />
-        ) : slide.status === 'failed' ? (
+        ) : slide.status === 'failed' || slide.imageUrl === 'error' ? (
           <div className="w-full h-full bg-red-50 flex items-center justify-center">
             <XCircle className="w-5 h-5 text-red-400" />
           </div>
@@ -59,11 +57,10 @@ function SlideThumbnail({ slide, index, isActive, onClick }) {
         )}
       </div>
       <span
-        className={`text-[10px] font-mono tracking-widest uppercase transition-colors ${
-          isActive
-            ? 'text-black font-bold'
-            : 'text-neutral-400 font-medium group-hover:text-neutral-600'
-        }`}
+        className={`text-[10px] font-mono tracking-widest uppercase transition-colors ${isActive
+          ? 'text-black font-bold'
+          : 'text-neutral-400 font-medium group-hover:text-neutral-600'
+          }`}
       >
         Slide {(index + 1).toString().padStart(2, '0')}
       </span>
@@ -83,6 +80,11 @@ export default function PresentationGenerator() {
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showModal, setShowModal] = useState(true);
+
+  // State for image editing modal
+  const [isEditingImage, setIsEditingImage] = useState(false);
+  const [editImagePrompt, setEditImagePrompt] = useState('');
+  const [isEditGenerating, setIsEditGenerating] = useState(false);
 
   const canvasRef = useRef(null);
   const searchParams = useSearchParams();
@@ -229,6 +231,201 @@ export default function PresentationGenerator() {
     setShowModal(true);
   };
 
+  // ─── Outline Mutators ────────────────────────────────────────────────────
+  const updateOutlinePrompt = (index, newPrompt) => {
+    setOutline((prev) => {
+      const newSlides = [...prev.slides];
+      newSlides[index].visualPrompt = newPrompt;
+      return { ...prev, slides: newSlides };
+    });
+  };
+
+  const moveOutlineSlide = (index, direction) => {
+    setOutline((prev) => {
+      const newSlides = [...prev.slides];
+      if (direction === 'up' && index > 0) {
+        [newSlides[index - 1], newSlides[index]] = [newSlides[index], newSlides[index - 1]];
+      } else if (direction === 'down' && index < newSlides.length - 1) {
+        [newSlides[index + 1], newSlides[index]] = [newSlides[index], newSlides[index + 1]];
+      }
+      return { ...prev, slides: newSlides };
+    });
+  };
+
+  const deleteOutlineSlide = (index) => {
+    setOutline((prev) => {
+      const newSlides = [...prev.slides];
+      if (newSlides.length <= 1) return prev; // Don't delete the last slide
+      newSlides.splice(index, 1);
+      return { ...prev, slides: newSlides };
+    });
+  };
+
+  const addOutlineSlide = () => {
+    setOutline((prev) => {
+      const newSlides = [...prev.slides];
+      newSlides.push({
+        title: 'New Slide',
+        visualPrompt: 'A sleek, modern corporate slide with a title and bullet points...',
+      });
+      return { ...prev, slides: newSlides };
+    });
+  };
+
+  // ─── Editor Phase Mutators ───────────────────────────────────────────────
+  const moveEditorSlide = (index, direction) => {
+    setSlides((prev) => {
+      const newSlides = [...prev];
+      if (direction === 'up' && index > 0) {
+        [newSlides[index - 1], newSlides[index]] = [newSlides[index], newSlides[index - 1]];
+      } else if (direction === 'down' && index < newSlides.length - 1) {
+        [newSlides[index + 1], newSlides[index]] = [newSlides[index], newSlides[index + 1]];
+      }
+      return newSlides;
+    });
+    // keep active index tracking the same slide data
+    if (direction === 'up' && index > 0 && activeSlideIndex === index) {
+      setActiveSlideIndex(index - 1);
+    } else if (direction === 'up' && index > 0 && activeSlideIndex === index - 1) {
+      setActiveSlideIndex(index);
+    } else if (direction === 'down' && index < slides.length - 1 && activeSlideIndex === index) {
+      setActiveSlideIndex(index + 1);
+    } else if (direction === 'down' && index < slides.length - 1 && activeSlideIndex === index + 1) {
+      setActiveSlideIndex(index);
+    }
+  };
+
+  const deleteEditorSlide = (index) => {
+    setSlides((prev) => {
+      const newSlides = [...prev];
+      if (newSlides.length <= 1) return prev;
+      newSlides.splice(index, 1);
+      return newSlides;
+    });
+    if (activeSlideIndex >= index && activeSlideIndex > 0) {
+      setActiveSlideIndex((i) => i - 1);
+    }
+  };
+
+  const addEditorSlide = () => {
+    const newSlideData = {
+      title: 'New Slide',
+      visualPrompt: 'A brand new sleek slide design...',
+    };
+
+    setSlides((prev) => [
+      ...prev,
+      {
+        status: 'pending',
+        title: newSlideData.title,
+        fallbackText: newSlideData.title,
+        prompt: newSlideData.visualPrompt,
+        visualPrompt: newSlideData.visualPrompt,
+      }
+    ]);
+    const newIndex = slides.length;
+    setActiveSlideIndex(newIndex);
+
+    // Auto-trigger generation for this new slide
+    handleGenerateSingleSlide(newSlideData, outline?.presentationTheme, newIndex);
+  };
+
+  const handleGenerateSingleSlide = async (slideData, theme, idx) => {
+    try {
+      setSlides(prev => {
+        const arr = [...prev];
+        arr[idx] = { ...arr[idx], status: 'generating' };
+        return arr;
+      });
+
+      const res = await fetch('/api/tools/presentation/generate-slide', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slide: slideData,
+          presentationTheme: theme,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to generate slide');
+
+      setSlides((prev) => {
+        const newSlides = [...prev];
+        if (newSlides[idx]) {
+          newSlides[idx] = { ...data.slide, status: 'complete' };
+        }
+        return newSlides;
+      });
+    } catch (e) {
+      console.error(`Slide ${idx} generation failed:`, e);
+      setSlides((prev) => {
+        const newSlides = [...prev];
+        if (newSlides[idx]) {
+          newSlides[idx] = {
+            ...newSlides[idx],
+            status: 'failed',
+            error: e.message,
+          };
+        }
+        return newSlides;
+      });
+    }
+  };
+
+  const handleRegenerateSlide = (index) => {
+    const slideToRegen = slides[index];
+    if (!slideToRegen || !slideToRegen.visualPrompt) return;
+
+    // Prompt the user for a new visual prompt or use the existing one
+    const updatedPrompt = window.prompt("Edit visual prompt before regenerating:", slideToRegen.visualPrompt);
+    if (updatedPrompt === null) return; // User cancelled
+
+    const slideDataForApi = {
+      title: slideToRegen.title || 'Slide',
+      visualPrompt: updatedPrompt
+    };
+
+    handleGenerateSingleSlide(slideDataForApi, outline?.presentationTheme, index);
+  };
+
+  const handleEditImageSubmit = async () => {
+    if (!editImagePrompt.trim() || !slides[activeSlideIndex] || !slides[activeSlideIndex].imageUrl) return;
+
+    setIsEditGenerating(true);
+    const targetIndex = activeSlideIndex;
+
+    try {
+      const res = await fetch('/api/tools/presentation/edit-slide', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slideImageBase64: slides[targetIndex].imageUrl,
+          editPrompt: editImagePrompt,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to edit slide');
+
+      setSlides(prev => {
+        const arr = [...prev];
+        arr[targetIndex] = {
+          ...arr[targetIndex],
+          imageUrl: data.slide.imageUrl,
+          prompt: `${arr[targetIndex].prompt}\n[Edited: ${data.slide.editPrompt}]`
+        };
+        return arr;
+      });
+      setIsEditingImage(false);
+      setEditImagePrompt('');
+    } catch (e) {
+      alert("Failed to edit image: " + e.message);
+    } finally {
+      setIsEditGenerating(false);
+    }
+  };
+
   // ─── Navigation ──────────────────────────────────────────────────────────
   const totalSlides = slides?.length || outline?.slides?.length || 0;
   const goNext = useCallback(
@@ -282,10 +479,15 @@ export default function PresentationGenerator() {
         </div>
         {activeSlide?.imageUrl && activeSlide.imageUrl !== 'error' ? (
           <img src={activeSlide.imageUrl} alt="" className="max-w-full max-h-full object-contain" />
-        ) : (
+        ) : activeSlide?.status === 'failed' || activeSlide?.imageUrl === 'error' ? (
           <div className="text-white/40 text-center">
             <XCircle className="w-16 h-16 mx-auto mb-4" />
             <p>Slide generation failed</p>
+          </div>
+        ) : (
+          <div className="text-white/50 text-center">
+            <Loader2 className="w-16 h-16 mx-auto mb-4 animate-spin" />
+            <p>Generating slide...</p>
           </div>
         )}
       </div>
@@ -369,175 +571,133 @@ export default function PresentationGenerator() {
 
   // ─── Loading State ───────────────────────────────────────────────────────
   const renderLoading = () => (
-    <div className="flex-1 flex items-center justify-center bg-[#f5f5f5] overflow-hidden">
-      <div className="relative w-full max-w-4xl aspect-video mx-auto px-8">
-        {/* Animated Mesh Gradient background for the "Slide Preview" look */}
-        <div className="absolute inset-0 bg-white rounded-3xl border-2 border-neutral-200 overflow-hidden shadow-2xl scale-[0.95] animate-in fade-in zoom-in-95 duration-1000">
-          {/* Animated Mesh Gradient */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                'linear-gradient(135deg, #fef0e7 0%, #fce4ec 25%, #f3e5f5 50%, #ede7f6 75%, #fef0e7 100%)',
-              backgroundSize: '400% 400%',
-              animation: 'meshGradient 6s ease infinite',
-            }}
-          />
-          {/* Orbs */}
-          <div
-            className="absolute w-[60%] h-[60%] rounded-full blur-[80px] opacity-60 top-[10%] left-[10%]"
-            style={{
-              background: 'radial-gradient(circle, #f8bbd0 0%, transparent 70%)',
-              animation: 'orbFloat1 8s ease-in-out infinite',
-            }}
-          />
-          <div
-            className="absolute w-[50%] h-[50%] rounded-full blur-[70px] opacity-50 bottom-[10%] right-[5%]"
-            style={{
-              background: 'radial-gradient(circle, #e1bee7 0%, transparent 70%)',
-              animation: 'orbFloat2 10s ease-in-out infinite',
-            }}
-          />
+    <div className="flex-1 flex items-center justify-center overflow-hidden">
+      <div className="w-full max-w-4xl aspect-video mx-auto px-8 flex items-center justify-center">
+        <div className="text-center space-y-8 p-12 mx-4">
+          <div className="relative w-24 h-24 mx-auto">
+            <div className="absolute inset-0 border-[3px] border-black/10 rounded-full" />
+            <div className="absolute inset-0 border-[3px] border-black border-t-transparent rounded-full animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center bg-white rounded-full m-1.5">
+              {status === 'drafting' ? (
+                <Brain className="w-8 h-8 text-black" />
+              ) : (
+                <Wand2 className="w-8 h-8 text-black" />
+              )}
+            </div>
+          </div>
+          <div>
+            <h3 className="text-4xl font-bold text-black font-['Playfair_Display'] tracking-tight">
+              {status === 'drafting' ? 'Synthesizing Narrative' : 'Rendering Visuals'}
+            </h3>
+            <div className="mt-4 flex flex-col items-center gap-3">
+              <p className="text-neutral-600/80 text-sm max-w-md mx-auto font-medium leading-relaxed">
+                {status === 'drafting'
+                  ? 'The AI agent is researching your topic and constructing a logical, high-impact narrative flow.'
+                  : `Initializing parallel diffusion models. Just a moment while we render your first slide...`}
+              </p>
 
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center space-y-8 p-12 bg-white/30 backdrop-blur-xl rounded-3xl border border-white/50 shadow-2xl mx-4">
-              <div className="relative w-24 h-24 mx-auto">
-                <div className="absolute inset-0 border-[3px] border-black/10 rounded-full" />
-                <div className="absolute inset-0 border-[3px] border-black border-t-transparent rounded-full animate-spin" />
-                <div className="absolute inset-0 flex items-center justify-center bg-white rounded-full m-1.5 shadow-sm">
-                  {status === 'drafting' ? (
-                    <Brain className="w-8 h-8 text-black" />
-                  ) : (
-                    <Wand2 className="w-8 h-8 text-black" />
-                  )}
+              {status === 'generating' && slides && (
+                <div className="w-full max-w-xs bg-black/5 rounded-full h-1.5 mt-2 overflow-hidden">
+                  <div
+                    className="bg-black h-full transition-all duration-1000 ease-out"
+                    style={{
+                      width: `${(slides.filter((s) => s.status === 'complete').length / slides.length) * 100}%`,
+                    }}
+                  />
                 </div>
-              </div>
-              <div>
-                <h3 className="text-4xl font-bold text-black font-['Playfair_Display'] tracking-tight">
-                  {status === 'drafting' ? 'Synthesizing Narrative' : 'Rendering Visuals'}
-                </h3>
-                <div className="mt-4 flex flex-col items-center gap-3">
-                  <p className="text-neutral-600/80 text-sm max-w-md mx-auto font-medium leading-relaxed">
-                    {status === 'drafting'
-                      ? 'The AI agent is researching your topic and constructing a logical, high-impact narrative flow.'
-                      : `Initializing parallel diffusion models. Just a moment while we render your first slide...`}
-                  </p>
-
-                  {status === 'generating' && slides && (
-                    <div className="w-full max-w-xs bg-black/5 rounded-full h-1.5 mt-2 overflow-hidden">
-                      <div
-                        className="bg-black h-full transition-all duration-1000 ease-out"
-                        style={{
-                          width: `${(slides.filter((s) => s.status === 'complete').length / slides.length) * 100}%`,
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes meshGradient {
-          0% {
-            background-position: 0% 50%;
-          }
-          25% {
-            background-position: 100% 0%;
-          }
-          50% {
-            background-position: 100% 100%;
-          }
-          75% {
-            background-position: 0% 100%;
-          }
-          100% {
-            background-position: 0% 50%;
-          }
-        }
-        @keyframes orbFloat1 {
-          0%,
-          100% {
-            transform: translate(0, 0) scale(1);
-          }
-          33% {
-            transform: translate(30%, 20%) scale(1.1);
-          }
-          66% {
-            transform: translate(-10%, 30%) scale(0.95);
-          }
-        }
-        @keyframes orbFloat2 {
-          0%,
-          100% {
-            transform: translate(0, 0) scale(1);
-          }
-          33% {
-            transform: translate(-25%, -15%) scale(1.05);
-          }
-          66% {
-            transform: translate(15%, -25%) scale(1.1);
-          }
-        }
-      `}</style>
     </div>
   );
 
-  // ─── Outline Review (replaces main canvas area) ──────────────────────────
+  // ─── Outline Review (Redesigned) ─────────────────────────────────────────
   const renderOutlineReview = () => (
-    <div className="flex-1 overflow-y-auto p-6 lg:p-12 bg-[#f5f5f5]">
-      <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b-2 border-black pb-6">
+    <div className="flex-1 overflow-y-auto p-6 lg:p-12 bg-[#ebeff5]">
+      <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
           <div>
-            <h3 className="text-4xl font-bold text-black font-['Playfair_Display'] tracking-tight">
-              Review Outline
+            <h3 className="text-2xl font-semibold text-neutral-800 tracking-tight">
+              Outline
             </h3>
-            <p className="text-sm font-medium text-neutral-500 mt-2 uppercase tracking-widest">
-              Verify narrative flow before visual rendering
-            </p>
           </div>
           <div className="flex gap-3 shrink-0">
             <button
               onClick={handleReset}
-              className="px-6 py-3 text-xs font-bold text-neutral-500 hover:text-black hover:bg-neutral-200 bg-neutral-100 rounded-xl uppercase tracking-widest transition-all"
+              className="px-6 py-2.5 text-xs font-bold text-neutral-500 hover:text-black hover:bg-neutral-200 bg-white shadow-sm border border-neutral-200 rounded-lg uppercase tracking-widest transition-all"
             >
               Start Over
             </button>
             <button
               onClick={handleGenerateSlides}
-              className="px-6 py-3 bg-black text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-neutral-800 hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.98] transition-all flex items-center gap-2 group"
+              className="px-6 py-2.5 bg-black text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-neutral-800 hover:shadow-md transition-all flex items-center gap-2 group"
             >
-              <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" /> Render
-              Visuals
+              <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" /> Render Visuals
             </button>
           </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="bg-white rounded-xl shadow-sm border border-neutral-100 p-6 space-y-4">
           {outline.slides.map((slide, idx) => (
             <div
               key={idx}
-              className="bg-white rounded-2xl border-2 border-neutral-200 p-6 flex flex-col sm:flex-row gap-6 hover:border-black hover:shadow-xl transition-all duration-300 group"
+              className="flex items-stretch bg-neutral-100/50 rounded-lg border border-neutral-200 focus-within:border-indigo-300 focus-within:ring-1 focus-within:ring-indigo-100 transition-all overflow-hidden group"
             >
-              <div className="text-neutral-300 font-mono font-bold text-3xl leading-none pt-1 group-hover:text-black transition-colors">
-                {(idx + 1).toString().padStart(2, '0')}
+              {/* Left indicator block */}
+              <div className="w-14 shrink-0 bg-[#fdf5fa] flex items-center justify-center border-r border-neutral-200">
+                <span className="text-[#6c5dd3] font-bold text-lg font-mono">
+                  {idx + 1}
+                </span>
               </div>
-              <div className="flex-1 min-w-0 space-y-4">
-                <h4 className="text-xl font-bold text-black font-['Playfair_Display'] tracking-tight">
-                  Slide {(idx + 1).toString().padStart(2, '0')}
-                </h4>
-                <div className="mt-4 text-xs bg-neutral-50 text-neutral-600 p-4 rounded-xl border border-neutral-200 font-mono leading-relaxed max-h-32 overflow-y-auto">
-                  <span className="font-bold text-black uppercase tracking-widest mr-2">
-                    Visual Prompt:
-                  </span>
-                  {slide.visualPrompt}
+
+              {/* Editable Content */}
+              <div className="flex-1 min-w-0 p-3 relative">
+                <textarea
+                  value={slide.visualPrompt}
+                  onChange={(e) => updateOutlinePrompt(idx, e.target.value)}
+                  className="w-full bg-transparent border-none focus:ring-0 text-sm text-neutral-700 resize-none min-h-[60px] p-0 outline-none leading-relaxed"
+                  placeholder="Describe your slide visual here..."
+                />
+
+                {/* Actions overlay */}
+                <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 backdrop-blur-sm rounded-md p-1 shadow-sm border border-neutral-200">
+                  <button
+                    onClick={() => moveOutlineSlide(idx, 'up')}
+                    disabled={idx === 0}
+                    className="p-1 text-neutral-400 hover:text-black disabled:opacity-30 rounded hover:bg-neutral-100"
+                    title="Move Up"
+                  >
+                    <ChevronLeft className="w-4 h-4 rotate-90" />
+                  </button>
+                  <button
+                    onClick={() => moveOutlineSlide(idx, 'down')}
+                    disabled={idx === outline.slides.length - 1}
+                    className="p-1 text-neutral-400 hover:text-black disabled:opacity-30 rounded hover:bg-neutral-100"
+                    title="Move Down"
+                  >
+                    <ChevronRight className="w-4 h-4 rotate-90" />
+                  </button>
+                  <button
+                    onClick={() => deleteOutlineSlide(idx)}
+                    disabled={outline.slides.length <= 1}
+                    className="p-1 text-red-400 hover:text-red-600 disabled:opacity-30 rounded hover:bg-red-50 ml-1"
+                    title="Delete Slide"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             </div>
           ))}
+
+          <button
+            onClick={addOutlineSlide}
+            className="w-full py-4 rounded-lg border-2 border-dashed border-neutral-200 text-neutral-500 hover:text-black hover:border-black hover:bg-neutral-50 transition-all flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-widest mt-4"
+          >
+            <PlusCircle className="w-5 h-5" /> Add Slide
+          </button>
         </div>
       </div>
     </div>
@@ -612,6 +772,13 @@ export default function PresentationGenerator() {
           {isEditorView && (
             <>
               <button
+                onClick={addEditorSlide}
+                className="px-3 py-1.5 rounded-lg hover:bg-neutral-100 text-xs font-bold uppercase tracking-widest text-neutral-600 hover:text-black transition-all border border-neutral-200 hover:border-black flex items-center gap-1.5"
+                title="Add New Blank Slide"
+              >
+                <PlusCircle className="w-3.5 h-3.5" /> Add Slide
+              </button>
+              <button
                 onClick={toggleFullscreen}
                 className="p-2.5 rounded-xl hover:bg-neutral-100 text-neutral-500 hover:text-black transition-all border border-transparent hover:border-neutral-200"
                 title="Slideshow"
@@ -651,15 +818,42 @@ export default function PresentationGenerator() {
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Sidebar / Topbar for Thumbnails */}
         {isEditorView && (
-          <aside className="md:w-[140px] lg:w-[180px] bg-white md:border-r border-b md:border-b-0 border-neutral-200 overflow-x-auto md:overflow-y-auto p-3 md:p-4 flex md:flex-col gap-3 md:gap-2 flex-shrink-0 custom-chat-scrollbar">
+          <aside className="md:w-[160px] lg:w-[180px] bg-white md:border-r border-b md:border-b-0 border-neutral-200 overflow-x-auto md:overflow-y-auto p-3 md:p-4 flex md:flex-col gap-3 md:gap-4 flex-shrink-0 custom-chat-scrollbar">
             {slides.map((slide, idx) => (
-              <div key={idx} className="w-[120px] md:w-full flex-shrink-0">
+              <div key={idx} className="w-[120px] md:w-full flex-shrink-0 relative group">
                 <SlideThumbnail
                   slide={slide}
                   index={idx}
                   isActive={idx === activeSlideIndex}
                   onClick={() => setActiveSlideIndex(idx)}
                 />
+
+                {/* Editor Sidebar Hover Controls */}
+                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1 bg-white/90 backdrop-blur-sm p-1 rounded-md shadow-sm border border-neutral-200 z-10">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); moveEditorSlide(idx, 'up'); }}
+                    disabled={idx === 0}
+                    className="p-1 hover:bg-neutral-100 rounded text-neutral-500 hover:text-black disabled:opacity-30"
+                    title="Move slide up"
+                  >
+                    <ChevronLeft className="w-3 h-3 rotate-90" />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); moveEditorSlide(idx, 'down'); }}
+                    disabled={idx === slides.length - 1}
+                    className="p-1 hover:bg-neutral-100 rounded text-neutral-500 hover:text-black disabled:opacity-30"
+                    title="Move slide down"
+                  >
+                    <ChevronRight className="w-3 h-3 rotate-90" />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); deleteEditorSlide(idx); }}
+                    disabled={slides.length <= 1}
+                    className="p-1 hover:bg-red-50 rounded text-red-500 hover:text-red-700 disabled:opacity-30 ml-auto"
+                    title="Delete slide"
+                  >
+                  </button>
+                </div>
               </div>
             ))}
           </aside>
@@ -668,7 +862,7 @@ export default function PresentationGenerator() {
         {/* Main Canvas Area */}
         <main
           ref={canvasRef}
-          className="flex-1 flex flex-col min-h-0 bg-[#f5f5f5] overflow-y-auto md:overflow-hidden"
+          className="flex-1 flex flex-col min-h-0 min-w-0 bg-[#f5f5f5] overflow-y-auto md:overflow-hidden relative"
         >
           {/* Idle (show modal) */}
           {(status === 'idle' || status === 'error') && showModal && renderModal()}
@@ -696,15 +890,15 @@ export default function PresentationGenerator() {
 
           {/* Complete: Slide Viewer */}
           {isEditorView && activeSlide && (
-            <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative">
-              <div className="w-full max-w-6xl aspect-video bg-white rounded-2xl shadow-2xl border-2 border-black overflow-hidden relative group">
+            <div className="flex-1 min-h-0 flex items-center justify-center p-6 lg:p-12 relative overflow-auto">
+              <div className="w-full max-w-6xl aspect-video bg-white rounded-2xl shadow-2xl border-2 border-black overflow-hidden relative group shrink-0">
                 {activeSlide.imageUrl && activeSlide.imageUrl !== 'error' ? (
                   <img
                     src={activeSlide.imageUrl}
                     alt={activeSlide.fallbackText}
                     className="w-full h-full object-contain bg-neutral-50"
                   />
-                ) : (
+                ) : activeSlide.status === 'failed' || activeSlide.imageUrl === 'error' ? (
                   <div className="w-full h-full flex flex-col items-center justify-center text-neutral-400 gap-4 bg-neutral-50 p-6 text-center">
                     <XCircle className="w-16 h-16 text-red-400" />
                     <p className="text-lg font-bold text-red-500 font-['Playfair_Display']">
@@ -715,6 +909,13 @@ export default function PresentationGenerator() {
                         {activeSlide.error}
                       </p>
                     )}
+                  </div>
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-neutral-400 gap-4 bg-neutral-50 p-6 text-center">
+                    <Loader2 className="w-12 h-12 text-neutral-400 animate-spin" />
+                    <p className="text-sm font-bold uppercase tracking-widest text-neutral-500">
+                      Generating Slide...
+                    </p>
                   </div>
                 )}
 
@@ -730,17 +931,35 @@ export default function PresentationGenerator() {
           {isEditorView && activeSlide && (
             <div className="h-16 bg-white border-t border-neutral-200 flex items-center justify-between px-6 flex-shrink-0 z-10">
               <p
-                className="text-xs text-neutral-500 font-mono truncate max-w-2xl"
+                className="text-xs text-neutral-500 font-mono truncate max-w-xl"
                 title={activeSlide.prompt || activeSlide.fallbackText}
               >
                 {activeSlide.fallbackText || 'No description available'}
               </p>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsEditingImage(!isEditingImage)}
+                  disabled={!activeSlide.imageUrl || activeSlide.imageUrl === 'error'}
+                  className="px-3 py-2 bg-neutral-100 hover:bg-neutral-200 disabled:opacity-50 rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 text-black"
+                  title="Visually edit this slide"
+                >
+                  <Wand2 className="w-3.5 h-3.5" /> Edit Image
+                </button>
+                <button
+                  onClick={() => handleRegenerateSlide(activeSlideIndex)}
+                  className="px-3 py-2 bg-neutral-100 hover:bg-neutral-200 rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 text-black border border-transparent hover:border-black"
+                  title="Edit prompt and regenerate completely"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" /> Regenerate
+                </button>
+
+                <div className="w-px h-6 bg-neutral-200 mx-1"></div>
+
                 {activeSlide.imageUrl && activeSlide.imageUrl !== 'error' && (
                   <a
                     href={activeSlide.imageUrl}
                     download={`slide-${activeSlideIndex + 1}.png`}
-                    className="px-4 py-2 bg-neutral-100 hover:bg-black hover:text-white rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 border border-neutral-200 hover:border-black"
+                    className="px-4 py-2 bg-black text-white hover:bg-neutral-800 rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2"
                     title="Download Slide"
                   >
                     <Download className="w-4 h-4" /> Download
@@ -749,8 +968,41 @@ export default function PresentationGenerator() {
               </div>
             </div>
           )}
+
+          {/* Editor Image Edit Modal Overaly */}
+          {isEditorView && activeSlide && isEditingImage && (
+            <div className="absolute bottom-20 right-6 w-80 bg-white rounded-xl shadow-2xl border border-neutral-200 p-4 z-50 animate-in slide-in-from-bottom-5">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-bold uppercase tracking-widest text-black">Edit Visuals</h4>
+                <button onClick={() => setIsEditingImage(false)} className="text-neutral-400 hover:text-black">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs text-neutral-500 mb-3 leading-relaxed">
+                Describe the visual change you want (e.g., "Make the background pure white", "Change accents to deep blue").
+              </p>
+              <textarea
+                value={editImagePrompt}
+                onChange={(e) => setEditImagePrompt(e.target.value)}
+                placeholder="How should I modify this image?"
+                className="w-full bg-neutral-50 border border-neutral-200 focus:border-black rounded-lg p-3 text-sm focus:ring-0 resize-none outline-none transition-colors h-24 mb-3 text-black"
+                disabled={isEditGenerating}
+              />
+              <button
+                onClick={handleEditImageSubmit}
+                disabled={!editImagePrompt.trim() || isEditGenerating}
+                className="w-full py-2 bg-black text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-neutral-800 transition-all disabled:opacity-50 disabled:hover:bg-black flex items-center justify-center gap-2"
+              >
+                {isEditGenerating ? (
+                  <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing...</>
+                ) : (
+                  <><Sparkles className="w-3.5 h-3.5" /> Apply Edit</>
+                )}
+              </button>
+            </div>
+          )}
         </main>
       </div>
-    </div>
+    </div >
   );
 }

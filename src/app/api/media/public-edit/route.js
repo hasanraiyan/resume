@@ -1,12 +1,39 @@
 // src/app/api/media/public-edit/route.js
-import dbConnect from '@/lib/dbConnect';
-import MediaAgentSettings from '@/models/MediaAgentSettings';
 import agentRegistry from '@/lib/agents';
 import { NextResponse } from 'next/server';
 import { AGENT_IDS } from '@/lib/constants/agents';
+import { UTApi, UTFile } from 'uploadthing/server';
 
 // Ensure agents are registered
 import '@/lib/agents';
+
+const utapi = new UTApi();
+
+function getImageExtension(mimeType) {
+  if (mimeType === 'image/jpeg') return 'jpg';
+  if (mimeType === 'image/png') return 'png';
+  if (mimeType === 'image/webp') return 'webp';
+  return 'png';
+}
+
+async function uploadGeneratedImage({ buffer, mimeType, prefix }) {
+  const extension = getImageExtension(mimeType);
+  const filename = `${prefix}-${Date.now()}.${extension}`;
+  const file = new UTFile([buffer], filename, {
+    type: mimeType,
+    lastModified: Date.now(),
+  });
+
+  const uploadResult = await utapi.uploadFiles(file, {
+    acl: 'public-read',
+    contentDisposition: 'inline',
+  });
+  if (uploadResult.error || !uploadResult.data) {
+    throw new Error(uploadResult.error?.message || 'Failed to upload edited image.');
+  }
+
+  return uploadResult.data;
+}
 
 export async function POST(request) {
   try {
@@ -45,15 +72,18 @@ export async function POST(request) {
       aspectRatio,
     });
 
-    // Convert back to base64 for direct display
-    const resultBase64 = `data:${mimeType};base64,${buffer.toString('base64')}`;
+    const uploadedFile = await uploadGeneratedImage({
+      buffer,
+      mimeType,
+      prefix: 'ai-edit',
+    });
 
-    console.log('[Public Edit] Success, returning edited image data...');
+    console.log('[Public Edit] Success, returning UploadThing URL...');
 
-    // No storage, no Cloudinary, just the result
     return NextResponse.json({
       success: true,
-      image: resultBase64,
+      image: uploadedFile.ufsUrl,
+      fileKey: uploadedFile.key,
       mimeType,
       agentId,
     });

@@ -1,13 +1,40 @@
 // src/app/api/media/public-generate/route.js
-import dbConnect from '@/lib/dbConnect';
-import MediaAgentSettings from '@/models/MediaAgentSettings';
 import agentRegistry from '@/lib/agents';
 import { NextResponse } from 'next/server';
 import { AGENT_IDS } from '@/lib/constants/agents';
 import { rateLimit } from '@/lib/rateLimit';
+import { UTApi, UTFile } from 'uploadthing/server';
 
 // Ensure agents are registered
 import '@/lib/agents';
+
+const utapi = new UTApi();
+
+function getImageExtension(mimeType) {
+  if (mimeType === 'image/jpeg') return 'jpg';
+  if (mimeType === 'image/png') return 'png';
+  if (mimeType === 'image/webp') return 'webp';
+  return 'png';
+}
+
+async function uploadGeneratedImage({ buffer, mimeType, prefix }) {
+  const extension = getImageExtension(mimeType);
+  const filename = `${prefix}-${Date.now()}.${extension}`;
+  const file = new UTFile([buffer], filename, {
+    type: mimeType,
+    lastModified: Date.now(),
+  });
+
+  const uploadResult = await utapi.uploadFiles(file, {
+    acl: 'public-read',
+    contentDisposition: 'inline',
+  });
+  if (uploadResult.error || !uploadResult.data) {
+    throw new Error(uploadResult.error?.message || 'Failed to upload generated image.');
+  }
+
+  return uploadResult.data;
+}
 
 export async function POST(request) {
   // Rate limit: 5 requests per 60 minutes
@@ -37,15 +64,18 @@ export async function POST(request) {
       aspectRatio,
     });
 
-    // Convert to base64 for direct display
-    const base64Image = `data:${mimeType};base64,${buffer.toString('base64')}`;
+    const uploadedFile = await uploadGeneratedImage({
+      buffer,
+      mimeType,
+      prefix: 'ai-generate',
+    });
 
-    console.log('[Public Generate] Success, returning image data...');
+    console.log('[Public Generate] Success, returning UploadThing URL...');
 
-    // We do NOT save to MongoDB, Cloudinary, or Qdrant as requested
     return NextResponse.json({
       success: true,
-      image: base64Image,
+      image: uploadedFile.ufsUrl,
+      fileKey: uploadedFile.key,
       mimeType,
       agentId,
     });
