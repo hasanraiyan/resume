@@ -2,6 +2,26 @@ import { NextResponse } from 'next/server';
 import agentRegistry from '@/lib/agents';
 import { AGENT_IDS } from '@/lib/constants/agents';
 import dbConnect from '@/lib/dbConnect';
+import { v2 as cloudinary } from 'cloudinary';
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+async function uploadToCloudinary(base64Image) {
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader.upload(
+      base64Image,
+      { folder: 'presentation_assets', resource_type: 'image' },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result.secure_url);
+      }
+    );
+  });
+}
 
 function normalizeSlideResponse(sourceSlide, generatedSlide) {
   const title = generatedSlide?.title || sourceSlide?.title || sourceSlide?.fallbackText || 'Slide';
@@ -64,6 +84,15 @@ export async function POST(req) {
 
     // Generate single slide visual
     const result = await presentationAgent.generateSlideImage(sourceSlide, designSystem);
+
+    if (result.imageUrl && result.imageUrl.startsWith('data:image')) {
+      try {
+        const cloudUrl = await uploadToCloudinary(result.imageUrl);
+        result.imageUrl = cloudUrl;
+      } catch (cloudErr) {
+        console.error('Cloudinary upload failed for slide:', cloudErr);
+      }
+    }
 
     return NextResponse.json({
       success: true,
