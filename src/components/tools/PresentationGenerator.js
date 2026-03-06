@@ -1,28 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import {
-  Sparkles,
-  Brain,
-  Wand2,
-  XCircle,
-  Download,
-  Play,
-  RotateCcw,
-  PlusCircle,
-  Minimize2,
-  Loader2,
-  ArrowLeft,
-  X,
-  Settings2,
-  LayoutTemplate,
-  ChevronDown,
-  ChevronUp,
-  Image as ImageIcon,
-  Trash2,
-} from 'lucide-react';
-import Link from 'next/link';
+import { XCircle, X, Minimize2, Loader2 } from 'lucide-react';
+
+import StartScreen from './presentation/StartScreen';
+import OutlineScreen from './presentation/OutlineScreen';
+import EditorLayout from './presentation/EditorLayout';
+import LoadingScreen from './presentation/LoadingScreen';
 
 // ─── Utility Functions ───────────────────────────────────────────────────────
 const getDefaultSlideTitle = (index) => `Slide ${index + 1}`;
@@ -37,6 +22,7 @@ function normalizeOutlineSlide(slide = {}, index = 0) {
 function normalizeRenderedSlide(slide = {}, index = 0) {
   const outlineSlide = normalizeOutlineSlide(slide, index);
   return {
+    id: slide.id || crypto.randomUUID(), // NEW: generate ID here if missing
     title: outlineSlide.title,
     fallbackText: slide.fallbackText?.trim() || outlineSlide.title,
     visualPrompt: outlineSlide.visualPrompt,
@@ -50,126 +36,6 @@ function normalizeRenderedSlide(slide = {}, index = 0) {
 function replaceItemAtIndex(items, index, item) {
   return items.map((c, i) => (i === index ? item : c));
 }
-
-// ─── Memoized Sub-Components (Solves React Re-render lags) ───────────────────
-
-const SlideThumbnail = memo(({ slide, index, isActive, onClick, onDelete, totalSlides }) => (
-  <button
-    onClick={() => onClick(index)}
-    className={`group relative flex flex-col gap-2 p-2 transition-all outline-none rounded-xl ${
-      isActive ? 'bg-white shadow-sm ring-2 ring-black' : 'hover:bg-neutral-200/50'
-    }`}
-  >
-    <div
-      className={`w-full aspect-video rounded-lg overflow-hidden border relative ${isActive ? 'border-transparent' : 'border-neutral-200 opacity-80 group-hover:opacity-100'}`}
-    >
-      {slide.status === 'generating' && (
-        <div className="absolute inset-0 z-20 bg-white flex flex-col items-center justify-center gap-1.5">
-          <div className="flex gap-1">
-            <span
-              className="w-1 h-1 bg-black rounded-full"
-              style={{ animation: 'dotPulse 1.4s ease-in-out infinite' }}
-            />
-            <span
-              className="w-1 h-1 bg-black rounded-full"
-              style={{ animation: 'dotPulse 1.4s ease-in-out 0.2s infinite' }}
-            />
-            <span
-              className="w-1 h-1 bg-black rounded-full"
-              style={{ animation: 'dotPulse 1.4s ease-in-out 0.4s infinite' }}
-            />
-          </div>
-        </div>
-      )}
-      {slide.imageUrl && slide.imageUrl !== 'error' ? (
-        <img src={slide.imageUrl} alt="" className="w-full h-full object-cover" />
-      ) : slide.status === 'failed' || slide.imageUrl === 'error' ? (
-        <div className="w-full h-full bg-neutral-100 flex items-center justify-center">
-          <XCircle className="w-4 h-4 text-neutral-400" />
-        </div>
-      ) : (
-        slide.status !== 'generating' && (
-          <div className="w-full h-full bg-neutral-100 flex items-center justify-center">
-            <Loader2 className="w-4 h-4 text-neutral-400 animate-spin" />
-          </div>
-        )
-      )}
-    </div>
-    <div className="flex items-center justify-between w-full px-1">
-      <span
-        className={`text-[10px] font-black uppercase tracking-widest ${isActive ? 'text-black' : 'text-neutral-400'}`}
-      >
-        {String(index + 1).padStart(2, '0')}
-      </span>
-      {totalSlides > 1 && (
-        <span
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(index);
-          }}
-          className="opacity-0 group-hover:opacity-100 text-neutral-400 hover:text-black transition-opacity"
-        >
-          <X className="w-3 h-3" />
-        </span>
-      )}
-    </div>
-  </button>
-));
-SlideThumbnail.displayName = 'SlideThumbnail';
-
-const SlideCanvas = memo(({ slide }) => {
-  if (!slide) return null;
-  return (
-    <div className="w-full max-w-4xl aspect-video bg-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-neutral-200 relative flex items-center justify-center overflow-hidden transition-all duration-300 z-10">
-      {slide.status === 'generating' && (
-        <div className="absolute inset-0 z-20 bg-white flex flex-col items-center justify-center">
-          <Loader2 className="w-6 h-6 text-black animate-spin stroke-[1.5]" />
-          <div className="mt-6 flex flex-col items-center gap-2.5">
-            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-black">
-              Rendering Slide
-            </span>
-            <div className="flex gap-1.5">
-              <span
-                className="w-1 h-1 bg-black rounded-full"
-                style={{ animation: 'dotPulse 1.4s ease-in-out infinite' }}
-              />
-              <span
-                className="w-1 h-1 bg-black rounded-full"
-                style={{ animation: 'dotPulse 1.4s ease-in-out 0.2s infinite' }}
-              />
-              <span
-                className="w-1 h-1 bg-black rounded-full"
-                style={{ animation: 'dotPulse 1.4s ease-in-out 0.4s infinite' }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {slide.imageUrl && slide.imageUrl !== 'error' ? (
-        <img src={slide.imageUrl} alt="Slide canvas" className="w-full h-full object-cover" />
-      ) : slide.status === 'failed' || slide.imageUrl === 'error' ? (
-        <div className="text-center space-y-3">
-          <XCircle className="w-8 h-8 text-neutral-400 mx-auto" />
-          <p className="text-black font-semibold uppercase tracking-widest text-xs">
-            Failed to render
-          </p>
-          <p className="text-[10px] text-neutral-500 max-w-[250px] uppercase">{slide.error}</p>
-        </div>
-      ) : (
-        slide.status !== 'generating' && (
-          <div className="flex flex-col items-center gap-4 text-neutral-400">
-            <Loader2 className="w-6 h-6 animate-spin text-black" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-black">
-              Initializing
-            </span>
-          </div>
-        )
-      )}
-    </div>
-  );
-});
-SlideCanvas.displayName = 'SlideCanvas';
 
 // ─── Main Application Component ──────────────────────────────────────────────
 export default function PresentationGenerator() {
@@ -199,6 +65,23 @@ export default function PresentationGenerator() {
   const searchParams = useSearchParams();
   const autoStartRef = useRef(false);
 
+  // Keyboard navigation for fullscreen and general prev/next
+  const goNext = useCallback(
+    () => setActiveSlideIndex((i) => Math.min(i + 1, (slides?.length || 0) - 1)),
+    [slides]
+  );
+  const goPrev = useCallback(() => setActiveSlideIndex((i) => Math.max(i - 1, 0)), []);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === 'ArrowRight') goNext();
+      if (e.key === 'ArrowLeft') goPrev();
+      if (e.key === 'Escape' && isFullscreen) setIsFullscreen(false);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [goNext, goPrev, isFullscreen]);
+
   useEffect(() => {
     if (autoStartRef.current) return;
     const urlTopic = searchParams.get('topic');
@@ -207,7 +90,7 @@ export default function PresentationGenerator() {
       autoStartRef.current = true;
       setTopic(urlTopic);
       if (urlStyle) setDesignStyle(urlStyle);
-      handleDraftOutlineFromTeaser(urlTopic, urlStyle || designStyle);
+      executeDraftOutline(urlTopic, '', slideCount, urlStyle || designStyle);
     }
   }, [searchParams, designStyle]);
 
@@ -224,8 +107,6 @@ export default function PresentationGenerator() {
     return data;
   };
 
-  const handleDraftOutlineFromTeaser = async (teaserTopic, teaserStyle) =>
-    executeDraftOutline(teaserTopic, '', slideCount, teaserStyle);
   const handleDraftOutline = async () =>
     executeDraftOutline(topic, instructions, slideCount, designStyle);
 
@@ -244,8 +125,13 @@ export default function PresentationGenerator() {
           designStyle: style,
         }),
       });
+      // Ensure all outline slides have a unique ID
+      const slidesWithIds = data.outline.slides.map((s) => ({
+        ...s,
+        id: s.id || crypto.randomUUID(),
+      }));
       setPresentationId(data.presentationId);
-      setOutline({ ...data.outline, designSystem: style });
+      setOutline({ ...data.outline, slides: slidesWithIds, designSystem: style });
       setStatus('review');
     } catch (e) {
       setErrorMsg(e.message);
@@ -274,14 +160,21 @@ export default function PresentationGenerator() {
             body: JSON.stringify({ slide: slideData, designSystem: outline.designSystem }),
           });
           setSlides((prev) =>
-            replaceItemAtIndex(prev, idx, normalizeRenderedSlide(data.slide, idx))
+            replaceItemAtIndex(
+              prev,
+              idx,
+              normalizeRenderedSlide({ ...data.slide, id: prev[idx].id }, idx)
+            )
           );
         } catch (e) {
           setSlides((prev) =>
             replaceItemAtIndex(
               prev,
               idx,
-              normalizeRenderedSlide({ status: 'failed', error: e.message, ...slideData }, idx)
+              normalizeRenderedSlide(
+                { status: 'failed', error: e.message, ...slideData, id: prev[idx].id },
+                idx
+              )
             )
           );
         }
@@ -302,23 +195,24 @@ export default function PresentationGenerator() {
   };
 
   // ─── Editor Actions ────────────────────────────────────────────────────────
-  const deleteEditorSlide = useCallback(
-    (index) => {
-      setSlides((prev) => prev.filter((_, i) => i !== index));
-      setOutline((prev) =>
-        prev ? { ...prev, slides: prev.slides.filter((_, i) => i !== index) } : prev
-      );
-      setActiveSlideIndex((curr) => Math.max(0, Math.min(curr, slides.length - 2)));
-    },
-    [slides]
-  );
+  const deleteEditorSlide = useCallback((index) => {
+    setSlides((prev) => {
+      const updated = prev.filter((_, i) => i !== index);
+      setActiveSlideIndex((curr) => Math.max(0, Math.min(curr, updated.length - 1)));
+      return updated;
+    });
+    setOutline((prev) =>
+      prev ? { ...prev, slides: prev.slides.filter((_, i) => i !== index) } : prev
+    );
+  }, []);
 
   const handleAddEditorSlide = async () => {
     if (!addSlideBrief.trim() || !outline) return;
     const insertionIndex = activeSlideIndex + 1;
     const slideBrief = addSlideBrief.trim();
+    const newId = crypto.randomUUID();
     const placeholderRendered = normalizeRenderedSlide(
-      { title: 'New Slide', visualPrompt: slideBrief, status: 'generating' },
+      { id: newId, title: 'New Slide', visualPrompt: slideBrief, status: 'generating' },
       insertionIndex
     );
 
@@ -334,7 +228,7 @@ export default function PresentationGenerator() {
             ...prev,
             slides: [
               ...prev.slides.slice(0, insertionIndex),
-              { title: 'New Slide', visualPrompt: slideBrief },
+              { id: newId, title: 'New Slide', visualPrompt: slideBrief },
               ...prev.slides.slice(insertionIndex),
             ],
           }
@@ -355,7 +249,11 @@ export default function PresentationGenerator() {
         }),
       });
       setSlides((prev) =>
-        replaceItemAtIndex(prev, insertionIndex, normalizeRenderedSlide(data.slide, insertionIndex))
+        replaceItemAtIndex(
+          prev,
+          insertionIndex,
+          normalizeRenderedSlide({ ...data.slide, id: newId }, insertionIndex)
+        )
       );
       setAddSlideBrief('');
     } catch (e) {
@@ -375,7 +273,9 @@ export default function PresentationGenerator() {
     const slideToRegen = slides[index];
     if (!slideToRegen || !slideToRegen.visualPrompt) return;
 
-    setSlides((prev) => replaceItemAtIndex(prev, index, { ...prev[index], status: 'generating' }));
+    setSlides((prev) =>
+      replaceItemAtIndex(prev, index, { ...prev[index], status: 'generating', imageUrl: null })
+    );
 
     try {
       const data = await fetchWithJSONCheck('/api/tools/presentation/generate-slide', {
@@ -384,7 +284,11 @@ export default function PresentationGenerator() {
         body: JSON.stringify({ slide: slideToRegen, designSystem: outline?.designSystem }),
       });
       setSlides((prev) =>
-        replaceItemAtIndex(prev, index, normalizeRenderedSlide(data.slide, index))
+        replaceItemAtIndex(
+          prev,
+          index,
+          normalizeRenderedSlide({ ...data.slide, id: prev[index].id }, index)
+        )
       );
     } catch (e) {
       setSlides((prev) =>
@@ -397,8 +301,14 @@ export default function PresentationGenerator() {
     if (!editImagePrompt.trim() || !slides[activeSlideIndex]?.imageUrl) return;
     setIsEditGenerating(true);
     const targetIndex = activeSlideIndex;
+    const oldImageUrl = slides[targetIndex].imageUrl;
+
     setSlides((prev) =>
-      replaceItemAtIndex(prev, targetIndex, { ...prev[targetIndex], status: 'generating' })
+      replaceItemAtIndex(prev, targetIndex, {
+        ...prev[targetIndex],
+        status: 'generating',
+        imageUrl: null,
+      })
     );
 
     try {
@@ -406,7 +316,7 @@ export default function PresentationGenerator() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          slideImageBase64: slides[targetIndex].imageUrl,
+          slideImageBase64: oldImageUrl,
           editPrompt: editImagePrompt,
         }),
       });
@@ -420,7 +330,12 @@ export default function PresentationGenerator() {
       setEditImagePrompt('');
     } catch (e) {
       setSlides((prev) =>
-        replaceItemAtIndex(prev, targetIndex, { ...prev[targetIndex], status: 'complete' })
+        // Revert to old image URL on failure
+        replaceItemAtIndex(prev, targetIndex, {
+          ...prev[targetIndex],
+          status: 'complete',
+          imageUrl: oldImageUrl,
+        })
       );
       alert('Failed to edit image: ' + e.message);
     } finally {
@@ -437,10 +352,8 @@ export default function PresentationGenerator() {
       const completedSlides = slides.filter((s) => s.imageUrl && s.imageUrl !== 'error');
       if (completedSlides.length === 0) throw new Error('No completed slides to export');
 
-      // Dynamically import jsPDF so it doesn't break Next.js server-side rendering
       const { jsPDF } = await import('jspdf');
 
-      // Create a Landscape PDF using standard 16:9 1080p pixels (1920x1080)
       const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'px',
@@ -451,7 +364,6 @@ export default function PresentationGenerator() {
         const slide = completedSlides[i];
         let base64Img = slide.imageUrl;
 
-        // If the URL is external and not a base64 string, fetch it to base64
         if (!base64Img.startsWith('data:image')) {
           const res = await fetch(slide.imageUrl);
           if (!res.ok) throw new Error(`Failed to fetch image for slide ${i + 1}`);
@@ -464,22 +376,18 @@ export default function PresentationGenerator() {
           });
         }
 
-        // Add a new page for every slide after the first one
         if (i > 0) pdf.addPage();
 
-        // Extract format (JPEG, PNG, WEBP)
         const mimeTypeMatch = base64Img.match(/data:(.*?);/);
-        let imgFormat = 'JPEG'; // Default
+        let imgFormat = 'JPEG';
         if (mimeTypeMatch && mimeTypeMatch[1]) {
           if (mimeTypeMatch[1] === 'image/png') imgFormat = 'PNG';
           else if (mimeTypeMatch[1] === 'image/webp') imgFormat = 'WEBP';
         }
 
-        // Add to PDF canvas starting from top-left (0, 0) matching 1920x1080 dimensions
         pdf.addImage(base64Img, imgFormat, 0, 0, 1920, 1080);
       }
 
-      // Automatically download
       const fileName = `${(topic || 'presentation').trim().replace(/\s+/g, '_')}.pdf`;
       pdf.save(fileName);
     } catch (error) {
@@ -488,480 +396,6 @@ export default function PresentationGenerator() {
     } finally {
       setIsExporting(false);
     }
-  };
-  // ──────────────────────────────────────────────────────────────────────────
-
-  const goNext = useCallback(
-    () => setActiveSlideIndex((i) => Math.min(i + 1, (slides?.length || 0) - 1)),
-    [slides]
-  );
-  const goPrev = useCallback(() => setActiveSlideIndex((i) => Math.max(i - 1, 0)), []);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (e.key === 'ArrowRight') goNext();
-      if (e.key === 'ArrowLeft') goPrev();
-      if (e.key === 'Escape' && isFullscreen) setIsFullscreen(false);
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [goNext, goPrev, isFullscreen]);
-
-  // ─── Sub-Renderers ─────────────────────────────────────────────────────────
-
-  const renderStartScreen = () => (
-    <div className="flex-1 flex flex-col items-center justify-center p-6 bg-white overflow-y-auto">
-      <div className="max-w-2xl w-full space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="space-y-6">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-neutral-100 text-black text-[10px] font-black uppercase tracking-[0.2em] border border-neutral-200 shadow-sm">
-            <Sparkles className="w-3 h-3" /> AI Deck Studio
-          </div>
-          <h1 className="text-5xl md:text-7xl font-semibold tracking-tighter text-black leading-[1.05]">
-            Generate <span className="text-neutral-400 italic">Narratives</span>
-          </h1>
-          <p className="text-neutral-500 text-lg leading-relaxed max-w-md">
-            From simple text to a structured visual presentation. Use the AI engine to build your
-            deck in seconds.
-          </p>
-        </div>
-        <div className="space-y-6">
-          <div className="bg-white border-2 border-neutral-200 rounded-[2rem] p-3 shadow-sm focus-within:border-black focus-within:ring-4 focus-within:ring-neutral-100 transition-all duration-300">
-            <textarea
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              placeholder="e.g. A pitch deck for a new sustainable coffee brand aiming for seed funding..."
-              className="w-full bg-transparent border-none focus:ring-0 outline-none px-6 pt-6 pb-2 text-black placeholder-neutral-400 min-h-[140px] resize-none text-xl leading-relaxed"
-              autoFocus
-            />
-            <div className="flex items-center justify-between px-3 pb-3">
-              <button
-                onClick={() => setShowAdvanced(!showAdvanced)}
-                className="text-[10px] font-black uppercase tracking-widest text-neutral-400 hover:text-black flex items-center gap-2 transition-colors px-4 py-2"
-              >
-                <Settings2 className="w-4 h-4" /> Options
-              </button>
-              <button
-                onClick={handleDraftOutline}
-                disabled={!topic.trim()}
-                className="px-8 py-3 bg-black text-white rounded-full text-sm font-bold uppercase tracking-wider hover:bg-neutral-800 transition-all disabled:opacity-30 flex items-center gap-2 shadow-lg"
-              >
-                <Brain className="w-4 h-4" /> Outline
-              </button>
-            </div>
-          </div>
-          {showAdvanced && (
-            <div className="grid grid-cols-2 gap-6 p-6 bg-neutral-50 rounded-2xl border border-neutral-200 animate-in slide-in-from-top-2">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500">
-                  Length
-                </label>
-                <select
-                  value={slideCount}
-                  onChange={(e) => setSlideCount(Number(e.target.value))}
-                  className="w-full bg-white border border-neutral-200 rounded-lg p-3 text-sm font-medium outline-none focus:ring-2 focus:ring-black focus:border-black"
-                >
-                  {[5, 7, 10, 15].map((n) => (
-                    <option key={n} value={n}>
-                      {n} Slides
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500">
-                  Visual Theme
-                </label>
-                <select
-                  value={designStyle}
-                  onChange={(e) => setDesignStyle(e.target.value)}
-                  className="w-full bg-white border border-neutral-200 rounded-lg p-3 text-sm font-medium outline-none focus:ring-2 focus:ring-black focus:border-black"
-                >
-                  <option value="studio_white">Minimalist White</option>
-                  <option value="luxury_gold">Obsidian Dark</option>
-                  <option value="swiss_modern">Swiss Typography</option>
-                  <option value="premium_blue">Corporate Monotone</option>
-                  <option value="cyberpunk">Cyberpunk Neon</option>
-                  <option value="organic">Organic Nature</option>
-                </select>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderOutlineScreen = () => (
-    <div className="flex-1 flex flex-col bg-neutral-50 overflow-hidden">
-      <header className="h-16 bg-white border-b border-neutral-200 px-6 flex items-center justify-between shrink-0">
-        <button
-          onClick={handleReset}
-          className="text-[10px] font-black uppercase tracking-widest text-neutral-400 hover:text-black flex items-center gap-2 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back
-        </button>
-        <div className="flex items-center gap-4">
-          <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400">
-            {outline.slides.length} slides
-          </span>
-          <button
-            onClick={handleGenerateSlides}
-            className="bg-black text-white px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-neutral-800 transition-all flex items-center gap-2"
-          >
-            <Wand2 className="w-4 h-4" /> Generate Deck
-          </button>
-        </div>
-      </header>
-      <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-        <div className="max-w-3xl mx-auto space-y-6">
-          <div className="mb-10 border-b border-neutral-200 pb-6">
-            <h2 className="text-3xl font-semibold tracking-tighter text-black mb-2">
-              Review Structure
-            </h2>
-            <p className="text-neutral-500 text-sm">
-              Refine the narrative outline before the AI renders the visuals.
-            </p>
-          </div>
-          <div className="space-y-4">
-            {outline.slides.map((slide, idx) => (
-              <div
-                key={idx}
-                className="group flex items-start gap-4 bg-white p-5 rounded-2xl border-2 border-neutral-100 shadow-sm focus-within:border-black transition-all"
-              >
-                <div className="text-neutral-300 font-mono text-sm pt-1 w-6">
-                  {String(idx + 1).padStart(2, '0')}
-                </div>
-                <textarea
-                  value={slide.visualPrompt}
-                  onChange={(e) =>
-                    setOutline((prev) => ({
-                      ...prev,
-                      slides: prev.slides.map((s, i) =>
-                        i === idx ? { ...s, visualPrompt: e.target.value } : s
-                      ),
-                    }))
-                  }
-                  className="flex-1 resize-none border-none outline-none min-h-[60px] text-neutral-900 font-medium leading-relaxed"
-                />
-                <button
-                  onClick={() =>
-                    setOutline((prev) => ({
-                      ...prev,
-                      slides: prev.slides.filter((_, i) => i !== idx),
-                    }))
-                  }
-                  className="opacity-0 group-hover:opacity-100 p-2 text-neutral-400 hover:text-black transition-all rounded-md"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-          <button
-            onClick={() =>
-              setOutline((prev) => ({
-                ...prev,
-                slides: [...prev.slides, { title: 'New Slide', visualPrompt: '' }],
-              }))
-            }
-            className="w-full py-5 mt-6 border-2 border-dashed border-neutral-300 rounded-2xl text-[10px] font-black uppercase tracking-widest text-neutral-400 hover:text-black hover:border-black hover:bg-neutral-100/50 transition-all flex items-center justify-center gap-2"
-          >
-            <PlusCircle className="w-4 h-4" /> Add Slide
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderLoadingScreen = (title, subtitle) => (
-    <div className="flex-1 flex flex-col items-center justify-center relative bg-neutral-50 overflow-hidden">
-      <div
-        className="absolute inset-0 z-0 opacity-20 pointer-events-none"
-        style={{
-          backgroundImage:
-            'linear-gradient(to right, #000 1px, transparent 1px), linear-gradient(to bottom, #000 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
-        }}
-      />
-      <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none bg-gradient-to-b from-transparent via-black to-transparent w-full h-[20%] animate-scanline" />
-      <div className="relative z-10 text-center flex flex-col items-center">
-        <div className="w-16 h-16 bg-white border-2 border-black rounded-2xl flex items-center justify-center mb-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-          <Loader2 className="w-6 h-6 text-black animate-spin" />
-        </div>
-        <h3 className="text-2xl font-semibold tracking-tighter text-black mb-2 uppercase">
-          {title}
-        </h3>
-        <p className="text-neutral-500 text-sm max-w-sm tracking-wide">{subtitle}</p>
-      </div>
-    </div>
-  );
-
-  const renderEditorScreen = () => {
-    const activeSlide = slides[activeSlideIndex];
-
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden bg-white">
-        <header className="h-14 bg-white border-b border-neutral-200 flex items-center justify-between px-4 shrink-0 z-10">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={handleReset}
-              className="p-2 text-neutral-400 hover:text-black transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-            <div className="w-px h-4 bg-neutral-200" />
-            <h1 className="text-xs font-black uppercase tracking-widest text-black truncate max-w-[200px] md:max-w-md">
-              {topic || 'Untitled'}
-            </h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setIsFullscreen(true)}
-              className="text-[10px] font-black uppercase tracking-widest text-neutral-400 hover:text-black transition-colors flex items-center gap-2"
-            >
-              <Play className="w-3 h-3" /> Present
-            </button>
-            <div className="w-px h-4 bg-neutral-200" />
-            <button
-              onClick={handleExportPDF}
-              disabled={isExporting}
-              className="px-4 py-1.5 bg-black text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-neutral-800 transition-all flex items-center gap-2 disabled:opacity-50"
-            >
-              {isExporting ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : (
-                <Download className="w-3 h-3" />
-              )}{' '}
-              Export
-            </button>
-          </div>
-        </header>
-
-        <div className="flex-1 flex min-h-0">
-          <aside className="w-28 md:w-56 bg-neutral-50 border-r border-neutral-200 overflow-y-auto flex flex-col p-4 gap-4 shrink-0 custom-scrollbar">
-            {slides.map((slide, idx) => (
-              <SlideThumbnail
-                key={idx}
-                slide={slide}
-                index={idx}
-                isActive={idx === activeSlideIndex}
-                onClick={(i) => {
-                  setActiveSlideIndex(i);
-                  if (rightPanelTab === 'settings') setRightPanelTab('edit');
-                }}
-                onDelete={deleteEditorSlide}
-                totalSlides={slides.length}
-              />
-            ))}
-            <button
-              onClick={() => setRightPanelTab('add')}
-              className="w-full aspect-video rounded-xl border-2 border-dashed border-neutral-300 text-neutral-400 hover:text-black hover:border-black hover:bg-neutral-100 transition-all flex flex-col items-center justify-center gap-2 mt-4"
-            >
-              <PlusCircle className="w-5 h-5" />
-            </button>
-          </aside>
-
-          <main className="flex-1 bg-neutral-100 flex flex-col relative overflow-hidden">
-            <div className="flex-1 flex items-center justify-center p-8 lg:p-12 overflow-y-auto relative">
-              <div
-                className="absolute inset-0 pointer-events-none opacity-5"
-                style={{
-                  backgroundImage:
-                    'linear-gradient(to right, #000 1px, transparent 1px), linear-gradient(to bottom, #000 1px, transparent 1px)',
-                  backgroundSize: '20px 20px',
-                }}
-              />
-              <SlideCanvas slide={activeSlide} />
-            </div>
-            <div className="h-12 bg-white border-t border-neutral-200 flex items-center justify-center gap-6 shrink-0">
-              <button
-                onClick={goPrev}
-                disabled={activeSlideIndex === 0}
-                className="p-1.5 text-neutral-400 hover:text-black disabled:opacity-30 transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </button>
-              <span className="text-[10px] font-black uppercase tracking-widest text-black min-w-[3rem] text-center">
-                {String(activeSlideIndex + 1).padStart(2, '0')} /{' '}
-                {String(slides.length).padStart(2, '0')}
-              </span>
-              <button
-                onClick={goNext}
-                disabled={activeSlideIndex === slides.length - 1}
-                className="p-1.5 text-neutral-400 hover:text-black disabled:opacity-30 transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4 rotate-180" />
-              </button>
-            </div>
-          </main>
-
-          <aside className="w-80 bg-white border-l border-neutral-200 flex flex-col shrink-0 z-10">
-            <div className="flex border-b border-neutral-200 shrink-0">
-              <button
-                onClick={() => setRightPanelTab('edit')}
-                className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 ${rightPanelTab === 'edit' ? 'border-black text-black' : 'border-transparent text-neutral-400 hover:text-black'}`}
-              >
-                Inspector
-              </button>
-              <button
-                onClick={() => setRightPanelTab('add')}
-                className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 ${rightPanelTab === 'add' ? 'border-black text-black' : 'border-transparent text-neutral-400 hover:text-black'}`}
-              >
-                Insert
-              </button>
-              <button
-                onClick={() => setRightPanelTab('settings')}
-                className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 ${rightPanelTab === 'settings' ? 'border-black text-black' : 'border-transparent text-neutral-400 hover:text-black'}`}
-              >
-                Settings
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-              {rightPanelTab === 'edit' && activeSlide && (
-                <div className="space-y-10 animate-in fade-in duration-300">
-                  <div className="space-y-4">
-                    <h3 className="text-[10px] font-black uppercase tracking-widest text-neutral-400 flex items-center gap-2">
-                      <LayoutTemplate className="w-3.5 h-3.5" /> Content
-                    </h3>
-                    <textarea
-                      value={activeSlide.visualPrompt}
-                      onChange={(e) =>
-                        setSlides((prev) =>
-                          prev.map((s, i) =>
-                            i === activeSlideIndex ? { ...s, visualPrompt: e.target.value } : s
-                          )
-                        )
-                      }
-                      className="w-full h-32 bg-neutral-50 border border-neutral-200 rounded-lg p-4 text-sm text-black resize-none outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
-                      placeholder="Slide prompt..."
-                    />
-                    <button
-                      onClick={() => handleRegenerateSlide(activeSlideIndex)}
-                      disabled={activeSlide.status === 'generating'}
-                      className="w-full py-3 bg-white border-2 border-neutral-200 rounded-lg text-[10px] font-black uppercase tracking-widest text-black hover:border-black transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
-                      {activeSlide.status === 'generating' ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                      ) : (
-                        <RotateCcw className="w-3 h-3" />
-                      )}{' '}
-                      Regenerate
-                    </button>
-                  </div>
-                  <hr className="border-neutral-200" />
-                  <div className="space-y-4">
-                    <h3 className="text-[10px] font-black uppercase tracking-widest text-neutral-400 flex items-center gap-2">
-                      <Wand2 className="w-3.5 h-3.5" /> Transform
-                    </h3>
-                    <textarea
-                      value={editImagePrompt}
-                      onChange={(e) => setEditImagePrompt(e.target.value)}
-                      placeholder="Describe edits (e.g., 'Change background to dark mode')"
-                      className="w-full h-24 bg-neutral-50 border border-neutral-200 rounded-lg p-4 text-sm text-black resize-none outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
-                      disabled={
-                        isEditGenerating ||
-                        !activeSlide.imageUrl ||
-                        activeSlide.imageUrl === 'error'
-                      }
-                    />
-                    <button
-                      onClick={handleEditImageSubmit}
-                      disabled={
-                        !editImagePrompt.trim() || isEditGenerating || !activeSlide.imageUrl
-                      }
-                      className="w-full py-3 bg-black text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-neutral-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
-                      {isEditGenerating ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                      ) : (
-                        <ImageIcon className="w-3 h-3" />
-                      )}{' '}
-                      Apply Magic Edit
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {rightPanelTab === 'add' && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
-                  <div className="space-y-2">
-                    <h3 className="text-[10px] font-black uppercase tracking-widest text-black">
-                      New Slide Brief
-                    </h3>
-                    <p className="text-xs text-neutral-500">
-                      Insert text here. Added after active slide.
-                    </p>
-                  </div>
-                  <textarea
-                    value={addSlideBrief}
-                    onChange={(e) => setAddSlideBrief(e.target.value)}
-                    placeholder="Describe new slide..."
-                    className="w-full h-40 bg-neutral-50 border border-neutral-200 rounded-lg p-4 text-sm text-black resize-none outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
-                    disabled={isAddSlideGenerating}
-                  />
-                  <button
-                    onClick={handleAddEditorSlide}
-                    disabled={!addSlideBrief.trim() || isAddSlideGenerating}
-                    className="w-full py-3 bg-black text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-neutral-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    {isAddSlideGenerating ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <PlusCircle className="w-3 h-3" />
-                    )}{' '}
-                    Insert Slide
-                  </button>
-                </div>
-              )}
-
-              {rightPanelTab === 'settings' && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
-                  <div className="space-y-2">
-                    <h3 className="text-[10px] font-black uppercase tracking-widest text-black">
-                      Deck Settings
-                    </h3>
-                    <p className="text-xs text-neutral-500">
-                      Update global deck theme. Existing slides must be regenerated to see changes.
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500">
-                      Active Theme
-                    </label>
-                    <select
-                      value={outline?.designSystem || designStyle}
-                      onChange={(e) => {
-                        const newStyle = e.target.value;
-                        setDesignStyle(newStyle);
-                        if (outline) setOutline({ ...outline, designSystem: newStyle });
-                      }}
-                      className="w-full bg-white border border-neutral-200 rounded-lg p-3 text-sm font-medium outline-none focus:ring-2 focus:ring-black focus:border-black"
-                    >
-                      <option value="studio_white">Minimalist White</option>
-                      <option value="luxury_gold">Obsidian Dark</option>
-                      <option value="swiss_modern">Swiss Typography</option>
-                      <option value="premium_blue">Corporate Monotone</option>
-                      <option value="cyberpunk">Cyberpunk Neon</option>
-                      <option value="organic">Organic Nature</option>
-                    </select>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setSlides(slides.map((s) => ({ ...s, status: 'generating' })));
-                      handleGenerateSlides();
-                    }}
-                    className="w-full py-3 bg-white border-2 border-neutral-200 rounded-lg text-[10px] font-black uppercase tracking-widest text-black hover:border-black transition-all flex items-center justify-center gap-2"
-                  >
-                    <RotateCcw className="w-3 h-3" /> Regenerate All
-                  </button>
-                </div>
-              )}
-            </div>
-          </aside>
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -975,11 +409,69 @@ export default function PresentationGenerator() {
         </div>
       )}
 
-      {status === 'idle' && renderStartScreen()}
-      {status === 'drafting' && renderLoadingScreen('Synthesizing', 'Structuring narrative blocks')}
-      {status === 'review' && outline && renderOutlineScreen()}
-      {status === 'generating' && renderLoadingScreen('Rendering', 'Applying design system')}
-      {status === 'complete' && slides && renderEditorScreen()}
+      {status === 'idle' && (
+        <StartScreen
+          topic={topic}
+          setTopic={setTopic}
+          showAdvanced={showAdvanced}
+          setShowAdvanced={setShowAdvanced}
+          slideCount={slideCount}
+          setSlideCount={setSlideCount}
+          designStyle={designStyle}
+          setDesignStyle={setDesignStyle}
+          handleDraftOutline={handleDraftOutline}
+        />
+      )}
+
+      {status === 'drafting' && (
+        <LoadingScreen title="Synthesizing" subtitle="Structuring narrative blocks" />
+      )}
+
+      {status === 'review' && outline && (
+        <OutlineScreen
+          outline={outline}
+          setOutline={setOutline}
+          handleReset={handleReset}
+          handleGenerateSlides={handleGenerateSlides}
+        />
+      )}
+
+      {status === 'generating' && (
+        <LoadingScreen title="Rendering" subtitle="Applying design system" />
+      )}
+
+      {status === 'complete' && slides && (
+        <EditorLayout
+          topic={topic}
+          slides={slides}
+          activeSlideIndex={activeSlideIndex}
+          setActiveSlideIndex={setActiveSlideIndex}
+          handleReset={handleReset}
+          setIsFullscreen={setIsFullscreen}
+          handleExportPDF={handleExportPDF}
+          isExporting={isExporting}
+          deleteEditorSlide={deleteEditorSlide}
+          rightPanelTab={rightPanelTab}
+          setRightPanelTab={setRightPanelTab}
+          goPrev={goPrev}
+          goNext={goNext}
+          handleRegenerateSlide={handleRegenerateSlide}
+          setSlides={setSlides}
+          editImagePrompt={editImagePrompt}
+          setEditImagePrompt={setEditImagePrompt}
+          isEditGenerating={isEditGenerating}
+          handleEditImageSubmit={handleEditImageSubmit}
+          addSlideBrief={addSlideBrief}
+          setAddSlideBrief={setAddSlideBrief}
+          isAddSlideGenerating={isAddSlideGenerating}
+          handleAddEditorSlide={handleAddEditorSlide}
+          outline={outline}
+          setOutline={setOutline}
+          designStyle={designStyle}
+          setDesignStyle={setDesignStyle}
+          handleGenerateSlides={handleGenerateSlides}
+        />
+      )}
 
       {isFullscreen && slides && (
         <div
