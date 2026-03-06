@@ -102,30 +102,6 @@ export async function PUT(request, { params }) {
     const runningAgent = agentRegistry.get(agentId);
     if (runningAgent) {
       await runningAgent.initialize();
-
-      // Attempt to register Telegram webhook if applicable
-      if (
-        agentId === 'telegram_bot' &&
-        updates.metadata?.telegramBotToken &&
-        updates.metadata?.webhookUrl
-      ) {
-        try {
-          const token = updates.metadata.telegramBotToken;
-          const url = updates.metadata.webhookUrl;
-          const res = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url }),
-          });
-          if (!res.ok) {
-            console.error('[Agent Update] Failed to auto-set Telegram webhook', await res.text());
-          } else {
-            console.log('[Agent Update] Successfully auto-set Telegram webhook');
-          }
-        } catch (e) {
-          console.error('[Agent Update] Error auto-setting Telegram webhook', e);
-        }
-      }
     }
 
     const metadata = agentRegistry.getMetadata(agentId);

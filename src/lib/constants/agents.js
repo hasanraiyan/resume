@@ -18,7 +18,7 @@ export const AGENT_IDS = {
   VISUAL_SEARCH: 'visual_search',
 
   // Chat & Conversation Agents
-  CHAT_ASSISTANT: 'chat_assistant',
+  CHAT_FAST: 'chat_fast',
   CHAT_FAST: 'chat_fast',
   CHAT_PRO: 'chat_pro',
   CHAT_THINKING: 'chat_thinking',
@@ -35,7 +35,6 @@ export const AGENT_IDS = {
   ENGAGEMENT_ANALYZER: 'engagement_analyzer',
 
   // Integrations
-  TELEGRAM_BOT: 'telegram_bot',
 };
 
 /**
@@ -147,16 +146,6 @@ export const DEFAULT_AGENT_CONFIGS = {
       'You are an elite Presentation Synthesizer agent. Your job is to research topics thoroughly, design logically structured presentation outlines, and ultimately translate dense text into visually stunning, complete slide images.',
     isActive: true,
   },
-  [AGENT_IDS.CHAT_ASSISTANT]: {
-    name: 'Chat Assistant',
-    description: 'Conversational AI assistant for user interactions',
-    type: AGENT_TYPES.CHAT,
-    category: AGENT_CATEGORIES.CONVERSATIONAL,
-    icon: 'Bot',
-    defaultModel: 'gpt-4o',
-    defaultProvider: 'openai',
-    isActive: true,
-  },
   [AGENT_IDS.CHAT_FAST]: {
     name: 'Chat Fast',
     description: 'Fast and efficient chat (optimized for speed/cost)',
@@ -243,16 +232,6 @@ export const DEFAULT_AGENT_CONFIGS = {
     icon: 'TrendingUp',
     isActive: true,
   },
-  [AGENT_IDS.TELEGRAM_BOT]: {
-    name: 'Telegram Bot',
-    description: 'Conversational agent interacting via Telegram Webhooks',
-    type: AGENT_TYPES.CHAT,
-    category: AGENT_CATEGORIES.CONVERSATIONAL,
-    icon: 'MessageCircle',
-    defaultModel: 'gpt-4o',
-    defaultProvider: 'openai',
-    isActive: true,
-  },
 };
 
 /**
@@ -265,7 +244,6 @@ export const AGENT_TOOLS = {
   [AGENT_IDS.IMAGE_EDITOR]: ['image_editing', 'inpainting', 'outpainting'],
   [AGENT_IDS.IMAGE_EMBEDDER]: ['text_embedding', 'image_embedding'],
   [AGENT_IDS.VISUAL_SEARCH]: ['vector_search', 'similarity_match'],
-  [AGENT_IDS.CHAT_ASSISTANT]: ['conversation', 'tool_use', 'generative_ui'],
   [AGENT_IDS.CHAT_FAST]: ['conversation', 'tool_use', 'generative_ui'],
   [AGENT_IDS.CHAT_PRO]: ['conversation', 'tool_use', 'generative_ui'],
   [AGENT_IDS.CHAT_THINKING]: ['conversation', 'tool_use', 'generative_ui'],
@@ -276,7 +254,6 @@ export const AGENT_TOOLS = {
   [AGENT_IDS.PRESENTATION_SYNTHESIZER]: ['research', 'outline_generation', 'slide_synthesis'],
   [AGENT_IDS.ANALYTICS_TRACKER]: ['event_tracking', 'session_management'],
   [AGENT_IDS.ENGAGEMENT_ANALYZER]: ['pattern_recognition', 'insights_generation'],
-  [AGENT_IDS.TELEGRAM_BOT]: ['conversation', 'tool_use'],
 };
 
 /**
@@ -289,7 +266,6 @@ export const RATE_LIMIT_DEFAULTS = {
   [AGENT_IDS.IMAGE_EDITOR]: { requests: 5, window: 60 },
   [AGENT_IDS.IMAGE_EMBEDDER]: { requests: 20, window: 60 },
   [AGENT_IDS.VISUAL_SEARCH]: { requests: 30, window: 60 },
-  [AGENT_IDS.CHAT_ASSISTANT]: { requests: 15, window: 60 },
   [AGENT_IDS.CHAT_FAST]: { requests: 20, window: 60 },
   [AGENT_IDS.CHAT_PRO]: { requests: 10, window: 60 },
   [AGENT_IDS.CHAT_THINKING]: { requests: 5, window: 60 },
@@ -300,7 +276,6 @@ export const RATE_LIMIT_DEFAULTS = {
   [AGENT_IDS.PRESENTATION_SYNTHESIZER]: { requests: 5, window: 60 },
   [AGENT_IDS.ANALYTICS_TRACKER]: { requests: 100, window: 60 },
   [AGENT_IDS.ENGAGEMENT_ANALYZER]: { requests: 30, window: 60 },
-  [AGENT_IDS.TELEGRAM_BOT]: { requests: 60, window: 60 },
 };
 
 /**

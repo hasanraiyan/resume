@@ -85,7 +85,7 @@ export const AGENT_IDS = {
   VISUAL_SEARCH: 'visual_search',
 
   // Chat & Conversation Agents
-  CHAT_ASSISTANT: 'chat_assistant',
+  CHAT_FAST: 'chat_fast',
   CONTACT_FORM_ASSISTANT: 'contact_form_assistant',
 
   // Content Agents
