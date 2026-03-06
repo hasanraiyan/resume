@@ -54,7 +54,11 @@ class TelegramAgent extends BaseAgent {
     const { message, chatId } = input;
 
     // Retrieve configuration token
-    const token = this.config.metadata?.telegramBotToken;
+    const metadata = this.config.metadata || {};
+    const token = metadata.telegramBotToken;
+
+    this.logger.info('Telegram Bot execution started. Metadata keys:', Object.keys(metadata));
+
     if (!token) {
       this.logger.warn('Telegram Bot Token not configured in metadata. Execution aborted.');
       return { success: false, error: 'Token not configured' };

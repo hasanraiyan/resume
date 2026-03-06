@@ -49,7 +49,7 @@ class AgentManager {
    */
   async _loadAgentSettings() {
     try {
-      const allConfigs = await AgentConfig.find({});
+      const allConfigs = await AgentConfig.find({}).lean();
 
       if (!allConfigs || allConfigs.length === 0) {
         console.log('[AgentManager] No agent configurations found in database');
