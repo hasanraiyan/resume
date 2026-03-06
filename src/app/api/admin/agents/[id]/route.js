@@ -98,7 +98,8 @@ export async function PUT(request, { params }) {
     await agentManager.updateAgentConfig(agentId, updates);
 
     // Re-initialize the running agent so it catches the new DB records immediately
-    const runningAgent = agentRegistry.getExisting(agentId);
+    // Use .get() to ensure it exists if it was registered but not instantiated
+    const runningAgent = agentRegistry.get(agentId);
     if (runningAgent) {
       await runningAgent.initialize();
 

@@ -7,7 +7,7 @@
 
 import agentRegistry from './AgentRegistry';
 import dbConnect from '@/lib/dbConnect';
-import MediaAgentSettings from '@/models/MediaAgentSettings';
+import AgentConfig from '@/models/AgentConfig';
 
 class AgentManager {
   constructor() {
@@ -49,36 +49,40 @@ class AgentManager {
    */
   async _loadAgentSettings() {
     try {
-      const settings = await MediaAgentSettings.findOne({});
+      const allConfigs = await AgentConfig.find({});
 
-      if (!settings) {
-        console.log('[AgentManager] No agent settings found in database');
+      if (!allConfigs || allConfigs.length === 0) {
+        console.log('[AgentManager] No agent configurations found in database');
         return;
       }
 
       // Sync database settings with registry agents
-      if (settings.agents && settings.agents.length > 0) {
-        for (const agentConfig of settings.agents) {
-          const agentId = agentConfig.id;
+      for (const config of allConfigs) {
+        const agentId = config.agentId;
 
-          if (agentRegistry.has(agentId)) {
-            const agent = agentRegistry.get(agentId);
+        if (agentRegistry.has(agentId)) {
+          // If instance doesn't exist yet, AgentRegistry.get will handle it if we ever need it.
+          // For now, we update the config of the existing instance if it exists.
+          const agent = agentRegistry.getExisting(agentId);
 
-            // Update agent configuration from database
+          if (agent) {
             agent.updateConfig({
-              providerId: agentConfig.providerId,
-              model: agentConfig.model,
-              persona: agentConfig.persona,
-              isActive: agentConfig.isActive,
-            });
-
-            // Track metrics
-            this._updateMetrics(agentId, {
-              isActive: agentConfig.isActive,
-              providerId: agentConfig.providerId,
-              model: agentConfig.model,
+              providerId: config.providerId,
+              model: config.model,
+              persona: config.persona,
+              isActive: config.isActive,
+              metadata: config.metadata,
+              tools: config.tools,
+              activeMCPs: config.activeMCPs,
             });
           }
+
+          // Track metrics
+          this._updateMetrics(agentId, {
+            isActive: config.isActive,
+            providerId: config.providerId,
+            model: config.model,
+          });
         }
       }
 
@@ -173,10 +177,16 @@ class AgentManager {
    * @returns {boolean} Success status
    */
   async activateAgent(agentId) {
-    const agent = agentRegistry.getExisting(agentId);
+    let agent = agentRegistry.getExisting(agentId);
+
+    // If no instance exists but it's registered, create it
+    if (!agent && agentRegistry.has(agentId)) {
+      console.log(`[AgentManager] Instantiating agent for activation: ${agentId}`);
+      agent = agentRegistry.get(agentId);
+    }
 
     if (!agent) {
-      console.error(`[AgentManager] Agent ${agentId} not found`);
+      console.error(`[AgentManager] Agent ${agentId} not found in registry`);
       return false;
     }
 
@@ -195,10 +205,15 @@ class AgentManager {
    * @returns {boolean} Success status
    */
   async deactivateAgent(agentId) {
-    const agent = agentRegistry.getExisting(agentId);
+    let agent = agentRegistry.getExisting(agentId);
+
+    if (!agent && agentRegistry.has(agentId)) {
+      console.log(`[AgentManager] Instantiating agent for deactivation: ${agentId}`);
+      agent = agentRegistry.get(agentId);
+    }
 
     if (!agent) {
-      console.error(`[AgentManager] Agent ${agentId} not found`);
+      console.error(`[AgentManager] Agent ${agentId} not found in registry`);
       return false;
     }
 
@@ -218,10 +233,15 @@ class AgentManager {
    * @returns {boolean} Success status
    */
   async updateAgentConfig(agentId, config) {
-    const agent = agentRegistry.getExisting(agentId);
+    let agent = agentRegistry.getExisting(agentId);
+
+    if (!agent && agentRegistry.has(agentId)) {
+      console.log(`[AgentManager] Instantiating agent for config update: ${agentId}`);
+      agent = agentRegistry.get(agentId);
+    }
 
     if (!agent) {
-      console.error(`[AgentManager] Agent ${agentId} not found`);
+      console.error(`[AgentManager] Agent ${agentId} not found in registry`);
       return false;
     }
 
@@ -241,47 +261,15 @@ class AgentManager {
   async _persistAgentState(agentId, updates) {
     try {
       await dbConnect();
-      let settings = await MediaAgentSettings.findOne({});
 
-      if (!settings) {
-        settings = new MediaAgentSettings();
-        await settings.ensureDefaultAgents();
-      }
+      // Persist to AgentConfig model (Source of Truth)
+      await AgentConfig.findOneAndUpdate(
+        { agentId },
+        { $set: updates },
+        { upsert: true, new: true, runValidators: true }
+      );
 
-      const agentIndex = settings.agents.findIndex((a) => a.id === agentId);
-
-      if (agentIndex >= 0) {
-        // Update existing agent
-        if (updates.isActive !== undefined) {
-          settings.agents[agentIndex].isActive = updates.isActive;
-        }
-        if (updates.providerId !== undefined) {
-          settings.agents[agentIndex].providerId = updates.providerId;
-        }
-        if (updates.model !== undefined) {
-          settings.agents[agentIndex].model = updates.model;
-        }
-        if (updates.persona !== undefined) {
-          settings.agents[agentIndex].persona = updates.persona;
-        }
-        if (updates.metadata !== undefined) {
-          settings.agents[agentIndex].metadata = updates.metadata;
-        }
-      } else {
-        // Add new agent entry
-        settings.agents.push({
-          id: agentId,
-          name: updates.name || agentId,
-          isActive: updates.isActive ?? true,
-          providerId: updates.providerId || '',
-          model: updates.model || '',
-          persona: updates.persona || '',
-          metadata: updates.metadata || {},
-        });
-      }
-
-      await settings.save();
-      console.log(`[AgentManager] Persisted state for agent: ${agentId}`);
+      console.log(`[AgentManager] Persisted state for agent: ${agentId} (AgentConfig)`);
     } catch (error) {
       console.error(`[AgentManager] Error persisting state for ${agentId}:`, error);
     }
