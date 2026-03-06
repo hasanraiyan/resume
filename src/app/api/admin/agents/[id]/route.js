@@ -61,7 +61,18 @@ export async function PUT(request, { params }) {
     console.log('[Agent Update] Received update request for agent:', agentId, body);
 
     if (!agentRegistry.has(agentId)) {
-      return NextResponse.json({ error: `Agent ${agentId} not found` }, { status: 404 });
+      console.error('[Agent Update] Agent ID not found in registry constants:', agentId);
+      return NextResponse.json(
+        { error: `Agent ${agentId} not found in system constants` },
+        { status: 404 }
+      );
+    }
+
+    if (!agentRegistry.hasInstance(agentId)) {
+      console.log(
+        '[Agent Update] Agent instance does not exist yet, it will be created by AgentManager:',
+        agentId
+      );
     }
 
     // Map input fields to updates

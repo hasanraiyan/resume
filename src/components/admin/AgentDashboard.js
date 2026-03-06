@@ -164,180 +164,206 @@ export default function AgentDashboard() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-8 max-w-7xl mx-auto space-y-10">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Cpu className="w-6 h-6" />
-            Agent Dashboard
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+        <div className="space-y-1">
+          <h1 className="text-4xl font-black flex items-center gap-3 tracking-tighter">
+            <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-black/10">
+              <Cpu className="w-6 h-6" />
+            </div>
+            AGENT CENTER
           </h1>
-          <p className="text-neutral-500 text-sm mt-1">Monitor and manage your AI agents</p>
+          <p className="text-neutral-400 text-sm font-medium pl-15">
+            Orchestrate and monitor your AI infrastructure
+          </p>
         </div>
-        <Button
-          onClick={handleRefresh}
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-2"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={handleRefresh}
+            variant="outline"
+            size="sm"
+            className="rounded-2xl border-neutral-100 bg-white shadow-sm hover:border-neutral-200 px-5 h-11"
+          >
+            <RefreshCw className="w-3.5 h-3.5 mr-2" />
+            Sync Status
+          </Button>
+        </div>
       </div>
 
       {/* Health Summary */}
       {health && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="p-4 bg-white border border-neutral-200 rounded-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wider">Health Score</p>
-                <p
-                  className={`text-2xl font-bold mt-1 ${
-                    health.summary.healthScore >= 80
-                      ? 'text-green-600'
-                      : health.summary.healthScore >= 50
-                        ? 'text-yellow-600'
-                        : 'text-red-600'
-                  }`}
-                >
-                  {health.summary.healthScore}%
-                </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="p-6 bg-white border border-neutral-100 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-black/5 transition-all duration-500 group">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-neutral-50 flex items-center justify-center group-hover:bg-black group-hover:text-white transition-all duration-500">
+                <Activity className="w-6 h-6" />
               </div>
-              <Activity className="w-8 h-8 text-neutral-300" />
+              <p
+                className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md ${
+                  health.summary.healthScore >= 80
+                    ? 'bg-green-50 text-green-600'
+                    : 'bg-yellow-50 text-yellow-600'
+                }`}
+              >
+                Operational
+              </p>
             </div>
+            <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest mb-1">
+              Health Score
+            </p>
+            <p className="text-3xl font-black tracking-tighter">{health.summary.healthScore}%</p>
           </div>
 
-          <div className="p-4 bg-white border border-neutral-200 rounded-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wider">Total Agents</p>
-                <p className="text-2xl font-bold mt-1">{health.summary.totalAgents}</p>
+          <div className="p-6 bg-white border border-neutral-100 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-black/5 transition-all duration-500 group">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-neutral-50 flex items-center justify-center group-hover:bg-black group-hover:text-white transition-all duration-500">
+                <Server className="w-6 h-6" />
               </div>
-              <Server className="w-8 h-8 text-neutral-300" />
             </div>
+            <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest mb-1">
+              Total Cluster
+            </p>
+            <p className="text-3xl font-black tracking-tighter">{health.summary.totalAgents}</p>
           </div>
 
-          <div className="p-4 bg-white border border-neutral-200 rounded-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wider">Active Agents</p>
-                <p className="text-2xl font-bold mt-1">{health.summary.activeAgents}</p>
+          <div className="p-6 bg-white border border-neutral-100 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-black/5 transition-all duration-500 group">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-neutral-50 flex items-center justify-center group-hover:bg-black group-hover:text-white transition-all duration-500">
+                <Zap className="w-6 h-6" />
               </div>
-              <Zap className="w-8 h-8 text-neutral-300" />
+              <p className="text-[10px] font-black text-green-500 bg-green-50 px-2 py-1 rounded-md">
+                Live
+              </p>
             </div>
+            <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest mb-1">
+              Active Now
+            </p>
+            <p className="text-3xl font-black tracking-tighter">{health.summary.activeAgents}</p>
           </div>
 
-          <div className="p-4 bg-white border border-neutral-200 rounded-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wider">
-                  Ready to Execute
-                </p>
-                <p className="text-2xl font-bold mt-1">{health.summary.readyAgents}</p>
+          <div className="p-6 bg-white border border-neutral-100 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-black/5 transition-all duration-500 group">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-neutral-50 flex items-center justify-center group-hover:bg-black group-hover:text-white transition-all duration-500">
+                <CheckCircle2 className="w-6 h-6" />
               </div>
-              <CheckCircle2 className="w-8 h-8 text-neutral-300" />
             </div>
+            <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest mb-1">
+              Ready Nodes
+            </p>
+            <p className="text-3xl font-black tracking-tighter">{health.summary.readyAgents}</p>
           </div>
         </div>
       )}
 
-      {/* Agents Grid */}
-      <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+      {/* Agents Table Section */}
+      <div className="bg-white border border-neutral-100 rounded-[2.5rem] shadow-sm overflow-hidden p-2">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-neutral-50 border-b border-neutral-200">
+          <table className="w-full border-separate border-spacing-0">
+            <thead className="">
               <tr>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">
-                  Agent
+                <th className="text-left px-6 py-5 text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] border-b border-neutral-50">
+                  Agent Instance
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">
+                <th className="text-left px-6 py-5 text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] border-b border-neutral-50">
                   Type
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">
+                <th className="text-left px-6 py-5 text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] border-b border-neutral-50">
                   Status
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">
-                  Executions
+                <th className="text-left px-6 py-5 text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] border-b border-neutral-50">
+                  Load
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">
-                  Last Active
-                </th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">
+                <th className="text-right px-6 py-5 text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] border-b border-neutral-50">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-100">
+            <tbody className="">
               {agents.map((agent) => (
-                <tr key={agent.agentId} className="hover:bg-neutral-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      {getStatusIcon(agent)}
+                <tr
+                  key={agent.agentId}
+                  className="group hover:bg-neutral-50/50 transition-all duration-300"
+                >
+                  <td className="px-6 py-6 border-b border-neutral-50">
+                    <div className="flex items-center gap-4">
+                      <div
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                          agent.isActive ? 'bg-black text-white' : 'bg-neutral-100 text-neutral-400'
+                        }`}
+                      >
+                        {getStatusIcon(agent)}
+                      </div>
                       <div>
-                        <p className="font-medium text-sm">{agent.name}</p>
-                        <p className="text-xs text-neutral-500 max-w-xs truncate">
+                        <p className="font-bold text-sm tracking-tight">{agent.name}</p>
+                        <p className="text-[11px] text-neutral-400 font-medium max-w-xs truncate mt-0.5">
                           {agent.description}
                         </p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-6 py-6 border-b border-neutral-50">
                     <span
-                      className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(agent.type)}`}
+                      className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg border shadow-sm ${getTypeColor(agent.type)} border-current opacity-70`}
                     >
                       {agent.type}
                     </span>
                   </td>
-                  <td className="px-4 py-3">{getStatusBadge(agent)}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1 text-sm">
-                      <TrendingUp className="w-4 h-4 text-neutral-400" />
-                      {agent.executionCount || 0}
+                  <td className="px-6 py-6 border-b border-neutral-50">
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(agent)}
+                      {agent.lastExecutedAt && (
+                        <span className="text-[10px] text-neutral-300 font-medium">
+                          •{' '}
+                          {new Date(agent.lastExecutedAt).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      )}
                     </div>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1 text-sm text-neutral-500">
-                      <Clock className="w-4 h-4" />
-                      {agent.lastExecutedAt
-                        ? new Date(agent.lastExecutedAt).toLocaleString()
-                        : 'Never'}
+                  <td className="px-6 py-6 border-b border-neutral-50">
+                    <div className="flex flex-col gap-1.5 min-w-[100px]">
+                      <div className="flex items-center justify-between text-[10px] font-bold text-neutral-400">
+                        <span>{agent.executionCount || 0} hits</span>
+                        <span>{Math.min(100, (agent.executionCount || 0) * 2)}%</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-black rounded-full transition-all duration-1000"
+                          style={{ width: `${Math.min(100, (agent.executionCount || 0) * 2)}%` }}
+                        />
+                      </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
+                  <td className="px-6 py-6 border-b border-neutral-50 text-right">
+                    <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setSelectedAgent(agent)}
-                        className="text-xs"
+                        className="h-9 px-4 rounded-xl border-neutral-100 bg-white shadow-sm hover:border-neutral-200 text-xs font-bold uppercase tracking-widest"
                       >
-                        <Settings2 className="w-3 h-3 mr-1" />
-                        Configure
+                        Config
                       </Button>
                       <Button
                         variant={agent.isActive ? 'outline' : 'default'}
                         size="sm"
                         onClick={() => handleToggleAgent(agent.agentId, agent.isActive)}
                         disabled={actionInProgress === agent.agentId}
-                        className={`text-xs ${
+                        className={`h-9 px-4 rounded-xl text-xs font-bold uppercase tracking-widest ${
                           agent.isActive
-                            ? 'text-red-600 border-red-200 hover:bg-red-50'
-                            : 'bg-green-600 hover:bg-green-700 text-white'
+                            ? 'text-red-600 border-red-50 hover:bg-red-100'
+                            : 'bg-black hover:bg-neutral-800 text-white shadow-lg shadow-black/10'
                         }`}
                       >
                         {actionInProgress === agent.agentId ? (
-                          <RefreshCw className="w-3 h-3 animate-spin" />
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                         ) : agent.isActive ? (
-                          <>
-                            <Square className="w-3 h-3 mr-1" />
-                            Deactivate
-                          </>
+                          'Kill'
                         ) : (
-                          <>
-                            <Play className="w-3 h-3 mr-1" />
-                            Activate
-                          </>
+                          'Power'
                         )}
                       </Button>
                     </div>
@@ -351,9 +377,14 @@ export default function AgentDashboard() {
 
       {/* Empty State */}
       {agents.length === 0 && (
-        <div className="text-center py-12">
-          <Bot className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
-          <p className="text-neutral-500">No agents registered</p>
+        <div className="text-center py-24 bg-white border border-neutral-100 rounded-[3rem]">
+          <div className="w-20 h-20 bg-neutral-50 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Bot className="w-10 h-10 text-neutral-200" />
+          </div>
+          <h3 className="text-xl font-bold mb-2">Cluster Empty</h3>
+          <p className="text-neutral-400 text-sm max-w-xs mx-auto">
+            No agent instances are currently registered in your local infrastructure.
+          </p>
         </div>
       )}
     </div>

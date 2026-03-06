@@ -164,47 +164,56 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden bg-white gap-0">
+      <DialogContent className="sm:max-w-[650px] p-0 overflow-hidden bg-white gap-0 border-none shadow-[0_32px_128px_-16px_rgba(0,0,0,0.3)] rounded-3xl">
         {/* Header Section */}
-        <div className="bg-neutral-50 px-6 py-5 border-b border-neutral-200">
+        <div className="bg-white px-8 pt-8 pb-6 relative">
           <DialogHeader className="mb-0">
             <div className="flex items-start justify-between">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-5">
                 <div
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm border ${settings.isActive ? 'bg-black text-white border-black' : 'bg-white text-neutral-400 border-neutral-200'}`}
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm transition-all duration-300 ${
+                    settings.isActive
+                      ? 'bg-black text-white shadow-black/10'
+                      : 'bg-neutral-100 text-neutral-400'
+                  }`}
                 >
-                  <Cpu className="w-6 h-6" />
+                  <Cpu className="w-7 h-7" />
                 </div>
-                <div>
-                  <DialogTitle className="text-xl font-bold font-['Playfair_Display'] text-neutral-900">
+                <div className="flex-1">
+                  <DialogTitle className="text-2xl font-bold font-serif text-neutral-900 tracking-tight">
                     {agentData.name}
                   </DialogTitle>
-                  <p className="text-sm text-neutral-500 mt-1 line-clamp-1">
+                  <p className="text-sm text-neutral-500 mt-1.5 leading-relaxed pr-8">
                     {agentData.description}
                   </p>
                 </div>
               </div>
-              <label
-                className="relative inline-flex items-center cursor-pointer"
-                aria-label="Toggle Agent Status"
-              >
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  checked={settings.isActive}
-                  onChange={(e) => setSettings({ ...settings, isActive: e.target.checked })}
-                />
-                <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                <span className="ml-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+
+              <div className="flex flex-col items-end gap-1.5 pr-12">
+                <label
+                  className="relative inline-flex items-center cursor-pointer group scale-110 origin-right"
+                  aria-label="Toggle Agent Status"
+                >
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={settings.isActive}
+                    onChange={(e) => setSettings({ ...settings, isActive: e.target.checked })}
+                  />
+                  <div className="w-10 h-5.5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-black"></div>
+                </label>
+                <span
+                  className={`text-[10px] font-black uppercase tracking-[0.2em] ${settings.isActive ? 'text-green-600' : 'text-neutral-400'}`}
+                >
                   {settings.isActive ? 'Active' : 'Offline'}
                 </span>
-              </label>
+              </div>
             </div>
           </DialogHeader>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex border-b border-neutral-200 px-2 bg-neutral-50/50">
+        <div className="flex px-8 border-b border-neutral-100">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -212,14 +221,14 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors relative ${
-                  isActive ? 'text-black' : 'text-neutral-500 hover:text-neutral-800'
+                className={`flex items-center gap-2 px-1 py-4 text-xs font-bold uppercase tracking-widest transition-all relative mr-8 last:mr-0 ${
+                  isActive ? 'text-black' : 'text-neutral-400 hover:text-neutral-600'
                 }`}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-black' : 'text-neutral-400'}`} />
                 {tab.label}
                 {isActive && (
-                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-black rounded-t-full"></span>
+                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-black rounded-full"></span>
                 )}
               </button>
             );
@@ -227,11 +236,11 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
         </div>
 
         {/* Tab Content Areas */}
-        <div className="p-6 min-h-[320px] max-h-[60vh] overflow-y-auto">
+        <div className="px-8 py-8 h-[480px] overflow-y-auto custom-scrollbar">
           {/* Engine Tab */}
           {activeTab === 'engine' && (
-            <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
-              <div className="space-y-4">
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="space-y-6">
                 <CustomDropdown
                   label="API Provider"
                   value={settings.providerId}
@@ -242,7 +251,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                   ]}
                 />
 
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <CustomDropdown
                     label="Execution Model"
                     value={settings.model}
@@ -258,9 +267,9 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                     ]}
                   />
                   {settings.providerId && models.length === 0 && !fetchingModels && (
-                    <div className="flex items-center gap-1.5 mt-2 text-amber-600 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
-                      <AlertCircle className="w-4 h-4" />
-                      <p className="text-xs font-medium">
+                    <div className="flex items-center gap-2 mt-3 text-amber-600 bg-amber-50/50 p-3 rounded-xl border border-amber-100">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <p className="text-[11px] font-medium leading-tight">
                         No models loaded. Please check the API Key configuration for this provider.
                       </p>
                     </div>
@@ -272,30 +281,43 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
 
           {/* Tools Tab */}
           {activeTab === 'tools' && (
-            <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
               {!agentData.tools || agentData.tools.length === 0 ? (
-                <div className="text-center p-8 border border-dashed border-neutral-200 rounded-2xl bg-neutral-50 flex flex-col items-center">
-                  <Webhook className="w-8 h-8 text-neutral-300 mb-3" />
-                  <p className="text-sm text-neutral-500">
-                    This agent has no built-in tools configured.
+                <div className="text-center py-12 px-6 border-2 border-dashed border-neutral-100 rounded-3xl bg-neutral-50/30 flex flex-col items-center">
+                  <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center mb-4">
+                    <Webhook className="w-6 h-6 text-neutral-300" />
+                  </div>
+                  <p className="text-sm font-medium text-neutral-500">
+                    No built-in tools configured for this agent.
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3">
                   {agentData.tools.map((tool) => {
                     const isEnabled = settings.tools.includes(tool);
                     return (
                       <button
                         key={tool}
                         onClick={() => toggleTool(tool)}
-                        className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all text-left ${
+                        className={`flex items-center justify-between px-5 py-4 rounded-2xl border-2 transition-all text-left group ${
                           isEnabled
-                            ? 'bg-neutral-900 border-black text-white shadow-sm'
-                            : 'bg-white border-neutral-200 text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50'
+                            ? 'bg-neutral-900 border-neutral-900 text-white shadow-xl shadow-black/10'
+                            : 'bg-white border-neutral-100 text-neutral-700 hover:border-neutral-200 hover:bg-neutral-50/50'
                         }`}
                       >
-                        <span className="text-sm font-medium font-mono">{tool}</span>
-                        {isEnabled && <CheckCircle2 className="w-4 h-4 text-white" />}
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-2 h-2 rounded-full ${isEnabled ? 'bg-green-400' : 'bg-neutral-200'}`}
+                          />
+                          <span className="text-sm font-semibold tracking-tight">{tool}</span>
+                        </div>
+                        <div
+                          className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${isEnabled ? 'bg-white/20' : 'bg-neutral-100 opacity-0 group-hover:opacity-100'}`}
+                        >
+                          <CheckCircle2
+                            className={`w-3.5 h-3.5 ${isEnabled ? 'text-white' : 'text-neutral-400'}`}
+                          />
+                        </div>
                       </button>
                     );
                   })}
@@ -306,18 +328,25 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
 
           {/* MCP Tab */}
           {activeTab === 'mcp' && (
-            <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
               {fetchingMCPs ? (
-                <div className="text-center p-8 text-sm text-neutral-500">Loading servers...</div>
+                <div className="flex flex-col items-center justify-center py-12 gap-3">
+                  <RefreshCw className="w-6 h-6 animate-spin text-neutral-300" />
+                  <p className="text-xs font-medium text-neutral-400">Syncing servers...</p>
+                </div>
               ) : mcpServers.length === 0 ? (
-                <div className="text-center p-8 border border-dashed border-neutral-200 rounded-2xl bg-neutral-50 flex flex-col items-center">
-                  <Plug className="w-8 h-8 text-neutral-300 mb-3" />
-                  <p className="text-sm text-neutral-600 mb-2">No MCP servers available.</p>
+                <div className="text-center py-12 px-6 border-2 border-dashed border-neutral-100 rounded-3xl bg-neutral-50/30 flex flex-col items-center">
+                  <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center mb-4">
+                    <Plug className="w-6 h-6 text-neutral-300" />
+                  </div>
+                  <p className="text-sm font-medium text-neutral-600 mb-2">
+                    No MCP servers available.
+                  </p>
                   <a
                     href="/admin/chatbot"
-                    className="text-sm font-medium text-black underline underline-offset-4 hover:text-neutral-600"
+                    className="text-xs font-bold text-black underline underline-offset-4 hover:text-neutral-500 uppercase tracking-widest transition-colors"
                   >
-                    Configure one in Chatbot settings
+                    Configure in Settings
                   </a>
                 </div>
               ) : (
@@ -329,37 +358,33 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                         key={mcp._id}
                         type="button"
                         onClick={() => toggleMCP(mcp._id)}
-                        className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-left border transition-all ${
+                        className={`w-full flex items-center gap-4 px-5 py-4.5 rounded-2xl text-left border-2 transition-all ${
                           isAssigned
-                            ? 'bg-neutral-900 border-black text-white shadow-sm'
-                            : 'bg-white border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
+                            ? 'bg-neutral-900 border-neutral-900 text-white shadow-xl shadow-black/10'
+                            : 'bg-white border-neutral-100 hover:border-neutral-200 hover:bg-neutral-50/50'
                         }`}
                       >
                         <div
-                          className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-colors ${
+                          className={`w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 transition-all ${
                             isAssigned
                               ? 'bg-white text-black'
-                              : 'border-2 border-neutral-300 bg-transparent'
+                              : 'border-2 border-neutral-200 bg-white'
                           }`}
                         >
-                          {isAssigned && <CheckCircle2 className="w-5 h-5" />}
+                          {isAssigned && <CheckCircle2 className="w-3.5 h-3.5" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p
-                              className={`text-sm font-semibold truncate ${isAssigned ? 'text-white' : 'text-neutral-900'}`}
-                            >
-                              {mcp.name}
-                            </p>
+                            <p className="text-sm font-bold tracking-tight">{mcp.name}</p>
                             {!mcp.isActive && (
-                              <span className="text-[10px] uppercase font-bold text-red-500 bg-red-50/10 border border-red-500/20 px-1.5 py-0.5 rounded">
+                              <span className="text-[9px] uppercase font-black text-red-500 bg-red-50 px-1.5 py-0.5 rounded-md border border-red-100">
                                 Offline
                               </span>
                             )}
                           </div>
                           {mcp.description && (
                             <p
-                              className={`text-xs truncate mt-0.5 ${isAssigned ? 'text-neutral-300' : 'text-neutral-500'}`}
+                              className={`text-[11px] truncate mt-1 ${isAssigned ? 'text-neutral-400' : 'text-neutral-500'}`}
                             >
                               {mcp.description}
                             </p>
@@ -375,29 +400,28 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
 
           {/* Persona Tab */}
           {activeTab === 'persona' && (
-            <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200 h-full flex flex-col">
-              <div>
-                <p className="text-sm text-neutral-600 mb-3">
-                  Define specialized instructions that will be injected into this agent's system
-                  prompt context. Use this to guide behavior, tone, or specific operational
-                  constraints.
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300 h-full flex flex-col">
+              <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100 mb-2">
+                <p className="text-[11px] leading-relaxed text-neutral-500 font-medium">
+                  Define specialized instructions for this agent's system prompt. Guide behavior,
+                  tone, or specific operational constraints to optimize performance.
                 </p>
               </div>
               <textarea
                 value={settings.persona}
                 onChange={(e) => setSettings((prev) => ({ ...prev, persona: e.target.value }))}
-                className="flex-1 min-h-[150px] w-full p-4 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-black/5 focus:border-black outline-none transition-all text-sm leading-relaxed text-neutral-800 resize-y shadow-sm"
-                placeholder="e.g., 'You are a strict code reviewer. Always focus on performance and security. Do not provide code examples unless explicitly requested...'"
+                className="flex-1 min-h-[200px] w-full p-5 bg-white border-2 border-neutral-100 rounded-2xl focus:ring-0 focus:border-black outline-none transition-all text-sm leading-relaxed text-neutral-800 resize-none shadow-sm"
+                placeholder="e.g., 'You are a critical code auditor. Focus on security patterns and performance bottlenecks...'"
               />
             </div>
           )}
 
           {/* Integration Tab */}
           {activeTab === 'integration' && agentData.agentId === AGENT_IDS.TELEGRAM_BOT && (
-            <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-neutral-900 mb-1">
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest">
                     Telegram Bot Token
                   </label>
                   <input
@@ -409,15 +433,12 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                         metadata: { ...prev.metadata, telegramBotToken: e.target.value },
                       }))
                     }
-                    placeholder="123456789:ABCdefGHIjklMNOpqrSTUvwxYZ"
-                    className="w-full p-3 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-black/5 focus:border-black outline-none transition-all text-sm text-neutral-800 shadow-sm"
+                    placeholder="123456789:ABCdef..."
+                    className="w-full p-4 bg-white border-2 border-neutral-100 rounded-2xl focus:ring-0 focus:border-black outline-none transition-all text-sm text-neutral-800 shadow-sm"
                   />
-                  <p className="text-xs text-neutral-500 mt-1.5">
-                    Obtain this token by talking to the BotFather on Telegram.
-                  </p>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-neutral-900 mb-1">
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest">
                     Webhook URL
                   </label>
                   <input
@@ -429,13 +450,14 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                         metadata: { ...prev.metadata, webhookUrl: e.target.value },
                       }))
                     }
-                    placeholder="https://yourdomain.com/api/webhooks/telegram"
-                    className="w-full p-3 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-black/5 focus:border-black outline-none transition-all text-sm text-neutral-800 shadow-sm"
+                    placeholder="https://..."
+                    className="w-full p-4 bg-white border-2 border-neutral-100 rounded-2xl focus:ring-0 focus:border-black outline-none transition-all text-sm text-neutral-800 shadow-sm"
                   />
-                  <p className="text-xs text-neutral-500 mt-1.5">
-                    The absolute URL where Telegram will send updates. Example:
-                    https://hasanraiyan.vercel.app/api/webhooks/telegram
-                  </p>
+                  <div className="bg-blue-50/50 border border-blue-100 p-3 rounded-xl mt-2">
+                    <p className="text-[10px] text-blue-600 font-medium leading-relaxed">
+                      Must be an absolute HTTPS URL. Telegram updates will be sent to this endpoint.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -443,22 +465,22 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-neutral-50 border-t border-neutral-200">
-          <DialogFooter className="flex-col sm:flex-row gap-3">
+        <div className="px-8 py-6 bg-white border-t border-neutral-100">
+          <DialogFooter className="flex-row gap-4">
             <Button
               variant="outline"
               onClick={onClose}
               disabled={saving}
-              className="rounded-xl flex-1 justify-center bg-white"
+              className="rounded-2xl flex-1 justify-center bg-white border-2 border-neutral-100 hover:border-neutral-200 hover:bg-neutral-50 text-neutral-600 font-bold uppercase tracking-widest text-[10px] h-12"
             >
-              Cancel
+              Discard Changes
             </Button>
             <Button
               onClick={handleSave}
               isLoading={saving}
-              className="rounded-xl bg-black hover:bg-neutral-800 text-white flex-1 justify-center shadow-md"
+              className="rounded-2xl bg-black hover:bg-neutral-800 text-white flex-1 justify-center shadow-xl shadow-black/10 font-bold uppercase tracking-widest text-[10px] h-12"
             >
-              <Save className="w-4 h-4 mr-2" /> Save Configuration
+              <Save className="w-3.5 h-3.5 mr-2" /> Save Configuration
             </Button>
           </DialogFooter>
         </div>

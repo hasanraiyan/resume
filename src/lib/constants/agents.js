@@ -54,6 +54,7 @@ export const AGENT_TYPES = {
  * Agent Categories
  * More specific categorization within types.
  */
+
 export const AGENT_CATEGORIES = {
   // Media
   IMAGE_PROCESSING: 'image_processing',
