@@ -19,7 +19,7 @@ export default function OutlineScreen({ outline, setOutline, handleReset, handle
           </span>
           <button
             onClick={handleGenerateSlides}
-            className="bg-black text-white px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-neutral-800 transition-all flex items-center gap-2"
+            className="bg-black text-white px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-neutral-800 transition-all flex items-center gap-2 cursor-pointer"
           >
             <Wand2 className="w-4 h-4" /> Generate Deck
           </button>
