@@ -45,6 +45,7 @@ const presentationSchema = new mongoose.Schema(
   }
 );
 
-const Presentation = mongoose.models.Presentation || mongoose.model('Presentation', presentationSchema);
+const Presentation =
+  mongoose.models.Presentation || mongoose.model('Presentation', presentationSchema);
 
 export default Presentation;

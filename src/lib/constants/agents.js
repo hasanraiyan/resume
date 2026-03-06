@@ -33,6 +33,9 @@ export const AGENT_IDS = {
   // Analytics Agents
   ANALYTICS_TRACKER: 'analytics_tracker',
   ENGAGEMENT_ANALYZER: 'engagement_analyzer',
+
+  // Integrations
+  TELEGRAM_BOT: 'telegram_bot',
 };
 
 /**
@@ -139,7 +142,8 @@ export const DEFAULT_AGENT_CONFIGS = {
     icon: 'Presentation',
     defaultModel: 'gemini-1.5-pro',
     defaultProvider: 'google',
-    persona: 'You are an elite Presentation Synthesizer agent. Your job is to research topics thoroughly, design logically structured presentation outlines, and ultimately translate dense text into visually stunning, complete slide images.',
+    persona:
+      'You are an elite Presentation Synthesizer agent. Your job is to research topics thoroughly, design logically structured presentation outlines, and ultimately translate dense text into visually stunning, complete slide images.',
     isActive: true,
   },
   [AGENT_IDS.CHAT_ASSISTANT]: {
@@ -238,6 +242,16 @@ export const DEFAULT_AGENT_CONFIGS = {
     icon: 'TrendingUp',
     isActive: true,
   },
+  [AGENT_IDS.TELEGRAM_BOT]: {
+    name: 'Telegram Bot',
+    description: 'Conversational agent interacting via Telegram Webhooks',
+    type: AGENT_TYPES.CHAT,
+    category: AGENT_CATEGORIES.CONVERSATIONAL,
+    icon: 'MessageCircle',
+    defaultModel: 'gpt-4o',
+    defaultProvider: 'openai',
+    isActive: true,
+  },
 };
 
 /**
@@ -261,6 +275,7 @@ export const AGENT_TOOLS = {
   [AGENT_IDS.PRESENTATION_SYNTHESIZER]: ['research', 'outline_generation', 'slide_synthesis'],
   [AGENT_IDS.ANALYTICS_TRACKER]: ['event_tracking', 'session_management'],
   [AGENT_IDS.ENGAGEMENT_ANALYZER]: ['pattern_recognition', 'insights_generation'],
+  [AGENT_IDS.TELEGRAM_BOT]: ['conversation', 'tool_use'],
 };
 
 /**
@@ -284,6 +299,7 @@ export const RATE_LIMIT_DEFAULTS = {
   [AGENT_IDS.PRESENTATION_SYNTHESIZER]: { requests: 5, window: 60 },
   [AGENT_IDS.ANALYTICS_TRACKER]: { requests: 100, window: 60 },
   [AGENT_IDS.ENGAGEMENT_ANALYZER]: { requests: 30, window: 60 },
+  [AGENT_IDS.TELEGRAM_BOT]: { requests: 60, window: 60 },
 };
 
 /**

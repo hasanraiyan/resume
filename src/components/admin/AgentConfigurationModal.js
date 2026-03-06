@@ -20,7 +20,10 @@ import {
   Plug,
   CheckCircle2,
   AlertCircle,
+  MessageCircle,
 } from 'lucide-react';
+
+import { AGENT_IDS } from '@/lib/constants/agents';
 
 export default function AgentConfigurationModal({ isOpen, onClose, agentData, providers, onSave }) {
   const [activeTab, setActiveTab] = useState('engine'); // 'engine', 'tools', 'mcp', 'persona'
@@ -31,6 +34,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
     isActive: true,
     tools: [],
     activeMCPs: [],
+    metadata: {},
   });
 
   const [models, setModels] = useState([]);
@@ -63,6 +67,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
         isActive: agentData.isActive ?? true,
         tools: agentData.tools || [],
         activeMCPs: agentData.activeMCPs || [],
+        metadata: agentData.metadata || {},
       });
       if (agentData.providerId) {
         fetchModels(agentData.providerId);
@@ -152,6 +157,10 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
     { id: 'mcp', label: 'MCP', icon: Plug },
     { id: 'persona', label: 'Persona', icon: Settings2 },
   ];
+
+  if (agentData.agentId === AGENT_IDS.TELEGRAM_BOT) {
+    tabs.push({ id: 'integration', label: 'Integration', icon: MessageCircle });
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -380,6 +389,55 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                 className="flex-1 min-h-[150px] w-full p-4 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-black/5 focus:border-black outline-none transition-all text-sm leading-relaxed text-neutral-800 resize-y shadow-sm"
                 placeholder="e.g., 'You are a strict code reviewer. Always focus on performance and security. Do not provide code examples unless explicitly requested...'"
               />
+            </div>
+          )}
+
+          {/* Integration Tab */}
+          {activeTab === 'integration' && agentData.agentId === AGENT_IDS.TELEGRAM_BOT && (
+            <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-neutral-900 mb-1">
+                    Telegram Bot Token
+                  </label>
+                  <input
+                    type="password"
+                    value={settings.metadata?.telegramBotToken || ''}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        metadata: { ...prev.metadata, telegramBotToken: e.target.value },
+                      }))
+                    }
+                    placeholder="123456789:ABCdefGHIjklMNOpqrSTUvwxYZ"
+                    className="w-full p-3 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-black/5 focus:border-black outline-none transition-all text-sm text-neutral-800 shadow-sm"
+                  />
+                  <p className="text-xs text-neutral-500 mt-1.5">
+                    Obtain this token by talking to the BotFather on Telegram.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-neutral-900 mb-1">
+                    Webhook URL
+                  </label>
+                  <input
+                    type="url"
+                    value={settings.metadata?.webhookUrl || ''}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        metadata: { ...prev.metadata, webhookUrl: e.target.value },
+                      }))
+                    }
+                    placeholder="https://yourdomain.com/api/webhooks/telegram"
+                    className="w-full p-3 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-black/5 focus:border-black outline-none transition-all text-sm text-neutral-800 shadow-sm"
+                  />
+                  <p className="text-xs text-neutral-500 mt-1.5">
+                    The absolute URL where Telegram will send updates. Example:
+                    https://hasanraiyan.vercel.app/api/webhooks/telegram
+                  </p>
+                </div>
+              </div>
             </div>
           )}
         </div>

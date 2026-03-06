@@ -18,7 +18,6 @@ export async function GET(req) {
       .lean();
 
     return NextResponse.json({ success: true, presentations });
-
   } catch (error) {
     console.error('Fetch Presentations Error:', error);
     return NextResponse.json({ error: 'Failed to fetch presentations' }, { status: 500 });
