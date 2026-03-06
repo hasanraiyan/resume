@@ -308,6 +308,7 @@ class AgentRegistry {
       lastExecutedAt: instance?.lastExecutedAt ?? null,
       canExecute: instance?.canExecute() ?? true,
       rateLimit: config.rateLimit,
+      metadata: config.metadata || {},
     };
   }
 }

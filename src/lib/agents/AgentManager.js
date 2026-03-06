@@ -264,6 +264,9 @@ class AgentManager {
         if (updates.persona !== undefined) {
           settings.agents[agentIndex].persona = updates.persona;
         }
+        if (updates.metadata !== undefined) {
+          settings.agents[agentIndex].metadata = updates.metadata;
+        }
       } else {
         // Add new agent entry
         settings.agents.push({
@@ -273,6 +276,7 @@ class AgentManager {
           providerId: updates.providerId || '',
           model: updates.model || '',
           persona: updates.persona || '',
+          metadata: updates.metadata || {},
         });
       }
 
