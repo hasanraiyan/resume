@@ -19,7 +19,6 @@ export const AGENT_IDS = {
 
   // Chat & Conversation Agents
   CHAT_FAST: 'chat_fast',
-  CHAT_FAST: 'chat_fast',
   CHAT_PRO: 'chat_pro',
   CHAT_THINKING: 'chat_thinking',
   CONTACT_FORM_ASSISTANT: 'contact_form_assistant',

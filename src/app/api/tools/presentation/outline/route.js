@@ -17,7 +17,7 @@ export async function POST(req) {
     const authorId = isAdmin ? session.user.id || session.user._id : null;
 
     const body = await req.json();
-    const { topic, instructions, slideCount = 7 } = body;
+    const { topic, instructions, slideCount = 7, designStyle = 'premium_blue' } = body;
     const normalizedSlideCount = Number.parseInt(slideCount, 10);
     const finalSlideCount =
       Number.isFinite(normalizedSlideCount) && normalizedSlideCount > 0 ? normalizedSlideCount : 7;
@@ -36,6 +36,7 @@ export async function POST(req) {
       instructions,
       isAdmin,
       slideCount: finalSlideCount,
+      designStyle,
     });
 
     await dbConnect();

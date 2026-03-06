@@ -35,6 +35,7 @@ import ImageEmbedderAgent from './ai/image-embedder-agent';
 import VisualSearchAgent from './ai/visual-search-agent';
 import BlogWriterAgent from './ai/blog-writer-agent';
 import PresentationAgent from './ai/presentation-agent';
+import ChatAgent from './ai/chat-assistant-agent';
 
 // Register agent classes into the registry
 agentRegistry.register(AGENT_IDS.IMAGE_ANALYZER, AIImageAgent);

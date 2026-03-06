@@ -5,6 +5,91 @@ import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { MultiServerMCPClient } from '@langchain/mcp-adapters';
 import { getBackendMCPConfig } from '@/lib/mcpConfig';
 
+const DESIGN_THEMES = {
+  PREMIUM_BLUE: {
+    id: 'premium_blue',
+    name: 'Premium Blue',
+    gradient:
+      'deep midnight navy at the top-left to rich dark indigo at the bottom-right with a subtle warm purple glow in the center',
+    accent: '#00D4FF',
+    font: 'SF Pro Display or Inter Black',
+    elements: 'Frosted glass panels, soft glowing orbs, bokeh light particles',
+    exampleTitle:
+      "A ultra-premium 16:9 presentation slide... The background is a rich multi-stop gradient flowing from deep midnight navy... In the upper center, the title 'THE FUTURE OF AI' is rendered in large bold white sans-serif...",
+    exampleContent:
+      'A ultra-premium 16:9 presentation slide... Same deep midnight navy to dark indigo gradient background. On the left: stacked horizontal glassmorphism cards...',
+  },
+  CYBERPUNK: {
+    id: 'cyberpunk',
+    name: 'Cyberpunk',
+    gradient:
+      'deep dark charcoal to vivid midnight violet, with aggressive neon cyan and hot pink light leaks from the edges',
+    accent: '#FF00FF',
+    font: 'JetBrains Mono or Space Grotesk Bold',
+    elements:
+      '3D retro-futuristic grids, glitch lines, holographic overlays, digital chromatic aberration',
+    exampleTitle:
+      "A futuristic 16:9 cyberpunk slide. Background is deep charcoal with neon violet glow. Title 'NEO-TECH' in glowing hot pink monospace font. A floating 3D holographic city model in cyan glows in the center.",
+    exampleContent:
+      'A cyberpunk slide. Background dark with cyan grid lines. Three data panels float like HUD elements with glitching green edges. 3D glowing fiber-optic cables snake across the right side.',
+  },
+  STUDIO_WHITE: {
+    id: 'studio_white',
+    name: 'Studio White',
+    gradient:
+      'soft off-white through misty silver to a clean pearl gray, perfectly diffused studio lighting',
+    accent: '#000000',
+    font: 'Inter or Helvetica Now Light',
+    elements:
+      'Ultra-thin 1px minimalist lines, vast whitespace, extremely soft drop shadows, high-key lighting',
+    exampleTitle:
+      "A minimalist studio-white slide. Background is a soft pearl gray gradient. Title 'PURE DESIGN' in large black lightweight sans-serif. A single high-end metallic 3D sphere sits elegantly in the bottom right.",
+    exampleContent:
+      'A clean white slide. Content arranged in a perfect grid with large margins. Subtle gray lines separate sections. Text is crisp black. A professional macro photo of architectural concrete on the right side.',
+  },
+  LUXURY_GOLD: {
+    id: 'luxury_gold',
+    name: 'Luxury Gold',
+    gradient:
+      'matte obsidian black to deep velvet espresso, with a rich metallic gold radiance in the focal point',
+    accent: '#D4AF37',
+    font: 'Playfair Display or Bodoni Serif',
+    elements:
+      'Brushed gold textures, marble surface reflections, thin gold wireframes, sophisticated bokeh',
+    exampleTitle:
+      "A luxury presentation slide. Background is matte obsidian black. Title 'EXCELLENCE' in elegant gold serif font. A 3D gold-leaf laurel or geometric sculpture with realistic metallic reflections floats in the center.",
+    exampleContent:
+      'A luxury slide. Dark velvet background. Two side-by-side white marble cards with gold bezels containing text. A blurred background of a high-end interior adds depth.',
+  },
+  SWISS_MODERN: {
+    id: 'swiss_modern',
+    name: 'Swiss Modern',
+    gradient:
+      'high-contrast solid vibrant electric red to bold signal orange (or other primary color pairings)',
+    accent: '#FFFFFF',
+    font: 'Akzidenz-Grotesk or Helvetica Bold',
+    elements:
+      'Strict asymmetric grid, oversized typography as a graphic element, thick solid borders, no shadows',
+    exampleTitle:
+      "A bold Swiss Modern slide. Background is solid electric red. Title 'FORM & FUNCTION' in massive white bold sans-serif, partially cropped at the edge. A black geometric circle overlaps a white square.",
+    exampleContent:
+      'A Swiss slide. Left half is black, right half is white. Text in opposite colors. Strong vertical and horizontal grid lines. A simple high-contrast icon placed exactly on a grid intersection.',
+  },
+  ORGANIC: {
+    id: 'organic',
+    name: 'Organic',
+    gradient: 'soft sage green through misty forest moss to a warm sun-drenched linen texture',
+    accent: '#4B5D50',
+    font: 'Cormorant Garamond or Montserrat Light',
+    elements:
+      'Soft botanical shadows, hand-drawn organic shapes, artisanal paper textures, floating leaf silhouettes',
+    exampleTitle:
+      "An organic presentation slide. Background is a soft sage green linen texture. Title 'SUSTAINABILITY' in elegant serif typography. A delicate floating 3D leaf silhouette cast a soft shadow on the background.",
+    exampleContent:
+      'An organic slide. Background of misty forest moss. Text is arranged in a gentle, non-geometric flow. Small botanical illustrations decorate the corners. A soft sun-flare effect comes from the top left.',
+  },
+};
+
 class PresentationAgent extends BaseAgent {
   constructor(agentId = AGENT_IDS.PRESENTATION_SYNTHESIZER, config = {}) {
     super(agentId, config);
@@ -14,7 +99,13 @@ class PresentationAgent extends BaseAgent {
     this.logger.info('Presentation Agent Initialized');
   }
 
-  async draftOutline(topic, extraInstructions = '', isAdmin = false, slideCount = 7) {
+  async draftOutline(
+    topic,
+    extraInstructions = '',
+    isAdmin = false,
+    slideCount = 7,
+    designStyle = 'premium_blue'
+  ) {
     if (!this.isInitialized) await this.initialize();
     this.logger.info(`Drafting outline for topic: ${topic}`);
 
@@ -44,48 +135,39 @@ class PresentationAgent extends BaseAgent {
       this.logger.error('MCP init error:', e);
     }
 
+    const theme = DESIGN_THEMES[designStyle?.toUpperCase()] || DESIGN_THEMES.PREMIUM_BLUE;
+
     const systemPrompt = `You are a world-class presentation designer who has worked at Apple, Stripe, and IDEO. You design slides that win design awards.
 
 Research the topic, then generate a JSON presentation where each slide has one "visualPrompt" — a rich, cinematic description of what the FULL slide looks like as a rendered image.
 
 Topic: ${topic}
+Design Style: ${theme.name}
 Additional Instructions: ${extraInstructions}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  DESIGN DNA — EVERY SLIDE MUST FOLLOW THIS
+  DESIGN DNA — EVERY SLIDE MUST FOLLOW THIS (${theme.name} Theme)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 VISUAL FOUNDATION:
-- Every prompt MUST begin with: "A ultra-premium 16:9 presentation slide, rendered in stunning 4K quality, inspired by Apple Keynote 2024 and Stripe's investor deck aesthetic."
-- Background: Deep rich gradients (NOT flat solid colors). Use multi-stop gradients like "a background transitioning from deep midnight navy at the top-left to rich dark indigo at the bottom-right with a subtle warm purple glow in the center".
-- Add DEPTH LAYERS: frosted glass panels, soft glowing orbs, bokeh light particles, subtle grid lines, mesh gradients, aurora-like color bleeds behind content areas.
+- Every prompt MUST begin with: "A ultra-premium 16:9 presentation slide, rendered in stunning 4K quality, inspired by ${theme.name} aesthetic."
+- Background: ${theme.gradient}.
+- Add DEPTH LAYERS: ${theme.elements}.
 
 TYPOGRAPHY RULES:
-- Title text: Large, bold, modern sans-serif font (like SF Pro Display or Inter Black). Crisp white or bright accent color.
-- Body text: Clean, lightweight sans-serif. Soft white or light gray with generous line spacing.
-- Every text element must be EXPLICITLY described with exact wording, size relationship (large/medium/small), position (top-left, center, etc.), and color.
+- Fonts to use: ${theme.font}.
+- Use crisp ${theme.accent} or white as the primary text colors.
+- Every text element must be EXPLICITLY described with exact wording, size relationship, position, and color.
 
 VISUAL RICHNESS — NO PLAIN SLIDES:
-- Every content slide MUST include at least ONE of these premium visual elements:
-  • Glassmorphism cards: Semi-transparent frosted glass rectangles with soft white borders and subtle backdrop blur containing the text content
-  • 3D floating objects: Glossy, reflective 3D icons or shapes with realistic shadows and ambient occlusion
-  • Glowing data visualizations: Neon-outlined charts, radial progress rings with glow effects, gradient-filled bar charts
-  • Isometric illustrations: Clean 3D isometric diagrams with soft shadows on a dark background
-  • Icon grids: Beautiful minimal line icons arranged in a grid, each inside a soft-glowing rounded square
-  • Flowing abstract art: Silk-like flowing gradients, DNA-helix shapes, orbital rings, particle systems as background accents
+- Use consistent motifs from the ${theme.name} style.
 - NEVER just text on a background. That is FORBIDDEN.
 
 LAYOUT COMPOSITION:
-- Use asymmetric layouts: content on left 55%, rich visual on right 45% — or vice versa.
-- Title slides: centered dramatic composition with a hero 3D visual element.
-- Use generous whitespace and padding. Nothing should feel cramped.
-- Content should feel like it's floating on layered glass cards above the background.
+- Use asymmetric layouts, generous whitespace, and modern padding.
 
 CONSISTENCY RULES:
-- SAME gradient background direction and color palette on every slide.
-- SAME font style throughout.
-- SAME accent color for highlights, icons, and decorative elements.
-- Only the CONTENT and VISUAL ELEMENTS change between slides — the overall design system stays locked.
+- SAME gradient, SAME font style, and SAME accent color (${theme.accent}) on every slide.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   JSON FORMAT (respond with ONLY this, no markdown)
@@ -93,29 +175,29 @@ CONSISTENCY RULES:
 
 {
   "designSystem": {
-    "backgroundGradient": "describe the exact multi-stop gradient used on ALL slides",
-    "accentColor": "the single bright accent color used for highlights across all slides",
-    "fontStyle": "the font family and weight pattern"
+    "backgroundGradient": "${theme.gradient}",
+    "accentColor": "${theme.accent}",
+    "fontStyle": "${theme.font}",
+    "themeId": "${theme.id}"
   },
   "slides": [
     {
-      "visualPrompt": "A single dense paragraph (150-200 words) describing EVERYTHING visible on this slide: the background gradient, every text element with exact wording and position, all visual elements with materials/lighting/shadows, layout composition, decorative accents. This paragraph alone must be enough to perfectly recreate this slide as a photorealistic render."
+      "visualPrompt": "A single dense paragraph (150-200 words) describing EVERYTHING visible on this slide."
     }
   ]
 }
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  EXAMPLE VISUAL PROMPTS (study the density and specificity)
+  EXAMPLE VISUAL PROMPTS FOR THIS STYLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 TITLE SLIDE EXAMPLE:
-"A ultra-premium 16:9 presentation slide, rendered in stunning 4K quality, inspired by Apple Keynote 2024 aesthetic. The background is a rich multi-stop gradient flowing from deep midnight navy in the top-left corner through dark royal indigo in the center to a subtle deep plum in the bottom-right, with a soft ethereal blue-purple glow emanating from the center. In the upper center of the slide, the title 'THE FUTURE OF AI' is rendered in a large bold modern sans-serif font (similar to SF Pro Display Heavy) in crisp pure white, with wide letter-spacing for a premium feel. Below it, the subtitle 'Transforming Industries Through Intelligence' appears in a lighter weight of the same font in soft silver-gray. Centered below the text, a stunning 3D glossy translucent brain sculpture floats with internal glowing neural network pathways in electric cyan and soft purple, casting a subtle colored light reflection downward. The brain has a glass-like refractive material with soft caustic light patterns. Small floating holographic data particles orbit around it. The overall composition is clean, centered, and dramatic with generous negative space."
+"${theme.exampleTitle}"
 
 CONTENT SLIDE EXAMPLE:
-"A ultra-premium 16:9 presentation slide, rendered in stunning 4K quality, inspired by Stripe's deck design. Same deep midnight navy to dark indigo gradient background. On the left 55% of the slide: the title 'Market Opportunity' is positioned at the top-left in bold white sans-serif text. Below it, three key points are displayed inside stacked horizontal glassmorphism cards — semi-transparent frosted glass rectangles with 1px soft white borders and rounded corners. Each card contains a glowing cyan dot bullet followed by text in light gray: '1. Global TAM reaches $4.2T by 2028', '2. 67% of enterprises actively adopting', '3. Cost reduction averaging 40% in Year 1'. The cards have subtle backdrop blur and a faint inner glow. On the right 45%, a large 3D isometric bar chart floats with four gradient-filled bars (cyan to purple gradient) of different heights, sitting on a thin translucent glass platform. Each bar has a soft glow at its base and a small floating label above it. Tiny glowing particles drift upward from the tallest bar. Subtle grid lines in very faint white (5% opacity) add depth to the background."
+"${theme.exampleContent}"
 
-Generate exactly ${slideCount} slides with a clear arc: Title → Context → Deep Dives (with diagrams) → Key Insights → Conclusion/CTA.
-Each visualPrompt must be 150-200 words. Short prompts produce garbage — be DENSE and SPECIFIC.`;
+Generate exactly ${slideCount} slides with a clear arc: Title → Context → Deep Dives → Key Insights → Conclusion.`;
 
     const agent = createReactAgent({ llm, tools });
 
@@ -307,11 +389,19 @@ ${qualitySuffix}`;
   }
 
   async _onExecute(input) {
-    const { action, topic, instructions, outlineData, isAdmin, slideCount = 7 } = input;
+    const {
+      action,
+      topic,
+      instructions,
+      outlineData,
+      isAdmin,
+      slideCount = 7,
+      designStyle = 'premium_blue',
+    } = input;
 
     if (action === 'draft_outline') {
       if (!topic) throw new Error('Topic is required.');
-      return await this.draftOutline(topic, instructions, isAdmin, slideCount);
+      return await this.draftOutline(topic, instructions, isAdmin, slideCount, designStyle);
     }
 
     if (action === 'generate_visuals') {
