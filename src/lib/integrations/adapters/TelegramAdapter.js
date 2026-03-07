@@ -1,4 +1,4 @@
-import { BaseIntegrationAdapter } from './BaseIntegrationAdapter';
+import { BaseIntegrationAdapter } from './BaseIntegrationAdapter.js';
 
 /**
  * Telegram Adapter

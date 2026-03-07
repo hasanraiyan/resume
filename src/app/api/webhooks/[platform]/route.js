@@ -132,5 +132,33 @@ export async function POST(request, { params }) {
 // Telegram specifically requires GET for setting up the webhook
 // (or you can use a separate script, this handles simple ping checking)
 export async function GET(request, { params }) {
-  return NextResponse.json({ message: `Webhook endpoint for ${params.platform} is active.` });
+  const { platform } = await params;
+
+  try {
+    await dbConnect();
+    const integration = await IntegrationSettings.findOne({
+      platform: platform.toLowerCase(),
+      isActive: true,
+    });
+
+    if (integration && platform.toLowerCase() === 'whatsapp') {
+      // 2. Decrypt Credentials
+      const credentials = {};
+      for (const [key, value] of Object.entries(integration.credentials || {})) {
+        credentials[key] = decrypt(value);
+      }
+
+      const adapter = IntegrationFactory.getAdapter(platform, credentials);
+      if (adapter && typeof adapter.handleVerification === 'function') {
+        const challenge = await adapter.handleVerification(request);
+        if (challenge) {
+          return new Response(challenge, { status: 200 });
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`[Webhook GET Error] Platform: ${platform}`, error);
+  }
+
+  return NextResponse.json({ message: `Webhook endpoint for ${platform} is active.` });
 }
