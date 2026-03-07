@@ -15,6 +15,7 @@ import {
   Network,
   Power,
   Activity,
+  MessageCircle,
 } from 'lucide-react';
 import AgentConfigurationModal from '@/components/admin/AgentConfigurationModal';
 import { Card } from '@/components/ui';
@@ -24,7 +25,7 @@ export default function AgentsDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState('providers'); // 'providers' or 'agents'
+  const [activeTab, setActiveTab] = useState('providers'); // 'providers', 'agents', or 'channels'
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -43,6 +44,18 @@ export default function AgentsDashboard() {
   const [selectedAgent, setSelectedAgent] = useState(null);
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
 
+  // Integrations State
+  const [integrations, setIntegrations] = useState([]);
+  const [savingIntegration, setSavingIntegration] = useState(false);
+  const [editingIntegration, setEditingIntegration] = useState(null);
+  const [newIntegration, setNewIntegration] = useState({
+    platform: 'telegram',
+    name: '',
+    credentials: { botToken: '' },
+    agentId: '',
+    isActive: true,
+  });
+
   useEffect(() => {
     if (status === 'loading') return;
     if (!session || session.user.role !== 'admin') {
@@ -51,6 +64,7 @@ export default function AgentsDashboard() {
     }
     fetchProviders();
     fetchAgents();
+    fetchIntegrations();
   }, [session, status, router]);
 
   const fetchProviders = async () => {
@@ -73,6 +87,16 @@ export default function AgentsDashboard() {
       }
     } catch (error) {
       console.error('Failed to fetch agents:', error);
+    }
+  };
+
+  const fetchIntegrations = async () => {
+    try {
+      const res = await fetch('/api/admin/integrations');
+      const data = await res.json();
+      if (res.ok) setIntegrations(data.integrations || []);
+    } catch (error) {
+      console.error('Failed to fetch integrations:', error);
     }
   };
 
@@ -131,6 +155,69 @@ export default function AgentsDashboard() {
     }
   };
 
+  // --- Integration Handlers ---
+  const handleAddIntegration = () => {
+    setEditingIntegration({ id: 'new', ...newIntegration });
+  };
+
+  const handleEditIntegration = (integration) => {
+    // Make a copy and clear credentials temporarily so they don't overwrite if they just want to change name
+    const copy = { ...integration };
+    if (copy.credentials && copy.credentials.botToken) {
+      copy.credentials.botToken = '';
+    }
+    setEditingIntegration(copy);
+  };
+
+  const handleSaveIntegration = async () => {
+    if (!editingIntegration.name || !editingIntegration.platform || !editingIntegration.agentId)
+      return;
+
+    setSavingIntegration(true);
+    try {
+      const isNew = editingIntegration.id === 'new';
+      const url = isNew
+        ? '/api/admin/integrations'
+        : `/api/admin/integrations/${editingIntegration.integrationId}`;
+      const method = isNew ? 'POST' : 'PUT';
+
+      const payload = { ...editingIntegration };
+
+      // Prevent sending empty credentials if not new
+      if (!isNew && payload.credentials && !payload.credentials.botToken) {
+        delete payload.credentials.botToken;
+      }
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        setEditingIntegration(null);
+        fetchIntegrations();
+      } else {
+        alert('Failed to save integration.');
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setSavingIntegration(false);
+    }
+  };
+
+  const handleDeleteIntegration = async (integrationId) => {
+    if (!confirm('Are you sure you want to delete this Channel Integration?')) return;
+    try {
+      // Assuming a DELETE route exists or will be created
+      const res = await fetch(`/api/admin/integrations/${integrationId}`, { method: 'DELETE' });
+      if (res.ok) fetchIntegrations();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   // --- UI Render ---
   if (loading)
     return (
@@ -150,6 +237,12 @@ export default function AgentsDashboard() {
       a.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       a.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       a.model?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredIntegrations = integrations.filter(
+    (i) =>
+      i.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      i.platform?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -229,6 +322,18 @@ export default function AgentsDashboard() {
               <Network className="w-4 h-4" />
               <span>Active Agents</span>
               {activeTab === 'agents' && (
+                <span className="absolute bottom-0 left-0 w-full h-[3px] bg-black"></span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('channels')}
+              className={`flex items-center gap-2 py-4 text-sm font-semibold transition-colors relative px-2 ${
+                activeTab === 'channels' ? 'text-black' : 'text-neutral-500 hover:text-neutral-800'
+              }`}
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span>Channels</span>
+              {activeTab === 'channels' && (
                 <span className="absolute bottom-0 left-0 w-full h-[3px] bg-black"></span>
               )}
             </button>
@@ -502,6 +607,248 @@ export default function AgentsDashboard() {
             {agents.length > 0 && filteredAgents.length === 0 && searchQuery && (
               <div className="text-center p-12 border border-dashed rounded-2xl bg-neutral-50 text-neutral-500">
                 No agents match your search for "{searchQuery}".
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Channels Tab */}
+        {activeTab === 'channels' && (
+          <div className="space-y-8 animate-in fade-in">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h2 className="text-2xl font-bold font-['Playfair_Display']">External Channels</h2>
+                <p className="text-sm text-neutral-500 mt-1">
+                  Connect your AI agents to external platforms like Telegram or WhatsApp.
+                </p>
+              </div>
+              <button
+                onClick={handleAddIntegration}
+                className="px-5 py-2.5 bg-black hover:bg-neutral-800 transition-colors text-white rounded-xl text-sm font-medium flex items-center gap-2 shadow-sm"
+              >
+                <Plus className="w-4 h-4" /> Add Channel
+              </button>
+            </div>
+
+            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredIntegrations.map((integration) => (
+                <Card
+                  key={integration.integrationId}
+                  className="p-6 border border-neutral-200 shadow-sm hover:shadow-md transition-shadow bg-white rounded-2xl flex flex-col h-full"
+                >
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-neutral-100 flex items-center justify-center flex-shrink-0 border border-neutral-200/60">
+                        <MessageCircle className="w-5 h-5 text-neutral-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-base text-neutral-900 leading-tight">
+                          {integration.name}
+                        </h3>
+                        <p className="text-xs text-neutral-500 font-medium capitalize mt-1">
+                          Platform:{' '}
+                          <span className="font-semibold text-neutral-800">
+                            {integration.platform}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => handleEditIntegration(integration)}
+                        className="p-1.5 text-neutral-400 hover:text-black hover:bg-neutral-100 rounded-lg transition-colors"
+                        aria-label="Edit Channel"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteIntegration(integration.integrationId)}
+                        className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        aria-label="Delete Channel"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 mb-6">
+                    <p className="text-xs text-neutral-500">
+                      Routing to Agent:{' '}
+                      <span className="font-semibold px-2 py-0.5 bg-neutral-100 rounded text-neutral-700">
+                        {integration.agentId}
+                      </span>
+                    </p>
+                  </div>
+
+                  <div className="mt-auto pt-4 border-t border-neutral-100">
+                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold mb-1.5 flex justify-between">
+                      <span>Webhook URL</span>
+                      {integration.isActive ? (
+                        <span className="text-green-500 font-bold">Active</span>
+                      ) : (
+                        <span className="text-neutral-400">Inactive</span>
+                      )}
+                    </p>
+                    <div className="text-xs bg-neutral-50 text-neutral-600 px-3 py-2 rounded-lg font-mono tracking-wider border border-neutral-100 truncate flex items-center gap-2">
+                      <Webhook className="w-3.5 h-3.5 text-neutral-400" />
+                      <span className="truncate">/api/webhooks/{integration.platform}</span>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            {integrations.length === 0 ? (
+              <div className="text-center p-16 border-2 border-dashed border-neutral-200 rounded-3xl bg-neutral-50/50 flex flex-col items-center justify-center">
+                <MessageCircle className="w-12 h-12 text-neutral-300 mb-4" />
+                <h3 className="text-lg font-semibold text-neutral-700">No Channels Found</h3>
+                <p className="text-sm text-neutral-500 mt-2 max-w-md">
+                  Connect your AI Agents to external platforms like Telegram bots to interact with
+                  users directly.
+                </p>
+                <button
+                  onClick={handleAddIntegration}
+                  className="mt-6 px-6 py-2.5 bg-white border border-neutral-300 hover:border-black transition-colors rounded-xl text-sm font-medium text-black shadow-sm"
+                >
+                  Add a Channel
+                </button>
+              </div>
+            ) : filteredIntegrations.length === 0 && searchQuery ? (
+              <div className="text-center p-12 border border-dashed rounded-2xl bg-neutral-50 text-neutral-500">
+                No channels match your search for "{searchQuery}".
+              </div>
+            ) : null}
+
+            {/* Integration Edit Modal */}
+            {editingIntegration && (
+              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 sm:p-6">
+                <div className="bg-white rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 space-y-6 shadow-2xl">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-bold">
+                      {editingIntegration.id === 'new' ? 'New Channel Integration' : 'Edit Channel'}
+                    </h3>
+                    <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider cursor-pointer">
+                      <span
+                        className={
+                          editingIntegration.isActive ? 'text-green-600' : 'text-neutral-400'
+                        }
+                      >
+                        {editingIntegration.isActive ? 'Active' : 'Offline'}
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={editingIntegration.isActive ?? true}
+                        onChange={(e) =>
+                          setEditingIntegration({
+                            ...editingIntegration,
+                            isActive: e.target.checked,
+                          })
+                        }
+                        className="rounded border-neutral-300 text-black focus:ring-black"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-medium text-neutral-600">Platform</label>
+                      <select
+                        className="w-full p-2 border rounded-lg mt-1 bg-white"
+                        value={editingIntegration.platform}
+                        onChange={(e) =>
+                          setEditingIntegration({ ...editingIntegration, platform: e.target.value })
+                        }
+                        disabled={editingIntegration.id !== 'new'}
+                      >
+                        <option value="telegram">Telegram Bot API</option>
+                        <option value="whatsapp" disabled>
+                          WhatsApp (Coming Soon)
+                        </option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-medium text-neutral-600">Name</label>
+                      <input
+                        className="w-full p-2 border rounded-lg mt-1"
+                        value={editingIntegration.name}
+                        onChange={(e) =>
+                          setEditingIntegration({ ...editingIntegration, name: e.target.value })
+                        }
+                        placeholder="My Support Bot"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-medium text-neutral-600">
+                        Target AI Agent
+                      </label>
+                      <select
+                        className="w-full p-2.5 border-2 border-neutral-200 focus:border-black rounded-xl mt-1.5 bg-white text-sm font-medium transition-colors outline-none"
+                        value={editingIntegration.agentId}
+                        onChange={(e) =>
+                          setEditingIntegration({ ...editingIntegration, agentId: e.target.value })
+                        }
+                      >
+                        <option value="">Select an Agent...</option>
+                        {agents.map((a) => (
+                          <option key={a.agentId} value={a.agentId}>
+                            {a.name} ({a.agentId})
+                          </option>
+                        ))}
+                      </select>
+                      {agents.length === 0 && (
+                        <div className="text-xs text-red-500 mt-1.5">
+                          No active agents found. Please create one first.
+                        </div>
+                      )}
+                    </div>
+
+                    {editingIntegration.platform === 'telegram' && (
+                      <div>
+                        <label className="text-xs font-medium text-neutral-600">
+                          Telegram Bot Token
+                        </label>
+                        <input
+                          className="w-full p-2 border rounded-lg mt-1"
+                          type="password"
+                          value={editingIntegration.credentials?.botToken || ''}
+                          onChange={(e) =>
+                            setEditingIntegration({
+                              ...editingIntegration,
+                              credentials: {
+                                ...editingIntegration.credentials,
+                                botToken: e.target.value,
+                              },
+                            })
+                          }
+                          placeholder="123456789:ABCDEF..."
+                        />
+                        {editingIntegration.id !== 'new' && (
+                          <p className="text-[10px] text-neutral-400 mt-1">
+                            Leave blank to keep existing token unchanged.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2 pt-4 border-t border-neutral-100 mt-6">
+                    <button
+                      onClick={() => setEditingIntegration(null)}
+                      className="flex-1 py-2 rounded-xl border-2 border-neutral-100 hover:bg-neutral-50 text-sm font-bold uppercase tracking-widest text-neutral-600 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSaveIntegration}
+                      disabled={savingIntegration}
+                      className="flex-1 py-2 rounded-xl bg-black hover:bg-neutral-800 text-white text-sm font-bold uppercase tracking-widest shadow-lg shadow-black/10 transition-colors"
+                    >
+                      {savingIntegration ? 'Saving...' : 'Save Channel'}
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
