@@ -34,7 +34,6 @@ const IntegrationSettingsSchema = new mongoose.Schema(
     agentId: {
       type: String,
       required: true,
-      enum: Object.values(AGENT_IDS),
     },
     isActive: {
       type: Boolean,
