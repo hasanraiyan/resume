@@ -304,7 +304,7 @@ export default function AgentsDashboard() {
           <div className="flex gap-8">
             <button
               onClick={() => setActiveTab('providers')}
-              className={`flex items-center gap-2 py-4 text-sm font-semibold transition-colors relative px-2 ${
+              className={`flex items-center gap-2 py-4 text-sm font-semibold transition-colors cursor-pointer relative px-2 ${
                 activeTab === 'providers' ? 'text-black' : 'text-neutral-500 hover:text-neutral-800'
               }`}
             >
@@ -316,7 +316,7 @@ export default function AgentsDashboard() {
             </button>
             <button
               onClick={() => setActiveTab('agents')}
-              className={`flex items-center gap-2 py-4 text-sm font-semibold transition-colors relative px-2 ${
+              className={`flex items-center gap-2 py-4 text-sm font-semibold transition-colors cursor-pointer relative px-2 ${
                 activeTab === 'agents' ? 'text-black' : 'text-neutral-500 hover:text-neutral-800'
               }`}
             >
@@ -328,7 +328,7 @@ export default function AgentsDashboard() {
             </button>
             <button
               onClick={() => setActiveTab('channels')}
-              className={`flex items-center gap-2 py-4 text-sm font-semibold transition-colors relative px-2 ${
+              className={`flex items-center gap-2 py-4 text-sm font-semibold transition-colors cursor-pointer relative px-2 ${
                 activeTab === 'channels' ? 'text-black' : 'text-neutral-500 hover:text-neutral-800'
               }`}
             >
@@ -353,7 +353,7 @@ export default function AgentsDashboard() {
               </div>
               <button
                 onClick={handleAddProvider}
-                className="px-5 py-2.5 bg-black hover:bg-neutral-800 transition-colors text-white rounded-xl text-sm font-medium flex items-center gap-2 shadow-sm"
+                className="px-5 py-2.5 bg-black hover:bg-neutral-800 transition-colors text-white rounded-xl text-sm font-medium flex items-center gap-2 shadow-sm cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Add New Provider
               </button>
@@ -386,14 +386,14 @@ export default function AgentsDashboard() {
                     <div className="flex gap-1.5">
                       <button
                         onClick={() => handleEditProvider(p)}
-                        className="p-1.5 text-neutral-400 hover:text-black hover:bg-neutral-100 rounded-lg transition-colors"
+                        className="p-1.5 text-neutral-400 hover:text-black hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer"
                         aria-label="Edit Provider"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDeleteProvider(p.providerId)}
-                        className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                         aria-label="Delete Provider"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -423,7 +423,7 @@ export default function AgentsDashboard() {
                 </p>
                 <button
                   onClick={handleAddProvider}
-                  className="mt-6 px-6 py-2.5 bg-white border border-neutral-300 hover:border-black transition-colors rounded-xl text-sm font-medium text-black shadow-sm"
+                  className="mt-6 px-6 py-2.5 bg-white border border-neutral-300 hover:border-black transition-colors rounded-xl text-sm font-medium text-black shadow-sm cursor-pointer"
                 >
                   Configure Provider
                 </button>
@@ -487,14 +487,14 @@ export default function AgentsDashboard() {
                   <div className="flex gap-2 pt-4">
                     <button
                       onClick={() => setEditingProvider(null)}
-                      className="flex-1 py-2 rounded-lg border text-sm font-medium"
+                      className="flex-1 py-2 rounded-lg border text-sm font-medium cursor-pointer"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleSaveProvider}
                       disabled={savingProvider}
-                      className="flex-1 py-2 rounded-lg bg-black text-white text-sm font-medium"
+                      className="flex-1 py-2 rounded-lg bg-black text-white text-sm font-medium cursor-pointer disabled:cursor-not-allowed"
                     >
                       {savingProvider ? 'Saving...' : 'Save Provider'}
                     </button>
@@ -625,7 +625,7 @@ export default function AgentsDashboard() {
               </div>
               <button
                 onClick={handleAddIntegration}
-                className="px-5 py-2.5 bg-black hover:bg-neutral-800 transition-colors text-white rounded-xl text-sm font-medium flex items-center gap-2 shadow-sm"
+                className="px-5 py-2.5 bg-black hover:bg-neutral-800 transition-colors text-white rounded-xl text-sm font-medium flex items-center gap-2 shadow-sm cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Add Channel
               </button>
@@ -657,14 +657,14 @@ export default function AgentsDashboard() {
                     <div className="flex gap-1.5">
                       <button
                         onClick={() => handleEditIntegration(integration)}
-                        className="p-1.5 text-neutral-400 hover:text-black hover:bg-neutral-100 rounded-lg transition-colors"
+                        className="p-1.5 text-neutral-400 hover:text-black hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer"
                         aria-label="Edit Channel"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDeleteIntegration(integration.integrationId)}
-                        className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                         aria-label="Delete Channel"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -709,7 +709,7 @@ export default function AgentsDashboard() {
                 </p>
                 <button
                   onClick={handleAddIntegration}
-                  className="mt-6 px-6 py-2.5 bg-white border border-neutral-300 hover:border-black transition-colors rounded-xl text-sm font-medium text-black shadow-sm"
+                  className="mt-6 px-6 py-2.5 bg-white border border-neutral-300 hover:border-black transition-colors rounded-xl text-sm font-medium text-black shadow-sm cursor-pointer"
                 >
                   Add a Channel
                 </button>
@@ -837,14 +837,14 @@ export default function AgentsDashboard() {
                   <div className="flex gap-2 pt-4 border-t border-neutral-100 mt-6">
                     <button
                       onClick={() => setEditingIntegration(null)}
-                      className="flex-1 py-2 rounded-xl border-2 border-neutral-100 hover:bg-neutral-50 text-sm font-bold uppercase tracking-widest text-neutral-600 transition-colors"
+                      className="flex-1 py-2 rounded-xl border-2 border-neutral-100 hover:bg-neutral-50 text-sm font-bold uppercase tracking-widest text-neutral-600 transition-colors cursor-pointer"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleSaveIntegration}
                       disabled={savingIntegration}
-                      className="flex-1 py-2 rounded-xl bg-black hover:bg-neutral-800 text-white text-sm font-bold uppercase tracking-widest shadow-lg shadow-black/10 transition-colors"
+                      className="flex-1 py-2 rounded-xl bg-black hover:bg-neutral-800 text-white text-sm font-bold uppercase tracking-widest shadow-lg shadow-black/10 transition-colors cursor-pointer disabled:cursor-not-allowed"
                     >
                       {savingIntegration ? 'Saving...' : 'Save Channel'}
                     </button>

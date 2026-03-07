@@ -14,7 +14,7 @@ export const componentStyles = {
     base: `
       inline-flex items-center justify-center
       font-semibold transition-all duration-300
-      focus:outline-none hover-target
+      focus:outline-none hover-target cursor-pointer
     `,
 
     // Primary button (black background)
@@ -75,7 +75,6 @@ export const componentStyles = {
     interactive: `
       hover-target cursor-pointer
       transform transition-transform
-      hover:scale-105
     `,
   },
 

@@ -235,7 +235,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
 
               <div className="flex flex-col items-end gap-1.5 pr-12">
                 <label
-                  className="relative inline-flex items-center cursor-pointer group scale-110 origin-right"
+                  className="relative inline-flex items-center cursor-pointer group scale-110 origin-right transition-transform"
                   aria-label="Toggle Agent Status"
                 >
                   <input
@@ -265,7 +265,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-1 py-4 text-xs font-bold uppercase tracking-widest transition-all relative mr-8 last:mr-0 ${
+                className={`flex items-center gap-2 px-1 py-4 text-xs font-bold uppercase tracking-widest transition-all cursor-pointer relative mr-8 last:mr-0 ${
                   isActive ? 'text-black' : 'text-neutral-400 hover:text-neutral-600'
                 }`}
               >
@@ -371,13 +371,40 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                         ),
                         datasets: [
                           {
-                            label: 'Executions',
+                            label: 'Total',
                             data: metricsData.chartData.map((d) => d.total),
-                            borderColor: '#000000',
-                            backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                            borderColor: '#a3a3a3', // Neutral gray
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [5, 5], // Dashed line to differentiate from primary lines
+                            pointBackgroundColor: '#ffffff',
+                            pointBorderColor: '#a3a3a3',
+                            pointBorderWidth: 2,
+                            pointRadius: 3,
+                            fill: false,
+                            tension: 0.4,
+                          },
+                          {
+                            label: 'Success',
+                            data: metricsData.chartData.map((d) => d.success),
+                            borderColor: '#10B981', // Emerald green
+                            backgroundColor: 'rgba(16, 185, 129, 0.05)',
                             borderWidth: 2,
                             pointBackgroundColor: '#ffffff',
-                            pointBorderColor: '#000000',
+                            pointBorderColor: '#10B981',
+                            pointBorderWidth: 2,
+                            pointRadius: 3,
+                            fill: true,
+                            tension: 0.4,
+                          },
+                          {
+                            label: 'Errors',
+                            data: metricsData.chartData.map((d) => d.errors),
+                            borderColor: '#EF4444', // Red
+                            backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#ffffff',
+                            pointBorderColor: '#EF4444',
                             pointBorderWidth: 2,
                             pointRadius: 3,
                             fill: true,
@@ -388,8 +415,23 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                       options={{
                         responsive: true,
                         maintainAspectRatio: false,
+                        interaction: {
+                          mode: 'index',
+                          intersect: false, // Show all lines on hover anywhere vertically
+                        },
                         plugins: {
-                          legend: { display: false },
+                          legend: {
+                            display: true,
+                            position: 'top',
+                            align: 'end',
+                            labels: {
+                              boxWidth: 8,
+                              usePointStyle: true,
+                              pointStyle: 'circle',
+                              font: { size: 11, family: "''Inter', sans-serif'" },
+                              color: '#525252',
+                            },
+                          },
                           tooltip: {
                             backgroundColor: '#000000',
                             padding: 12,
@@ -445,7 +487,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                       <button
                         key={tool}
                         onClick={() => toggleTool(tool)}
-                        className={`flex items-center justify-between px-5 py-4 rounded-2xl border-2 transition-all text-left group ${
+                        className={`flex items-center justify-between px-5 py-4 rounded-2xl border-2 transition-all cursor-pointer text-left group ${
                           isEnabled
                             ? 'bg-neutral-900 border-neutral-900 text-white shadow-xl shadow-black/10'
                             : 'bg-white border-neutral-100 text-neutral-700 hover:border-neutral-200 hover:bg-neutral-50/50'
@@ -504,7 +546,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                         key={mcp._id}
                         type="button"
                         onClick={() => toggleMCP(mcp._id)}
-                        className={`w-full flex items-center gap-4 px-5 py-4.5 rounded-2xl text-left border-2 transition-all ${
+                        className={`w-full flex items-center gap-4 px-5 py-4.5 rounded-2xl text-left border-2 cursor-pointer transition-all ${
                           isAssigned
                             ? 'bg-neutral-900 border-neutral-900 text-white shadow-xl shadow-black/10'
                             : 'bg-white border-neutral-100 hover:border-neutral-200 hover:bg-neutral-50/50'
