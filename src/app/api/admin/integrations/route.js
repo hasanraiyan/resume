@@ -16,13 +16,16 @@ export async function GET(request) {
     await dbConnect();
     const integrations = await IntegrationSettings.find({}).sort({ createdAt: -1 });
 
-    // Send dummy credentials to the frontend for security
+    // Sanitize credentials
+    const sensitiveFields = ['botToken', 'accessToken', 'phoneNumberId', 'verifyToken'];
     const sanitizedIntegrations = integrations.map((i) => {
       const iObj = i.toObject();
-      if (iObj.credentials && Object.keys(iObj.credentials).length > 0) {
-        // Redact values
+      if (iObj.credentials) {
+        // Only redact sensitive values
         for (let key in iObj.credentials) {
-          iObj.credentials[key] = '***************';
+          if (sensitiveFields.includes(key)) {
+            iObj.credentials[key] = '***************';
+          }
         }
       }
       return iObj;
@@ -56,11 +59,12 @@ export async function POST(request) {
 
     const integrationId = `integration-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
 
-    // Encrypt credential values
+    // Encrypt sensitive credential values
     const encryptedCredentials = {};
+    const sensitiveFields = ['botToken', 'accessToken', 'phoneNumberId', 'verifyToken'];
     for (const [key, value] of Object.entries(credentials)) {
       if (value) {
-        encryptedCredentials[key] = encrypt(value);
+        encryptedCredentials[key] = sensitiveFields.includes(key) ? encrypt(value) : value;
       }
     }
 
@@ -77,8 +81,11 @@ export async function POST(request) {
 
     const sanitized = newIntegration.toObject();
     if (sanitized.credentials) {
+      const sensitiveFields = ['botToken', 'accessToken', 'phoneNumberId', 'verifyToken'];
       for (let key in sanitized.credentials) {
-        sanitized.credentials[key] = '***************';
+        if (sensitiveFields.includes(key)) {
+          sanitized.credentials[key] = '***************';
+        }
       }
     }
 

@@ -16,6 +16,14 @@ export class WhatsAppAdapter extends BaseIntegrationAdapter {
     this.phoneNumberId = getCred('phoneNumberId');
     this.verifyToken = getCred('verifyToken');
 
+    // Selective Automation Settings
+    this.responseMode = getCred('responseMode') || 'all'; // 'all' or 'whitelisted'
+    const allowedRaw = getCred('allowedNumbers') || '';
+    this.allowedNumbers = allowedRaw
+      .split(',')
+      .map((n) => n.trim())
+      .filter((n) => n.length > 0);
+
     if (!this.accessToken || !this.phoneNumberId) {
       throw new Error('WhatsApp accessToken and phoneNumberId are required.');
     }
@@ -62,6 +70,15 @@ export class WhatsAppAdapter extends BaseIntegrationAdapter {
 
     if (!chatId || !userMessage) {
       return null;
+    }
+
+    // --- Selective Automation Filter ---
+    if (this.responseMode === 'whitelisted') {
+      const isAllowed = this.allowedNumbers.includes(chatId);
+      if (!isAllowed) {
+        console.log(`[WhatsAppAdapter] Ignoring message from unauthorized number: ${chatId}`);
+        return null;
+      }
     }
 
     return {

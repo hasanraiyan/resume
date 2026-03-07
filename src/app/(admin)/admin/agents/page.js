@@ -59,7 +59,14 @@ export default function AgentsDashboard() {
   const [newIntegration, setNewIntegration] = useState({
     platform: 'telegram',
     name: '',
-    credentials: { botToken: '' },
+    credentials: {
+      botToken: '',
+      accessToken: '',
+      phoneNumberId: '',
+      verifyToken: '',
+      responseMode: 'all',
+      allowedNumbers: '',
+    },
     agentId: '',
     isActive: true,
   });
@@ -240,8 +247,12 @@ export default function AgentsDashboard() {
   const handleEditIntegration = (integration) => {
     // Make a copy and clear credentials temporarily so they don't overwrite if they just want to change name
     const copy = { ...integration };
-    if (copy.credentials && copy.credentials.botToken) {
-      copy.credentials.botToken = '';
+    if (copy.credentials) {
+      const creds = { ...copy.credentials };
+      // Clear sensitive fields if they exist
+      if (creds.botToken) creds.botToken = '';
+      if (creds.accessToken) creds.accessToken = '';
+      copy.credentials = creds;
     }
     setEditingIntegration(copy);
   };
@@ -261,8 +272,13 @@ export default function AgentsDashboard() {
       const payload = { ...editingIntegration };
 
       // Prevent sending empty credentials if not new
-      if (!isNew && payload.credentials && !payload.credentials.botToken) {
-        delete payload.credentials.botToken;
+      if (!isNew && payload.credentials) {
+        const sensitiveFields = ['botToken', 'accessToken', 'phoneNumberId', 'verifyToken'];
+        sensitiveFields.forEach((f) => {
+          if (!payload.credentials[f]) {
+            delete payload.credentials[f];
+          }
+        });
       }
 
       const res = await fetch(url, {
@@ -944,9 +960,7 @@ export default function AgentsDashboard() {
                         disabled={editingIntegration.id !== 'new'}
                       >
                         <option value="telegram">Telegram Bot API</option>
-                        <option value="whatsapp" disabled>
-                          WhatsApp (Coming Soon)
-                        </option>
+                        <option value="whatsapp">WhatsApp Cloud API</option>
                       </select>
                     </div>
 
@@ -1014,6 +1028,113 @@ export default function AgentsDashboard() {
                           Leave blank to keep existing token unchanged.
                         </p>
                       )}
+                    </div>
+                  )}
+                  {editingIntegration.platform === 'whatsapp' && (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-xs font-medium text-neutral-600">Access Token</label>
+                        <input
+                          className="w-full p-2 border rounded-lg mt-1"
+                          type="password"
+                          value={editingIntegration.credentials?.accessToken || ''}
+                          onChange={(e) =>
+                            setEditingIntegration({
+                              ...editingIntegration,
+                              credentials: {
+                                ...editingIntegration.credentials,
+                                accessToken: e.target.value,
+                              },
+                            })
+                          }
+                          placeholder="EAAB..."
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-xs font-medium text-neutral-600">
+                            Phone Number ID
+                          </label>
+                          <input
+                            className="w-full p-2 border rounded-lg mt-1"
+                            value={editingIntegration.credentials?.phoneNumberId || ''}
+                            onChange={(e) =>
+                              setEditingIntegration({
+                                ...editingIntegration,
+                                credentials: {
+                                  ...editingIntegration.credentials,
+                                  phoneNumberId: e.target.value,
+                                },
+                              })
+                            }
+                            placeholder="1234..."
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-neutral-600">
+                            Verify Token
+                          </label>
+                          <input
+                            className="w-full p-2 border rounded-lg mt-1"
+                            value={editingIntegration.credentials?.verifyToken || ''}
+                            onChange={(e) =>
+                              setEditingIntegration({
+                                ...editingIntegration,
+                                credentials: {
+                                  ...editingIntegration.credentials,
+                                  verifyToken: e.target.value,
+                                },
+                              })
+                            }
+                            placeholder="my_secret..."
+                          />
+                        </div>
+                      </div>
+
+                      <div className="pt-4 border-t border-neutral-100">
+                        <label className="text-sm font-bold block mb-2">Selective Response</label>
+                        <select
+                          className="w-full p-2 border rounded-lg bg-white text-sm"
+                          value={editingIntegration.credentials?.responseMode || 'all'}
+                          onChange={(e) =>
+                            setEditingIntegration({
+                              ...editingIntegration,
+                              credentials: {
+                                ...editingIntegration.credentials,
+                                responseMode: e.target.value,
+                              },
+                            })
+                          }
+                        >
+                          <option value="all">Respond to Everyone</option>
+                          <option value="whitelisted">Only Allowed Numbers</option>
+                        </select>
+
+                        {editingIntegration.credentials?.responseMode === 'whitelisted' && (
+                          <div className="mt-3">
+                            <label className="text-xs font-medium text-neutral-600">
+                              Whitelisted Numbers (comma separated)
+                            </label>
+                            <textarea
+                              className="w-full p-2 border rounded-lg mt-1 text-sm h-20"
+                              value={editingIntegration.credentials?.allowedNumbers || ''}
+                              onChange={(e) =>
+                                setEditingIntegration({
+                                  ...editingIntegration,
+                                  credentials: {
+                                    ...editingIntegration.credentials,
+                                    allowedNumbers: e.target.value,
+                                  },
+                                })
+                              }
+                              placeholder="919876543210, 911234567890"
+                            />
+                            <p className="text-[10px] text-neutral-400 mt-1">
+                              Include country code without + (e.g., 91 for India).
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 

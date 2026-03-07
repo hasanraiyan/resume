@@ -21,9 +21,12 @@ export async function GET(request, { params }) {
     }
 
     // Sanitize credentials
+    const sensitiveFields = ['botToken', 'accessToken', 'phoneNumberId', 'verifyToken'];
     if (integration.credentials) {
       for (let key in integration.credentials) {
-        integration.credentials[key] = '***************';
+        if (sensitiveFields.includes(key)) {
+          integration.credentials[key] = '***************';
+        }
       }
     }
 
@@ -57,10 +60,12 @@ export async function PUT(request, { params }) {
     if (typeof isActive !== 'undefined') integration.isActive = isActive;
 
     if (credentials) {
+      const sensitiveFields = ['botToken', 'accessToken', 'phoneNumberId', 'verifyToken'];
       // Correct way to update Mongoose Map to avoid casting errors
       for (const [key, value] of Object.entries(credentials)) {
         if (value && value !== '***************') {
-          integration.credentials.set(key, encrypt(value));
+          const processedValue = sensitiveFields.includes(key) ? encrypt(value) : value;
+          integration.credentials.set(key, processedValue);
         }
       }
     }
@@ -69,8 +74,11 @@ export async function PUT(request, { params }) {
 
     const sanitized = integration.toObject();
     if (sanitized.credentials) {
+      const sensitiveFields = ['botToken', 'accessToken', 'phoneNumberId', 'verifyToken'];
       for (let key in sanitized.credentials) {
-        sanitized.credentials[key] = '***************';
+        if (sensitiveFields.includes(key)) {
+          sanitized.credentials[key] = '***************';
+        }
       }
     }
 
