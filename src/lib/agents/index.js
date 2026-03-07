@@ -36,6 +36,7 @@ import VisualSearchAgent from './ai/visual-search-agent';
 import BlogWriterAgent from './ai/blog-writer-agent';
 import PresentationAgent from './ai/presentation-agent';
 import ChatAgent from './ai/chat-assistant-agent';
+import TelegramAgent from './ai/telegram-agent';
 
 // Register agent classes into the registry
 agentRegistry.register(AGENT_IDS.IMAGE_ANALYZER, AIImageAgent);
@@ -48,6 +49,7 @@ agentRegistry.register(AGENT_IDS.IMAGE_EMBEDDER, ImageEmbedderAgent);
 agentRegistry.register(AGENT_IDS.VISUAL_SEARCH, VisualSearchAgent);
 agentRegistry.register(AGENT_IDS.BLOG_WRITER, BlogWriterAgent);
 agentRegistry.register(AGENT_IDS.PRESENTATION_SYNTHESIZER, PresentationAgent);
+agentRegistry.register(AGENT_IDS.TELEGRAM_ASSISTANT, TelegramAgent);
 
 export {
   AIImageAgent,
@@ -58,5 +60,6 @@ export {
   VisualSearchAgent,
   BlogWriterAgent,
   PresentationAgent,
+  TelegramAgent,
 };
 export default agentRegistry;
