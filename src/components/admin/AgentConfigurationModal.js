@@ -76,10 +76,10 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
   const fetchMCPs = async () => {
     setFetchingMCPs(true);
     try {
-      const res = await fetch('/api/admin/chatbot/mcp');
+      const res = await fetch('/api/admin/mcp-servers');
       if (res.ok) {
         const data = await res.json();
-        setMcpServers(Array.isArray(data) ? data : []);
+        setMcpServers(Array.isArray(data.servers) ? data.servers : []);
       }
     } catch (error) {
       console.error('Failed to fetch MCP servers:', error);

@@ -74,7 +74,6 @@ export const componentStyles = {
 
     interactive: `
       hover-target cursor-pointer
-      transform transition-transform
     `,
   },
 

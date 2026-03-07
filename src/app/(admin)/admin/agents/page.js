@@ -57,6 +57,21 @@ export default function AgentsDashboard() {
     isActive: true,
   });
 
+  // MCP Servers State
+  const [mcpServers, setMcpServers] = useState([]);
+  const [savingMcp, setSavingMcp] = useState(false);
+  const [editingMcp, setEditingMcp] = useState(null);
+  const [newMcp, setNewMcp] = useState({
+    name: '',
+    description: '',
+    type: 'sse',
+    url: '',
+    icon: 'Server',
+    color: 'blue-500',
+    isActive: true,
+    adminOnly: false,
+  });
+
   useEffect(() => {
     if (status === 'loading') return;
     if (!session || session.user.role !== 'admin') {
@@ -66,6 +81,7 @@ export default function AgentsDashboard() {
     fetchProviders();
     fetchAgents();
     fetchIntegrations();
+    fetchMcpServers();
   }, [session, status, router]);
 
   const fetchProviders = async () => {
@@ -98,6 +114,16 @@ export default function AgentsDashboard() {
       if (res.ok) setIntegrations(data.integrations || []);
     } catch (error) {
       console.error('Failed to fetch integrations:', error);
+    }
+  };
+
+  const fetchMcpServers = async () => {
+    try {
+      const res = await fetch('/api/admin/mcp-servers');
+      const data = await res.json();
+      if (res.ok) setMcpServers(data.servers || []);
+    } catch (error) {
+      console.error('Failed to fetch MCP servers:', error);
     }
   };
 
@@ -219,6 +245,53 @@ export default function AgentsDashboard() {
     }
   };
 
+  // --- MCP Handlers ---
+  const handleAddMcp = () => {
+    setEditingMcp({ id: 'new', ...newMcp });
+  };
+
+  const handleEditMcp = (server) => {
+    setEditingMcp({ ...server, id: server._id });
+  };
+
+  const handleSaveMcp = async () => {
+    if (!editingMcp.name || !editingMcp.url) return;
+
+    setSavingMcp(true);
+    try {
+      const isNew = editingMcp.id === 'new';
+      const url = isNew ? '/api/admin/mcp-servers' : `/api/admin/mcp-servers/${editingMcp.id}`;
+      const method = isNew ? 'POST' : 'PUT';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingMcp),
+      });
+
+      if (res.ok) {
+        setEditingMcp(null);
+        fetchMcpServers();
+      } else {
+        alert('Failed to save MCP server.');
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setSavingMcp(false);
+    }
+  };
+
+  const handleDeleteMcp = async (serverId) => {
+    if (!confirm('Are you sure you want to delete this MCP Server?')) return;
+    try {
+      const res = await fetch(`/api/admin/mcp-servers/${serverId}`, { method: 'DELETE' });
+      if (res.ok) fetchMcpServers();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   // --- UI Render ---
   if (loading)
     return (
@@ -244,6 +317,12 @@ export default function AgentsDashboard() {
     (i) =>
       i.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       i.platform?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredMcpServers = mcpServers.filter(
+    (s) =>
+      s.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.url?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -283,7 +362,7 @@ export default function AgentsDashboard() {
                   className="absolute inset-y-0 right-10 pr-4 flex items-center text-neutral-400 hover:text-red-500 transition-colors duration-200 group"
                   title="Clear search"
                 >
-                  <i className="fas fa-times-circle text-base group-hover:scale-110 transition-transform duration-200"></i>
+                  <X className="w-5 h-5 transition-transform duration-200" />
                 </button>
               )}
               {!searchQuery && (
@@ -338,6 +417,18 @@ export default function AgentsDashboard() {
                 <span className="absolute bottom-0 left-0 w-full h-[3px] bg-black"></span>
               )}
             </button>
+            <button
+              onClick={() => setActiveTab('mcp')}
+              className={`flex items-center gap-2 py-4 text-sm font-semibold transition-colors cursor-pointer relative px-2 ${
+                activeTab === 'mcp' ? 'text-black' : 'text-neutral-500 hover:text-neutral-800'
+              }`}
+            >
+              <Activity className="w-4 h-4" />
+              <span>MCP Servers</span>
+              {activeTab === 'mcp' && (
+                <span className="absolute bottom-0 left-0 w-full h-[3px] bg-black"></span>
+              )}
+            </button>
           </div>
         </div>
 
@@ -363,7 +454,8 @@ export default function AgentsDashboard() {
               {filteredProviders.map((p) => (
                 <Card
                   key={p.providerId}
-                  className="p-6 border border-neutral-200 shadow-sm hover:shadow-md transition-shadow bg-white rounded-2xl flex flex-col h-full"
+                  interactive
+                  className="p-6 border border-neutral-200 shadow-sm hover:shadow-md hover:border-black transition-all bg-white rounded-2xl flex flex-col h-full cursor-pointer"
                 >
                   <div className="flex justify-between items-start mb-6">
                     <div className="flex items-center gap-3">
@@ -635,7 +727,8 @@ export default function AgentsDashboard() {
               {filteredIntegrations.map((integration) => (
                 <Card
                   key={integration.integrationId}
-                  className="p-6 border border-neutral-200 shadow-sm hover:shadow-md transition-shadow bg-white rounded-2xl flex flex-col h-full"
+                  interactive
+                  className="p-6 border border-neutral-200 shadow-sm hover:shadow-md hover:border-black transition-all bg-white rounded-2xl flex flex-col h-full cursor-pointer"
                 >
                   <div className="flex justify-between items-start mb-6">
                     <div className="flex items-center gap-3">
@@ -798,41 +891,42 @@ export default function AgentsDashboard() {
                           </option>
                         ))}
                       </select>
-                      {agents.length === 0 && (
-                        <div className="text-xs text-red-500 mt-1.5">
-                          No active agents found. Please create one first.
-                        </div>
-                      )}
                     </div>
 
-                    {editingIntegration.platform === 'telegram' && (
-                      <div>
-                        <label className="text-xs font-medium text-neutral-600">
-                          Telegram Bot Token
-                        </label>
-                        <input
-                          className="w-full p-2 border rounded-lg mt-1"
-                          type="password"
-                          value={editingIntegration.credentials?.botToken || ''}
-                          onChange={(e) =>
-                            setEditingIntegration({
-                              ...editingIntegration,
-                              credentials: {
-                                ...editingIntegration.credentials,
-                                botToken: e.target.value,
-                              },
-                            })
-                          }
-                          placeholder="123456789:ABCDEF..."
-                        />
-                        {editingIntegration.id !== 'new' && (
-                          <p className="text-[10px] text-neutral-400 mt-1">
-                            Leave blank to keep existing token unchanged.
-                          </p>
-                        )}
+                    {agents.length === 0 && (
+                      <div className="text-xs text-red-500 mt-1.5">
+                        No active agents found. Please create one first.
                       </div>
                     )}
                   </div>
+
+                  {editingIntegration.platform === 'telegram' && (
+                    <div>
+                      <label className="text-xs font-medium text-neutral-600">
+                        Telegram Bot Token
+                      </label>
+                      <input
+                        className="w-full p-2 border rounded-lg mt-1"
+                        type="password"
+                        value={editingIntegration.credentials?.botToken || ''}
+                        onChange={(e) =>
+                          setEditingIntegration({
+                            ...editingIntegration,
+                            credentials: {
+                              ...editingIntegration.credentials,
+                              botToken: e.target.value,
+                            },
+                          })
+                        }
+                        placeholder="123456789:ABCDEF..."
+                      />
+                      {editingIntegration.id !== 'new' && (
+                        <p className="text-[10px] text-neutral-400 mt-1">
+                          Leave blank to keep existing token unchanged.
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   <div className="flex gap-2 pt-4 border-t border-neutral-100 mt-6">
                     <button
@@ -847,6 +941,225 @@ export default function AgentsDashboard() {
                       className="flex-1 py-2 rounded-xl bg-black hover:bg-neutral-800 text-white text-sm font-bold uppercase tracking-widest shadow-lg shadow-black/10 transition-colors cursor-pointer disabled:cursor-not-allowed"
                     >
                       {savingIntegration ? 'Saving...' : 'Save Channel'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* MCP Servers Tab */}
+        {activeTab === 'mcp' && (
+          <div className="space-y-8 animate-in fade-in">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h2 className="text-2xl font-bold font-['Playfair_Display']">MCP Infrastructure</h2>
+                <p className="text-sm text-neutral-500 mt-1">
+                  Connect Model Context Protocol (MCP) servers to give agents tool-use capabilities.
+                </p>
+              </div>
+              <button
+                onClick={handleAddMcp}
+                className="px-5 py-2.5 bg-black hover:bg-neutral-800 transition-colors text-white rounded-xl text-sm font-medium flex items-center gap-2 shadow-sm cursor-pointer"
+              >
+                <Plus className="w-4 h-4" /> Add MCP Server
+              </button>
+            </div>
+
+            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredMcpServers.map((server) => (
+                <Card
+                  key={server._id}
+                  interactive
+                  className="p-6 border border-neutral-200 shadow-sm hover:shadow-md hover:border-black transition-all bg-white rounded-2xl flex flex-col h-full cursor-pointer"
+                >
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-10 h-10 rounded-xl bg-neutral-100 flex items-center justify-center flex-shrink-0 border border-neutral-200/60`}
+                      >
+                        <Server className={`w-5 h-5 text-${server.color || 'blue-500'}`} />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-base text-neutral-900 leading-tight">
+                          {server.name}
+                        </h3>
+                        <p className="text-[10px] text-neutral-400 font-mono mt-1 uppercase tracking-widest">
+                          Type: {server.type}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => handleEditMcp(server)}
+                        className="p-1.5 text-neutral-400 hover:text-black hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer"
+                        aria-label="Edit MCP"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteMcp(server._id)}
+                        className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                        aria-label="Delete MCP"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {server.description && (
+                    <p className="text-sm text-neutral-600 mb-4 line-clamp-2">
+                      {server.description}
+                    </p>
+                  )}
+
+                  <div className="mt-auto pt-4 border-t border-neutral-100">
+                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold mb-1.5 flex justify-between">
+                      <span>Endpoint URL</span>
+                      {server.isActive ? (
+                        <span className="text-green-500 font-bold">Online</span>
+                      ) : (
+                        <span className="text-neutral-400">Offline</span>
+                      )}
+                    </p>
+                    <div
+                      className="text-xs bg-neutral-50 text-neutral-600 px-3 py-2 rounded-lg font-mono tracking-wider border border-neutral-100 truncate"
+                      title={server.url}
+                    >
+                      {server.url}
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            {mcpServers.length === 0 ? (
+              <div className="text-center p-16 border-2 border-dashed border-neutral-200 rounded-3xl bg-neutral-50/50 flex flex-col items-center justify-center">
+                <Activity className="w-12 h-12 text-neutral-300 mb-4" />
+                <h3 className="text-lg font-semibold text-neutral-700">
+                  No MCP Servers Configured
+                </h3>
+                <p className="text-sm text-neutral-500 mt-2 max-w-md">
+                  MCP servers like Google Search, Brave Search, or your local filesystem tools allow
+                  agents to interact with the real world.
+                </p>
+                <button
+                  onClick={handleAddMcp}
+                  className="mt-6 px-6 py-2.5 bg-white border border-neutral-300 hover:border-black transition-colors rounded-xl text-sm font-medium text-black shadow-sm cursor-pointer"
+                >
+                  Configure Local SSE Server
+                </button>
+              </div>
+            ) : filteredMcpServers.length === 0 && searchQuery ? (
+              <div className="text-center p-12 border border-dashed rounded-2xl bg-neutral-50 text-neutral-500">
+                No MCP servers match your search for "{searchQuery}".
+              </div>
+            ) : null}
+
+            {/* MCP Edit Modal */}
+            {editingMcp && (
+              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl max-w-lg w-full p-8 space-y-6 shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-600" />
+
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-xl font-bold font-['Playfair_Display']">
+                      {editingMcp.id === 'new' ? 'Register MCP Server' : 'Configure Server'}
+                    </h3>
+                    <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer">
+                      <span
+                        className={
+                          editingMcp.isActive
+                            ? 'text-green-600'
+                            : 'text-neutral-400 transition-colors'
+                        }
+                      >
+                        {editingMcp.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                      <div
+                        className={`w-12 h-6 rounded-full relative transition-colors duration-200 ${editingMcp.isActive ? 'bg-black' : 'bg-neutral-200'}`}
+                        onClick={() =>
+                          setEditingMcp({ ...editingMcp, isActive: !editingMcp.isActive })
+                        }
+                      >
+                        <div
+                          className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 ${editingMcp.isActive ? 'translate-x-6' : ''}`}
+                        />
+                      </div>
+                    </label>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="col-span-2 sm:col-span-1">
+                        <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block mb-1.5">
+                          Friendly Name
+                        </label>
+                        <input
+                          className="w-full px-4 py-2.5 bg-neutral-50 border-2 border-neutral-100 focus:border-black focus:bg-white rounded-xl transition-all outline-none text-sm"
+                          value={editingMcp.name}
+                          onChange={(e) => setEditingMcp({ ...editingMcp, name: e.target.value })}
+                          placeholder="Search Tools"
+                        />
+                      </div>
+                      <div className="col-span-2 sm:col-span-1">
+                        <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block mb-1.5">
+                          Connection Type
+                        </label>
+                        <select
+                          className="w-full px-4 py-2.5 bg-neutral-50 border-2 border-neutral-100 focus:border-black focus:bg-white rounded-xl transition-all outline-none text-sm appearance-none cursor-pointer"
+                          value={editingMcp.type}
+                          onChange={(e) => setEditingMcp({ ...editingMcp, type: e.target.value })}
+                        >
+                          <option value="sse">SSE (HTTP/Events)</option>
+                          <option value="stdio" disabled>
+                            stdio (Local Only)
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block mb-1.5">
+                        Endpoint URL
+                      </label>
+                      <input
+                        className="w-full px-4 py-2.5 bg-neutral-50 border-2 border-neutral-100 focus:border-black focus:bg-white rounded-xl transition-all outline-none text-sm font-mono"
+                        value={editingMcp.url}
+                        onChange={(e) => setEditingMcp({ ...editingMcp, url: e.target.value })}
+                        placeholder="http://localhost:3001/sse"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block mb-1.5">
+                        Short Description
+                      </label>
+                      <textarea
+                        className="w-full px-4 py-2.5 bg-neutral-50 border-2 border-neutral-100 focus:border-black focus:bg-white rounded-xl transition-all outline-none text-sm min-h-[80px] resize-none"
+                        value={editingMcp.description}
+                        onChange={(e) =>
+                          setEditingMcp({ ...editingMcp, description: e.target.value })
+                        }
+                        placeholder="Optional description of what this server provides..."
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-6">
+                    <button
+                      onClick={() => setEditingMcp(null)}
+                      className="flex-1 py-3 rounded-xl border-2 border-neutral-50 hover:bg-neutral-50 text-sm font-bold uppercase tracking-widest transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSaveMcp}
+                      disabled={savingMcp}
+                      className="flex-1 py-3 rounded-xl bg-black hover:bg-neutral-800 text-white text-sm font-bold uppercase tracking-widest shadow-xl shadow-black/10 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:bg-neutral-400"
+                    >
+                      {savingMcp ? 'Syncing...' : 'Register Server'}
                     </button>
                   </div>
                 </div>
