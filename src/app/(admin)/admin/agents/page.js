@@ -16,6 +16,7 @@ import {
   Power,
   Activity,
   MessageCircle,
+  Webhook,
 } from 'lucide-react';
 import AgentConfigurationModal from '@/components/admin/AgentConfigurationModal';
 import { Card } from '@/components/ui';

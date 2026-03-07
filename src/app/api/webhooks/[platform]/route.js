@@ -5,6 +5,9 @@ import { IntegrationFactory } from '@/lib/integrations/IntegrationFactory';
 import { decrypt } from '@/lib/crypto';
 import AgentRegistry from '@/lib/agents/AgentRegistry';
 
+// Ensure agents are imported and registered before processing any webhooks
+import '@/lib/agents';
+
 /**
  * Generic Webhook Endpoint for all Integrations
  * Routes incoming payloads to the correct adapter, parses the message,
@@ -81,15 +84,32 @@ export async function POST(request, { params }) {
       // Use our secure, robust AgentRegistry to get the configured agent
       const agent = AgentRegistry.get(integration.agentId);
 
-      // Standard execution context
-      const aiResponse = await agent.execute({
-        message: userMessage,
-        sessionId: `${platform}-${chatId}`, // Pass stable session ID for history
-      });
+      // Standard execution context: Try streamExecute as some agents only support that
+      let textResponse = '';
+      try {
+        const stream = await agent.streamExecute({
+          userMessage: userMessage,
+          sessionId: `${platform}-${chatId}`, // Pass stable session ID for history
+        });
 
-      // Format the string out of Langchain objects or simple strings
-      const textResponse =
-        aiResponse?.text || aiResponse || "I'm sorry, I couldn't process that response.";
+        for await (const chunk of stream) {
+          if (chunk.type === 'content' && chunk.message) {
+            textResponse += chunk.message;
+          } else if (chunk.type === 'text' && chunk.content) {
+            textResponse += chunk.content;
+          } else if (typeof chunk === 'string') {
+            textResponse += chunk;
+          }
+        }
+      } catch (streamError) {
+        // Fallback to standard execute if streaming fails entirely
+        const aiResponse = await agent.execute({
+          userMessage: userMessage,
+          sessionId: `${platform}-${chatId}`,
+        });
+        textResponse =
+          aiResponse?.text || aiResponse || "I'm sorry, I couldn't process that response.";
+      }
 
       // 7. Send Response back via the adapter
       await adapter.sendMessage(chatId, textResponse);
