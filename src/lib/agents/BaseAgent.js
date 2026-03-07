@@ -9,6 +9,7 @@ import { AGENT_IDS, DEFAULT_AGENT_CONFIGS, RATE_LIMIT_DEFAULTS } from '@/lib/con
 import dbConnect from '@/lib/dbConnect';
 import AgentConfig from '@/models/AgentConfig';
 import ProviderSettings from '@/models/ProviderSettings';
+import AgentExecutionLog from '@/models/AgentExecutionLog';
 import { decrypt } from '@/lib/crypto';
 import { ChatOpenAI, OpenAIEmbeddings } from '@langchain/openai';
 import { ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
@@ -215,14 +216,29 @@ class BaseAgent {
     this.logger.info('Executing agent with input:', this._sanitizeLog(input));
     this.lastExecutedAt = new Date();
     this.executionCount++;
+    const startTime = Date.now();
 
     try {
       await this._validateInput(input);
       const result = await this._onExecute(input);
       this.logger.info('Agent execution completed successfully');
+
+      // Asynchronously log success
+      this._logExecutionToDatabase({ status: 'success', durationMs: Date.now() - startTime }).catch(
+        (err) => this.logger.error('Failed to log execution to DB:', err)
+      );
+
       return result;
     } catch (error) {
       this.logger.error('Agent execution failed:', error);
+
+      // Asynchronously log error
+      this._logExecutionToDatabase({
+        status: 'error',
+        durationMs: Date.now() - startTime,
+        errorMessage: error?.message || 'Unknown error',
+      }).catch((err) => this.logger.error('Failed to log execution error to DB:', err));
+
       throw error;
     }
   }
@@ -252,13 +268,27 @@ class BaseAgent {
     this.logger.info('Executing agent stream with input:', this._sanitizeLog(input));
     this.lastExecutedAt = new Date();
     this.executionCount++;
+    const startTime = Date.now();
 
     try {
       await this._validateInput(input);
       yield* this._onStreamExecute(input);
       this.logger.info('Agent stream execution completed successfully');
+
+      // Asynchronously log success
+      this._logExecutionToDatabase({ status: 'success', durationMs: Date.now() - startTime }).catch(
+        (err) => this.logger.error('Failed to log execution stream to DB:', err)
+      );
     } catch (error) {
       this.logger.error('Agent stream execution failed:', error);
+
+      // Asynchronously log error
+      this._logExecutionToDatabase({
+        status: 'error',
+        durationMs: Date.now() - startTime,
+        errorMessage: error?.message || 'Unknown error',
+      }).catch((err) => this.logger.error('Failed to log stream execution error to DB:', err));
+
       throw error;
     }
   }
@@ -269,6 +299,25 @@ class BaseAgent {
    */
   async *_onStreamExecute(input) {
     throw new Error('_onStreamExecute must be implemented by subclass for streaming');
+  }
+
+  /**
+   * Asynchronously log the execution to the database
+   * @private
+   */
+  async _logExecutionToDatabase({ status, durationMs, errorMessage }) {
+    try {
+      await dbConnect();
+      await AgentExecutionLog.create({
+        agentId: this.agentId,
+        providerId: this.config.providerId || this.config.defaultProvider,
+        status,
+        durationMs,
+        errorMessage,
+      });
+    } catch (error) {
+      this.logger.error('Database execution logging failed:', error);
+    }
   }
 
   /**

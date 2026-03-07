@@ -4,9 +4,21 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
-import { Sparkles, Bot, Plus, Trash2, Edit2, Server, Globe2, Network, Power } from 'lucide-react';
+import {
+  Sparkles,
+  Bot,
+  Plus,
+  Trash2,
+  Edit2,
+  Server,
+  Globe2,
+  Network,
+  Power,
+  Activity,
+} from 'lucide-react';
 import AgentConfigurationModal from '@/components/admin/AgentConfigurationModal';
 import { Card } from '@/components/ui';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function AgentsDashboard() {
   const { data: session, status } = useSession();
@@ -440,10 +452,26 @@ export default function AgentsDashboard() {
                     </div>
 
                     {agent.description && (
-                      <p className="text-sm text-neutral-600 line-clamp-2 mt-2 mb-6 flex-1">
+                      <p className="text-sm text-neutral-600 line-clamp-2 mt-2 mb-4 flex-1">
                         {agent.description}
                       </p>
                     )}
+
+                    <div className="flex flex-col gap-1.5 mb-6">
+                      <div className="flex items-center gap-2 text-xs text-neutral-500">
+                        <Activity className="w-3.5 h-3.5 text-neutral-400" />
+                        <span className="font-medium text-neutral-700">
+                          {agent.executionCount || 0}
+                        </span>{' '}
+                        Executions
+                      </div>
+                      {agent.lastExecutedAt && (
+                        <div className="text-[10px] text-neutral-400 ml-5.5">
+                          Last run{' '}
+                          {formatDistanceToNow(new Date(agent.lastExecutedAt), { addSuffix: true })}
+                        </div>
+                      )}
+                    </div>
 
                     <div className="mt-auto flex flex-wrap gap-2 pt-4 border-t border-neutral-100">
                       {agent.model ? (

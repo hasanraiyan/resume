@@ -11,6 +11,7 @@ import agentManager from '@/lib/agents/AgentManager';
 import { DEFAULT_AGENT_CONFIGS } from '@/lib/constants/agents';
 import dbConnect from '@/lib/dbConnect';
 import AgentConfig from '@/models/AgentConfig';
+import AgentExecutionLog from '@/models/AgentExecutionLog';
 
 // Ensure agents are imported and registered
 import '@/lib/agents';
@@ -43,11 +44,34 @@ export async function GET() {
       });
     }
 
+    // Fetch execution stats for all agents efficiently
+    const executionStats = await AgentExecutionLog.aggregate([
+      {
+        $group: {
+          _id: '$agentId',
+          totalExecutions: { $sum: 1 },
+          lastExecutedAt: { $max: '$createdAt' },
+        },
+      },
+    ]);
+
+    const executionStatsMap = new Map();
+    executionStats.forEach((stat) => {
+      executionStatsMap.set(stat._id, {
+        totalExecutions: stat.totalExecutions,
+        lastExecutedAt: stat.lastExecutedAt,
+      });
+    });
+
     // Get runtime status for each agent and merge with DB settings
     const agentsWithStatus = registeredAgents.map((agent) => {
       const status = agentManager.getAgentStatus(agent.agentId);
       const defaultConfig = DEFAULT_AGENT_CONFIGS[agent.agentId];
       const dbConfig = dbAgentsMap.get(agent.agentId) || {};
+      const stats = executionStatsMap.get(agent.agentId) || {
+        totalExecutions: 0,
+        lastExecutedAt: null,
+      };
 
       return {
         ...agent,
@@ -56,6 +80,10 @@ export async function GET() {
         defaultModel: defaultConfig?.defaultModel || null,
         defaultProvider: defaultConfig?.defaultProvider || null,
         tools: dbConfig.tools?.length > 0 ? dbConfig.tools : defaultConfig?.tools || [],
+
+        // Override in-memory stats with persistent DB stats
+        executionCount: stats.totalExecutions,
+        lastExecutedAt: stats.lastExecutedAt || status.lastExecutedAt,
       };
     });
 

@@ -21,9 +21,35 @@ import {
   CheckCircle2,
   AlertCircle,
   MessageCircle,
+  BarChart3,
+  RefreshCw,
+  Activity,
 } from 'lucide-react';
 
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
 import { AGENT_IDS } from '@/lib/constants/agents';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 export default function AgentConfigurationModal({ isOpen, onClose, agentData, providers, onSave }) {
   const [activeTab, setActiveTab] = useState('engine'); // 'engine', 'tools', 'mcp', 'persona'
@@ -42,6 +68,10 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
   const [saving, setSaving] = useState(false);
   const [mcpServers, setMcpServers] = useState([]);
   const [fetchingMCPs, setFetchingMCPs] = useState(false);
+
+  // Metrics State
+  const [metricsData, setMetricsData] = useState(null);
+  const [fetchingMetrics, setFetchingMetrics] = useState(false);
 
   const fetchMCPs = async () => {
     setFetchingMCPs(true);
@@ -75,9 +105,26 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
         setModels([]);
       }
       fetchMCPs();
+      fetchMetrics(agentData.agentId);
       setActiveTab('engine'); // Reset tab on open
     }
   }, [isOpen, agentData]);
+
+  const fetchMetrics = async (agentId) => {
+    if (!agentId) return;
+    setFetchingMetrics(true);
+    try {
+      const res = await fetch(`/api/admin/agents/${agentId}/metrics?days=30`);
+      if (res.ok) {
+        const data = await res.json();
+        setMetricsData(data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch metrics:', error);
+    } finally {
+      setFetchingMetrics(false);
+    }
+  };
 
   const fetchModels = async (providerId) => {
     if (!providerId) return;
@@ -153,6 +200,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
 
   const tabs = [
     { id: 'engine', label: 'Engine', icon: Bot },
+    { id: 'metrics', label: 'Metrics', icon: BarChart3 },
     { id: 'tools', label: 'Tools', icon: Webhook },
     { id: 'mcp', label: 'MCP', icon: Plug },
     { id: 'persona', label: 'Persona', icon: Settings2 },
@@ -272,6 +320,108 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                   )}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Metrics Tab */}
+          {activeTab === 'metrics' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              {fetchingMetrics && !metricsData ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-3">
+                  <RefreshCw className="w-6 h-6 animate-spin text-neutral-300" />
+                  <p className="text-xs font-medium text-neutral-400">Loading metrics...</p>
+                </div>
+              ) : !metricsData ? (
+                <div className="text-center py-12 text-neutral-500 text-sm">
+                  No metrics data available.
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100 flex flex-col items-center justify-center">
+                      <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider mb-1">
+                        Total Executions
+                      </p>
+                      <p className="text-3xl font-black text-black">
+                        {metricsData.summary.totalExecutions}
+                      </p>
+                    </div>
+                    <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100 flex flex-col items-center justify-center">
+                      <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider mb-1">
+                        Success Rate
+                      </p>
+                      <p
+                        className={`text-3xl font-black ${metricsData.summary.successRate >= 95 ? 'text-green-500' : metricsData.summary.successRate >= 80 ? 'text-amber-500' : 'text-red-500'}`}
+                      >
+                        {metricsData.summary.totalExecutions > 0
+                          ? `${metricsData.summary.successRate.toFixed(1)}%`
+                          : 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-4 rounded-2xl border border-neutral-100 shadow-sm h-[240px]">
+                    <Line
+                      data={{
+                        labels: metricsData.chartData.map((d) =>
+                          new Date(d.date).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                          })
+                        ),
+                        datasets: [
+                          {
+                            label: 'Executions',
+                            data: metricsData.chartData.map((d) => d.total),
+                            borderColor: '#000000',
+                            backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#ffffff',
+                            pointBorderColor: '#000000',
+                            pointBorderWidth: 2,
+                            pointRadius: 3,
+                            fill: true,
+                            tension: 0.4,
+                          },
+                        ],
+                      }}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: { display: false },
+                          tooltip: {
+                            backgroundColor: '#000000',
+                            padding: 12,
+                            titleFont: { size: 13, family: "''Inter', sans-serif'" },
+                            bodyFont: { size: 13, family: "''Inter', sans-serif'" },
+                            cornerRadius: 8,
+                          },
+                        },
+                        scales: {
+                          x: {
+                            grid: { display: false },
+                            ticks: {
+                              maxTicksLimit: 7,
+                              font: { size: 10, family: "''Inter', sans-serif'" },
+                              color: '#a3a3a3',
+                            },
+                          },
+                          y: {
+                            beginAtZero: true,
+                            grid: { color: '#f5f5f5' },
+                            ticks: {
+                              precision: 0,
+                              font: { size: 10, family: "''Inter', sans-serif'" },
+                              color: '#a3a3a3',
+                            },
+                          },
+                        },
+                      }}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           )}
 
