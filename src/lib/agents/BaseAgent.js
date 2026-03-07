@@ -272,12 +272,26 @@ class BaseAgent {
 
     try {
       await this._validateInput(input);
-      yield* this._onStreamExecute(input);
-      this.logger.info('Agent stream execution completed successfully');
+
+      let toolCallCount = 0;
+      const toolNames = [];
+      for await (const chunk of this._onStreamExecute(input)) {
+        if (chunk.type === 'tool_result') {
+          toolCallCount++;
+          toolNames.push(chunk.name || 'unknown');
+          this.logger.debug(`Tool #${toolCallCount}: ${chunk.name}`);
+        }
+        yield chunk;
+      }
+
+      const durationMs = Date.now() - startTime;
+      this.logger.info(
+        `Stream completed — Tools used: ${toolCallCount}, Names: [${toolNames.join(', ')}], Duration: ${durationMs}ms`
+      );
 
       // Asynchronously log success
-      this._logExecutionToDatabase({ status: 'success', durationMs: Date.now() - startTime }).catch(
-        (err) => this.logger.error('Failed to log execution stream to DB:', err)
+      this._logExecutionToDatabase({ status: 'success', durationMs }).catch((err) =>
+        this.logger.error('Failed to log execution stream to DB:', err)
       );
     } catch (error) {
       this.logger.error('Agent stream execution failed:', error);

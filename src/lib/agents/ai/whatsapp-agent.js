@@ -41,7 +41,14 @@ class WhatsAppAgent extends BaseAgent {
   }
 
   async *_onStreamExecute(input) {
-    const { userMessage, chatHistory = [], sessionId, activeMCPs = [], isAdmin = false } = input;
+    const {
+      userMessage,
+      chatHistory = [],
+      sessionId,
+      activeMCPs: inputMCPs,
+      isAdmin = false,
+    } = input;
+    const activeMCPs = inputMCPs || this.config.activeMCPs || [];
 
     const startTime = Date.now();
     let toolsUsed = [];
@@ -130,6 +137,10 @@ class WhatsAppAgent extends BaseAgent {
       }
 
       const finalTools = this.config.provider?.supportsTools !== false ? allTools : [];
+
+      this.logger.info(
+        `Tools passed to AI: ${finalTools.length}, Names: [${finalTools.map((t) => t.name).join(', ')}]`
+      );
 
       const safeMessageModifier = async (msgs) => sanitizeMessages(msgs);
 
