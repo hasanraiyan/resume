@@ -7,30 +7,11 @@ import { Section, Button, Badge, ForSaleBadge } from '@/components/ui';
 // ========================================
 // 📦 DYNAMIC DATA (Backend-Ready)
 // ========================================
-const workData = {
-  heading: {
-    title: 'Featured Works',
-    description: 'A curated selection of my best projects',
-  },
-  cta: {
-    text: 'View All Projects',
-    link: '/projects',
-    icon: 'fas fa-arrow-right',
-  },
-};
 
 /**
  * Featured work/projects showcase component with alternating grid layout.
- *
- * Displays a curated selection of featured projects in an alternating grid layout
- * with images, descriptions, technology tags, and call-to-action buttons. Includes
- * GSAP scroll-triggered animations and support for "for sale" badges on projects.
- *
- * @param {Object} props - Component props
- * @param {Array} props.featuredProjects - Array of project objects to display
- * @returns {JSX.Element} Featured work section with project grid
  */
-export default function Work({ featuredProjects = [] }) {
+export default function Work({ featuredProjects = [], section = {} }) {
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
 
@@ -68,8 +49,8 @@ export default function Work({ featuredProjects = [] }) {
   return (
     <Section
       id="work"
-      title={workData.heading.title}
-      description={workData.heading.description}
+      title={section.title || 'Featured Works'}
+      description={section.description || 'A curated selection of my best projects'}
       centered={true}
       className="py-16 sm:py-20 md:py-24 bg-white"
     >
@@ -140,11 +121,11 @@ export default function Work({ featuredProjects = [] }) {
       {/* View All Projects Button */}
       <div className="text-center mt-12 sm:mt-16 md:mt-20">
         <Button
-          href={workData.cta.link}
+          href={section.viewAllLink || '/projects'}
           variant="primary"
           className="px-8 sm:px-12 py-4 sm:py-5 text-base sm:text-lg"
         >
-          {workData.cta.text} <i className={`${workData.cta.icon} ml-3`}></i>
+          {section.viewAllText || 'View All Projects'} <i className="fas fa-arrow-right ml-3"></i>
         </Button>
       </div>
     </Section>

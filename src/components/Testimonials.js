@@ -19,32 +19,18 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
-// --- DATA: TESTIMONIALS ---
-const TESTIMONIALS = [
-  {
-    name: 'Shivam Kumar Singh',
-    company: 'Career Simplify Multi Utility Private Limited',
-    companyLink: 'https://careersimplify.in',
-    // position: 'CEO',
-    avatar: 'https://careersimplify.in/assets/cslogo-C1vdCqlW.svg',
-    rating: 5,
-    content:
-      'Raiyan demonstrated exceptional ownership by independently building our platform from the ground up and delivering a  functional, stable product. He managed every stage of development backend, frontend, database architecture, and deployment while resolving major performance bottlenecks with practical and scalable solutions. The platform is now live and expanding on the solid technical foundation he created. Raiyan consistently proved to be reliable, proactive, and continues to provide valuable support and improvements post-launch.',
-    project: 'Career Simplify Website',
-    projectLink: '/projects/careersimplify',
-  },
-];
+// --- REMOVED HARDCODED DATA: Driven by CMS ---
 
 /**
  * Testimonials Carousel Component
  */
-const TestimonialsCarousel = () => {
+const TestimonialsCarousel = ({ testimonials = [] }) => {
   const swiperRef = useRef(null);
 
   const handlePrev = () => swiperRef.current?.slidePrev();
   const handleNext = () => swiperRef.current?.slideNext();
 
-  const showNavButtons = TESTIMONIALS.length >= 2;
+  const showNavButtons = testimonials.length >= 2;
 
   return (
     <div className="relative w-full testimonials-swiper-container">
@@ -71,7 +57,7 @@ const TestimonialsCarousel = () => {
         modules={[Pagination, Autoplay]}
         slidesPerView={1}
         spaceBetween={30}
-        loop={TESTIMONIALS.length > 1}
+        loop={testimonials.length > 1}
         autoplay={{
           delay: 5000,
           disableOnInteraction: false,
@@ -83,12 +69,12 @@ const TestimonialsCarousel = () => {
         }}
         onSwiper={(swiper) => (swiperRef.current = swiper)}
         breakpoints={{
-          640: { slidesPerView: TESTIMONIALS.length < 2 ? 1 : 2 },
-          1024: { slidesPerView: TESTIMONIALS.length < 3 ? TESTIMONIALS.length : 3 },
+          640: { slidesPerView: testimonials.length < 2 ? 1 : 2 },
+          1024: { slidesPerView: testimonials.length < 3 ? testimonials.length : 3 },
         }}
         className="testimonials-swiper !pb-14"
       >
-        {TESTIMONIALS.map((testimonial, index) => (
+        {testimonials.map((testimonial, index) => (
           <SwiperSlide key={index} className="h-auto">
             <TestimonialCard testimonial={testimonial} />
           </SwiperSlide>
@@ -98,7 +84,7 @@ const TestimonialsCarousel = () => {
   );
 };
 
-const Testimonials = () => {
+const Testimonials = ({ testimonials = [], section = {} }) => {
   const { registerComponent, markComponentAsLoaded } = useLoadingStatus();
 
   useEffect(() => {
@@ -137,20 +123,20 @@ const Testimonials = () => {
   }, []);
 
   // Don't render if no testimonials data
-  if (!TESTIMONIALS || TESTIMONIALS.length === 0) {
+  if (!testimonials || testimonials.length === 0) {
     return null;
   }
 
   return (
     <Section
       id="testimonials-section"
-      title="Client Testimonials"
-      description="What my clients say about working with me"
+      title={section.title || 'Client Testimonials'}
+      description={section.description || 'What my clients say about working with me'}
       centered={true}
       className="py-16 sm:py-20 md:py-24 bg-neutral-50"
     >
       <div className="max-w-7xl mx-auto px-4">
-        <TestimonialsCarousel />
+        <TestimonialsCarousel testimonials={testimonials} />
       </div>
     </Section>
   );

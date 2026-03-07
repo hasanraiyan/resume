@@ -23,66 +23,11 @@ import 'swiper/css/pagination';
 // ========================================
 // 📦 DYNAMIC DATA (Backend-Ready)
 // ========================================
-const workData = {
-  cta: {
-    text: 'View All Projects',
-    link: '/projects',
-    icon: 'fas fa-arrow-right',
-  },
-};
 
 /**
  * Featured Works section component that displays projects in an interactive carousel.
- * Features Swiper carousel with autoplay, pagination, and custom navigation controls.
- *
- * @component
- * @param {Object} props - Component props
- * @param {Array} props.featuredProjects - Array of project objects to display
- * @returns {JSX.Element} Featured works carousel section
- * @example
- * ```jsx
- * // Basic usage in homepage
- * <FeaturedWorks featuredProjects={projects} />
- *
- * // In layout with other sections
- * <main>
- *   <Hero />
- *   <About />
- *   <FeaturedWorks featuredProjects={projects} />
- *   <Achievements />
- *   <Contact />
- * </main>
- * ```
- *
- * @features
- * - Interactive Swiper carousel with autoplay
- * - Custom navigation arrows
- * - Pagination dots
- * - Hover animations with image scaling and overlay effects
- * - GSAP scroll-triggered animations
- * - Loading state coordination with LoadingContext
- * - Responsive breakpoints (1-3 slides per view)
- *
- * @animations
- * - Fade-in animation for the entire section
- * - Scroll-triggered entrance effects
- * - Hover scale effects on images
- * - Overlay fade-in on hover
- *
- * @responsiveness
- * - Mobile: Single slide per view
- * - Tablet: Two slides per view
- * - Desktop: Three slides per view
- * - Responsive spacing and typography
- *
- * @dependencies
- * - Swiper for carousel functionality
- * - GSAP for animations
- * - LoadingContext for coordinated loading states
- * - UI components (Section, Button)
- * - Lucide React for navigation icons
  */
-const FeaturedWorks = ({ featuredProjects = [] }) => {
+const FeaturedWorks = ({ featuredProjects = [], section = {} }) => {
   const swiperRef = useRef(null);
   const { registerComponent, markComponentAsLoaded } = useLoadingStatus();
 
@@ -151,8 +96,8 @@ const FeaturedWorks = ({ featuredProjects = [] }) => {
   return (
     <Section
       id="work"
-      title="Featured Works"
-      description="A curated selection of my best projects"
+      title={section.title || 'Featured Works'}
+      description={section.description || 'A curated selection of my best projects'}
       className="p-0 m-0"
       centered={true}
     >
@@ -228,11 +173,11 @@ const FeaturedWorks = ({ featuredProjects = [] }) => {
       {/* View All Projects Button */}
       <div className="text-center mt-10 sm:mt-14 md:mt-10">
         <Button
-          href={workData.cta.link}
+          href={section.viewAllLink || '/projects'}
           variant="primary"
           className="px-8 sm:px-12 py-4 sm:py-5 text-base sm:text-lg"
         >
-          {workData.cta.text} <i className={`${workData.cta.icon} ml-3`}></i>
+          {section.viewAllText || 'View All Projects'} <i className="fas fa-arrow-right ml-3"></i>
         </Button>
       </div>
     </Section>

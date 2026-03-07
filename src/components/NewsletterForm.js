@@ -12,6 +12,7 @@ import { faEnvelope, faCheck, faExclamationTriangle } from '@fortawesome/free-so
  * @param {boolean} [props.showNameField=false] - Whether to show name input field
  * @param {string} [props.placeholder='Enter your email address'] - Email input placeholder
  * @param {string} [props.buttonText='Subscribe'] - Submit button text
+ * @param {string} [props.privacyText] - Privacy policy text
  * @param {Function} [props.onSuccess] - Callback function when subscription is successful
  * @param {Function} [props.onError] - Callback function when subscription fails
  */
@@ -21,6 +22,7 @@ export default function NewsletterForm({
   showNameField = false,
   placeholder = 'Enter your email address',
   buttonText = 'Subscribe',
+  privacyText,
   onSuccess,
   onError,
 }) {
@@ -196,8 +198,8 @@ export default function NewsletterForm({
         )}
 
         <p className="text-xs text-gray-500 leading-relaxed">
-          Join our newsletter for updates on new projects, articles, and insights. We respect your
-          privacy and won't spam you.
+          {privacyText ||
+            "Join our newsletter for updates on new projects, articles, and insights. We respect your privacy and won't spam you."}
         </p>
       </form>
     </div>

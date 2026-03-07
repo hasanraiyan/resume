@@ -231,4 +231,34 @@ StatsSectionSchema.statics.seedDefault = async function () {
   return await this.create(defaultData);
 };
 
-export default mongoose.models.StatsSection || mongoose.model('StatsSection', StatsSectionSchema);
+/**
+ * Static method to retrieve the stats section settings.
+ * Ensures that at least one stats section exists by seeding default data if necessary.
+ *
+ * @static
+ * @async
+ * @function getSettings
+ * @returns {Promise<StatsSection>} The active stats section document
+ */
+StatsSectionSchema.statics.getSettings = async function () {
+  let settings = await this.findOne({ isActive: true }).lean();
+  if (!settings) {
+    settings = (await this.seedDefault()).toObject();
+  }
+  return settings;
+};
+
+const StatsSection =
+  mongoose.models.StatsSection || mongoose.model('StatsSection', StatsSectionSchema);
+
+if (!StatsSection.getSettings) {
+  StatsSection.getSettings = async function () {
+    let settings = await this.findOne({ isActive: true }).lean();
+    if (!settings) {
+      settings = (await this.seedDefault()).toObject();
+    }
+    return settings;
+  };
+}
+
+export default StatsSection;

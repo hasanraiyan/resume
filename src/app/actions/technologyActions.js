@@ -17,7 +17,7 @@ import { serializeForClient } from '@/lib/serialize';
 export async function getAllTechnologies() {
   try {
     await dbConnect();
-    const technologies = await Technology.find({}).sort({ displayOrder: 1 });
+    const technologies = await Technology.find({}).sort({ displayOrder: 1 }).lean();
     return serializeForClient(technologies);
   } catch (error) {
     console.error('Error fetching technologies:', error);

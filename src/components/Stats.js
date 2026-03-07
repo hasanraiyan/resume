@@ -15,11 +15,17 @@ import { SkeletonLoader } from './Skeleton';
  *
  * @returns {JSX.Element} Statistics section with animated counters or skeleton loader
  */
-export default function Stats() {
-  const [statsData, setStatsData] = useState(null);
-  const [loading, setLoading] = useState(true);
+export default function Stats({ statsData: initialData }) {
+  const [statsData, setStatsData] = useState(initialData || null);
+  const [loading, setLoading] = useState(!initialData);
 
   useEffect(() => {
+    if (initialData) {
+      setStatsData(initialData);
+      setLoading(false);
+      return;
+    }
+
     const fetchStatsData = async () => {
       try {
         const response = await fetch('/api/stats');
@@ -29,7 +35,7 @@ export default function Stats() {
           setStatsData(result.data);
         }
       } catch (error) {
-        console.error('Error fetching stats data:', error);
+        console.error('Error fetching Stats data:', error);
       } finally {
         setLoading(false);
       }
@@ -47,7 +53,7 @@ export default function Stats() {
     return () => {
       window.removeEventListener('statsDataUpdated', handleStatsDataUpdate);
     };
-  }, []);
+  }, [initialData]);
 
   useEffect(() => {
     // Only animate when we have data and are not loading

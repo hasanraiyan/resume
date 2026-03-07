@@ -17,7 +17,7 @@ import { serializeForClient } from '@/lib/serialize';
 export async function getAllCertifications() {
   try {
     await dbConnect();
-    const certifications = await Certification.find({}).sort({ displayOrder: 1 });
+    const certifications = await Certification.find({}).sort({ displayOrder: 1 }).lean();
     return serializeForClient(certifications);
   } catch (error) {
     console.error('Error fetching certifications:', error);

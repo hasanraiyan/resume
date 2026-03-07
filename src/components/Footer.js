@@ -15,7 +15,12 @@ import NewsletterForm from './NewsletterForm';
  *
  * @returns {JSX.Element} Footer section with social links and optional newsletter form
  */
-export default function Footer() {
+/**
+ * Footer component with dynamic content, social links, and newsletter subscription.
+ * @param {Object} props - Component props
+ * @param {Object} props.siteConfig - Global site configuration from CMS
+ */
+export default function Footer({ siteConfig }) {
   const pathname = usePathname();
   const { heroData, initials } = useSiteContext(); // Use context to get dynamic data
 
@@ -24,7 +29,13 @@ export default function Footer() {
 
   // --- Dynamically build footer data ---
   const logo = {
-    text: initials || 'JD', // Use initials from context
+    text:
+      siteConfig?.ownerName
+        ?.split(' ')
+        .map((n) => n[0])
+        .join('') ||
+      initials ||
+      'JD',
     link: '/',
   };
 
@@ -33,7 +44,7 @@ export default function Footer() {
 
   const copyright = {
     year: new Date().getFullYear(),
-    name: heroData?.introduction?.name || 'Your Name', // Use name from context
+    name: siteConfig?.ownerName || heroData?.introduction?.name || 'Your Name',
     text: 'All rights reserved',
   };
 
@@ -44,14 +55,18 @@ export default function Footer() {
         {!isBlogPage && (
           <div className="mb-12 pb-8 border-b border-gray-200">
             <div className="max-w-md mx-auto text-center">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Stay Updated</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {siteConfig?.newsletterTitle || 'Stay Updated'}
+              </h3>
               <p className="text-sm text-gray-600 mb-6">
-                Subscribe to our newsletter for the latest projects, articles, and insights.
+                {siteConfig?.newsletterDescription ||
+                  'Subscribe to our newsletter for the latest projects, articles, and insights.'}
               </p>
               <NewsletterForm
                 source="footer"
-                placeholder="Enter your email address"
-                buttonText="Subscribe"
+                placeholder={siteConfig?.newsletterPlaceholder || 'Enter your email address'}
+                buttonText={siteConfig?.newsletterButtonText || 'Subscribe'}
+                privacyText={siteConfig?.privacyText}
                 className="newsletter-footer-form"
               />
             </div>

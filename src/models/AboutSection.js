@@ -228,4 +228,34 @@ AboutSectionSchema.statics.seedDefault = async function () {
   return await this.create(defaultData);
 };
 
-export default mongoose.models.AboutSection || mongoose.model('AboutSection', AboutSectionSchema);
+/**
+ * Static method to retrieve the about section settings.
+ * Ensures that at least one about section exists by seeding default data if necessary.
+ *
+ * @static
+ * @async
+ * @function getSettings
+ * @returns {Promise<AboutSection>} The active about section document
+ */
+AboutSectionSchema.statics.getSettings = async function () {
+  let settings = await this.findOne({ isActive: true }).lean();
+  if (!settings) {
+    settings = (await this.seedDefault()).toObject();
+  }
+  return settings;
+};
+
+const AboutSection =
+  mongoose.models.AboutSection || mongoose.model('AboutSection', AboutSectionSchema);
+
+if (!AboutSection.getSettings) {
+  AboutSection.getSettings = async function () {
+    let settings = await this.findOne({ isActive: true }).lean();
+    if (!settings) {
+      settings = (await this.seedDefault()).toObject();
+    }
+    return settings;
+  };
+}
+
+export default AboutSection;

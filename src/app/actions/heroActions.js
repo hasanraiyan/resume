@@ -25,12 +25,7 @@ export async function getHeroData() {
   try {
     await dbConnect();
 
-    let heroData = await HeroSection.findOne({ isActive: true }).lean();
-
-    if (!heroData) {
-      heroData = await HeroSection.seedDefault();
-    }
-
+    const heroData = await HeroSection.getSettings();
     return serializeForClient(heroData);
   } catch (error) {
     console.error('[getHeroData] Failed to fetch hero section from DB:', error);

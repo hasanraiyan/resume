@@ -53,8 +53,13 @@
 export function serializeForClient(obj, visited = new WeakSet()) {
   if (obj === null || obj === undefined) return obj;
 
-  // Handle MongoDB ObjectId detection more specifically
-  if (obj && typeof obj === 'object' && obj.constructor && obj.constructor.name === 'ObjectId') {
+  // Handle MongoDB ObjectId detection
+  const isObjectId = (o) =>
+    o &&
+    typeof o === 'object' &&
+    (o.constructor?.name === 'ObjectId' || o._bsontype === 'ObjectId' || o.toHexString);
+
+  if (isObjectId(obj)) {
     return obj.toString();
   }
 
@@ -68,30 +73,28 @@ export function serializeForClient(obj, visited = new WeakSet()) {
     return obj.toString('base64');
   }
 
-  // Handle circular references
-  if (typeof obj === 'object') {
-    if (visited.has(obj)) {
-      return '[Circular]';
-    }
-    visited.add(obj);
+  // Handle Mongoose documents (if not leaned)
+  if (obj && typeof obj.toObject === 'function' && !visited.has(obj)) {
+    return serializeForClient(obj.toObject(), visited);
   }
 
+  // Handle arrays
   if (Array.isArray(obj)) {
     return obj.map((item) => serializeForClient(item, visited));
   }
 
+  // Handle objects
   if (typeof obj === 'object') {
+    // Handle circular references
+    if (visited.has(obj)) {
+      return '[Circular]';
+    }
+    visited.add(obj);
+
     const serialized = {};
     for (const [key, value] of Object.entries(obj)) {
-      // Specifically handle _id fields that might be ObjectIds
-      if (key === '_id' && value && typeof value === 'object') {
-        if (value.constructor && value.constructor.name === 'ObjectId') {
-          serialized[key] = value.toString();
-        } else if (value.toString && typeof value.toString === 'function') {
-          serialized[key] = value.toString();
-        } else {
-          serialized[key] = String(value);
-        }
+      if (isObjectId(value)) {
+        serialized[key] = value.toString();
       } else if (value && typeof value === 'object') {
         serialized[key] = serializeForClient(value, visited);
       } else {

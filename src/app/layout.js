@@ -7,6 +7,7 @@ import { SiteProvider } from '@/context/SiteContext';
 import ChatbotWidget from '@/components/chatbot/ChatbotWidget';
 import PWAManager from '@/components/PWAManager';
 import { getHeroData } from '@/app/actions/heroActions';
+import { getSiteConfig } from '@/app/actions/siteActions';
 import { getInitials } from '@/utils/string';
 import { Analytics } from '@vercel/analytics/next';
 
@@ -31,88 +32,81 @@ export const viewport = {
   viewportFit: 'cover',
 };
 
-export const metadata = {
-  metadataBase: new URL('https://hasanraiyan.vercel.app'),
-  title: {
-    default: 'Raiyan Hasan | Freelance Next.js Developer & UI Designer',
-    template: '%s | Raiyan Hasan',
-  },
-  description:
-    'Expert freelance web developer specializing in Next.js, React, and minimalist UI design. Building high-performance, conversion-focused websites and SaaS MVPs.',
-  keywords: [
-    'Hire Next.js developer for SaaS MVP',
-    'Convert React app to Next.js 14',
-    'Freelance headless CMS developer',
-    'React to Next.js Migration Expert',
-    'Next.js Performance Optimization',
-    'Freelance Front-end Developer for Startups',
-  ],
-  authors: [{ name: 'Raiyan Hasan', url: 'https://hasanraiyan.vercel.app' }],
-  creator: 'Raiyan Hasan',
-  alternates: {
-    canonical: '/',
-  },
-  manifest: '/manifest.json',
-  icons: {
-    icon: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762069094/portfolio_assets/ckfre3frqkzgatpgmzu1.jpg',
-    apple:
-      'https://res.cloudinary.com/djkpavwmp/image/upload/v1762069094/portfolio_assets/ckfre3frqkzgatpgmzu1.jpg',
-  },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'Raiyan Hasan Portfolio',
-  },
-  openGraph: {
-    title: 'Raiyan Hasan | Freelance Next.js Developer & UI Designer',
-    description:
-      'Expert freelance web developer specializing in Next.js, React, and minimalist UI design. Building high-performance, conversion-focused websites and SaaS MVPs.',
-    url: 'https://hasanraiyan.vercel.app',
-    siteName: 'Raiyan Hasan Portfolio',
-    locale: 'en_US',
-    type: 'website',
-    images: [
-      {
-        url: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762069094/portfolio_assets/ckfre3frqkzgatpgmzu1.jpg', // Using icon as fallback OG image for now
-        width: 1200,
-        height: 630,
-        alt: 'Raiyan Hasan - Freelance Next.js Developer',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Raiyan Hasan | Freelance Next.js Developer & UI Designer',
-    description:
-      'Expert freelance web developer specializing in Next.js, React, and minimalist UI design. Building high-performance, conversion-focused websites and SaaS MVPs.',
-    creator: '@hasanraiyan', // Assuming handle, can be updated if known
-    images: [
-      'https://res.cloudinary.com/djkpavwmp/image/upload/v1762069094/portfolio_assets/ckfre3frqkzgatpgmzu1.jpg',
-    ],
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
+/**
+ * Generates dynamic metadata for the site based on SiteConfig.
+ */
+export async function generateMetadata() {
+  const siteConfig = await getSiteConfig();
+  const defaultTitle = siteConfig?.siteName || 'Portfolio';
+  const ownerName = siteConfig?.ownerName || 'Admin';
+  const description = siteConfig?.seo?.description || 'Modern portfolio.';
+  const keywords = siteConfig?.seo?.keywords || [];
+
+  return {
+    metadataBase: new URL('https://hasanraiyan.vercel.app'),
+    title: {
+      default: `${ownerName} | ${defaultTitle}`,
+      template: `%s | ${ownerName}`,
+    },
+    description,
+    keywords:
+      keywords.length > 0
+        ? keywords
+        : [
+            'Hire Next.js developer for SaaS MVP',
+            'Convert React app to Next.js 14',
+            'Freelance headless CMS developer',
+          ],
+    authors: [{ name: ownerName, url: 'https://hasanraiyan.vercel.app' }],
+    creator: ownerName,
+    alternates: {
+      canonical: '/',
+    },
+    manifest: '/manifest.json',
+    icons: {
+      icon: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762069094/portfolio_assets/ckfre3frqkzgatpgmzu1.jpg',
+      apple:
+        'https://res.cloudinary.com/djkpavwmp/image/upload/v1762069094/portfolio_assets/ckfre3frqkzgatpgmzu1.jpg',
+    },
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'default',
+      title: `${ownerName} Portfolio`,
+    },
+    openGraph: {
+      title: `${ownerName} | ${defaultTitle}`,
+      description,
+      url: 'https://hasanraiyan.vercel.app',
+      siteName: `${ownerName} Portfolio`,
+      locale: 'en_US',
+      type: 'website',
+      images: [
+        {
+          url: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762069094/portfolio_assets/ckfre3frqkzgatpgmzu1.jpg',
+          width: 1200,
+          height: 630,
+          alt: `${ownerName} - Freelance Next.js Developer`,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${ownerName} | ${defaultTitle}`,
+      description,
+      creator: '@hasanraiyan',
+      images: [
+        'https://res.cloudinary.com/djkpavwmp/image/upload/v1762069094/portfolio_assets/ckfre3frqkzgatpgmzu1.jpg',
+      ],
+    },
+    robots: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
     },
-  },
-  verification: {
-    google: 'JPIiaNXrg8wrdFpkbSeFxSy40-b9UdqnPfdo48j_VeQ',
-  },
-  other: {
-    'mobile-web-app-capable': 'yes',
-    'apple-mobile-web-app-capable': 'yes',
-    'apple-mobile-web-app-status-bar-style': 'default',
-    'apple-mobile-web-app-title': 'Portfolio',
-    'msapplication-TileColor': '#1f2937',
-    'msapplication-config': '/browserconfig.xml',
-  },
-};
+    verification: {
+      google: 'JPIiaNXrg8wrdFpkbSeFxSy40-b9UdqnPfdo48j_VeQ',
+    },
+  };
+}
 
 /** Default hero data used when the DB is unreachable. */
 const DEFAULT_HERO = { introduction: { name: '' }, socialLinks: [] };
@@ -123,11 +117,15 @@ export default async function RootLayout({ children }) {
   const serializedHeroData = (await getHeroData()) ?? DEFAULT_HERO;
   const initials = getInitials(serializedHeroData.introduction?.name);
 
+  // Fetch site config for JSON-LD
+  const siteConfig = await getSiteConfig();
+  const ownerName = siteConfig?.ownerName || 'Admin';
+
   // Build JSON-LD from live DB data so sameAs stays in sync with social links.
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Person',
-    name: 'Raiyan Hasan',
+    name: ownerName,
     url: 'https://hasanraiyan.vercel.app',
     jobTitle: 'Freelance Web Developer',
     sameAs: serializedHeroData.socialLinks?.map((l) => l.url).filter(Boolean) ?? [

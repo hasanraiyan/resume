@@ -8,32 +8,37 @@ import { useSiteContext } from '@/context/SiteContext';
 import SearchOverlay from '@/components/search/SearchOverlay';
 
 /**
- * "Floating Pill" Navbar
- * A premium, glassmorphism navigation bar centered at the bottom or top.
+ * \"Floating Pill\" Navbar
+ * @param {Object} props - Component props
+ * @param {Object} props.siteConfig - Global site configuration from CMS
  */
-export default function Navbar() {
+export default function Navbar({ siteConfig }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const pathname = usePathname();
   const { initials, heroData } = useSiteContext();
 
+  // Use siteConfig for navigation, branding, and CTA, otherwise fallback
   const logo = {
-    text: initials || 'JD',
+    text: siteConfig?.siteName || initials || 'JD',
     link: '/',
   };
 
-  const navigationLinks = [
-    { id: 1, label: 'Home', href: '/' },
-    { id: 2, label: 'About', href: '/#about' },
-    { id: 3, label: 'Work', href: '/#work' },
-    { id: 4, label: 'Projects', href: '/projects' },
-    { id: 5, label: 'Blog', href: '/blog' },
-    { id: 6, label: 'Tools', href: '/tools' },
-  ];
+  const navigationLinks =
+    siteConfig?.navigation?.length > 0
+      ? siteConfig.navigation
+      : [
+          { id: 1, label: 'Home', href: '/' },
+          { id: 2, label: 'About', href: '/#about' },
+          { id: 3, label: 'Work', href: '/#work' },
+          { id: 4, label: 'Projects', href: '/projects' },
+          { id: 5, label: 'Blog', href: '/blog' },
+          { id: 6, label: 'Tools', href: '/tools' },
+        ];
 
   const cta = {
-    text: "Let's Talk",
-    href: '/#contact',
+    text: siteConfig?.navbarCta?.text || "Let's Talk",
+    href: siteConfig?.navbarCta?.href || '/#contact',
   };
 
   // Mobile menu combines navigation and social links

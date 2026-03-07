@@ -150,13 +150,27 @@ const defaultHeroData = {
  * 3. GSAP animations initialize on mount
  * 4. Real-time admin preview: 'heroDataUpdated' events trigger a single re-fetch
  */
-export default function Hero() {
-  // Use hero data already fetched server-side by layout.js via SiteContext.
-  // This eliminates the redundant client-side fetch to /api/hero on every page load.
+/**
+ * Main Hero component for the homepage.
+ * @param {Object} props - Component props
+ * @param {Object} props.data - Hero section data from CMS
+ * @returns {JSX.Element} Hero section with full-screen layout and animations
+ */
+export default function Hero({ data }) {
+  // Use data prop if provided, otherwise fallback to context or defaults
   const { heroData: siteHeroData } = useSiteContext();
 
-  // Initialise from SiteContext data (or fall back to defaults if context isn't ready).
-  const [heroData, setHeroData] = useState(siteHeroData || defaultHeroData);
+  // Initialise from props, then context, then defaults
+  const [heroData, setHeroData] = useState(data || siteHeroData || defaultHeroData);
+
+  // Keep data in sync if props change
+  useEffect(() => {
+    if (data) {
+      setHeroData(data);
+    } else if (siteHeroData) {
+      setHeroData(siteHeroData);
+    }
+  }, [data, siteHeroData]);
 
   // Keep data in sync if SiteContext value changes (e.g. during hydration).
   useEffect(() => {

@@ -99,16 +99,27 @@ const contactData = {
 
 /**
  * Contact form component with integrated Calendly scheduling.
- *
- * This component renders a contact form with multiple field types (text, email, dropdown, textarea),
- * handles form submission, and provides a Calendly widget for scheduling after successful submission.
- * It includes GSAP animations for scroll-triggered effects and integrates with the backend
- * contact submission system.
- *
- * @returns {JSX.Element} Contact section with form or success message with Calendly
+ * @param {Object} props - Component props
+ * @param {Object} props.config - Contact section configuration from CMS
  */
-export default function Contact() {
-  const initialFormData = contactData.form.fields.reduce((acc, field) => {
+export default function Contact({ config }) {
+  // Merge CMS config with default structure
+  const activeConfig = {
+    ...contactData,
+    heading: {
+      ...contactData.heading,
+      title: config?.title || contactData.heading.title,
+      subtitle: config?.subtitle || contactData.heading.subtitle,
+      description: config?.description || contactData.heading.description,
+    },
+    calendlyUrl: config?.calendlyUrl || 'https://calendly.com/raiyanhasan2006/30min',
+    messages: {
+      success: config?.successMessage || contactData.messages.success,
+      error: config?.errorMessage || contactData.messages.error,
+    },
+  };
+
+  const initialFormData = activeConfig.form.fields.reduce((acc, field) => {
     acc[field.name] = field.defaultValue || '';
     return acc;
   }, {});
@@ -322,7 +333,7 @@ export default function Contact() {
 
     window.addEventListener('contact_prefill', handlePrefill);
     return () => window.removeEventListener('contact_prefill', handlePrefill);
-  }, []);
+  }, [activeConfig.form.fields]);
 
   /**
    * Renders a form field based on its type configuration.
@@ -424,19 +435,19 @@ export default function Contact() {
     return (
       <Section
         id="contact"
-        title={`${contactData.heading.title} ${contactData.heading.subtitle}`}
-        description={contactData.heading.description}
+        title={`${activeConfig.heading.title} ${activeConfig.heading.subtitle}`}
+        description={activeConfig.heading.description}
         centered={true}
         className="py-16 sm:py-20 md:py-24"
       >
         <div className="max-w-3xl mx-auto text-center">
           <div className="p-8 bg-gray-50 border-2 border-black rounded-lg">
             <h3 className="text-lg font-semibold text-black mb-2">Message Sent Successfully!</h3>
-            <p className="text-gray-600 mb-4">{contactData.messages.success}</p>
+            <p className="text-gray-600 mb-4">{activeConfig.messages.success}</p>
             <div className="mt-4">
               <div className="relative w-full overflow-hidden rounded-lg border border-gray-200">
                 <InlineWidget
-                  url="https://calendly.com/raiyanhasan2006/30min"
+                  url={activeConfig.calendlyUrl}
                   styles={{
                     height: '720px',
                     width: '100%',
@@ -457,8 +468,8 @@ export default function Contact() {
   return (
     <Section
       id="contact"
-      title={`${contactData.heading.title} ${contactData.heading.subtitle}`}
-      description={contactData.heading.description}
+      title={`${activeConfig.heading.title} ${activeConfig.heading.subtitle}`}
+      description={activeConfig.heading.description}
       centered={true}
       className="py-16 sm:py-20 md:py-24"
     >
@@ -466,7 +477,7 @@ export default function Contact() {
       <div className="max-w-3xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-7">
           <div className="grid md:grid-cols-2 gap-6 sm:gap-7">
-            {contactData.form.fields
+            {activeConfig.form.fields
               .filter((field) => field.gridColumn === 'half')
               .map((field) => (
                 <div key={field.id}>{renderField(field)}</div>
@@ -474,7 +485,7 @@ export default function Contact() {
           </div>
 
           {/* Full width fields */}
-          {contactData.form.fields
+          {activeConfig.form.fields
             .filter((field) => field.gridColumn === 'full')
             .map((field) => (
               <div key={field.id}>{renderField(field)}</div>

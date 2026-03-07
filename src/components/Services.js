@@ -4,9 +4,16 @@ import { useEffect, useRef } from 'react';
 import { Section, Card } from '@/components/ui';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useLoadingStatus } from '@/context/LoadingContext';
 
-export default function Services({ services }) {
+export default function Services({ services = [], section = {} }) {
   const cardsRef = useRef(null);
+  const { registerComponent, markComponentAsLoaded } = useLoadingStatus();
+
+  useEffect(() => {
+    registerComponent('Services');
+    markComponentAsLoaded('Services');
+  }, [registerComponent, markComponentAsLoaded]);
 
   if (!services || services.length === 0) {
     return null;
@@ -14,10 +21,10 @@ export default function Services({ services }) {
 
   return (
     <Section
-      id="services-section"
-      title="What I Do"
-      description="Crafting digital solutions from concept to deployment."
-      centered
+      id="services"
+      title={section.title || 'My Services'}
+      description={section.description || 'Specialized solutions for your digital needs'}
+      centered={true}
       className="bg-white"
     >
       <div ref={cardsRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

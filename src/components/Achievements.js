@@ -18,123 +18,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
-// --- DATA: CERTIFICATIONS ---
-const CERTIFICATES = [
-  {
-    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1763631873/portfolio_assets/iaeau07wjimbx3vlbhhw.png',
-    alt: 'LangChain Essentials Certificate',
-    title: 'LangChain Essentials — TypeScript',
-    description:
-      'Completed the LangChain Academy course on building LLM applications using TypeScript and LangChain.js.',
-  },
-  {
-    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762785755/portfolio_assets/qgkdrzy7nrlnzighzrck.jpg',
-    alt: 'NIELIT ML Internship',
-    title: 'ML Intern — NIELIT Patna',
-    description:
-      '4-week internship on ML with Python, covering data pipelines, models, and scikit-learn.',
-  },
-
-  {
-    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762785972/portfolio_assets/a4senp6qn7fli89vfysk.jpg',
-    alt: 'SUSTAIN-A-THON 2024',
-    title: 'SUSTAIN-A-THON 2024 — Participant',
-    description: 'National sustainability hackathon by Indian Oil, creating green tech solutions.',
-  },
-  {
-    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762786166/portfolio_assets/irvixzesg7dbuz1glezp.jpg',
-    alt: 'SCIFE 24 Exhibition',
-    title: 'SCIFE’24 — Exhibitor',
-    description: 'Showcased tech innovations with Team Tech Thinkers at MIT’s science expo.',
-  },
-  {
-    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1763960607/portfolio_assets/cj3fmc7qu8hsbmhovk12.png',
-    alt: 'Foundation: Intro to the LangGraph Certificate',
-    title: 'Foundation — Intro to LangGraph',
-    description:
-      'Completed foundational training on LangGraph, focusing on graph-based LLM workflows and agentic development.',
-  },
-  {
-    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1771931409/portfolio_assets/kec3i8yr1pcp0dutteck.jpg',
-    alt: 'MITMAAI Certificate of Appreciation',
-    title: 'Alumni Meet 2025 — Event Coordinator (MITMAAI)',
-    description:
-      'Recognized by MIT Muzaffarpur Alumni Association International (MITMAAI) for serving as Event Coordinator for Alumni Meet 2025 and contributing to the successful planning and execution of “Connections – 2025”.',
-  },
-  {
-    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1771932622/portfolio_assets/m7jnhoas5xsi9xqxfhnn.jpg',
-    alt: 'CLIMB 3rd Position Certificate',
-    title: 'C.L.I.M.B — 3rd Position (Team DOSTIFY)',
-    description:
-      'Secured 3rd position at C.L.I.M.B (Campus Leadership & Innovation Movement for Betterment) with Team DOSTIFY, recognized by MIT Muzaffarpur and MITMAAI USA for innovation and leadership.',
-  },
-];
-
-// --- DATA: ACHIEVEMENTS ---
-const ACHIEVEMENTS = [
-  {
-    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1772214725/portfolio_assets/yhe9pmxetss39hfaxwyn.jpg',
-    alt: 'CLIMB Competition 3rd Place - Dostify Project',
-    title: 'CLIMB Competition — 3rd Place',
-    description:
-      'Secured 3rd place in the CLIMB Innovation Competition for Dostify, presenting a solution-driven project with strong technical execution and real-world impact.',
-  },
-  {
-    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1772214725/portfolio_assets/yyiciqegiexqyaslnwyf.jpg',
-    alt: 'CLIMB Competition Team Triumph - Dostify',
-    title: 'CLIMB Competition — Team Triumph',
-    description:
-      'Celebrating our 3rd place finish at the CLIMB Competition with Team Dostify, recognized for innovation, collaboration, and impactful problem-solving.',
-  },
-  {
-    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1772214725/portfolio_assets/lbevyaxkxxhvmoznulcy.jpg',
-    alt: 'Dostify Project Funding - ₹40,000 Grant',
-    title: 'Dostify — ₹40,000 Project Grant',
-    description:
-      'Awarded ₹40,000 in funding by the MIT Muzaffarpur Alumni Association International for Dostify, recognizing the project’s innovation, feasibility, and real-world potential.',
-  },
-
-  {
-    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1772214725/portfolio_assets/sh6efuvk5lpllzeaylgo.jpg',
-    alt: 'CLIMB Competition 3rd Position Medal - Dostify',
-    title: 'CLIMB — 3rd Position Medal',
-    description:
-      'Awarded 3rd position at the CLIMB Innovation Competition for Dostify, recognizing persistence, technical execution, and impactful problem-solving.',
-  },
-  {
-    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762678856/portfolio_assets/u9vr8j427iy1wocnrm6n.png',
-    alt: 'MIT Muzaffarpur Magazine 2025',
-    title: 'MIT Magazine 2025 — Featured Innovator',
-    description:
-      'Featured for building PYQDeck, an AI platform that streamlines exam prep for students.',
-  },
-  {
-    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762675267/portfolio_assets/smq6q7fn18ruw6lx38mg.jpg',
-    alt: 'Smart India Hackathon 2025 Finalist',
-    title: 'Smart India Hackathon 2025 — Finalist',
-    description:
-      'National finalist in the Hardware Edition for an innovative real-world prototype.',
-  },
-  {
-    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762698762/portfolio_assets/v9hfuc3gdddi1pj9qxeg.jpg',
-    alt: 'Coder of the Month MIT',
-    title: 'Coder of the Month — MIT Muzaffarpur',
-    description: 'Earned for top coding performance and consistent problem-solving.',
-  },
-  {
-    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762685373/portfolio_assets/hxdyhklql3ohq4n8yxre.jpg',
-    alt: 'Newspaper SIH 2025',
-    title: 'Press Feature — SIH 2025 Selection',
-    description: 'Local newspaper covered my selection as a SIH 2025 finalist.',
-  },
-
-  {
-    src: 'https://res.cloudinary.com/djkpavwmp/image/upload/v1762786062/portfolio_assets/hlvoafwqjlacyglrj9zc.jpg',
-    alt: 'Hackstack 23 2nd Place',
-    title: 'Hackstack’23 — 2nd Place',
-    description: 'Runner-up in MIT’s flagship hackathon for creative problem-solving and teamwork.',
-  },
-];
+// --- REMOVED HARDCODED DATA: Driven by CMS ---
 
 /**
  * Reusable Carousel Component to handle Logic for both sections
@@ -215,7 +99,7 @@ const Carousel = ({ id, data, delay = 3500 }) => {
   );
 };
 
-const Achievements = () => {
+const Achievements = ({ achievements = [], certifications = [], section = {} }) => {
   const { registerComponent, markComponentAsLoaded } = useLoadingStatus();
 
   useEffect(() => {
@@ -270,33 +154,43 @@ const Achievements = () => {
     };
   }, []);
 
+  if (achievements.length === 0 && certifications.length === 0) {
+    return null;
+  }
+
   return (
     <div className="space-y-24">
       {/* --- SECTION 1: ACHIEVEMENTS --- */}
-      <Section
-        id="achievements-section"
-        title="Achievements"
-        description="Milestones that inspire"
-        className=""
-        centered={true}
-      >
-        <div className="max-w-7xl mx-auto px-4">
-          <Carousel id="achievements" data={ACHIEVEMENTS} delay={3500} />
-        </div>
-      </Section>
+      {achievements.length > 0 && (
+        <Section
+          id="achievements-section"
+          title={section.achievementTitle || 'Achievements'}
+          description={section.achievementDescription || 'Milestones that inspire'}
+          className=""
+          centered={true}
+        >
+          <div className="max-w-7xl mx-auto px-4">
+            <Carousel id="achievements" data={achievements} delay={3500} />
+          </div>
+        </Section>
+      )}
 
       {/* --- SECTION 2: CERTIFICATIONS --- */}
-      <Section
-        id="certificates-section"
-        title="Certifications"
-        description="Continuous learning & professional growth"
-        className=""
-        centered={true}
-      >
-        <div className="max-w-7xl mx-auto px-4">
-          <Carousel id="certificates" data={CERTIFICATES} delay={4500} />
-        </div>
-      </Section>
+      {certifications.length > 0 && (
+        <Section
+          id="certificates-section"
+          title={section.certificationTitle || 'Certifications'}
+          description={
+            section.certificationDescription || 'Continuous learning & professional growth'
+          }
+          className=""
+          centered={true}
+        >
+          <div className="max-w-7xl mx-auto px-4">
+            <Carousel id="certificates" data={certifications} delay={4500} />
+          </div>
+        </Section>
+      )}
     </div>
   );
 };

@@ -6,7 +6,7 @@ import { Wand2, ArrowRight, Sparkles, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { pushImageHistory } from '@/lib/imageHistoryStorage';
 
-export default function AICreatorTeaser() {
+export default function AICreatorTeaser({ section = {} }) {
   const [prompt, setPrompt] = useState('');
   const [resultImage, setResultImage] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -62,12 +62,18 @@ export default function AICreatorTeaser() {
               </div>
 
               <h2 className="text-4xl md:text-6xl font-['Playfair_Display'] text-neutral-900 leading-tight">
-                Try My <span className="text-blue-500 italic">AI Artist</span>
+                {section.title ? (
+                  <span dangerouslySetInnerHTML={{ __html: section.title }} />
+                ) : (
+                  <>
+                    Try My <span className="text-blue-500 italic">AI Artist</span>
+                  </>
+                )}
               </h2>
 
               <p className="text-neutral-600 text-lg leading-relaxed max-w-md">
-                Experience the same AI technology I use for my projects. Describe anything, and
-                watch it manifest in seconds.
+                {section.description ||
+                  'Experience the same AI technology I use for my projects. Describe anything, and watch it manifest in seconds.'}
               </p>
 
               <div className="relative group">
@@ -76,7 +82,7 @@ export default function AICreatorTeaser() {
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleQuickGenerate()}
-                  placeholder="A futuristic city in a glass bottle..."
+                  placeholder={section.inputPlaceholder || 'A futuristic city in a glass bottle...'}
                   className="w-full bg-white border border-neutral-200 rounded-2xl py-5 pl-6 pr-16 text-neutral-900 placeholder-neutral-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
                 />
                 <button

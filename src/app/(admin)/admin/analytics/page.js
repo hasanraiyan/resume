@@ -32,7 +32,7 @@ ChartJS.register(
   LineElement
 );
 
-import UserFlowVisualization from '@/components/admin/analytics/UserFlowVisualization';
+// UserFlowVisualization removed as it depends on chartjs-chart-sankey
 
 export default function AnalyticsDashboard() {
   const { data: session } = useSession();
@@ -254,7 +254,6 @@ export default function AnalyticsDashboard() {
       <TabNavigation
         tabs={[
           { id: 'overview', label: 'Overview', icon: 'chart-line' },
-          { id: 'user_flow', label: 'User Flow', icon: 'route' },
           { id: 'pageviews', label: 'Page Views', icon: 'eye' },
           { id: 'sessions', label: 'Sessions', icon: 'users' },
           { id: 'chatbot', label: 'Chatbot', icon: 'comments' },
@@ -569,8 +568,7 @@ export default function AnalyticsDashboard() {
             </div>
           )}
 
-          {/* User Flow Tab */}
-          {activeTab === 'user_flow' && <UserFlowVisualization data={analyticsData.userFlow} />}
+          {/* UserFlow Tab Removed */}
 
           {/* Pageviews Tab */}
           {activeTab === 'pageviews' && (

@@ -345,4 +345,34 @@ HeroSectionSchema.statics.seedDefault = async function () {
   return existingHero;
 };
 
-export default mongoose.models.HeroSection || mongoose.model('HeroSection', HeroSectionSchema);
+/**
+ * Static method to retrieve the hero section settings.
+ * Ensures that at least one hero section exists by seeding default data if necessary.
+ *
+ * @static
+ * @async
+ * @function getSettings
+ * @returns {Promise<HeroSection>} The active hero section document
+ */
+HeroSectionSchema.statics.getSettings = async function () {
+  let settings = await this.findOne({ isActive: true }).lean();
+  if (!settings) {
+    settings = (await this.seedDefault()).toObject();
+  }
+  return settings;
+};
+
+const HeroSection = mongoose.models.HeroSection || mongoose.model('HeroSection', HeroSectionSchema);
+
+// Ensure the static method is available even if the model was previously cached
+if (!HeroSection.getSettings) {
+  HeroSection.getSettings = async function () {
+    let settings = await this.findOne({ isActive: true }).lean();
+    if (!settings) {
+      settings = (await this.seedDefault()).toObject();
+    }
+    return settings;
+  };
+}
+
+export default HeroSection;

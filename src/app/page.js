@@ -18,6 +18,20 @@ import Project from '@/models/Project';
 import { serializeProjects } from '@/lib/serialize';
 import { getLatestArticles } from '@/app/actions/articleActions';
 import { getActiveServices } from '@/app/actions/serviceActions';
+import { getAllTechnologies } from '@/app/actions/technologyActions';
+import { getAllCertifications } from '@/app/actions/certificationActions';
+import { getContactSectionData } from '@/app/actions/contactSectionActions';
+import { getHeroData } from '@/app/actions/heroActions';
+import { getAboutData } from '@/app/actions/aboutActions';
+import { getSiteConfig } from '@/app/actions/siteActions';
+import { getStatsData } from '@/app/actions/statsActions';
+import { getAchievementsData } from '@/app/actions/achievementActions';
+import { getTestimonialsData } from '@/app/actions/testimonialActions';
+import { getProjectSectionData } from '@/app/actions/projectSectionActions';
+import { getToolTeaserData } from '@/app/actions/toolTeaserActions';
+import { getFeaturedProjects } from '@/app/actions/projectActions';
+import { getServiceSectionData } from '@/app/actions/serviceSectionActions';
+import { getSkillsSectionData } from '@/app/actions/skillsSectionActions';
 
 export default async function Home() {
   await dbConnect();
@@ -40,25 +54,65 @@ export default async function Home() {
   // Fetch active services
   const services = await getActiveServices();
 
+  // CMS Data
+  const technologies = await getAllTechnologies();
+  const certifications = await getAllCertifications();
+  const contactConfig = await getContactSectionData();
+
+  const [
+    heroData,
+    statsData,
+    aboutData,
+    siteConfig,
+    achievementsData,
+    testimonialsData,
+    projectSection,
+    toolTeaserSection,
+    skillsSectionData,
+    serviceSectionData,
+  ] = await Promise.all([
+    getHeroData(),
+    getStatsData(),
+    getAboutData(),
+    getSiteConfig(),
+    getAchievementsData(),
+    getTestimonialsData(),
+    getProjectSectionData(),
+    getToolTeaserData(),
+    getSkillsSectionData(),
+    getServiceSectionData(),
+  ]);
+
   return (
     <HomepageLoaderManager>
-      <Navbar />
-      <Hero />
+      <Navbar siteConfig={siteConfig} />
+      <Hero data={heroData} />
       <Marquee />
-      <About />
-      <Skills />
-      <Achievements />
-      <Services services={services} />
-      <FeaturedWorks featuredProjects={featuredProjects} />
-      <AICreatorTeaser />
+      <About aboutData={aboutData} />
+      <Skills
+        technologies={technologies}
+        certifications={certifications}
+        section={skillsSectionData || {}}
+      />
+      <Achievements
+        achievements={achievementsData?.achievements || []}
+        certifications={achievementsData?.certifications || []}
+        section={achievementsData?.section || {}}
+      />
+      <Services services={services} section={serviceSectionData || {}} />
+      <FeaturedWorks featuredProjects={featuredProjects} section={projectSection || {}} />
+      <AICreatorTeaser section={toolTeaserSection || {}} />
       <div style={{ overflow: 'hidden', width: '100%' }}>
-        <Stats />
+        <Stats statsData={statsData} />
       </div>
-      <PPTCreatorTeaser />
+      <PPTCreatorTeaser section={toolTeaserSection || {}} />
 
-      <Testimonials />
-      <Contact />
-      <Footer />
+      <Testimonials
+        testimonials={testimonialsData?.testimonials || []}
+        section={testimonialsData?.section || {}}
+      />
+      <Contact config={contactConfig} />
+      <Footer siteConfig={siteConfig} />
     </HomepageLoaderManager>
   );
 }

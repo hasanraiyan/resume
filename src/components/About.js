@@ -58,14 +58,21 @@ import { SkeletonLoader, SkeletonItem } from './Skeleton';
  * - UI components (Section, Card, Button)
  * - Skeleton components for loading states
  */
-const About = () => {
-  const [aboutData, setAboutData] = useState(null);
-  const [loading, setLoading] = useState(true);
+const About = ({ aboutData: initialData }) => {
+  const [aboutData, setAboutData] = useState(initialData || null);
+  const [loading, setLoading] = useState(!initialData);
   const { registerComponent, markComponentAsLoaded } = useLoadingStatus();
 
   useEffect(() => {
     // Register this component as "loading" when it mounts
     registerComponent('About');
+
+    if (initialData) {
+      setAboutData(initialData);
+      setLoading(false);
+      markComponentAsLoaded('About');
+      return;
+    }
 
     const fetchAboutData = async () => {
       try {
@@ -96,7 +103,7 @@ const About = () => {
     return () => {
       window.removeEventListener('aboutDataUpdated', handleAboutDataUpdate);
     };
-  }, [registerComponent, markComponentAsLoaded]);
+  }, [initialData, registerComponent, markComponentAsLoaded]);
 
   useEffect(() => {
     // Only animate when we have data and are not loading
