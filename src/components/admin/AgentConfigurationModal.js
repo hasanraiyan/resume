@@ -90,6 +90,12 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
 
   useEffect(() => {
     if (isOpen && agentData) {
+      // Clear previous states to avoid flickering stale data
+      setMetricsData(null);
+      setModels([]);
+      setFetchingMetrics(true);
+      setFetchingModels(true);
+
       setSettings({
         providerId: agentData.providerId || '',
         model: agentData.model || '',
@@ -99,11 +105,13 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
         activeMCPs: agentData.activeMCPs || [],
         metadata: agentData.metadata || {},
       });
+
       if (agentData.providerId) {
         fetchModels(agentData.providerId);
       } else {
-        setModels([]);
+        setFetchingModels(false);
       }
+
       fetchMCPs();
       fetchMetrics(agentData.agentId);
       setActiveTab('engine'); // Reset tab on open
@@ -215,10 +223,10 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-5">
                 <div
-                  className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm transition-all duration-300 ${
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-300 border-2 ${
                     settings.isActive
-                      ? 'bg-black text-white shadow-black/10'
-                      : 'bg-neutral-100 text-neutral-400'
+                      ? 'bg-black text-white border-black'
+                      : 'bg-neutral-100 text-neutral-400 border-neutral-100'
                   }`}
                 >
                   <Cpu className="w-7 h-7" />
@@ -326,37 +334,72 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
           {/* Metrics Tab */}
           {activeTab === 'metrics' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              {fetchingMetrics && !metricsData ? (
-                <div className="flex flex-col items-center justify-center py-12 gap-3">
-                  <RefreshCw className="w-6 h-6 animate-spin text-neutral-300" />
-                  <p className="text-xs font-medium text-neutral-400">Loading metrics...</p>
+              {fetchingMetrics ? (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    {[1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className="bg-neutral-50 p-6 rounded-2xl border border-neutral-100 flex flex-col items-center justify-center animate-pulse"
+                      >
+                        <div className="h-2 w-20 bg-neutral-200 rounded-full mb-3" />
+                        <div className="h-8 w-16 bg-neutral-300 rounded-lg" />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="bg-white p-6 rounded-2xl border border-neutral-100 h-[240px] animate-pulse">
+                    <div className="flex justify-between mb-8">
+                      <div className="h-3 w-32 bg-neutral-100 rounded-full" />
+                      <div className="flex gap-4">
+                        <div className="h-3 w-12 bg-neutral-100 rounded-full" />
+                        <div className="h-3 w-12 bg-neutral-100 rounded-full" />
+                      </div>
+                    </div>
+                    <div className="flex items-end justify-between h-32 px-4 gap-2">
+                      {[...Array(12)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="w-full bg-neutral-50 rounded-t-sm"
+                          style={{ height: `${Math.random() * 100}%` }}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </div>
               ) : !metricsData ? (
-                <div className="text-center py-12 text-neutral-500 text-sm">
-                  No metrics data available.
+                <div className="text-center py-12 px-6 border-2 border-dashed border-neutral-100 rounded-3xl bg-neutral-50/30 flex flex-col items-center">
+                  <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center mb-4">
+                    <BarChart3 className="w-6 h-6 text-neutral-300" />
+                  </div>
+                  <p className="text-sm font-medium text-neutral-500">
+                    No metrics data available for this agent.
+                  </p>
                 </div>
               ) : (
                 <>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100 flex flex-col items-center justify-center">
-                      <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider mb-1">
+                    <div className="bg-neutral-50 p-6 rounded-2xl border border-neutral-100 flex flex-col items-center justify-center group hover:bg-white hover:border-black transition-all duration-300">
+                      <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest mb-2 group-hover:text-neutral-500 transition-colors">
                         Total Executions
                       </p>
-                      <p className="text-3xl font-black text-black">
+                      <p className="text-4xl font-black text-black tracking-tighter">
                         {metricsData.summary.totalExecutions}
                       </p>
                     </div>
-                    <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100 flex flex-col items-center justify-center">
-                      <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider mb-1">
+                    <div className="bg-neutral-50 p-6 rounded-2xl border border-neutral-100 flex flex-col items-center justify-center group hover:bg-white hover:border-black transition-all duration-300">
+                      <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest mb-2 group-hover:text-neutral-500 transition-colors">
                         Success Rate
                       </p>
-                      <p
-                        className={`text-3xl font-black ${metricsData.summary.successRate >= 95 ? 'text-green-500' : metricsData.summary.successRate >= 80 ? 'text-amber-500' : 'text-red-500'}`}
-                      >
-                        {metricsData.summary.totalExecutions > 0
-                          ? `${metricsData.summary.successRate.toFixed(1)}%`
-                          : 'N/A'}
-                      </p>
+                      <div className="flex items-baseline gap-1">
+                        <p
+                          className={`text-4xl font-black tracking-tighter ${metricsData.summary.successRate >= 95 ? 'text-green-500' : metricsData.summary.successRate >= 80 ? 'text-amber-500' : 'text-red-500'}`}
+                        >
+                          {metricsData.summary.totalExecutions > 0
+                            ? Math.round(metricsData.summary.successRate)
+                            : '0'}
+                        </p>
+                        <span className="text-xl font-bold text-neutral-300">%</span>
+                      </div>
                     </div>
                   </div>
 
@@ -619,7 +662,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
             <Button
               onClick={handleSave}
               isLoading={saving}
-              className="rounded-2xl bg-black hover:bg-neutral-800 text-white flex-1 justify-center shadow-xl shadow-black/10 font-bold uppercase tracking-widest text-[10px] h-12"
+              className="rounded-2xl bg-black hover:bg-neutral-800 text-white flex-1 justify-center font-bold uppercase tracking-widest text-[10px] h-12"
             >
               <Save className="w-3.5 h-3.5 mr-2" /> Save Configuration
             </Button>

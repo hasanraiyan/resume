@@ -125,6 +125,11 @@ const ChatbotSettingsSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    defaultEngine: {
+      type: String,
+      enum: ['fast', 'pro', 'thinking'],
+      default: 'fast',
+    },
   },
   {
     timestamps: true,

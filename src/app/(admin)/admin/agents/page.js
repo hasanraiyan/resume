@@ -17,10 +17,17 @@ import {
   Activity,
   MessageCircle,
   Webhook,
+  UserCircle,
+  BookOpen,
+  ShieldCheck,
+  Save,
+  RotateCcw,
+  PlusCircle,
 } from 'lucide-react';
 import AgentConfigurationModal from '@/components/admin/AgentConfigurationModal';
 import { Card } from '@/components/ui';
 import { formatDistanceToNow } from 'date-fns';
+import Switch from '@/components/admin/Switch';
 
 export default function AgentsDashboard() {
   const { data: session, status } = useSession();
@@ -70,7 +77,24 @@ export default function AgentsDashboard() {
     color: 'blue-500',
     isActive: true,
     adminOnly: false,
+    isDefault: false,
   });
+
+  // Assistant / Chatbot State
+  const [chatbotSettings, setChatbotSettings] = useState({
+    aiName: 'Kiro',
+    persona: '',
+    baseKnowledge: '',
+    servicesOffered: '',
+    callToAction: '',
+    suggestedPrompts: [''],
+    welcomeMessage: '',
+    rules: [''],
+    isActive: true,
+    defaultEngine: 'fast',
+  });
+  const [savingChatbot, setSavingChatbot] = useState(false);
+  const [chatbotLoading, setChatbotLoading] = useState(true);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -82,6 +106,14 @@ export default function AgentsDashboard() {
     fetchAgents();
     fetchIntegrations();
     fetchMcpServers();
+    fetchChatbotSettings();
+
+    // Check for tab in URL
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab && ['providers', 'agents', 'channels', 'mcp', 'assistant'].includes(tab)) {
+      setActiveTab(tab);
+    }
   }, [session, status, router]);
 
   const fetchProviders = async () => {
@@ -124,6 +156,24 @@ export default function AgentsDashboard() {
       if (res.ok) setMcpServers(data.servers || []);
     } catch (error) {
       console.error('Failed to fetch MCP servers:', error);
+    }
+  };
+
+  const fetchChatbotSettings = async () => {
+    try {
+      const res = await fetch('/api/admin/chatbot');
+      const data = await res.json();
+      if (res.ok && data) {
+        setChatbotSettings({
+          ...data,
+          suggestedPrompts: data.suggestedPrompts || [''],
+          rules: data.rules || [''],
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch chatbot settings:', error);
+    } finally {
+      setChatbotLoading(false);
     }
   };
 
@@ -292,6 +342,33 @@ export default function AgentsDashboard() {
     }
   };
 
+  // --- Assistant Handlers ---
+  const handleSaveChatbot = async () => {
+    setSavingChatbot(true);
+    try {
+      const res = await fetch('/api/admin/chatbot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(chatbotSettings),
+      });
+
+      if (res.ok) {
+        // Success notification or just refresh
+        fetchChatbotSettings();
+      } else {
+        alert('Failed to save chatbot settings.');
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setSavingChatbot(false);
+    }
+  };
+
+  const handleChatbotInputChange = (field, value) => {
+    setChatbotSettings((prev) => ({ ...prev, [field]: value }));
+  };
+
   // --- UI Render ---
   if (loading)
     return (
@@ -429,6 +506,18 @@ export default function AgentsDashboard() {
                 <span className="absolute bottom-0 left-0 w-full h-[3px] bg-black"></span>
               )}
             </button>
+            <button
+              onClick={() => setActiveTab('assistant')}
+              className={`flex items-center gap-2 py-4 text-sm font-semibold transition-colors cursor-pointer relative px-2 ${
+                activeTab === 'assistant' ? 'text-black' : 'text-neutral-500 hover:text-neutral-800'
+              }`}
+            >
+              <Bot className="w-4 h-4" />
+              <span>Assistant</span>
+              {activeTab === 'assistant' && (
+                <span className="absolute bottom-0 left-0 w-full h-[3px] bg-black"></span>
+              )}
+            </button>
           </div>
         </div>
 
@@ -444,7 +533,7 @@ export default function AgentsDashboard() {
               </div>
               <button
                 onClick={handleAddProvider}
-                className="px-5 py-2.5 bg-black hover:bg-neutral-800 transition-colors text-white rounded-xl text-sm font-medium flex items-center gap-2 shadow-sm cursor-pointer"
+                className="px-5 py-2.5 bg-black hover:bg-neutral-800 transition-colors text-white rounded-xl text-sm font-medium flex items-center gap-2 cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Add New Provider
               </button>
@@ -455,7 +544,7 @@ export default function AgentsDashboard() {
                 <Card
                   key={p.providerId}
                   interactive
-                  className="p-6 border border-neutral-200 shadow-sm hover:shadow-md hover:border-black transition-all bg-white rounded-2xl flex flex-col h-full cursor-pointer"
+                  className="p-6 border-2 border-neutral-100 hover:border-black transition-all bg-white rounded-xl flex flex-col h-full cursor-pointer overflow-hidden relative"
                 >
                   <div className="flex justify-between items-start mb-6">
                     <div className="flex items-center gap-3">
@@ -515,7 +604,7 @@ export default function AgentsDashboard() {
                 </p>
                 <button
                   onClick={handleAddProvider}
-                  className="mt-6 px-6 py-2.5 bg-white border border-neutral-300 hover:border-black transition-colors rounded-xl text-sm font-medium text-black shadow-sm cursor-pointer"
+                  className="mt-6 px-6 py-2.5 bg-white border border-neutral-300 hover:border-black transition-colors rounded-xl text-sm font-medium text-black cursor-pointer"
                 >
                   Configure Provider
                 </button>
@@ -614,7 +703,7 @@ export default function AgentsDashboard() {
                 <Card
                   key={agent.agentId}
                   interactive
-                  className="group flex flex-col h-full bg-white border border-neutral-200 rounded-2xl overflow-hidden cursor-pointer hover:border-black transition-all duration-300"
+                  className="group flex flex-col h-full bg-white border-2 border-neutral-100 rounded-xl overflow-hidden cursor-pointer hover:border-black transition-all duration-300 relative"
                   onClick={() => {
                     setSelectedAgent(agent);
                     setIsAgentModalOpen(true);
@@ -717,7 +806,7 @@ export default function AgentsDashboard() {
               </div>
               <button
                 onClick={handleAddIntegration}
-                className="px-5 py-2.5 bg-black hover:bg-neutral-800 transition-colors text-white rounded-xl text-sm font-medium flex items-center gap-2 shadow-sm cursor-pointer"
+                className="px-5 py-2.5 bg-black hover:bg-neutral-800 transition-colors text-white rounded-xl text-sm font-medium flex items-center gap-2 cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Add Channel
               </button>
@@ -728,7 +817,7 @@ export default function AgentsDashboard() {
                 <Card
                   key={integration.integrationId}
                   interactive
-                  className="p-6 border border-neutral-200 shadow-sm hover:shadow-md hover:border-black transition-all bg-white rounded-2xl flex flex-col h-full cursor-pointer"
+                  className="p-6 border-2 border-neutral-100 hover:border-black transition-all bg-white rounded-xl flex flex-col h-full cursor-pointer relative"
                 >
                   <div className="flex justify-between items-start mb-6">
                     <div className="flex items-center gap-3">
@@ -802,7 +891,7 @@ export default function AgentsDashboard() {
                 </p>
                 <button
                   onClick={handleAddIntegration}
-                  className="mt-6 px-6 py-2.5 bg-white border border-neutral-300 hover:border-black transition-colors rounded-xl text-sm font-medium text-black shadow-sm cursor-pointer"
+                  className="mt-6 px-6 py-2.5 bg-white border border-neutral-300 hover:border-black transition-colors rounded-xl text-sm font-medium text-black cursor-pointer"
                 >
                   Add a Channel
                 </button>
@@ -816,7 +905,7 @@ export default function AgentsDashboard() {
             {/* Integration Edit Modal */}
             {editingIntegration && (
               <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 sm:p-6">
-                <div className="bg-white rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 space-y-6 shadow-2xl">
+                <div className="bg-white rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 space-y-6 border-2 border-neutral-100">
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-bold">
                       {editingIntegration.id === 'new' ? 'New Channel Integration' : 'Edit Channel'}
@@ -938,7 +1027,7 @@ export default function AgentsDashboard() {
                     <button
                       onClick={handleSaveIntegration}
                       disabled={savingIntegration}
-                      className="flex-1 py-2 rounded-xl bg-black hover:bg-neutral-800 text-white text-sm font-bold uppercase tracking-widest shadow-lg shadow-black/10 transition-colors cursor-pointer disabled:cursor-not-allowed"
+                      className="flex-1 py-2 rounded-xl bg-black hover:bg-neutral-800 text-white text-sm font-bold uppercase tracking-widest transition-colors cursor-pointer disabled:cursor-not-allowed"
                     >
                       {savingIntegration ? 'Saving...' : 'Save Channel'}
                     </button>
@@ -949,7 +1038,7 @@ export default function AgentsDashboard() {
           </div>
         )}
 
-        {/* MCP Servers Tab */}
+        {/* MCP Tab */}
         {activeTab === 'mcp' && (
           <div className="space-y-8 animate-in fade-in">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -961,7 +1050,7 @@ export default function AgentsDashboard() {
               </div>
               <button
                 onClick={handleAddMcp}
-                className="px-5 py-2.5 bg-black hover:bg-neutral-800 transition-colors text-white rounded-xl text-sm font-medium flex items-center gap-2 shadow-sm cursor-pointer"
+                className="px-5 py-2.5 bg-black hover:bg-neutral-800 transition-colors text-white rounded-xl text-sm font-medium flex items-center gap-2 cursor-pointer transition-all active:scale-95 border-2 border-black"
               >
                 <Plus className="w-4 h-4" /> Add MCP Server
               </button>
@@ -972,13 +1061,11 @@ export default function AgentsDashboard() {
                 <Card
                   key={server._id}
                   interactive
-                  className="p-6 border border-neutral-200 shadow-sm hover:shadow-md hover:border-black transition-all bg-white rounded-2xl flex flex-col h-full cursor-pointer"
+                  className="p-6 border-2 border-neutral-100 hover:border-black transition-all bg-white rounded-xl flex flex-col h-full cursor-pointer relative group"
                 >
                   <div className="flex justify-between items-start mb-6">
                     <div className="flex items-center gap-3">
-                      <div
-                        className={`w-10 h-10 rounded-xl bg-neutral-100 flex items-center justify-center flex-shrink-0 border border-neutral-200/60`}
-                      >
+                      <div className="w-10 h-10 rounded-xl bg-neutral-100 flex items-center justify-center flex-shrink-0 border border-neutral-200/60 group-hover:bg-neutral-200/50 transition-colors">
                         <Server className={`w-5 h-5 text-${server.color || 'blue-500'}`} />
                       </div>
                       <div>
@@ -992,14 +1079,20 @@ export default function AgentsDashboard() {
                     </div>
                     <div className="flex gap-1.5">
                       <button
-                        onClick={() => handleEditMcp(server)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditMcp(server);
+                        }}
                         className="p-1.5 text-neutral-400 hover:text-black hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer"
                         aria-label="Edit MCP"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDeleteMcp(server._id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteMcp(server._id);
+                        }}
                         className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                         aria-label="Delete MCP"
                       >
@@ -1009,25 +1102,29 @@ export default function AgentsDashboard() {
                   </div>
 
                   {server.description && (
-                    <p className="text-sm text-neutral-600 mb-4 line-clamp-2">
+                    <p className="text-sm text-neutral-600 mb-4 line-clamp-2 leading-relaxed">
                       {server.description}
                     </p>
                   )}
 
                   <div className="mt-auto pt-4 border-t border-neutral-100">
-                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold mb-1.5 flex justify-between">
+                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold mb-1.5 flex justify-between items-center">
                       <span>Endpoint URL</span>
-                      {server.isActive ? (
-                        <span className="text-green-500 font-bold">Online</span>
-                      ) : (
-                        <span className="text-neutral-400">Offline</span>
-                      )}
+                      <span
+                        className={`inline-flex items-center gap-1.5 ${server.isActive ? 'text-green-600' : 'text-neutral-400'}`}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${server.isActive ? 'bg-green-500' : 'bg-neutral-300'}`}
+                        ></span>
+                        {server.isActive ? 'Active' : 'Offline'}
+                      </span>
                     </p>
                     <div
-                      className="text-xs bg-neutral-50 text-neutral-600 px-3 py-2 rounded-lg font-mono tracking-wider border border-neutral-100 truncate"
+                      className="text-xs bg-neutral-50 text-neutral-600 px-3 py-2 rounded-lg font-mono tracking-wider border border-neutral-100 truncate flex items-center gap-2 group-hover:bg-neutral-100/50 transition-colors"
                       title={server.url}
                     >
-                      {server.url}
+                      <Globe2 className="w-3.5 h-3.5 text-neutral-400" />
+                      <span className="truncate">{server.url}</span>
                     </div>
                   </div>
                 </Card>
@@ -1041,12 +1138,12 @@ export default function AgentsDashboard() {
                   No MCP Servers Configured
                 </h3>
                 <p className="text-sm text-neutral-500 mt-2 max-w-md">
-                  MCP servers like Google Search, Brave Search, or your local filesystem tools allow
-                  agents to interact with the real world.
+                  MCP servers allow agents to interact with search engines, file systems, and other
+                  external tools.
                 </p>
                 <button
                   onClick={handleAddMcp}
-                  className="mt-6 px-6 py-2.5 bg-white border border-neutral-300 hover:border-black transition-colors rounded-xl text-sm font-medium text-black shadow-sm cursor-pointer"
+                  className="mt-6 px-6 py-2.5 bg-white border border-neutral-300 hover:border-black transition-colors rounded-xl text-sm font-medium text-black cursor-pointer transition-all active:scale-95"
                 >
                   Configure Local SSE Server
                 </button>
@@ -1059,73 +1156,60 @@ export default function AgentsDashboard() {
 
             {/* MCP Edit Modal */}
             {editingMcp && (
-              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-3xl max-w-lg w-full p-8 space-y-6 shadow-2xl relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-600" />
+              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="bg-white rounded-3xl max-w-lg w-full p-8 space-y-6 relative overflow-hidden animate-in zoom-in-95 duration-200">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-black" />
 
                   <div className="flex justify-between items-center">
                     <h3 className="text-xl font-bold font-['Playfair_Display']">
-                      {editingMcp.id === 'new' ? 'Register MCP Server' : 'Configure Server'}
+                      {editingMcp.id === 'new'
+                        ? 'Register Private MCP Server'
+                        : 'Configure Server Settings'}
                     </h3>
-                    <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer">
-                      <span
-                        className={
-                          editingMcp.isActive
-                            ? 'text-green-600'
-                            : 'text-neutral-400 transition-colors'
-                        }
-                      >
-                        {editingMcp.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                      <div
-                        className={`w-12 h-6 rounded-full relative transition-colors duration-200 ${editingMcp.isActive ? 'bg-black' : 'bg-neutral-200'}`}
-                        onClick={() =>
-                          setEditingMcp({ ...editingMcp, isActive: !editingMcp.isActive })
-                        }
-                      >
-                        <div
-                          className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 ${editingMcp.isActive ? 'translate-x-6' : ''}`}
-                        />
-                      </div>
-                    </label>
+                    <button
+                      onClick={() => setEditingMcp(null)}
+                      className="p-1.5 hover:bg-neutral-100 rounded-full transition-colors text-neutral-400 hover:text-black cursor-pointer"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-5">
+                    <div className="grid grid-cols-2 gap-5">
                       <div className="col-span-2 sm:col-span-1">
-                        <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block mb-1.5">
+                        <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-2">
                           Friendly Name
                         </label>
                         <input
-                          className="w-full px-4 py-2.5 bg-neutral-50 border-2 border-neutral-100 focus:border-black focus:bg-white rounded-xl transition-all outline-none text-sm"
+                          className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-xl transition-all outline-none text-sm placeholder:text-neutral-400"
                           value={editingMcp.name}
                           onChange={(e) => setEditingMcp({ ...editingMcp, name: e.target.value })}
                           placeholder="Search Tools"
                         />
                       </div>
                       <div className="col-span-2 sm:col-span-1">
-                        <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block mb-1.5">
+                        <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-2">
                           Connection Type
                         </label>
                         <select
-                          className="w-full px-4 py-2.5 bg-neutral-50 border-2 border-neutral-100 focus:border-black focus:bg-white rounded-xl transition-all outline-none text-sm appearance-none cursor-pointer"
+                          className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-xl transition-all outline-none text-sm appearance-none cursor-pointer"
                           value={editingMcp.type}
                           onChange={(e) => setEditingMcp({ ...editingMcp, type: e.target.value })}
                         >
                           <option value="sse">SSE (HTTP/Events)</option>
                           <option value="stdio" disabled>
-                            stdio (Local Only)
+                            stdio (Local Process)
                           </option>
                         </select>
                       </div>
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block mb-1.5">
+                      <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-2">
                         Endpoint URL
                       </label>
                       <input
-                        className="w-full px-4 py-2.5 bg-neutral-50 border-2 border-neutral-100 focus:border-black focus:bg-white rounded-xl transition-all outline-none text-sm font-mono"
+                        className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-xl transition-all outline-none text-sm font-mono placeholder:text-neutral-400"
                         value={editingMcp.url}
                         onChange={(e) => setEditingMcp({ ...editingMcp, url: e.target.value })}
                         placeholder="http://localhost:3001/sse"
@@ -1133,16 +1217,29 @@ export default function AgentsDashboard() {
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block mb-1.5">
+                      <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-2">
                         Short Description
                       </label>
                       <textarea
-                        className="w-full px-4 py-2.5 bg-neutral-50 border-2 border-neutral-100 focus:border-black focus:bg-white rounded-xl transition-all outline-none text-sm min-h-[80px] resize-none"
+                        className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-xl transition-all outline-none text-sm min-h-[100px] resize-none placeholder:text-neutral-400 leading-relaxed"
                         value={editingMcp.description}
                         onChange={(e) =>
                           setEditingMcp({ ...editingMcp, description: e.target.value })
                         }
-                        placeholder="Optional description of what this server provides..."
+                        placeholder="Describe what capabilities this server adds to your agents..."
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl border border-neutral-100">
+                      <div>
+                        <p className="text-sm font-bold text-neutral-900">Active Status</p>
+                        <p className="text-[10px] text-neutral-500 uppercase tracking-widest mt-0.5">
+                          Toggle availability to agents
+                        </p>
+                      </div>
+                      <Switch
+                        checked={editingMcp.isActive}
+                        onCheckedChange={(val) => setEditingMcp({ ...editingMcp, isActive: val })}
                       />
                     </div>
                   </div>
@@ -1150,16 +1247,20 @@ export default function AgentsDashboard() {
                   <div className="flex gap-3 pt-6">
                     <button
                       onClick={() => setEditingMcp(null)}
-                      className="flex-1 py-3 rounded-xl border-2 border-neutral-50 hover:bg-neutral-50 text-sm font-bold uppercase tracking-widest transition-colors cursor-pointer"
+                      className="flex-1 py-3.5 rounded-xl border-2 border-neutral-100 hover:bg-neutral-50 text-xs font-black uppercase tracking-widest text-neutral-600 transition-colors cursor-pointer"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleSaveMcp}
                       disabled={savingMcp}
-                      className="flex-1 py-3 rounded-xl bg-black hover:bg-neutral-800 text-white text-sm font-bold uppercase tracking-widest shadow-xl shadow-black/10 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:bg-neutral-400"
+                      className="flex-1 py-3.5 rounded-xl bg-black hover:bg-neutral-800 text-white text-xs font-black uppercase tracking-widest transition-all cursor-pointer disabled:bg-neutral-300 disabled:cursor-not-allowed"
                     >
-                      {savingMcp ? 'Syncing...' : 'Register Server'}
+                      {savingMcp
+                        ? 'Synchronizing...'
+                        : editingMcp.id === 'new'
+                          ? 'Register Server'
+                          : 'Update Server'}
                     </button>
                   </div>
                 </div>
@@ -1168,9 +1269,314 @@ export default function AgentsDashboard() {
           </div>
         )}
 
+        {/* Assistant Tab */}
+        {activeTab === 'assistant' && (
+          <div className="space-y-8 animate-in fade-in">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-neutral-100 pb-8">
+              <div>
+                <h2 className="text-3xl font-bold font-['Playfair_Display'] text-neutral-900">
+                  AI Assistant Hub
+                </h2>
+                <p className="text-sm text-neutral-500 mt-1">
+                  Refine your website's conversational brain and persona.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => fetchChatbotSettings()}
+                  className="px-5 py-2.5 border-2 border-neutral-100 hover:border-black rounded-xl text-xs font-black uppercase tracking-widest text-neutral-600 hover:text-black transition-all flex items-center gap-2 cursor-pointer bg-white"
+                >
+                  <RotateCcw className="w-4 h-4" /> Reset
+                </button>
+                <button
+                  onClick={handleSaveChatbot}
+                  disabled={savingChatbot}
+                  className="px-8 py-2.5 bg-black hover:bg-neutral-800 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 cursor-pointer disabled:bg-neutral-300 disabled:cursor-not-allowed"
+                >
+                  <Save className="w-4 h-4" /> {savingChatbot ? 'Saving...' : 'Publish Changes'}
+                </button>
+              </div>
+            </div>
+
+            <div className="grid lg:grid-cols-12 gap-8">
+              {/* Left Column: Profile Card */}
+              <div className="lg:col-span-4 space-y-8">
+                <Card className="p-8 border-2 border-neutral-100 bg-white rounded-xl flex flex-col h-fit">
+                  <div className="flex flex-col items-center text-center mb-10">
+                    <div className="w-24 h-24 rounded-3xl bg-neutral-900 flex items-center justify-center mb-4 transition-all hover:scale-105 border-4 border-white ring-1 ring-neutral-100">
+                      <Sparkles className="w-10 h-10 text-white animate-pulse" />
+                    </div>
+                    <h3 className="text-xl font-bold text-neutral-900">
+                      {chatbotSettings.aiName || 'Assistant'}
+                    </h3>
+                    <p className="text-xs text-neutral-400 font-medium uppercase tracking-widest mt-1">
+                      Primary Website Node
+                    </p>
+                  </div>
+
+                  <div className="space-y-8 pt-6 border-t border-neutral-100">
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 block mb-3">
+                        Assistant Name
+                      </label>
+                      <input
+                        className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-xl outline-none text-sm transition-all focus:bg-white"
+                        value={chatbotSettings.aiName}
+                        onChange={(e) => handleChatbotInputChange('aiName', e.target.value)}
+                        placeholder="e.g. Kiro"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 block mb-3">
+                        Model Architecture
+                      </label>
+                      <select
+                        className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-xl outline-none text-sm appearance-none cursor-pointer transition-all focus:bg-white"
+                        value={chatbotSettings.defaultEngine || 'fast'}
+                        onChange={(e) => handleChatbotInputChange('defaultEngine', e.target.value)}
+                      >
+                        <option value="fast">Fast (GPT-4o Mini)</option>
+                        <option value="pro">Pro (GPT-4o)</option>
+                        <option value="thinking">Critical Thinker (o1-mini/o3)</option>
+                      </select>
+                      <p className="text-[10px] text-neutral-400 mt-2 leading-relaxed">
+                        Determines the logic weight and speed of responses.
+                      </p>
+                    </div>
+
+                    <div className="pt-6 border-t border-neutral-100">
+                      <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl border border-neutral-100">
+                        <div>
+                          <p className="text-sm font-bold text-neutral-900">Online Status</p>
+                          <p className="text-[10px] text-neutral-500 uppercase tracking-widest mt-0.5">
+                            Visible to visitors
+                          </p>
+                        </div>
+                        <Switch
+                          checked={chatbotSettings.isActive}
+                          onCheckedChange={(val) => handleChatbotInputChange('isActive', val)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-6 border-t border-neutral-100">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 block mb-3">
+                        CTA Prompt
+                      </label>
+                      <textarea
+                        className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-xl outline-none text-sm transition-all min-h-[100px] resize-none focus:bg-white leading-relaxed"
+                        value={chatbotSettings.callToAction}
+                        onChange={(e) => handleChatbotInputChange('callToAction', e.target.value)}
+                        placeholder="e.g. Let's build something extraordinary together."
+                      />
+                      <p className="text-[10px] text-neutral-400 mt-2 leading-relaxed">
+                        Directs users toward your contact funnel.
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Right Column: Intelligence & Strategy */}
+              <div className="lg:col-span-8 space-y-8">
+                <Card className="border-2 border-neutral-100 bg-white rounded-xl overflow-hidden flex flex-col">
+                  <div className="p-8 border-b border-neutral-100 bg-neutral-50/40">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center border border-black">
+                        <UserCircle className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-xl text-neutral-900">
+                          AI Intelligence Configuration
+                        </h3>
+                        <p className="text-xs text-neutral-500">
+                          Fine-tune the neural pathways and guardrails.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-8 space-y-12">
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400">
+                          System Persona & Vocal Tone
+                        </label>
+                      </div>
+                      <textarea
+                        className="w-full px-6 py-5 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-2xl outline-none text-[15px] leading-relaxed transition-all min-h-[220px] focus:bg-white"
+                        value={chatbotSettings.persona}
+                        onChange={(e) => handleChatbotInputChange('persona', e.target.value)}
+                        placeholder="Define background, humor style, and professional boundary..."
+                      />
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-8 pt-8 border-t border-neutral-100">
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400">
+                            Operational Rules
+                          </label>
+                          <button
+                            onClick={() =>
+                              handleChatbotInputChange('rules', [...chatbotSettings.rules, ''])
+                            }
+                            className="text-[10px] font-black uppercase tracking-widest text-black flex items-center gap-1.5 hover:opacity-60 transition-all cursor-pointer"
+                          >
+                            <PlusCircle className="w-3.5 h-3.5" /> Add Rule
+                          </button>
+                        </div>
+                        <div className="space-y-3">
+                          {chatbotSettings.rules.map((rule, idx) => (
+                            <div key={idx} className="flex gap-2 group items-center">
+                              <input
+                                className="flex-1 px-4 py-2.5 bg-neutral-50 border-2 border-neutral-100 rounded-xl text-xs font-medium outline-none focus:border-black transition-all focus:bg-white"
+                                value={rule}
+                                onChange={(e) => {
+                                  const newRules = [...chatbotSettings.rules];
+                                  newRules[idx] = e.target.value;
+                                  handleChatbotInputChange('rules', newRules);
+                                }}
+                                placeholder={`Constraint #${idx + 1}`}
+                              />
+                              <button
+                                onClick={() => {
+                                  const newRules = chatbotSettings.rules.filter(
+                                    (_, i) => i !== idx
+                                  );
+                                  handleChatbotInputChange('rules', newRules);
+                                }}
+                                className="p-2 text-neutral-300 hover:text-red-500 transition-colors cursor-pointer group-hover:scale-110"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400">
+                            Strategic Prompts
+                          </label>
+                          <button
+                            onClick={() =>
+                              handleChatbotInputChange('suggestedPrompts', [
+                                ...chatbotSettings.suggestedPrompts,
+                                '',
+                              ])
+                            }
+                            className="text-[10px] font-black uppercase tracking-widest text-black flex items-center gap-1.5 hover:opacity-60 transition-all cursor-pointer"
+                          >
+                            <PlusCircle className="w-3.5 h-3.5" /> Add Prompt
+                          </button>
+                        </div>
+                        <div className="space-y-3">
+                          {chatbotSettings.suggestedPrompts.map((prompt, idx) => (
+                            <div key={idx} className="flex gap-2 group items-center">
+                              <input
+                                className="flex-1 px-4 py-2.5 bg-neutral-50 border-2 border-neutral-100 rounded-xl text-xs font-medium outline-none focus:border-black transition-all focus:bg-white"
+                                value={prompt}
+                                onChange={(e) => {
+                                  const newPrompts = [...chatbotSettings.suggestedPrompts];
+                                  newPrompts[idx] = e.target.value;
+                                  handleChatbotInputChange('suggestedPrompts', newPrompts);
+                                }}
+                                placeholder={`Starter #${idx + 1}`}
+                              />
+                              <button
+                                onClick={() => {
+                                  const newPrompts = chatbotSettings.suggestedPrompts.filter(
+                                    (_, i) => i !== idx
+                                  );
+                                  handleChatbotInputChange('suggestedPrompts', newPrompts);
+                                }}
+                                className="p-2 text-neutral-300 hover:text-red-500 transition-colors cursor-pointer group-hover:scale-110"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="border-2 border-neutral-100 bg-white rounded-xl overflow-hidden flex flex-col">
+                  <div className="p-8 border-b border-neutral-100 bg-neutral-50/40">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center border-2 border-neutral-100 transition-colors">
+                        <BookOpen className="w-5 h-5 text-black" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-xl text-neutral-900">
+                          Knowledge Architecture
+                        </h3>
+                        <p className="text-xs text-neutral-500">
+                          Static facts and services injected into queries.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-8 space-y-12">
+                    <div className="grid sm:grid-cols-2 gap-10">
+                      <div>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 block mb-4">
+                          Legacy Bio & Context Injection
+                        </label>
+                        <textarea
+                          className="w-full px-5 py-4 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-2xl outline-none text-sm leading-relaxed transition-all min-h-[180px] focus:bg-white"
+                          value={chatbotSettings.baseKnowledge}
+                          onChange={(e) =>
+                            handleChatbotInputChange('baseKnowledge', e.target.value)
+                          }
+                          placeholder="Inject project history, skills, and personal data..."
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 block mb-4">
+                          Services Taxonomy
+                        </label>
+                        <textarea
+                          className="w-full px-5 py-4 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-2xl outline-none text-[13px] font-mono leading-relaxed transition-all min-h-[180px] focus:bg-white"
+                          value={chatbotSettings.servicesOffered}
+                          onChange={(e) =>
+                            handleChatbotInputChange('servicesOffered', e.target.value)
+                          }
+                          placeholder="JSON or List of primary business offerings..."
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-8 border-t border-neutral-100">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 block mb-4">
+                        Initial Salutation
+                      </label>
+                      <textarea
+                        className="w-full px-6 py-5 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-2xl outline-none text-[15px] font-medium leading-relaxed transition-all min-h-[120px] focus:bg-white"
+                        value={chatbotSettings.welcomeMessage}
+                        onChange={(e) => handleChatbotInputChange('welcomeMessage', e.target.value)}
+                        placeholder="The first sentence the AI speaks when chat opens..."
+                      />
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          </div>
+        )}
+
         <AgentConfigurationModal
           isOpen={isAgentModalOpen}
-          onClose={() => setIsAgentModalOpen(false)}
+          onClose={() => {
+            setIsAgentModalOpen(false);
+            fetchAgents(); // Sync execution counts on close
+          }}
           agentData={selectedAgent}
           providers={providers}
           onSave={() => {

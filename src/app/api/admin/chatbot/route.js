@@ -80,6 +80,7 @@ export async function GET() {
       welcomeMessage: settings.welcomeMessage || '',
       rules: settings.rules,
       isActive: settings.isActive,
+      defaultEngine: settings.defaultEngine || 'fast',
     });
   } catch (error) {
     console.error('Error fetching chatbot settings:', error);
@@ -172,6 +173,7 @@ export async function POST(request) {
       welcomeMessage = '',
       rules,
       isActive = true,
+      defaultEngine = 'fast',
     } = body;
 
     // Validate required fields
@@ -196,6 +198,7 @@ export async function POST(request) {
       settings.welcomeMessage = welcomeMessage;
       settings.rules = filteredRules;
       settings.isActive = isActive;
+      settings.defaultEngine = defaultEngine;
 
       await settings.save();
     } else {
@@ -210,6 +213,7 @@ export async function POST(request) {
         welcomeMessage,
         rules: filteredRules,
         isActive,
+        defaultEngine,
       });
 
       await settings.save();
@@ -235,6 +239,7 @@ export async function POST(request) {
         welcomeMessage: settings.welcomeMessage,
         rules: settings.rules,
         isActive: settings.isActive,
+        defaultEngine: settings.defaultEngine,
       },
     });
   } catch (error) {

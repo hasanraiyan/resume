@@ -182,24 +182,6 @@ export default async function AdminDashboard() {
             </Card>
           </Link>
 
-          <Link href="/admin/chatbot" className="group">
-            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group-hover:bg-neutral-900 group-hover:text-white">
-              <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-neutral-100 group-hover:bg-white rounded-lg flex items-center justify-center transition-colors">
-                  <i className="fas fa-robot text-neutral-600 group-hover:text-black text-lg"></i>
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-black group-hover:text-white mb-1">
-                    Chatbot Settings
-                  </h3>
-                  <p className="text-sm text-neutral-600 group-hover:text-neutral-300">
-                    Configure AI chatbot settings
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </Link>
-
           <Link href="/admin/sections/contact" className="group">
             <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group-hover:bg-neutral-900 group-hover:text-white">
               <div className="flex items-start space-x-4">
