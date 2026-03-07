@@ -2,7 +2,6 @@ import { User, Bot } from 'lucide-react';
 import ToolCard from './ToolCard';
 import StepHistory from './StepHistory';
 import MdContent from './MdContent';
-import ResearchPlanningIndicator from './ResearchPlanningIndicator';
 
 export default function MessageList({
   messages,
@@ -85,7 +84,6 @@ export default function MessageList({
 
       {isLoading && !messages.some((m) => m.role === 'tool_action' && !m.done) && (
         <div className="flex gap-3 flex-col animate-in slide-in-from-bottom-2 duration-300 w-full mt-1">
-          <ResearchPlanningIndicator isActive={isLoading} />
           <div className="flex gap-3">
             <div className="relative w-7 h-7 shrink-0 flex items-center justify-center">
               <div className="absolute inset-0 rounded-full border-[1.5px] border-neutral-200" />
