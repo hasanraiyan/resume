@@ -7,11 +7,10 @@ import { getBackendMCPConfig } from '@/lib/mcpConfig';
 import agentRegistry from '../AgentRegistry';
 import Article from '@/models/Article';
 import { uploadGeneratedImage } from '@/app/actions/mediaActions';
-import { revalidatePath } from 'next/cache';
 
-// Current date context for time-sensitive research
-const CURRENT_DATE = 'March 2026';
-const CURRENT_YEAR = '2026';
+// Dynamic date context for time-sensitive research
+const CURRENT_DATE = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+const CURRENT_YEAR = new Date().getFullYear().toString();
 
 const BlogGenState = Annotation.Root({
   topic: Annotation({ reducer: (_, b) => b, default: () => '' }),
@@ -39,14 +38,7 @@ class BlogWriterAgent extends BaseAgent {
     const self = this;
 
     // Node tracking for progress calculation
-    const nodeOrder = [
-      'researchTopic',
-      'planOutline',
-      'writeDraft',
-      'generateImages',
-      'assemblePost',
-      'saveDraft',
-    ];
+    const nodeOrder = ['researchTopic', 'planOutline', 'writeAndGenerate', 'assembleAndSave'];
     const totalNodes = nodeOrder.length;
     let completedNodes = 0;
 
@@ -56,7 +48,6 @@ class BlogWriterAgent extends BaseAgent {
         try {
           const result = await nodeFunc(state);
 
-          // Calculate and emit progress
           completedNodes++;
           const progressPercent = Math.round((completedNodes / totalNodes) * 100);
 
@@ -66,7 +57,6 @@ class BlogWriterAgent extends BaseAgent {
               percent: progressPercent,
             };
 
-            // Include article ID in final progress event
             if (result.articleId) {
               progressEvent.articleId = result.articleId;
             }
@@ -86,7 +76,6 @@ class BlogWriterAgent extends BaseAgent {
     const researchTopic = async (state) => {
       self.logger.info(`Researching topic: ${state.topic}`);
 
-      // Emit status about starting research
       if (emitStatus) {
         emitStatus({ type: 'status', message: '🔍 Researching topic with live web search...' });
       }
@@ -133,7 +122,6 @@ class BlogWriterAgent extends BaseAgent {
 
       const llm = await self.createChatModel({ temperature: 0.3 });
 
-      // Enhanced system prompt with explicit date context and live info requirements
       const systemPrompt = `You are an expert technical researcher with access to live web search tools. Your job is to research topics thoroughly and provide CURRENT, UP-TO-DATE information.
 
 CURRENT DATE: ${CURRENT_DATE} (this is critical - prioritize information from ${CURRENT_YEAR} and late ${parseInt(CURRENT_YEAR) - 1})
@@ -223,16 +211,9 @@ Output a comprehensive research summary with all your findings, including source
       return { researchNotes, status: 'Research complete' };
     };
 
-    // ─── Node 2: Plan outline from research ───
+    // ─── Node 2: Plan outline + extract image prompts & metadata ───
     const planOutline = async (state) => {
       self.logger.info(`Planning outline from research...`);
-
-      if (emitStatus) {
-        emitStatus({
-          type: 'status',
-          message: '📝 Creating article outline based on latest research...',
-        });
-      }
 
       if (emitStatus) {
         emitStatus({
@@ -266,22 +247,78 @@ For each section, note:
 - Where to place comparison tables
 - Where to use the real-world analogy
 
-IMPORTANT: Ensure the outline reflects that this article is being written in ${CURRENT_DATE}.`;
+IMPORTANT: Ensure the outline reflects that this article is being written in ${CURRENT_DATE}.
+
+Also plan 2-4 images for the article. For each image, provide a highly detailed generation prompt.
+
+Output a JSON block at the very end with metadata AND image prompts:
+\`\`\`json
+{
+  "title": "Exact article title",
+  "slug": "lowercase-hyphenated-version",
+  "excerpt": "Compelling 2-sentence summary, 150-200 characters",
+  "tags": ["primary-category", "tag2", "tag3", "tag4", "tag5"],
+  "imagePrompts": [
+    { "id": "IMAGE_0", "prompt": "A clean, minimal infographic-style illustration on a white background. DETAILED DESCRIPTION HERE. Soft pastel colors, geometric shapes, modern editorial style. No text.", "aspect": "16:9" },
+    { "id": "IMAGE_1", "prompt": "A clean, minimal infographic-style illustration on a white background. DETAILED DESCRIPTION HERE. Soft pastel colors, geometric shapes, modern editorial style. No text.", "aspect": "16:9" }
+  ]
+}
+\`\`\`
+
+Image prompt requirements:
+- ALWAYS specify "white background" and "no text" in every prompt
+- Be EXTREMELY specific and detailed about what objects, actions, and layout to show
+- Style: clean, minimal, infographic-style illustration with soft pastel colors
+- The first image (IMAGE_0) should be a cover/hero image about the overall topic
+- Provide 5-8 lowercase tags. The first tag should be the primary category (e.g., "javascript", "react", "architecture").`;
 
       const result = await llm.invoke([{ role: 'user', content: prompt }]);
+      const content = result.content;
 
-      return { outline: result.content, status: 'Outline planned' };
+      // Extract JSON metadata + imagePrompts
+      let metadata = {};
+      let imagePrompts = [];
+      const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/);
+      if (jsonMatch) {
+        try {
+          const parsed = JSON.parse(jsonMatch[1]);
+          imagePrompts = parsed.imagePrompts || [];
+          delete parsed.imagePrompts;
+          metadata = parsed;
+        } catch (e) {
+          self.logger.warn('Failed to parse outline JSON:', e);
+        }
+      }
+
+      if (!metadata.title) metadata.title = state.topic;
+      if (!metadata.slug)
+        metadata.slug = state.topic
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)+/g, '');
+      if (!metadata.excerpt) metadata.excerpt = 'A comprehensive guide to ' + state.topic;
+      if (!metadata.tags) metadata.tags = [state.topic.split(' ')[0]];
+
+      const cleanOutline = content.replace(/```json\n[\s\S]*?\n```/, '').trim();
+
+      return { outline: cleanOutline, imagePrompts, metadata, status: 'Outline planned' };
     };
 
-    const writeDraft = async (state) => {
+    // ─── Inner function: Write the draft ───
+    const writeDraftFn = async (state) => {
       self.logger.info(`Writing draft...`);
-      // No status messages - progress events only
 
       if (emitStatus) {
         emitStatus({ type: 'status', message: '✍️ Writing article with latest information...' });
       }
 
       const llm = await self.createChatModel({ temperature: 0.7 });
+
+      // Build image placement instructions from pre-planned prompts
+      const imagePlaceholders = (state.imagePrompts || [])
+        .map((img) => `  ${img.id}: ${img.prompt}`)
+        .join('\n');
+
       const prompt = `You are an expert technical writer for a developer portfolio blog. Write a professional, high-quality blog post with UP-TO-DATE information.
 
 CURRENT DATE: ${CURRENT_DATE} (this article is being written in ${CURRENT_YEAR})
@@ -315,74 +352,23 @@ WRITING RULES:
 
 DATE CONTEXT: Mention when relevant that information is current as of ${CURRENT_DATE}. If discussing trends, note they are ${CURRENT_YEAR} trends.
 
-IMAGE RULES:
-Insert 2-4 images at key points using this exact markdown format:
-  ![A clean, minimal infographic-style illustration on a white background. DETAILED DESCRIPTION HERE. Soft pastel colors, geometric shapes, modern editorial style. No text.](IMAGE_0)
-  ![A clean, minimal infographic-style illustration on a white background. DETAILED DESCRIPTION HERE. Soft pastel colors, geometric shapes, modern editorial style. No text.](IMAGE_1)
+IMAGE PLACEMENT:
+Insert these pre-planned images at appropriate points in your article using this exact markdown format:
+${imagePlaceholders}
 
-Image prompt requirements:
-- ALWAYS specify "white background" and "no text" in every prompt
-- Be EXTREMELY specific and detailed about what objects, actions, and layout to show
-- Style: clean, minimal, infographic-style illustration with soft pastel colors
-- The first image should be a cover/hero image about the overall topic
+Use: ![brief description](IMAGE_X) where IMAGE_X matches the IDs above.
+Place them at natural visual break points between sections. The first image (IMAGE_0) should appear near the top as a hero image.
 
-METADATA (output at the very end as a JSON code block):
-\`\`\`json
-{
-  "title": "Exact title from the article",
-  "slug": "lowercase-hyphenated-version",
-  "excerpt": "Compelling 2-sentence summary, 150-200 characters",
-  "tags": ["primary-category", "tag2", "tag3", "tag4", "tag5"]
-}
-\`\`\`
-Provide 5-8 lowercase tags. The first tag should be the primary category (e.g., "javascript", "react", "architecture").`;
+Do NOT output any JSON metadata block — just the article content.`;
 
       const result = await llm.invoke([{ role: 'user', content: prompt }]);
-      const content = result.content;
 
-      // Extract JSON metadata
-      let metadata = {};
-      const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/);
-      if (jsonMatch) {
-        try {
-          metadata = JSON.parse(jsonMatch[1]);
-        } catch (e) {
-          self.logger.warn('Failed to parse metadata JSON:', e);
-        }
-      }
-
-      if (!metadata.title) metadata.title = state.topic;
-      if (!metadata.slug)
-        metadata.slug = state.topic
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)+/g, '');
-      if (!metadata.excerpt) metadata.excerpt = 'A comprehensive guide to ' + state.topic;
-      if (!metadata.tags) metadata.tags = [state.topic.split(' ')[0]];
-
-      const cleanContent = content.replace(/```json\n[\s\S]*?\n```/, '').trim();
-
-      // Extract Image Prompts from markdown format: ![description](IMAGE_0)
-      const imagePrompts = [];
-      const imageRegex = /!\[(.*?)\]\((IMAGE_\d+)\)/g;
-      let match;
-      while ((match = imageRegex.exec(cleanContent)) !== null) {
-        const description = match[1].trim();
-        const imageId = match[2].trim();
-
-        imagePrompts.push({
-          id: imageId,
-          prompt: description,
-          aspect: '16:9', // Default to 16:9 for all blog images
-        });
-      }
-
-      return { rawContent: cleanContent, imagePrompts, metadata, status: 'Draft written' };
+      return { rawContent: result.content.trim() };
     };
 
-    const generateImages = async (state) => {
-      self.logger.info(`Generating images...`);
-      // No status messages - progress events only
+    // ─── Inner function: Generate all images in parallel ───
+    const generateImagesFn = async (state) => {
+      self.logger.info(`Generating images in parallel...`);
 
       if (emitStatus) {
         emitStatus({ type: 'status', message: '🎨 Generating custom illustrations...' });
@@ -393,50 +379,78 @@ Provide 5-8 lowercase tags. The first tag should be the primary category (e.g., 
       if (state.imagePrompts && state.imagePrompts.length > 0) {
         const imageGenerator = agentRegistry.get(AGENT_IDS.IMAGE_GENERATOR);
 
-        for (const [index, img] of state.imagePrompts.entries()) {
-          // Silently generate images, no status updates
-          try {
-            const result = await imageGenerator.execute({
-              prompt: img.prompt,
-              aspectRatio: img.aspect,
-            });
-            if (result && result.buffer) {
-              // Use the shared upload function that also saves to media library
-              const uploadRes = await uploadGeneratedImage({
-                buffer: result.buffer,
-                mimeType: result.mimeType,
-                filename: `blog_${img.id}_${Date.now()}.${result.mimeType.split('/')[1]}`,
+        const generateSingleImage = async (img) => {
+          // Try up to 2 attempts (1 initial + 1 retry)
+          for (let attempt = 0; attempt < 2; attempt++) {
+            try {
+              const result = await imageGenerator.execute({
                 prompt: img.prompt,
-                source: 'blog_writer',
+                aspectRatio: img.aspect,
               });
-              if (uploadRes.success) {
-                generatedImages[img.id] = uploadRes.asset.secure_url;
+              if (result && result.buffer) {
+                const uploadRes = await uploadGeneratedImage({
+                  buffer: result.buffer,
+                  mimeType: result.mimeType,
+                  filename: `blog_${img.id}_${Date.now()}.${result.mimeType.split('/')[1]}`,
+                  prompt: img.prompt,
+                  source: 'blog_writer',
+                });
+                if (uploadRes.success) {
+                  return { id: img.id, url: uploadRes.asset.secure_url };
+                }
+              }
+            } catch (e) {
+              self.logger.warn(`Image ${img.id} attempt ${attempt + 1} failed:`, e.message);
+              if (attempt === 1) {
+                self.logger.error(`Failed to generate image ${img.id} after retry`);
               }
             }
-          } catch (e) {
-            self.logger.error(`Failed to generate/upload image for ${img.id}:`, e);
+          }
+          return null;
+        };
+
+        const results = await Promise.allSettled(
+          state.imagePrompts.map((img) => generateSingleImage(img))
+        );
+
+        for (const result of results) {
+          if (result.status === 'fulfilled' && result.value) {
+            generatedImages[result.value.id] = result.value.url;
           }
         }
       }
 
-      return { generatedImages, status: 'Images generated' };
+      return { generatedImages };
     };
 
-    const assemblePost = async (state) => {
-      self.logger.info(`Assembling final post...`);
-      // No status messages - progress events only
-
+    // ─── Node 3: Write draft & generate images in parallel ───
+    const writeAndGenerate = async (state) => {
       if (emitStatus) {
-        emitStatus({ type: 'status', message: '✨ Assembling final article...' });
+        emitStatus({ type: 'status', message: '✍️ Writing draft & generating images...' });
       }
 
+      const [draftResult, imageResult] = await Promise.all([
+        writeDraftFn(state),
+        generateImagesFn(state),
+      ]);
+
+      return { ...draftResult, ...imageResult, status: 'Draft & images complete' };
+    };
+
+    // ─── Node 4: Assemble final post & save to database ───
+    const assembleAndSave = async (state) => {
+      self.logger.info(`Assembling and saving...`);
+
+      if (emitStatus) {
+        emitStatus({ type: 'status', message: '✨ Assembling & saving article...' });
+      }
+
+      // Replace image placeholders with real URLs
       let finalContent = state.rawContent;
       let coverImage = null;
 
-      // Replace placeholders in markdown format: ![description](IMAGE_0) -> ![description](url)
       for (const [id, url] of Object.entries(state.generatedImages)) {
-        if (!coverImage) coverImage = url; // first image becomes cover
-        // Replace IMAGE_0, IMAGE_1, etc. with actual URLs
+        if (!coverImage) coverImage = url;
         const regex = new RegExp(`\\(${id}\\)`, 'g');
         finalContent = finalContent.replace(regex, `(${url})`);
       }
@@ -444,42 +458,28 @@ Provide 5-8 lowercase tags. The first tag should be the primary category (e.g., 
       const finalMeta = { ...state.metadata };
       if (coverImage) finalMeta.coverImage = coverImage;
 
-      return { finalContent, metadata: finalMeta, status: 'Post assembled' };
-    };
-
-    const saveDraft = async (state) => {
-      self.logger.info(`Saving draft...`);
-      // No status messages - progress events only
-
-      if (emitStatus) {
-        emitStatus({ type: 'status', message: '💾 Saving article draft...' });
-      }
-
-      let slug = state.metadata.slug;
-
       // Ensure unique slug
+      let slug = finalMeta.slug;
       let counter = 1;
       let existing = await Article.findOne({ slug });
       while (existing) {
-        slug = `${state.metadata.slug}-${counter}`;
+        slug = `${finalMeta.slug}-${counter}`;
         existing = await Article.findOne({ slug });
         counter++;
       }
 
       const article = new Article({
-        title: state.metadata.title,
+        title: finalMeta.title,
         slug: slug,
-        excerpt: state.metadata.excerpt,
-        content: state.finalContent,
-        coverImage: state.metadata.coverImage || '',
-        tags: state.metadata.tags || [],
+        excerpt: finalMeta.excerpt,
+        content: finalContent,
+        coverImage: finalMeta.coverImage || '',
+        tags: finalMeta.tags || [],
         status: 'draft',
         visibility: 'public',
       });
 
       await article.save();
-
-      // No status messages - progress events only (emitted by wrapNode)
 
       return { articleId: article._id.toString(), status: 'Done' };
     };
@@ -487,17 +487,13 @@ Provide 5-8 lowercase tags. The first tag should be the primary category (e.g., 
     const graph = new StateGraph(BlogGenState)
       .addNode('researchTopic', wrapNode('researchTopic', researchTopic))
       .addNode('planOutline', wrapNode('planOutline', planOutline))
-      .addNode('writeDraft', wrapNode('writeDraft', writeDraft))
-      .addNode('generateImages', wrapNode('generateImages', generateImages))
-      .addNode('assemblePost', wrapNode('assemblePost', assemblePost))
-      .addNode('saveDraft', wrapNode('saveDraft', saveDraft))
+      .addNode('writeAndGenerate', wrapNode('writeAndGenerate', writeAndGenerate))
+      .addNode('assembleAndSave', wrapNode('assembleAndSave', assembleAndSave))
       .addEdge(START, 'researchTopic')
       .addEdge('researchTopic', 'planOutline')
-      .addEdge('planOutline', 'writeDraft')
-      .addEdge('writeDraft', 'generateImages')
-      .addEdge('generateImages', 'assemblePost')
-      .addEdge('assemblePost', 'saveDraft')
-      .addEdge('saveDraft', END);
+      .addEdge('planOutline', 'writeAndGenerate')
+      .addEdge('writeAndGenerate', 'assembleAndSave')
+      .addEdge('assembleAndSave', END);
 
     return graph.compile();
   }
@@ -510,10 +506,6 @@ Provide 5-8 lowercase tags. The first tag should be the primary category (e.g., 
 
   async *_onStreamExecute(input) {
     const { topic } = input;
-
-    // We set the statusEmitter to yield directly from the node steps
-    // Since node execution is somewhat opaque in streaming if we don't hook into its internal events,
-    // we use a callback pattern mapped to our `yield` mechanism.
 
     let currentResolver = null;
     let eventsQueue = [];
@@ -543,12 +535,11 @@ Provide 5-8 lowercase tags. The first tag should be the primary category (e.g., 
       if (eventsQueue.length > 0) {
         const event = eventsQueue.shift();
         if (event.type === 'done') {
-          // Don't send content message - just let progress bar handle it
           break;
         } else if (event.type === 'error') {
           throw new Error(event.error);
         } else {
-          yield event; // Only yield progress events
+          yield event;
         }
       } else {
         await new Promise((resolve) => {

@@ -8,11 +8,14 @@ import { Card } from '@/components/ui';
 import { AGENT_IDS } from '@/lib/constants/agents';
 
 const AI_STEPS = [
-  { id: 'planTopic', label: 'Researching & planning outline', icon: 'fa-magnifying-glass' },
-  { id: 'writeDraft', label: 'Writing SEO-optimized draft', icon: 'fa-pen-nib' },
-  { id: 'generateImages', label: 'Generating images', icon: 'fa-image' },
-  { id: 'assemblePost', label: 'Assembling final post', icon: 'fa-puzzle-piece' },
-  { id: 'saveDraft', label: 'Saving to database', icon: 'fa-floppy-disk' },
+  { id: 'researchTopic', label: 'Researching topic', icon: 'fa-magnifying-glass' },
+  { id: 'planOutline', label: 'Planning outline & images', icon: 'fa-pen-nib' },
+  {
+    id: 'writeAndGenerate',
+    label: 'Writing draft & generating images',
+    icon: 'fa-wand-magic-sparkles',
+  },
+  { id: 'assembleAndSave', label: 'Assembling & saving article', icon: 'fa-floppy-disk' },
 ];
 
 export default function NewArticlePage() {
@@ -47,7 +50,7 @@ export default function NewArticlePage() {
     if (!topic.trim()) return;
 
     setIsGenerating(true);
-    setProgress(0);
+    setProgress(1);
     setError(null);
 
     const abortController = new AbortController();
