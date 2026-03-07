@@ -33,14 +33,25 @@ export async function POST(request, { params }) {
     }
 
     // 2. Decrypt Credentials
+    const sensitiveFields = [
+      'botToken',
+      'accessToken',
+      'phoneNumberId',
+      'verifyToken',
+      'accountSid',
+      'authToken',
+    ];
     const credentials = {};
-    if (integration.credentials instanceof Map) {
-      for (const [key, value] of integration.credentials.entries()) {
+    const rawCredentials =
+      integration.credentials instanceof Map
+        ? Object.fromEntries(integration.credentials)
+        : integration.credentials || {};
+
+    for (const [key, value] of Object.entries(rawCredentials)) {
+      if (sensitiveFields.includes(key) && value && value.includes(':')) {
         credentials[key] = decrypt(value);
-      }
-    } else {
-      for (const [key, value] of Object.entries(integration.credentials || {})) {
-        credentials[key] = decrypt(value);
+      } else {
+        credentials[key] = value;
       }
     }
 
@@ -60,9 +71,26 @@ export async function POST(request, { params }) {
     }
 
     // 5. Parse Generic Message
-    // Note: Some webhooks send form data, some send json. We clone/read raw.
-    // Assuming JSON payloads for now (e.g., Telegram).
-    const rawBody = await request.json();
+    // Note: Some webhooks send form data (Twilio), some send json (Telegram).
+    let rawBody;
+    const contentType = request.headers.get('content-type') || '';
+
+    if (contentType.includes('application/x-www-form-urlencoded')) {
+      const formData = await request.formData();
+      rawBody = Object.fromEntries(formData.entries());
+    } else {
+      try {
+        rawBody = await request.json();
+      } catch (e) {
+        // Fallback to text if JSON parsing fails
+        const text = await request.text();
+        console.warn(
+          `[Webhook] Failed to parse JSON, falling back to text. Body starting with: ${text.substring(0, 20)}`
+        );
+        rawBody = text;
+      }
+    }
+
     const parsedData = await adapter.parseMessage(rawBody);
 
     if (!parsedData) {

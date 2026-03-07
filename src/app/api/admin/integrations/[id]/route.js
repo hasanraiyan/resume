@@ -21,7 +21,14 @@ export async function GET(request, { params }) {
     }
 
     // Sanitize credentials
-    const sensitiveFields = ['botToken', 'accessToken', 'phoneNumberId', 'verifyToken'];
+    const sensitiveFields = [
+      'botToken',
+      'accessToken',
+      'phoneNumberId',
+      'verifyToken',
+      'accountSid',
+      'authToken',
+    ];
     if (integration.credentials) {
       for (let key in integration.credentials) {
         if (sensitiveFields.includes(key)) {

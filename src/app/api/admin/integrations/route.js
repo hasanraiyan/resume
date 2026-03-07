@@ -17,7 +17,14 @@ export async function GET(request) {
     const integrations = await IntegrationSettings.find({}).sort({ createdAt: -1 });
 
     // Sanitize credentials
-    const sensitiveFields = ['botToken', 'accessToken', 'phoneNumberId', 'verifyToken'];
+    const sensitiveFields = [
+      'botToken',
+      'accessToken',
+      'phoneNumberId',
+      'verifyToken',
+      'accountSid',
+      'authToken',
+    ];
     const sanitizedIntegrations = integrations.map((i) => {
       const iObj = i.toObject();
       if (iObj.credentials) {
@@ -61,7 +68,14 @@ export async function POST(request) {
 
     // Encrypt sensitive credential values
     const encryptedCredentials = {};
-    const sensitiveFields = ['botToken', 'accessToken', 'phoneNumberId', 'verifyToken'];
+    const sensitiveFields = [
+      'botToken',
+      'accessToken',
+      'phoneNumberId',
+      'verifyToken',
+      'accountSid',
+      'authToken',
+    ];
     for (const [key, value] of Object.entries(credentials)) {
       if (value) {
         encryptedCredentials[key] = sensitiveFields.includes(key) ? encrypt(value) : value;
@@ -81,7 +95,14 @@ export async function POST(request) {
 
     const sanitized = newIntegration.toObject();
     if (sanitized.credentials) {
-      const sensitiveFields = ['botToken', 'accessToken', 'phoneNumberId', 'verifyToken'];
+      const sensitiveFields = [
+        'botToken',
+        'accessToken',
+        'phoneNumberId',
+        'verifyToken',
+        'accountSid',
+        'authToken',
+      ];
       for (let key in sanitized.credentials) {
         if (sensitiveFields.includes(key)) {
           sanitized.credentials[key] = '***************';

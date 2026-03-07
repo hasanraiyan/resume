@@ -113,11 +113,10 @@ import mongoose from 'mongoose';
  */
 const AnalyticsSchema = new mongoose.Schema(
   {
-    // Event type: 'pageview', 'custom', etc.
+    // Event type: 'pageview', 'custom', 'telegram_interaction', etc.
     eventType: {
       type: String,
       required: true,
-      enum: ['pageview', 'custom', 'click', 'form_submit', 'download', 'chatbot_interaction'],
       index: true,
     },
 
@@ -363,5 +362,10 @@ AnalyticsSchema.statics.getSessionStats = async function (startDate, endDate) {
     },
   ]);
 };
+
+// src/models/Analytics.js
+if (process.env.NODE_ENV === 'development' && mongoose.models.Analytics) {
+  delete mongoose.models.Analytics;
+}
 
 export default mongoose.models.Analytics || mongoose.model('Analytics', AnalyticsSchema);
