@@ -95,33 +95,58 @@ export class TwilioAdapter extends BaseIntegrationAdapter {
         from = from.replace(':', ':+');
       }
 
-      console.log(`[TwilioAdapter] Sending message - To: ${to}, From: ${from}`);
-
-      const params = new URLSearchParams();
-      params.append('To', to);
-      params.append('From', from);
-      params.append('Body', text);
-
-      const response = await fetch(this.apiUrl, {
-        method: 'POST',
-        headers: {
-          Authorization: `Basic ${auth}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: params.toString(),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        let errorMsg = result.message || response.statusText;
-        if (errorMsg.includes('Channel with the specified From address')) {
-          errorMsg += ` (Tip: If using Twilio Sandbox, the "From" number MUST be exactly as shown in your Twilio Console, usually ending in 8886. If using a personal Twilio number, ensure the WhatsApp Sender is approved in Twilio Console.)`;
+      // Split into chunks if message exceeds Twilio's 1600 character limit
+      const MAX_LENGTH = 1600;
+      const chunks = [];
+      if (text.length <= MAX_LENGTH) {
+        chunks.push(text);
+      } else {
+        let remaining = text;
+        while (remaining.length > 0) {
+          if (remaining.length <= MAX_LENGTH) {
+            chunks.push(remaining);
+            break;
+          }
+          let splitIdx = remaining.lastIndexOf('\n', MAX_LENGTH);
+          if (splitIdx <= 0) splitIdx = remaining.lastIndexOf(' ', MAX_LENGTH);
+          if (splitIdx <= 0) splitIdx = MAX_LENGTH;
+          chunks.push(remaining.slice(0, splitIdx));
+          remaining = remaining.slice(splitIdx).trimStart();
         }
-        throw new Error(`Twilio API error: ${errorMsg}`);
       }
 
-      return result;
+      console.log(
+        `[TwilioAdapter] Sending message - To: ${to}, From: ${from}, Chunks: ${chunks.length}`
+      );
+
+      let lastResult;
+      for (const chunk of chunks) {
+        const params = new URLSearchParams();
+        params.append('To', to);
+        params.append('From', from);
+        params.append('Body', chunk);
+
+        const response = await fetch(this.apiUrl, {
+          method: 'POST',
+          headers: {
+            Authorization: `Basic ${auth}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: params.toString(),
+        });
+
+        lastResult = await response.json();
+
+        if (!response.ok) {
+          let errorMsg = lastResult.message || response.statusText;
+          if (errorMsg.includes('Channel with the specified From address')) {
+            errorMsg += ` (Tip: If using Twilio Sandbox, the "From" number MUST be exactly as shown in your Twilio Console, usually ending in 8886. If using a personal Twilio number, ensure the WhatsApp Sender is approved in Twilio Console.)`;
+          }
+          throw new Error(`Twilio API error: ${errorMsg}`);
+        }
+      }
+
+      return lastResult;
     } catch (error) {
       console.error('[TwilioAdapter] Error sending message:', error);
       throw error;

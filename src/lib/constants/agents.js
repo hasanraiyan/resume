@@ -23,6 +23,7 @@ export const AGENT_IDS = {
   CHAT_THINKING: 'chat_thinking',
   CONTACT_FORM_ASSISTANT: 'contact_form_assistant',
   TELEGRAM_ASSISTANT: 'telegram_assistant',
+  WHATSAPP_ASSISTANT: 'whatsapp_assistant',
 
   // Content Agents
   BLOG_WRITER: 'blog_writer',
@@ -197,6 +198,17 @@ export const DEFAULT_AGENT_CONFIGS = {
     persona: '', // Driven by UI configuration
     isActive: true,
   },
+  [AGENT_IDS.WHATSAPP_ASSISTANT]: {
+    name: 'WhatsApp Assistant',
+    description: 'Dedicated agent for handling WhatsApp interactions',
+    type: AGENT_TYPES.CHAT,
+    category: AGENT_CATEGORIES.CONVERSATIONAL,
+    icon: 'MessageCircle',
+    defaultModel: 'gpt-4o',
+    defaultProvider: 'openai',
+    persona: '', // Driven by UI configuration
+    isActive: true,
+  },
   [AGENT_IDS.BLOG_WRITER]: {
     name: 'Blog Writer',
     description: 'Assists in writing and structuring blog posts',
@@ -260,6 +272,7 @@ export const AGENT_TOOLS = {
   [AGENT_IDS.CHAT_THINKING]: ['conversation', 'tool_use', 'generative_ui'],
   [AGENT_IDS.CONTACT_FORM_ASSISTANT]: ['form_handling', 'validation', 'submission'],
   [AGENT_IDS.TELEGRAM_ASSISTANT]: [], // Tools configured dynamically via UI
+  [AGENT_IDS.WHATSAPP_ASSISTANT]: [], // Tools configured dynamically via UI
   [AGENT_IDS.BLOG_WRITER]: ['writing', 'editing', 'seo_optimization'],
   [AGENT_IDS.CODE_REPORTER]: ['code_analysis', 'documentation', 'reporting'],
   [AGENT_IDS.ISSUE_MANAGER]: ['issue_tracking', 'template_generation', 'assignment'],
@@ -283,6 +296,7 @@ export const RATE_LIMIT_DEFAULTS = {
   [AGENT_IDS.CHAT_THINKING]: { requests: 5, window: 60 },
   [AGENT_IDS.CONTACT_FORM_ASSISTANT]: { requests: 10, window: 60 },
   [AGENT_IDS.TELEGRAM_ASSISTANT]: { requests: 20, window: 60 },
+  [AGENT_IDS.WHATSAPP_ASSISTANT]: { requests: 20, window: 60 },
   [AGENT_IDS.BLOG_WRITER]: { requests: 10, window: 60 },
   [AGENT_IDS.CODE_REPORTER]: { requests: 10, window: 60 },
   [AGENT_IDS.ISSUE_MANAGER]: { requests: 15, window: 60 },

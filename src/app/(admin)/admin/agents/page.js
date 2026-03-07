@@ -23,6 +23,7 @@ import {
   Save,
   RotateCcw,
   PlusCircle,
+  X,
 } from 'lucide-react';
 import AgentConfigurationModal from '@/components/admin/AgentConfigurationModal';
 import { Card } from '@/components/ui';
