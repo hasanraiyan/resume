@@ -123,7 +123,8 @@ class PresentationAgent extends BaseAgent {
       const mcpServerConfig = {};
       for (const cfg of allActiveConfigs) {
         if (cfg && cfg.type !== 'rest' && cfg.url) {
-          mcpServerConfig[cfg.id] = { transport: 'sse', url: cfg.url };
+          mcpServerConfig[cfg.id] = { transport: cfg.type === 'http' ? 'http' : 'sse', url: cfg.url };
+              headers: cfg.type === 'http' ? cfg.headers || {} : undefined,
         }
       }
 

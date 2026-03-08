@@ -93,7 +93,8 @@ class BlogWriterAgent extends BaseAgent {
           const mcpServerConfig = {};
           for (const cfg of selectedMCPConfigs) {
             if (cfg && cfg.type !== 'rest' && cfg.url) {
-              mcpServerConfig[cfg.id] = { transport: 'sse', url: cfg.url };
+              mcpServerConfig[cfg.id] = { transport: cfg.type === 'http' ? 'http' : 'sse', url: cfg.url };
+              headers: cfg.type === 'http' ? cfg.headers || {} : undefined,
             }
           }
           if (Object.keys(mcpServerConfig).length > 0) {

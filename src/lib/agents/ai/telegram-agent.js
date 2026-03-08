@@ -120,7 +120,8 @@ class TelegramAgent extends BaseAgent {
         for (const cfg of selectedMCPConfigs) {
           if (cfg && cfg.type !== 'rest' && cfg.url) {
             mcpServerConfig[cfg.id] = {
-              transport: 'sse',
+              transport: cfg.type === 'http' ? 'http' : 'sse',
+              headers: cfg.type === 'http' ? cfg.headers || {} : undefined,
               url: cfg.url,
             };
           }
