@@ -16,8 +16,30 @@
  */
 
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import dbConnect from '@/lib/dbConnect';
 import Subscriber from '@/models/Subscriber';
+
+/**
+ * Verifies if the current user has admin privileges.
+ * Checks the user's session for authentication and admin role.
+ *
+ * @async
+ * @function isAdmin
+ * @param {Request} request - The Next.js request object containing session information
+ * @returns {Promise<boolean>} True if the user is authenticated and has admin role, false otherwise
+ */
+async function isAdmin(request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) return false;
+    return session.user.role === 'admin';
+  } catch (error) {
+    console.error('Admin check error:', error);
+    return false;
+  }
+}
 
 /**
  * GET /api/admin/subscribers - Get all subscribers (admin only)
@@ -25,8 +47,9 @@ import Subscriber from '@/models/Subscriber';
  */
 export async function GET(request) {
   try {
-    // TODO: Add authentication check for admin access
-    // For now, we'll assume admin access
+    if (!(await isAdmin(request))) {
+      return NextResponse.json({ error: 'Unauthorized. Admin access required.' }, { status: 401 });
+    }
 
     await dbConnect();
 
@@ -99,7 +122,9 @@ export async function GET(request) {
  */
 export async function DELETE(request, { params }) {
   try {
-    // TODO: Add authentication check for admin access
+    if (!(await isAdmin(request))) {
+      return NextResponse.json({ error: 'Unauthorized. Admin access required.' }, { status: 401 });
+    }
 
     await dbConnect();
 
@@ -134,7 +159,9 @@ export async function DELETE(request, { params }) {
  */
 export async function PATCH(request, { params }) {
   try {
-    // TODO: Add authentication check for admin access
+    if (!(await isAdmin(request))) {
+      return NextResponse.json({ error: 'Unauthorized. Admin access required.' }, { status: 401 });
+    }
 
     await dbConnect();
 
