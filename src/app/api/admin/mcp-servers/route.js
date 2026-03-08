@@ -29,7 +29,7 @@ export async function POST(request) {
     }
 
     const data = await request.json();
-    const { name, description, type, url, icon, color, adminOnly, isDefault, isActive } = data;
+    const { name, description, type, url, headers, icon, color, adminOnly, isDefault, isActive } = data;
 
     if (!name || !url) {
       return NextResponse.json({ error: 'Name and URL are required' }, { status: 400 });
@@ -42,6 +42,7 @@ export async function POST(request) {
       description,
       type: type || 'sse',
       url,
+      headers: headers || {},
       icon: icon || 'Server',
       color: color || 'blue-500',
       adminOnly: adminOnly ?? false,

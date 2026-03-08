@@ -19,8 +19,9 @@ export const getBackendMCPConfig = async (isAdmin = false) => {
       id: server._id.toString(),
       name: server.name,
       description: server.description || '',
-      type: 'mcp',
+      type: server.type === 'http' ? 'http' : 'mcp',
       url: server.url,
+      headers: server.headers ? Object.fromEntries(server.headers) : {},
       icon: server.icon || 'Server',
       color: server.color || 'blue-500',
       adminOnly: server.adminOnly || false,
@@ -45,7 +46,7 @@ export const getFrontendSafeMCPs = async (isAdmin = false) => {
       // Only expose tools that are fully configured and not default
       .filter(
         (mcp) =>
-          ((mcp.type === 'mcp' && mcp.url !== null) ||
+          (((mcp.type === 'mcp' || mcp.type === 'http') && mcp.url !== null) ||
             (mcp.type === 'rest' && mcp.apiKey !== null)) &&
           !mcp.isDefault
       )

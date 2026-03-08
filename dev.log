@@ -1,0 +1,588 @@
+
+> resume@0.1.0 dev /app
+> next dev --turbopack
+
+   ▲ Next.js 15.5.9 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.2:3000
+   - Experiments (use with caution):
+     · serverActions
+
+ ✓ Starting...
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+ ○ Compiling middleware ...
+ ✓ Compiled middleware in 519ms
+ ✓ Ready in 1735ms
+ ○ Compiling /admin/agents ...
+ ✓ Compiled /admin/agents in 22.2s
+WARNING: MONGODB_URI environment variable is not defined.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+ GET /admin/agents 200 in 30000ms
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+ GET /admin/agents 200 in 20290ms
+ ○ Compiling /api/analytics ...
+WARNING: MONGODB_URI environment variable is not defined.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/chatbot'
+}
+[next-auth][warn][NEXTAUTH_URL]
+https://next-auth.js.org/warnings#nextauth_url
+[next-auth][warn][NO_SECRET]
+https://next-auth.js.org/warnings#no_secret
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/actions/contactActions.js:11:1)
+    at __TURBOPACK__module__evaluation__ (.next-internal/server/app/page/actions.js (server actions loader):40:1)
+    at __TURBOPACK__module__evaluation__ (.next/server/chunks/ssr/[root-of-the-server]__e5a07c92._.js:3665:2440)
+    at Object.<anonymous> (.next/server/app/page.js:17:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/'
+}
+ ✓ Compiled /api/analytics in 9s
+ GET /api/admin/chatbot 500 in 8778ms
+ GET / 500 in 8631ms
+ GET /3D.png 404 in 8317ms
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/chatbot'
+}
+ ✓ Compiled /api/admin/providers in 497ms
+ GET /api/admin/chatbot 500 in 570ms
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/providers'
+}
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/integrations'
+}
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/providers'
+}
+ GET /api/admin/providers 500 in 1202ms
+ GET /api/admin/integrations 500 in 1218ms
+ GET /api/admin/providers 500 in 655ms
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/integrations'
+}
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/chatbot'
+}
+ GET /api/admin/integrations 500 in 585ms
+ GET /api/admin/chatbot 500 in 605ms
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+ POST /api/analytics 500 in 11772ms
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+ POST /api/analytics 500 in 11772ms
+Error fetching dynamic MCP config: [MongooseError: Operation `mcpservers.find()` buffering timed out after 10000ms]
+ GET /api/mcps 200 in 14934ms
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+ POST /api/analytics 200 in 9957ms
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+ GET /admin/agents 200 in 20332ms
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+ POST /api/analytics 200 in 611ms
+ POST /api/analytics 200 in 613ms
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/actions/contactActions.js:11:1)
+    at __TURBOPACK__module__evaluation__ (.next-internal/server/app/page/actions.js (server actions loader):40:1)
+    at __TURBOPACK__module__evaluation__ (.next/server/chunks/ssr/[root-of-the-server]__e5a07c92._.js:3665:2440)
+    at Object.<anonymous> (.next/server/app/page.js:17:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/'
+}
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/chatbot'
+}
+Skipping dbConnect because MONGODB_URI is not set.
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+Error fetching dynamic MCP config: [MongooseError: Operation `mcpservers.find()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+ GET /admin/agents 200 in 20292ms
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/actions/contactActions.js:11:1)
+    at __TURBOPACK__module__evaluation__ (.next-internal/server/app/page/actions.js (server actions loader):40:1)
+    at __TURBOPACK__module__evaluation__ (.next/server/chunks/ssr/[root-of-the-server]__e5a07c92._.js:3665:2440)
+    at Object.<anonymous> (.next/server/app/page.js:17:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/'
+}
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+ GET / 500 in 521ms
+ GET /3D.png 404 in 441ms
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/chatbot'
+}
+Skipping dbConnect because MONGODB_URI is not set.
+ GET /api/admin/chatbot 500 in 804ms
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/providers'
+}
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/integrations'
+}
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/chatbot'
+}
+ GET /api/admin/providers 500 in 637ms
+ GET /api/admin/integrations 500 in 660ms
+ GET /api/admin/chatbot 500 in 438ms
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/providers'
+}
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/chatbot'
+}
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/integrations'
+}
+ GET /api/admin/providers 500 in 596ms
+ GET /api/admin/chatbot 500 in 613ms
+ GET /api/admin/integrations 500 in 613ms
+ POST /api/analytics 200 in 9184ms
+ POST /api/analytics 200 in 9191ms
+ GET /api/mcps 200 in 8804ms
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+Error fetching dynamic MCP config: [MongooseError: Operation `mcpservers.find()` buffering timed out after 10000ms]
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+ GET /admin/agents 200 in 20281ms
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/actions/contactActions.js:11:1)
+    at __TURBOPACK__module__evaluation__ (.next-internal/server/app/page/actions.js (server actions loader):40:1)
+    at __TURBOPACK__module__evaluation__ (.next/server/chunks/ssr/[root-of-the-server]__e5a07c92._.js:3665:2440)
+    at Object.<anonymous> (.next/server/app/page.js:17:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/'
+}
+ GET / 500 in 373ms
+ GET /3D.png 404 in 365ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 1817ms
+Skipping dbConnect because MONGODB_URI is not set.
+ GET /login 200 in 5123ms
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+ GET /admin/agents 200 in 20231ms
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/actions/contactActions.js:11:1)
+    at __TURBOPACK__module__evaluation__ (.next-internal/server/app/page/actions.js (server actions loader):40:1)
+    at __TURBOPACK__module__evaluation__ (.next/server/chunks/ssr/[root-of-the-server]__e5a07c92._.js:3665:2440)
+    at Object.<anonymous> (.next/server/app/page.js:17:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/'
+}
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+ GET / 500 in 528ms
+ GET /3D.png 404 in 493ms
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/chatbot'
+}
+[next-auth][error][JWT_SESSION_ERROR]
+https://next-auth.js.org/errors#jwt_session_error Invalid Compact JWE {
+  message: 'Invalid Compact JWE',
+  stack: 'JWEInvalid: Invalid Compact JWE\n' +
+    '    at compactDecrypt (/app/.next/server/chunks/c1491_jose_dist_node_cjs_ad7cf29d._.js:2306:15)\n' +
+    '    at jwtDecrypt (/app/.next/server/chunks/c1491_jose_dist_node_cjs_ad7cf29d._.js:3770:61)\n' +
+    '    at Object.decode (/app/.next/server/chunks/b0d50_next-auth_ffd466ab._.js:725:52)\n' +
+    '    at async Object.session (/app/.next/server/chunks/b0d50_next-auth_ffd466ab._.js:2009:34)\n' +
+    '    at async AuthHandler (/app/.next/server/chunks/b0d50_next-auth_ffd466ab._.js:3155:37)\n' +
+    '    at async getServerSession (/app/.next/server/chunks/b0d50_next-auth_ffd466ab._.js:3535:21)\n' +
+    '    at async GET (/app/.next/server/chunks/[root-of-the-server]__ff08662f._.js:499:25)\n' +
+    '    at async AppRouteRouteModule.do (/app/node_modules/.pnpm/next@15.5.9_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:38696)\n' +
+    '    at async AppRouteRouteModule.handle (/app/node_modules/.pnpm/next@15.5.9_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:45978)\n' +
+    '    at async responseGenerator (/app/.next/server/chunks/4b4c5_next_8f61dd63._.js:15715:38)\n' +
+    '    at async AppRouteRouteModule.handleResponse (/app/node_modules/.pnpm/next@15.5.9_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:1:187643)\n' +
+    '    at async handleResponse (/app/.next/server/chunks/4b4c5_next_8f61dd63._.js:15777:32)\n' +
+    '    at async handler (/app/.next/server/chunks/4b4c5_next_8f61dd63._.js:15829:13)\n' +
+    '    at async DevServer.renderToResponseWithComponentsImpl (/app/node_modules/.pnpm/next@15.5.9_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/server/base-server.js:1422:9)\n' +
+    '    at async DevServer.renderPageComponent (/app/node_modules/.pnpm/next@15.5.9_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/server/base-server.js:1474:24)\n' +
+    '    at async DevServer.renderToResponseImpl (/app/node_modules/.pnpm/next@15.5.9_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/server/base-server.js:1514:32)\n' +
+    '    at async DevServer.pipeImpl (/app/node_modules/.pnpm/next@15.5.9_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/server/base-server.js:1025:25)\n' +
+    '    at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/.pnpm/next@15.5.9_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/server/next-server.js:393:17)\n' +
+    '    at async DevServer.handleRequestImpl (/app/node_modules/.pnpm/next@15.5.9_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/server/base-server.js:916:17)\n' +
+    '    at async /app/node_modules/.pnpm/next@15.5.9_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/server/dev/next-dev-server.js:399:20\n' +
+    '    at async Span.traceAsyncFn (/app/node_modules/.pnpm/next@15.5.9_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/trace/trace.js:157:20)\n' +
+    '    at async DevServer.handleRequest (/app/node_modules/.pnpm/next@15.5.9_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/server/dev/next-dev-server.js:395:24)\n' +
+    '    at async invokeRender (/app/node_modules/.pnpm/next@15.5.9_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/server/lib/router-server.js:240:21)\n' +
+    '    at async handleRequest (/app/node_modules/.pnpm/next@15.5.9_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/server/lib/router-server.js:437:24)\n' +
+    '    at async requestHandlerImpl (/app/node_modules/.pnpm/next@15.5.9_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/server/lib/router-server.js:485:13)\n' +
+    '    at async Server.requestListener (/app/node_modules/.pnpm/next@15.5.9_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/server/lib/start-server.js:226:13)',
+  name: 'JWEInvalid'
+}
+Skipping dbConnect because MONGODB_URI is not set.
+ GET /api/admin/chatbot 500 in 723ms
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/providers'
+}
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/integrations'
+}
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/chatbot'
+}
+ GET /api/admin/providers 500 in 756ms
+ GET /api/admin/integrations 500 in 779ms
+ GET /api/admin/chatbot 500 in 775ms
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/providers'
+}
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/chatbot'
+}
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/integrations'
+}
+ GET /api/admin/chatbot 500 in 605ms
+ GET /api/admin/providers 500 in 642ms
+ GET /api/admin/integrations 500 in 606ms
+ POST /api/analytics 200 in 7513ms
+ GET /api/mcps 200 in 7098ms
+ POST /api/analytics 200 in 7520ms
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+Error fetching dynamic MCP config: [MongooseError: Operation `mcpservers.find()` buffering timed out after 10000ms]
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]

@@ -14,12 +14,17 @@ const McpServerSchema = new mongoose.Schema(
     type: {
       type: String,
       default: 'sse',
-      enum: ['sse', 'stdio'],
+      enum: ['sse', 'stdio', 'http'],
     },
     url: {
       type: String,
       required: true,
       trim: true,
+    },
+    headers: {
+      type: Map,
+      of: String,
+      default: {},
     },
     icon: {
       type: String,

@@ -84,12 +84,37 @@ export default function AgentsDashboard() {
     description: '',
     type: 'sse',
     url: '',
+    headers: {},
     icon: 'Server',
     color: 'blue-500',
     isActive: true,
     adminOnly: false,
     isDefault: false,
   });
+
+  const [headerKeyInput, setHeaderKeyInput] = useState('');
+  const [headerValueInput, setHeaderValueInput] = useState('');
+
+  const handleAddHeader = () => {
+    if (!headerKeyInput.trim() || !headerValueInput.trim()) return;
+    setEditingMcp((prev) => ({
+      ...prev,
+      headers: {
+        ...(prev.headers || {}),
+        [headerKeyInput.trim()]: headerValueInput.trim(),
+      },
+    }));
+    setHeaderKeyInput('');
+    setHeaderValueInput('');
+  };
+
+  const handleRemoveHeader = (key) => {
+    setEditingMcp((prev) => {
+      const newHeaders = { ...prev.headers };
+      delete newHeaders[key];
+      return { ...prev, headers: newHeaders };
+    });
+  };
 
   // Assistant / Chatbot State
   const [chatbotSettings, setChatbotSettings] = useState({
@@ -1434,6 +1459,7 @@ export default function AgentsDashboard() {
                           onChange={(e) => setEditingMcp({ ...editingMcp, type: e.target.value })}
                         >
                           <option value="sse">SSE (HTTP/Events)</option>
+                          <option value="http">HTTP (Remote API)</option>
                           <option value="stdio" disabled>
                             stdio (Local Process)
                           </option>
@@ -1452,6 +1478,75 @@ export default function AgentsDashboard() {
                         placeholder="http://localhost:3001/sse"
                       />
                     </div>
+
+                    {editingMcp.type === 'http' && (
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block">
+                          HTTP Headers
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            className="flex-1 px-4 py-2 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-xl transition-all outline-none text-sm placeholder:text-neutral-400"
+                            placeholder="Key (e.g., Authorization)"
+                            value={headerKeyInput}
+                            onChange={(e) => setHeaderKeyInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleAddHeader();
+                              }
+                            }}
+                          />
+                          <input
+                            className="flex-1 px-4 py-2 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-xl transition-all outline-none text-sm placeholder:text-neutral-400"
+                            placeholder="Value (e.g., Bearer token...)"
+                            value={headerValueInput}
+                            onChange={(e) => setHeaderValueInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleAddHeader();
+                              }
+                            }}
+                          />
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleAddHeader();
+                            }}
+                            type="button"
+                            className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 rounded-xl text-sm font-medium transition-colors"
+                          >
+                            Add
+                          </button>
+                        </div>
+
+                        {editingMcp.headers && Object.keys(editingMcp.headers).length > 0 && (
+                          <div className="mt-3 space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                            {Object.entries(editingMcp.headers).map(([key, value]) => (
+                              <div
+                                key={key}
+                                className="flex items-center justify-between p-2 bg-neutral-50 border border-neutral-100 rounded-lg text-sm"
+                              >
+                                <div className="flex flex-col sm:flex-row sm:gap-4 truncate mr-2">
+                                  <span className="font-semibold text-neutral-700">{key}:</span>
+                                  <span className="text-neutral-500 font-mono text-xs truncate">
+                                    {value}
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveHeader(key)}
+                                  className="p-1 hover:bg-neutral-200 rounded-md text-neutral-400 hover:text-red-500 transition-colors shrink-0"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     <div>
                       <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-2">
