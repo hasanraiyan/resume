@@ -460,12 +460,22 @@ Do NOT output any JSON metadata block — just the article content.`;
 
       // Ensure unique slug
       let slug = finalMeta.slug;
-      let counter = 1;
-      let existing = await Article.findOne({ slug });
-      while (existing) {
-        slug = `${finalMeta.slug}-${counter}`;
-        existing = await Article.findOne({ slug });
-        counter++;
+      // Escape slug for regex and find all potential collisions
+      const escapedSlug = slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const slugRegex = new RegExp(`^${escapedSlug}(-[0-9]+)?$`);
+
+      // Only select the slug field and use lean() for performance
+      const existingArticles = await Article.find({ slug: slugRegex }).select('slug').lean();
+
+      if (existingArticles.length > 0) {
+        const existingSlugs = new Set(existingArticles.map((a) => a.slug));
+        if (existingSlugs.has(slug)) {
+          let counter = 1;
+          while (existingSlugs.has(`${finalMeta.slug}-${counter}`)) {
+            counter++;
+          }
+          slug = `${finalMeta.slug}-${counter}`;
+        }
       }
 
       const article = new Article({
