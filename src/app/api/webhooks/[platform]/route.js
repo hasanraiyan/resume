@@ -2,11 +2,109 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import IntegrationSettings from '@/models/IntegrationSettings';
 import { IntegrationFactory } from '@/lib/integrations/IntegrationFactory';
-import { decrypt } from '@/lib/crypto';
 import AgentRegistry from '@/lib/agents/AgentRegistry';
+import {
+  decryptSensitiveIntegrationCredentials,
+  integrationMapToObject,
+  integrationMetadataToObject,
+  normalizeTelegramAuthorizedChats,
+} from '@/lib/integrations/credentials';
 
 // Ensure agents are imported and registered before processing any webhooks
 import '@/lib/agents';
+
+const TELEGRAM_AUTH_COMMAND = /^auth\s*:\s*(.+)$/i;
+
+function getAuthorizedChats(integration) {
+  const metadata = integrationMetadataToObject(integration.metadata);
+  return normalizeTelegramAuthorizedChats(metadata.authorizedChats);
+}
+
+function setAuthorizedChats(integration, authorizedChats) {
+  integration.metadata = {
+    ...integrationMetadataToObject(integration.metadata),
+    authorizedChats: normalizeTelegramAuthorizedChats(authorizedChats),
+  };
+}
+
+function upsertAuthorizedChat(integration, chatId, username) {
+  const normalizedChatId = String(chatId);
+  const now = new Date().toISOString();
+  const authorizedChats = getAuthorizedChats(integration);
+  const existingIndex = authorizedChats.findIndex((entry) => entry.chatId === normalizedChatId);
+
+  if (existingIndex >= 0) {
+    const existingEntry = authorizedChats[existingIndex];
+    authorizedChats[existingIndex] = {
+      ...existingEntry,
+      ...(username ? { username } : {}),
+      firstAuthorizedAt: existingEntry.firstAuthorizedAt || now,
+      lastAuthorizedAt: now,
+    };
+  } else {
+    authorizedChats.push({
+      chatId: normalizedChatId,
+      ...(username ? { username } : {}),
+      firstAuthorizedAt: now,
+      lastAuthorizedAt: now,
+    });
+  }
+
+  setAuthorizedChats(integration, authorizedChats);
+}
+
+async function authorizeTelegramChat(integration, adapter, credentials, parsedData) {
+  const telegramAuthToken = credentials.telegramAuthToken?.trim();
+
+  if (!telegramAuthToken) {
+    return true;
+  }
+
+  if (parsedData.chatType !== 'private') {
+    await adapter.sendMessage(
+      parsedData.chatId,
+      'Please use this bot in a private chat to authenticate access.'
+    );
+    return false;
+  }
+
+  const authorizedChats = getAuthorizedChats(integration);
+  const normalizedChatId = String(parsedData.chatId);
+  const isAuthorized = authorizedChats.some((entry) => entry.chatId === normalizedChatId);
+  const authMatch = parsedData.userMessage.match(TELEGRAM_AUTH_COMMAND);
+
+  if (authMatch) {
+    const submittedToken = authMatch[1].trim();
+
+    if (submittedToken === telegramAuthToken) {
+      upsertAuthorizedChat(integration, parsedData.chatId, parsedData.username);
+      await integration.save();
+      await adapter.sendMessage(
+        parsedData.chatId,
+        isAuthorized
+          ? 'Access confirmed. You can continue chatting with the bot.'
+          : 'Authentication successful. You can now chat with the bot.'
+      );
+    } else {
+      await adapter.sendMessage(
+        parsedData.chatId,
+        'Invalid access code. Send `auth:<code>` to try again.'
+      );
+    }
+
+    return false;
+  }
+
+  if (!isAuthorized) {
+    await adapter.sendMessage(
+      parsedData.chatId,
+      'Access is restricted. Send `auth:<code>` in this private chat to enable the bot.'
+    );
+    return false;
+  }
+
+  return true;
+}
 
 /**
  * Generic Webhook Endpoint for all Integrations
@@ -33,27 +131,8 @@ export async function POST(request, { params }) {
     }
 
     // 2. Decrypt Credentials
-    const sensitiveFields = [
-      'botToken',
-      'accessToken',
-      'phoneNumberId',
-      'verifyToken',
-      'accountSid',
-      'authToken',
-    ];
-    const credentials = {};
-    const rawCredentials =
-      integration.credentials instanceof Map
-        ? Object.fromEntries(integration.credentials)
-        : integration.credentials || {};
-
-    for (const [key, value] of Object.entries(rawCredentials)) {
-      if (sensitiveFields.includes(key) && value && value.includes(':')) {
-        credentials[key] = decrypt(value);
-      } else {
-        credentials[key] = value;
-      }
-    }
+    const rawCredentials = integrationMapToObject(integration.credentials);
+    const credentials = decryptSensitiveIntegrationCredentials(rawCredentials);
 
     // 3. Instantiate specific adapter via Factory
     const adapter = IntegrationFactory.getAdapter(platform, credentials);
@@ -99,6 +178,19 @@ export async function POST(request, { params }) {
     }
 
     const { chatId, userMessage } = parsedData;
+
+    if (platform.toLowerCase() === 'telegram') {
+      const isAuthorized = await authorizeTelegramChat(
+        integration,
+        adapter,
+        credentials,
+        parsedData
+      );
+
+      if (!isAuthorized) {
+        return NextResponse.json({ status: 'Handled' }, { status: 200 });
+      }
+    }
 
     // Optional: send typing indicator immediately so the user knows we got it
     await adapter.sendTypingAction(chatId);
@@ -172,10 +264,9 @@ export async function GET(request, { params }) {
 
     if (integration && platform.toLowerCase() === 'whatsapp') {
       // 2. Decrypt Credentials
-      const credentials = {};
-      for (const [key, value] of Object.entries(integration.credentials || {})) {
-        credentials[key] = decrypt(value);
-      }
+      const credentials = decryptSensitiveIntegrationCredentials(
+        integrationMapToObject(integration.credentials)
+      );
 
       const adapter = IntegrationFactory.getAdapter(platform, credentials);
       if (adapter && typeof adapter.handleVerification === 'function') {

@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import { AGENT_IDS } from '@/lib/constants/agents';
 
 /**
  * IntegrationSettings Schema
@@ -23,7 +22,8 @@ const IntegrationSettingsSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    // Credentials vary by platform (e.g., botToken for Telegram, accountSid/authToken for WhatsApp)
+    // Credentials vary by platform (e.g., botToken/telegramAuthToken for Telegram,
+    // accountSid/authToken for Twilio WhatsApp).
     // These are encrypted at rest using the crypto utility before saving.
     credentials: {
       type: Map,
@@ -39,6 +39,7 @@ const IntegrationSettingsSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // Platform-specific runtime state, such as Telegram authorized chat allowlists.
     metadata: {
       type: Map,
       of: mongoose.Schema.Types.Mixed,

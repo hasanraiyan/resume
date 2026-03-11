@@ -3,8 +3,20 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import dbConnect from '@/lib/dbConnect';
 import IntegrationSettings from '@/models/IntegrationSettings';
-import { encrypt, decrypt } from '@/lib/crypto';
 import crypto from 'crypto';
+import {
+  generateTelegramAuthCode,
+  encryptSensitiveIntegrationCredentials,
+  normalizeTelegramAuthorizedChats,
+  sanitizeIntegrationForAdmin,
+} from '@/lib/integrations/credentials';
+
+function normalizeIntegrationMetadata(metadata = {}) {
+  return {
+    ...metadata,
+    authorizedChats: normalizeTelegramAuthorizedChats(metadata.authorizedChats),
+  };
+}
 
 export async function GET(request) {
   try {
@@ -15,28 +27,9 @@ export async function GET(request) {
 
     await dbConnect();
     const integrations = await IntegrationSettings.find({}).sort({ createdAt: -1 });
-
-    // Sanitize credentials
-    const sensitiveFields = [
-      'botToken',
-      'accessToken',
-      'phoneNumberId',
-      'verifyToken',
-      'accountSid',
-      'authToken',
-    ];
-    const sanitizedIntegrations = integrations.map((i) => {
-      const iObj = i.toObject();
-      if (iObj.credentials) {
-        // Only redact sensitive values
-        for (let key in iObj.credentials) {
-          if (sensitiveFields.includes(key)) {
-            iObj.credentials[key] = '***************';
-          }
-        }
-      }
-      return iObj;
-    });
+    const sanitizedIntegrations = integrations.map((integration) =>
+      sanitizeIntegrationForAdmin(integration)
+    );
 
     return NextResponse.json({ integrations: sanitizedIntegrations });
   } catch (error) {
@@ -53,7 +46,7 @@ export async function POST(request) {
     }
 
     const data = await request.json();
-    const { platform, name, credentials, agentId, isActive } = data;
+    const { platform, name, credentials, agentId, isActive, metadata } = data;
 
     if (!platform || !name || !credentials || !agentId) {
       return NextResponse.json(
@@ -65,52 +58,27 @@ export async function POST(request) {
     await dbConnect();
 
     const integrationId = `integration-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
+    const nextCredentials = { ...credentials };
 
-    // Encrypt sensitive credential values
-    const encryptedCredentials = {};
-    const sensitiveFields = [
-      'botToken',
-      'accessToken',
-      'phoneNumberId',
-      'verifyToken',
-      'accountSid',
-      'authToken',
-    ];
-    for (const [key, value] of Object.entries(credentials)) {
-      if (value) {
-        encryptedCredentials[key] = sensitiveFields.includes(key) ? encrypt(value) : value;
-      }
+    if (platform === 'telegram' && !nextCredentials.telegramAuthToken) {
+      nextCredentials.telegramAuthToken = generateTelegramAuthCode();
     }
 
     const newIntegration = new IntegrationSettings({
       integrationId,
       platform,
       name,
-      credentials: encryptedCredentials,
+      credentials: encryptSensitiveIntegrationCredentials(nextCredentials),
       agentId,
       isActive: isActive ?? true,
+      metadata: normalizeIntegrationMetadata(metadata || {}),
     });
 
     await newIntegration.save();
-
-    const sanitized = newIntegration.toObject();
-    if (sanitized.credentials) {
-      const sensitiveFields = [
-        'botToken',
-        'accessToken',
-        'phoneNumberId',
-        'verifyToken',
-        'accountSid',
-        'authToken',
-      ];
-      for (let key in sanitized.credentials) {
-        if (sensitiveFields.includes(key)) {
-          sanitized.credentials[key] = '***************';
-        }
-      }
-    }
-
-    return NextResponse.json({ integration: sanitized }, { status: 201 });
+    return NextResponse.json(
+      { integration: sanitizeIntegrationForAdmin(newIntegration) },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Error creating integration:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

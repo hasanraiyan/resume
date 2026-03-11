@@ -8,6 +8,8 @@ import {
   Sparkles,
   Bot,
   Plus,
+  Copy,
+  Check,
   Trash2,
   Edit2,
   Server,
@@ -57,11 +59,15 @@ export default function AgentsDashboard() {
   const [integrations, setIntegrations] = useState([]);
   const [savingIntegration, setSavingIntegration] = useState(false);
   const [editingIntegration, setEditingIntegration] = useState(null);
+  const [copiedAccessCodeKey, setCopiedAccessCodeKey] = useState('');
   const [newIntegration, setNewIntegration] = useState({
     platform: 'telegram',
     name: '',
+    telegramAuthCode: '',
+    regenerateTelegramAuthToken: false,
     credentials: {
       botToken: '',
+      telegramAuthToken: '',
       accessToken: '',
       phoneNumberId: '',
       verifyToken: '',
@@ -70,6 +76,9 @@ export default function AgentsDashboard() {
       fromNumber: '',
       responseMode: 'all',
       allowedNumbers: '',
+    },
+    metadata: {
+      authorizedChats: [],
     },
     agentId: '',
     isActive: true,
@@ -243,6 +252,38 @@ export default function AgentsDashboard() {
     }
   };
 
+  const getTelegramAccessCommand = (code) => (code ? `auth:${code}` : '');
+
+  const handleCopyAccessCode = async (command, key) => {
+    if (!command) return;
+
+    try {
+      await navigator.clipboard.writeText(command);
+      setCopiedAccessCodeKey(key);
+      setTimeout(() => {
+        setCopiedAccessCodeKey((current) => (current === key ? '' : current));
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to copy Telegram access code:', error);
+
+      try {
+        const textArea = document.createElement('textarea');
+        textArea.value = command;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        setCopiedAccessCodeKey(key);
+        setTimeout(() => {
+          setCopiedAccessCodeKey((current) => (current === key ? '' : current));
+        }, 2000);
+      } catch (fallbackError) {
+        console.error('Fallback copy failed:', fallbackError);
+        alert(`Unable to copy the Telegram access code. Please copy manually: ${command}`);
+      }
+    }
+  };
+
   // --- Integration Handlers ---
   const handleAddIntegration = () => {
     setEditingIntegration({ id: 'new', ...newIntegration });
@@ -250,12 +291,22 @@ export default function AgentsDashboard() {
 
   const handleEditIntegration = (integration) => {
     // Make a copy and clear credentials temporarily so they don't overwrite if they just want to change name
-    const copy = { ...integration };
+    const copy = { regenerateTelegramAuthToken: false, ...integration };
     if (copy.credentials) {
       const creds = { ...copy.credentials };
-      // Clear sensitive fields if they exist
-      if (creds.botToken) creds.botToken = '';
-      if (creds.accessToken) creds.accessToken = '';
+      [
+        'botToken',
+        'telegramAuthToken',
+        'accessToken',
+        'phoneNumberId',
+        'verifyToken',
+        'accountSid',
+        'authToken',
+      ].forEach((field) => {
+        if (creds[field]) {
+          creds[field] = '';
+        }
+      });
       copy.credentials = creds;
     }
     setEditingIntegration(copy);
@@ -279,6 +330,7 @@ export default function AgentsDashboard() {
       if (!isNew && payload.credentials) {
         const sensitiveFields = [
           'botToken',
+          'telegramAuthToken',
           'accessToken',
           'phoneNumberId',
           'verifyToken',
@@ -888,6 +940,41 @@ export default function AgentsDashboard() {
                         {integration.agentId}
                       </span>
                     </p>
+                    {integration.platform === 'telegram' && integration.telegramAuthCode && (
+                      <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-3 mt-1">
+                        <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-neutral-500">
+                          Access Command
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="min-w-0 flex-1 text-xs font-semibold text-neutral-800 font-mono truncate">
+                            {getTelegramAccessCommand(integration.telegramAuthCode)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCopyAccessCode(
+                                getTelegramAccessCommand(integration.telegramAuthCode),
+                                `card-${integration.integrationId}`
+                              );
+                            }}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-neutral-300 bg-white text-[11px] font-medium text-neutral-700 hover:border-black hover:text-black transition-colors cursor-pointer shrink-0"
+                          >
+                            {copiedAccessCodeKey === `card-${integration.integrationId}` ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-green-600" />
+                                Copied
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5" />
+                                Copy
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-auto pt-4 border-t border-neutral-100">
@@ -1016,28 +1103,144 @@ export default function AgentsDashboard() {
                   </div>
 
                   {editingIntegration.platform === 'telegram' && (
-                    <div>
-                      <label className="text-xs font-medium text-neutral-600">
-                        Telegram Bot Token
-                      </label>
-                      <input
-                        className="w-full p-2 border rounded-lg mt-1"
-                        type="password"
-                        value={editingIntegration.credentials?.botToken || ''}
-                        onChange={(e) =>
-                          setEditingIntegration({
-                            ...editingIntegration,
-                            credentials: {
-                              ...editingIntegration.credentials,
-                              botToken: e.target.value,
-                            },
-                          })
-                        }
-                        placeholder="123456789:ABCDEF..."
-                      />
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-xs font-medium text-neutral-600">
+                          Telegram Bot Token
+                        </label>
+                        <input
+                          className="w-full p-2 border rounded-lg mt-1"
+                          type="password"
+                          value={editingIntegration.credentials?.botToken || ''}
+                          onChange={(e) =>
+                            setEditingIntegration({
+                              ...editingIntegration,
+                              credentials: {
+                                ...editingIntegration.credentials,
+                                botToken: e.target.value,
+                              },
+                            })
+                          }
+                          placeholder="123456789:ABCDEF..."
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-neutral-600">
+                          Telegram Access Code
+                        </label>
+                        <div className="rounded-2xl border border-neutral-200 bg-[linear-gradient(135deg,#fafaf9_0%,#f5f5f4_100%)] px-4 py-4 mt-1 space-y-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-neutral-500">
+                                Share This Exact Message
+                              </p>
+                              <p className="text-xs text-neutral-500 mt-1">
+                                Anyone who sends this in a private Telegram chat gets access.
+                              </p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-neutral-400">
+                                Status
+                              </p>
+                              <p className="text-xs font-medium text-neutral-700 mt-1">
+                                {editingIntegration.telegramAuthCode
+                                  ? 'Ready to copy'
+                                  : 'Generate on save'}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="rounded-xl border border-neutral-200 bg-white px-3 py-3 flex items-center gap-3">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-neutral-400 mb-1">
+                                Telegram Command
+                              </p>
+                              <p className="text-sm font-semibold text-neutral-900 font-mono break-all">
+                                {editingIntegration.telegramAuthCode
+                                  ? getTelegramAccessCommand(editingIntegration.telegramAuthCode)
+                                  : 'auth:<code appears after save>'}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              disabled={!editingIntegration.telegramAuthCode}
+                              onClick={() =>
+                                handleCopyAccessCode(
+                                  getTelegramAccessCommand(editingIntegration.telegramAuthCode),
+                                  'modal-telegram-auth-code'
+                                )
+                              }
+                              className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-colors shrink-0 ${
+                                editingIntegration.telegramAuthCode
+                                  ? 'border-neutral-300 bg-neutral-900 text-white hover:bg-black cursor-pointer'
+                                  : 'border-neutral-200 bg-neutral-100 text-neutral-400 cursor-not-allowed'
+                              }`}
+                            >
+                              {copiedAccessCodeKey === 'modal-telegram-auth-code' ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5" />
+                                  Copied
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3.5 h-3.5" />
+                                  Copy
+                                </>
+                              )}
+                            </button>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setEditingIntegration({
+                                  ...editingIntegration,
+                                  regenerateTelegramAuthToken:
+                                    !editingIntegration.regenerateTelegramAuthToken,
+                                })
+                              }
+                              className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-colors cursor-pointer ${
+                                editingIntegration.regenerateTelegramAuthToken
+                                  ? 'border-amber-300 bg-amber-50 text-amber-800'
+                                  : 'border-neutral-300 bg-white text-neutral-700 hover:border-black hover:text-black'
+                              }`}
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                              {editingIntegration.regenerateTelegramAuthToken
+                                ? 'New code will be generated on save'
+                                : editingIntegration.telegramAuthCode
+                                  ? 'Generate new code on save'
+                                  : 'Generate code on save'}
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-neutral-400 mt-1">
+                          Users must send <span className="font-mono">auth:&lt;code&gt;</span> in a
+                          private chat to unlock this bot.
+                        </p>
+                        {editingIntegration.regenerateTelegramAuthToken && (
+                          <p className="text-[10px] text-amber-600 mt-1">
+                            A new access code will be generated when you save. Existing authorized
+                            chats will be cleared.
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2">
+                        <p className="text-[10px] uppercase tracking-wider font-semibold text-neutral-500">
+                          Authorized Chats
+                        </p>
+                        <p className="text-sm font-semibold text-neutral-900 mt-1">
+                          {editingIntegration.metadata?.authorizedChats?.length || 0}
+                        </p>
+                      </div>
+
                       {editingIntegration.id !== 'new' && (
                         <p className="text-[10px] text-neutral-400 mt-1">
-                          Leave blank to keep existing token unchanged.
+                          Leave secret fields blank to keep existing values unchanged. Regenerating
+                          the Telegram access code clears the current Telegram allowlist.
                         </p>
                       )}
                     </div>
