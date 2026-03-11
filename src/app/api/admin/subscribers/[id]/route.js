@@ -16,8 +16,27 @@
  */
 
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import dbConnect from '@/lib/dbConnect';
 import Subscriber from '@/models/Subscriber';
+
+/**
+ * Verifies if the current user has admin privileges.
+ *
+ * @async
+ * @function isAdmin
+ * @returns {Promise<boolean>} True if the user is authenticated and has admin role
+ */
+async function isAdmin() {
+  try {
+    const session = await getServerSession(authOptions);
+    return session?.user?.role === 'admin';
+  } catch (error) {
+    console.error('Admin check error:', error);
+    return false;
+  }
+}
 
 /**
  * GET /api/admin/subscribers - Get all subscribers (admin only)
@@ -25,8 +44,10 @@ import Subscriber from '@/models/Subscriber';
  */
 export async function GET(request) {
   try {
-    // TODO: Add authentication check for admin access
-    // For now, we'll assume admin access
+    // Check if user is admin
+    if (!(await isAdmin())) {
+      return NextResponse.json({ error: 'Unauthorized. Admin access required.' }, { status: 403 });
+    }
 
     await dbConnect();
 
@@ -99,7 +120,10 @@ export async function GET(request) {
  */
 export async function DELETE(request, { params }) {
   try {
-    // TODO: Add authentication check for admin access
+    // Check if user is admin
+    if (!(await isAdmin())) {
+      return NextResponse.json({ error: 'Unauthorized. Admin access required.' }, { status: 403 });
+    }
 
     await dbConnect();
 
@@ -134,7 +158,10 @@ export async function DELETE(request, { params }) {
  */
 export async function PATCH(request, { params }) {
   try {
-    // TODO: Add authentication check for admin access
+    // Check if user is admin
+    if (!(await isAdmin())) {
+      return NextResponse.json({ error: 'Unauthorized. Admin access required.' }, { status: 403 });
+    }
 
     await dbConnect();
 
