@@ -294,21 +294,30 @@ class AgentRegistry {
 
     const instance = this._agents.get(agentId);
     const config = registration.config;
+    const defaultConfig = DEFAULT_AGENT_CONFIGS[agentId] || {};
 
     return {
       agentId,
-      name: config.name || DEFAULT_AGENT_CONFIGS[agentId]?.name || 'Unknown',
-      description: config.description || DEFAULT_AGENT_CONFIGS[agentId]?.description || '',
-      type: config.type || DEFAULT_AGENT_CONFIGS[agentId]?.type || '',
-      category: config.category || DEFAULT_AGENT_CONFIGS[agentId]?.category || '',
-      icon: config.icon || DEFAULT_AGENT_CONFIGS[agentId]?.icon || '',
+      name: config.name || defaultConfig.name || 'Unknown',
+      description: config.description || defaultConfig.description || '',
+      type: config.type || defaultConfig.type || '',
+      category: config.category || defaultConfig.category || '',
+      icon: config.icon || defaultConfig.icon || '',
       isActive: instance?.isActive ?? config.isActive ?? true,
       isInitialized: instance?.isInitialized ?? false,
       executionCount: instance?.executionCount ?? 0,
       lastExecutedAt: instance?.lastExecutedAt ?? null,
       canExecute: instance?.canExecute() ?? true,
-      rateLimit: config.rateLimit,
-      metadata: config.metadata || {},
+      rateLimit: config.rateLimit || instance?.config?.rateLimit || defaultConfig.rateLimit,
+      metadata: instance?.config?.metadata || config.metadata || {},
+
+      // Configuration fields
+      providerId:
+        instance?.config?.providerId || config.providerId || defaultConfig.defaultProvider || '',
+      model: instance?.config?.model || config.model || defaultConfig.defaultModel || '',
+      persona: instance?.config?.persona || config.persona || defaultConfig.persona || '',
+      tools: instance?.config?.tools || config.tools || defaultConfig.tools || [],
+      activeMCPs: instance?.config?.activeMCPs || config.activeMCPs || [],
     };
   }
 }

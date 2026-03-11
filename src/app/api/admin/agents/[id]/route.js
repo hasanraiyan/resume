@@ -31,13 +31,19 @@ export async function GET(request, { params }) {
     const status = agentManager.getAgentStatus(agentId);
     const metrics = agentManager.getMetrics(agentId);
 
+    // Merge in database settings for a complete view
+    await dbConnect();
+    const dbConfig = await AgentConfig.findOne({ agentId }).lean();
+    const mergedAgent = {
+      ...metadata,
+      ...status,
+      metrics,
+      ...(dbConfig || {}),
+    };
+
     return NextResponse.json({
       success: true,
-      agent: {
-        ...metadata,
-        ...status,
-        metrics,
-      },
+      agent: mergedAgent,
     });
   } catch (error) {
     console.error('[Agent Get] Error:', error);

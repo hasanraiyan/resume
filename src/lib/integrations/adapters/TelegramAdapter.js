@@ -52,27 +52,45 @@ export class TelegramAdapter extends BaseIntegrationAdapter {
         }),
       });
     } catch (e) {
-      console.error('Failed to send Telegram typing action:', e);
+      if (e.code === 'ECONNRESET' || e.code === 'UND_ERR_CONNECT_TIMEOUT') {
+        console.warn(
+          `[TelegramAdapter] Typing action failed due to network timeout or reset (${e.code}). Ignored.`
+        );
+      } else {
+        console.warn(`[TelegramAdapter] Failed to send typing action: ${e.message}`);
+      }
     }
   }
 
-  async sendMessage(chatId, text) {
+  async sendMessage(chatId, text, isFallback = false) {
     try {
+      const payload = {
+        chat_id: chatId,
+        text: text,
+      };
+
+      if (!isFallback) {
+        // Use markdown parsing so AI responses look nice
+        payload.parse_mode = 'Markdown';
+      }
+
       const resp = await fetch(`${this.apiUrl}/sendMessage`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: text,
-          // Use markdown parsing so AI responses look nice
-          parse_mode: 'Markdown',
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!resp.ok) {
         const errorText = await resp.text();
+
+        // If Markdown parsing fails, try again without parse_mode
+        if (!isFallback && errorText.includes("can't parse entities")) {
+          console.warn(`[TelegramAdapter] Failed to parse Markdown, falling back to plain text.`);
+          return await this.sendMessage(chatId, text, true);
+        }
+
         throw new Error(`Telegram API responded with ${resp.status}: ${errorText}`);
       }
 

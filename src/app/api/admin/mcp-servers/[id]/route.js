@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import dbConnect from '@/lib/dbConnect';
 import McpServer from '@/models/McpServer';
+import AgentConfig from '@/models/AgentConfig';
 
 export async function GET(request, { params }) {
   try {
@@ -71,6 +72,9 @@ export async function DELETE(request, { params }) {
     if (!deletedServer) {
       return NextResponse.json({ error: 'MCP Server not found' }, { status: 404 });
     }
+
+    // Purge the deleted server's ID from all agent configurations
+    await AgentConfig.updateMany({ activeMCPs: id }, { $pull: { activeMCPs: id } });
 
     return NextResponse.json({ message: 'MCP Server deleted successfully' });
   } catch (error) {
