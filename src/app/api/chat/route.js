@@ -3,6 +3,7 @@
  * Uses the BaseAgent architecture via AgentRegistry for streaming responses.
  */
 
+import crypto from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { rateLimit } from '@/lib/rateLimit';
 import { getServerSession } from 'next-auth';
@@ -32,8 +33,7 @@ export async function POST(request) {
       topic,
     } = await request.json();
 
-    const sessionId =
-      providedSessionId || `fallback-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    const sessionId = providedSessionId || crypto.randomUUID();
 
     if (!userMessage)
       return NextResponse.json({ error: 'User message is required' }, { status: 400 });

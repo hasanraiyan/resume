@@ -5,6 +5,7 @@
  * and Multi-Server MCP Client routing. Extends BaseAgent.
  */
 
+import crypto from 'node:crypto';
 import { AGENT_IDS } from '@/lib/constants/agents';
 import BaseAgent from '../BaseAgent';
 import { buildDynamicContext } from '../utils/context-builder';
@@ -140,7 +141,7 @@ class ChatAgent extends BaseAgent {
                       : tc.function.arguments;
                 } catch (e) {}
                 return {
-                  id: tc.id || `unknown-id-${Math.random()}`,
+                  id: tc.id || `unknown-id-${crypto.randomUUID()}`,
                   name: tc.function.name || 'unknown_function',
                   args: parsedArgs,
                 };

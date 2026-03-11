@@ -200,7 +200,10 @@ export function useChatStreaming() {
 
             // Only add tool steps for non-blog_writer agents
             if (selectedAgentId !== 'blog_writer') {
-              const toolMsgId = Date.now() + Math.random();
+              const toolMsgId =
+                typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+                  ? crypto.randomUUID()
+                  : Date.now() + Math.random();
               activeToolMsgId = toolMsgId;
 
               setMessages((prev) => [
@@ -253,7 +256,10 @@ export function useChatStreaming() {
             setMessages((prev) => [
               ...prev,
               {
-                id: Date.now() + Math.random(),
+                id:
+                  typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+                    ? crypto.randomUUID()
+                    : Date.now() + Math.random(),
                 role: 'tool',
                 tool_call_id: data.tool_call_id,
                 name: data.name,

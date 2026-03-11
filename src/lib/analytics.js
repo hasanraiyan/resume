@@ -115,7 +115,11 @@ class AnalyticsTracker {
    * @returns {string} Unique session identifier
    */
   generateSessionId() {
-    return 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    const randomPart =
+      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    return 'sess_' + randomPart;
   }
 
   /**
