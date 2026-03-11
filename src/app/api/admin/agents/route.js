@@ -36,6 +36,8 @@ export async function GET() {
         dbAgentsMap.set(agent.agentId, {
           providerId: agent.providerId || '',
           model: agent.model || '',
+          summaryProviderId: agent.summaryProviderId || '',
+          summaryModel: agent.summaryModel || '',
           persona: agent.persona || '',
           isActive: agent.isActive,
           tools: agent.tools || [],

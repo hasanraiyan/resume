@@ -56,6 +56,8 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
   const [settings, setSettings] = useState({
     providerId: '',
     model: '',
+    summaryProviderId: '',
+    summaryModel: '',
     persona: '',
     isActive: true,
     tools: [],
@@ -65,6 +67,8 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
 
   const [models, setModels] = useState([]);
   const [fetchingModels, setFetchingModels] = useState(false);
+  const [summaryModels, setSummaryModels] = useState([]);
+  const [fetchingSummaryModels, setFetchingSummaryModels] = useState(false);
   const [saving, setSaving] = useState(false);
   const [mcpServers, setMcpServers] = useState([]);
   const [fetchingMCPs, setFetchingMCPs] = useState(false);
@@ -72,6 +76,35 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
   // Metrics State
   const [metricsData, setMetricsData] = useState(null);
   const [fetchingMetrics, setFetchingMetrics] = useState(false);
+  const isTelegramAgent = agentData?.agentId === AGENT_IDS.TELEGRAM_ASSISTANT;
+
+  const getEffectiveMainProviderId = (providerId) => providerId || agentData?.defaultProvider || '';
+
+  const fetchModelOptions = async (providerId, setTarget, setLoading) => {
+    if (!providerId) {
+      setTarget([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `/api/media/models?providerId=${encodeURIComponent(providerId)}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setTarget(Array.isArray(data.models) ? data.models : []);
+      } else {
+        setTarget([]);
+      }
+    } catch (error) {
+      console.error('Error fetching models:', error);
+      setTarget([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchMCPs = async () => {
     setFetchingMCPs(true);
@@ -99,6 +132,8 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
       setSettings({
         providerId: agentData.providerId || '',
         model: agentData.model || '',
+        summaryProviderId: agentData.summaryProviderId || '',
+        summaryModel: agentData.summaryModel || '',
         persona: agentData.persona || '',
         isActive: agentData.isActive ?? true,
         tools: agentData.tools || [],
@@ -106,10 +141,19 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
         metadata: agentData.metadata || {},
       });
 
-      if (agentData.providerId) {
-        fetchModels(agentData.providerId);
+      const initialMainProviderId = agentData.providerId || agentData.defaultProvider || '';
+      if (initialMainProviderId) {
+        fetchModelOptions(initialMainProviderId, setModels, setFetchingModels);
       } else {
         setFetchingModels(false);
+        setModels([]);
+      }
+
+      if (agentData.agentId === AGENT_IDS.TELEGRAM_ASSISTANT && agentData.summaryProviderId) {
+        fetchModelOptions(agentData.summaryProviderId, setSummaryModels, setFetchingSummaryModels);
+      } else {
+        setSummaryModels([]);
+        setFetchingSummaryModels(false);
       }
 
       fetchMCPs();
@@ -134,30 +178,29 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
     }
   };
 
-  const fetchModels = async (providerId) => {
-    if (!providerId) return;
-    setFetchingModels(true);
-    try {
-      const response = await fetch(
-        `/api/media/models?providerId=${encodeURIComponent(providerId)}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setModels(Array.isArray(data.models) ? data.models : []);
-      }
-    } catch (error) {
-      console.error('Error fetching models:', error);
-      setModels([]);
-    } finally {
-      setFetchingModels(false);
-    }
-  };
-
   const handleProviderChange = (e) => {
     const providerId = e.target.value;
-    setSettings((prev) => ({ ...prev, providerId, model: '' }));
+    const effectiveProviderId = getEffectiveMainProviderId(providerId);
+    setSettings((prev) => ({
+      ...prev,
+      providerId,
+      model: '',
+      ...(prev.summaryProviderId ? {} : { summaryModel: '' }),
+    }));
     setModels([]);
-    fetchModels(providerId);
+    fetchModelOptions(effectiveProviderId, setModels, setFetchingModels);
+  };
+
+  const handleSummaryProviderChange = (e) => {
+    const summaryProviderId = e.target.value;
+    setSettings((prev) => ({ ...prev, summaryProviderId, summaryModel: '' }));
+
+    if (summaryProviderId) {
+      fetchModelOptions(summaryProviderId, setSummaryModels, setFetchingSummaryModels);
+    } else {
+      setSummaryModels([]);
+      setFetchingSummaryModels(false);
+    }
   };
 
   const handleSave = async () => {
@@ -205,6 +248,13 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
   };
 
   if (!agentData) return null;
+
+  const summaryModelOptions = settings.summaryProviderId ? summaryModels : models;
+  const isFetchingSummaryModelOptions = settings.summaryProviderId
+    ? fetchingSummaryModels
+    : fetchingModels;
+  const effectiveSummaryProviderId =
+    settings.summaryProviderId || getEffectiveMainProviderId(settings.providerId);
 
   const tabs = [
     { id: 'engine', label: 'Engine', icon: Bot },
@@ -309,24 +359,84 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                     value={settings.model}
                     onChange={(e) => setSettings((prev) => ({ ...prev, model: e.target.value }))}
                     isLoading={fetchingModels}
-                    disabled={!settings.providerId}
+                    disabled={!getEffectiveMainProviderId(settings.providerId)}
                     options={[
                       {
                         value: '',
-                        label: settings.providerId ? 'Select Model' : 'Select provider first',
+                        label: getEffectiveMainProviderId(settings.providerId)
+                          ? 'Use Provider Default'
+                          : 'Select provider first',
                       },
                       ...models.map((m) => ({ value: m, label: m })),
                     ]}
                   />
-                  {settings.providerId && models.length === 0 && !fetchingModels && (
+                  {getEffectiveMainProviderId(settings.providerId) &&
+                    models.length === 0 &&
+                    !fetchingModels && (
+                      <div className="flex items-center gap-2 mt-3 text-amber-600 bg-amber-50/50 p-3 rounded-xl border border-amber-100">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <p className="text-[11px] font-medium leading-tight">
+                          No models loaded. Please check the API Key configuration for this
+                          provider.
+                        </p>
+                      </div>
+                    )}
+                </div>
+
+                {isTelegramAgent && (
+                  <div className="pt-6 border-t border-neutral-100 space-y-6">
                     <div className="flex items-center gap-2 mt-3 text-amber-600 bg-amber-50/50 p-3 rounded-xl border border-amber-100">
-                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <MessageCircle className="w-4 h-4 shrink-0" />
                       <p className="text-[11px] font-medium leading-tight">
-                        No models loaded. Please check the API Key configuration for this provider.
+                        The Summary Engine is only used to compress older Telegram conversation
+                        history. Tool calls and final replies still use the main execution model.
                       </p>
                     </div>
-                  )}
-                </div>
+
+                    <CustomDropdown
+                      label="Summary Provider"
+                      value={settings.summaryProviderId}
+                      onChange={handleSummaryProviderChange}
+                      options={[
+                        { value: '', label: 'Use Main Provider' },
+                        ...providers.map((p) => ({ value: p.providerId, label: p.name })),
+                      ]}
+                    />
+
+                    <div className="space-y-2">
+                      <CustomDropdown
+                        label="Summary Model"
+                        value={settings.summaryModel}
+                        onChange={(e) =>
+                          setSettings((prev) => ({ ...prev, summaryModel: e.target.value }))
+                        }
+                        isLoading={isFetchingSummaryModelOptions}
+                        disabled={!effectiveSummaryProviderId}
+                        options={[
+                          {
+                            value: '',
+                            label: effectiveSummaryProviderId
+                              ? 'Use Main Model'
+                              : 'Select provider first',
+                          },
+                          ...summaryModelOptions.map((m) => ({ value: m, label: m })),
+                        ]}
+                      />
+
+                      {effectiveSummaryProviderId &&
+                        summaryModelOptions.length === 0 &&
+                        !isFetchingSummaryModelOptions && (
+                          <div className="flex items-center gap-2 mt-3 text-amber-600 bg-amber-50/50 p-3 rounded-xl border border-amber-100">
+                            <AlertCircle className="w-4 h-4 shrink-0" />
+                            <p className="text-[11px] font-medium leading-tight">
+                              No summary models loaded for this provider. Leave Summary Model blank
+                              to fall back to the main model.
+                            </p>
+                          </div>
+                        )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

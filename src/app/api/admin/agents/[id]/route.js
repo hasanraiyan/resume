@@ -86,6 +86,8 @@ export async function PUT(request, { params }) {
     if (body.isActive !== undefined) updates.isActive = body.isActive;
     if (body.providerId !== undefined) updates.providerId = body.providerId;
     if (body.model !== undefined) updates.model = body.model;
+    if (body.summaryProviderId !== undefined) updates.summaryProviderId = body.summaryProviderId;
+    if (body.summaryModel !== undefined) updates.summaryModel = body.summaryModel;
     if (body.persona !== undefined) updates.persona = body.persona;
     if (body.tools !== undefined) updates.tools = body.tools;
     if (body.activeMCPs !== undefined) updates.activeMCPs = body.activeMCPs;

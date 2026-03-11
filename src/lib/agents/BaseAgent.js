@@ -445,6 +445,61 @@ class BaseAgent {
   }
 
   /**
+   * Resolve a provider for chat model creation.
+   * Reuses the initialized primary provider when possible and only looks up a new one when
+   * a different providerId is explicitly requested.
+   * @private
+   */
+  async _resolveChatProvider(providerId = '') {
+    if (!this.isInitialized) await this.initialize();
+
+    const requestedProviderId = providerId || '';
+    const currentProviderId = this.config.providerId || this.config.defaultProvider || '';
+
+    if (!requestedProviderId || requestedProviderId === currentProviderId) {
+      return this.config.provider;
+    }
+
+    return await this.resolveProvider(requestedProviderId);
+  }
+
+  /**
+   * Build a LangChain chat model from an already resolved provider and model selection.
+   * @private
+   */
+  _buildChatModel({ provider, modelName, temperature, maxTokens, purpose = 'chat' }) {
+    if (!provider) {
+      throw new Error(`No provider resolved for ${purpose} on agent ${this.agentId}`);
+    }
+
+    const normalizedModelName = (modelName || '').replace(/^models\//, '');
+    if (!normalizedModelName) {
+      throw new Error(
+        `Chat model name is missing for ${purpose} on agent ${this.agentId}. Please configure it in Agent Settings or Provider Settings.`
+      );
+    }
+
+    if (provider.baseUrl?.includes('googleapis') || provider.providerId === 'google') {
+      return new ChatGoogleGenerativeAI({
+        apiKey: provider.apiKey,
+        model: normalizedModelName,
+        maxOutputTokens: maxTokens,
+        temperature,
+      });
+    }
+
+    return new ChatOpenAI({
+      openAIApiKey: provider.apiKey,
+      modelName: normalizedModelName,
+      configuration: {
+        baseURL: provider.baseUrl,
+      },
+      maxTokens,
+      temperature,
+    });
+  }
+
+  /**
    * Create a LangChain Chat Model based on current provider and config
    * @param {Object} overrides - Optional overrides for model/temperature etc.
    * @returns {Promise<ChatOpenAI|ChatGoogleGenerativeAI>}
@@ -452,41 +507,42 @@ class BaseAgent {
   async createChatModel(overrides = {}) {
     if (!this.isInitialized) await this.initialize();
 
-    const provider = this.config.provider;
-    if (!provider) throw new Error(`No provider resolved for agent ${this.agentId}`);
-
-    const modelName = (overrides.model || this.config.model || provider.model || '').replace(
-      /^models\//,
-      ''
-    );
-
-    if (!modelName) {
-      throw new Error(
-        `Chat model name is missing for agent ${this.agentId}. Please configure it in Agent Settings or Provider Settings.`
-      );
-    }
-
+    const provider = overrides.provider || (await this._resolveChatProvider(overrides.providerId));
+    const modelName = overrides.model || this.config.model || provider?.model || '';
     const temperature = overrides.temperature ?? this.config.temperature ?? 0.7;
     const maxTokens = overrides.maxTokens ?? this.config.maxTokens;
 
-    if (provider.baseUrl?.includes('googleapis') || provider.providerId === 'google') {
-      return new ChatGoogleGenerativeAI({
-        apiKey: provider.apiKey,
-        model: modelName, // LangChain Google provider uses 'model'
-        maxOutputTokens: maxTokens,
-        temperature,
-      });
-    }
-
-    // Default to OpenAI compatible
-    return new ChatOpenAI({
-      openAIApiKey: provider.apiKey,
-      modelName: modelName, // OpenAI provider supports modelName or model
-      configuration: {
-        baseURL: provider.baseUrl,
-      },
-      maxTokens,
+    return this._buildChatModel({
+      provider,
+      modelName,
       temperature,
+      maxTokens,
+      purpose: 'chat execution',
+    });
+  }
+
+  /**
+   * Create a dedicated chat model for lightweight conversation summarization.
+   * Falls back to the primary agent provider/model when a separate summary engine is not configured.
+   * @param {Object} overrides - Optional overrides for provider/model/temperature etc.
+   * @returns {Promise<ChatOpenAI|ChatGoogleGenerativeAI>}
+   */
+  async createSummaryChatModel(overrides = {}) {
+    if (!this.isInitialized) await this.initialize();
+
+    const summaryProviderId = overrides.providerId ?? this.config.summaryProviderId ?? '';
+    const provider = overrides.provider || (await this._resolveChatProvider(summaryProviderId));
+    const modelName =
+      overrides.model ?? this.config.summaryModel ?? this.config.model ?? provider?.model ?? '';
+    const temperature = overrides.temperature ?? this.config.temperature ?? 0.7;
+    const maxTokens = overrides.maxTokens ?? this.config.maxTokens;
+
+    return this._buildChatModel({
+      provider,
+      modelName,
+      temperature,
+      maxTokens,
+      purpose: 'conversation summarization',
     });
   }
 

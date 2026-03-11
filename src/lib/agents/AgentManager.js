@@ -69,6 +69,8 @@ class AgentManager {
             agent.updateConfig({
               providerId: config.providerId,
               model: config.model,
+              summaryProviderId: config.summaryProviderId,
+              summaryModel: config.summaryModel,
               persona: config.persona,
               isActive: config.isActive,
               metadata: config.metadata,

@@ -78,6 +78,7 @@ class TelegramAgent extends BaseAgent {
 
     try {
       const llm = await this.createChatModel();
+      const summaryLlm = await this.createSummaryChatModel({ temperature: 0.2 });
 
       // Persona is purely driven from the UI config. If empty, fallback to a basic assistant.
       const persona = this.config.persona || 'You are a helpful assistant on Telegram.';
@@ -240,7 +241,7 @@ class TelegramAgent extends BaseAgent {
           summaryPrompt += `\n\nExisting summary: ${summaryStr}`;
         }
 
-        const res = await llm.invoke([
+        const res = await summaryLlm.invoke([
           new SystemMessage({ content: summaryPrompt }),
           ...messagesToSummarize,
         ]);

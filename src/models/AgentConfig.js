@@ -23,6 +23,14 @@ const AgentConfigSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    summaryProviderId: {
+      type: String,
+      default: '',
+    },
+    summaryModel: {
+      type: String,
+      default: '',
+    },
     persona: {
       type: String,
       default: '',
