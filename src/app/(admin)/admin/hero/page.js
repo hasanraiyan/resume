@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
+import HeroAdminSkeleton from '@/components/admin/HeroAdminSkeleton';
 import HeroPreview from '@/components/admin/HeroPreview';
 import IconPicker from '@/components/admin/IconPicker';
 import ActionButton from '@/components/admin/ActionButton';
@@ -287,12 +288,7 @@ export default function HeroAdminPage() {
   if (status === 'loading' || loading) {
     return (
       <AdminPageWrapper title="Hero Section">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-neutral-600">Loading hero section...</p>
-          </div>
-        </div>
+        <HeroAdminSkeleton />
       </AdminPageWrapper>
     );
   }
