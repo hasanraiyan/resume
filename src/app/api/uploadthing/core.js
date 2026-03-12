@@ -45,4 +45,29 @@ export const uploadRouter = {
         fileKey: file.key,
       };
     }),
+
+  resumeUploader: uploadBuilder({
+    pdf: { maxFileSize: '5MB', maxFileCount: 1 },
+    'application/msword': { maxFileSize: '5MB', maxFileCount: 1 },
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': {
+      maxFileSize: '5MB',
+      maxFileCount: 1,
+    },
+  })
+    .middleware(async () => {
+      const session = await getServerSession(authOptions);
+
+      if (!session || session.user?.role !== 'admin') {
+        throw new Error('Unauthorized');
+      }
+
+      return { uploaderId: session.user?.id || session.user?.email || 'admin' };
+    })
+    .onUploadComplete(async ({ file, metadata }) => {
+      return {
+        uploaderId: metadata.uploaderId,
+        fileKey: file.key,
+        fileUrl: file.url,
+      };
+    }),
 };
