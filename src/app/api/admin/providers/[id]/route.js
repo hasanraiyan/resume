@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import dbConnect from '@/lib/dbConnect';
 import ProviderSettings from '@/models/ProviderSettings';
 import { encrypt } from '@/lib/crypto';
+import { invalidateProviderModelCache } from '@/lib/providers/modelListCache';
 
 export async function PUT(request, { params }) {
   try {
@@ -33,6 +34,8 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: 'Provider not found' }, { status: 404 });
     }
 
+    invalidateProviderModelCache(id);
+
     const sanitized = updatedProvider.toObject();
     sanitized.apiKey = sanitized.apiKey ? '***************' : '';
 
@@ -57,6 +60,8 @@ export async function DELETE(request, { params }) {
     if (!deletedProvider) {
       return NextResponse.json({ error: 'Provider not found' }, { status: 404 });
     }
+
+    invalidateProviderModelCache(id);
 
     return NextResponse.json({ success: true });
   } catch (error) {

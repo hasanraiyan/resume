@@ -178,6 +178,14 @@ export async function POST(request, { params }) {
     }
 
     const { chatId, userMessage } = parsedData;
+    const memoryContext = {
+      platform: platform.toLowerCase(),
+      integrationId: integration.integrationId || integration._id?.toString() || '',
+      chatId,
+      chatType: parsedData.chatType || '',
+      userId: parsedData.userId ?? '',
+      username: parsedData.username || '',
+    };
 
     if (platform.toLowerCase() === 'telegram') {
       const isAuthorized = await authorizeTelegramChat(
@@ -211,6 +219,7 @@ export async function POST(request, { params }) {
           userMessage: userMessage,
           sessionId: `${platform}-${chatId}`, // Pass stable session ID for history
           activeMCPs: agent.config.activeMCPs || [],
+          memoryContext,
         });
 
         for await (const chunk of stream) {
@@ -227,6 +236,7 @@ export async function POST(request, { params }) {
         const aiResponse = await agent.execute({
           userMessage: userMessage,
           sessionId: `${platform}-${chatId}`,
+          memoryContext,
         });
         textResponse =
           aiResponse?.text || aiResponse || "I'm sorry, I couldn't process that response.";

@@ -39,6 +39,10 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { AGENT_IDS } from '@/lib/constants/agents';
+import {
+  getLongTermMemoryConfig,
+  mergeLongTermMemoryMetadata,
+} from '@/lib/agents/memory/longTermMemoryConfig';
 
 ChartJS.register(
   CategoryScale,
@@ -203,6 +207,13 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
     }
   };
 
+  const updateLongTermMemorySettings = (updates) => {
+    setSettings((prev) => ({
+      ...prev,
+      metadata: mergeLongTermMemoryMetadata(prev.metadata, updates),
+    }));
+  };
+
   const handleSave = async () => {
     if (!agentData) return;
 
@@ -255,6 +266,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
     : fetchingModels;
   const effectiveSummaryProviderId =
     settings.summaryProviderId || getEffectiveMainProviderId(settings.providerId);
+  const longTermMemory = getLongTermMemoryConfig(settings.metadata);
 
   const tabs = [
     { id: 'engine', label: 'Engine', icon: Bot },
@@ -434,6 +446,115 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                             </p>
                           </div>
                         )}
+                    </div>
+
+                    <div className="pt-6 border-t border-neutral-100 space-y-5">
+                      <div className="flex items-start justify-between gap-4 bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
+                        <div className="space-y-1.5">
+                          <p className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-700">
+                            Long-Term Memory
+                          </p>
+                          <p className="text-[11px] leading-relaxed text-neutral-500 font-medium max-w-[420px]">
+                            Remembers profile details and reusable facts for the same Telegram user
+                            across future private-chat sessions. `/clear` only resets thread
+                            history.
+                          </p>
+                        </div>
+
+                        <label
+                          className="relative inline-flex items-center cursor-pointer group scale-105 origin-right transition-transform shrink-0"
+                          aria-label="Toggle Long-Term Memory"
+                        >
+                          <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={longTermMemory.enabled}
+                            onChange={(e) =>
+                              updateLongTermMemorySettings({ enabled: e.target.checked })
+                            }
+                          />
+                          <div className="w-10 h-5.5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-black"></div>
+                        </label>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-500">
+                            Retrieval Limit
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="20"
+                            step="1"
+                            value={longTermMemory.retrievalLimit}
+                            disabled={!longTermMemory.enabled}
+                            onChange={(e) =>
+                              updateLongTermMemorySettings({
+                                retrievalLimit: Number(e.target.value),
+                              })
+                            }
+                            className="w-full h-11 px-4 bg-white border-2 border-neutral-100 rounded-2xl focus:ring-0 focus:border-black outline-none transition-all text-sm text-neutral-800 disabled:bg-neutral-50 disabled:text-neutral-400"
+                          />
+                          <p className="text-[11px] text-neutral-400 leading-tight">
+                            How many saved memories to inject per reply.
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-500">
+                            Max Entries
+                          </label>
+                          <input
+                            type="number"
+                            min="5"
+                            max="500"
+                            step="1"
+                            value={longTermMemory.maxEntriesPerUser}
+                            disabled={!longTermMemory.enabled}
+                            onChange={(e) =>
+                              updateLongTermMemorySettings({
+                                maxEntriesPerUser: Number(e.target.value),
+                              })
+                            }
+                            className="w-full h-11 px-4 bg-white border-2 border-neutral-100 rounded-2xl focus:ring-0 focus:border-black outline-none transition-all text-sm text-neutral-800 disabled:bg-neutral-50 disabled:text-neutral-400"
+                          />
+                          <p className="text-[11px] text-neutral-400 leading-tight">
+                            Older low-value memories are pruned above this cap.
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-500">
+                            Min Salience
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="1"
+                            step="0.05"
+                            value={longTermMemory.minSalienceToStore}
+                            disabled={!longTermMemory.enabled}
+                            onChange={(e) =>
+                              updateLongTermMemorySettings({
+                                minSalienceToStore: Number(e.target.value),
+                              })
+                            }
+                            className="w-full h-11 px-4 bg-white border-2 border-neutral-100 rounded-2xl focus:ring-0 focus:border-black outline-none transition-all text-sm text-neutral-800 disabled:bg-neutral-50 disabled:text-neutral-400"
+                          />
+                          <p className="text-[11px] text-neutral-400 leading-tight">
+                            Ignore extracted memories below this score.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-sky-700 bg-sky-50/80 p-3 rounded-xl border border-sky-100">
+                        <MessageCircle className="w-4 h-4 shrink-0" />
+                        <p className="text-[11px] font-medium leading-tight">
+                          Long-term memory is only used for Telegram private chats. Different users
+                          stay isolated from each other.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 )}

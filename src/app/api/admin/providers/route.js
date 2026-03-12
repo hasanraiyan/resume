@@ -5,6 +5,7 @@ import dbConnect from '@/lib/dbConnect';
 import ProviderSettings from '@/models/ProviderSettings';
 import { encrypt, decrypt } from '@/lib/crypto';
 import crypto from 'crypto';
+import { invalidateProviderModelCache } from '@/lib/providers/modelListCache';
 
 export async function GET(request) {
   try {
@@ -62,6 +63,7 @@ export async function POST(request) {
     });
 
     await newProvider.save();
+    invalidateProviderModelCache(providerId);
 
     const sanitized = newProvider.toObject();
     sanitized.apiKey = '***************';

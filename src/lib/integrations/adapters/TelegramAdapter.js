@@ -23,6 +23,7 @@ export class TelegramAdapter extends BaseIntegrationAdapter {
     const message = rawBody.message;
     const chatId = message.chat?.id;
     const chatType = message.chat?.type;
+    const userId = message.from?.id;
     const username = message.from?.username;
     const userMessage = message.text;
 
@@ -33,6 +34,7 @@ export class TelegramAdapter extends BaseIntegrationAdapter {
     return {
       chatId,
       chatType,
+      userId,
       username,
       userMessage,
       rawPayload: rawBody,

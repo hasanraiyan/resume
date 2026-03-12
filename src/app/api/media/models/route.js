@@ -3,6 +3,11 @@ import dbConnect from '@/lib/dbConnect';
 import ProviderSettings from '@/models/ProviderSettings';
 import { decrypt } from '@/lib/crypto';
 import OpenAI from 'openai';
+import {
+  DEFAULT_TTL_MS,
+  getCachedProviderModels,
+  setCachedProviderModels,
+} from '@/lib/providers/modelListCache';
 
 export async function GET(request) {
   try {
@@ -43,6 +48,21 @@ export async function GET(request) {
 
     console.log('[Media Models API] Provider found:', provider.name);
 
+    const cachedModels = getCachedProviderModels(providerId);
+    if (cachedModels) {
+      console.log(
+        '[Media Models API] Returning cached models:',
+        cachedModels.models.length,
+        'TTL ms remaining:',
+        Math.max(cachedModels.expiresAt - Date.now(), 0)
+      );
+      return Response.json({
+        models: cachedModels.models,
+        cached: true,
+        ttlMs: DEFAULT_TTL_MS,
+      });
+    }
+
     const decryptedKey = decrypt(provider.apiKey);
     if (!decryptedKey) {
       console.error('[Media Models API] Failed to decrypt API key');
@@ -58,9 +78,10 @@ export async function GET(request) {
       console.log('[Media Models API] Fetching models from provider...');
       const response = await openai.models.list();
       const models = response.data.map((m) => m.id);
+      setCachedProviderModels(providerId, models);
 
       console.log('[Media Models API] Retrieved', models.length, 'models');
-      return Response.json({ models });
+      return Response.json({ models, cached: false, ttlMs: DEFAULT_TTL_MS });
     } catch (apiError) {
       console.error('[Media Models API] OpenAI API error:', apiError.message);
       // Return empty models array instead of error for better UX
