@@ -54,18 +54,28 @@ export default function AdminPageWrapper({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [searchable]);
   return (
-    <div className={`space-y-8 pb-24 ${className}`}>
+    <div className={`space-y-8 pb-24 px-4 sm:px-6 lg:px-8 ${className}`}>
       {/* Page Header */}
-      <div className="border-b-2 border-neutral-200 pb-6">
+      <div className="relative group/header pt-8">
+        <div className="absolute inset-0 -top-4 -mx-4 sm:-mx-8 lg:-mx-12 h-64 bg-gradient-to-b from-white/50 to-transparent pointer-events-none backdrop-blur-[2px] border-b border-white/20 -z-10" />
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
           <div className="flex-1">
-            <h1 className="text-4xl font-bold text-black font-['Playfair_Display'] mb-2">
+            <h1 className="text-4xl sm:text-5xl font-bold text-black font-['Playfair_Display'] tracking-tight mb-3">
               {title}
             </h1>
-            {description && <p className="text-neutral-600 text-lg max-w-4xl">{description}</p>}
+            {description && (
+              <p className="text-neutral-600 text-lg max-w-2xl leading-relaxed">{description}</p>
+            )}
           </div>
 
-          {actionButton && <div className="mt-4 sm:mt-0 sm:ml-6">{actionButton}</div>}
+          {actionButton && (
+            <div className="mt-6 sm:mt-0 sm:ml-6 flex-shrink-0">
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-black/5 to-black/10 rounded-lg blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 pointer-events-none" />
+                {actionButton}
+              </div>
+            </div>
+          )}
         </div>
 
         {searchable && (
@@ -85,7 +95,7 @@ export default function AdminPageWrapper({
                     handleSearchChange('');
                   }
                 }}
-                className="pl-12 pr-12 py-3 w-full bg-white border-2 border-neutral-200 rounded-lg focus:border-black focus:ring-4 focus:ring-black/5 transition-all duration-200 text-neutral-700 placeholder-neutral-400 shadow-sm hover:shadow-md focus:shadow-lg text-sm"
+                className="pl-12 pr-12 py-3.5 w-full bg-white/70 backdrop-blur-md border border-neutral-200/50 rounded-xl focus:border-black focus:ring-8 focus:ring-black/5 transition-all duration-300 text-neutral-800 placeholder-neutral-400 shadow-sm hover:shadow-md focus:shadow-xl text-base"
               />
               {searchTerm && (
                 <button

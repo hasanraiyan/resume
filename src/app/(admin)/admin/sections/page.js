@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Card } from '@/components/ui';
+import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 
 function SectionCard({ href, icon, title, description, comingSoon }) {
   const cardContent = (
@@ -136,26 +137,25 @@ export default function SectionsAdminPage() {
   const quickActions = [];
 
   return (
-    <div className="space-y-8">
-      <div className="border-b-2 border-neutral-200 pb-6">
-        <h1 className="text-4xl font-bold text-black font-['Playfair_Display'] mb-2">
-          Manage Sections
-        </h1>
-        <p className="text-neutral-600 text-lg">
-          Configure and customize different sections of your portfolio website.
-        </p>
-      </div>
+    <AdminPageWrapper
+      title="Manage Sections"
+      description="Configure and customize different sections of your portfolio website."
+    >
+      <div className="space-y-10 max-w-6xl mx-auto">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-black font-['Playfair_Display'] flex items-center">
+            <i className="fas fa-layer-group mr-3 text-neutral-400"></i>
+            Available Sections
+          </h2>
+          <div className="h-px flex-1 bg-neutral-200 mx-6 opacity-50" />
+        </div>
 
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-black font-['Playfair_Display']">
-          Available Sections
-        </h2>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {sections.map((section, index) => (
             <SectionCard key={index} {...section} />
           ))}
         </div>
       </div>
-    </div>
+    </AdminPageWrapper>
   );
 }

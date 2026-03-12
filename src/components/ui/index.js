@@ -65,6 +65,12 @@ export { default as ForSaleBadge } from './ForSaleBadge';
  */
 export { default as TabNavigation } from './TabNavigation';
 
+/**
+ * Skeleton component with shimmer animation for loading states.
+ * @see {@link ./Skeleton.js} for detailed documentation.
+ */
+export { default as Skeleton } from './Skeleton';
+
 // ========================================
 // 🎨 DESIGN TOKENS & UTILITIES
 // ========================================

@@ -22,6 +22,7 @@ export default function Button({
   const classes = cn(
     componentStyles.buttons.base,
     componentStyles.buttons[variant],
+    'relative z-10',
     size !== 'base' && componentStyles.buttons[size],
     magnetic && !disabled && !isLoading && 'magnetic-btn',
     (disabled || isLoading) && 'opacity-50 cursor-not-allowed pointer-events-none',

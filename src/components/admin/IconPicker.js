@@ -524,7 +524,7 @@ export default function IconPicker({
                     <button
                       key={index}
                       onClick={() => handleIconSelect(icon.class)}
-                      className={`p-3 rounded-lg hover:bg-neutral-100 transition-colors group relative ${
+                      className={`p-3 rounded-lg hover:bg-neutral-100 transition-colors group relative cursor-pointer ${
                         selectedIcon === icon.class ? 'bg-blue-50 border border-blue-200' : ''
                       }`}
                       title={icon.name}

@@ -45,12 +45,32 @@ export default function EditServicePage({ params }) {
   }, [unwrappedParams.id]);
 
   if (loading) {
-    console.log('⏳ [SERVICE EDIT PAGE] Loading state - showing loading UI');
+    console.log('⏳ [SERVICE EDIT PAGE] Loading state - showing skeleton UI');
     return (
       <AdminPageWrapper title="Edit Service">
-        <div className="text-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-2 border-black border-t-transparent mx-auto"></div>
-          <p className="mt-4 text-neutral-600">Loading service...</p>
+        <div className="max-w-6xl mx-auto space-y-8">
+          <div className="relative overflow-hidden rounded-3xl bg-neutral-100 px-8 py-12 text-white shadow-sm mb-8 animate-pulse">
+            <div className="h-10 w-48 bg-neutral-200 rounded-lg mb-3" />
+            <div className="h-6 w-96 bg-neutral-200 rounded-lg" />
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+              <div className="p-8 bg-white border border-neutral-100 shadow-sm rounded-3xl space-y-8">
+                <div className="space-y-3">
+                  <div className="h-4 w-24 bg-neutral-100 rounded" />
+                  <div className="h-12 w-full bg-neutral-50 rounded-2xl" />
+                </div>
+                <div className="space-y-3">
+                  <div className="h-4 w-32 bg-neutral-100 rounded" />
+                  <div className="h-32 w-full bg-neutral-50 rounded-2xl" />
+                </div>
+              </div>
+            </div>
+            <div className="space-y-8">
+              <div className="h-64 w-full bg-neutral-100 rounded-[2.5rem] animate-pulse" />
+            </div>
+          </div>
         </div>
       </AdminPageWrapper>
     );
