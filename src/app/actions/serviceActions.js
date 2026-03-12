@@ -39,7 +39,7 @@ export async function createService(formData) {
     console.log('✅ [CREATE SERVICE] Service created successfully');
 
     // Revalidate the admin services page to show the new service
-    revalidatePath('/admin/services');
+    revalidatePath('/admin/sections/services');
     revalidatePath('/');
 
     return { success: true };
@@ -117,7 +117,7 @@ export async function updateService(id, formData) {
     console.log('✅ [UPDATE SERVICE] Service updated successfully for ID:', id);
 
     // Revalidate the admin services page to show the updated service
-    revalidatePath('/admin/services');
+    revalidatePath('/admin/sections/services');
     revalidatePath('/');
 
     return { success: true };
@@ -140,7 +140,7 @@ export async function deleteService(id) {
     await Service.findByIdAndDelete(id);
 
     // Revalidate the admin services page to remove the deleted service
-    revalidatePath('/admin/services');
+    revalidatePath('/admin/sections/services');
     revalidatePath('/');
 
     return { success: true };

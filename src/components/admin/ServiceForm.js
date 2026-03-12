@@ -93,7 +93,7 @@ export default function ServiceForm({ initialData, onSave, onDelete, isEditing =
         });
         console.log('✅ [SERVICE FORM] Submission successful');
         setTimeout(() => {
-          router.push('/admin/services');
+          router.push('/admin/sections/services');
         }, 1500);
       }
     } catch (error) {
@@ -118,7 +118,7 @@ export default function ServiceForm({ initialData, onSave, onDelete, isEditing =
       } else {
         setMessage({ type: 'success', text: 'Service deleted successfully!' });
         setTimeout(() => {
-          router.push('/admin/services');
+          router.push('/admin/sections/services');
         }, 1500);
       }
     } catch (error) {
@@ -146,7 +146,7 @@ export default function ServiceForm({ initialData, onSave, onDelete, isEditing =
 
         <div className="mt-4 sm:mt-0 flex space-x-3">
           <button
-            onClick={() => router.push('/admin/services')}
+            onClick={() => router.push('/admin/sections/services')}
             className="px-4 py-2 text-sm font-medium text-neutral-600 hover:text-black hover:bg-neutral-100 rounded transition-colors"
           >
             Cancel
@@ -287,7 +287,7 @@ export default function ServiceForm({ initialData, onSave, onDelete, isEditing =
         <div className="flex justify-end space-x-4">
           <button
             type="button"
-            onClick={() => router.push('/admin/services')}
+            onClick={() => router.push('/admin/sections/services')}
             className="px-6 py-3 text-sm font-medium text-neutral-600 hover:text-black hover:bg-neutral-100 rounded-lg transition-colors"
           >
             Cancel

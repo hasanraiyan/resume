@@ -66,16 +66,16 @@ export default function SectionsAdminPage() {
       description: 'Main introduction, profile image, and social buttons',
     },
     {
-      href: '/admin/sections/about',
-      icon: 'fa-info-circle',
-      title: 'About Section',
-      description: 'Bio, skills, and highlights titles',
-    },
-    {
       href: '/admin/sections/services',
       icon: 'fa-concierge-bell',
       title: 'Services Section',
       description: 'Manage your service offerings and section titles',
+    },
+    {
+      href: '/admin/sections/about',
+      icon: 'fa-info-circle',
+      title: 'About Section',
+      description: 'Bio, skills, and highlights titles',
     },
     {
       href: '/admin/sections/stats',
@@ -133,14 +133,7 @@ export default function SectionsAdminPage() {
     },
   ];
 
-  const quickActions = [
-    {
-      href: '/admin/marquee',
-      icon: 'fa-text-width',
-      title: 'Marquee Text',
-      description: 'Update the scrolling text banner',
-    },
-  ];
+  const quickActions = [];
 
   return (
     <div className="space-y-8">
@@ -160,15 +153,6 @@ export default function SectionsAdminPage() {
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {sections.map((section, index) => (
             <SectionCard key={index} {...section} />
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-black font-['Playfair_Display']">Quick Actions</h2>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {quickActions.map((action, index) => (
-            <SectionCard key={index} {...action} />
           ))}
         </div>
       </div>

@@ -44,7 +44,7 @@ function AdminLayoutContent({ children }) {
     { name: 'Storage', href: '/admin/storage', icon: 'fas fa-cloud' },
     { name: 'Messages', href: '/admin/contacts', icon: 'fas fa-envelope' },
     { name: 'Projects', href: '/admin/projects', icon: 'fas fa-folder' },
-    { name: 'Services', href: '/admin/services', icon: 'fas fa-tools' },
+    { name: 'Services', href: '/admin/sections/services', icon: 'fas fa-tools' },
     { name: 'Subscribers', href: '/admin/subscribers', icon: 'fas fa-users' },
   ];
 

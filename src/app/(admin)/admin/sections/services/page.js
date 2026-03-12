@@ -14,7 +14,7 @@ export default async function ServicesPage() {
       title="Services"
       description="Manage the services you offer on your portfolio."
       actionButton={
-        <Button href="/admin/services/new" variant="primary">
+        <Button href="/admin/sections/services/new" variant="primary">
           <i className="fas fa-plus mr-2"></i> Add Service
         </Button>
       }
@@ -29,7 +29,7 @@ export default async function ServicesPage() {
             <p className="text-neutral-600 mb-8">
               Get started by creating your first service offering.
             </p>
-            <Button href="/admin/services/new" variant="primary">
+            <Button href="/admin/sections/services/new" variant="primary">
               <i className="fas fa-plus mr-2"></i>
               Create First Service
             </Button>
@@ -57,7 +57,11 @@ export default async function ServicesPage() {
                     </Badge>
                   )}
                   <div className="text-sm text-neutral-500">Order: {service.displayOrder || 0}</div>
-                  <Button href={`/admin/services/${service._id}/edit`} variant="ghost" size="small">
+                  <Button
+                    href={`/admin/sections/services/${service._id}/edit`}
+                    variant="ghost"
+                    size="small"
+                  >
                     Edit
                   </Button>
                 </div>
