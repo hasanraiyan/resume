@@ -1,4 +1,3 @@
-
 /**
  * Updated Benchmark script for slug uniqueness check.
  * Compares current N+1 approach vs optimized regex approach.
@@ -47,14 +46,12 @@ class MockArticle {
   }
 
   async findOne({ slug }) {
-    const found = this.existingSlugs.find(s => s === slug);
+    const found = this.existingSlugs.find((s) => s === slug);
     return found ? { slug: found } : null;
   }
 
   async find({ slug: regex }) {
-    return this.existingSlugs
-      .filter(s => regex.test(s))
-      .map(s => ({ slug: s }));
+    return this.existingSlugs.filter((s) => regex.test(s)).map((s) => ({ slug: s }));
   }
 }
 
@@ -87,8 +84,8 @@ async function runBenchmark() {
   console.log(`  Time:        ${endOpt - startOpt}ms (simulated)`);
 
   if (resCurrent.slug !== resOpt.slug) {
-      console.error(`ERROR: Slugs do not match! Expected ${resCurrent.slug}, got ${resOpt.slug}`);
-      process.exit(1);
+    console.error(`ERROR: Slugs do not match! Expected ${resCurrent.slug}, got ${resOpt.slug}`);
+    process.exit(1);
   }
 }
 
