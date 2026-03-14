@@ -1,4 +1,3 @@
-
 import test from 'node:test';
 import assert from 'node:assert';
 
@@ -31,15 +30,13 @@ class MockArticle {
     this.existingSlugs = existingSlugs;
   }
   find({ slug: regex }) {
-    const results = this.existingSlugs
-      .filter(s => regex.test(s))
-      .map(s => ({ slug: s }));
+    const results = this.existingSlugs.filter((s) => regex.test(s)).map((s) => ({ slug: s }));
 
     // Chainable mock for .select().lean()
     return {
       select: () => ({
-        lean: async () => results
-      })
+        lean: async () => results,
+      }),
     };
   }
 }
