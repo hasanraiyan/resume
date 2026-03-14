@@ -60,7 +60,7 @@ export default function AdminPageWrapper({
         <div className="absolute inset-0 -top-4 -mx-4 sm:-mx-8 lg:-mx-12 h-64 bg-gradient-to-b from-white/50 to-transparent pointer-events-none backdrop-blur-[2px] border-b border-white/20 -z-10" />
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
           <div className="flex-1">
-            <h1 className="text-4xl sm:text-5xl font-bold text-black font-['Playfair_Display'] tracking-tight mb-3">
+            <h1 className="text-4xl sm:text-5xl font-bold text-black font-['Playfair_Display'] tracking-tight mb-3 break-all">
               {title}
             </h1>
             {description && (

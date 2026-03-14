@@ -10,6 +10,7 @@ export default function ShortLinksDashboard() {
   const { data: session } = useSession();
   const [links, setLinks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
   // Form State
@@ -90,6 +91,7 @@ export default function ShortLinksDashboard() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
       const payload = {
         ...formData,
@@ -113,6 +115,8 @@ export default function ShortLinksDashboard() {
       fetchLinks();
     } catch (err) {
       alert(err.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -204,9 +208,14 @@ export default function ShortLinksDashboard() {
                         {link.isActive ? 'Active' : 'Inactive'}
                       </Badge>
                     </td>
-                    <td className="py-4 px-4">
-                      <div className="font-medium text-black">{link.title || link.slug}</div>
-                      <div className="text-xs text-neutral-500 flex items-center mt-1">
+                    <td className="py-4 px-4 max-w-[150px]">
+                      <div
+                        className="font-medium text-black truncate"
+                        title={link.title || link.slug}
+                      >
+                        {link.title || link.slug}
+                      </div>
+                      <div className="text-xs text-neutral-500 flex items-center mt-1 break-all">
                         /r/{link.slug}
                         <button
                           onClick={() => handleCopyLink(link.slug)}
@@ -285,7 +294,8 @@ export default function ShortLinksDashboard() {
                       className="w-full border-2 border-neutral-300 rounded-r-xl px-4 py-2 focus:border-black focus:ring-0 text-sm"
                       placeholder="e.g., github"
                       pattern="^[a-z0-9-]+$"
-                      title="Only lowercase letters, numbers, and hyphens"
+                      maxLength={50}
+                      title="Only lowercase letters, numbers, and hyphens (Max 50 characters)"
                     />
                   </div>
                 </div>
@@ -362,7 +372,7 @@ export default function ShortLinksDashboard() {
                 <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" variant="primary">
+                <Button type="submit" variant="primary" isLoading={submitting}>
                   {isEditing ? 'Update Link' : 'Create Link'}
                 </Button>
               </div>

@@ -46,6 +46,7 @@ const shortLinkSchema = new mongoose.Schema(
       index: true,
       lowercase: true,
       trim: true,
+      maxlength: [50, 'Slug cannot exceed 50 characters'],
       match: [/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers, and hyphens'],
       validate: {
         validator: function (v) {

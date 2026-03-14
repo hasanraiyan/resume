@@ -40,6 +40,10 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Slug and Destination are required' }, { status: 400 });
     }
 
+    if (slug.length > 50) {
+      return NextResponse.json({ error: 'Slug cannot exceed 50 characters' }, { status: 400 });
+    }
+
     await dbConnect();
 
     // Check if slug exists
@@ -85,6 +89,10 @@ export async function PUT(request) {
 
     if (!id || !destination) {
       return NextResponse.json({ error: 'ID and Destination are required' }, { status: 400 });
+    }
+
+    if (slug && slug.length > 50) {
+      return NextResponse.json({ error: 'Slug cannot exceed 50 characters' }, { status: 400 });
     }
 
     await dbConnect();

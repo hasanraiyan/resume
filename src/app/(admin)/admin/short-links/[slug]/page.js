@@ -187,9 +187,16 @@ export default function ShortLinkAnalyticsPage() {
     },
   };
 
+  const displaySlug = slug?.length > 40 ? `${slug.substring(0, 40)}...` : slug;
+
   return (
     <AdminPageWrapper
-      title={`Analytics for /r/${slug}`}
+      title={
+        <span title={`/r/${slug}`}>
+          Analytics for /r/
+          {displaySlug}
+        </span>
+      }
       description={linkDetails?.title || `Detailed click analytics for ${linkDetails?.destination}`}
       actionButton={
         <div className="flex space-x-4 items-center">
