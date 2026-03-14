@@ -37,6 +37,8 @@ export async function GET(request) {
       uniqueVisitorsResult,
       clicksOverTime,
       topReferrers,
+      topSources,
+      topCampaigns,
       devices,
       countries,
     ] = await Promise.all([
@@ -89,6 +91,34 @@ export async function GET(request) {
         { $project: { _id: 0, referrer: '$_id', count: 1 } },
       ]),
 
+      // Top Sources (custom src parameters)
+      LinkClick.aggregate([
+        {
+          $match: {
+            ...matchCriteria,
+            source: { $ne: '', $exists: true }, // Only include hits with a source
+          },
+        },
+        { $group: { _id: '$source', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 10 },
+        { $project: { _id: 0, source: '$_id', count: 1 } },
+      ]),
+
+      // Top Campaigns (UTM parameters)
+      LinkClick.aggregate([
+        {
+          $match: {
+            ...matchCriteria,
+            utm_campaign: { $ne: '', $exists: true },
+          },
+        },
+        { $group: { _id: '$utm_campaign', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 10 },
+        { $project: { _id: 0, campaign: '$_id', count: 1 } },
+      ]),
+
       // Devices Breakdown
       LinkClick.aggregate([
         { $match: matchCriteria },
@@ -131,6 +161,8 @@ export async function GET(request) {
         linkDetails,
         clicksOverTime,
         topReferrers,
+        topSources,
+        topCampaigns,
         devices,
         countries,
       },

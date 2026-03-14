@@ -6,6 +6,10 @@ import mongoose from 'mongoose';
  * @property {string} slug - Denormalized slug for faster querying
  * @property {Date} timestamp - Time the click occurred
  * @property {string} [referrer] - URL that referred the click
+ * @property {string} [source] - Custom source parameter (e.g., ?src=linkedin)
+ * @property {string} [utm_source] - UTM source parameter
+ * @property {string} [utm_medium] - UTM medium parameter
+ * @property {string} [utm_campaign] - UTM campaign parameter
  * @property {string} [country] - Two-letter ISO country code
  * @property {string} [device] - Device type (e.g., Mobile, Desktop, Tablet)
  * @property {string} [browser] - Browser name
@@ -37,6 +41,22 @@ const linkClickSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: 'Direct',
+    },
+    source: {
+      type: String,
+      trim: true,
+    },
+    utm_source: {
+      type: String,
+      trim: true,
+    },
+    utm_medium: {
+      type: String,
+      trim: true,
+    },
+    utm_campaign: {
+      type: String,
+      trim: true,
     },
     country: {
       type: String,

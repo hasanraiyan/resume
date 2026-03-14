@@ -112,6 +112,13 @@ export async function GET(request, { params }) {
           }
         }
 
+        // Extract extra tracking parameters from query string
+        const { searchParams } = new URL(request.url);
+        const source = searchParams.get('src') || searchParams.get('source') || '';
+        const utm_source = searchParams.get('utm_source') || '';
+        const utm_medium = searchParams.get('utm_medium') || '';
+        const utm_campaign = searchParams.get('utm_campaign') || '';
+
         // Parse UA
         const parser = new UAParser(userAgentStr);
         const browser = parser.getBrowser().name || 'Unknown';
@@ -132,6 +139,10 @@ export async function GET(request, { params }) {
           shortLink: link._id,
           slug: link.slug,
           referrer,
+          source,
+          utm_source,
+          utm_medium,
+          utm_campaign,
           country,
           device,
           browser,

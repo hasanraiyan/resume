@@ -113,7 +113,16 @@ export default function ShortLinkAnalyticsPage() {
     );
   }
 
-  const { summary, linkDetails, topReferrers, devices, countries, clicksOverTime } = analytics;
+  const {
+    summary,
+    linkDetails,
+    topReferrers,
+    topSources,
+    topCampaigns,
+    devices,
+    countries,
+    clicksOverTime,
+  } = analytics;
 
   // Chart Configuration
   const chartData = {
@@ -283,7 +292,7 @@ export default function ShortLinkAnalyticsPage() {
         )}
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card variant="bordered" className="p-6">
           <h3 className="text-lg font-bold mb-4 font-['Playfair_Display']">Top Referrers</h3>
           {topReferrers.length > 0 ? (
@@ -300,6 +309,54 @@ export default function ShortLinkAnalyticsPage() {
             </ul>
           ) : (
             <p className="text-neutral-500 text-sm">No referrer data.</p>
+          )}
+        </Card>
+
+        <Card variant="bordered" className="p-6">
+          <h3 className="text-lg font-bold mb-4 font-['Playfair_Display']">Custom Sources</h3>
+          {topSources && topSources.length > 0 ? (
+            <ul className="space-y-3">
+              {topSources.map((src, idx) => (
+                <li
+                  key={idx}
+                  className="flex justify-between items-center text-sm border-b border-neutral-100 pb-2 last:border-0"
+                >
+                  <span className="font-medium truncate max-w-[150px] capitalize">
+                    {src.source}
+                  </span>
+                  <span className="text-neutral-500">{src.count} clicks</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-neutral-400 py-4">
+              <i className="fas fa-link mb-2 opacity-50"></i>
+              <p className="text-xs text-center">No custom source data (e.g. ?src=xxx)</p>
+            </div>
+          )}
+        </Card>
+
+        <Card variant="bordered" className="p-6">
+          <h3 className="text-lg font-bold mb-4 font-['Playfair_Display']">UTM Campaigns</h3>
+          {topCampaigns && topCampaigns.length > 0 ? (
+            <ul className="space-y-3">
+              {topCampaigns.map((camp, idx) => (
+                <li
+                  key={idx}
+                  className="flex justify-between items-center text-sm border-b border-neutral-100 pb-2 last:border-0"
+                >
+                  <span className="font-medium truncate max-w-[150px] capitalize">
+                    {camp.campaign}
+                  </span>
+                  <span className="text-neutral-500">{camp.count} clicks</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-neutral-400 py-4">
+              <i className="fas fa-bullhorn mb-2 opacity-50"></i>
+              <p className="text-xs text-center">No campaign data recorded.</p>
+            </div>
           )}
         </Card>
 
@@ -321,7 +378,9 @@ export default function ShortLinkAnalyticsPage() {
             <p className="text-neutral-500 text-sm">No location data.</p>
           )}
         </Card>
+      </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
         <Card variant="bordered" className="p-6">
           <h3 className="text-lg font-bold mb-4 font-['Playfair_Display']">Devices</h3>
           {devices.length > 0 ? (
