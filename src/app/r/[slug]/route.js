@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
+import crypto from 'node:crypto';
 import ShortLink from '@/models/ShortLink';
 import LinkClick from '@/models/LinkClick';
 import { isBot, hashIP } from '@/utils/analytics-helpers';
@@ -84,7 +85,12 @@ export async function GET(request, { params }) {
     // Get real IP for hashing
     const forwarded = request.headers.get('x-forwarded-for');
     const realIP = request.headers.get('x-real-ip');
-    const clientIP = forwarded ? forwarded.split(',')[0] : realIP || request.ip || '127.0.0.1';
+    // We avoid '127.0.0.1' as a fallback to prevent all missing-IP traffic
+    // from being rate-limited together or counted as a single unique visitor.
+    // Instead we use a random string or 'unknown' (hashIP returns null for falsy values).
+    const clientIP = forwarded
+      ? forwarded.split(',')[0]
+      : realIP || request.ip || `unknown-${Date.now()}-${crypto.randomUUID()}`;
     const ipHash = hashIP(clientIP);
 
     const isSpam = isRateLimited(ipHash);
@@ -119,21 +125,22 @@ export async function GET(request, { params }) {
         // context.waitUntil is used, but since Next.js App Router API Routes run on Node by default
         // (unless `export const runtime = 'edge'` is set), background promises usually complete.
         // For absolute safety and to guarantee consistency, we will await them here.
-        // The slight latency is an acceptable trade-off for accurate metrics.
+        // Create the LinkClick first, if it succeeds, then increment the counter on the ShortLink.
+        // This ensures the counter stays in sync with the actual click documents.
+        // Doing this sequentially avoids metric drift from partial parallel execution failures.
+        await LinkClick.create({
+          shortLink: link._id,
+          slug: link.slug,
+          referrer,
+          country,
+          device,
+          browser,
+          os,
+          ipHash,
+        });
 
-        await Promise.all([
-          ShortLink.updateOne({ _id: link._id }, { $inc: { totalClicks: 1 } }),
-          LinkClick.create({
-            shortLink: link._id,
-            slug: link.slug,
-            referrer,
-            country,
-            device,
-            browser,
-            os,
-            ipHash,
-          }),
-        ]);
+        // Only increment if creation of the log succeeded
+        await ShortLink.updateOne({ _id: link._id }, { $inc: { totalClicks: 1 } });
       } catch (logError) {
         console.error('Failed to log short link click:', logError);
         // We still proceed to redirect even if logging fails
