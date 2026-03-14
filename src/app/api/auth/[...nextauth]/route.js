@@ -37,14 +37,6 @@ export const authOptions = {
           const adminUsername = process.env.ADMIN_USERNAME;
           const adminPassword = process.env.ADMIN_PASSWORD;
 
-          // Debug logging (remove in production)
-          console.log('Auth attempt:', {
-            providedUsername: credentials?.username,
-            expectedUsername: adminUsername,
-            hasPassword: !!credentials?.password,
-            hasExpectedPassword: !!adminPassword,
-          });
-
           if (
             credentials?.username &&
             credentials?.password &&
