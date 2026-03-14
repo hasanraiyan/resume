@@ -4,8 +4,32 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 import { Button, Card, Badge, Skeleton } from '@/components/ui';
+
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 export default function ShortLinkAnalyticsPage() {
   const params = useParams();
@@ -91,6 +115,78 @@ export default function ShortLinkAnalyticsPage() {
 
   const { summary, linkDetails, topReferrers, devices, countries, clicksOverTime } = analytics;
 
+  // Chart Configuration
+  const chartData = {
+    labels: clicksOverTime.map((item) => item.date),
+    datasets: [
+      {
+        fill: true,
+        label: 'Clicks',
+        data: clicksOverTime.map((item) => item.clicks),
+        borderColor: 'rgb(0, 0, 0)',
+        backgroundColor: 'rgba(0, 0, 0, 0.05)',
+        tension: 0.4,
+        pointBackgroundColor: 'rgb(0, 0, 0)',
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: 'rgb(0, 0, 0)',
+        pointRadius: 4,
+        pointHitRadius: 10,
+      },
+    ],
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: '#fff',
+        titleColor: '#000',
+        bodyColor: '#666',
+        borderColor: '#eee',
+        borderWidth: 1,
+        padding: 12,
+        boxPadding: 4,
+        usePointStyle: true,
+        callbacks: {
+          label: (context) => ` ${context.parsed.y} clicks`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false,
+        },
+        ticks: {
+          font: {
+            size: 11,
+          },
+          color: '#999',
+        },
+      },
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0, 0, 0, 0.05)',
+          drawBorder: false,
+        },
+        ticks: {
+          stepSize: 1,
+          font: {
+            size: 11,
+          },
+          color: '#999',
+          padding: 8,
+        },
+      },
+    },
+  };
+
   return (
     <AdminPageWrapper
       title={`Analytics for /r/${slug}`}
@@ -162,20 +258,21 @@ export default function ShortLinkAnalyticsPage() {
         </Card>
       </div>
 
-      {/* Chart.js Placeholder structure for future integration */}
+      {/* Click trends chart */}
       <Card
         variant="bordered"
         className="p-6 mb-8 border-2 border-transparent hover:border-black transition-all"
       >
         <h3 className="text-lg font-bold mb-4 font-['Playfair_Display']">Clicks Over Time</h3>
         {clicksOverTime.length > 0 ? (
-          <div className="h-64 flex flex-col justify-center text-center text-neutral-400 bg-neutral-50 rounded-lg">
-            <i className="fas fa-chart-line text-4xl mb-2"></i>
-            <p>Ready for Chart.js Integration</p>
-            <p className="text-sm">Data points available: {clicksOverTime.length}</p>
+          <div className="h-72">
+            <Line data={chartData} options={chartOptions} />
           </div>
         ) : (
-          <p className="text-neutral-500 text-sm">No click data available for this period.</p>
+          <div className="h-64 flex flex-col justify-center text-center text-neutral-400 bg-neutral-50 rounded-lg">
+            <i className="fas fa-chart-line text-4xl mb-2"></i>
+            <p>No analytics data available for the selected time range.</p>
+          </div>
         )}
       </Card>
 
