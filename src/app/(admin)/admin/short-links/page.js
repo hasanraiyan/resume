@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
-import { Button, Card, Badge } from '@/components/ui';
+import { Button, Card, Badge, Skeleton } from '@/components/ui';
 
 export default function ShortLinksDashboard() {
   const { data: session } = useSession();
@@ -132,9 +132,47 @@ export default function ShortLinksDashboard() {
         </Button>
       }
     >
-      <Card className="p-6">
+      <Card variant="bordered" className="p-6">
         {loading ? (
-          <div className="text-center py-8">Loading links...</div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b-2 border-neutral-100">
+                  <th className="py-4 px-4 font-semibold text-sm">Status</th>
+                  <th className="py-4 px-4 font-semibold text-sm">Link</th>
+                  <th className="py-4 px-4 font-semibold text-sm">Destination</th>
+                  <th className="py-4 px-4 font-semibold text-sm">Clicks</th>
+                  <th className="py-4 px-4 font-semibold text-sm text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...Array(5)].map((_, i) => (
+                  <tr key={i} className="border-b border-neutral-50">
+                    <td className="py-4 px-4">
+                      <Skeleton className="h-6 w-16" />
+                    </td>
+                    <td className="py-4 px-4">
+                      <Skeleton className="h-5 w-32 mb-2" />
+                      <Skeleton className="h-3 w-20" />
+                    </td>
+                    <td className="py-4 px-4">
+                      <Skeleton className="h-4 w-48" />
+                    </td>
+                    <td className="py-4 px-4">
+                      <Skeleton className="h-5 w-8" />
+                    </td>
+                    <td className="py-4 px-4 text-right">
+                      <div className="flex justify-end space-x-2">
+                        <Skeleton className="h-8 w-8" />
+                        <Skeleton className="h-8 w-8" />
+                        <Skeleton className="h-8 w-8" />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : error ? (
           <div className="text-red-500 text-center py-8">{error}</div>
         ) : links.length === 0 ? (

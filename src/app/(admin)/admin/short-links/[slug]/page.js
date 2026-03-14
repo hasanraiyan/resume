@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
-import { Button, Card, Badge } from '@/components/ui';
+import { Button, Card, Badge, Skeleton } from '@/components/ui';
 
 export default function ShortLinkAnalyticsPage() {
   const params = useParams();
@@ -55,15 +55,35 @@ export default function ShortLinkAnalyticsPage() {
 
   if (loading || !analytics) {
     return (
-      <AdminPageWrapper title="Loading...">
-        <div className="animate-pulse flex space-x-4">
-          <div className="flex-1 space-y-4 py-1">
-            <div className="h-4 bg-neutral-200 rounded w-3/4"></div>
-            <div className="space-y-2">
-              <div className="h-4 bg-neutral-200 rounded"></div>
-              <div className="h-4 bg-neutral-200 rounded w-5/6"></div>
-            </div>
-          </div>
+      <AdminPageWrapper title="Loading Analytics...">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} variant="bordered" className="p-6">
+              <Skeleton className="h-4 w-24 mb-4" />
+              <Skeleton className="h-10 w-32" />
+            </Card>
+          ))}
+        </div>
+
+        <Card variant="bordered" className="p-6 mb-8">
+          <Skeleton className="h-6 w-48 mb-6" />
+          <Skeleton className="h-64 w-full" />
+        </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i} variant="bordered" className="p-6">
+              <Skeleton className="h-6 w-32 mb-6" />
+              <div className="space-y-4">
+                {[...Array(5)].map((_, j) => (
+                  <div key={j} className="flex justify-between">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-12" />
+                  </div>
+                ))}
+              </div>
+            </Card>
+          ))}
         </div>
       </AdminPageWrapper>
     );
@@ -95,13 +115,13 @@ export default function ShortLinkAnalyticsPage() {
       }
     >
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card className="p-6">
+        <Card variant="bordered" className="p-6">
           <h3 className="text-sm font-medium text-neutral-500 uppercase tracking-wider">
             Total Clicks
           </h3>
           <p className="text-3xl font-bold mt-2 font-['Playfair_Display']">{summary.totalClicks}</p>
         </Card>
-        <Card className="p-6">
+        <Card variant="bordered" className="p-6">
           <h3 className="text-sm font-medium text-neutral-500 uppercase tracking-wider">
             Unique Visitors
           </h3>
@@ -109,7 +129,7 @@ export default function ShortLinkAnalyticsPage() {
             {summary.uniqueVisitors}
           </p>
         </Card>
-        <Card className="p-6">
+        <Card variant="bordered" className="p-6">
           <h3 className="text-sm font-medium text-neutral-500 uppercase tracking-wider">Status</h3>
           <div className="mt-2">
             <Badge
@@ -122,7 +142,7 @@ export default function ShortLinkAnalyticsPage() {
             </Badge>
           </div>
         </Card>
-        <Card className="p-6">
+        <Card variant="bordered" className="p-6">
           <h3 className="text-sm font-medium text-neutral-500 uppercase tracking-wider">Tags</h3>
           <div className="mt-2 flex flex-wrap gap-2">
             {linkDetails?.tags?.length > 0 ? (
@@ -143,7 +163,10 @@ export default function ShortLinkAnalyticsPage() {
       </div>
 
       {/* Chart.js Placeholder structure for future integration */}
-      <Card className="p-6 mb-8 border-2 border-transparent hover:border-black transition-all">
+      <Card
+        variant="bordered"
+        className="p-6 mb-8 border-2 border-transparent hover:border-black transition-all"
+      >
         <h3 className="text-lg font-bold mb-4 font-['Playfair_Display']">Clicks Over Time</h3>
         {clicksOverTime.length > 0 ? (
           <div className="h-64 flex flex-col justify-center text-center text-neutral-400 bg-neutral-50 rounded-lg">
@@ -157,7 +180,7 @@ export default function ShortLinkAnalyticsPage() {
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="p-6">
+        <Card variant="bordered" className="p-6">
           <h3 className="text-lg font-bold mb-4 font-['Playfair_Display']">Top Referrers</h3>
           {topReferrers.length > 0 ? (
             <ul className="space-y-3">
@@ -176,7 +199,7 @@ export default function ShortLinkAnalyticsPage() {
           )}
         </Card>
 
-        <Card className="p-6">
+        <Card variant="bordered" className="p-6">
           <h3 className="text-lg font-bold mb-4 font-['Playfair_Display']">Top Locations</h3>
           {countries.length > 0 ? (
             <ul className="space-y-3">
@@ -195,7 +218,7 @@ export default function ShortLinkAnalyticsPage() {
           )}
         </Card>
 
-        <Card className="p-6">
+        <Card variant="bordered" className="p-6">
           <h3 className="text-lg font-bold mb-4 font-['Playfair_Display']">Devices</h3>
           {devices.length > 0 ? (
             <ul className="space-y-3">
