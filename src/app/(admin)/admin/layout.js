@@ -32,21 +32,39 @@ function AdminLayoutContent({ children }) {
     return null;
   }
 
-  const navigation = [
-    { name: 'Analytics', href: '/admin/analytics', icon: 'fas fa-chart-line' },
-    { name: 'AI Command Hub', href: '/admin/agents', icon: 'fas fa-brain' },
-    { name: 'Articles', href: '/admin/articles', icon: 'fas fa-newspaper' },
-    { name: 'Chat Logs', href: '/admin/chatbot/logs', icon: 'fas fa-comments' },
-    { name: 'Contributors', href: '/admin/contributors', icon: 'fas fa-users' },
-    { name: 'Dashboard', href: '/admin/dashboard', icon: 'fas fa-tachometer-alt' },
-    { name: 'Manage Sections', href: '/admin/sections', icon: 'fas fa-cog' },
-    { name: 'Media Library', href: '/admin/media', icon: 'fas fa-images' },
-    { name: 'Storage', href: '/admin/storage', icon: 'fas fa-cloud' },
-    { name: 'Messages', href: '/admin/contacts', icon: 'fas fa-envelope' },
-    { name: 'Projects', href: '/admin/projects', icon: 'fas fa-folder' },
-    { name: 'Short Links', href: '/admin/short-links', icon: 'fas fa-link' },
-    { name: 'Services', href: '/admin/sections/services', icon: 'fas fa-tools' },
-    { name: 'Subscribers', href: '/admin/subscribers', icon: 'fas fa-users' },
+  const navigationGroups = [
+    {
+      title: 'Common',
+      items: [
+        { name: 'Dashboard', href: '/admin/dashboard', icon: 'fas fa-tachometer-alt' },
+        { name: 'Analytics', href: '/admin/analytics', icon: 'fas fa-chart-line' },
+        { name: 'AI Command Hub', href: '/admin/agents', icon: 'fas fa-brain' },
+        { name: 'Chat Logs', href: '/admin/chatbot/logs', icon: 'fas fa-comments' },
+      ],
+    },
+    {
+      title: 'Apps',
+      items: [{ name: 'Short Links', href: '/admin/short-links', icon: 'fas fa-link' }],
+    },
+    {
+      title: 'Content',
+      items: [
+        { name: 'Articles', href: '/admin/articles', icon: 'fas fa-newspaper' },
+        { name: 'Projects', href: '/admin/projects', icon: 'fas fa-folder' },
+        { name: 'Media Library', href: '/admin/media', icon: 'fas fa-images' },
+        { name: 'Manage Sections', href: '/admin/sections', icon: 'fas fa-cog' },
+        { name: 'Services', href: '/admin/sections/services', icon: 'fas fa-tools' },
+      ],
+    },
+    {
+      title: 'Management',
+      items: [
+        { name: 'Contributors', href: '/admin/contributors', icon: 'fas fa-users' },
+        { name: 'Messages', href: '/admin/contacts', icon: 'fas fa-envelope' },
+        { name: 'Subscribers', href: '/admin/subscribers', icon: 'fas fa-users' },
+        { name: 'Storage', href: '/admin/storage', icon: 'fas fa-cloud' },
+      ],
+    },
   ];
 
   return (
@@ -72,17 +90,28 @@ function AdminLayoutContent({ children }) {
               <i className="fas fa-times text-lg"></i>
             </Button>
           </div>
-          <nav className="mt-6 px-3 space-y-2 overflow-y-auto max-h-[calc(100vh-80px)]">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200 touch-manipulation"
-                onClick={() => setSidebarOpen(false)}
-              >
-                <i className={`${item.icon} mr-3 text-gray-400`}></i>
-                {item.name}
-              </Link>
+          <nav className="mt-6 px-3 pb-8 space-y-6 overflow-y-auto max-h-[calc(100vh-80px)]">
+            {navigationGroups.map((group) => (
+              <div key={group.title}>
+                <h3 className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                  {group.title}
+                </h3>
+                <div className="space-y-1">
+                  {group.items.map((item) => (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200 touch-manipulation"
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <i
+                        className={`${item.icon} w-5 mr-3 text-gray-400 group-hover:text-gray-600 transition-colors`}
+                      ></i>
+                      {item.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
             ))}
           </nav>
         </div>
