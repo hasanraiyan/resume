@@ -44,7 +44,7 @@ function AdminLayoutContent({ children }) {
     },
     {
       title: 'Apps',
-      items: [{ name: 'Short Links', href: '/admin/short-links', icon: 'fas fa-link' }],
+      items: [{ name: 'SnapLinks', href: '/admin/short-links', icon: 'fas fa-link' }],
     },
     {
       title: 'Content',

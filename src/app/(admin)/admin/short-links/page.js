@@ -128,8 +128,8 @@ export default function ShortLinksDashboard() {
 
   return (
     <AdminPageWrapper
-      title="Short Links"
-      description="Create, manage, and track custom redirect links for your portfolio."
+      title="SnapLinks"
+      description="Create, manage, and track lightning-fast redirect links for your portfolio."
       actionButton={
         <Button onClick={openCreateModal} variant="primary">
           <i className="fas fa-plus mr-2"></i> Create Link
@@ -181,7 +181,7 @@ export default function ShortLinksDashboard() {
           <div className="text-red-500 text-center py-8">{error}</div>
         ) : links.length === 0 ? (
           <div className="text-center py-12 text-neutral-500">
-            <p>No short links found. Create your first link to get started.</p>
+            <p>No SnapLinks found. Create your first link to get started.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -274,7 +274,7 @@ export default function ShortLinksDashboard() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <Card className="p-8 w-full max-w-2xl bg-white max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-6 font-['Playfair_Display']">
-              {isEditing ? 'Edit Short Link' : 'Create Short Link'}
+              {isEditing ? 'Edit SnapLink' : 'Create SnapLink'}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

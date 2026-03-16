@@ -79,7 +79,7 @@ export default function ShortLinkAnalyticsPage() {
 
   if (loading || !analytics) {
     return (
-      <AdminPageWrapper title="Loading Analytics...">
+      <AdminPageWrapper title="Loading SnapLinks Analytics...">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {[...Array(4)].map((_, i) => (
             <Card key={i} variant="bordered" className="p-6">
@@ -202,7 +202,7 @@ export default function ShortLinkAnalyticsPage() {
     <AdminPageWrapper
       title={
         <span title={`/r/${slug}`}>
-          Analytics for /r/
+          SnapLinks Analytics for /r/
           {displaySlug}
         </span>
       }
