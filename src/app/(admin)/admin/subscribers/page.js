@@ -1,4 +1,6 @@
 import { redirect } from 'next/navigation';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import dbConnect from '@/lib/dbConnect';
 import Subscriber from '@/models/Subscriber';
 import SubscribersClient from '@/components/admin/SubscribersClient';
@@ -8,8 +10,11 @@ import SubscribersClient from '@/components/admin/SubscribersClient';
  * Displays and manages newsletter subscribers
  */
 export default async function SubscribersPage() {
-  // TODO: Add authentication check
-  // For now, we'll assume admin access
+  const session = await getServerSession(authOptions);
+
+  if (!session || session.user.role !== 'admin') {
+    redirect('/login');
+  }
 
   await dbConnect();
 

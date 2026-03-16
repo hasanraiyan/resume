@@ -1,4 +1,7 @@
 import Link from 'next/link';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { redirect } from 'next/navigation';
 import { getAllProjects } from '@/app/actions/projectActions';
 import { getAllContacts } from '@/app/actions/contactActions';
 import { Button, Card } from '@/components/ui';
@@ -19,6 +22,12 @@ function getStatIcon(statName) {
 }
 
 export default async function AdminDashboard() {
+  const session = await getServerSession(authOptions);
+
+  if (!session || session.user.role !== 'admin') {
+    redirect('/login');
+  }
+
   const [projectsResult, contactsResult] = await Promise.all([getAllProjects(), getAllContacts()]);
 
   const totalProjects = projectsResult.projects?.length || 0;
