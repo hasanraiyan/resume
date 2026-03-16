@@ -30,7 +30,7 @@ A modern, full-stack portfolio website built with Next.js 15, featuring an AI-po
 Before you begin, ensure you have the following installed:
 
 - **Node.js** (v18 or higher)
-- **npm**, **yarn**, **pnpm**, or **bun**
+- **pnpm**, **npm**, **yarn**, or **bun**
 - **MongoDB** (local instance or MongoDB Atlas account)
 - **OpenAI API Key** (for chatbot functionality)
 
@@ -53,35 +53,23 @@ yarn install
 pnpm install
 ```
 
-### 3. Environment Configuration
+### 3. Quick Setup
 
-Create a `.env.local` file in the root directory with the following variables:
-
-```env
-# Database
-MONGODB_URI=mongodb://localhost:27017/portfolio
-# or for MongoDB Atlas:
-# MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/portfolio
-
-# NextAuth Configuration
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your-secret-key-here
-
-# OpenAI API (for AI Chatbot)
-OPENAI_API_KEY=your-openai-api-key
-OPENAI_BASE_URL=https://api.openai.com/v1
-OPENAI_MODEL_NAME=gpt-4-turbo-preview
-
-# Admin Credentials (First User)
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=your-secure-password
-```
-
-**Security Note**: Generate a strong secret for `NEXTAUTH_SECRET` using:
+The easiest way to configure the project is to use the interactive setup script:
 
 ```bash
-openssl rand -base64 32
+pnpm run project-setup
 ```
+
+This script will:
+
+- Guide you through the configuration of Database, Admin, and API keys.
+- **Automatically generate** secure random secrets for `NEXTAUTH_SECRET` and `ENCRYPTION_SECRET`.
+- Create and populate your `.env` file based on your inputs.
+
+#### Manual Configuration (Alternative)
+
+If you prefer to configure manually, copy `.env.example` to `.env` and fill in the required variables.
 
 ### 4. Database Setup
 
@@ -211,25 +199,29 @@ resume/
 
 ### Available Scripts
 
-```bash
 # Development server with Turbopack
-npm run dev
+
+pnpm run dev
 
 # Production build
-npm run build
+
+pnpm run build
 
 # Start production server
-npm start
+
+pnpm start
 
 # Lint code
-npm run lint
+
+pnpm run lint
 
 # Format code with Prettier
-npm run format
+
+pnpm run format
 
 # Check formatting
-npm run check-format
-```
+
+pnpm run check-format
 
 ### Code Style
 

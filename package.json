@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "next dev --turbopack",
+    "project-setup": "node scripts/setup.js",
     "build": "rimraf .next/cache && next build --no-lint",
     "start": "next start",
     "lint": "eslint",
@@ -43,6 +44,7 @@
     "cloudinary": "^2.7.0",
     "date-fns": "^4.1.0",
     "easymde": "^2.20.0",
+    "enquirer": "^2.4.1",
     "fuse.js": "^7.1.0",
     "gsap": "^3.13.0",
     "jspdf": "^4.2.0",
