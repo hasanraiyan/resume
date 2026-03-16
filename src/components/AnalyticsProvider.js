@@ -48,13 +48,7 @@ export default function AnalyticsProvider({ children }) {
 
   useEffect(() => {
     // Initialize analytics tracker
-    console.log('=== ANALYTICS PROVIDER DEBUG ===');
-    console.log('Initializing analytics tracker...');
-
     const analytics = getAnalytics();
-    console.log('Analytics instance created:', !!analytics);
-    console.log('Analytics enabled:', analytics.isEnabled);
-    console.log('Session ID:', analytics.sessionId);
 
     // Set user role if session is available and loaded
     if (status !== 'loading' && session?.user) {
@@ -63,7 +57,6 @@ export default function AnalyticsProvider({ children }) {
 
     // Flush events when page is about to unload
     const handleBeforeUnload = () => {
-      console.log('Page unloading, flushing analytics...');
       const analytics = getAnalytics();
       analytics.flush();
     };
@@ -71,7 +64,6 @@ export default function AnalyticsProvider({ children }) {
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
-      console.log('AnalyticsProvider cleanup, final flush...');
       window.removeEventListener('beforeunload', handleBeforeUnload);
       // Final flush of any remaining events
       const analytics = getAnalytics();

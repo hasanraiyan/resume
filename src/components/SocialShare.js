@@ -112,19 +112,8 @@ export default function SocialShare({ title, slug, excerpt, type = 'article', cl
       ? contentUrl
       : contentUrl.replace('http://', 'https://');
 
-    // Debug logging (remove in production)
-    console.log('LinkedIn Share Debug:', {
-      originalUrl: contentUrl,
-      secureUrl: secureUrl,
-      isHttps: secureUrl.startsWith('https://'),
-      title: title,
-      type: type,
-    });
-
     // Try LinkedIn's current sharing method first
     const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(secureUrl)}`;
-
-    console.log('LinkedIn URL generated:', linkedinUrl);
 
     try {
       // Open in new window with specific dimensions
@@ -136,7 +125,6 @@ export default function SocialShare({ title, slug, excerpt, type = 'article', cl
 
       // Check if popup was blocked
       if (!shareWindow) {
-        console.log('LinkedIn popup blocked, copying to clipboard');
         // Fallback: copy URL to clipboard
         navigator.clipboard
           .writeText(linkedinUrl)
@@ -148,8 +136,6 @@ export default function SocialShare({ title, slug, excerpt, type = 'article', cl
           .catch(() => {
             alert(`LinkedIn sharing: ${linkedinUrl}`);
           });
-      } else {
-        console.log('LinkedIn share window opened successfully');
       }
     } catch (error) {
       console.error('LinkedIn sharing failed:', error);

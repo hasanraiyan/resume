@@ -45,17 +45,12 @@ class AnalyticsTracker {
   setUser(user) {
     if (user && user.role === 'admin') {
       this.userRole = 'admin';
-      console.log('AnalyticsTracker: User identified as admin.');
 
       // Retroactively update any existing events in the queue
       // that were tracked before the session was loaded
       this.eventQueue.forEach((event) => {
         if (event.userRole === 'visitor') {
           event.userRole = 'admin';
-          console.log(
-            'AnalyticsTracker: Retroactively updated event userRole to admin:',
-            event.path
-          );
         }
       });
     }
@@ -79,17 +74,8 @@ class AnalyticsTracker {
     const storedSessionId = localStorage.getItem(SESSION_KEY);
     const storedExpiry = localStorage.getItem(SESSION_EXPIRY_KEY);
 
-    console.log('=== SESSION DEBUG ===');
-    console.log('Current time:', new Date(now).toISOString());
-    console.log('Stored session ID:', storedSessionId);
-    console.log(
-      'Stored expiry:',
-      storedExpiry ? new Date(parseInt(storedExpiry)).toISOString() : 'none'
-    );
-
     // Check if existing session is still valid
     if (storedSessionId && storedExpiry && parseInt(storedExpiry) > now) {
-      console.log('Using existing valid session:', storedSessionId);
       return storedSessionId;
     }
 
@@ -97,13 +83,6 @@ class AnalyticsTracker {
     const newSessionId = this.generateSessionId();
     localStorage.setItem(SESSION_KEY, newSessionId);
     localStorage.setItem(SESSION_EXPIRY_KEY, (now + SESSION_DURATION).toString());
-
-    console.log(
-      'Created new session:',
-      newSessionId,
-      'expires:',
-      new Date(now + SESSION_DURATION).toISOString()
-    );
 
     return newSessionId;
   }
@@ -153,13 +132,6 @@ class AnalyticsTracker {
     ];
 
     const isBotDetected = botPatterns.some((pattern) => userAgent.includes(pattern));
-    console.log('=== BOT DETECTION DEBUG ===');
-    console.log('User agent:', userAgent);
-    console.log(
-      'Bot patterns found:',
-      botPatterns.filter((pattern) => userAgent.includes(pattern))
-    );
-    console.log('Is bot detected:', isBotDetected);
 
     return isBotDetected;
   }
@@ -204,9 +176,6 @@ class AnalyticsTracker {
       timestamp: new Date().toISOString(),
     };
 
-    console.log('=== CLIENT ANALYTICS DEBUG ===');
-    console.log('Sending event data:', JSON.stringify(eventData, null, 2));
-
     this.eventQueue.push(eventData);
 
     // Flush immediately for pageviews and critical events
@@ -229,10 +198,6 @@ class AnalyticsTracker {
     const events = [...this.eventQueue];
     this.eventQueue = [];
 
-    console.log('=== FLUSH DEBUG ===');
-    console.log(`Sending ${events.length} events to ${this.apiEndpoint}`);
-    console.log('Events payload:', JSON.stringify(events, null, 2));
-
     try {
       const response = await fetch(this.apiEndpoint, {
         method: 'POST',
@@ -242,21 +207,14 @@ class AnalyticsTracker {
         body: JSON.stringify(events),
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-
       if (!response.ok) {
         // Put events back in queue if sending failed
         this.eventQueue.unshift(...events);
-        console.log('Request failed, events returned to queue');
-      } else {
-        console.log('Request successful');
       }
     } catch (error) {
       console.error('Analytics flush error:', error);
       // Put events back in queue if sending failed
       this.eventQueue.unshift(...events);
-      console.log('Network error, events returned to queue');
     }
   }
 

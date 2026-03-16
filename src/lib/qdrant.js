@@ -44,7 +44,6 @@ export async function ensureCollection(collectionName, vectorSize) {
       }
     }
 
-    console.log(`Creating Qdrant collection: ${collectionName} (Size: ${vectorSize})`);
     await qdrantClient.createCollection(collectionName, {
       vectors: {
         size: vectorSize,
