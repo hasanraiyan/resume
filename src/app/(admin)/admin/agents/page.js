@@ -28,7 +28,7 @@ import {
   X,
 } from 'lucide-react';
 import AgentConfigurationModal from '@/components/admin/AgentConfigurationModal';
-import { Card } from '@/components/ui';
+import { Card, Skeleton } from '@/components/ui';
 import { formatDistanceToNow } from 'date-fns';
 import Switch from '@/components/admin/Switch';
 
@@ -452,7 +452,43 @@ export default function AgentsDashboard() {
   if (loading)
     return (
       <AdminPageWrapper>
-        <div className="p-8 text-center text-neutral-500">Loading AI Hub...</div>
+        <div className="space-y-8 pb-24">
+          {/* Header Skeleton */}
+          <div className="border-b border-neutral-200 pb-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <Skeleton className="h-10 w-64" />
+              <Skeleton className="h-12 w-full md:w-80 lg:w-96 rounded-xl" />
+            </div>
+          </div>
+
+          <div className="max-w-6xl mx-auto space-y-12">
+            {/* Tabs Skeleton */}
+            <div className="flex border-b border-neutral-200 gap-8 pb-4">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-8 w-24 rounded-lg" />
+              ))}
+            </div>
+
+            {/* Grid Skeleton */}
+            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <Card key={i} className="p-6 border-2 border-neutral-100 flex flex-col h-64">
+                  <div className="flex items-center gap-3 mb-6">
+                    <Skeleton className="w-12 h-12 rounded-xl" />
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-5 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                  </div>
+                  <Skeleton className="flex-1 w-full mb-4" />
+                  <div className="mt-auto pt-4 border-t border-neutral-100">
+                    <Skeleton className="h-8 w-full rounded-lg" />
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
       </AdminPageWrapper>
     );
 
@@ -486,9 +522,7 @@ export default function AgentsDashboard() {
       {/* Page Header */}
       <div className="border-b border-neutral-200 pb-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h1 className="text-4xl font-bold text-black font-['Playfair_Display']">
-            AI Command Hub
-          </h1>
+          <h1 className="text-4xl font-bold text-black font-['Playfair_Display']">SmallClaw 🦞</h1>
 
           {/* Search */}
           <div className="w-full md:w-80 lg:w-96">

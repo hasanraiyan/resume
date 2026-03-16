@@ -6,6 +6,21 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import SessionProvider from '@/components/SessionProvider';
 import { Button } from '@/components/ui';
+import {
+  Gauge,
+  BarChart2,
+  Brain,
+  MessageSquare,
+  Link as LinkIcon,
+  Image,
+  Newspaper,
+  Folder,
+  Settings,
+  Wrench,
+  Users,
+  Mail,
+  Cloud,
+} from 'lucide-react';
 
 function AdminLayoutContent({ children }) {
   const { data: session, status } = useSession();
@@ -36,33 +51,35 @@ function AdminLayoutContent({ children }) {
     {
       title: 'Common',
       items: [
-        { name: 'Dashboard', href: '/admin/dashboard', icon: 'fas fa-tachometer-alt' },
-        { name: 'Analytics', href: '/admin/analytics', icon: 'fas fa-chart-line' },
-        { name: 'AI Command Hub', href: '/admin/agents', icon: 'fas fa-brain' },
-        { name: 'Chat Logs', href: '/admin/chatbot/logs', icon: 'fas fa-comments' },
+        { name: 'Dashboard', href: '/admin/dashboard', icon: Gauge },
+        { name: 'Analytics', href: '/admin/analytics', icon: BarChart2 },
+        { name: 'Chat Logs', href: '/admin/chatbot/logs', icon: MessageSquare },
       ],
     },
     {
       title: 'Apps',
-      items: [{ name: 'SnapLinks', href: '/admin/short-links', icon: 'fas fa-link' }],
+      items: [
+        { name: 'SnapLinks', href: '/admin/short-links', icon: LinkIcon },
+        { name: 'SmallClaw 🦞', href: '/admin/agents', icon: Brain },
+        { name: 'Prisma', href: '/admin/media', icon: Image },
+      ],
     },
     {
       title: 'Content',
       items: [
-        { name: 'Articles', href: '/admin/articles', icon: 'fas fa-newspaper' },
-        { name: 'Projects', href: '/admin/projects', icon: 'fas fa-folder' },
-        { name: 'Media Library', href: '/admin/media', icon: 'fas fa-images' },
-        { name: 'Manage Sections', href: '/admin/sections', icon: 'fas fa-cog' },
-        { name: 'Services', href: '/admin/sections/services', icon: 'fas fa-tools' },
+        { name: 'Articles', href: '/admin/articles', icon: Newspaper },
+        { name: 'Projects', href: '/admin/projects', icon: Folder },
+        { name: 'Manage Sections', href: '/admin/sections', icon: Settings },
+        { name: 'Services', href: '/admin/sections/services', icon: Wrench },
       ],
     },
     {
       title: 'Management',
       items: [
-        { name: 'Contributors', href: '/admin/contributors', icon: 'fas fa-users' },
-        { name: 'Messages', href: '/admin/contacts', icon: 'fas fa-envelope' },
-        { name: 'Subscribers', href: '/admin/subscribers', icon: 'fas fa-users' },
-        { name: 'Storage', href: '/admin/storage', icon: 'fas fa-cloud' },
+        { name: 'Contributors', href: '/admin/contributors', icon: Users },
+        { name: 'Messages', href: '/admin/contacts', icon: Mail },
+        { name: 'Subscribers', href: '/admin/subscribers', icon: Users },
+        { name: 'Storage', href: '/admin/storage', icon: Cloud },
       ],
     },
   ];
@@ -101,12 +118,10 @@ function AdminLayoutContent({ children }) {
                     <Link
                       key={item.name}
                       href={item.href}
-                      className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200 touch-manipulation"
+                      className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200 touch-manipulation group"
                       onClick={() => setSidebarOpen(false)}
                     >
-                      <i
-                        className={`${item.icon} w-5 mr-3 text-gray-400 group-hover:text-gray-600 transition-colors`}
-                      ></i>
+                      <item.icon className="w-5 h-5 mr-3 text-gray-400 group-hover:text-gray-900 transition-colors" />
                       {item.name}
                     </Link>
                   ))}

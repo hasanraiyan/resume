@@ -1,6 +1,9 @@
 # Portfolio Resume Website
 
-A modern, full-stack portfolio website built with Next.js 15, featuring an AI-powered chatbot, comprehensive analytics, content management system, and dynamic project showcase. This application demonstrates advanced web development practices with a focus on performance, user experience, and maintainability.
+A modern, full-stack portfolio website built with Next.js 15, featuring an AI-powered chatbot, comprehensive analytics, content management system, and dynamic project showcase.
+
+> [!CAUTION]
+> **DEVELOPMENT STATUS**: This project is currently in active development. Features are being added and refined daily. Use with caution in production environments.
 
 ## 🚀 Features
 
@@ -415,16 +418,16 @@ Manage content via the admin dashboard:
 
 ## 📄 License
 
-This project is private and proprietary.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 👨‍💻 Author
 
-Built with ❤️ by a senior full-stack developer with 30 years of experience.
+Built with ❤️ by Raiyan Hasan.
 
-## 🆘 Support
+## 🆘 Support & Issues
 
-For issues and questions:
+If you encounter any issues:
 
-- Check documentation above
-- Review existing issues
-- Create a new issue with detailed description
+1. Check the [Documentation](#-features) above.
+2. Search through [Existing Issues](https://github.com/hasanraiyan/resume/issues).
+3. If your issue is new, please [Create a New Issue](https://github.com/hasanraiyan/resume/issues/new/choose) using the provided templates.

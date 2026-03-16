@@ -14,8 +14,8 @@ export default async function MediaLibraryPage() {
   return (
     <MediaLibraryClient
       initialAssets={serializedAssets}
-      title="Media Library"
-      description="Upload and manage your images and assets."
+      title="Prisma"
+      description="Manage your high-performance media assets and gallery."
     />
   );
 }
