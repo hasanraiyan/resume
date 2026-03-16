@@ -337,7 +337,7 @@ The AI chatbot features:
 
 ### Vercel (Recommended)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fhasanraiyan%2Fresume&env=MONGODB_URI,NEXTAUTH_SECRET,ENCRYPTION_SECRET,ADMIN_USERNAME,ADMIN_PASSWORD&project-name=beyond-campus&repository-name=beyond-campus)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fhasanraiyan%2Fresume&env=MONGODB_URI,NEXTAUTH_SECRET,ENCRYPTION_SECRET,ADMIN_USERNAME,ADMIN_PASSWORD&project-name=resume&repository-name=resume)
 
 1. Push code to GitHub/GitLab/Bitbucket
 2. Import project in Vercel
