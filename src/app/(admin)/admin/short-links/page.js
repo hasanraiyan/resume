@@ -231,7 +231,9 @@ export default function ShortLinksDashboard() {
                         <Badge
                           variant="tag"
                           className={
-                            link.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            link.isActive
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
                           }
                         >
                           {link.isActive ? 'Active' : 'Inactive'}
@@ -299,10 +301,16 @@ export default function ShortLinksDashboard() {
             {/* Mobile Cards */}
             <div className="md:hidden space-y-4">
               {links.map((link) => (
-                <div key={link._id} className="border border-neutral-100 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+                <div
+                  key={link._id}
+                  className="border border-neutral-100 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow"
+                >
                   <div className="flex justify-between items-start mb-3">
                     <div className="max-w-[70%]">
-                      <div className="font-medium text-black truncate" title={link.title || link.slug}>
+                      <div
+                        className="font-medium text-black truncate"
+                        title={link.title || link.slug}
+                      >
                         {link.title || link.slug}
                       </div>
                       <div className="text-xs text-neutral-500 flex items-center mt-1 break-all">
@@ -319,7 +327,9 @@ export default function ShortLinksDashboard() {
                     <Badge
                       variant="tag"
                       className={
-                        link.isActive ? 'bg-green-100 text-green-800 shrink-0' : 'bg-red-100 text-red-800 shrink-0'
+                        link.isActive
+                          ? 'bg-green-100 text-green-800 shrink-0'
+                          : 'bg-red-100 text-red-800 shrink-0'
                       }
                     >
                       {link.isActive ? 'Active' : 'Inactive'}
@@ -340,7 +350,8 @@ export default function ShortLinksDashboard() {
 
                   <div className="flex justify-between items-center pt-3 border-t border-neutral-50">
                     <div className="text-sm">
-                      <span className="font-medium">{link.totalClicks}</span> <span className="text-neutral-500">clicks</span>
+                      <span className="font-medium">{link.totalClicks}</span>{' '}
+                      <span className="text-neutral-500">clicks</span>
                     </div>
                     <div className="flex space-x-2">
                       <Link href={`/admin/short-links/${link.slug}`}>

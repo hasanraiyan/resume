@@ -522,7 +522,10 @@ export default function AgentsDashboard() {
       {/* Page Header */}
       <div className="border-b border-neutral-200 pb-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h1 className="text-4xl font-bold text-black font-['Playfair_Display']">SmallClaw 🦞</h1>
+          <h1 className="text-4xl font-bold text-black font-['Playfair_Display'] flex items-center gap-2">
+            <span>🦞</span>
+            SmallClaw
+          </h1>
 
           {/* Search */}
           <div className="w-full md:w-80 lg:w-96">

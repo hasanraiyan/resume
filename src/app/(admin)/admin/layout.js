@@ -60,7 +60,13 @@ function AdminLayoutContent({ children }) {
       title: 'Apps',
       items: [
         { name: 'SnapLinks', href: '/admin/short-links', icon: LinkIcon },
-        { name: 'SmallClaw 🦞', href: '/admin/agents', icon: Brain },
+        {
+          name: 'SmallClaw',
+          href: '/admin/agents',
+          icon: ({ className }) => (
+            <span className={`flex items-center justify-center ${className}`}>🦞</span>
+          ),
+        },
         { name: 'Prisma', href: '/admin/media', icon: Image },
       ],
     },

@@ -231,7 +231,9 @@ export default function ShortLinkAnalyticsPage() {
           <h3 className="text-xs md:text-sm font-medium text-neutral-500 uppercase tracking-wider">
             Total Clicks
           </h3>
-          <p className="text-2xl md:text-3xl font-bold mt-2 font-['Playfair_Display']">{summary.totalClicks}</p>
+          <p className="text-2xl md:text-3xl font-bold mt-2 font-['Playfair_Display']">
+            {summary.totalClicks}
+          </p>
         </Card>
         <Card variant="bordered" className="p-4 md:p-6">
           <h3 className="text-xs md:text-sm font-medium text-neutral-500 uppercase tracking-wider">
@@ -242,12 +244,16 @@ export default function ShortLinkAnalyticsPage() {
           </p>
         </Card>
         <Card variant="bordered" className="p-4 md:p-6">
-          <h3 className="text-xs md:text-sm font-medium text-neutral-500 uppercase tracking-wider">Status</h3>
+          <h3 className="text-xs md:text-sm font-medium text-neutral-500 uppercase tracking-wider">
+            Status
+          </h3>
           <div className="mt-2">
             <Badge
               variant="tag"
               className={
-                linkDetails?.isActive ? 'bg-green-100 text-green-800 text-xs md:text-sm' : 'bg-red-100 text-red-800 text-xs md:text-sm'
+                linkDetails?.isActive
+                  ? 'bg-green-100 text-green-800 text-xs md:text-sm'
+                  : 'bg-red-100 text-red-800 text-xs md:text-sm'
               }
             >
               {linkDetails?.isActive ? 'Active' : 'Inactive'}
@@ -255,7 +261,9 @@ export default function ShortLinkAnalyticsPage() {
           </div>
         </Card>
         <Card variant="bordered" className="p-4 md:p-6">
-          <h3 className="text-xs md:text-sm font-medium text-neutral-500 uppercase tracking-wider">Tags</h3>
+          <h3 className="text-xs md:text-sm font-medium text-neutral-500 uppercase tracking-wider">
+            Tags
+          </h3>
           <div className="mt-2 flex flex-wrap gap-1 md:gap-2">
             {linkDetails?.tags?.length > 0 ? (
               linkDetails.tags.map((tag) => (
@@ -279,7 +287,9 @@ export default function ShortLinkAnalyticsPage() {
         variant="bordered"
         className="p-4 md:p-6 mb-8 border-2 border-transparent hover:border-black transition-all overflow-hidden"
       >
-        <h3 className="text-base md:text-lg font-bold mb-4 font-['Playfair_Display']">Clicks Over Time</h3>
+        <h3 className="text-base md:text-lg font-bold mb-4 font-['Playfair_Display']">
+          Clicks Over Time
+        </h3>
         {clicksOverTime.length > 0 ? (
           <div className="h-64 md:h-72 w-full">
             <Line data={chartData} options={chartOptions} />
@@ -287,14 +297,18 @@ export default function ShortLinkAnalyticsPage() {
         ) : (
           <div className="h-56 md:h-64 flex flex-col justify-center text-center text-neutral-400 bg-neutral-50 rounded-lg p-4">
             <i className="fas fa-chart-line text-3xl md:text-4xl mb-2"></i>
-            <p className="text-sm md:text-base">No analytics data available for the selected time range.</p>
+            <p className="text-sm md:text-base">
+              No analytics data available for the selected time range.
+            </p>
           </div>
         )}
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
         <Card variant="bordered" className="p-4 md:p-6">
-          <h3 className="text-base md:text-lg font-bold mb-3 md:mb-4 font-['Playfair_Display']">Top Referrers</h3>
+          <h3 className="text-base md:text-lg font-bold mb-3 md:mb-4 font-['Playfair_Display']">
+            Top Referrers
+          </h3>
           {topReferrers.length > 0 ? (
             <ul className="space-y-2 md:space-y-3">
               {topReferrers.map((ref, idx) => (
@@ -302,7 +316,9 @@ export default function ShortLinkAnalyticsPage() {
                   key={idx}
                   className="flex justify-between items-center text-xs md:text-sm border-b border-neutral-100 pb-2 last:border-0"
                 >
-                  <span className="font-medium truncate max-w-[120px] md:max-w-[150px]">{ref.referrer}</span>
+                  <span className="font-medium truncate max-w-[120px] md:max-w-[150px]">
+                    {ref.referrer}
+                  </span>
                   <span className="text-neutral-500 whitespace-nowrap">{ref.count} clicks</span>
                 </li>
               ))}
@@ -313,7 +329,9 @@ export default function ShortLinkAnalyticsPage() {
         </Card>
 
         <Card variant="bordered" className="p-4 md:p-6">
-          <h3 className="text-base md:text-lg font-bold mb-3 md:mb-4 font-['Playfair_Display']">Custom Sources</h3>
+          <h3 className="text-base md:text-lg font-bold mb-3 md:mb-4 font-['Playfair_Display']">
+            Custom Sources
+          </h3>
           {topSources && topSources.length > 0 ? (
             <ul className="space-y-2 md:space-y-3">
               {topSources.map((src, idx) => (
@@ -337,7 +355,9 @@ export default function ShortLinkAnalyticsPage() {
         </Card>
 
         <Card variant="bordered" className="p-4 md:p-6">
-          <h3 className="text-base md:text-lg font-bold mb-3 md:mb-4 font-['Playfair_Display']">UTM Campaigns</h3>
+          <h3 className="text-base md:text-lg font-bold mb-3 md:mb-4 font-['Playfair_Display']">
+            UTM Campaigns
+          </h3>
           {topCampaigns && topCampaigns.length > 0 ? (
             <ul className="space-y-2 md:space-y-3">
               {topCampaigns.map((camp, idx) => (
@@ -361,7 +381,9 @@ export default function ShortLinkAnalyticsPage() {
         </Card>
 
         <Card variant="bordered" className="p-4 md:p-6">
-          <h3 className="text-base md:text-lg font-bold mb-3 md:mb-4 font-['Playfair_Display']">Top Locations</h3>
+          <h3 className="text-base md:text-lg font-bold mb-3 md:mb-4 font-['Playfair_Display']">
+            Top Locations
+          </h3>
           {countries.length > 0 ? (
             <ul className="space-y-2 md:space-y-3">
               {countries.map((loc, idx) => (
@@ -369,7 +391,9 @@ export default function ShortLinkAnalyticsPage() {
                   key={idx}
                   className="flex justify-between items-center text-xs md:text-sm border-b border-neutral-100 pb-2 last:border-0"
                 >
-                  <span className="font-medium truncate max-w-[120px] md:max-w-[150px]">{loc.country || 'Unknown'}</span>
+                  <span className="font-medium truncate max-w-[120px] md:max-w-[150px]">
+                    {loc.country || 'Unknown'}
+                  </span>
                   <span className="text-neutral-500 whitespace-nowrap">{loc.count} clicks</span>
                 </li>
               ))}
@@ -382,7 +406,9 @@ export default function ShortLinkAnalyticsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 pb-12">
         <Card variant="bordered" className="p-4 md:p-6">
-          <h3 className="text-base md:text-lg font-bold mb-3 md:mb-4 font-['Playfair_Display']">Devices</h3>
+          <h3 className="text-base md:text-lg font-bold mb-3 md:mb-4 font-['Playfair_Display']">
+            Devices
+          </h3>
           {devices.length > 0 ? (
             <ul className="space-y-2 md:space-y-3">
               {devices.map((dev, idx) => (
