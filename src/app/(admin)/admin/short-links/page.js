@@ -138,44 +138,71 @@ export default function ShortLinksDashboard() {
     >
       <Card variant="bordered" className="p-6">
         {loading ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b-2 border-neutral-100">
-                  <th className="py-4 px-4 font-semibold text-sm">Status</th>
-                  <th className="py-4 px-4 font-semibold text-sm">Link</th>
-                  <th className="py-4 px-4 font-semibold text-sm">Destination</th>
-                  <th className="py-4 px-4 font-semibold text-sm">Clicks</th>
-                  <th className="py-4 px-4 font-semibold text-sm text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[...Array(5)].map((_, i) => (
-                  <tr key={i} className="border-b border-neutral-50">
-                    <td className="py-4 px-4">
-                      <Skeleton className="h-6 w-16" />
-                    </td>
-                    <td className="py-4 px-4">
+          <div className="w-full">
+            {/* Desktop Skeleton */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b-2 border-neutral-100">
+                    <th className="py-4 px-4 font-semibold text-sm">Status</th>
+                    <th className="py-4 px-4 font-semibold text-sm">Link</th>
+                    <th className="py-4 px-4 font-semibold text-sm">Destination</th>
+                    <th className="py-4 px-4 font-semibold text-sm">Clicks</th>
+                    <th className="py-4 px-4 font-semibold text-sm text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...Array(5)].map((_, i) => (
+                    <tr key={i} className="border-b border-neutral-50">
+                      <td className="py-4 px-4">
+                        <Skeleton className="h-6 w-16" />
+                      </td>
+                      <td className="py-4 px-4">
+                        <Skeleton className="h-5 w-32 mb-2" />
+                        <Skeleton className="h-3 w-20" />
+                      </td>
+                      <td className="py-4 px-4">
+                        <Skeleton className="h-4 w-48" />
+                      </td>
+                      <td className="py-4 px-4">
+                        <Skeleton className="h-5 w-8" />
+                      </td>
+                      <td className="py-4 px-4 text-right">
+                        <div className="flex justify-end space-x-2">
+                          <Skeleton className="h-8 w-8" />
+                          <Skeleton className="h-8 w-8" />
+                          <Skeleton className="h-8 w-8" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Skeleton */}
+            <div className="md:hidden space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="border border-neutral-100 rounded-lg p-4 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
                       <Skeleton className="h-5 w-32 mb-2" />
                       <Skeleton className="h-3 w-20" />
-                    </td>
-                    <td className="py-4 px-4">
-                      <Skeleton className="h-4 w-48" />
-                    </td>
-                    <td className="py-4 px-4">
-                      <Skeleton className="h-5 w-8" />
-                    </td>
-                    <td className="py-4 px-4 text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Skeleton className="h-8 w-8" />
-                        <Skeleton className="h-8 w-8" />
-                        <Skeleton className="h-8 w-8" />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                    <Skeleton className="h-6 w-16" />
+                  </div>
+                  <Skeleton className="h-4 w-full max-w-[200px]" />
+                  <div className="flex justify-between items-center pt-2">
+                    <Skeleton className="h-5 w-12" />
+                    <div className="flex space-x-2">
+                      <Skeleton className="h-8 w-8" />
+                      <Skeleton className="h-8 w-8" />
+                      <Skeleton className="h-8 w-8" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         ) : error ? (
           <div className="text-red-500 text-center py-8">{error}</div>
@@ -184,35 +211,98 @@ export default function ShortLinksDashboard() {
             <p>No SnapLinks found. Create your first link to get started.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b-2 border-neutral-100">
-                  <th className="py-4 px-4 font-semibold text-sm">Status</th>
-                  <th className="py-4 px-4 font-semibold text-sm">Link</th>
-                  <th className="py-4 px-4 font-semibold text-sm">Destination</th>
-                  <th className="py-4 px-4 font-semibold text-sm">Clicks</th>
-                  <th className="py-4 px-4 font-semibold text-sm text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {links.map((link) => (
-                  <tr key={link._id} className="border-b border-neutral-50 hover:bg-neutral-50">
-                    <td className="py-4 px-4">
-                      <Badge
-                        variant="tag"
-                        className={
-                          link.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }
-                      >
-                        {link.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </td>
-                    <td className="py-4 px-4 max-w-[150px]">
-                      <div
-                        className="font-medium text-black truncate"
-                        title={link.title || link.slug}
-                      >
+          <div className="w-full">
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b-2 border-neutral-100">
+                    <th className="py-4 px-4 font-semibold text-sm">Status</th>
+                    <th className="py-4 px-4 font-semibold text-sm">Link</th>
+                    <th className="py-4 px-4 font-semibold text-sm">Destination</th>
+                    <th className="py-4 px-4 font-semibold text-sm">Clicks</th>
+                    <th className="py-4 px-4 font-semibold text-sm text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {links.map((link) => (
+                    <tr key={link._id} className="border-b border-neutral-50 hover:bg-neutral-50">
+                      <td className="py-4 px-4">
+                        <Badge
+                          variant="tag"
+                          className={
+                            link.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }
+                        >
+                          {link.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </td>
+                      <td className="py-4 px-4 max-w-[150px]">
+                        <div
+                          className="font-medium text-black truncate"
+                          title={link.title || link.slug}
+                        >
+                          {link.title || link.slug}
+                        </div>
+                        <div className="text-xs text-neutral-500 flex items-center mt-1 break-all">
+                          /r/{link.slug}
+                          <button
+                            onClick={() => handleCopyLink(link.slug)}
+                            className="ml-2 text-neutral-400 hover:text-black transition"
+                            title="Copy Link"
+                          >
+                            <i className="fas fa-copy"></i>
+                          </button>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 max-w-xs truncate text-sm text-neutral-600">
+                        <a
+                          href={link.destination}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="hover:underline"
+                        >
+                          {link.destination}
+                        </a>
+                      </td>
+                      <td className="py-4 px-4 text-sm font-medium">{link.totalClicks}</td>
+                      <td className="py-4 px-4 text-right space-x-2">
+                        <Link href={`/admin/short-links/${link.slug}`}>
+                          <Button variant="outline" size="sm" className="px-2 py-1 h-8">
+                            <i className="fas fa-chart-bar"></i>
+                          </Button>
+                        </Link>
+                        {/* Space reserved for future QR Code feature */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="px-2 py-1 h-8"
+                          onClick={() => openEditModal(link)}
+                        >
+                          <i className="fas fa-edit"></i>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="px-2 py-1 h-8 text-red-600 border-red-200 hover:bg-red-50"
+                          onClick={() => handleDelete(link._id)}
+                        >
+                          <i className="fas fa-trash"></i>
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-4">
+              {links.map((link) => (
+                <div key={link._id} className="border border-neutral-100 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="max-w-[70%]">
+                      <div className="font-medium text-black truncate" title={link.title || link.slug}>
                         {link.title || link.slug}
                       </div>
                       <div className="text-xs text-neutral-500 flex items-center mt-1 break-all">
@@ -225,25 +315,39 @@ export default function ShortLinksDashboard() {
                           <i className="fas fa-copy"></i>
                         </button>
                       </div>
-                    </td>
-                    <td className="py-4 px-4 max-w-xs truncate text-sm text-neutral-600">
-                      <a
-                        href={link.destination}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="hover:underline"
-                      >
-                        {link.destination}
-                      </a>
-                    </td>
-                    <td className="py-4 px-4 text-sm font-medium">{link.totalClicks}</td>
-                    <td className="py-4 px-4 text-right space-x-2">
+                    </div>
+                    <Badge
+                      variant="tag"
+                      className={
+                        link.isActive ? 'bg-green-100 text-green-800 shrink-0' : 'bg-red-100 text-red-800 shrink-0'
+                      }
+                    >
+                      {link.isActive ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
+
+                  <div className="mb-3 text-sm text-neutral-600 truncate">
+                    <a
+                      href={link.destination}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="hover:underline flex items-center gap-1"
+                    >
+                      <i className="fas fa-link text-xs opacity-50"></i>
+                      <span className="truncate">{link.destination}</span>
+                    </a>
+                  </div>
+
+                  <div className="flex justify-between items-center pt-3 border-t border-neutral-50">
+                    <div className="text-sm">
+                      <span className="font-medium">{link.totalClicks}</span> <span className="text-neutral-500">clicks</span>
+                    </div>
+                    <div className="flex space-x-2">
                       <Link href={`/admin/short-links/${link.slug}`}>
                         <Button variant="outline" size="sm" className="px-2 py-1 h-8">
                           <i className="fas fa-chart-bar"></i>
                         </Button>
                       </Link>
-                      {/* Space reserved for future QR Code feature */}
                       <Button
                         variant="outline"
                         size="sm"
@@ -260,11 +364,11 @@ export default function ShortLinksDashboard() {
                       >
                         <i className="fas fa-trash"></i>
                       </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </Card>
