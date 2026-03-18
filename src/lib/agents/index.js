@@ -38,6 +38,7 @@ import PresentationAgent from './ai/presentation-agent';
 import ChatAgent from './ai/chat-assistant-agent';
 import TelegramAgent from './ai/telegram-agent';
 import WhatsAppAgent from './ai/whatsapp-agent';
+import AppBuilderAgent from './ai/app-builder-agent';
 
 // Register agent classes into the registry
 agentRegistry.register(AGENT_IDS.IMAGE_ANALYZER, AIImageAgent);
@@ -52,6 +53,7 @@ agentRegistry.register(AGENT_IDS.BLOG_WRITER, BlogWriterAgent);
 agentRegistry.register(AGENT_IDS.PRESENTATION_SYNTHESIZER, PresentationAgent);
 agentRegistry.register(AGENT_IDS.TELEGRAM_ASSISTANT, TelegramAgent);
 agentRegistry.register(AGENT_IDS.WHATSAPP_ASSISTANT, WhatsAppAgent);
+agentRegistry.register(AGENT_IDS.APP_BUILDER, AppBuilderAgent);
 
 export {
   AIImageAgent,
@@ -64,5 +66,6 @@ export {
   PresentationAgent,
   TelegramAgent,
   WhatsAppAgent,
+  AppBuilderAgent,
 };
 export default agentRegistry;
