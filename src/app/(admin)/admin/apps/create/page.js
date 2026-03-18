@@ -1,8 +1,6 @@
-'use client';
-
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Card } from '@/components/ui';
+import { Card } from '@/components/ui';
 import { TerminalSquare, Cpu, PenTool, ArrowLeft, Loader2, Sparkles } from 'lucide-react';
 
 export default function CreateAppPage() {
@@ -85,18 +83,19 @@ export default function CreateAppPage() {
 
   if (!mode) {
     return (
-      <div className="max-w-4xl mx-auto space-y-8 pb-24 animate-in fade-in">
+      <div className="max-w-5xl mx-auto space-y-8 pb-24 animate-in fade-in">
         <div className="flex items-center gap-4 mb-12">
-          <Button
-            variant="ghost"
+          <button
             onClick={() => router.push('/admin/apps')}
-            className="rounded-full p-2 h-10 w-10 shrink-0"
+            className="p-2.5 rounded-xl hover:bg-neutral-100 transition-colors cursor-pointer text-neutral-500 hover:text-black"
           >
             <ArrowLeft className="w-5 h-5" />
-          </Button>
+          </button>
           <div>
-            <h1 className="text-3xl font-bold font-['Playfair_Display']">Create New App</h1>
-            <p className="text-neutral-500">Choose how you want to build your internal tool.</p>
+            <h1 className="text-3xl font-bold font-['Playfair_Display'] text-black">
+              Create New App
+            </h1>
+            <p className="text-neutral-500 mt-1">Select an assembly method for your new tool.</p>
           </div>
         </div>
 
@@ -104,29 +103,34 @@ export default function CreateAppPage() {
           <Card
             interactive
             onClick={() => setMode('ai')}
-            className="p-8 border-2 border-neutral-200 hover:border-black transition-all cursor-pointer group flex flex-col items-center text-center h-80 justify-center"
+            className="p-10 border-2 border-neutral-100 hover:border-black transition-all cursor-pointer group flex flex-col items-center text-center h-80 justify-center bg-white rounded-2xl relative overflow-hidden"
           >
-            <div className="w-20 h-20 rounded-2xl bg-black text-white flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <div className="w-20 h-20 rounded-2xl bg-black text-white flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-inner">
               <Cpu className="w-10 h-10" />
             </div>
-            <h2 className="text-2xl font-bold mb-2 group-hover:text-black">Generate with AI</h2>
-            <p className="text-neutral-500">
-              Describe what you need and let the LangGraph agent build a complete HTML/JS tool for
-              you.
+            <h2 className="text-2xl font-bold mb-3 text-neutral-900 group-hover:text-black">
+              Generate with AI
+            </h2>
+            <p className="text-sm text-neutral-500 max-w-sm leading-relaxed">
+              Describe what you need. The LangGraph agent will architect and build a complete
+              HTML/JS tool autonomously.
             </p>
           </Card>
 
           <Card
             interactive
             onClick={() => setMode('manual')}
-            className="p-8 border-2 border-neutral-200 hover:border-black transition-all cursor-pointer group flex flex-col items-center text-center h-80 justify-center"
+            className="p-10 border-2 border-neutral-100 hover:border-black transition-all cursor-pointer group flex flex-col items-center text-center h-80 justify-center bg-white rounded-2xl relative overflow-hidden"
           >
-            <div className="w-20 h-20 rounded-2xl bg-neutral-100 text-neutral-600 flex items-center justify-center mb-6 group-hover:bg-neutral-900 group-hover:text-white transition-all">
+            <div className="w-20 h-20 rounded-2xl bg-neutral-100 text-neutral-600 border border-neutral-200/60 flex items-center justify-center mb-6 group-hover:bg-neutral-900 group-hover:text-white transition-all">
               <PenTool className="w-10 h-10" />
             </div>
-            <h2 className="text-2xl font-bold mb-2 group-hover:text-black">Add Manually</h2>
-            <p className="text-neutral-500">
-              Paste your own HTML/JS/CSS code or use a custom built frontend snippet directly.
+            <h2 className="text-2xl font-bold mb-3 text-neutral-900 group-hover:text-black">
+              Add Manually
+            </h2>
+            <p className="text-sm text-neutral-500 max-w-sm leading-relaxed">
+              Paste your own HTML/JS/CSS code or configure a custom frontend snippet directly in the
+              editor.
             </p>
           </Card>
         </div>
@@ -135,27 +139,26 @@ export default function CreateAppPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-24 animate-in slide-in-from-right-8">
-      <div className="flex items-center gap-4 border-b border-neutral-200 pb-8">
-        <Button
-          variant="ghost"
+    <div className="max-w-7xl mx-auto space-y-8 pb-24 animate-in slide-in-from-right-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 border-b border-neutral-200 pb-8">
+        <button
           onClick={() => {
             setMode(null);
             setAiPreviewContent(null);
           }}
-          className="rounded-full p-2 h-10 w-10 shrink-0"
+          className="p-2.5 rounded-xl hover:bg-neutral-100 transition-colors cursor-pointer text-neutral-500 hover:text-black"
         >
           <ArrowLeft className="w-5 h-5" />
-        </Button>
+        </button>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold font-['Playfair_Display'] flex items-center gap-3">
+          <h1 className="text-3xl md:text-4xl font-bold font-['Playfair_Display'] flex items-center gap-3 text-black">
             {mode === 'ai' ? (
               <>
-                <Cpu className="w-8 h-8 text-blue-600" /> AI App Generator
+                <Cpu className="w-8 h-8 md:w-10 md:h-10 text-black" /> AI App Generator
               </>
             ) : (
               <>
-                <PenTool className="w-8 h-8 text-orange-600" /> Manual App Creator
+                <PenTool className="w-8 h-8 md:w-10 md:h-10 text-black" /> Manual App Creator
               </>
             )}
           </h1>
@@ -165,15 +168,15 @@ export default function CreateAppPage() {
       <div className="grid lg:grid-cols-12 gap-8">
         {/* Form Column */}
         <div className="lg:col-span-4 space-y-6">
-          <Card className="p-6 border-2 border-neutral-100 bg-white">
-            <h2 className="text-xl font-bold mb-6">App Details</h2>
-            <div className="space-y-5">
+          <Card className="p-8 border-2 border-neutral-100 bg-white rounded-2xl">
+            <h2 className="text-xl font-bold mb-6 text-black">App Details</h2>
+            <div className="space-y-6">
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2 block">
+                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-2 block">
                   App Name
                 </label>
                 <input
-                  className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-200 focus:border-black rounded-xl outline-none text-sm transition-all font-medium"
+                  className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-xl outline-none text-sm transition-all font-medium text-black placeholder:text-neutral-400"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g., ROI Calculator"
@@ -182,11 +185,11 @@ export default function CreateAppPage() {
               </div>
 
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2 block">
-                  Description
+                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-2 block">
+                  Description / Prompt
                 </label>
                 <textarea
-                  className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-200 focus:border-black rounded-xl outline-none text-sm transition-all min-h-[120px] resize-none"
+                  className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-xl outline-none text-sm transition-all min-h-[140px] resize-none text-black placeholder:text-neutral-400 leading-relaxed"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder={
@@ -200,11 +203,11 @@ export default function CreateAppPage() {
 
               {mode === 'ai' && (
                 <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2 block">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-2 block">
                     Design Schema
                   </label>
                   <select
-                    className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-200 focus:border-black rounded-xl outline-none text-sm transition-all appearance-none cursor-pointer font-medium"
+                    className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-xl outline-none text-sm transition-all appearance-none cursor-pointer font-medium text-black"
                     value={designSchema}
                     onChange={(e) => setDesignSchema(e.target.value)}
                   >
@@ -219,50 +222,51 @@ export default function CreateAppPage() {
 
               {mode === 'manual' && (
                 <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2 block">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-2 block">
                     HTML/JS Content
                   </label>
                   <textarea
-                    className="w-full px-4 py-3 bg-neutral-900 text-green-400 font-mono border-2 border-neutral-800 focus:border-black rounded-xl outline-none text-xs transition-all min-h-[400px]"
+                    className="w-full px-4 py-4 bg-[#0a0a0a] text-green-400 font-mono border-2 border-neutral-900 focus:border-black rounded-xl outline-none text-xs transition-all min-h-[400px] leading-relaxed"
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     placeholder="<!DOCTYPE html>..."
+                    spellCheck={false}
                     required
                   />
                 </div>
               )}
 
-              <div className="pt-4 border-t border-neutral-100">
+              <div className="pt-6 border-t border-neutral-100">
                 {mode === 'ai' ? (
-                  <Button
+                  <button
                     onClick={handleGenerate}
                     disabled={loading || !name || !description}
-                    className="w-full py-4 text-sm font-bold uppercase tracking-widest flex items-center justify-center gap-2"
+                    className="w-full py-4 bg-black hover:bg-neutral-800 disabled:bg-neutral-200 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer disabled:cursor-not-allowed"
                   >
                     {loading ? (
                       <>
-                        <Loader2 className="w-5 h-5 animate-spin" /> Generating...
+                        <Loader2 className="w-4 h-4 animate-spin" /> Generating...
                       </>
                     ) : (
                       <>
-                        <Sparkles className="w-5 h-5" /> Generate App
+                        <Sparkles className="w-4 h-4" /> Generate App
                       </>
                     )}
-                  </Button>
+                  </button>
                 ) : (
-                  <Button
+                  <button
                     onClick={handleSave}
                     disabled={loading || !name || !description || !content}
-                    className="w-full py-4 text-sm font-bold uppercase tracking-widest flex items-center justify-center gap-2"
+                    className="w-full py-4 bg-black hover:bg-neutral-800 disabled:bg-neutral-200 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer disabled:cursor-not-allowed"
                   >
                     {loading ? (
                       <>
-                        <Loader2 className="w-5 h-5 animate-spin" /> Saving...
+                        <Loader2 className="w-4 h-4 animate-spin" /> Saving...
                       </>
                     ) : (
                       'Save App'
                     )}
-                  </Button>
+                  </button>
                 )}
               </div>
             </div>
@@ -272,26 +276,34 @@ export default function CreateAppPage() {
         {/* Preview Column */}
         {mode === 'ai' && (
           <div className="lg:col-span-8 space-y-6">
-            <Card className="p-0 border-2 border-neutral-100 bg-white overflow-hidden flex flex-col h-[800px]">
-              <div className="p-4 border-b border-neutral-100 bg-neutral-50 flex justify-between items-center shrink-0">
-                <div className="flex items-center gap-2">
-                  <TerminalSquare className="w-5 h-5 text-neutral-400" />
-                  <h3 className="font-bold text-neutral-700">Live Preview</h3>
+            <Card className="p-0 border-2 border-neutral-100 bg-white overflow-hidden flex flex-col h-[800px] rounded-2xl">
+              <div className="px-6 py-4 border-b border-neutral-100 bg-neutral-50/50 flex justify-between items-center shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-neutral-200/50 flex items-center justify-center">
+                    <TerminalSquare className="w-4 h-4 text-neutral-600" />
+                  </div>
+                  <h3 className="font-bold text-neutral-900">Live Preview</h3>
                 </div>
                 {aiPreviewContent && (
-                  <Button onClick={handleSave} disabled={loading} size="small" variant="primary">
+                  <button
+                    onClick={handleSave}
+                    disabled={loading}
+                    className="px-4 py-2 bg-black hover:bg-neutral-800 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                  >
                     Save to Dashboard
-                  </Button>
+                  </button>
                 )}
               </div>
 
               {loading ? (
-                <div className="flex-1 flex flex-col items-center justify-center bg-neutral-50/50 p-8 text-center space-y-4">
-                  <div className="w-16 h-16 border-4 border-neutral-200 border-t-black rounded-full animate-spin"></div>
-                  <p className="text-neutral-500 font-medium">
-                    The Agent is planning and building your app...
-                  </p>
-                  <p className="text-xs text-neutral-400">This usually takes 15-30 seconds.</p>
+                <div className="flex-1 flex flex-col items-center justify-center bg-white p-8 text-center space-y-6">
+                  <div className="w-16 h-16 border-4 border-neutral-100 border-t-black rounded-full animate-spin"></div>
+                  <div>
+                    <p className="text-neutral-900 font-bold text-lg">Architecting Your App...</p>
+                    <p className="text-sm text-neutral-500 mt-2">
+                      The LangGraph agent is planning and writing code. This takes 15-30s.
+                    </p>
+                  </div>
                 </div>
               ) : aiPreviewContent ? (
                 <div className="flex-1 flex flex-col md:flex-row relative h-full">
@@ -304,14 +316,17 @@ export default function CreateAppPage() {
                     />
                   </div>
                   {aiTodoList.length > 0 && (
-                    <div className="w-full md:w-64 bg-neutral-50 border-t md:border-t-0 md:border-l border-neutral-200 p-4 overflow-y-auto shrink-0 z-10">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-4">
-                        Agent Plan
+                    <div className="w-full md:w-72 bg-neutral-50 border-t md:border-t-0 md:border-l border-neutral-200 p-6 overflow-y-auto shrink-0 z-10">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-5">
+                        Agent Execution Plan
                       </h4>
-                      <ul className="space-y-3">
+                      <ul className="space-y-4">
                         {aiTodoList.map((item, idx) => (
-                          <li key={idx} className="text-xs text-neutral-600 flex gap-2">
-                            <span className="text-black font-bold shrink-0">{idx + 1}.</span>
+                          <li
+                            key={idx}
+                            className="text-sm text-neutral-700 flex gap-3 leading-relaxed"
+                          >
+                            <span className="text-black font-black shrink-0">{idx + 1}.</span>
                             <span>{item}</span>
                           </li>
                         ))}
@@ -320,12 +335,15 @@ export default function CreateAppPage() {
                   )}
                 </div>
               ) : (
-                <div className="flex-1 flex items-center justify-center bg-neutral-50/50 p-8 text-center">
-                  <div className="max-w-md">
-                    <TerminalSquare className="w-16 h-16 text-neutral-300 mx-auto mb-4" />
-                    <p className="text-neutral-500 font-medium">Your preview will appear here.</p>
-                    <p className="text-xs text-neutral-400 mt-2">
-                      Fill out the details on the left and click Generate.
+                <div className="flex-1 flex items-center justify-center bg-neutral-50/30 p-8 text-center">
+                  <div className="max-w-sm">
+                    <div className="w-20 h-20 bg-neutral-100 rounded-2xl mx-auto flex items-center justify-center mb-6">
+                      <TerminalSquare className="w-8 h-8 text-neutral-400" />
+                    </div>
+                    <p className="text-neutral-900 font-bold text-lg mb-2">Awaiting Instructions</p>
+                    <p className="text-sm text-neutral-500 leading-relaxed">
+                      Fill out the app details on the left and click Generate to see your app built
+                      in real-time.
                     </p>
                   </div>
                 </div>

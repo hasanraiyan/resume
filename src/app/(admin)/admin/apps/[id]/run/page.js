@@ -1,8 +1,6 @@
-'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Button, Skeleton } from '@/components/ui';
+import { Skeleton } from '@/components/ui';
 import { TerminalSquare, ArrowLeft, Maximize, Minimize } from 'lucide-react';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 
@@ -53,56 +51,55 @@ export default function RunAppPage() {
 
   return (
     <div
-      className={`flex flex-col animate-in fade-in duration-300 ${isFullscreen ? 'fixed inset-0 z-50 bg-neutral-100' : 'max-w-7xl mx-auto h-[calc(100vh-120px)]'}`}
+      className={`flex flex-col animate-in fade-in duration-300 ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'max-w-7xl mx-auto h-[calc(100vh-120px)]'}`}
     >
       {/* Header Toolbar */}
       <div
-        className={`flex items-center justify-between border-b border-neutral-200 bg-white px-6 py-4 shrink-0 shadow-sm ${isFullscreen ? '' : 'rounded-t-2xl'}`}
+        className={`flex items-center justify-between border-b-2 border-neutral-100 bg-white px-8 py-5 shrink-0 transition-all ${isFullscreen ? '' : 'rounded-t-2xl border-x-2 border-t-2 mt-8'}`}
       >
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
+        <div className="flex items-center gap-6">
+          <button
             onClick={() => router.push('/admin/apps')}
-            className="rounded-full p-2 h-10 w-10 shrink-0 hover:bg-neutral-100"
+            className="p-2.5 rounded-xl hover:bg-neutral-100 transition-colors cursor-pointer text-neutral-500 hover:text-black"
           >
-            <ArrowLeft className="w-5 h-5 text-neutral-600" />
-          </Button>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center shadow-inner">
-              <TerminalSquare className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-black text-white flex items-center justify-center shadow-inner">
+              <TerminalSquare className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-neutral-900 leading-tight">{app.name}</h1>
-              <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">
-                {app.type === 'ai' ? 'AI Generated App' : 'Manual App'}
+              <h1 className="text-xl font-bold text-neutral-900 leading-tight font-['Playfair_Display']">
+                {app.name}
+              </h1>
+              <p className="text-[10px] text-neutral-400 font-black uppercase tracking-widest mt-1">
+                {app.type === 'ai' ? 'AI GENERATED WORKSPACE' : 'MANUAL WORKSPACE'}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
+        <div className="flex items-center gap-4">
+          <button
             onClick={toggleFullscreen}
-            className="hidden sm:flex items-center gap-2"
-            size="small"
+            className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-neutral-50 hover:bg-neutral-100 border-2 border-neutral-100 hover:border-black rounded-xl text-xs font-bold text-neutral-600 hover:text-black transition-all cursor-pointer"
           >
             {isFullscreen ? (
               <>
-                <Minimize className="w-4 h-4" /> Exit Fullscreen
+                <Minimize className="w-4 h-4" /> Exit Focus
               </>
             ) : (
               <>
-                <Maximize className="w-4 h-4" /> Fullscreen
+                <Maximize className="w-4 h-4" /> Focus Mode
               </>
             )}
-          </Button>
+          </button>
         </div>
       </div>
 
       {/* App Container */}
       <div
-        className={`flex-1 bg-white relative overflow-hidden ${isFullscreen ? '' : 'rounded-b-2xl shadow-xl border border-t-0 border-neutral-200'}`}
+        className={`flex-1 bg-white relative overflow-hidden ${isFullscreen ? '' : 'rounded-b-2xl border-2 border-t-0 border-neutral-100'}`}
       >
         <iframe
           srcDoc={app.content}
