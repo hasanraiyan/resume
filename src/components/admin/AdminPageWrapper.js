@@ -54,7 +54,7 @@ export default function AdminPageWrapper({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [searchable]);
   return (
-    <div className={`space-y-6 pb-24 px-4 sm:px-6 lg:px-8 ${className}`}>
+    <div className={`space-y-6 pb-24 ${className}`}>
       {/* Page Header */}
       <div className="relative group/header">
         <div className="absolute inset-0 -top-4 -mx-4 sm:-mx-8 lg:-mx-12 h-64 bg-gradient-to-b from-white/50 to-transparent pointer-events-none backdrop-blur-[2px] border-b border-white/20 -z-10" />

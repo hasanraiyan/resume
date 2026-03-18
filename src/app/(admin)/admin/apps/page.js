@@ -130,7 +130,7 @@ export default function AppBuilderDashboard() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto space-y-12">
+      <div className="w-full space-y-8">
         {/* Grid */}
         {apps.length === 0 ? (
           <div className="text-center p-16 border-2 border-dashed border-neutral-200 rounded-3xl bg-neutral-50/50 flex flex-col items-center justify-center">
