@@ -40,12 +40,9 @@ export default function RunAppPage() {
 
   if (loading) {
     return (
-      <AdminPageWrapper>
-        <div className="space-y-8 pb-24 h-screen flex flex-col">
-          <Skeleton className="h-10 w-64 mb-4" />
-          <Skeleton className="flex-1 w-full rounded-2xl" />
-        </div>
-      </AdminPageWrapper>
+      <div className="flex flex-col animate-in fade-in duration-300 w-full h-[calc(100vh-120px)]">
+        <Skeleton className="flex-1 w-full rounded-2xl border-2 border-neutral-100" />
+      </div>
     );
   }
 
@@ -53,11 +50,11 @@ export default function RunAppPage() {
 
   return (
     <div
-      className={`flex flex-col animate-in fade-in duration-300 ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'max-w-7xl mx-auto h-[calc(100vh-120px)]'}`}
+      className={`flex flex-col animate-in fade-in duration-300 ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'w-full h-[calc(100vh-120px)]'}`}
     >
       {/* Header Toolbar */}
       <div
-        className={`flex items-center justify-between border-b-2 border-neutral-100 bg-white px-8 py-5 shrink-0 transition-all ${isFullscreen ? '' : 'rounded-t-2xl border-x-2 border-t-2 mt-8'}`}
+        className={`flex items-center justify-between border-b-2 border-neutral-100 bg-white px-8 py-5 shrink-0 transition-all ${isFullscreen ? '' : 'rounded-t-2xl border-x-2 border-t-2'}`}
       >
         <div className="flex items-center gap-6">
           <button

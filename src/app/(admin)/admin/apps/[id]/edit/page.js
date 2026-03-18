@@ -79,17 +79,14 @@ export default function EditAppPage() {
 
   if (loading) {
     return (
-      <AdminPageWrapper>
-        <div className="space-y-8 pb-24">
-          <Skeleton className="h-10 w-64 mb-4" />
-          <Skeleton className="h-[600px] w-full rounded-2xl" />
-        </div>
-      </AdminPageWrapper>
+      <div className="w-full space-y-8 pb-24 animate-in fade-in duration-300">
+        <Skeleton className="h-[750px] w-full rounded-2xl border-2 border-neutral-100" />
+      </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 pb-24 animate-in slide-in-from-right-8">
+    <div className="w-full space-y-8 pb-24 animate-in slide-in-from-right-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-neutral-200 pb-8">
         <div className="flex items-center gap-4">
           <button

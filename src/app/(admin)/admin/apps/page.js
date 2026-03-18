@@ -53,41 +53,40 @@ export default function AppBuilderDashboard() {
 
   if (loading) {
     return (
-      <AdminPageWrapper>
-        <div className="space-y-8 pb-24">
-          <div className="border-b border-neutral-200 pb-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <Skeleton className="h-10 w-64" />
-              <Skeleton className="h-12 w-full md:w-80 lg:w-96 rounded-xl" />
-            </div>
-          </div>
-          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} className="p-6 border-2 border-neutral-100 flex flex-col h-64">
-                <div className="flex items-center gap-3 mb-6">
-                  <Skeleton className="w-12 h-12 rounded-xl" />
-                  <div className="space-y-2 flex-1">
-                    <Skeleton className="h-5 w-3/4" />
-                    <Skeleton className="h-3 w-1/2" />
-                  </div>
-                </div>
-                <Skeleton className="flex-1 w-full mb-4" />
-                <div className="mt-auto pt-4 border-t border-neutral-100">
-                  <Skeleton className="h-8 w-full rounded-lg" />
-                </div>
-              </Card>
-            ))}
-          </div>
+      <div className="space-y-6 pb-24 animate-in fade-in duration-300">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-neutral-200 pb-6">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-12 w-full md:w-80 lg:w-96 rounded-xl" />
         </div>
-      </AdminPageWrapper>
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-8">
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="p-8 border-2 border-neutral-100 flex flex-col h-72 rounded-2xl bg-white shadow-sm"
+            >
+              <div className="flex items-center gap-4 mb-8">
+                <Skeleton className="w-14 h-14 rounded-2xl" />
+                <div className="space-y-3 flex-1">
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              </div>
+              <Skeleton className="flex-1 w-full mb-6" />
+              <div className="mt-auto pt-6 border-t border-neutral-50">
+                <Skeleton className="h-12 w-full rounded-xl" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-8 pb-24 animate-in fade-in">
+    <div className="space-y-5 pb-16 animate-in fade-in">
       {/* Page Header */}
-      <div className="border-b border-neutral-200 pb-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="border-b border-neutral-200 pb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <TerminalSquare className="w-8 h-8 md:w-10 md:h-10 text-black" />
             <h1 className="text-3xl md:text-4xl font-bold text-black font-['Playfair_Display']">

@@ -195,7 +195,7 @@ function AdminLayoutContent({ children }) {
           </header>
 
           {/* Page Content */}
-          <main className="flex-1 p-6 lg:p-8 bg-gray-50">{children}</main>
+          <main className="flex-1 p-4 lg:px-8 lg:py-6 bg-gray-50">{children}</main>
         </div>
       </div>
     </>

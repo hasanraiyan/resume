@@ -85,7 +85,7 @@ export default function CreateAppPage() {
 
   if (!mode) {
     return (
-      <div className="max-w-5xl mx-auto space-y-8 pb-24 animate-in fade-in">
+      <div className="w-full space-y-8 pb-24 animate-in fade-in">
         <div className="flex items-center gap-4 mb-12">
           <button
             onClick={() => router.push('/admin/apps')}
@@ -141,7 +141,7 @@ export default function CreateAppPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 pb-24 animate-in slide-in-from-right-8">
+    <div className="w-full space-y-8 pb-24 animate-in slide-in-from-right-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 border-b border-neutral-200 pb-8">
         <button
           onClick={() => {
