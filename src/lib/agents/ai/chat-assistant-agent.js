@@ -138,7 +138,9 @@ class ChatAgent extends BaseAgent {
                     typeof tc.function.arguments === 'string'
                       ? JSON.parse(tc.function.arguments)
                       : tc.function.arguments;
-                } catch (e) {}
+                } catch (e) {
+                  this.logger.error('Failed to parse tool arguments in chat history:', e);
+                }
                 return {
                   id: tc.id || `unknown-id-${Math.random()}`,
                   name: tc.function.name || 'unknown_function',
