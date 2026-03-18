@@ -1,11 +1,18 @@
 import { NextResponse } from 'next/server';
-import { requireAdminSession } from '@/lib/auth/admin';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+
+// Ensure agents are imported and registered
+import '@/lib/agents/index';
 import agentRegistry from '@/lib/agents/AgentRegistry';
 import { AGENT_IDS } from '@/lib/constants/agents';
 
 export async function POST(req) {
   try {
-    await requireAdminSession();
+    const session = await getServerSession(authOptions);
+    if (!session || session.user?.role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const body = await req.json();
     const { name, description, designSchema } = body;
 

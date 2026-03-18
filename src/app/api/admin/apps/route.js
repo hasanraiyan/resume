@@ -1,13 +1,18 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import AppModel from '@/models/App';
-import { requireAdminSession } from '@/lib/auth/admin';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export async function GET(req) {
   try {
-    await requireAdminSession();
+    const session = await getServerSession(authOptions);
+    if (!session || session.user?.role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     await dbConnect();
-    const apps = await AppModel.find().sort({ createdAt: -1 }).lean();
+    // Exclude content from the list view payload to save bandwidth
+    const apps = await AppModel.find().select('-content').sort({ createdAt: -1 }).lean();
     return NextResponse.json({ apps });
   } catch (error) {
     if (error.message === 'Forbidden') {
@@ -20,7 +25,10 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    await requireAdminSession();
+    const session = await getServerSession(authOptions);
+    if (!session || session.user?.role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     await dbConnect();
     const body = await req.json();
 

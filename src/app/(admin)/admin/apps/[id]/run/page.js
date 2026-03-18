@@ -107,7 +107,7 @@ export default function RunAppPage() {
         <iframe
           srcDoc={app.content}
           title={app.name}
-          sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"
+          sandbox="allow-scripts allow-forms allow-modals allow-popups"
           className="w-full h-full border-none absolute inset-0 bg-white"
         />
       </div>
