@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Service from '@/models/Service';
+import { requireAdminSession } from '@/lib/auth/admin';
 
 export async function GET(request, { params }) {
   try {
@@ -55,6 +56,9 @@ export async function GET(request, { params }) {
 
 export async function PUT(request, { params }) {
   try {
+    const adminSession = await requireAdminSession();
+    if (adminSession instanceof NextResponse) return adminSession;
+
     await dbConnect();
 
     const { id } = await params;
@@ -102,6 +106,9 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
+    const adminSession = await requireAdminSession();
+    if (adminSession instanceof NextResponse) return adminSession;
+
     await dbConnect();
 
     const { id } = await params;

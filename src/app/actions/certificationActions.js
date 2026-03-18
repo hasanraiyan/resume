@@ -9,6 +9,7 @@ import dbConnect from '@/lib/dbConnect';
 import Certification from '@/models/Certification';
 import { revalidatePath } from 'next/cache';
 import { serializeForClient } from '@/lib/serialize';
+import { verifyAdminAction } from '@/lib/auth/admin';
 
 /**
  * Retrieves all certifications from the database, sorted by display order.
@@ -32,6 +33,7 @@ export async function getAllCertifications() {
  */
 export async function createCertification(formData) {
   try {
+    await verifyAdminAction();
     await dbConnect();
 
     const certificationData = Object.fromEntries(formData.entries());
@@ -58,6 +60,7 @@ export async function createCertification(formData) {
  */
 export async function updateCertification(id, formData) {
   try {
+    await verifyAdminAction();
     await dbConnect();
 
     const certificationData = Object.fromEntries(formData.entries());
@@ -82,6 +85,7 @@ export async function updateCertification(id, formData) {
  */
 export async function deleteCertification(id) {
   try {
+    await verifyAdminAction();
     await dbConnect();
 
     console.log('🗑️ [DELETE CERTIFICATION] Deleting certification:', id);
@@ -104,6 +108,7 @@ export async function deleteCertification(id) {
  */
 export async function getCertificationById(id) {
   try {
+    await verifyAdminAction();
     await dbConnect();
     const certification = await Certification.findById(id);
     return certification ? serializeForClient(certification) : null;
