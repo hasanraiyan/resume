@@ -34,3 +34,24 @@ export async function requireAdminSession() {
     );
   }
 }
+
+/**
+ * Helper to check for admin session in Server Actions.
+ * Throws an error if not authenticated or not an admin.
+ *
+ * @returns {Promise<Object>} Session object
+ * @throws {Error} Unauthorized or Forbidden error
+ */
+export async function verifyAdminAction() {
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    throw new Error('Unauthorized');
+  }
+
+  if (session.user?.role !== 'admin') {
+    throw new Error('Forbidden. Admin access required.');
+  }
+
+  return session;
+}
