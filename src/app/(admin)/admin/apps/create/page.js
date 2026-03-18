@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Card, Label } from '@/components/ui';
+import { Button, Card } from '@/components/ui';
 import { TerminalSquare, Cpu, PenTool, ArrowLeft, Loader2, Sparkles } from 'lucide-react';
 
 export default function CreateAppPage() {
@@ -169,9 +169,9 @@ export default function CreateAppPage() {
             <h2 className="text-xl font-bold mb-6">App Details</h2>
             <div className="space-y-5">
               <div>
-                <Label className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2 block">
+                <label className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2 block">
                   App Name
-                </Label>
+                </label>
                 <input
                   className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-200 focus:border-black rounded-xl outline-none text-sm transition-all font-medium"
                   value={name}
@@ -182,9 +182,9 @@ export default function CreateAppPage() {
               </div>
 
               <div>
-                <Label className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2 block">
+                <label className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2 block">
                   Description
-                </Label>
+                </label>
                 <textarea
                   className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-200 focus:border-black rounded-xl outline-none text-sm transition-all min-h-[120px] resize-none"
                   value={description}
@@ -200,9 +200,9 @@ export default function CreateAppPage() {
 
               {mode === 'ai' && (
                 <div>
-                  <Label className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2 block">
+                  <label className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2 block">
                     Design Schema
-                  </Label>
+                  </label>
                   <select
                     className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-200 focus:border-black rounded-xl outline-none text-sm transition-all appearance-none cursor-pointer font-medium"
                     value={designSchema}
@@ -219,9 +219,9 @@ export default function CreateAppPage() {
 
               {mode === 'manual' && (
                 <div>
-                  <Label className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2 block">
+                  <label className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2 block">
                     HTML/JS Content
-                  </Label>
+                  </label>
                   <textarea
                     className="w-full px-4 py-3 bg-neutral-900 text-green-400 font-mono border-2 border-neutral-800 focus:border-black rounded-xl outline-none text-xs transition-all min-h-[400px]"
                     value={content}

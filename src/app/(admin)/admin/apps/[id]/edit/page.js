@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Button, Card, Label, Skeleton } from '@/components/ui';
+import { Button, Card, Skeleton } from '@/components/ui';
 import { TerminalSquare, ArrowLeft, Loader2, Save } from 'lucide-react';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 
@@ -142,9 +142,9 @@ export default function EditAppPage() {
             <h2 className="text-xl font-bold mb-6">App Settings</h2>
             <div className="space-y-5">
               <div>
-                <Label className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2 block">
+                <label className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2 block">
                   App Name
-                </Label>
+                </label>
                 <input
                   className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-200 focus:border-black rounded-xl outline-none text-sm transition-all font-medium"
                   value={name}
@@ -154,9 +154,9 @@ export default function EditAppPage() {
               </div>
 
               <div>
-                <Label className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2 block">
+                <label className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2 block">
                   Description
-                </Label>
+                </label>
                 <textarea
                   className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-200 focus:border-black rounded-xl outline-none text-sm transition-all min-h-[120px] resize-none"
                   value={description}
@@ -167,9 +167,9 @@ export default function EditAppPage() {
 
               {type === 'ai' && (
                 <div>
-                  <Label className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2 block">
+                  <label className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2 block">
                     Design Schema
-                  </Label>
+                  </label>
                   <select
                     className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-200 focus:border-black rounded-xl outline-none text-sm transition-all appearance-none cursor-pointer font-medium"
                     value={designSchema}
