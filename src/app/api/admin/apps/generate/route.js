@@ -23,16 +23,40 @@ export async function POST(req) {
     // Use the AppBuilderAgent via the registry
     const appBuilder = agentRegistry.get(AGENT_IDS.APP_BUILDER);
 
-    // Execute the LangGraph workflow
-    const result = await appBuilder.execute({
-      name,
-      description,
-      designSchema: designSchema || 'modern',
+    // We'll use SSE to stream the execution live to the client
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          const executionStream = await appBuilder.streamExecute({
+            name,
+            description,
+            designSchema: designSchema || 'modern',
+          });
+
+          for await (const chunk of executionStream) {
+            // Encode the chunk as an SSE data payload
+            controller.enqueue(encoder.encode(`${JSON.stringify(chunk)}\n`));
+          }
+        } catch (err) {
+          console.error('AppBuilder Stream Error:', err);
+          controller.enqueue(
+            encoder.encode(
+              `${JSON.stringify({ type: 'error', message: err.message || 'Generation failed' })}\n`
+            )
+          );
+        } finally {
+          controller.close();
+        }
+      },
     });
 
-    return NextResponse.json({
-      content: result.content,
-      todoList: result.todoList,
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        Connection: 'keep-alive',
+      },
     });
   } catch (error) {
     if (error.message === 'Forbidden') {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Editor from '@monaco-editor/react';
 import { Card } from '@/components/ui';
@@ -13,6 +13,9 @@ import {
   Sparkles,
   Eye,
   Code2,
+  Bot,
+  Wrench,
+  CheckCircle2,
 } from 'lucide-react';
 
 export default function AppEditor({
@@ -42,6 +45,8 @@ export default function AppEditor({
   // AI specific
   const [aiPreviewContent, setAiPreviewContent] = useState(null);
   const [aiTodoList, setAiTodoList] = useState([]);
+  const [agentStream, setAgentStream] = useState([]);
+  const streamEndRef = useRef(null);
 
   // Initialize with initial data
   useEffect(() => {
@@ -52,6 +57,12 @@ export default function AppEditor({
     if (initialData.type) setType(initialData.type);
   }, [initialData]);
 
+  useEffect(() => {
+    if (streamEndRef.current) {
+      streamEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [agentStream]);
+
   const handleGenerate = async (e) => {
     e.preventDefault();
     if (!name || !description) return alert('Name and description are required.');
@@ -59,6 +70,8 @@ export default function AppEditor({
     setLoading(true);
     setAiPreviewContent(null);
     setAiTodoList([]);
+    setAgentStream([]);
+    setContent('');
     setActiveTab('preview');
 
     try {
@@ -68,16 +81,85 @@ export default function AppEditor({
         body: JSON.stringify({ name, description, designSchema }),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to generate app');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      setAiPreviewContent(data.content);
-      setContent(data.content);
-      setAiTodoList(data.todoList);
-      setActiveTab('code');
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      let pendingThought = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+
+          let data;
+          try {
+            data = JSON.parse(line);
+          } catch (e) {
+            console.warn('Failed to parse stream line:', line);
+            continue;
+          }
+
+          if (data.type === 'error') {
+            throw new Error(data.message);
+          }
+
+          if (data.type === 'thought') {
+            pendingThought += data.message;
+            setAgentStream((prev) => {
+              const last = prev[prev.length - 1];
+              if (last && last.type === 'thought') {
+                return [...prev.slice(0, -1), { ...last, message: pendingThought }];
+              }
+              return [...prev, { type: 'thought', message: pendingThought }];
+            });
+          } else if (data.type === 'status') {
+             pendingThought = ''; // Reset thought buffer
+             setAgentStream((prev) => [
+              ...prev,
+              { type: 'tool', message: data.message, status: 'running' }
+            ]);
+          } else if (data.type === 'tool_result') {
+            pendingThought = ''; // Reset thought buffer
+            setAgentStream((prev) => {
+              const last = prev[prev.length - 1];
+              if (last && last.type === 'tool' && last.status === 'running') {
+                 return [...prev.slice(0, -1), { ...last, status: 'complete' }];
+              }
+              return prev;
+            });
+            // Update the live preview/code with the current state of the document
+            if (data.content !== undefined) {
+              setContent(data.content);
+              setAiPreviewContent(data.content);
+            }
+          } else if (data.type === 'done') {
+            setAiPreviewContent(data.content);
+            setContent(data.content);
+            setAiTodoList(data.todoList || []);
+            setActiveTab('code'); // Switch back to code when done
+            setAgentStream((prev) => [
+              ...prev,
+              { type: 'success', message: 'App built successfully!' }
+            ]);
+          }
+        }
+      }
     } catch (error) {
       console.error(error);
       alert(error.message);
+      setAgentStream((prev) => [
+        ...prev,
+        { type: 'error', message: `Generation failed: ${error.message}` }
+      ]);
     } finally {
       setLoading(false);
     }
@@ -372,113 +454,137 @@ export default function AppEditor({
                 if (follower) follower.style.display = '';
               }}
             >
-              {activeTab === 'code' ? (
-                mode === 'ai' && loading ? (
-                  <div className="flex-1 flex flex-col items-center justify-center bg-white p-8 text-center space-y-6">
-                    <div className="w-16 h-16 border-4 border-neutral-100 border-t-black rounded-full animate-spin"></div>
-                    <div>
-                      <p className="text-neutral-900 font-bold text-lg">Architecting Your App...</p>
-                      <p className="text-sm text-neutral-500 mt-2">
-                        The LangGraph agent is planning and writing code. This takes 15-30s.
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <Editor
-                    height="100%"
-                    defaultLanguage="html"
-                    theme="vs-dark"
-                    value={content}
-                    onChange={(val) => setContent(val || '')}
-                    options={{
-                      minimap: { enabled: true },
-                      fontSize: 14,
-                      lineNumbers: 'on',
-                      roundedSelection: true,
-                      scrollBeyondLastLine: false,
-                      automaticLayout: true,
-                      padding: { top: 20 },
-                      fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                      cursorSmoothCaretAnimation: 'off',
-                      cursorBlinking: 'smooth',
-                      cursorWidth: 2,
-                      smoothScrolling: false,
-                      formatOnPaste: true,
-                      formatOnType: true,
-                      wordWrap: 'on',
-                      bracketPairColorization: { enabled: true },
-                      suggestOnTriggerCharacters: true,
-                      autoClosingBrackets: 'always',
-                      autoClosingQuotes: 'always',
-                      folding: true,
-                    }}
-                  />
-                )
-              ) : mode === 'ai' ? (
-                aiPreviewContent ? (
-                  <div className="flex-1 flex flex-col md:flex-row relative h-full">
-                    <div className="flex-1 h-full w-full bg-white relative">
-                      <iframe
-                        srcDoc={aiPreviewContent}
-                        title="App Preview"
-                        sandbox="allow-scripts allow-forms allow-modals allow-popups"
-                        className="w-full h-full border-none absolute inset-0"
-                      />
-                    </div>
-                    {aiTodoList.length > 0 && (
-                      <div className="w-full md:w-72 bg-neutral-50 border-t md:border-t-0 md:border-l border-neutral-200 p-6 overflow-y-auto shrink-0 z-10">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-5">
-                          Agent Execution Plan
-                        </h4>
-                        <ul className="space-y-4">
-                          {aiTodoList.map((item, idx) => (
-                            <li
-                              key={idx}
-                              className="text-sm text-neutral-700 flex gap-3 leading-relaxed"
-                            >
-                              <span className="text-black font-black shrink-0">{idx + 1}.</span>
-                              <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
+              <div className="flex-1 flex h-full relative">
+                {/* Agent Activity Sidebar (Only visible during AI generation or viewing AI generated app state) */}
+                {mode === 'ai' && (loading || agentStream.length > 0) && (
+                  <div className="w-full md:w-80 border-r border-neutral-100 bg-neutral-50/50 flex flex-col h-full shrink-0 z-10 absolute md:relative overflow-hidden transition-all duration-300">
+                    <div className="p-4 border-b border-neutral-100 bg-white flex items-center gap-3 shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-black text-white flex items-center justify-center shadow-inner">
+                        <Bot className="w-4 h-4" />
                       </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex-1 flex items-center justify-center bg-neutral-50/30 p-8 text-center">
-                    <div className="max-w-sm">
-                      <div className="w-20 h-20 bg-neutral-100 rounded-2xl mx-auto flex items-center justify-center mb-6">
-                        <TerminalSquare className="w-8 h-8 text-neutral-400" />
+                      <div>
+                        <h4 className="text-sm font-bold text-neutral-900">Code Assistant</h4>
+                        <p className="text-[10px] text-neutral-500 font-semibold uppercase tracking-widest flex items-center gap-1.5">
+                          {loading ? (
+                            <>
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                              Running
+                            </>
+                          ) : (
+                            <>
+                              <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                              Idle
+                            </>
+                          )}
+                        </p>
                       </div>
-                      <p className="text-neutral-900 font-bold text-lg mb-2">Awaiting Generation</p>
-                      <p className="text-sm text-neutral-500 leading-relaxed">
-                        Fill out the app details on the left and click Generate to see your app
-                        built in real-time.
-                      </p>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-chat-scrollbar">
+                      {agentStream.map((event, idx) => (
+                        <div key={idx} className="animate-in fade-in slide-in-from-bottom-2 duration-300 text-sm">
+                          {event.type === 'thought' && (
+                            <div className="flex gap-3">
+                              <div className="w-6 h-6 rounded-full bg-white border border-neutral-200 flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                                <Bot className="w-3.5 h-3.5 text-neutral-500" />
+                              </div>
+                              <div className="bg-white p-3 rounded-2xl rounded-tl-sm border border-neutral-200 shadow-sm text-neutral-700 w-full whitespace-pre-wrap leading-relaxed text-[13px]">
+                                {event.message}
+                              </div>
+                            </div>
+                          )}
+                          {event.type === 'tool' && (
+                            <div className="ml-9 border border-neutral-200 rounded-xl bg-white overflow-hidden shadow-sm">
+                              <div className="flex items-center gap-2 px-3 py-2 bg-neutral-50/80 border-b border-neutral-200/60">
+                                {event.status === 'running' ? (
+                                  <div className="w-3.5 h-3.5 border-[1.5px] border-neutral-200 border-t-neutral-800 border-r-neutral-800 rounded-full animate-spin shrink-0"></div>
+                                ) : (
+                                  <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                                )}
+                                <span className="font-bold text-xs text-neutral-700 truncate">{event.message}</span>
+                              </div>
+                            </div>
+                          )}
+                          {event.type === 'error' && (
+                            <div className="ml-9 p-3 bg-red-50 border border-red-100 text-red-700 rounded-xl text-xs font-medium">
+                              {event.message}
+                            </div>
+                          )}
+                          {event.type === 'success' && (
+                            <div className="ml-9 p-3 bg-green-50 border border-green-100 text-green-700 rounded-xl text-xs font-medium flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 shrink-0" />
+                              {event.message}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      <div ref={streamEndRef} />
                     </div>
                   </div>
-                )
-              ) : content ? (
-                <iframe
-                  srcDoc={content}
-                  title="Manual App Preview"
-                  sandbox="allow-scripts allow-forms allow-modals allow-popups"
-                  className="w-full h-full border-none"
-                />
-              ) : (
-                <div className="flex-1 flex items-center justify-center bg-neutral-50/30 p-8 text-center">
-                  <div className="max-w-sm">
-                    <div className="w-20 h-20 bg-neutral-100 rounded-2xl mx-auto flex items-center justify-center mb-6">
-                      <TerminalSquare className="w-8 h-8 text-neutral-400" />
+                )}
+
+                {/* Main Content Area */}
+                <div className="flex-1 h-full relative bg-white overflow-hidden">
+                  {activeTab === 'code' ? (
+                    <Editor
+                      height="100%"
+                      defaultLanguage="html"
+                      theme="vs-dark"
+                      value={content}
+                      onChange={(val) => setContent(val || '')}
+                      options={{
+                        minimap: { enabled: true },
+                        fontSize: 14,
+                        lineNumbers: 'on',
+                        roundedSelection: true,
+                        scrollBeyondLastLine: false,
+                        automaticLayout: true,
+                        padding: { top: 20 },
+                        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                        cursorSmoothCaretAnimation: 'off',
+                        cursorBlinking: 'smooth',
+                        cursorWidth: 2,
+                        smoothScrolling: false,
+                        formatOnPaste: true,
+                        formatOnType: true,
+                        wordWrap: 'on',
+                        bracketPairColorization: { enabled: true },
+                        suggestOnTriggerCharacters: true,
+                        autoClosingBrackets: 'always',
+                        autoClosingQuotes: 'always',
+                        folding: true,
+                        readOnly: loading, // Prevent user edits while AI is generating
+                      }}
+                    />
+                  ) : content || aiPreviewContent ? (
+                    <iframe
+                      srcDoc={content || aiPreviewContent}
+                      title="App Preview"
+                      sandbox="allow-scripts allow-forms allow-modals allow-popups"
+                      className="w-full h-full border-none absolute inset-0 bg-white"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-50/30 p-8 text-center">
+                      <div className="max-w-sm">
+                        <div className="w-20 h-20 bg-neutral-100 rounded-2xl mx-auto flex items-center justify-center mb-6 shadow-inner">
+                          {mode === 'ai' ? (
+                            <Cpu className="w-8 h-8 text-neutral-400" />
+                          ) : (
+                            <TerminalSquare className="w-8 h-8 text-neutral-400" />
+                          )}
+                        </div>
+                        <p className="text-neutral-900 font-bold text-lg mb-2">
+                          {mode === 'ai' ? 'Awaiting Generation' : 'Empty Canvas'}
+                        </p>
+                        <p className="text-sm text-neutral-500 leading-relaxed">
+                          {mode === 'ai'
+                            ? 'Fill out the app details on the left and click Generate to see your app built live.'
+                            : 'Switch to the Code tab and start writing HTML/JS to see it rendered here.'}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-neutral-900 font-bold text-lg mb-2">Live Preview</p>
-                    <p className="text-sm text-neutral-500 leading-relaxed">
-                      Switch to the Code tab and start writing HTML/JS to see it rendered here in
-                      real-time.
-                    </p>
-                  </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </Card>
         </div>
