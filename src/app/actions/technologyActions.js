@@ -9,6 +9,7 @@ import dbConnect from '@/lib/dbConnect';
 import Technology from '@/models/Technology';
 import { revalidatePath } from 'next/cache';
 import { serializeForClient } from '@/lib/serialize';
+import { verifyAdminAction } from '@/lib/auth/admin';
 
 /**
  * Retrieves all technologies from the database, sorted by display order.
@@ -32,6 +33,7 @@ export async function getAllTechnologies() {
  */
 export async function createTechnology(formData) {
   try {
+    await verifyAdminAction();
     await dbConnect();
 
     const technologyData = Object.fromEntries(formData.entries());
@@ -58,6 +60,7 @@ export async function createTechnology(formData) {
  */
 export async function updateTechnology(id, formData) {
   try {
+    await verifyAdminAction();
     await dbConnect();
 
     const technologyData = Object.fromEntries(formData.entries());
@@ -82,6 +85,7 @@ export async function updateTechnology(id, formData) {
  */
 export async function deleteTechnology(id) {
   try {
+    await verifyAdminAction();
     await dbConnect();
 
     console.log('🗑️ [DELETE TECHNOLOGY] Deleting technology:', id);
@@ -104,6 +108,7 @@ export async function deleteTechnology(id) {
  */
 export async function getTechnologyById(id) {
   try {
+    await verifyAdminAction();
     await dbConnect();
     const technology = await Technology.findById(id);
     return technology ? serializeForClient(technology) : null;

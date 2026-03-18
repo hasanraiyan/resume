@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Certification from '@/models/Certification';
+import { requireAdminSession } from '@/lib/auth/admin';
 
 /**
  * GET /api/certifications/[id] - Get a single certification
@@ -28,6 +29,9 @@ export async function GET(request, { params }) {
  */
 export async function PUT(request, { params }) {
   try {
+    const adminSession = await requireAdminSession();
+    if (adminSession instanceof NextResponse) return adminSession;
+
     await dbConnect();
 
     const { id } = await params;
@@ -54,6 +58,9 @@ export async function PUT(request, { params }) {
  */
 export async function DELETE(request, { params }) {
   try {
+    const adminSession = await requireAdminSession();
+    if (adminSession instanceof NextResponse) return adminSession;
+
     await dbConnect();
 
     const { id } = await params;

@@ -9,6 +9,7 @@ import dbConnect from '@/lib/dbConnect';
 import Service from '@/models/Service';
 import { revalidatePath } from 'next/cache';
 import { serializeForClient } from '@/lib/serialize';
+import { verifyAdminAction } from '@/lib/auth/admin';
 
 /**
  * Creates a new service in the database with the provided form data.
@@ -19,6 +20,7 @@ import { serializeForClient } from '@/lib/serialize';
  */
 export async function createService(formData) {
   try {
+    await verifyAdminAction();
     await dbConnect();
 
     // Convert FormData to plain object for processing
@@ -73,6 +75,7 @@ export async function getActiveServices() {
  */
 export async function getAllServices() {
   try {
+    await verifyAdminAction();
     console.log('🔗 [GET ALL SERVICES] Connecting to DB...');
     await dbConnect();
     console.log('📡 [GET ALL SERVICES] DB connected, fetching services...');
@@ -99,6 +102,7 @@ export async function getAllServices() {
  */
 export async function updateService(id, formData) {
   try {
+    await verifyAdminAction();
     await dbConnect();
 
     // Convert FormData to plain object for processing
@@ -136,6 +140,7 @@ export async function updateService(id, formData) {
  */
 export async function deleteService(id) {
   try {
+    await verifyAdminAction();
     await dbConnect();
     await Service.findByIdAndDelete(id);
 
