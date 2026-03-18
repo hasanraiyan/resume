@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Certification from '@/models/Certification';
+import { requireAdminSession } from '@/lib/auth/admin';
 
 /**
  * GET /api/certifications
@@ -27,6 +28,9 @@ export async function GET() {
  */
 export async function POST(request) {
   try {
+    const adminSession = await requireAdminSession();
+    if (adminSession instanceof NextResponse) return adminSession;
+
     await dbConnect();
 
     const body = await request.json();
