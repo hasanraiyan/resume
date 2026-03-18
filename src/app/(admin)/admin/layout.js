@@ -20,6 +20,7 @@ import {
   Users,
   Mail,
   Cloud,
+  TerminalSquare,
 } from 'lucide-react';
 
 function AdminLayoutContent({ children }) {
@@ -68,6 +69,7 @@ function AdminLayoutContent({ children }) {
           ),
         },
         { name: 'Prisma', href: '/admin/media', icon: Image },
+        { name: 'App Builder', href: '/admin/apps', icon: TerminalSquare },
       ],
     },
     {

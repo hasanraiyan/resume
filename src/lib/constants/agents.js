@@ -35,6 +35,9 @@ export const AGENT_IDS = {
   ANALYTICS_TRACKER: 'analytics_tracker',
   ENGAGEMENT_ANALYZER: 'engagement_analyzer',
 
+  // Tools / Apps
+  APP_BUILDER: 'app_builder',
+
   // Integrations
 };
 
@@ -255,6 +258,17 @@ export const DEFAULT_AGENT_CONFIGS = {
     icon: 'TrendingUp',
     isActive: true,
   },
+  [AGENT_IDS.APP_BUILDER]: {
+    name: 'App Builder',
+    description: 'Generates standalone HTML/JS web applications using LangGraph state.',
+    type: AGENT_TYPES.CONTENT,
+    category: AGENT_CATEGORIES.CODE_ANALYSIS,
+    icon: 'TerminalSquare',
+    defaultModel: 'gpt-4o',
+    defaultProvider: 'openai',
+    persona: `You are an elite App Builder agent. Your job is to generate complete, single-file HTML/JS/CSS applications. You must use modern CDNs like TailwindCSS for styling and ensure the app is fully functional and responsive. You work iteratively: first plan out the app structure, then generate the code, and finally review it for correctness.`,
+    isActive: true,
+  },
 };
 
 /**
@@ -279,6 +293,7 @@ export const AGENT_TOOLS = {
   [AGENT_IDS.PRESENTATION_SYNTHESIZER]: ['research', 'outline_generation', 'slide_synthesis'],
   [AGENT_IDS.ANALYTICS_TRACKER]: ['event_tracking', 'session_management'],
   [AGENT_IDS.ENGAGEMENT_ANALYZER]: ['pattern_recognition', 'insights_generation'],
+  [AGENT_IDS.APP_BUILDER]: ['planning', 'html_generation', 'code_review'],
 };
 
 /**
@@ -303,6 +318,7 @@ export const RATE_LIMIT_DEFAULTS = {
   [AGENT_IDS.PRESENTATION_SYNTHESIZER]: { requests: 5, window: 60 },
   [AGENT_IDS.ANALYTICS_TRACKER]: { requests: 100, window: 60 },
   [AGENT_IDS.ENGAGEMENT_ANALYZER]: { requests: 30, window: 60 },
+  [AGENT_IDS.APP_BUILDER]: { requests: 10, window: 60 },
 };
 
 /**
