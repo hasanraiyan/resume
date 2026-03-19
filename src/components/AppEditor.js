@@ -22,6 +22,8 @@ import {
   Wrench,
   CheckCircle2,
   ArrowUp,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 
 export default function AppEditor({
@@ -54,6 +56,7 @@ export default function AppEditor({
   const [type, setType] = useState(initialData.type || 'manual');
 
   // AI specific
+  const [appId, setAppId] = useState(initialData._id || null);
   const [aiPreviewContent, setAiPreviewContent] = useState(null);
   const [aiTodoList, setAiTodoList] = useState([]);
   const [agentStream, setAgentStream] = useState([]);
@@ -64,15 +67,18 @@ export default function AppEditor({
   const [generatedPlan, setGeneratedPlan] = useState([]);
   const [threadId, setThreadId] = useState(null);
   const [showAiSidebar, setShowAiSidebar] = useState(true);
+  const [isTodoCollapsed, setIsTodoCollapsed] = useState(false);
   const [sidebarChatInput, setSidebarChatInput] = useState('');
   const [hasDraft, setHasDraft] = useState(false);
 
   // Initialize with initial data
   useEffect(() => {
+    if (initialData._id) setAppId(initialData._id);
     if (initialData.name) setName(initialData.name);
     if (initialData.description) setDescription(initialData.description);
     if (initialData.content) setContent(initialData.content);
-    if (initialData.type) setType(initialData.type);
+    if (initialData.type) setType(initialData.type || 'manual');
+    if (initialData.threadId) setThreadId(initialData.threadId);
   }, [initialData]);
 
   // Handle Draft Persistence
@@ -92,6 +98,25 @@ export default function AppEditor({
     }, 30000); // 30s debounce
     return () => clearTimeout(timeout);
   }, [name, description, content, type, isEdit, initialData?._id, loading]);
+
+  useEffect(() => {
+    if (!appId || !name || loading) return;
+
+    const timeout = setTimeout(async () => {
+      try {
+        await fetch(`/api/admin/apps/${appId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, description, content, threadId }),
+        });
+        console.log('Metadata auto-saved');
+      } catch (err) {
+        console.error('Auto-save failed:', err);
+      }
+    }, 10000); // 10s debounce for metadata
+
+    return () => clearTimeout(timeout);
+  }, [name, description, appId, loading, content, threadId]);
 
   const restoreDraft = () => {
     const draftKey = `app_draft_${isEdit ? initialData?._id : 'new'}`;
@@ -130,7 +155,8 @@ export default function AppEditor({
     setIsGenerated(false);
     setAiPreviewContent(null);
     setAiTodoList([]);
-    setThreadId(null);
+    // Only reset threadId if starting a completely new flow without an appId
+    if (!appId) setThreadId(null);
     setAgentStream([{ type: 'human', message: finalDescription }]);
     // Use the description as well for context
     const currentCode = content || undefined;
@@ -150,6 +176,7 @@ export default function AppEditor({
           name,
           description: finalDescription,
           initialCode: currentCode,
+          appId: appId,
         }),
       });
 
@@ -184,7 +211,15 @@ export default function AppEditor({
             throw new Error(data.message);
           }
 
-          if (data.type === 'thought') {
+          if (data.type === 'metadata') {
+            // AUTO-SAVE: Update local state and URL when draft is created
+            if (data.appId && !appId) {
+              setAppId(data.appId);
+              setThreadId(data.threadId);
+              // Update URL without reloading
+              window.history.replaceState(null, '', `/admin/apps/${data.appId}/edit`);
+            }
+          } else if (data.type === 'thought') {
             pendingThought += data.message;
             setAgentStream((prev) => {
               const last = prev[prev.length - 1];
@@ -195,10 +230,13 @@ export default function AppEditor({
             });
           } else if (data.type === 'status') {
             pendingThought = ''; // Reset thought buffer
-            setAgentStream((prev) => [
-              ...prev,
-              { type: 'tool', message: data.message, status: 'running' },
-            ]);
+            setAgentStream((prev) => {
+              // Mark any previous running entry as complete
+              const updatedStream = prev.map((s) =>
+                s.type === 'tool' && s.status === 'running' ? { ...s, status: 'complete' } : s
+              );
+              return [...updatedStream, { type: 'tool', message: data.message, status: 'running' }];
+            });
           } else if (data.type === 'plan_ready' || data.type === 'interrupted') {
             // Plan generated - show approval UI
             pendingThought = '';
@@ -231,6 +269,13 @@ export default function AppEditor({
             if (data.content !== undefined) {
               setContent(data.content);
               setAiPreviewContent(data.content);
+            }
+            if (data.plan) {
+              setAiTodoList(data.plan);
+              // Update the latest plan in the stream to keep it current
+              setAgentStream((prev) =>
+                prev.map((s) => (s.type === 'plan' ? { ...s, plan: data.plan } : s))
+              );
             }
           } else if (data.type === 'done') {
             setAiPreviewContent(data.content);
@@ -328,10 +373,13 @@ export default function AppEditor({
             });
           } else if (data.type === 'status') {
             pendingThought = '';
-            setAgentStream((prev) => [
-              ...prev,
-              { type: 'tool', message: data.message, status: 'running' },
-            ]);
+            setAgentStream((prev) => {
+              // Mark any previous running entry as complete
+              const updatedStream = prev.map((s) =>
+                s.type === 'tool' && s.status === 'running' ? { ...s, status: 'complete' } : s
+              );
+              return [...updatedStream, { type: 'tool', message: data.message, status: 'running' }];
+            });
           } else if (data.type === 'tool_result') {
             pendingThought = '';
             setAgentStream((prev) =>
@@ -348,6 +396,13 @@ export default function AppEditor({
             if (data.content !== undefined) {
               setContent(data.content);
               setAiPreviewContent(data.content);
+            }
+            if (data.plan) {
+              setAiTodoList(data.plan);
+              // Update the latest plan in the stream to keep it current
+              setAgentStream((prev) =>
+                prev.map((s) => (s.type === 'plan' ? { ...s, plan: data.plan } : s))
+              );
             }
           } else if (data.type === 'interrupted') {
             pendingThought = '';
@@ -421,6 +476,7 @@ export default function AppEditor({
         description,
         content,
         type: mode || type,
+        threadId: threadId,
       });
       clearDraft();
     } catch (error) {
@@ -922,15 +978,30 @@ export default function AppEditor({
                                     </div>
                                     <div className="p-3 space-y-2">
                                       {event.plan &&
-                                        event.plan.map((step, i) => (
-                                          <div
-                                            key={i}
-                                            className="flex gap-2 text-xs text-blue-900 leading-relaxed"
-                                          >
-                                            <span className="font-bold opacity-50">{i + 1}.</span>
-                                            <span className="font-medium">{step}</span>
-                                          </div>
-                                        ))}
+                                        event.plan.map((step, i) => {
+                                          const stepTask =
+                                            typeof step === 'string' ? step : step.task;
+                                          return (
+                                            <div
+                                              key={i}
+                                              className="flex gap-4 text-xs leading-relaxed p-3 bg-white rounded-xl border-2 border-black/5 group/step hover:border-blue-400 transition-all duration-300"
+                                            >
+                                              <div className="flex flex-col items-center shrink-0">
+                                                <div className="w-6 h-6 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-black text-[10px] border-2 border-blue-100 group-hover/step:bg-blue-600 group-hover/step:text-white group-hover/step:border-blue-600 transition-all">
+                                                  {i + 1}
+                                                </div>
+                                                {i < event.plan.length - 1 && (
+                                                  <div className="w-0.5 h-full bg-blue-50 mt-1" />
+                                                )}
+                                              </div>
+                                              <div className="flex flex-col gap-0.5">
+                                                <span className="font-bold text-blue-900 group-hover/step:text-blue-700 transition-colors">
+                                                  {stepTask}
+                                                </span>
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
                                       {showPlanApproval && (
                                         <div className="flex flex-col gap-3 pt-3 border-t border-blue-200 mt-3">
                                           <p className="text-[10px] text-blue-700 italic">
@@ -988,6 +1059,74 @@ export default function AppEditor({
                         ))}
                         <div ref={streamEndRef} />
                       </div>
+
+                      {/* Persistent TODO Tracker - Above Input */}
+                      {aiTodoList && aiTodoList.length > 0 && (
+                        <div className="mx-4 mb-4 border-2 border-black rounded-xl bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] overflow-hidden animate-in slide-in-from-bottom-2 duration-300">
+                          <div className="px-3 py-1.5 bg-black text-white flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${isTodoCollapsed ? 'bg-green-400' : 'bg-white animate-pulse'}`}
+                              ></span>
+                              {isTodoCollapsed ? 'Build Progress' : 'In-Progress Plan'}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[9px] font-bold bg-neutral-800 px-2 py-0.5 rounded text-neutral-300">
+                                {aiTodoList.filter((t) => t.status === 'completed').length}/
+                                {aiTodoList.length}
+                              </span>
+                              <button
+                                onClick={() => setIsTodoCollapsed(!isTodoCollapsed)}
+                                className="p-1 hover:bg-neutral-800 rounded-md transition-colors text-white"
+                              >
+                                {isTodoCollapsed ? (
+                                  <ChevronUp className="w-3.5 h-3.5" />
+                                ) : (
+                                  <ChevronDown className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                          {!isTodoCollapsed && (
+                            <div className="p-2 space-y-1.5 max-h-[160px] overflow-y-auto custom-chat-scrollbar animate-in slide-in-from-top-1">
+                              {aiTodoList.map((todo, i) => (
+                                <div
+                                  key={i}
+                                  className={`flex items-center gap-2.5 px-2 py-1.5 rounded-lg border-2 border-transparent transition-all ${
+                                    todo.status === 'completed'
+                                      ? 'bg-green-50/50 opacity-70'
+                                      : todo.status === 'in-progress'
+                                        ? 'bg-blue-50 border-blue-600'
+                                        : 'bg-neutral-50'
+                                  }`}
+                                >
+                                  {todo.status === 'completed' ? (
+                                    <div className="w-4 h-4 rounded-md bg-green-500 text-white flex items-center justify-center border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] shrink-0">
+                                      <CheckCircle2 className="w-3.5 h-3.5" />
+                                    </div>
+                                  ) : todo.status === 'in-progress' ? (
+                                    <div className="w-4 h-4 rounded-md bg-yellow-300 flex items-center justify-center border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] shrink-0">
+                                      <div className="w-1.5 h-1.5 bg-black rounded-full animate-pulse" />
+                                    </div>
+                                  ) : (
+                                    <div className="w-4 h-4 rounded-md bg-white border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] shrink-0" />
+                                  )}
+                                  <span
+                                    className={`text-[11px] font-bold truncate ${todo.status === 'completed' ? 'line-through text-green-700' : 'text-neutral-900'}`}
+                                  >
+                                    {todo.task}
+                                  </span>
+                                  {todo.status === 'in-progress' && (
+                                    <span className="ml-auto text-[8px] font-black bg-blue-600 text-white px-1.5 py-0.5 rounded uppercase tracking-tighter">
+                                      Live
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                       {/* Agent Chat Input Bar */}
                       <div className="p-4 border-t-2 border-black bg-white shrink-0">
                         <div className="rounded-2xl border-2 border-black focus-within:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all flex flex-col bg-neutral-50 overflow-hidden">

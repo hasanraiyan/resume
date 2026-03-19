@@ -176,16 +176,29 @@ class BaseAgent {
 
     if (provider && provider.apiKey) {
       try {
+        const encryptedKey = provider.apiKey;
         provider.apiKey = decrypt(provider.apiKey);
+
+        console.log(
+          `[BaseAgent:resolveProvider] Resolved provider: ${provider.name} (${provider.providerId})`
+        );
+        console.log(
+          `[BaseAgent:resolveProvider] API Key - Encrypted Length: ${encryptedKey?.length}, Decrypted Length: ${provider.apiKey?.length}`
+        );
+
         if (!provider.apiKey) {
           this.logger.error(
-            `Decryption failed for provider ${providerId}. Check ENCRYPTION_SECRET.`
+            `Decryption failed for provider ${providerId}. Result was empty string or null.`
           );
         }
       } catch (e) {
         this.logger.error(`Failed to decrypt API key for provider ${providerId}`, e);
         provider.apiKey = null;
       }
+    } else {
+      console.log(
+        `[BaseAgent:resolveProvider] Provider ${providerId} found but NO apiKey field exists.`
+      );
     }
 
     return provider;
@@ -472,6 +485,24 @@ class BaseAgent {
       throw new Error(`No provider resolved for ${purpose} on agent ${this.agentId}`);
     }
 
+    if (!provider.apiKey) {
+      console.error(
+        `[BaseAgent:_buildChatModel] FAILED: apiKey is MISSING for provider ${provider.name}`
+      );
+      this.logger.error(
+        `API Key is MISSING for provider: ${provider.name} (${provider.providerId}) used in ${purpose}`
+      );
+      const err = new Error(
+        `Missing API key for AI provider: ${provider.name}. Please check Admin > AI Command Hub.`
+      );
+      err.lc_error_code = 'MISSING_API_KEY';
+      throw err;
+    }
+
+    console.log(
+      `[BaseAgent:_buildChatModel] Successfully verified apiKey for ${provider.name}. Building ${modelName}...`
+    );
+
     const normalizedModelName = (modelName || '').replace(/^models\//, '');
     if (!normalizedModelName) {
       throw new Error(
@@ -489,7 +520,7 @@ class BaseAgent {
     }
 
     return new ChatOpenAI({
-      openAIApiKey: provider.apiKey,
+      apiKey: provider.apiKey,
       modelName: normalizedModelName,
       configuration: {
         baseURL: provider.baseUrl,

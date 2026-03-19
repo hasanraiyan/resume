@@ -3,6 +3,8 @@ import dbConnect from '@/lib/dbConnect';
 import AppModel from '@/models/App';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import agentRegistry from '@/lib/agents/index';
+import { AGENT_IDS } from '@/lib/constants/agents';
 
 export async function GET(req) {
   try {
@@ -31,14 +33,29 @@ export async function POST(req) {
     }
     await dbConnect();
     const body = await req.json();
+    let { threadId, content, type, designSchema, icon, name, description } = body;
+
+    // Unified approach: ensure every app (manual or AI) has a threadId and content is in checkpointer
+    if (!threadId) {
+      threadId = `${type || 'manual'}-build-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    }
+
+    // Initialize the checkpointer for MUST case
+    try {
+      const appBuilder = agentRegistry.get(AGENT_IDS.APP_BUILDER);
+      await appBuilder.updateThreadState(threadId, { content: content || '' });
+    } catch (err) {
+      console.error('Failed to initialize thread state for manual/new app:', err);
+    }
 
     const app = await AppModel.create({
-      name: body.name,
-      description: body.description,
-      content: body.content,
-      type: body.type || 'manual',
-      designSchema: body.designSchema || 'modern',
-      icon: body.icon || 'Layout',
+      name,
+      description,
+      content, // Fallback
+      type: type || 'manual',
+      threadId,
+      designSchema: designSchema || 'modern',
+      icon: icon || 'Layout',
       isActive: true,
     });
 

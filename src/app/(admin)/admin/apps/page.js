@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 import { Button, Card, Skeleton } from '@/components/ui';
 import { TerminalSquare, Plus, Play, Edit2, Trash2, Cpu, PenTool, Search, X } from 'lucide-react';
 
 export default function AppBuilderDashboard() {
+  const router = useRouter();
   const [apps, setApps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -152,7 +154,11 @@ export default function AppBuilderDashboard() {
         ) : (
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredApps.map((app) => (
-              <Link key={app._id} href={`/admin/apps/${app._id}/run`} className="block group">
+              <div
+                key={app._id}
+                className="block group cursor-pointer"
+                onClick={() => router.push(`/admin/apps/${app._id}/run`)}
+              >
                 <Card
                   interactive
                   className="h-full flex flex-col p-6 border-2 border-neutral-100 hover:border-black transition-all duration-300 bg-white rounded-xl relative overflow-hidden"
@@ -186,11 +192,10 @@ export default function AppBuilderDashboard() {
                       </div>
                     </div>
 
-                    <div className="flex gap-1.5">
+                    <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
                       <Link
                         href={`/admin/apps/${app._id}/edit`}
                         className="p-1.5 rounded-lg text-neutral-400 hover:text-black hover:bg-neutral-100 transition-colors z-10 relative cursor-pointer"
-                        onClick={(e) => e.stopPropagation()}
                         title="Edit App"
                       >
                         <Edit2 className="w-4 h-4" />
@@ -226,7 +231,7 @@ export default function AppBuilderDashboard() {
                     </div>
                   </div>
                 </Card>
-              </Link>
+              </div>
             ))}
           </div>
         )}

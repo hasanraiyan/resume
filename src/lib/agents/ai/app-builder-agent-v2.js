@@ -58,7 +58,9 @@ class AppBuilderAgent extends BaseAgent {
     const savePlanTool = tool(
       async (input) => {
         this.logger.info(`Saving plan with ${input.steps.length} steps`);
-        state.todoList = input.steps;
+        // Initialize todos with pending status
+        const initialTodos = input.steps.map((step) => ({ task: step, status: 'pending' }));
+        state.todoList = initialTodos;
         state.planGenerated = true;
 
         // Use interrupt() to pause execution and wait for approval or refinement
@@ -86,7 +88,30 @@ class AppBuilderAgent extends BaseAgent {
         schema: z.object({
           steps: z
             .array(z.string())
-            .describe('List of structural and functional steps needed to build this app.'),
+            .describe(
+              'List of structural and functional steps needed to build this app (e.g., "Add Login UI", "Create Dashboard Layout").'
+            ),
+        }),
+      }
+    );
+
+    const updateTodoTool = tool(
+      async (input) => {
+        this.logger.info(`Updating todo status: ${input.index} to ${input.status}`);
+        if (!state.todoList[input.index]) {
+          return `Error: Todo at index ${input.index} not found.`;
+        }
+        state.todoList[input.index].status = input.status;
+        return `Todo "${state.todoList[input.index].task}" updated to ${input.status}.`;
+      },
+      {
+        name: 'update_todo',
+        description: 'Updates the progress status of a specific task in the approved plan.',
+        schema: z.object({
+          index: z.number().describe('The index of the task in the todo list (0-based).'),
+          status: z
+            .enum(['pending', 'in-progress', 'completed'])
+            .describe('The new status of the task.'),
         }),
       }
     );
@@ -152,6 +177,92 @@ class AppBuilderAgent extends BaseAgent {
       }
     );
 
+    const patchCodeTool = tool(
+      async (input) => {
+        this.logger.info(`Patching code with ${input.patches.length} hunks`);
+        let currentContent = state.content;
+        let successCount = 0;
+        const results = [];
+
+        for (const patch of input.patches) {
+          const { searchBlock, replaceBlock } = patch;
+          if (currentContent.includes(searchBlock)) {
+            currentContent = currentContent.replace(searchBlock, replaceBlock);
+            successCount++;
+            results.push(`Hunk ${successCount}: Success`);
+          } else {
+            results.push(`Hunk ${results.length + 1}: Failed (search block not found)`);
+          }
+        }
+
+        state.content = currentContent;
+        return `Patch applied: ${successCount}/${input.patches.length} hunks succeeded.\nDetails:\n${results.join('\n')}`;
+      },
+      {
+        name: 'patch_code',
+        description:
+          'Applies multiple search-and-replace hunks at once. More efficient than replace_code.',
+        schema: z.object({
+          patches: z.array(
+            z.object({
+              searchBlock: z.string().describe('The exact block of code to find.'),
+              replaceBlock: z.string().describe('The block of code to replace it with.'),
+            })
+          ),
+        }),
+      }
+    );
+
+    const checkCodeTool = tool(
+      async () => {
+        this.logger.info(`Checking code for errors`);
+        const code = state.content;
+        const errors = [];
+
+        // Simple HTML nesting check (very basic)
+        const tags = code.match(/<[a-zA-Z0-9]+| <\/[a-zA-Z0-9]+>/g) || [];
+        const stack = [];
+        tags.forEach((tag) => {
+          if (tag.startsWith('</')) {
+            const tagName = tag.substring(2).trim();
+            if (stack.length > 0 && stack[stack.length - 1] === tagName) {
+              stack.pop();
+            } else {
+              // Ignore some common unclosed tags or mistakes for now
+              // errors.push(`Potential HTML mismatch: closed ${tagName} without matching open tag.`);
+            }
+          } else if (!tag.endsWith('/>')) {
+            const tagName = tag.substring(1).trim();
+            // Skip self-closing tags
+            if (!['img', 'br', 'hr', 'input', 'link', 'meta'].includes(tagName.toLowerCase())) {
+              stack.push(tagName);
+            }
+          }
+        });
+
+        // Check for JS syntax errors in <script> tags
+        const scriptMatches = code.matchAll(/<script(?:\s+[^>]*)?>([\s\S]*?)<\/script>/gi);
+        for (const match of scriptMatches) {
+          const jsContent = match[1];
+          try {
+            new Function(jsContent);
+          } catch (e) {
+            errors.push(`JS Syntax Error in <script>: ${e.message}`);
+          }
+        }
+
+        if (errors.length === 0) {
+          return 'No obvious syntax errors found. The code is well-formed.';
+        }
+        return `Found ${errors.length} potential issues:\n- ${errors.join('\n- ')}`;
+      },
+      {
+        name: 'check_code',
+        description: 'Performs a basic syntax check on HTML and JS code to catch errors early.',
+        schema: z.object({}),
+      }
+    );
+
     const finishTool = tool(
       async () => {
         this.logger.info(`App building finished.`);
@@ -165,7 +276,16 @@ class AppBuilderAgent extends BaseAgent {
       }
     );
 
-    return [savePlanTool, readCodeTool, appendCodeTool, replaceCodeTool, finishTool];
+    return [
+      savePlanTool,
+      updateTodoTool,
+      readCodeTool,
+      appendCodeTool,
+      replaceCodeTool,
+      patchCodeTool,
+      checkCodeTool,
+      finishTool,
+    ];
   }
 
   _getSystemPrompt(input, isAfterApproval = false) {
@@ -178,11 +298,14 @@ Description: ${input.description}
 The plan has been APPROVED. Now execute it step by step:
 
 1. First call \`read_code\` to see what's already in the document
-2. Use \`append_code\` to add new sections or \`replace_code\` to modify existing parts
-3. Use \`read_code\` frequently to check your progress
-4. Include proper styling, interactivity, and all required features
-5. Make it look professional and polished
-6. When completely done, call the \`finish\` tool
+2. Use \`update_todo\` at the start and end of each task to keep the user informed of your progress
+3. Use \`append_code\` to add new sections or \`patch_code\` / \`replace_code\` to modify existing parts
+4. Use \`check_code\` after making significant changes to ensure no syntax errors were introduced
+5. Include proper styling, interactivity, and all required features
+6. Make it look professional and polished
+7. **MANDATORY**: You MUST call \`check_code\` one last time before calling the \`finish\` tool to ensure everything is perfect.
+8. When completely done AND after identifying no errors, call the \`finish\` tool
+9. Note: Your current progress is AUTOMATICALLY saved after every turn via the graph state. You do not need to call a separate save tool.
 
 DESIGN SYSTEM - NEOBRUTALISM/MINIMALIST STYLE:
 - Use ONLY the predefined Tailwind colors from the config (background, foreground, primary, border, etc.)
@@ -208,9 +331,13 @@ REQUIREMENTS:
 1. First, call \`read_code\` to see the initial HTML template and understand what design system is already set up.
 2. Then call the \`save_plan\` tool to outline the architecture and steps based on what you read.
 3. After save_plan, the user will review and approve your plan.
-4. Once approved, you will use \`append_code\` and \`replace_code\` to build the application.
-5. Design using NEOBRUTALISM/MINIMALIST style (see guidelines below).
-6. When completely done, call the \`finish\` tool.
+4. Once approved, you will use \`update_todo\` to track progress and \`append_code\`, \`patch_code\`, and \`replace_code\` to build the application.
+5. IMPORTANT: Use \`update_todo\` to mark steps as 'in-progress' before you start them and 'completed' once they are finished.
+6. Use \`check_code\` periodically to detect syntax errors in your HTML or script tags.
+7. **MANDATORY**: You MUST call \`check_code\` one last time before calling the \`finish\` tool to verify that the final code is error-free.
+8. Design using NEOBRUTALISM/MINIMALIST style (see guidelines below).
+9. When completely done and verified, call the \`finish\` tool.
+10. Your progress is PERSISTENT and saved automatically after every turn.
 
 DESIGN SYSTEM - NEOBRUTALISM/MINIMALIST STYLE:
 - Use ONLY the predefined Tailwind colors from the config (background, foreground, primary, border, destructive, etc.)
@@ -246,37 +373,39 @@ PROCEED:
 4. Call 'finish' ONLY when the app is completely polished.`;
   }
 
-  /**
-   * Start a new app build with plan generation
-   */
-  async *startBuild(input) {
-    const threadId = `app-build-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const state = {
-      content: input.initialCode || this._getInitialHTML(input),
-      todoList: [],
-      planGenerated: false,
-    };
-    const tools = this._getTools(state);
-    const model = await this.createChatModel({ temperature: 0.7 });
+  async _compileGraph(stateObj, input) {
+    if (!this.model) {
+      await this.initialize();
+      if (!this.model) this.model = await this.createChatModel({ temperature: 0.7 });
+    }
 
+    const tools = this._getTools(stateObj);
+    const model = this.model;
     const agent = async (state) => {
-      const boundModel = model.bindTools(tools);
-      const response = await boundModel.invoke([
-        new SystemMessage(this._getSystemPrompt(input)),
-        ...state.messages,
-      ]);
-      return { messages: [response] };
+      this.logger.info(`Running agent node... approved status: ${stateObj.approved}`);
+
+      const response = await model
+        .bindTools(tools)
+        .invoke([
+          new SystemMessage(
+            this._getSystemPrompt(
+              input || { name: 'App', description: 'Application' },
+              stateObj.approved === true
+            )
+          ),
+          ...state.messages,
+        ]);
+
+      return {
+        messages: [response],
+        content: stateObj.content,
+        todoList: stateObj.todoList,
+      };
     };
 
     const shouldContinue = (state) => {
       const lastMessage = state.messages[state.messages.length - 1];
-
-      // If plan was just generated, interrupt before executing tools
       if (lastMessage.tool_calls && lastMessage.tool_calls.length > 0) {
-        const hasSavePlan = lastMessage.tool_calls.some((tc) => tc.name === 'save_plan');
-        if (hasSavePlan) {
-          return 'tools'; // Will be interrupted before tools node
-        }
         return 'tools';
       }
       return END;
@@ -291,19 +420,37 @@ PROCEED:
       .addConditionalEdges('agent', shouldContinue)
       .addEdge(START, 'agent');
 
-    // Compile with checkpointer - interrupt() is called within save_plan tool
-    const compiledGraph = graph.compile({
-      checkpointer: this.checkpointer,
-    });
+    return graph.compile({ checkpointer: this.checkpointer });
+  }
 
-    const config = { configurable: { thread_id: threadId } };
+  /**
+   * Start a new app build with plan generation
+   */
+  async *startBuild(input) {
+    yield { type: 'status', message: 'Initializing build engine...' };
+    if (!this.checkpointer) await this.initialize();
+
+    yield { type: 'status', message: 'Analyzing requirements...' };
+    const threadId =
+      input.threadId || `app-build-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const stateObj = {
+      content: input.initialCode || this._getInitialHTML(input),
+      todoList: [],
+      planGenerated: false,
+      approved: false,
+    };
+
+    yield { type: 'status', message: 'Compiling build graph...' };
+    const compiledGraph = await this._compileGraph(stateObj, input);
+    const config = { configurable: { thread_id: threadId }, recursionLimit: 100 };
     const initialMessages = [new HumanMessage(`Please build the ${input.name} app.`)];
 
+    yield { type: 'status', message: 'Starting AI Assistant...' };
     // Stream events for real-time UI updates
     const eventStream = compiledGraph.streamEvents(
       {
         messages: initialMessages,
-        content: state.content,
+        content: stateObj.content,
         todoList: [],
         planGenerated: false,
       },
@@ -313,8 +460,19 @@ PROCEED:
     for await (const event of eventStream) {
       if (event.event === 'on_chat_model_stream' && event.data.chunk?.content) {
         yield { type: 'thought', message: event.data.chunk.content };
-      } else if (event.event === 'on_tool_start' && event.name === 'save_plan') {
-        yield { type: 'status', message: `Generating plan...` };
+      } else if (event.event === 'on_tool_start') {
+        if (event.name === 'save_plan') {
+          yield { type: 'status', message: `Generating plan...` };
+        } else {
+          yield { type: 'status', message: `Executing: ${event.name}...` };
+        }
+      } else if (event.event === 'on_tool_end') {
+        yield {
+          type: 'tool_result',
+          name: event.name,
+          content: stateObj.content,
+          plan: stateObj.todoList,
+        };
       }
     }
 
@@ -339,7 +497,7 @@ PROCEED:
           yield {
             type: 'interrupted',
             threadId,
-            plan: interruptData.plan || state.todoList,
+            plan: interruptData.plan || stateObj.todoList,
             message:
               interruptData.message || 'Execution paused. Please approve the plan to continue.',
           };
@@ -352,8 +510,8 @@ PROCEED:
     this.logger.info('No interrupt found - graph completed');
     yield {
       type: 'done',
-      content: graphState.values?.content || state.content,
-      todoList: graphState.values?.todoList || state.todoList,
+      content: graphState.values?.content || stateObj.content,
+      todoList: graphState.values?.todoList || stateObj.todoList,
     };
   }
 
@@ -361,45 +519,19 @@ PROCEED:
    * Continue build after plan approval
    */
   async *continueBuild(threadId, approved = true, input = null) {
-    const config = { configurable: { thread_id: threadId } };
+    yield { type: 'status', message: 'Resuming build engine...' };
+    if (!this.checkpointer) await this.initialize();
+    const config = { configurable: { thread_id: threadId }, recursionLimit: 100 };
 
     // Recreate the graph (must be identical to startBuild)
-    const stateObj = { content: '', todoList: [], planGenerated: false };
-    const tools = this._getTools(stateObj);
-    const model = await this.createChatModel({ temperature: 0.7 });
-
-    const agent = async (state) => {
-      const boundModel = model.bindTools(tools);
-      const response = await boundModel.invoke([
-        new SystemMessage(
-          this._getSystemPrompt(
-            input || { name: 'App', description: 'Application' },
-            approved === true
-          )
-        ),
-        ...state.messages,
-      ]);
-      return { messages: [response] };
+    const stateObj = {
+      content: '',
+      todoList: [],
+      planGenerated: false,
+      approved: approved === true,
     };
 
-    const shouldContinue = (state) => {
-      const lastMessage = state.messages[state.messages.length - 1];
-      if (lastMessage.tool_calls && lastMessage.tool_calls.length > 0) {
-        return 'tools';
-      }
-      return END;
-    };
-
-    const toolNode = new ToolNode(tools);
-
-    const graph = new StateGraph(GraphState)
-      .addNode('agent', agent)
-      .addNode('tools', toolNode)
-      .addEdge('tools', 'agent')
-      .addConditionalEdges('agent', shouldContinue)
-      .addEdge(START, 'agent');
-
-    const compiledGraph = graph.compile({ checkpointer: this.checkpointer });
+    const compiledGraph = await this._compileGraph(stateObj, input);
 
     // PRE-LOAD THE STATE to avoid data loss on resume
     const currentState = await compiledGraph.getState(config);
@@ -411,7 +543,7 @@ PROCEED:
       stateObj.todoList = currentState.values.todoList || [];
     }
 
-    let inputToStream = null;
+    let inputToStream = {};
     if (isInterrupted) {
       // Map boolean false to a string to avoid potential EmptyInputError in some LangGraph versions
       const resumeValue = approved === false ? '__REJECTED__' : approved;
@@ -419,9 +551,6 @@ PROCEED:
     } else if (typeof approved === 'string') {
       // If not interrupted but we have a message, it's a follow-up refinement
       inputToStream = { messages: [new HumanMessage(approved)] };
-    } else {
-      // Nothing to do if not interrupted and no message
-      return;
     }
 
     // Resume execution with Command or new input
@@ -430,7 +559,11 @@ PROCEED:
       version: 'v2',
     });
 
+    this.logger.info(
+      `Starting continuation stream for thread: ${threadId}. Input keys: ${Object.keys(inputToStream || {})}`
+    );
     for await (const event of eventStream) {
+      this.logger.debug(`Continuation Event: ${event.event} (${event.name || 'anonymous'})`);
       if (event.event === 'on_chat_model_stream' && event.data.chunk?.content) {
         yield { type: 'thought', message: event.data.chunk.content };
       } else if (
@@ -453,19 +586,23 @@ PROCEED:
       } else if (
         event.event === 'on_tool_end' &&
         event.name !== 'agent' &&
-        event.name !== 'save_plan'
+        event.name !== 'save_plan' &&
+        event.name !== 'tools'
       ) {
-        // Fetch fresh state to ensure no loss
-        const latestState = await compiledGraph.getState(config);
-        const finalContent = latestState.values?.content || stateObj.content;
-        yield { type: 'tool_result', name: event.name, content: finalContent };
+        // ALWAYS use the closure state for the most immediate "live" value
+        yield {
+          type: 'tool_result',
+          name: event.name,
+          content: stateObj.content,
+          plan: stateObj.todoList,
+        };
       }
     }
 
     // After streaming, fetch definitive final state
     const graphState = await compiledGraph.getState(config);
-    const finalContent = graphState.values?.content || stateObj.content;
-    const finalTodoList = graphState.values?.todoList || stateObj.todoList;
+    const finalContent = stateObj.content || graphState.values?.content;
+    const finalTodoList = stateObj.todoList || graphState.values?.todoList;
 
     if (graphState.tasks && graphState.tasks.length > 0) {
       for (const task of graphState.tasks) {
@@ -540,6 +677,28 @@ PROCEED:
   </script>
 </body>
 </html>`;
+  }
+
+  /**
+   * Fetch current state for a thread directly from checkpointer
+   */
+  async getThreadState(threadId) {
+    if (!this.checkpointer) await this.initialize();
+    const config = { configurable: { thread_id: threadId } };
+    const compiledGraph = await this._compileGraph({});
+    const state = await compiledGraph.getState(config);
+    return state.values || null;
+  }
+
+  /**
+   * Manually update thread state without running the graph
+   */
+  async updateThreadState(threadId, values) {
+    if (!this.checkpointer) await this._onInitialize();
+    const config = { configurable: { thread_id: threadId } };
+    const compiledGraph = await this._compileGraph({});
+    await compiledGraph.updateState(config, values);
+    return true;
   }
 
   // Fallback for non-streaming usage if needed

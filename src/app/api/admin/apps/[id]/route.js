@@ -3,6 +3,8 @@ import dbConnect from '@/lib/dbConnect';
 import AppModel from '@/models/App';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import agentRegistry from '@/lib/agents/index';
+import { AGENT_IDS } from '@/lib/constants/agents';
 
 export async function GET(req, { params }) {
   try {
@@ -16,6 +18,23 @@ export async function GET(req, { params }) {
     const app = await AppModel.findById(id).lean();
     if (!app) {
       return NextResponse.json({ error: 'App not found' }, { status: 404 });
+    }
+
+    // Unified Archive Check: if threadId is present, fetch live content from checkpointer
+    if (app.threadId) {
+      try {
+        const appBuilder = agentRegistry.get(AGENT_IDS.APP_BUILDER);
+        const state = await appBuilder.getThreadState(app.threadId);
+        if (state && state.content) {
+          app.content = state.content;
+          if (state.todoList) app.todoList = state.todoList;
+        }
+      } catch (err) {
+        console.warn(
+          'Failed to fetch live content from thread, falling back to stored content:',
+          err
+        );
+      }
     }
 
     return NextResponse.json({ app });
@@ -47,6 +66,7 @@ export async function PUT(req, { params }) {
           content: body.content,
           icon: body.icon,
           designSchema: body.designSchema,
+          threadId: body.threadId,
         },
       },
       { new: true, runValidators: true }
@@ -54,6 +74,16 @@ export async function PUT(req, { params }) {
 
     if (!app) {
       return NextResponse.json({ error: 'App not found' }, { status: 404 });
+    }
+
+    // Sync manual change back to thread checkpoint
+    if (app.threadId) {
+      try {
+        const appBuilder = agentRegistry.get(AGENT_IDS.APP_BUILDER);
+        await appBuilder.updateThreadState(app.threadId, { content: body.content });
+      } catch (err) {
+        console.error('Failed to update thread state during manual edit sync:', err);
+      }
     }
 
     return NextResponse.json({ app });

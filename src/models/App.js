@@ -20,7 +20,7 @@ const AppSchema = new mongoose.Schema(
     },
     content: {
       type: String,
-      required: true,
+      default: '',
     },
     icon: {
       type: String,
@@ -35,6 +35,10 @@ const AppSchema = new mongoose.Schema(
     designSchema: {
       type: String,
       default: 'modern',
+      trim: true,
+    },
+    threadId: {
+      type: String,
       trim: true,
     },
     isActive: {

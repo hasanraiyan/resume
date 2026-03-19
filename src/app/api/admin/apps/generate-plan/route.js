@@ -5,6 +5,8 @@ import { AGENT_IDS } from '@/lib/constants/agents';
 
 // Import the full agents module to trigger registration
 import agentRegistry from '@/lib/agents/index';
+import dbConnect from '@/lib/dbConnect';
+import AppModel from '@/models/App';
 
 /**
  * POST /api/admin/apps/generate-plan
@@ -18,10 +20,38 @@ export async function POST(req) {
     }
 
     const body = await req.json();
-    const { name, description, initialCode } = body;
+    let { name, description, initialCode, appId } = body;
 
     if (!name || !description) {
       return NextResponse.json({ error: 'Name and description are required' }, { status: 400 });
+    }
+
+    await dbConnect();
+
+    // Automatic Draft Creation/Loading
+    let threadId = null;
+    if (!appId) {
+      // Create a fresh draft
+      const newApp = await AppModel.create({
+        name,
+        description,
+        content: initialCode || 'Generating...',
+        type: 'ai',
+        isActive: true, // Show in dashboard if desired, or keep as draft
+      });
+      appId = newApp._id;
+      threadId = `app-build-${appId}-${Date.now()}`;
+      newApp.threadId = threadId;
+      await newApp.save();
+    } else {
+      const existingApp = await AppModel.findById(appId);
+      if (existingApp) {
+        threadId = existingApp.threadId || `app-build-${appId}-${Date.now()}`;
+        if (!existingApp.threadId) {
+          existingApp.threadId = threadId;
+          await existingApp.save();
+        }
+      }
     }
 
     const appBuilder = agentRegistry.get(AGENT_IDS.APP_BUILDER);
@@ -30,7 +60,17 @@ export async function POST(req) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const buildStream = await appBuilder.startBuild({ name, description, initialCode });
+          // Immediately send metadata to the frontend
+          controller.enqueue(
+            encoder.encode(`${JSON.stringify({ type: 'metadata', appId, threadId })}\n`)
+          );
+
+          const buildStream = await appBuilder.startBuild({
+            name,
+            description,
+            initialCode,
+            threadId, // Pass the explicit threadId
+          });
 
           for await (const chunk of buildStream) {
             controller.enqueue(encoder.encode(`${JSON.stringify(chunk)}\n`));
