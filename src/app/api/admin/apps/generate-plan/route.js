@@ -1,18 +1,22 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-
-// Ensure agents are imported and registered
-import '@/lib/agents/index';
-import agentRegistry from '@/lib/agents/AgentRegistry';
 import { AGENT_IDS } from '@/lib/constants/agents';
 
+// Import the full agents module to trigger registration
+import agentRegistry from '@/lib/agents/index';
+
+/**
+ * POST /api/admin/apps/generate-plan
+ * Step 1: Generate plan and return it for approval
+ */
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
     if (!session || session.user?.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
     const body = await req.json();
     const { name, description } = body;
 
@@ -20,42 +24,22 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Name and description are required' }, { status: 400 });
     }
 
-    // Use the AppBuilderAgent via the registry
     const appBuilder = agentRegistry.get(AGENT_IDS.APP_BUILDER);
-
-    // We'll use SSE to stream the execution live to the client
     const encoder = new TextEncoder();
+
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const executionStream = await appBuilder.streamExecute({
-            name,
-            description,
-            initialCode: `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${name}</title>
-</head>
-<body>
-  <div id="app">
-    <h1>${name}</h1>
-    <p>${description}</p>
-  </div>
-</body>
-</html>`,
-          });
+          const buildStream = await appBuilder.startBuild({ name, description });
 
-          for await (const chunk of executionStream) {
-            // Encode the chunk as an SSE data payload
+          for await (const chunk of buildStream) {
             controller.enqueue(encoder.encode(`${JSON.stringify(chunk)}\n`));
           }
         } catch (err) {
-          console.error('AppBuilder Stream Error:', err);
+          console.error('Plan Generation Error:', err);
           controller.enqueue(
             encoder.encode(
-              `${JSON.stringify({ type: 'error', message: err.message || 'Generation failed' })}\n`
+              `${JSON.stringify({ type: 'error', message: err.message || 'Plan generation failed' })}\n`
             )
           );
         } finally {
@@ -72,10 +56,10 @@ export async function POST(req) {
       },
     });
   } catch (error) {
-    if (error.message === 'Forbidden') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-    console.error('AI App Generation Failed:', error);
-    return NextResponse.json({ error: error.message || 'Failed to generate app' }, { status: 500 });
+    console.error('Plan Generation Failed:', error);
+    return NextResponse.json(
+      { error: error.message || 'Failed to generate plan' },
+      { status: 500 }
+    );
   }
 }
