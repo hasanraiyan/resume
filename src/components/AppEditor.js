@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation';
 import Editor from '@monaco-editor/react';
 import { Card } from '@/components/ui';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import {
   TerminalSquare,
   Cpu,
@@ -547,8 +551,6 @@ export default function AppEditor({
                 ? 'AI will generate your app code.'
                 : 'Write your app code manually.'}
           </p>
-        </div>
-        {!isEdit && (
           <div className="flex items-center gap-3">
             <div className="flex-1">
               <input
@@ -585,7 +587,7 @@ export default function AppEditor({
               {activeTab === 'preview' ? 'View Code' : 'Live Preview'}
             </button>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Input Screen - Only for AI mode, shown initially */}
@@ -790,27 +792,83 @@ export default function AppEditor({
                                 </div>
                                 <div className="bg-white p-4 rounded-2xl rounded-tl-sm border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] text-neutral-800 w-full leading-relaxed text-[13.5px] prose prose-sm max-w-none">
                                   <ReactMarkdown
+                                    remarkPlugins={[remarkGfm]}
+                                    rehypePlugins={[rehypeRaw]}
                                     components={{
-                                      p: ({ children }) => (
-                                        <p className="mb-2 last:mb-0">{children}</p>
-                                      ),
-                                      code: ({ inline, children }) =>
-                                        inline ? (
-                                          <code className="px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-800 text-xs font-mono">
-                                            {children}
-                                          </code>
-                                        ) : (
-                                          <code className="block px-2 py-1 rounded bg-neutral-100 text-neutral-800 text-xs font-mono overflow-x-auto">
-                                            {children}
-                                          </code>
-                                        ),
-                                      ul: ({ children }) => (
-                                        <ul className="list-disc pl-4 mb-2 space-y-1">
+                                      h1: ({ children }) => (
+                                        <h1 className="text-lg font-black uppercase tracking-tight mb-4 border-b-2 border-black pb-1">
                                           {children}
-                                        </ul>
+                                        </h1>
+                                      ),
+                                      h2: ({ children }) => (
+                                        <h2 className="text-base font-black uppercase tracking-tight mb-3">
+                                          {children}
+                                        </h2>
+                                      ),
+                                      h3: ({ children }) => (
+                                        <h3 className="text-sm font-black uppercase tracking-tight mb-2">
+                                          {children}
+                                        </h3>
+                                      ),
+                                      p: ({ children }) => (
+                                        <p className="mb-3 last:mb-0 text-neutral-800 leading-relaxed">
+                                          {children}
+                                        </p>
+                                      ),
+                                      strong: ({ children }) => (
+                                        <strong className="font-black text-black">
+                                          {children}
+                                        </strong>
+                                      ),
+                                      blockquote: ({ children }) => (
+                                        <blockquote className="border-l-4 border-black pl-4 py-1 my-4 italic bg-neutral-50 font-medium">
+                                          {children}
+                                        </blockquote>
+                                      ),
+                                      code: ({ inline, className, children, ...props }) => {
+                                        const match = /language-(\w+)/.exec(className || '');
+                                        return !inline && match ? (
+                                          <div className="my-4 border-2 border-black rounded-lg overflow-hidden shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+                                            <div className="bg-black px-3 py-1 flex items-center justify-between">
+                                              <span className="text-[10px] font-black text-white uppercase tracking-widest">
+                                                {match[1]}
+                                              </span>
+                                            </div>
+                                            <SyntaxHighlighter
+                                              style={vscDarkPlus}
+                                              language={match[1]}
+                                              PreTag="div"
+                                              customStyle={{
+                                                margin: 0,
+                                                padding: '1rem',
+                                                fontSize: '12px',
+                                                background: '#1e1e1e',
+                                              }}
+                                              {...props}
+                                            >
+                                              {String(children).replace(/\n$/, '')}
+                                            </SyntaxHighlighter>
+                                          </div>
+                                        ) : (
+                                          <code
+                                            className={`${inline ? 'px-1.5 py-0.5 rounded bg-neutral-100 text-black font-bold text-xs' : 'block p-3 rounded-lg bg-neutral-900 text-white text-xs font-mono overflow-x-auto my-3'}`}
+                                            {...props}
+                                          >
+                                            {children}
+                                          </code>
+                                        );
+                                      },
+                                      ul: ({ children }) => (
+                                        <ul className="list-none mb-4 space-y-2">{children}</ul>
+                                      ),
+                                      li: ({ children }) => (
+                                        <li className="flex gap-2 items-start">
+                                          <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-black shrink-0" />
+                                          <span className="text-[13.5px]">{children}</span>
+                                        </li>
                                       ),
                                       ol: ({ children }) => (
-                                        <ol className="list-decimal pl-4 mb-2 space-y-1">
+                                        <ol className="list-decimal pl-6 mb-4 space-y-2 font-bold">
                                           {children}
                                         </ol>
                                       ),

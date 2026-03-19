@@ -234,19 +234,15 @@ LAYOUT STRUCTURE:
 - Proper spacing hierarchy: space-y-2 for tight groups, space-y-4 for related items, space-y-8 for sections
 - Responsive design: use sm:, md:, lg: breakpoints when needed
 
-Start by providing a conversational thought about your objective and rationale. Always explain WHAT you are doing and WHY you chose a specific design or implementation approach. 
-
-IMPORTANT: After 'save_plan', you MUST wait for the user's approval. Do not call any modification tools like 'append_code' until the user approves or says 'Proceed'. 
-
-DESIGN ARCHITECTURE:
-- Think like a product designer first: How will the user interact? What is the core value?
-- Then like a developer: How do I structure the HTML/JS for best maintainability?
-- Finally like a neobrutalist artist: How do I make this UX pop with bold borders and shadows?
+IMPORTANT: 
+- If the user asks a question, requests a list of features, or wants a general explanation, RESPOND IN TEXT ONLY. DO NOT call 'save_plan' for information/discovery requests.
+- ONLY call 'save_plan' when you are initiating a specific build task or responding to a complex refinement request that requires code changes.
+- After calling 'save_plan', you MUST wait for the user's approval. Do not call modification tools (append_code, replace_code) until the user approves or says 'Proceed'.
 
 PROCEED:
-1. Call 'save_plan' with your proposal.
-2. If approved, use 'append_code' and 'replace_code' to build.
-3. If feedback is received, update your plan or proceed if simple.
+1. If this is a coding task, Start by explaining your rationale, then call 'save_plan'.
+2. If this is a question or summary request, just provide the answer in text and call 'finish' or just end your turn.
+3. Once a plan is approved, use the building tools to execute.
 4. Call 'finish' ONLY when the app is completely polished.`;
   }
 
