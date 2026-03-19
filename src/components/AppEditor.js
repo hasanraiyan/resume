@@ -17,6 +17,7 @@ import {
   Bot,
   Wrench,
   CheckCircle2,
+  ArrowUp,
 } from 'lucide-react';
 
 export default function AppEditor({
@@ -56,6 +57,9 @@ export default function AppEditor({
   const [showPlanApproval, setShowPlanApproval] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState([]);
   const [threadId, setThreadId] = useState(null);
+  const [showAiSidebar, setShowAiSidebar] = useState(true);
+  const [sidebarChatInput, setSidebarChatInput] = useState('');
+  const [hasDraft, setHasDraft] = useState(false);
 
   // Initialize with initial data
   useEffect(() => {
@@ -64,6 +68,42 @@ export default function AppEditor({
     if (initialData.content) setContent(initialData.content);
     if (initialData.type) setType(initialData.type);
   }, [initialData]);
+
+  // Handle Draft Persistence
+  useEffect(() => {
+    const draftKey = `app_draft_${isEdit ? initialData?._id : 'new'}`;
+    const draft = localStorage.getItem(draftKey);
+    if (draft) {
+      setHasDraft(true);
+    }
+  }, [isEdit, initialData?._id]);
+
+  useEffect(() => {
+    if (loading || !name) return; // Don't save empty/initial or during loading
+    const draftKey = `app_draft_${isEdit ? initialData?._id : 'new'}`;
+    const timeout = setTimeout(() => {
+      localStorage.setItem(draftKey, JSON.stringify({ name, description, content, type }));
+    }, 30000); // 30s debounce
+    return () => clearTimeout(timeout);
+  }, [name, description, content, type, isEdit, initialData?._id, loading]);
+
+  const restoreDraft = () => {
+    const draftKey = `app_draft_${isEdit ? initialData?._id : 'new'}`;
+    const draft = JSON.parse(localStorage.getItem(draftKey));
+    if (draft) {
+      setName(draft.name);
+      setDescription(draft.description);
+      setContent(draft.content);
+      setType(draft.type);
+      setHasDraft(false);
+    }
+  };
+
+  const clearDraft = () => {
+    const draftKey = `app_draft_${isEdit ? initialData?._id : 'new'}`;
+    localStorage.removeItem(draftKey);
+    setHasDraft(false);
+  };
 
   useEffect(() => {
     if (streamEndRef.current) {
@@ -77,13 +117,18 @@ export default function AppEditor({
 
     // Move to generation screen
     setShowInputScreen(false);
+    setShowAiSidebar(true);
 
     setLoading(true);
     setIsGenerated(false);
     setAiPreviewContent(null);
     setAiTodoList([]);
-    setAgentStream([]);
-    setContent('');
+    setThreadId(null);
+    setAgentStream([{ type: 'human', message: description }]);
+    // Do NOT clear content if we're refining existing code
+    if (!content) {
+      setContent('');
+    }
     setActiveTab('preview');
     setShowPlanApproval(false);
     setGeneratedPlan([]);
@@ -93,7 +138,11 @@ export default function AppEditor({
       const res = await fetch('/api/admin/apps/generate-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description }),
+        body: JSON.stringify({
+          name,
+          description,
+          initialCode: content || undefined, // Send current code if it exists
+        }),
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -207,13 +256,26 @@ export default function AppEditor({
     setLoading(true);
     setShowPlanApproval(false);
 
+    setAgentStream((prev) => [
+      ...prev,
+      {
+        type: 'human',
+        message:
+          approved === true
+            ? 'Approved! Build the app.'
+            : approved === false
+              ? 'Rejected. Rethink the plan.'
+              : approved,
+      },
+    ]);
+
     try {
       const res = await fetch('/api/admin/apps/approve-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           threadId,
-          approved,
+          approved: typeof approved === 'string' ? approved : approved,
           name, // Pass name for system prompt
           description, // Pass description for system prompt
         }),
@@ -281,6 +343,17 @@ export default function AppEditor({
               setContent(data.content);
               setAiPreviewContent(data.content);
             }
+          } else if (data.type === 'interrupted') {
+            pendingThought = '';
+            setGeneratedPlan(data.plan || []);
+            setShowPlanApproval(true);
+            setLoading(false);
+            setAgentStream((prev) => {
+              const updatedStream = prev.map((s) =>
+                s.type === 'tool' && s.status === 'running' ? { ...s, status: 'complete' } : s
+              );
+              return [...updatedStream, { type: 'plan', message: data.message, plan: data.plan }];
+            });
           } else if (data.type === 'done') {
             setAiPreviewContent(data.content);
             setContent(data.content);
@@ -306,6 +379,29 @@ export default function AppEditor({
     }
   };
 
+  const handleSidebarChatSend = () => {
+    if (!sidebarChatInput.trim() || loading) return;
+
+    const message = sidebarChatInput.trim();
+    setSidebarChatInput('');
+    setShowAiSidebar(true);
+
+    if (showPlanApproval && threadId) {
+      // User is refining the plan
+      handleApprovePlan(message);
+    } else if (threadId) {
+      // User is refining the finished app or adding more features
+      handleApprovePlan(message);
+    } else {
+      // Starting a fresh generation with this message
+      if (!name) setName('My New App');
+      setDescription(message);
+      // We can't immediately call handleGenerate because setName/setDescription are async state updates
+      // So we use the message directly
+      setTimeout(() => handleGenerate({ preventDefault: () => {} }), 0);
+    }
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
 
@@ -321,6 +417,7 @@ export default function AppEditor({
         content,
         type: mode || type,
       });
+      clearDraft();
     } catch (error) {
       console.error(error);
       alert(error.message);
@@ -421,6 +518,26 @@ export default function AppEditor({
               </>
             )}
           </h1>
+          {hasDraft && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded uppercase tracking-wider">
+                Unsaved Draft Found
+              </span>
+              <button
+                onClick={restoreDraft}
+                className="text-[10px] font-black text-black underline underline-offset-2 hover:text-neutral-600 transition-colors uppercase"
+              >
+                Restore
+              </button>
+              <button
+                onClick={clearDraft}
+                className="text-[10px] font-bold text-neutral-400 hover:text-red-500 transition-colors"
+                title="Discard Draft"
+              >
+                Discard
+              </button>
+            </div>
+          )}
           <p className="text-neutral-500 mt-1">
             {isEdit
               ? 'Modify your app details and code.'
@@ -439,6 +556,17 @@ export default function AppEditor({
                 placeholder="Application Name"
               />
             </div>
+            <button
+              onClick={() => setShowAiSidebar(!showAiSidebar)}
+              className={`p-2 rounded-xl border-2 transition-all flex items-center gap-2 ${
+                showAiSidebar
+                  ? 'bg-blue-50 border-blue-200 text-blue-600'
+                  : 'bg-neutral-50 border-neutral-100 text-neutral-500 hover:border-black hover:text-black'
+              }`}
+              title="AI Assistant"
+            >
+              <Bot className="w-5 h-5" />
+            </button>
             <button
               onClick={() => setActiveTab(activeTab === 'code' ? 'preview' : 'code')}
               className={`px-4 py-2 text-sm font-semibold transition-all flex items-center gap-2 rounded-xl ${
@@ -535,50 +663,32 @@ export default function AppEditor({
 
           {/* Action Buttons Row */}
           <div className="flex flex-col sm:flex-row gap-3">
-            {mode === 'ai' && !isEdit ? (
-              <>
-                <button
-                  onClick={handleGenerate}
-                  disabled={loading || !name || !description}
-                  className={`flex-1 py-4 ${isGenerated ? 'bg-white border-2 border-neutral-200 text-black hover:border-black' : 'bg-black text-white hover:bg-neutral-800'} disabled:bg-neutral-200 disabled:text-white disabled:border-transparent rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer disabled:cursor-not-allowed`}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4" />{' '}
-                      {isGenerated ? 'Regenerate App' : 'Generate App'}
-                    </>
-                  )}
-                </button>
-                {isGenerated && (
-                  <button
-                    onClick={handleSave}
-                    disabled={loading || !name || !description || !content}
-                    className="flex-1 py-4 bg-black hover:bg-neutral-800 disabled:bg-neutral-200 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer disabled:cursor-not-allowed"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" /> Saving...
-                      </>
-                    ) : (
-                      'Save to Dashboard'
-                    )}
-                  </button>
-                )}
-              </>
-            ) : (
+            {!isGenerated && !content && (
               <button
-                onClick={handleSave}
-                disabled={loading || !name || !description || !content}
-                className="w-full py-4 bg-black hover:bg-neutral-800 disabled:bg-neutral-200 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer disabled:cursor-not-allowed"
+                onClick={handleGenerate}
+                disabled={loading || !name || !description}
+                className="flex-1 py-4 bg-black text-white hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />{' '}
-                    {isEdit ? 'Saving...' : 'Saving...'}
+                    <Loader2 className="w-4 h-4 animate-spin" /> Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" /> Generate with AI
+                  </>
+                )}
+              </button>
+            )}
+            {(isGenerated || content || isEdit) && (
+              <button
+                onClick={handleSave}
+                disabled={loading || !name || !description || !content}
+                className="flex-1 py-4 bg-black hover:bg-neutral-800 disabled:bg-neutral-200 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Saving...
                   </>
                 ) : isEdit ? (
                   'Save Changes'
@@ -641,8 +751,8 @@ export default function AppEditor({
                 }}
               >
                 <div className="flex-1 flex h-full relative">
-                  {/* Agent Activity Sidebar (Only visible during AI generation or viewing AI generated app state) */}
-                  {mode === 'ai' && (loading || agentStream.length > 0) && (
+                  {/* Agent Activity Sidebar - visible if toggled or if AI build in progress */}
+                  {showAiSidebar && (
                     <div className="w-[400px] md:w-[500px] border-r border-neutral-100 bg-neutral-50/50 flex flex-col h-full shrink-0 z-10 relative overflow-hidden transition-all duration-300">
                       <div className="p-4 border-b border-neutral-100 bg-white flex items-center gap-3 shrink-0">
                         <div className="w-8 h-8 rounded-lg bg-black text-white flex items-center justify-center shadow-inner">
@@ -709,42 +819,86 @@ export default function AppEditor({
                                 </div>
                               </div>
                             )}
-                            {event.type === 'plan' && (
-                              <div className="ml-9 border-2 border-blue-200 rounded-xl bg-blue-50 overflow-hidden shadow-sm">
-                                <div className="px-3 py-2 bg-blue-100/80 border-b border-blue-200/60">
-                                  <span className="font-bold text-xs text-blue-900">
-                                    📋 Generated Plan
-                                  </span>
-                                </div>
-                                <div className="p-3 space-y-2">
-                                  {event.plan &&
-                                    event.plan.map((step, i) => (
-                                      <div key={i} className="flex gap-2 text-xs text-blue-900">
-                                        <span className="font-bold">{i + 1}.</span>
-                                        <span>{step}</span>
-                                      </div>
-                                    ))}
-                                  {showPlanApproval && (
-                                    <div className="flex gap-2 pt-3 border-t border-blue-200 mt-3">
-                                      <button
-                                        onClick={() => handleApprovePlan(true)}
-                                        disabled={loading}
-                                        className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50"
-                                      >
-                                        ✓ Approve & Build
-                                      </button>
-                                      <button
-                                        onClick={() => handleApprovePlan(false)}
-                                        disabled={loading}
-                                        className="flex-1 py-2 px-3 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 text-xs font-bold rounded-lg transition-colors disabled:opacity-50"
-                                      >
-                                        ✗ Reject
-                                      </button>
-                                    </div>
-                                  )}
+                            {event.type === 'human' && (
+                              <div className="flex gap-3 justify-end">
+                                <div className="bg-black p-3 rounded-2xl rounded-tr-sm text-white w-fit max-w-[85%] leading-relaxed text-[13px] shadow-sm">
+                                  {event.message}
                                 </div>
                               </div>
                             )}
+                            {event.type === 'plan' &&
+                              (() => {
+                                const isNewestPlan = !agentStream
+                                  .slice(idx + 1)
+                                  .some((e) => e.type === 'plan');
+
+                                if (!isNewestPlan) {
+                                  return (
+                                    <div className="ml-9 border border-neutral-200 rounded-xl bg-neutral-50 px-3 py-2 text-[11px] text-neutral-500 flex items-center justify-between opacity-70 mb-2">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-bold">📋 Outdated Plan</span>
+                                        <span className="italic">
+                                          ({event.plan?.length || 0} steps)
+                                        </span>
+                                      </div>
+                                      <span className="text-[9px] uppercase font-bold tracking-tight bg-neutral-200 px-1.5 py-0.5 rounded text-neutral-600">
+                                        Archived
+                                      </span>
+                                    </div>
+                                  );
+                                }
+
+                                return (
+                                  <div className="ml-9 border-2 border-blue-200 rounded-xl bg-blue-50 overflow-hidden shadow-sm animate-in zoom-in-95 duration-300 mb-2">
+                                    <div className="px-3 py-2 bg-blue-100/80 border-b border-blue-200/60 flex items-center justify-between">
+                                      <span className="font-bold text-xs text-blue-900 flex items-center gap-1.5">
+                                        <span className="text-[14px]">📋</span> Generated Plan
+                                      </span>
+                                      {showPlanApproval && (
+                                        <span className="text-[9px] uppercase font-bold tracking-widest bg-blue-600 px-1.5 py-0.5 rounded text-white animate-pulse">
+                                          Needs Approval
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="p-3 space-y-2">
+                                      {event.plan &&
+                                        event.plan.map((step, i) => (
+                                          <div
+                                            key={i}
+                                            className="flex gap-2 text-xs text-blue-900 leading-relaxed"
+                                          >
+                                            <span className="font-bold opacity-50">{i + 1}.</span>
+                                            <span className="font-medium">{step}</span>
+                                          </div>
+                                        ))}
+                                      {showPlanApproval && (
+                                        <div className="flex flex-col gap-3 pt-3 border-t border-blue-200 mt-3">
+                                          <p className="text-[10px] text-blue-700 italic">
+                                            Review the plan above. Use the chat at the bottom to
+                                            suggest changes, or approve to start building.
+                                          </p>
+                                          <div className="flex gap-2">
+                                            <button
+                                              onClick={() => handleApprovePlan(true)}
+                                              disabled={loading}
+                                              className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50 shadow-sm"
+                                            >
+                                              ✓ Approve & Build
+                                            </button>
+                                            <button
+                                              onClick={() => handleApprovePlan(false)}
+                                              disabled={loading}
+                                              className="flex-1 py-2 px-3 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 text-xs font-bold rounded-lg transition-colors disabled:opacity-50"
+                                            >
+                                              ✗ Reject
+                                            </button>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                             {event.type === 'tool' && (
                               <div className="ml-9 border border-neutral-200 rounded-xl bg-white overflow-hidden shadow-sm">
                                 <div className="flex items-center gap-2 px-3 py-2 bg-neutral-50/80 border-b border-neutral-200/60">
@@ -773,6 +927,31 @@ export default function AppEditor({
                           </div>
                         ))}
                         <div ref={streamEndRef} />
+                      </div>
+                      {/* Agent Chat Input Bar */}
+                      <div className="p-4 border-t border-neutral-100 bg-white/80 backdrop-blur-sm shrink-0">
+                        <div className="relative group">
+                          <textarea
+                            value={sidebarChatInput}
+                            onChange={(e) => setSidebarChatInput(e.target.value)}
+                            placeholder="Ask your assistant anything..."
+                            className="w-full px-4 py-3.5 pr-12 bg-neutral-100/50 border-2 border-transparent focus:border-black focus:bg-white rounded-2xl outline-none text-[13px] transition-all min-h-[60px] max-h-[200px] resize-none leading-relaxed text-black placeholder:text-neutral-500 font-medium"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSidebarChatSend();
+                              }
+                            }}
+                            disabled={loading}
+                          />
+                          <button
+                            onClick={handleSidebarChatSend}
+                            disabled={loading || !sidebarChatInput.trim()}
+                            className="absolute bottom-2.5 right-2.5 p-2 bg-black text-white hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 rounded-xl transition-all shadow-lg active:scale-95"
+                          >
+                            <ArrowUp className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}

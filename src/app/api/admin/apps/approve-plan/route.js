@@ -32,7 +32,7 @@ export async function POST(req) {
         try {
           const buildStream = await appBuilder.continueBuild(
             threadId,
-            approved !== false,
+            approved,
             { name, description } // Pass input for the new system prompt
           );
 

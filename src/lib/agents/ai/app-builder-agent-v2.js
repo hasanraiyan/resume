@@ -61,15 +61,20 @@ class AppBuilderAgent extends BaseAgent {
         state.todoList = input.steps;
         state.planGenerated = true;
 
-        // Use interrupt() to pause execution and wait for approval
-        const approved = interrupt({
+        // Use interrupt() to pause execution and wait for approval or refinement
+        const response = interrupt({
           type: 'plan_approval',
           plan: input.steps,
-          message: 'Plan generated. Please review and approve to continue.',
+          message:
+            'Plan generated. Please review and approve to continue, or provide feedback for refinement.',
         });
 
-        if (!approved) {
-          return `Plan was rejected. Please provide new requirements.`;
+        if (response === false || response === '__REJECTED__') {
+          return `Plan was rejected. Please explain to the user that you've acknowledged the rejection and ask for new requirements or a different approach to improve the plan.`;
+        }
+
+        if (typeof response === 'string' && response.trim().length > 0) {
+          return `The user has provided feedback/refinement: "${response}". Please update your plan accordingly by calling save_plan again, or proceed if the feedback is simple.`;
         }
 
         return `Plan approved! Proceeding with implementation: ${input.steps.join(', ')}`;
@@ -77,7 +82,7 @@ class AppBuilderAgent extends BaseAgent {
       {
         name: 'save_plan',
         description:
-          'Saves the structural plan for the app. Call this FIRST and ONLY ONCE. After calling this, WAIT for user approval before proceeding.',
+          'Saves the structural plan for the app. Call this to outline the architecture before building. You can call this multiple times if the user requests changes to the plan.',
         schema: z.object({
           steps: z
             .array(z.string())
@@ -165,7 +170,7 @@ class AppBuilderAgent extends BaseAgent {
 
   _getSystemPrompt(input, isAfterApproval = false) {
     if (isAfterApproval) {
-      return `You are an elite App Builder agent. Continue building the approved application.
+      return `You are an elite App Builder agent. Continue building the application.
 
 App Name: ${input.name}
 Description: ${input.description}
@@ -229,7 +234,7 @@ LAYOUT STRUCTURE:
 - Proper spacing hierarchy: space-y-2 for tight groups, space-y-4 for related items, space-y-8 for sections
 - Responsive design: use sm:, md:, lg: breakpoints when needed
 
-Start by calling save_plan with your implementation plan.`;
+Start by calling save_plan with your implementation plan. If the user provides feedback, you should call save_plan again with an updated plan. If the feedback is very simple and you are ready to build, you can proceed to use the build tools.`;
   }
 
   /**
@@ -353,8 +358,11 @@ Start by calling save_plan with your implementation plan.`;
       const boundModel = model.bindTools(tools);
       const response = await boundModel.invoke([
         new SystemMessage(
-          this._getSystemPrompt(input || { name: 'App', description: 'Application' }, true)
-        ), // true = after approval
+          this._getSystemPrompt(
+            input || { name: 'App', description: 'Application' },
+            approved === true
+          )
+        ),
         ...state.messages,
       ]);
       return { messages: [response] };
@@ -379,9 +387,24 @@ Start by calling save_plan with your implementation plan.`;
 
     const compiledGraph = graph.compile({ checkpointer: this.checkpointer });
 
-    // Resume execution with Command({ resume: approved })
-    // This value becomes the return value of interrupt() inside save_plan
-    const eventStream = compiledGraph.streamEvents(new Command({ resume: approved }), {
+    const currentState = await compiledGraph.getState(config);
+    const isInterrupted = currentState.next.length > 0;
+
+    let inputToStream = null;
+    if (isInterrupted) {
+      // Map boolean false to a string to avoid potential EmptyInputError in some LangGraph versions
+      const resumeValue = approved === false ? '__REJECTED__' : approved;
+      inputToStream = new Command({ resume: resumeValue });
+    } else if (typeof approved === 'string') {
+      // If not interrupted but we have a message, it's a follow-up refinement
+      inputToStream = { messages: [new HumanMessage(approved)] };
+    } else {
+      // Nothing to do if not interrupted and no message
+      return;
+    }
+
+    // Resume execution with Command or new input
+    const eventStream = compiledGraph.streamEvents(inputToStream, {
       ...config,
       version: 'v2',
     });
@@ -412,6 +435,24 @@ Start by calling save_plan with your implementation plan.`;
         event.name !== 'save_plan'
       ) {
         yield { type: 'tool_result', name: event.name, content: stateObj.content };
+      }
+    }
+
+    // After streaming, check for NEW interrupts (e.g. if the agent calls save_plan AGAIN)
+    const graphState = await compiledGraph.getState(config);
+    if (graphState.tasks && graphState.tasks.length > 0) {
+      for (const task of graphState.tasks) {
+        if (task.interrupts && task.interrupts.length > 0) {
+          const interruptData = task.interrupts[0].value;
+          yield {
+            type: 'interrupted',
+            threadId,
+            plan: interruptData.plan || stateObj.todoList,
+            message:
+              interruptData.message || 'Execution paused. Please approve the plan to continue.',
+          };
+          return;
+        }
       }
     }
 

@@ -18,7 +18,7 @@ export async function POST(req) {
     }
 
     const body = await req.json();
-    const { name, description } = body;
+    const { name, description, initialCode } = body;
 
     if (!name || !description) {
       return NextResponse.json({ error: 'Name and description are required' }, { status: 400 });
@@ -30,7 +30,7 @@ export async function POST(req) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const buildStream = await appBuilder.startBuild({ name, description });
+          const buildStream = await appBuilder.startBuild({ name, description, initialCode });
 
           for await (const chunk of buildStream) {
             controller.enqueue(encoder.encode(`${JSON.stringify(chunk)}\n`));
