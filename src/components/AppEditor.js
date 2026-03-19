@@ -34,6 +34,7 @@ export default function AppEditor({
 
   // Loading states
   const [loading, setLoading] = useState(false);
+  const [isGenerated, setIsGenerated] = useState(false);
 
   // Form state
   const [name, setName] = useState(initialData.name || '');
@@ -68,6 +69,7 @@ export default function AppEditor({
     if (!name || !description) return alert('Name and description are required.');
 
     setLoading(true);
+    setIsGenerated(false);
     setAiPreviewContent(null);
     setAiTodoList([]);
     setAgentStream([]);
@@ -146,6 +148,7 @@ export default function AppEditor({
             setContent(data.content);
             setAiTodoList(data.todoList || []);
             setActiveTab('code'); // Switch back to code when done
+            setIsGenerated(true);
             setAgentStream((prev) => [
               ...prev,
               { type: 'success', message: 'App built successfully!' }
@@ -363,23 +366,40 @@ export default function AppEditor({
                 </div>
               )}
 
-              <div className="pt-6 border-t border-neutral-100">
+              <div className="pt-6 border-t border-neutral-100 flex flex-col gap-3">
                 {mode === 'ai' && !isEdit ? (
-                  <button
-                    onClick={handleGenerate}
-                    disabled={loading || !name || !description}
-                    className="w-full py-4 bg-black hover:bg-neutral-800 disabled:bg-neutral-200 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer disabled:cursor-not-allowed"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" /> Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4" /> Generate App
-                      </>
+                  <>
+                    <button
+                      onClick={handleGenerate}
+                      disabled={loading || !name || !description}
+                      className={`w-full py-4 ${isGenerated ? 'bg-white border-2 border-neutral-200 text-black hover:border-black' : 'bg-black text-white hover:bg-neutral-800'} disabled:bg-neutral-200 disabled:text-white disabled:border-transparent rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer disabled:cursor-not-allowed`}
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" /> Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4" /> {isGenerated ? 'Regenerate App' : 'Generate App'}
+                        </>
+                      )}
+                    </button>
+                    {isGenerated && (
+                      <button
+                        onClick={handleSave}
+                        disabled={loading || !name || !description || !content}
+                        className="w-full py-4 bg-black hover:bg-neutral-800 disabled:bg-neutral-200 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer disabled:cursor-not-allowed"
+                      >
+                        {loading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" /> Saving...
+                          </>
+                        ) : (
+                          'Save to Dashboard'
+                        )}
+                      </button>
                     )}
-                  </button>
+                  </>
                 ) : (
                   <button
                     onClick={handleSave}
