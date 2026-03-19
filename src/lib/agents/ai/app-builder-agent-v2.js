@@ -172,12 +172,24 @@ Description: ${input.description}
 
 The plan has been APPROVED. Now execute it step by step:
 
-1. Start by using \`append_code\` to build the initial HTML structure with Tailwind CSS CDN
-2. Use \`read_code\` to check your progress
-3. Use \`replace_code\` to refine and improve sections
+1. First call \`read_code\` to see what's already in the document
+2. Use \`append_code\` to add new sections or \`replace_code\` to modify existing parts
+3. Use \`read_code\` frequently to check your progress
 4. Include proper styling, interactivity, and all required features
 5. Make it look professional and polished
 6. When completely done, call the \`finish\` tool
+
+DESIGN SYSTEM - NEOBRUTALISM/MINIMALIST STYLE:
+- Use ONLY the predefined Tailwind colors from the config (background, foreground, primary, border, etc.)
+- Apply thick borders: border-4, border-black
+- Use bold typography: font-black, font-bold, uppercase, tracking-tight
+- Add brutal shadows: shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]
+- High contrast: white backgrounds with black borders and text
+- Button states: bg-black text-white hover:bg-white hover:text-black with border-4 border-black
+- Keep layouts clean and spacious with proper spacing (space-y-4, space-y-6, p-6, p-8)
+- Use Lucide icons for visual elements
+- Minimal color palette: primarily black and white
+- Make UI elements chunky and bold, not delicate
 
 YOU MUST NOW BUILD THE APPLICATION. Do not just say you will build it - actually call the tools to write the code!`;
     }
@@ -188,12 +200,34 @@ App Name: ${input.name}
 Description: ${input.description}
 
 REQUIREMENTS:
-1. You MUST first call the \`save_plan\` tool to outline the architecture and steps.
-2. After save_plan, the user will review and approve your plan.
-3. Once approved, you will use \`append_code\` and \`replace_code\` to build the application.
-4. The HTML MUST use Tailwind CSS via CDN.
-5. Design an excellent, modern UI according to the app description.
+1. First, call \`read_code\` to see the initial HTML template and understand what design system is already set up.
+2. Then call the \`save_plan\` tool to outline the architecture and steps based on what you read.
+3. After save_plan, the user will review and approve your plan.
+4. Once approved, you will use \`append_code\` and \`replace_code\` to build the application.
+5. Design using NEOBRUTALISM/MINIMALIST style (see guidelines below).
 6. When completely done, call the \`finish\` tool.
+
+DESIGN SYSTEM - NEOBRUTALISM/MINIMALIST STYLE:
+- Use ONLY the predefined Tailwind colors from the config (background, foreground, primary, border, destructive, etc.)
+- Apply thick borders everywhere: border-4, border-black
+- Use bold typography: font-black, font-bold, uppercase for headings/buttons, tracking-tight
+- Add brutal box shadows: shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]
+- High contrast design: white backgrounds (#ffffff) with black borders and text (#000000)
+- Button styling: bg-black text-white hover:bg-white hover:text-black with border-4 border-black and transition-colors
+- Cards and containers: bg-white border-4 border-black with the brutal shadow
+- Keep layouts clean, spacious, and centered: use space-y-4, space-y-6, space-y-8, p-6, p-8
+- Use Lucide icons (already loaded) for all icons - call lucide.createIcons() after DOM updates
+- Minimal color palette: ONLY black and white, no grays or colors unless absolutely necessary
+- Make all UI elements chunky and bold - thick borders, large padding, bold text
+- Use Inter font (already loaded) for all text
+- Interactive states: clear hover effects with border or background color inversions
+- No rounded corners unless specifically needed (keep sharp, brutalist aesthetic)
+
+LAYOUT STRUCTURE:
+- Center content with max-w-2xl or max-w-4xl containers
+- Use min-h-screen for full-page layouts
+- Proper spacing hierarchy: space-y-2 for tight groups, space-y-4 for related items, space-y-8 for sections
+- Responsive design: use sm:, md:, lg: breakpoints when needed
 
 Start by calling save_plan with your implementation plan.`;
   }
@@ -391,13 +425,51 @@ Start by calling save_plan with your implementation plan.`;
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${input.name}</title>
+  
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            background: '#ffffff',
+            foreground: '#000000',
+            primary: '#000000',
+            'primary-foreground': '#ffffff',
+            card: '#ffffff',
+            'card-foreground': '#000000',
+            muted: '#ffffff',
+            'muted-foreground': '#000000',
+            border: '#000000',
+            destructive: '#000000',
+            'destructive-foreground': '#ffffff',
+            secondary: '#ffffff',
+            'secondary-foreground': '#000000',
+          },
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
-  <div id="app" class="min-h-screen bg-gray-50">
-    <h1 class="text-3xl font-bold">${input.name}</h1>
+<body class="antialiased bg-background text-foreground">
+  <div id="app" class="min-h-screen">
+    <h1>${input.name}</h1>
     <p>${input.description}</p>
   </div>
+  
+  <script>
+    lucide.createIcons();
+  </script>
 </body>
 </html>`;
   }
