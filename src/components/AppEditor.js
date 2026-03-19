@@ -38,7 +38,9 @@ export default function AppEditor({
   const [activeTab, setActiveTab] = useState('preview');
 
   // Loading states
-  const [loading, setLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const loading = isGenerating || isSaving;
   const [isGenerated, setIsGenerated] = useState(false);
 
   // Form state
@@ -111,21 +113,23 @@ export default function AppEditor({
     }
   }, [agentStream]);
 
-  const handleGenerate = async (e) => {
-    e.preventDefault();
-    if (!name || !description) return alert('Name and description are required.');
+  const handleGenerate = async (e, query = null) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const finalDescription = query || description;
+    if (!name || !finalDescription) return alert('Name and description are required.');
 
     // Move to generation screen
     setShowInputScreen(false);
     setShowAiSidebar(true);
 
-    setLoading(true);
+    setIsGenerating(true);
     setIsGenerated(false);
     setAiPreviewContent(null);
     setAiTodoList([]);
     setThreadId(null);
-    setAgentStream([{ type: 'human', message: description }]);
-    // Do NOT clear content if we're refining existing code
+    setAgentStream([{ type: 'human', message: finalDescription }]);
+    // Use the description as well for context
+    const currentCode = content || undefined;
     if (!content) {
       setContent('');
     }
@@ -140,8 +144,8 @@ export default function AppEditor({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name,
-          description,
-          initialCode: content || undefined, // Send current code if it exists
+          description: finalDescription,
+          initialCode: currentCode,
         }),
       });
 
@@ -197,7 +201,7 @@ export default function AppEditor({
             setGeneratedPlan(data.plan || []);
             setThreadId(data.threadId);
             setShowPlanApproval(true);
-            setLoading(false);
+            setIsGenerating(false);
             setAgentStream((prev) => {
               // Mark any 'running' tool as complete before adding the plan
               const updatedStream = prev.map((s) =>
@@ -246,14 +250,12 @@ export default function AppEditor({
         { type: 'error', message: `Generation failed: ${error.message}` },
       ]);
     } finally {
-      setLoading(false);
+      setIsGenerating(false);
     }
   };
 
   const handleApprovePlan = async (approved = true) => {
-    if (!threadId) return;
-
-    setLoading(true);
+    setIsGenerating(true);
     setShowPlanApproval(false);
 
     setAgentStream((prev) => [
@@ -347,7 +349,7 @@ export default function AppEditor({
             pendingThought = '';
             setGeneratedPlan(data.plan || []);
             setShowPlanApproval(true);
-            setLoading(false);
+            setIsGenerating(false);
             setAgentStream((prev) => {
               const updatedStream = prev.map((s) =>
                 s.type === 'tool' && s.status === 'running' ? { ...s, status: 'complete' } : s
@@ -375,7 +377,7 @@ export default function AppEditor({
         { type: 'error', message: `Build failed: ${error.message}` },
       ]);
     } finally {
-      setLoading(false);
+      setIsGenerating(false);
     }
   };
 
@@ -395,10 +397,9 @@ export default function AppEditor({
     } else {
       // Starting a fresh generation with this message
       if (!name) setName('My New App');
-      setDescription(message);
-      // We can't immediately call handleGenerate because setName/setDescription are async state updates
-      // So we use the message directly
-      setTimeout(() => handleGenerate({ preventDefault: () => {} }), 0);
+      // Pass the message directly to handleGenerate as a query
+      // This way the app description remains stable
+      handleGenerate(null, message);
     }
   };
 
@@ -409,7 +410,7 @@ export default function AppEditor({
       return alert('All fields including content are required.');
     }
 
-    setLoading(true);
+    setIsSaving(true);
     try {
       await onSave({
         name,
@@ -421,7 +422,8 @@ export default function AppEditor({
     } catch (error) {
       console.error(error);
       alert(error.message);
-      setLoading(false);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -669,7 +671,7 @@ export default function AppEditor({
                 disabled={loading || !name || !description}
                 className="flex-1 py-4 bg-black text-white hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer disabled:cursor-not-allowed"
               >
-                {loading ? (
+                {isGenerating ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" /> Generating...
                   </>
@@ -686,7 +688,7 @@ export default function AppEditor({
                 disabled={loading || !name || !description || !content}
                 className="flex-1 py-4 bg-black hover:bg-neutral-800 disabled:bg-neutral-200 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer disabled:cursor-not-allowed"
               >
-                {loading ? (
+                {isSaving ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" /> Saving...
                   </>
@@ -783,10 +785,10 @@ export default function AppEditor({
                           >
                             {event.type === 'thought' && (
                               <div className="flex gap-3">
-                                <div className="w-6 h-6 rounded-full bg-white border border-neutral-200 flex items-center justify-center shrink-0 shadow-sm mt-0.5">
-                                  <Bot className="w-3.5 h-3.5 text-neutral-500" />
+                                <div className="w-8 h-8 rounded-xl bg-black border-2 border-black flex items-center justify-center shrink-0 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] mt-0.5">
+                                  <Bot className="w-4 h-4 text-white" />
                                 </div>
-                                <div className="bg-white p-3 rounded-2xl rounded-tl-sm border border-neutral-200 shadow-sm text-neutral-700 w-full leading-relaxed text-[13px] prose prose-sm max-w-none">
+                                <div className="bg-white p-4 rounded-2xl rounded-tl-sm border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] text-neutral-800 w-full leading-relaxed text-[13.5px] prose prose-sm max-w-none">
                                   <ReactMarkdown
                                     components={{
                                       p: ({ children }) => (
@@ -821,7 +823,7 @@ export default function AppEditor({
                             )}
                             {event.type === 'human' && (
                               <div className="flex gap-3 justify-end">
-                                <div className="bg-black p-3 rounded-2xl rounded-tr-sm text-white w-fit max-w-[85%] leading-relaxed text-[13px] shadow-sm">
+                                <div className="bg-white p-4 rounded-2xl rounded-tr-sm border-2 border-black shadow-[-4px_4px_0px_0px_rgba(0,0,0,1)] text-black w-fit max-w-[85%] leading-relaxed font-bold text-[13.5px] uppercase tracking-tight">
                                   {event.message}
                                 </div>
                               </div>
@@ -849,14 +851,14 @@ export default function AppEditor({
                                 }
 
                                 return (
-                                  <div className="ml-9 border-2 border-blue-200 rounded-xl bg-blue-50 overflow-hidden shadow-sm animate-in zoom-in-95 duration-300 mb-2">
-                                    <div className="px-3 py-2 bg-blue-100/80 border-b border-blue-200/60 flex items-center justify-between">
-                                      <span className="font-bold text-xs text-blue-900 flex items-center gap-1.5">
-                                        <span className="text-[14px]">📋</span> Generated Plan
+                                  <div className="ml-11 border-2 border-black rounded-2xl bg-blue-50 overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] animate-in zoom-in-95 duration-300 mb-2">
+                                    <div className="px-4 py-2.5 bg-blue-600 border-b-2 border-black flex items-center justify-between">
+                                      <span className="font-black text-[11px] uppercase tracking-widest text-white flex items-center gap-2">
+                                        <span className="text-sm">📋</span> Implementation Plan
                                       </span>
                                       {showPlanApproval && (
-                                        <span className="text-[9px] uppercase font-bold tracking-widest bg-blue-600 px-1.5 py-0.5 rounded text-white animate-pulse">
-                                          Needs Approval
+                                        <span className="text-[9px] uppercase font-black tracking-widest bg-yellow-300 px-2 py-1 rounded-lg border-2 border-black text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] animate-bounce">
+                                          WAITING
                                         </span>
                                       )}
                                     </div>
@@ -900,14 +902,14 @@ export default function AppEditor({
                                 );
                               })()}
                             {event.type === 'tool' && (
-                              <div className="ml-9 border border-neutral-200 rounded-xl bg-white overflow-hidden shadow-sm">
-                                <div className="flex items-center gap-2 px-3 py-2 bg-neutral-50/80 border-b border-neutral-200/60">
+                              <div className="ml-11 border-2 border-black rounded-xl bg-white overflow-hidden shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+                                <div className="flex items-center gap-3 px-4 py-2.5 bg-neutral-50 border-b-2 border-black">
                                   {event.status === 'running' ? (
-                                    <div className="w-3.5 h-3.5 border-[1.5px] border-neutral-200 border-t-neutral-800 border-r-neutral-800 rounded-full animate-spin shrink-0"></div>
+                                    <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin shrink-0"></div>
                                   ) : (
-                                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                                    <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
                                   )}
-                                  <span className="font-bold text-xs text-neutral-700 truncate">
+                                  <span className="font-black text-[11px] uppercase tracking-wider text-black truncate italic">
                                     {event.message}
                                   </span>
                                 </div>
@@ -929,28 +931,40 @@ export default function AppEditor({
                         <div ref={streamEndRef} />
                       </div>
                       {/* Agent Chat Input Bar */}
-                      <div className="p-4 border-t border-neutral-100 bg-white/80 backdrop-blur-sm shrink-0">
-                        <div className="relative group">
+                      <div className="p-4 border-t-2 border-black bg-white shrink-0">
+                        <div className="rounded-2xl border-2 border-black focus-within:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all flex flex-col bg-neutral-50 overflow-hidden">
                           <textarea
                             value={sidebarChatInput}
-                            onChange={(e) => setSidebarChatInput(e.target.value)}
+                            onChange={(e) => {
+                              setSidebarChatInput(e.target.value);
+                              e.target.style.height = 'auto';
+                              e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px';
+                            }}
                             placeholder="Ask your assistant anything..."
-                            className="w-full px-4 py-3.5 pr-12 bg-neutral-100/50 border-2 border-transparent focus:border-black focus:bg-white rounded-2xl outline-none text-[13px] transition-all min-h-[60px] max-h-[200px] resize-none leading-relaxed text-black placeholder:text-neutral-500 font-medium"
+                            rows={1}
+                            className="w-full resize-none bg-transparent px-4 pt-3 pb-2 text-[13px] leading-relaxed outline-none placeholder:text-neutral-400 disabled:opacity-50 max-h-40 overflow-y-auto text-black font-medium"
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
                                 handleSidebarChatSend();
                               }
                             }}
-                            disabled={loading}
+                            disabled={isGenerating}
+                            style={{ height: '44px' }}
                           />
-                          <button
-                            onClick={handleSidebarChatSend}
-                            disabled={loading || !sidebarChatInput.trim()}
-                            className="absolute bottom-2.5 right-2.5 p-2 bg-black text-white hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 rounded-xl transition-all shadow-lg active:scale-95"
-                          >
-                            <ArrowUp className="w-4 h-4" />
-                          </button>
+                          <div className="flex justify-end items-center px-2 pb-2">
+                            <button
+                              onClick={handleSidebarChatSend}
+                              disabled={isGenerating || !sidebarChatInput.trim()}
+                              className="w-8 h-8 rounded-xl flex items-center justify-center bg-black text-white hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:scale-95"
+                            >
+                              {isGenerating ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <ArrowUp className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>

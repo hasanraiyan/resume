@@ -234,7 +234,20 @@ LAYOUT STRUCTURE:
 - Proper spacing hierarchy: space-y-2 for tight groups, space-y-4 for related items, space-y-8 for sections
 - Responsive design: use sm:, md:, lg: breakpoints when needed
 
-Start by calling save_plan with your implementation plan. If the user provides feedback, you should call save_plan again with an updated plan. If the feedback is very simple and you are ready to build, you can proceed to use the build tools.`;
+Start by providing a conversational thought about your objective and rationale. Always explain WHAT you are doing and WHY you chose a specific design or implementation approach. 
+
+IMPORTANT: After 'save_plan', you MUST wait for the user's approval. Do not call any modification tools like 'append_code' until the user approves or says 'Proceed'. 
+
+DESIGN ARCHITECTURE:
+- Think like a product designer first: How will the user interact? What is the core value?
+- Then like a developer: How do I structure the HTML/JS for best maintainability?
+- Finally like a neobrutalist artist: How do I make this UX pop with bold borders and shadows?
+
+PROCEED:
+1. Call 'save_plan' with your proposal.
+2. If approved, use 'append_code' and 'replace_code' to build.
+3. If feedback is received, update your plan or proceed if simple.
+4. Call 'finish' ONLY when the app is completely polished.`;
   }
 
   /**
@@ -341,6 +354,11 @@ Start by calling save_plan with your implementation plan. If the user provides f
 
     // If no interrupt, the graph completed
     this.logger.info('No interrupt found - graph completed');
+    yield {
+      type: 'done',
+      content: graphState.values?.content || state.content,
+      todoList: graphState.values?.todoList || state.todoList,
+    };
   }
 
   /**
@@ -387,8 +405,15 @@ Start by calling save_plan with your implementation plan. If the user provides f
 
     const compiledGraph = graph.compile({ checkpointer: this.checkpointer });
 
+    // PRE-LOAD THE STATE to avoid data loss on resume
     const currentState = await compiledGraph.getState(config);
     const isInterrupted = currentState.next.length > 0;
+
+    // Initialize our closure state with the actual persistent state
+    if (currentState.values) {
+      stateObj.content = currentState.values.content || '';
+      stateObj.todoList = currentState.values.todoList || [];
+    }
 
     let inputToStream = null;
     if (isInterrupted) {
@@ -434,12 +459,18 @@ Start by calling save_plan with your implementation plan. If the user provides f
         event.name !== 'agent' &&
         event.name !== 'save_plan'
       ) {
-        yield { type: 'tool_result', name: event.name, content: stateObj.content };
+        // Fetch fresh state to ensure no loss
+        const latestState = await compiledGraph.getState(config);
+        const finalContent = latestState.values?.content || stateObj.content;
+        yield { type: 'tool_result', name: event.name, content: finalContent };
       }
     }
 
-    // After streaming, check for NEW interrupts (e.g. if the agent calls save_plan AGAIN)
+    // After streaming, fetch definitive final state
     const graphState = await compiledGraph.getState(config);
+    const finalContent = graphState.values?.content || stateObj.content;
+    const finalTodoList = graphState.values?.todoList || stateObj.todoList;
+
     if (graphState.tasks && graphState.tasks.length > 0) {
       for (const task of graphState.tasks) {
         if (task.interrupts && task.interrupts.length > 0) {
@@ -447,7 +478,7 @@ Start by calling save_plan with your implementation plan. If the user provides f
           yield {
             type: 'interrupted',
             threadId,
-            plan: interruptData.plan || stateObj.todoList,
+            plan: interruptData.plan || finalTodoList,
             message:
               interruptData.message || 'Execution paused. Please approve the plan to continue.',
           };
@@ -456,7 +487,7 @@ Start by calling save_plan with your implementation plan. If the user provides f
       }
     }
 
-    yield { type: 'done', content: stateObj.content, todoList: stateObj.todoList };
+    yield { type: 'done', content: finalContent, todoList: finalTodoList };
   }
 
   _getInitialHTML(input) {
