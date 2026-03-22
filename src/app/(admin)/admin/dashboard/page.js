@@ -75,20 +75,20 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => (
           <Link key={stat.name} href={stat.link} className="group">
             <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group-hover:bg-neutral-50">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-neutral-600 uppercase tracking-wider">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-neutral-600 uppercase tracking-wider truncate">
                     {stat.name}
                   </p>
                   <p className="text-3xl font-bold text-black mt-2 font-['Playfair_Display']">
                     {stat.value}
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center group-hover:bg-neutral-800 transition-colors">
+                <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center group-hover:bg-neutral-800 transition-colors shrink-0">
                   <i className={`text-white ${getStatIcon(stat.name)}`}></i>
                 </div>
               </div>
@@ -100,15 +100,15 @@ export default async function AdminDashboard() {
       {/* Quick Actions */}
       <div className="space-y-6">
         <h2 className="text-2xl font-bold text-black font-['Playfair_Display']">Quick Actions</h2>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
           <Link href="/admin/projects/new" className="group">
             <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group-hover:bg-black group-hover:text-white">
               <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-black group-hover:bg-white rounded-lg flex items-center justify-center transition-colors">
+                <div className="w-12 h-12 bg-black group-hover:bg-white rounded-lg flex items-center justify-center transition-colors shrink-0">
                   <i className="fas fa-plus text-white group-hover:text-black text-lg"></i>
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-black group-hover:text-white mb-1">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-black group-hover:text-white mb-1 truncate">
                     Add New Project
                   </h3>
                   <p className="text-sm text-neutral-600 group-hover:text-neutral-300">
@@ -122,11 +122,11 @@ export default async function AdminDashboard() {
           <Link href="/admin/projects" className="group">
             <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group-hover:bg-neutral-900 group-hover:text-white">
               <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-neutral-100 group-hover:bg-white rounded-lg flex items-center justify-center transition-colors">
+                <div className="w-12 h-12 bg-neutral-100 group-hover:bg-white rounded-lg flex items-center justify-center transition-colors shrink-0">
                   <i className="fas fa-folder text-neutral-600 group-hover:text-black text-lg"></i>
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-black group-hover:text-white mb-1">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-black group-hover:text-white mb-1 truncate">
                     Manage Projects
                   </h3>
                   <p className="text-sm text-neutral-600 group-hover:text-neutral-300">
@@ -140,11 +140,11 @@ export default async function AdminDashboard() {
           <Link href="/admin/contacts" className="group">
             <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group-hover:bg-neutral-900 group-hover:text-white">
               <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-neutral-100 group-hover:bg-white rounded-lg flex items-center justify-center transition-colors">
+                <div className="w-12 h-12 bg-neutral-100 group-hover:bg-white rounded-lg flex items-center justify-center transition-colors shrink-0">
                   <i className="fas fa-envelope text-neutral-600 group-hover:text-black text-lg"></i>
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-black group-hover:text-white mb-1">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-black group-hover:text-white mb-1 truncate">
                     View Messages
                   </h3>
                   <p className="text-sm text-neutral-600 group-hover:text-neutral-300">
@@ -158,11 +158,11 @@ export default async function AdminDashboard() {
           <Link href="/admin/sections" className="group">
             <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group-hover:bg-neutral-900 group-hover:text-white">
               <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-neutral-100 group-hover:bg-white rounded-lg flex items-center justify-center transition-colors">
+                <div className="w-12 h-12 bg-neutral-100 group-hover:bg-white rounded-lg flex items-center justify-center transition-colors shrink-0">
                   <i className="fas fa-cog text-neutral-600 group-hover:text-black text-lg"></i>
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-black group-hover:text-white mb-1">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-black group-hover:text-white mb-1 truncate">
                     Manage Sections
                   </h3>
                   <p className="text-sm text-neutral-600 group-hover:text-neutral-300">
@@ -176,11 +176,11 @@ export default async function AdminDashboard() {
           <Link href="/admin/analytics" className="group">
             <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group-hover:bg-neutral-900 group-hover:text-white">
               <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-neutral-100 group-hover:bg-white rounded-lg flex items-center justify-center transition-colors">
+                <div className="w-12 h-12 bg-neutral-100 group-hover:bg-white rounded-lg flex items-center justify-center transition-colors shrink-0">
                   <i className="fas fa-chart-line text-neutral-600 group-hover:text-black text-lg"></i>
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-black group-hover:text-white mb-1">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-black group-hover:text-white mb-1 truncate">
                     View Analytics
                   </h3>
                   <p className="text-sm text-neutral-600 group-hover:text-neutral-300">
@@ -194,11 +194,11 @@ export default async function AdminDashboard() {
           <Link href="/admin/sections/contact" className="group">
             <Card className="p-6 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-black group-hover:bg-neutral-900 group-hover:text-white">
               <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-neutral-100 group-hover:bg-white rounded-lg flex items-center justify-center transition-colors">
+                <div className="w-12 h-12 bg-neutral-100 group-hover:bg-white rounded-lg flex items-center justify-center transition-colors shrink-0">
                   <i className="fas fa-paper-plane text-neutral-600 group-hover:text-black text-lg"></i>
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-black group-hover:text-white mb-1">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-black group-hover:text-white mb-1 truncate">
                     Contact Notifications
                   </h3>
                   <p className="text-sm text-neutral-600 group-hover:text-neutral-300">
