@@ -97,21 +97,30 @@ class AppBuilderAgent extends BaseAgent {
 
     const updateTodoTool = tool(
       async (input) => {
-        this.logger.info(`Updating todo status: ${input.index} to ${input.status}`);
-        if (!state.todoList[input.index]) {
-          return `Error: Todo at index ${input.index} not found.`;
-        }
-        state.todoList[input.index].status = input.status;
-        return `Todo "${state.todoList[input.index].task}" updated to ${input.status}.`;
+        this.logger.info(`Updating status for ${input.updates.length} todos`);
+        const results = [];
+        input.updates.forEach((update) => {
+          if (state.todoList[update.index]) {
+            state.todoList[update.index].status = update.status;
+            results.push(
+              `Task "${state.todoList[update.index].task}" updated to ${update.status}.`
+            );
+          }
+        });
+        return results.join('\n') || 'No valid updates provided.';
       },
       {
         name: 'update_todo',
-        description: 'Updates the progress status of a specific task in the approved plan.',
+        description: 'Updates the progress status of one or more tasks in the approved plan.',
         schema: z.object({
-          index: z.number().describe('The index of the task in the todo list (0-based).'),
-          status: z
-            .enum(['pending', 'in-progress', 'completed'])
-            .describe('The new status of the task.'),
+          updates: z.array(
+            z.object({
+              index: z.number().describe('The index of the task in the todo list (0-based).'),
+              status: z
+                .enum(['pending', 'in-progress', 'completed'])
+                .describe('The new status of the task.'),
+            })
+          ),
         }),
       }
     );
