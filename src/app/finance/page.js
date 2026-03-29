@@ -7,6 +7,8 @@ import CategoriesTab from '@/components/finance-tracker/CategoriesTab';
 import AnalysisTab from '@/components/finance-tracker/AnalysisTab';
 import BudgetsTab from '@/components/finance-tracker/BudgetsTab';
 import AddTransactionModal from '@/components/finance-tracker/AddTransactionModal';
+import FinanceAgentPanel from '@/components/finance-tracker/FinanceAgentPanel';
+import FinanceSyncStatus from '@/components/finance-tracker/FinanceSyncStatus';
 import {
   RecordsSkeleton,
   AnalysisSkeleton,
@@ -138,7 +140,7 @@ function FinanceContent() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
+              className={`w-full cursor-pointer flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
                 activeTab === tab.id
                   ? 'bg-[#1f644e] text-white'
                   : 'text-[#7c8e88] hover:bg-[#f0f5f2] hover:text-[#1e3a34]'
@@ -170,14 +172,30 @@ function FinanceContent() {
                 {tabTitles[activeTab]}
               </h1>
             </div>
-            <button className="p-1">
-              <Search className="w-5 h-5 text-[#1e3a34]" />
-            </button>
+            <div className="flex items-center gap-2">
+              <div className="hidden sm:block">
+                <FinanceSyncStatus />
+              </div>
+              <button className="p-1">
+                <Search className="w-5 h-5 text-[#1e3a34]" />
+              </button>
+            </div>
+          </div>
+          <div className="px-4 pb-3 sm:hidden">
+            <FinanceSyncStatus />
           </div>
         </header>
 
         {/* Content */}
-        <main className="flex-1 max-w-4xl mx-auto w-full">{renderTab()}</main>
+        <main
+          className={`flex-1 max-w-4xl mx-auto w-full ${
+            isLoading || error || accounts.length === 0
+              ? 'min-h-[calc(100vh-56px)] flex items-center justify-center'
+              : ''
+          }`}
+        >
+          {renderTab()}
+        </main>
       </div>
 
       {/* Mobile Sidebar Overlay */}
@@ -198,7 +216,7 @@ function FinanceContent() {
                     setActiveTab(tab.id);
                     setSidebarOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
+                  className={`w-full cursor-pointer flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
                     activeTab === tab.id
                       ? 'bg-[#1f644e] text-white'
                       : 'text-[#7c8e88] hover:bg-[#f0f5f2]'
@@ -215,6 +233,7 @@ function FinanceContent() {
 
       {/* FAB */}
       {accounts.length > 0 && <AddTransactionModal />}
+      {accounts.length > 0 && <FinanceAgentPanel activeTab={tabTitles[activeTab]} />}
 
       {/* Mobile Bottom Nav */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#fcfbf5] border-t border-[#e5e3d8] z-30 flex">
@@ -238,7 +257,7 @@ function FinanceContent() {
   );
 }
 
-export default function FinanceTrackerPage() {
+export default function FinancePage() {
   return (
     <MoneyProvider>
       <FinanceContent />

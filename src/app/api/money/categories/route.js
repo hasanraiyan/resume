@@ -1,16 +1,13 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Category from '@/models/Category';
+import { serializeCategory } from '@/lib/money-serializers';
 
 export async function GET() {
   try {
     await dbConnect();
-    const categories = await Category.find({}).sort({ type: 1, name: 1 }).lean();
-    const serialized = categories.map((c) => ({
-      ...c,
-      _id: c._id.toString(),
-      id: c._id.toString(),
-    }));
+    const categories = await Category.find({ deletedAt: null }).sort({ type: 1, name: 1 }).lean();
+    const serialized = categories.map(serializeCategory);
     return NextResponse.json({ success: true, categories: serialized });
   } catch (error) {
     return NextResponse.json(
@@ -29,7 +26,7 @@ export async function POST(request) {
     const obj = category.toObject();
     return NextResponse.json({
       success: true,
-      category: { ...obj, _id: obj._id.toString(), id: obj._id.toString() },
+      category: serializeCategory(obj),
     });
   } catch (error) {
     return NextResponse.json(

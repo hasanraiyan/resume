@@ -1,6 +1,22 @@
 'use client';
 
 import { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
+import {
+  createAccount,
+  createCategory,
+  createTransaction,
+  deleteAccountRecord,
+  deleteCategoryRecord,
+  deleteTransactionRecord,
+  flushSyncQueue,
+  getFinanceSnapshot,
+  hydrateFinanceData,
+  refreshFinanceData,
+  subscribeToFinanceChanges,
+  updateAccountRecord,
+  updateCategoryRecord,
+  upsertBudget,
+} from '@/lib/finance-repository';
 
 const MoneyContext = createContext(null);
 
@@ -12,6 +28,8 @@ const initialState = {
   analysis: null,
   isLoading: true,
   error: null,
+  pendingSyncCount: 0,
+  lastRemoteSyncAt: null,
   activeTab: 'records',
   periodStart: getWeekStart(),
   periodEnd: getWeekEnd(),
@@ -41,40 +59,12 @@ function moneyReducer(state, action) {
       return { ...state, isLoading: action.payload };
     case 'SET_ERROR':
       return { ...state, error: action.payload };
-    case 'SET_ACTIVE_TAB':
-      return { ...state, activeTab: action.payload };
-    case 'SET_ACCOUNTS':
-      return { ...state, accounts: action.payload };
-    case 'ADD_ACCOUNT':
-      return { ...state, accounts: [...state.accounts, action.payload] };
-    case 'UPDATE_ACCOUNT':
-      return {
-        ...state,
-        accounts: state.accounts.map((a) => (a.id === action.payload.id ? action.payload : a)),
-      };
-    case 'DELETE_ACCOUNT':
-      return { ...state, accounts: state.accounts.filter((a) => a.id !== action.payload) };
-    case 'SET_CATEGORIES':
-      return { ...state, categories: action.payload };
-    case 'ADD_CATEGORY':
-      return { ...state, categories: [...state.categories, action.payload] };
-    case 'UPDATE_CATEGORY':
-      return {
-        ...state,
-        categories: state.categories.map((c) => (c.id === action.payload.id ? action.payload : c)),
-      };
-    case 'DELETE_CATEGORY':
-      return { ...state, categories: state.categories.filter((c) => c.id !== action.payload) };
-    case 'SET_TRANSACTIONS':
-      return { ...state, transactions: action.payload };
-    case 'ADD_TRANSACTION':
-      return { ...state, transactions: [action.payload, ...state.transactions] };
-    case 'DELETE_TRANSACTION':
-      return { ...state, transactions: state.transactions.filter((t) => t.id !== action.payload) };
-    case 'SET_BUDGETS':
-      return { ...state, budgets: action.payload };
+    case 'SET_FINANCE_SNAPSHOT':
+      return { ...state, ...action.payload };
     case 'SET_ANALYSIS':
       return { ...state, analysis: action.payload };
+    case 'SET_ACTIVE_TAB':
+      return { ...state, activeTab: action.payload };
     case 'SET_PERIOD':
       return { ...state, periodStart: action.payload.start, periodEnd: action.payload.end };
     default:
@@ -85,52 +75,65 @@ function moneyReducer(state, action) {
 export function MoneyProvider({ children }) {
   const [state, dispatch] = useReducer(moneyReducer, initialState);
 
+  const refreshSnapshot = useCallback(async () => {
+    const snapshot = await getFinanceSnapshot({
+      periodStart: state.periodStart,
+      periodEnd: state.periodEnd,
+    });
+    dispatch({ type: 'SET_FINANCE_SNAPSHOT', payload: snapshot });
+    return snapshot;
+  }, [state.periodEnd, state.periodStart]);
+
   const fetchData = useCallback(async () => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
 
-      const [accRes, catRes, transRes] = await Promise.all([
-        fetch('/api/money/accounts'),
-        fetch('/api/money/categories'),
-        fetch(`/api/money/transactions?startDate=${state.periodStart}&endDate=${state.periodEnd}`),
-      ]);
+      const localSnapshot = await hydrateFinanceData({
+        periodStart: state.periodStart,
+        periodEnd: state.periodEnd,
+      });
+      dispatch({ type: 'SET_FINANCE_SNAPSHOT', payload: localSnapshot });
 
-      const accData = await accRes.json();
-      const catData = await catRes.json();
-      const transData = await transRes.json();
-
-      if (accData.success) dispatch({ type: 'SET_ACCOUNTS', payload: accData.accounts });
-      if (catData.success) dispatch({ type: 'SET_CATEGORIES', payload: catData.categories });
-      if (transData.success)
-        dispatch({ type: 'SET_TRANSACTIONS', payload: transData.transactions });
-
-      if (!accData.success || !catData.success || !transData.success) {
-        dispatch({ type: 'SET_ERROR', payload: 'Some data failed to load. Please try again.' });
+      if (typeof navigator === 'undefined' || navigator.onLine) {
+        const remoteSnapshot = await refreshFinanceData({
+          periodStart: state.periodStart,
+          periodEnd: state.periodEnd,
+        });
+        dispatch({ type: 'SET_FINANCE_SNAPSHOT', payload: remoteSnapshot });
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
       dispatch({
         type: 'SET_ERROR',
-        payload: 'Failed to connect to server. Please check your connection.',
+        payload: 'Failed to connect to finance storage. Please check your connection.',
       });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  }, [state.periodStart, state.periodEnd]);
+  }, [state.periodEnd, state.periodStart]);
 
-  const fetchAnalysis = useCallback(async (startDate, endDate) => {
-    try {
-      const params = new URLSearchParams();
-      if (startDate) params.set('startDate', startDate);
-      if (endDate) params.set('endDate', endDate);
-      const res = await fetch(`/api/money/analysis?${params}`);
-      const data = await res.json();
-      if (data.success) dispatch({ type: 'SET_ANALYSIS', payload: data.analysis });
-    } catch (error) {
-      console.error('Failed to fetch analysis:', error);
-    }
-  }, []);
+  const fetchAnalysis = useCallback(
+    async (startDate, endDate) => {
+      try {
+        const snapshot = await getFinanceSnapshot({
+          periodStart: startDate || state.periodStart,
+          periodEnd: endDate || state.periodEnd,
+        });
+        dispatch({ type: 'SET_ANALYSIS', payload: snapshot.analysis });
+        dispatch({
+          type: 'SET_FINANCE_SNAPSHOT',
+          payload: {
+            pendingSyncCount: snapshot.pendingSyncCount,
+            lastRemoteSyncAt: snapshot.lastRemoteSyncAt,
+          },
+        });
+      } catch (error) {
+        console.error('Failed to fetch analysis:', error);
+      }
+    },
+    [state.periodEnd, state.periodStart]
+  );
 
   const seedData = useCallback(async () => {
     try {
@@ -147,18 +150,37 @@ export function MoneyProvider({ children }) {
     fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    const unsubscribe = subscribeToFinanceChanges(() => {
+      refreshSnapshot();
+    });
+
+    const handleServiceWorkerMessage = async (event) => {
+      if (event.data?.type === 'finance-sync-request') {
+        await flushSyncQueue();
+        fetchData();
+      }
+    };
+
+    const handleReconnect = async () => {
+      await flushSyncQueue();
+      fetchData();
+    };
+
+    window.addEventListener('online', handleReconnect);
+    navigator.serviceWorker?.addEventListener('message', handleServiceWorkerMessage);
+    return () => {
+      unsubscribe();
+      window.removeEventListener('online', handleReconnect);
+      navigator.serviceWorker?.removeEventListener('message', handleServiceWorkerMessage);
+    };
+  }, [fetchData, refreshSnapshot]);
+
   const addTransaction = async (transaction) => {
     try {
-      const res = await fetch('/api/money/transactions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(transaction),
-      });
-      const data = await res.json();
-      if (data.success) {
-        dispatch({ type: 'ADD_TRANSACTION', payload: data.transaction });
-        return data.transaction;
-      }
+      const nextTransaction = await createTransaction(transaction);
+      await refreshSnapshot();
+      return nextTransaction;
     } catch (error) {
       console.error('Failed to add transaction:', error);
     }
@@ -166,8 +188,8 @@ export function MoneyProvider({ children }) {
 
   const deleteTransaction = async (id) => {
     try {
-      const res = await fetch(`/api/money/transactions/${id}`, { method: 'DELETE' });
-      if (res.ok) dispatch({ type: 'DELETE_TRANSACTION', payload: id });
+      await deleteTransactionRecord(id);
+      await refreshSnapshot();
     } catch (error) {
       console.error('Failed to delete transaction:', error);
     }
@@ -175,16 +197,9 @@ export function MoneyProvider({ children }) {
 
   const addAccount = async (account) => {
     try {
-      const res = await fetch('/api/money/accounts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(account),
-      });
-      const data = await res.json();
-      if (data.success) {
-        dispatch({ type: 'ADD_ACCOUNT', payload: data.account });
-        return data.account;
-      }
+      const nextAccount = await createAccount(account);
+      await refreshSnapshot();
+      return nextAccount;
     } catch (error) {
       console.error('Failed to add account:', error);
     }
@@ -192,16 +207,9 @@ export function MoneyProvider({ children }) {
 
   const updateAccount = async (id, account) => {
     try {
-      const res = await fetch(`/api/money/accounts/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(account),
-      });
-      const data = await res.json();
-      if (data.success) {
-        dispatch({ type: 'UPDATE_ACCOUNT', payload: data.account });
-        return data.account;
-      }
+      const nextAccount = await updateAccountRecord(id, account);
+      await refreshSnapshot();
+      return nextAccount;
     } catch (error) {
       console.error('Failed to update account:', error);
     }
@@ -209,8 +217,8 @@ export function MoneyProvider({ children }) {
 
   const deleteAccount = async (id) => {
     try {
-      const res = await fetch(`/api/money/accounts/${id}`, { method: 'DELETE' });
-      if (res.ok) dispatch({ type: 'DELETE_ACCOUNT', payload: id });
+      await deleteAccountRecord(id);
+      await refreshSnapshot();
     } catch (error) {
       console.error('Failed to delete account:', error);
     }
@@ -218,16 +226,9 @@ export function MoneyProvider({ children }) {
 
   const addCategory = async (category) => {
     try {
-      const res = await fetch('/api/money/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(category),
-      });
-      const data = await res.json();
-      if (data.success) {
-        dispatch({ type: 'ADD_CATEGORY', payload: data.category });
-        return data.category;
-      }
+      const nextCategory = await createCategory(category);
+      await refreshSnapshot();
+      return nextCategory;
     } catch (error) {
       console.error('Failed to add category:', error);
     }
@@ -235,16 +236,9 @@ export function MoneyProvider({ children }) {
 
   const updateCategory = async (id, category) => {
     try {
-      const res = await fetch(`/api/money/categories/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(category),
-      });
-      const data = await res.json();
-      if (data.success) {
-        dispatch({ type: 'UPDATE_CATEGORY', payload: data.category });
-        return data.category;
-      }
+      const nextCategory = await updateCategoryRecord(id, category);
+      await refreshSnapshot();
+      return nextCategory;
     } catch (error) {
       console.error('Failed to update category:', error);
     }
@@ -252,10 +246,20 @@ export function MoneyProvider({ children }) {
 
   const deleteCategory = async (id) => {
     try {
-      const res = await fetch(`/api/money/categories/${id}`, { method: 'DELETE' });
-      if (res.ok) dispatch({ type: 'DELETE_CATEGORY', payload: id });
+      await deleteCategoryRecord(id);
+      await refreshSnapshot();
     } catch (error) {
       console.error('Failed to delete category:', error);
+    }
+  };
+
+  const saveBudget = async (budget) => {
+    try {
+      const nextBudget = await upsertBudget(budget);
+      await refreshSnapshot();
+      return nextBudget;
+    } catch (error) {
+      console.error('Failed to save budget:', error);
     }
   };
 
@@ -268,14 +272,17 @@ export function MoneyProvider({ children }) {
   };
 
   const totalExpense = state.transactions
-    .filter((t) => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .filter((transaction) => transaction.type === 'expense')
+    .reduce((sum, transaction) => sum + transaction.amount, 0);
 
   const totalIncome = state.transactions
-    .filter((t) => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .filter((transaction) => transaction.type === 'income')
+    .reduce((sum, transaction) => sum + transaction.amount, 0);
 
-  const totalBalance = state.accounts.reduce((sum, a) => sum + (a.initialBalance || 0), 0);
+  const totalBalance = state.accounts.reduce(
+    (sum, account) => sum + (account.initialBalance || 0),
+    0
+  );
 
   const value = {
     ...state,
@@ -293,6 +300,7 @@ export function MoneyProvider({ children }) {
     addCategory,
     updateCategory,
     deleteCategory,
+    saveBudget,
     setPeriod,
     setActiveTab,
   };

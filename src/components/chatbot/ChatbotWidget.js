@@ -212,7 +212,7 @@ export default function ChatbotWidget() {
 
   const suggestedPrompts = (chatbotSettings?.suggestedPrompts || []).map((t) => ({ text: t }));
 
-  if (pathname === '/tools/presentation') {
+  if (pathname === '/tools/presentation' || pathname.startsWith('/finance')) {
     return null;
   }
 

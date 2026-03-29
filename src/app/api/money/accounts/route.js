@@ -1,16 +1,13 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Account from '@/models/Account';
+import { serializeAccount } from '@/lib/money-serializers';
 
 export async function GET() {
   try {
     await dbConnect();
-    const accounts = await Account.find({}).sort({ createdAt: 1 }).lean();
-    const serialized = accounts.map((a) => ({
-      ...a,
-      _id: a._id.toString(),
-      id: a._id.toString(),
-    }));
+    const accounts = await Account.find({ deletedAt: null }).sort({ createdAt: 1 }).lean();
+    const serialized = accounts.map(serializeAccount);
     return NextResponse.json({ success: true, accounts: serialized });
   } catch (error) {
     return NextResponse.json(
@@ -29,7 +26,7 @@ export async function POST(request) {
     const obj = account.toObject();
     return NextResponse.json({
       success: true,
-      account: { ...obj, _id: obj._id.toString(), id: obj._id.toString() },
+      account: serializeAccount(obj),
     });
   } catch (error) {
     return NextResponse.json(

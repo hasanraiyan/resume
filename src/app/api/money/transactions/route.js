@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Transaction from '@/models/Transaction';
+import { serializeTransaction } from '@/lib/money-serializers';
 
 export async function GET(request) {
   try {
@@ -12,7 +13,7 @@ export async function GET(request) {
     const category = searchParams.get('category');
     const type = searchParams.get('type');
 
-    const query = {};
+    const query = { deletedAt: null };
     if (startDate || endDate) {
       query.date = {};
       if (startDate) query.date.$gte = new Date(startDate);
@@ -29,15 +30,7 @@ export async function GET(request) {
       .sort({ date: -1, createdAt: -1 })
       .lean();
 
-    const serialized = transactions.map((t) => ({
-      ...t,
-      _id: t._id.toString(),
-      id: t._id.toString(),
-      category: t.category ? { ...t.category, _id: t.category._id.toString() } : null,
-      account: { ...t.account, _id: t.account._id.toString() },
-      toAccount: t.toAccount ? { ...t.toAccount, _id: t.toAccount._id.toString() } : null,
-      date: t.date.toISOString(),
-    }));
+    const serialized = transactions.map(serializeTransaction);
 
     return NextResponse.json({ success: true, transactions: serialized });
   } catch (error) {
@@ -60,19 +53,7 @@ export async function POST(request) {
       .populate('toAccount', 'name icon')
       .lean();
 
-    const serialized = {
-      ...populated,
-      _id: populated._id.toString(),
-      id: populated._id.toString(),
-      category: populated.category
-        ? { ...populated.category, _id: populated.category._id.toString() }
-        : null,
-      account: { ...populated.account, _id: populated.account._id.toString() },
-      toAccount: populated.toAccount
-        ? { ...populated.toAccount, _id: populated.toAccount._id.toString() }
-        : null,
-      date: populated.date.toISOString(),
-    };
+    const serialized = serializeTransaction(populated);
 
     return NextResponse.json({ success: true, transaction: serialized });
   } catch (error) {

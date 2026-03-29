@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Budget from '@/models/Budget';
+import { serializeBudget } from '@/lib/money-serializers';
 
 export async function GET(request) {
   try {
@@ -9,7 +10,7 @@ export async function GET(request) {
     const month = searchParams.get('month');
     const year = searchParams.get('year');
 
-    const query = {};
+    const query = { deletedAt: null };
     if (month) query.month = parseInt(month);
     if (year) query.year = parseInt(year);
 
@@ -18,12 +19,7 @@ export async function GET(request) {
       .sort({ year: -1, month: -1 })
       .lean();
 
-    const serialized = budgets.map((b) => ({
-      ...b,
-      _id: b._id.toString(),
-      id: b._id.toString(),
-      category: { ...b.category, _id: b.category._id.toString() },
-    }));
+    const serialized = budgets.map(serializeBudget);
 
     return NextResponse.json({ success: true, budgets: serialized });
   } catch (error) {
@@ -44,12 +40,7 @@ export async function POST(request) {
       .populate('category', 'name icon type color')
       .lean();
 
-    const serialized = {
-      ...populated,
-      _id: populated._id.toString(),
-      id: populated._id.toString(),
-      category: { ...populated.category, _id: populated.category._id.toString() },
-    };
+    const serialized = serializeBudget(populated);
 
     return NextResponse.json({ success: true, budget: serialized });
   } catch (error) {
@@ -65,19 +56,19 @@ export async function PUT(request) {
     await dbConnect();
     const body = await request.json();
     const { _id, ...update } = body;
-    const budget = await Budget.findByIdAndUpdate(_id || body.id, update, {
-      new: true,
-      upsert: true,
-    })
+    const budget = await Budget.findByIdAndUpdate(
+      _id || body.id,
+      { $set: { ...update, deletedAt: null }, $inc: { syncVersion: 1 } },
+      {
+        new: true,
+        upsert: true,
+        setDefaultsOnInsert: true,
+      }
+    )
       .populate('category', 'name icon type color')
       .lean();
 
-    const serialized = {
-      ...budget,
-      _id: budget._id.toString(),
-      id: budget._id.toString(),
-      category: { ...budget.category, _id: budget.category._id.toString() },
-    };
+    const serialized = serializeBudget(budget);
 
     return NextResponse.json({ success: true, budget: serialized });
   } catch (error) {

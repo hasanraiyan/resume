@@ -22,6 +22,8 @@ const TransactionSchema = new mongoose.Schema(
     },
     date: { type: Date, required: true },
     note: { type: String, default: '' },
+    deletedAt: { type: Date, default: null },
+    syncVersion: { type: Number, default: 1 },
   },
   { timestamps: true }
 );

@@ -119,7 +119,7 @@ export default function PWAManager() {
 
   const showUpdateNotification = () => {
     // You could show a toast notification here
-    console.log('New app update available');
+    // intentionally left blank - update UI removed
   };
 
   // Don't render anything if not installable and not showing offline indicator
@@ -187,26 +187,7 @@ export default function PWAManager() {
         </div>
       )}
 
-      {/* Update Notification */}
-      <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 max-w-sm">
-        <div className="flex items-center space-x-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
-          </svg>
-          <span className="text-sm">App update available</span>
-          <button
-            onClick={() => window.location.reload()}
-            className="ml-2 bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700 transition-colors"
-          >
-            Refresh
-          </button>
-        </div>
-      </div>
+      {/* Update notification removed by request */}
     </>
   );
 }

@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';
 const IconRenderer = dynamic(() => import('./IconRenderer'), { ssr: false });
 
 export default function BudgetsTab() {
-  const { categories, transactions, budgets } = useMoney();
+  const { categories, transactions, budgets, saveBudget } = useMoney();
   const [budgetForm, setBudgetForm] = useState(null);
   const [amount, setAmount] = useState('');
 
@@ -36,22 +36,17 @@ export default function BudgetsTab() {
 
   const handleSaveBudget = async (cat) => {
     try {
-      const res = await fetch('/api/money/budgets', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          _id: cat.budget?._id,
-          category: cat.id,
-          amount: parseFloat(amount),
-          month: currentMonth,
-          year: currentYear,
-        }),
+      const saved = await saveBudget({
+        _id: cat.budget?._id,
+        id: cat.budget?.id,
+        category: cat.id,
+        amount: parseFloat(amount),
+        month: currentMonth,
+        year: currentYear,
       });
-      const data = await res.json();
-      if (data.success) {
+      if (saved) {
         setBudgetForm(null);
         setAmount('');
-        window.location.reload();
       }
     } catch (error) {
       console.error('Failed to save budget:', error);

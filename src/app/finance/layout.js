@@ -19,6 +19,6 @@ export const metadata = {
   description: 'Personal finance and expense tracker',
 };
 
-export default function FinanceTrackerLayout({ children }) {
+export default function FinanceLayout({ children }) {
   return <div className={`${pacifico.variable} ${nunito.variable}`}>{children}</div>;
 }

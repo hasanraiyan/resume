@@ -7,6 +7,8 @@ const AccountSchema = new mongoose.Schema(
     initialBalance: { type: Number, default: 0 },
     currency: { type: String, default: 'INR' },
     ignored: { type: Boolean, default: false },
+    deletedAt: { type: Date, default: null },
+    syncVersion: { type: Number, default: 1 },
   },
   { timestamps: true }
 );

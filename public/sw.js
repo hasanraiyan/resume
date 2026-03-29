@@ -240,11 +240,27 @@ self.addEventListener('sync', (event) => {
   if (event.tag === 'background-sync') {
     event.waitUntil(handleBackgroundSync());
   }
+
+  if (event.tag === 'finance-sync') {
+    event.waitUntil(handleFinanceSync());
+  }
 });
 
 async function handleBackgroundSync() {
   // Handle queued form submissions or other background tasks
   console.log('Service Worker: Background sync triggered');
+}
+
+async function handleFinanceSync() {
+  const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  await Promise.all(
+    clients.map((client) =>
+      client.postMessage({
+        type: 'finance-sync-request',
+        source: 'service-worker',
+      })
+    )
+  );
 }
 
 // Push notifications (optional)

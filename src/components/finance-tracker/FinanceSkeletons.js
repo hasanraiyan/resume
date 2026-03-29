@@ -1,6 +1,6 @@
 'use client';
 
-function Shimmer({ className = '' }) {
+export function Shimmer({ className = '' }) {
   return (
     <div className={`relative overflow-hidden bg-[#e5e3d8] rounded ${className}`}>
       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#fcfbf5]/60 to-transparent -translate-x-full animate-shimmer" />

@@ -115,7 +115,7 @@ export default function AddTransactionModal() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-20 lg:bottom-8 right-4 lg:right-8 w-12 h-12 bg-white border border-[#e5e3d8] rounded-full shadow-lg flex items-center justify-center text-[#1f644e] hover:shadow-xl transition active:scale-95 z-30"
+        className="fixed bottom-20 left-4 lg:bottom-8 lg:left-[17.5rem] w-12 h-12 bg-white border border-[#e5e3d8] rounded-full shadow-lg flex items-center justify-center text-[#1f644e] hover:shadow-xl transition active:scale-95 z-30"
       >
         <Plus className="w-6 h-6" strokeWidth={2.5} />
       </button>

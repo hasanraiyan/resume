@@ -29,8 +29,9 @@ export default withAuth(
        * @returns {boolean} True if user is authorized, false otherwise
        */
       authorized: ({ token, req }) => {
-        // Check if user has admin role for admin routes
-        if (req.nextUrl.pathname.startsWith('/admin')) {
+        const path = req.nextUrl.pathname;
+        // Check if user has admin role for admin routes and finance app
+        if (path.startsWith('/admin') || path.startsWith('/finance')) {
           return token?.role === 'admin';
         }
         return true;
@@ -40,5 +41,5 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ['/admin/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/admin/((?!api|_next/static|_next/image|favicon.ico).*)', '/finance/:path*'],
 };
