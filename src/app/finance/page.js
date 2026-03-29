@@ -10,13 +10,6 @@ import AddTransactionModal from '@/components/finance-tracker/AddTransactionModa
 import FinanceAgentPanel from '@/components/finance-tracker/FinanceAgentPanel';
 import FinanceSettingsTab from '@/components/finance-tracker/FinanceSettingsTab';
 import {
-  RecordsSkeleton,
-  AnalysisSkeleton,
-  AccountsSkeleton,
-  CategoriesSkeleton,
-  BudgetsSkeleton,
-} from '@/components/finance-tracker/FinanceSkeletons';
-import {
   Receipt,
   BarChart3,
   Wallet,
@@ -28,8 +21,9 @@ import {
   RefreshCw,
   AlertTriangle,
   Settings,
+  Loader2,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 const tabs = [
   { id: 'records', label: 'Records', icon: Receipt },
@@ -41,8 +35,10 @@ const tabs = [
 ];
 
 function FinanceContent() {
-  const { activeTab, setActiveTab, isLoading, error, accounts, fetchData } = useMoney();
+  const { activeTab, setActiveTab, isSyncing, error, accounts, fetchData } = useMoney();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [requestAddAccountModal, setRequestAddAccountModal] = useState(false);
+  const handleAddModalClose = useCallback(() => setRequestAddAccountModal(false), []);
 
   const tabTitles = {
     records: 'Records',
@@ -54,25 +50,6 @@ function FinanceContent() {
   };
 
   const renderTab = () => {
-    if (isLoading) {
-      switch (activeTab) {
-        case 'records':
-          return <RecordsSkeleton />;
-        case 'analysis':
-          return <AnalysisSkeleton />;
-        case 'budgets':
-          return <BudgetsSkeleton />;
-        case 'accounts':
-          return <AccountsSkeleton />;
-        case 'categories':
-          return <CategoriesSkeleton />;
-        case 'settings':
-          return <div className="px-4 py-8 text-sm text-[#7c8e88]">Loading settings...</div>;
-        default:
-          return <RecordsSkeleton />;
-      }
-    }
-
     if (error) {
       return (
         <div className="flex flex-col items-center justify-center py-20 px-6">
@@ -91,23 +68,6 @@ function FinanceContent() {
       );
     }
 
-    if (accounts.length === 0 && activeTab !== 'settings') {
-      return (
-        <div className="text-center py-20 px-6">
-          <div className="w-20 h-20 rounded-full bg-[#e8f0ec] flex items-center justify-center mx-auto mb-5">
-            <Wallet className="w-10 h-10 text-[#1f644e]" />
-          </div>
-          <h3 className="text-xl font-bold mb-2 font-[family-name:var(--font-logo)]">
-            Welcome to MyMoney
-          </h3>
-          <p className="text-sm text-[#7c8e88] mb-8 max-w-xs mx-auto">
-            No finance data yet. Create your first account, category, and transaction to start
-            tracking locally.
-          </p>
-        </div>
-      );
-    }
-
     switch (activeTab) {
       case 'records':
         return <RecordsTab />;
@@ -116,7 +76,12 @@ function FinanceContent() {
       case 'budgets':
         return <BudgetsTab />;
       case 'accounts':
-        return <AccountsTab />;
+        return (
+          <AccountsTab
+            openAddModal={requestAddAccountModal}
+            onAddModalClose={handleAddModalClose}
+          />
+        );
       case 'categories':
         return <CategoriesTab />;
       case 'settings':
@@ -158,7 +123,7 @@ function FinanceContent() {
       <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
         {/* Header */}
         <header className="bg-[#fcfbf5] sticky top-0 z-20 border-b border-[#e5e3d8]/50">
-          <div className="max-w-4xl mx-auto px-4 lg:px-8 py-3 flex items-center justify-between">
+          <div className="w-full px-4 lg:px-6 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button className="lg:hidden p-1" onClick={() => setSidebarOpen(true)}>
                 <Menu className="w-5 h-5 text-[#1e3a34]" />
@@ -170,17 +135,26 @@ function FinanceContent() {
                 {tabTitles[activeTab]}
               </h1>
             </div>
-            <button className="p-1">
-              <Search className="w-5 h-5 text-[#1e3a34]" />
-            </button>
+            <div className="flex items-center gap-3">
+              {isSyncing && (
+                <div className="flex items-center gap-1.5 text-xs text-[#7c8e88]">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Syncing...</span>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
         {/* Content */}
         <main
-          className={`flex-1 max-w-4xl mx-auto w-full ${
-            isLoading || error || accounts.length === 0
-              ? 'min-h-[calc(100vh-56px)] flex items-center justify-center'
+          className={`flex-1 w-full ${
+            error ||
+            (accounts.length === 0 &&
+              !isSyncing &&
+              activeTab !== 'settings' &&
+              activeTab !== 'accounts')
+              ? 'min-h-[calc(100vh-56px)] flex justify-center'
               : ''
           }`}
         >

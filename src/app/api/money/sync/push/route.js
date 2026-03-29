@@ -111,10 +111,7 @@ export async function POST(request) {
 
       if (operation.type === 'delete') {
         const targetId = tempIdMap[operation.recordId] || operation.recordId;
-        await Model.findByIdAndUpdate(targetId, {
-          $set: { deletedAt: new Date() },
-          $inc: { syncVersion: 1 },
-        });
+        await Model.deleteOne({ _id: targetId });
         applied.push({
           queueId: operation.id,
           storeName,

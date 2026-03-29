@@ -31,10 +31,10 @@ export async function DELETE(request, { params }) {
   try {
     await dbConnect();
     const { id } = await params;
-    await Account.findByIdAndUpdate(id, {
-      $set: { deletedAt: new Date() },
-      $inc: { syncVersion: 1 },
-    });
+    if (!id) {
+      return NextResponse.json({ success: false, message: 'Missing id' }, { status: 400 });
+    }
+    await Account.deleteOne({ _id: id });
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(

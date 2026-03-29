@@ -10,7 +10,8 @@ const initialState = {
   transactions: [],
   budgets: [],
   analysis: null,
-  isLoading: true,
+  isLoading: false,
+  isSyncing: true,
   error: null,
   activeTab: 'records',
   periodStart: getWeekStart(),
@@ -39,6 +40,8 @@ function moneyReducer(state, action) {
   switch (action.type) {
     case 'SET_LOADING':
       return { ...state, isLoading: action.payload };
+    case 'SET_SYNCING':
+      return { ...state, isSyncing: action.payload };
     case 'SET_ERROR':
       return { ...state, error: action.payload };
     case 'SET_ACTIVE_TAB':
@@ -73,7 +76,7 @@ export function MoneyProvider({ children }) {
 
   const fetchData = useCallback(async () => {
     try {
-      dispatch({ type: 'SET_LOADING', payload: true });
+      dispatch({ type: 'SET_SYNCING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
 
       const now = new Date();
@@ -100,7 +103,7 @@ export function MoneyProvider({ children }) {
         payload: 'Failed to load finance data. Please try again.',
       });
     } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
+      dispatch({ type: 'SET_SYNCING', payload: false });
     }
   }, [state.periodEnd, state.periodStart]);
 
