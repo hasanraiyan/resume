@@ -12,10 +12,7 @@ export async function requireAdminSession() {
     const session = await getServerSession(authOptions);
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     if (session.user?.role !== 'admin') {
@@ -28,10 +25,7 @@ export async function requireAdminSession() {
     return { session };
   } catch (error) {
     console.error('requireAdminSession error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal Server Error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
