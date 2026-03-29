@@ -1,25 +1,6 @@
 'use client';
 
 import { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
-import {
-  clearAllFinanceData,
-  clearLocalFinanceCache,
-  createAccount,
-  createCategory,
-  createTransaction,
-  deleteAccountRecord,
-  deleteCategoryRecord,
-  deleteTransactionRecord,
-  discardLocalChangesAndAcceptRemoteReset,
-  flushSyncQueue,
-  getFinanceSnapshot,
-  hydrateFinanceData,
-  refreshFinanceData,
-  subscribeToFinanceChanges,
-  updateAccountRecord,
-  updateCategoryRecord,
-  upsertBudget,
-} from '@/lib/finance-repository';
 
 const MoneyContext = createContext(null);
 
@@ -31,10 +12,6 @@ const initialState = {
   analysis: null,
   isLoading: true,
   error: null,
-  pendingSyncCount: 0,
-  lastRemoteSyncAt: null,
-  syncConflict: null,
-  financeResetVersion: 0,
   activeTab: 'records',
   periodStart: getWeekStart(),
   periodEnd: getWeekEnd(),
@@ -64,12 +41,18 @@ function moneyReducer(state, action) {
       return { ...state, isLoading: action.payload };
     case 'SET_ERROR':
       return { ...state, error: action.payload };
-    case 'SET_FINANCE_SNAPSHOT':
-      return { ...state, ...action.payload };
-    case 'SET_ANALYSIS':
-      return { ...state, analysis: action.payload };
     case 'SET_ACTIVE_TAB':
       return { ...state, activeTab: action.payload };
+    case 'SET_ACCOUNTS':
+      return { ...state, accounts: action.payload };
+    case 'SET_CATEGORIES':
+      return { ...state, categories: action.payload };
+    case 'SET_TRANSACTIONS':
+      return { ...state, transactions: action.payload };
+    case 'SET_BUDGETS':
+      return { ...state, budgets: action.payload };
+    case 'SET_ANALYSIS':
+      return { ...state, analysis: action.payload };
     case 'SET_PERIOD':
       return { ...state, periodStart: action.payload.start, periodEnd: action.payload.end };
     default:
@@ -77,104 +60,75 @@ function moneyReducer(state, action) {
   }
 }
 
+async function readJson(response) {
+  const data = await response.json();
+  if (!response.ok || data.success === false) {
+    throw new Error(data.message || 'Request failed');
+  }
+  return data;
+}
+
 export function MoneyProvider({ children }) {
   const [state, dispatch] = useReducer(moneyReducer, initialState);
-
-  const refreshSnapshot = useCallback(async () => {
-    const snapshot = await getFinanceSnapshot({
-      periodStart: state.periodStart,
-      periodEnd: state.periodEnd,
-    });
-    dispatch({ type: 'SET_FINANCE_SNAPSHOT', payload: snapshot });
-    return snapshot;
-  }, [state.periodEnd, state.periodStart]);
 
   const fetchData = useCallback(async () => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
 
-      const localSnapshot = await hydrateFinanceData({
-        periodStart: state.periodStart,
-        periodEnd: state.periodEnd,
-      });
-      dispatch({ type: 'SET_FINANCE_SNAPSHOT', payload: localSnapshot });
+      const now = new Date();
+      const month = now.getMonth() + 1;
+      const year = now.getFullYear();
 
-      if (typeof navigator === 'undefined' || navigator.onLine) {
-        const remoteSnapshot = await refreshFinanceData({
-          periodStart: state.periodStart,
-          periodEnd: state.periodEnd,
-        });
-        dispatch({ type: 'SET_FINANCE_SNAPSHOT', payload: remoteSnapshot });
-      }
+      const [accData, catData, transData, budgetData] = await Promise.all([
+        fetch('/api/money/accounts').then(readJson),
+        fetch('/api/money/categories').then(readJson),
+        fetch(
+          `/api/money/transactions?startDate=${encodeURIComponent(state.periodStart)}&endDate=${encodeURIComponent(state.periodEnd)}`
+        ).then(readJson),
+        fetch(`/api/money/budgets?month=${month}&year=${year}`).then(readJson),
+      ]);
+
+      dispatch({ type: 'SET_ACCOUNTS', payload: accData.accounts || [] });
+      dispatch({ type: 'SET_CATEGORIES', payload: catData.categories || [] });
+      dispatch({ type: 'SET_TRANSACTIONS', payload: transData.transactions || [] });
+      dispatch({ type: 'SET_BUDGETS', payload: budgetData.budgets || [] });
     } catch (error) {
-      console.error('Failed to fetch data:', error);
+      console.error('Failed to fetch finance data:', error);
       dispatch({
         type: 'SET_ERROR',
-        payload: 'Failed to connect to finance storage. Please check your connection.',
+        payload: 'Failed to load finance data. Please try again.',
       });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
   }, [state.periodEnd, state.periodStart]);
 
-  const fetchAnalysis = useCallback(
-    async (startDate, endDate) => {
-      try {
-        const snapshot = await getFinanceSnapshot({
-          periodStart: startDate || state.periodStart,
-          periodEnd: endDate || state.periodEnd,
-        });
-        dispatch({ type: 'SET_ANALYSIS', payload: snapshot.analysis });
-        dispatch({
-          type: 'SET_FINANCE_SNAPSHOT',
-          payload: {
-            pendingSyncCount: snapshot.pendingSyncCount,
-            lastRemoteSyncAt: snapshot.lastRemoteSyncAt,
-          },
-        });
-      } catch (error) {
-        console.error('Failed to fetch analysis:', error);
-      }
-    },
-    [state.periodEnd, state.periodStart]
-  );
+  const fetchAnalysis = useCallback(async (startDate, endDate) => {
+    try {
+      const params = new URLSearchParams();
+      if (startDate) params.set('startDate', startDate);
+      if (endDate) params.set('endDate', endDate);
+      const data = await fetch(`/api/money/analysis?${params}`).then(readJson);
+      dispatch({ type: 'SET_ANALYSIS', payload: data.analysis });
+    } catch (error) {
+      console.error('Failed to fetch analysis:', error);
+    }
+  }, []);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  useEffect(() => {
-    const unsubscribe = subscribeToFinanceChanges(() => {
-      refreshSnapshot();
-    });
-
-    const handleServiceWorkerMessage = async (event) => {
-      if (event.data?.type === 'finance-sync-request') {
-        await flushSyncQueue();
-        fetchData();
-      }
-    };
-
-    const handleReconnect = async () => {
-      await flushSyncQueue();
-      fetchData();
-    };
-
-    window.addEventListener('online', handleReconnect);
-    navigator.serviceWorker?.addEventListener('message', handleServiceWorkerMessage);
-    return () => {
-      unsubscribe();
-      window.removeEventListener('online', handleReconnect);
-      navigator.serviceWorker?.removeEventListener('message', handleServiceWorkerMessage);
-    };
-  }, [fetchData, refreshSnapshot]);
-
   const addTransaction = async (transaction) => {
     try {
-      const nextTransaction = await createTransaction(transaction);
-      await refreshSnapshot();
-      return nextTransaction;
+      const data = await fetch('/api/money/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(transaction),
+      }).then(readJson);
+      await fetchData();
+      return data.transaction;
     } catch (error) {
       console.error('Failed to add transaction:', error);
     }
@@ -182,8 +136,8 @@ export function MoneyProvider({ children }) {
 
   const deleteTransaction = async (id) => {
     try {
-      await deleteTransactionRecord(id);
-      await refreshSnapshot();
+      await fetch(`/api/money/transactions/${id}`, { method: 'DELETE' }).then(readJson);
+      await fetchData();
     } catch (error) {
       console.error('Failed to delete transaction:', error);
     }
@@ -191,9 +145,13 @@ export function MoneyProvider({ children }) {
 
   const addAccount = async (account) => {
     try {
-      const nextAccount = await createAccount(account);
-      await refreshSnapshot();
-      return nextAccount;
+      const data = await fetch('/api/money/accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(account),
+      }).then(readJson);
+      await fetchData();
+      return data.account;
     } catch (error) {
       console.error('Failed to add account:', error);
     }
@@ -201,9 +159,13 @@ export function MoneyProvider({ children }) {
 
   const updateAccount = async (id, account) => {
     try {
-      const nextAccount = await updateAccountRecord(id, account);
-      await refreshSnapshot();
-      return nextAccount;
+      const data = await fetch(`/api/money/accounts/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(account),
+      }).then(readJson);
+      await fetchData();
+      return data.account;
     } catch (error) {
       console.error('Failed to update account:', error);
     }
@@ -211,8 +173,8 @@ export function MoneyProvider({ children }) {
 
   const deleteAccount = async (id) => {
     try {
-      await deleteAccountRecord(id);
-      await refreshSnapshot();
+      await fetch(`/api/money/accounts/${id}`, { method: 'DELETE' }).then(readJson);
+      await fetchData();
     } catch (error) {
       console.error('Failed to delete account:', error);
     }
@@ -220,9 +182,13 @@ export function MoneyProvider({ children }) {
 
   const addCategory = async (category) => {
     try {
-      const nextCategory = await createCategory(category);
-      await refreshSnapshot();
-      return nextCategory;
+      const data = await fetch('/api/money/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(category),
+      }).then(readJson);
+      await fetchData();
+      return data.category;
     } catch (error) {
       console.error('Failed to add category:', error);
     }
@@ -230,9 +196,13 @@ export function MoneyProvider({ children }) {
 
   const updateCategory = async (id, category) => {
     try {
-      const nextCategory = await updateCategoryRecord(id, category);
-      await refreshSnapshot();
-      return nextCategory;
+      const data = await fetch(`/api/money/categories/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(category),
+      }).then(readJson);
+      await fetchData();
+      return data.category;
     } catch (error) {
       console.error('Failed to update category:', error);
     }
@@ -240,8 +210,8 @@ export function MoneyProvider({ children }) {
 
   const deleteCategory = async (id) => {
     try {
-      await deleteCategoryRecord(id);
-      await refreshSnapshot();
+      await fetch(`/api/money/categories/${id}`, { method: 'DELETE' }).then(readJson);
+      await fetchData();
     } catch (error) {
       console.error('Failed to delete category:', error);
     }
@@ -249,9 +219,13 @@ export function MoneyProvider({ children }) {
 
   const saveBudget = async (budget) => {
     try {
-      const nextBudget = await upsertBudget(budget);
-      await refreshSnapshot();
-      return nextBudget;
+      const data = await fetch('/api/money/budgets', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(budget),
+      }).then(readJson);
+      await fetchData();
+      return data.budget;
     } catch (error) {
       console.error('Failed to save budget:', error);
     }
@@ -259,30 +233,10 @@ export function MoneyProvider({ children }) {
 
   const clearFinanceData = async () => {
     try {
-      await clearAllFinanceData();
-      await refreshSnapshot();
+      await fetch('/api/money/reset', { method: 'POST' }).then(readJson);
+      await fetchData();
     } catch (error) {
       console.error('Failed to clear finance data:', error);
-      throw error;
-    }
-  };
-
-  const clearLocalCache = async () => {
-    try {
-      await clearLocalFinanceCache();
-      await fetchData();
-    } catch (error) {
-      console.error('Failed to clear local finance cache:', error);
-      throw error;
-    }
-  };
-
-  const acceptRemoteReset = async () => {
-    try {
-      await discardLocalChangesAndAcceptRemoteReset();
-      await fetchData();
-    } catch (error) {
-      console.error('Failed to accept remote reset:', error);
       throw error;
     }
   };
@@ -325,8 +279,6 @@ export function MoneyProvider({ children }) {
     deleteCategory,
     saveBudget,
     clearFinanceData,
-    clearLocalCache,
-    acceptRemoteReset,
     setPeriod,
     setActiveTab,
   };

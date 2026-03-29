@@ -8,9 +8,7 @@ import AnalysisTab from '@/components/finance-tracker/AnalysisTab';
 import BudgetsTab from '@/components/finance-tracker/BudgetsTab';
 import AddTransactionModal from '@/components/finance-tracker/AddTransactionModal';
 import FinanceAgentPanel from '@/components/finance-tracker/FinanceAgentPanel';
-import FinanceSyncStatus from '@/components/finance-tracker/FinanceSyncStatus';
 import FinanceSettingsTab from '@/components/finance-tracker/FinanceSettingsTab';
-import FinanceConflictBanner from '@/components/finance-tracker/FinanceConflictBanner';
 import {
   RecordsSkeleton,
   AnalysisSkeleton,
@@ -43,8 +41,7 @@ const tabs = [
 ];
 
 function FinanceContent() {
-  const { activeTab, setActiveTab, isLoading, error, accounts, fetchData, syncConflict } =
-    useMoney();
+  const { activeTab, setActiveTab, isLoading, error, accounts, fetchData } = useMoney();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const tabTitles = {
@@ -173,20 +170,11 @@ function FinanceContent() {
                 {tabTitles[activeTab]}
               </h1>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="hidden sm:block">
-                <FinanceSyncStatus />
-              </div>
-              <button className="p-1">
-                <Search className="w-5 h-5 text-[#1e3a34]" />
-              </button>
-            </div>
-          </div>
-          <div className="px-4 pb-3 sm:hidden">
-            <FinanceSyncStatus />
+            <button className="p-1">
+              <Search className="w-5 h-5 text-[#1e3a34]" />
+            </button>
           </div>
         </header>
-        <FinanceConflictBanner />
 
         {/* Content */}
         <main

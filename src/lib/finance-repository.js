@@ -79,10 +79,12 @@ async function readStoreSnapshot() {
   ]);
 
   return {
-    accounts,
-    categories,
-    transactions: transactions.sort((a, b) => new Date(b.date) - new Date(a.date)),
-    budgets,
+    accounts: accounts.filter((record) => !record.deletedAt),
+    categories: categories.filter((record) => !record.deletedAt),
+    transactions: transactions
+      .filter((record) => !record.deletedAt)
+      .sort((a, b) => new Date(b.date) - new Date(a.date)),
+    budgets: budgets.filter((record) => !record.deletedAt),
   };
 }
 
