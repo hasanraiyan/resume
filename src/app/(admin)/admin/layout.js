@@ -21,6 +21,7 @@ import {
   Mail,
   Cloud,
   TerminalSquare,
+  CreditCard,
 } from 'lucide-react';
 
 function AdminLayoutContent({ children }) {
@@ -68,6 +69,7 @@ function AdminLayoutContent({ children }) {
             <span className={`flex items-center justify-center ${className}`}>🦞</span>
           ),
         },
+        { name: 'Finance Tracker', href: '/admin/finance-tracker', icon: CreditCard },
         { name: 'Prisma', href: '/admin/media', icon: Image },
         { name: 'App Builder', href: '/admin/apps', icon: TerminalSquare },
       ],
