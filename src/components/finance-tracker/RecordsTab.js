@@ -78,9 +78,9 @@ export default function RecordsTab() {
         </div>
       </div>
 
-      {/* Content - Centered horizontally */}
-      <div className="flex justify-center">
-        <div className="w-full max-w-2xl">
+      {/* Content */}
+      <div className="w-full px-4">
+        <div className="w-full max-w-5xl">
           {/* Summary Bar */}
           <div className="flex text-center border-b border-[#e5e3d8] pb-2 mb-4 px-4">
             <div className="flex-1">

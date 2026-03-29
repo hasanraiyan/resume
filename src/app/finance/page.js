@@ -147,19 +147,7 @@ function FinanceContent() {
         </header>
 
         {/* Content */}
-        <main
-          className={`flex-1 w-full ${
-            error ||
-            (accounts.length === 0 &&
-              !isSyncing &&
-              activeTab !== 'settings' &&
-              activeTab !== 'accounts')
-              ? 'min-h-[calc(100vh-56px)] flex justify-center'
-              : ''
-          }`}
-        >
-          {renderTab()}
-        </main>
+        <main className="flex-1 w-full">{renderTab()}</main>
       </div>
 
       {/* Mobile Sidebar Overlay */}

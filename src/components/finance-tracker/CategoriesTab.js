@@ -154,22 +154,27 @@ export default function CategoriesTab() {
 
   return (
     <div className="pb-4">
-      {/* Net Worth Header */}
-      <div className="text-center font-bold text-sm my-4 px-4">
-        [ All Accounts ₹{totalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })} ]
-      </div>
+      {/* Content - Centered horizontally */}
+      <div className="flex justify-center">
+        <div className="w-full max-w-2xl">
+          {/* Net Worth Header */}
+          <div className="font-bold text-sm my-4 px-4">
+            [ All Accounts ₹{totalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })} ]
+          </div>
 
-      {renderCategoryList(incomeCategories, 'Income categories')}
-      {renderCategoryList(expenseCategories, 'Expense categories')}
+          {renderCategoryList(incomeCategories, 'Income categories')}
+          {renderCategoryList(expenseCategories, 'Expense categories')}
 
-      {/* Add Button */}
-      <div className="flex justify-center mt-6">
-        <button
-          onClick={() => setShowForm(true)}
-          className="border border-[#1f644e] text-[#1f644e] px-4 py-2 rounded text-sm font-bold flex items-center gap-1 hover:bg-[#1f644e] hover:text-white transition"
-        >
-          <Plus className="w-4 h-4" /> ADD NEW CATEGORY
-        </button>
+          {/* Add Button */}
+          <div className="flex mt-6 px-4">
+            <button
+              onClick={() => setShowForm(true)}
+              className="border border-[#1f644e] text-[#1f644e] px-4 py-2 rounded text-sm font-bold flex items-center gap-1 hover:bg-[#1f644e] hover:text-white transition"
+            >
+              <Plus className="w-4 h-4" /> ADD NEW CATEGORY
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Add/Edit Form Modal */}

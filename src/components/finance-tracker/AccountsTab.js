@@ -82,11 +82,11 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
 
   return (
     <div className="pb-4">
-      {/* Content - Centered horizontally */}
-      <div className="flex justify-center">
-        <div className="w-full max-w-2xl">
+      {/* Content */}
+      <div className="w-full px-4">
+        <div className="w-full max-w-5xl">
           {/* Net Worth Header */}
-          <div className="font-bold text-sm my-4 px-4">
+          <div className="font-bold text-sm my-4 px-4 text-center">
             [ All Accounts ₹{totalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })} ]
           </div>
 
@@ -168,7 +168,7 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
           </div>
 
           {/* Add Button */}
-          <div className="flex mt-6 px-4">
+          <div className="flex justify-center mt-6 px-4">
             <button
               onClick={() => setShowForm(true)}
               className="border border-[#1f644e] text-[#1f644e] px-4 py-2 rounded text-sm font-bold flex items-center gap-1 hover:bg-[#1f644e] hover:text-white transition"
