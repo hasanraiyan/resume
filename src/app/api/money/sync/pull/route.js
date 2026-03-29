@@ -4,6 +4,7 @@ import Account from '@/models/Account';
 import Category from '@/models/Category';
 import Transaction from '@/models/Transaction';
 import Budget from '@/models/Budget';
+import FinanceSyncState from '@/models/FinanceSyncState';
 import {
   serializeAccount,
   serializeBudget,
@@ -25,6 +26,11 @@ export async function GET(request) {
     const since = searchParams.get('since');
     const query = buildChangeQuery(since);
 
+    let syncState = await FinanceSyncState.findOne({ key: 'singleton' }).lean();
+    if (!syncState) {
+      syncState = { resetVersion: 0, resetAt: null };
+    }
+
     const [accounts, categories, transactions, budgets] = await Promise.all([
       Account.find(query).sort({ updatedAt: 1 }).lean(),
       Category.find(query).sort({ updatedAt: 1 }).lean(),
@@ -44,6 +50,10 @@ export async function GET(request) {
         categories: categories.map(serializeCategory),
         transactions: transactions.map(serializeTransaction),
         budgets: budgets.map(serializeBudget),
+      },
+      syncState: {
+        resetVersion: syncState.resetVersion || 0,
+        resetAt: syncState.resetAt ? new Date(syncState.resetAt).toISOString() : null,
       },
       serverTime: new Date().toISOString(),
     });

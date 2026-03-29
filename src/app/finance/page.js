@@ -9,6 +9,8 @@ import BudgetsTab from '@/components/finance-tracker/BudgetsTab';
 import AddTransactionModal from '@/components/finance-tracker/AddTransactionModal';
 import FinanceAgentPanel from '@/components/finance-tracker/FinanceAgentPanel';
 import FinanceSyncStatus from '@/components/finance-tracker/FinanceSyncStatus';
+import FinanceSettingsTab from '@/components/finance-tracker/FinanceSettingsTab';
+import FinanceConflictBanner from '@/components/finance-tracker/FinanceConflictBanner';
 import {
   RecordsSkeleton,
   AnalysisSkeleton,
@@ -27,6 +29,7 @@ import {
   Plus,
   RefreshCw,
   AlertTriangle,
+  Settings,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -36,15 +39,13 @@ const tabs = [
   { id: 'budgets', label: 'Budgets', icon: Calculator },
   { id: 'accounts', label: 'Accounts', icon: Wallet },
   { id: 'categories', label: 'Categories', icon: Tag },
+  { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
 function FinanceContent() {
-  const { activeTab, setActiveTab, isLoading, error, accounts, seedData, fetchData } = useMoney();
+  const { activeTab, setActiveTab, isLoading, error, accounts, fetchData, syncConflict } =
+    useMoney();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  const handleSeed = async () => {
-    await seedData();
-  };
 
   const tabTitles = {
     records: 'Records',
@@ -52,6 +53,7 @@ function FinanceContent() {
     budgets: 'Budgets',
     accounts: 'Accounts',
     categories: 'Categories',
+    settings: 'Settings',
   };
 
   const renderTab = () => {
@@ -67,6 +69,8 @@ function FinanceContent() {
           return <AccountsSkeleton />;
         case 'categories':
           return <CategoriesSkeleton />;
+        case 'settings':
+          return <div className="px-4 py-8 text-sm text-[#7c8e88]">Loading settings...</div>;
         default:
           return <RecordsSkeleton />;
       }
@@ -90,7 +94,7 @@ function FinanceContent() {
       );
     }
 
-    if (accounts.length === 0) {
+    if (accounts.length === 0 && activeTab !== 'settings') {
       return (
         <div className="text-center py-20 px-6">
           <div className="w-20 h-20 rounded-full bg-[#e8f0ec] flex items-center justify-center mx-auto mb-5">
@@ -100,14 +104,9 @@ function FinanceContent() {
             Welcome to MyMoney
           </h3>
           <p className="text-sm text-[#7c8e88] mb-8 max-w-xs mx-auto">
-            Get started by loading sample data to explore all features.
+            No finance data yet. Create your first account, category, and transaction to start
+            tracking locally.
           </p>
-          <button
-            onClick={handleSeed}
-            className="px-8 py-3 bg-[#1f644e] text-white text-sm font-bold rounded-lg hover:bg-[#17503e] transition-colors shadow-md"
-          >
-            Load Sample Data
-          </button>
         </div>
       );
     }
@@ -123,6 +122,8 @@ function FinanceContent() {
         return <AccountsTab />;
       case 'categories':
         return <CategoriesTab />;
+      case 'settings':
+        return <FinanceSettingsTab />;
       default:
         return <RecordsTab />;
     }
@@ -185,6 +186,7 @@ function FinanceContent() {
             <FinanceSyncStatus />
           </div>
         </header>
+        <FinanceConflictBanner />
 
         {/* Content */}
         <main
@@ -232,8 +234,10 @@ function FinanceContent() {
       )}
 
       {/* FAB */}
-      {accounts.length > 0 && <AddTransactionModal />}
-      {accounts.length > 0 && <FinanceAgentPanel activeTab={tabTitles[activeTab]} />}
+      {accounts.length > 0 && activeTab !== 'settings' && <AddTransactionModal />}
+      {accounts.length > 0 && activeTab !== 'settings' && (
+        <FinanceAgentPanel activeTab={tabTitles[activeTab]} />
+      )}
 
       {/* Mobile Bottom Nav */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#fcfbf5] border-t border-[#e5e3d8] z-30 flex">

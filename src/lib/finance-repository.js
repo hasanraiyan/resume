@@ -1,6 +1,8 @@
 import { computeAnalysis } from '@/lib/finance-analysis';
 import {
   canUseIndexedDb,
+  clearStore,
+  clearStores,
   deleteRecord,
   enqueueSyncOperation,
   getAllRecords,
@@ -42,6 +44,15 @@ function notifyChange(reason) {
   const channel = getChannel();
   channel?.postMessage({ type: 'finance-data-changed', reason, timestamp: nowIso() });
   channel?.close();
+}
+
+function createResetConflict(syncState) {
+  const error = new Error(
+    'Finance data was reset on another device while this device still has offline changes.'
+  );
+  error.code = 'FINANCE_RESET_CONFLICT';
+  error.syncState = syncState;
+  return error;
 }
 
 async function requestBackgroundSync() {
@@ -94,11 +105,34 @@ async function applyRemoteRecords(storeName, records) {
   }
 }
 
+async function wipeLocalFinanceData() {
+  await clearStores(['accounts', 'categories', 'transactions', 'budgets', 'syncQueue']);
+  await setMeta('financeIdMap', {});
+}
+
 async function pullRemoteChanges() {
   const since = await getMeta('lastRemoteSyncAt', null);
+  const localResetVersion = await getMeta('financeResetVersion', 0);
   const query = since ? `?since=${encodeURIComponent(since)}` : '';
   const data = await fetchJson(`/api/money/sync/pull${query}`);
   const changes = data.changes || {};
+  const syncState = data.syncState || { resetVersion: 0, resetAt: null };
+  const pendingQueue = await getSyncQueue();
+
+  if ((syncState.resetVersion || 0) > localResetVersion) {
+    if (pendingQueue.length > 0) {
+      await setMeta('financeSyncConflict', {
+        type: 'remote_reset_with_pending_changes',
+        resetVersion: syncState.resetVersion,
+        resetAt: syncState.resetAt,
+      });
+      throw createResetConflict(syncState);
+    }
+
+    await wipeLocalFinanceData();
+    await setMeta('financeResetVersion', syncState.resetVersion || 0);
+    await setMeta('financeSyncConflict', null);
+  }
 
   await Promise.all([
     applyRemoteRecords('accounts', changes.accounts || []),
@@ -108,6 +142,8 @@ async function pullRemoteChanges() {
   ]);
 
   await setMeta('lastRemoteSyncAt', data.serverTime || nowIso());
+  await setMeta('financeResetVersion', syncState.resetVersion || 0);
+  await setMeta('financeSyncConflict', null);
   notifyChange('remote-pull');
 }
 
@@ -169,6 +205,8 @@ export async function getFinanceSnapshot({ periodStart, periodEnd }) {
     analysis,
     lastRemoteSyncAt: await getMeta('lastRemoteSyncAt', null),
     pendingSyncCount: (await getSyncQueue()).length,
+    syncConflict: await getMeta('financeSyncConflict', null),
+    financeResetVersion: await getMeta('financeResetVersion', 0),
   };
 }
 
@@ -539,4 +577,35 @@ export function subscribeToFinanceChanges(callback) {
   };
 
   return () => channel.close();
+}
+
+export async function discardLocalChangesAndAcceptRemoteReset() {
+  const conflict = await getMeta('financeSyncConflict', null);
+  const resetVersion = conflict?.resetVersion || (await getMeta('financeResetVersion', 0));
+  await wipeLocalFinanceData();
+  await setMeta('financeIdMap', {});
+  await setMeta('financeSyncConflict', null);
+  await setMeta('financeResetVersion', resetVersion);
+  await setMeta('lastRemoteSyncAt', null);
+  notifyChange('remote-reset-accepted');
+}
+
+export async function clearAllFinanceData() {
+  const data = await fetchJson('/api/money/reset', { method: 'POST' });
+  const syncState = data.syncState || { resetVersion: 0, resetAt: null };
+  await wipeLocalFinanceData();
+  await setMeta('financeIdMap', {});
+  await setMeta('financeSyncConflict', null);
+  await setMeta('financeResetVersion', syncState.resetVersion || 0);
+  await setMeta('lastRemoteSyncAt', syncState.resetAt || nowIso());
+  notifyChange('all-finance-data-cleared');
+  return syncState;
+}
+
+export async function clearLocalFinanceCache() {
+  await wipeLocalFinanceData();
+  await setMeta('financeIdMap', {});
+  await setMeta('financeSyncConflict', null);
+  await setMeta('lastRemoteSyncAt', null);
+  notifyChange('local-finance-cache-cleared');
 }

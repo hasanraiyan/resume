@@ -91,6 +91,12 @@ export function clearStore(storeName) {
   return withStore(storeName, 'readwrite', (store) => promisifyRequest(store.clear()));
 }
 
+export async function clearStores(storeNames) {
+  for (const storeName of storeNames) {
+    await clearStore(storeName);
+  }
+}
+
 export async function getMeta(key, fallback = null) {
   const value = await getRecord('meta', key);
   return value?.value ?? fallback;

@@ -2,12 +2,15 @@
 
 import { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
 import {
+  clearAllFinanceData,
+  clearLocalFinanceCache,
   createAccount,
   createCategory,
   createTransaction,
   deleteAccountRecord,
   deleteCategoryRecord,
   deleteTransactionRecord,
+  discardLocalChangesAndAcceptRemoteReset,
   flushSyncQueue,
   getFinanceSnapshot,
   hydrateFinanceData,
@@ -30,6 +33,8 @@ const initialState = {
   error: null,
   pendingSyncCount: 0,
   lastRemoteSyncAt: null,
+  syncConflict: null,
+  financeResetVersion: 0,
   activeTab: 'records',
   periodStart: getWeekStart(),
   periodEnd: getWeekEnd(),
@@ -134,17 +139,6 @@ export function MoneyProvider({ children }) {
     },
     [state.periodEnd, state.periodStart]
   );
-
-  const seedData = useCallback(async () => {
-    try {
-      const res = await fetch('/api/money/seed', { method: 'POST' });
-      const data = await res.json();
-      if (data.success) await fetchData();
-      return data;
-    } catch (error) {
-      console.error('Failed to seed data:', error);
-    }
-  }, [fetchData]);
 
   useEffect(() => {
     fetchData();
@@ -263,6 +257,36 @@ export function MoneyProvider({ children }) {
     }
   };
 
+  const clearFinanceData = async () => {
+    try {
+      await clearAllFinanceData();
+      await refreshSnapshot();
+    } catch (error) {
+      console.error('Failed to clear finance data:', error);
+      throw error;
+    }
+  };
+
+  const clearLocalCache = async () => {
+    try {
+      await clearLocalFinanceCache();
+      await fetchData();
+    } catch (error) {
+      console.error('Failed to clear local finance cache:', error);
+      throw error;
+    }
+  };
+
+  const acceptRemoteReset = async () => {
+    try {
+      await discardLocalChangesAndAcceptRemoteReset();
+      await fetchData();
+    } catch (error) {
+      console.error('Failed to accept remote reset:', error);
+      throw error;
+    }
+  };
+
   const setPeriod = (start, end) => {
     dispatch({ type: 'SET_PERIOD', payload: { start, end } });
   };
@@ -291,7 +315,6 @@ export function MoneyProvider({ children }) {
     totalBalance,
     fetchData,
     fetchAnalysis,
-    seedData,
     addTransaction,
     deleteTransaction,
     addAccount,
@@ -301,6 +324,9 @@ export function MoneyProvider({ children }) {
     updateCategory,
     deleteCategory,
     saveBudget,
+    clearFinanceData,
+    clearLocalCache,
+    acceptRemoteReset,
     setPeriod,
     setActiveTab,
   };
