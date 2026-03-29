@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useMoney } from '@/context/MoneyContext';
-import { ChevronDown, Filter } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { AnalysisSkeleton } from './FinanceSkeletons';
 import dynamic from 'next/dynamic';
 
 const IconRenderer = dynamic(() => import('./IconRenderer'), { ssr: false });
@@ -50,11 +51,7 @@ export default function AnalysisTab() {
   };
 
   if (!analysis) {
-    return (
-      <div className="flex items-center justify-center py-32">
-        <div className="w-8 h-8 border-[3px] border-[#1f644e] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <AnalysisSkeleton />;
   }
 
   const formatPeriodRange = () => {

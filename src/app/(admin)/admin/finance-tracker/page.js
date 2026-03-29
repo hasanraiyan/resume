@@ -7,7 +7,25 @@ import CategoriesTab from '@/components/finance-tracker/CategoriesTab';
 import AnalysisTab from '@/components/finance-tracker/AnalysisTab';
 import BudgetsTab from '@/components/finance-tracker/BudgetsTab';
 import AddTransactionModal from '@/components/finance-tracker/AddTransactionModal';
-import { Receipt, BarChart3, Wallet, Tag, Calculator, Menu, Search, Plus } from 'lucide-react';
+import {
+  RecordsSkeleton,
+  AnalysisSkeleton,
+  AccountsSkeleton,
+  CategoriesSkeleton,
+  BudgetsSkeleton,
+} from '@/components/finance-tracker/FinanceSkeletons';
+import {
+  Receipt,
+  BarChart3,
+  Wallet,
+  Tag,
+  Calculator,
+  Menu,
+  Search,
+  Plus,
+  RefreshCw,
+  AlertTriangle,
+} from 'lucide-react';
 import { useState } from 'react';
 
 const tabs = [
@@ -19,7 +37,7 @@ const tabs = [
 ];
 
 function FinanceContent() {
-  const { activeTab, setActiveTab, isLoading, accounts, seedData } = useMoney();
+  const { activeTab, setActiveTab, isLoading, error, accounts, seedData, fetchData } = useMoney();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleSeed = async () => {
@@ -36,9 +54,36 @@ function FinanceContent() {
 
   const renderTab = () => {
     if (isLoading) {
+      switch (activeTab) {
+        case 'records':
+          return <RecordsSkeleton />;
+        case 'analysis':
+          return <AnalysisSkeleton />;
+        case 'budgets':
+          return <BudgetsSkeleton />;
+        case 'accounts':
+          return <AccountsSkeleton />;
+        case 'categories':
+          return <CategoriesSkeleton />;
+        default:
+          return <RecordsSkeleton />;
+      }
+    }
+
+    if (error) {
       return (
-        <div className="flex items-center justify-center py-32">
-          <div className="w-8 h-8 border-[3px] border-[#1f644e] border-t-transparent rounded-full animate-spin" />
+        <div className="flex flex-col items-center justify-center py-20 px-6">
+          <div className="w-16 h-16 rounded-full bg-[#fef2f2] flex items-center justify-center mb-4">
+            <AlertTriangle className="w-8 h-8 text-[#c94c4c]" />
+          </div>
+          <p className="text-sm text-[#7c8e88] mb-4 text-center">{error}</p>
+          <button
+            onClick={fetchData}
+            className="px-6 py-2.5 bg-[#1f644e] text-white text-sm font-bold rounded-lg hover:bg-[#17503e] transition-colors flex items-center gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Retry
+          </button>
         </div>
       );
     }

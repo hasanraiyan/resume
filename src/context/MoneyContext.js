@@ -11,6 +11,7 @@ const initialState = {
   budgets: [],
   analysis: null,
   isLoading: true,
+  error: null,
   activeTab: 'records',
   periodStart: getWeekStart(),
   periodEnd: getWeekEnd(),
@@ -38,6 +39,8 @@ function moneyReducer(state, action) {
   switch (action.type) {
     case 'SET_LOADING':
       return { ...state, isLoading: action.payload };
+    case 'SET_ERROR':
+      return { ...state, error: action.payload };
     case 'SET_ACTIVE_TAB':
       return { ...state, activeTab: action.payload };
     case 'SET_ACCOUNTS':
@@ -85,6 +88,7 @@ export function MoneyProvider({ children }) {
   const fetchData = useCallback(async () => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
+      dispatch({ type: 'SET_ERROR', payload: null });
 
       const [accRes, catRes, transRes] = await Promise.all([
         fetch('/api/money/accounts'),
@@ -100,8 +104,16 @@ export function MoneyProvider({ children }) {
       if (catData.success) dispatch({ type: 'SET_CATEGORIES', payload: catData.categories });
       if (transData.success)
         dispatch({ type: 'SET_TRANSACTIONS', payload: transData.transactions });
+
+      if (!accData.success || !catData.success || !transData.success) {
+        dispatch({ type: 'SET_ERROR', payload: 'Some data failed to load. Please try again.' });
+      }
     } catch (error) {
       console.error('Failed to fetch data:', error);
+      dispatch({
+        type: 'SET_ERROR',
+        payload: 'Failed to connect to server. Please check your connection.',
+      });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
