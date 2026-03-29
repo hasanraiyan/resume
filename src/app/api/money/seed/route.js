@@ -9,17 +9,16 @@ export async function POST() {
     await dbConnect();
 
     // Check if data already exists
-    const existingAccounts = await Account.countDocuments();
+    const existingAccounts = await Account.countDocuments({ deletedAt: null });
     if (existingAccounts > 0) {
       return NextResponse.json({ success: true, message: 'Data already seeded' });
     }
 
     // Seed Accounts
     const accounts = await Account.insertMany([
-      { name: 'Cash', icon: 'wallet', initialBalance: 5000 },
-      { name: 'PNB Bank', icon: 'building-2', initialBalance: 14926.06 },
-      { name: 'Savings', icon: 'piggy-bank', initialBalance: 25000 },
-      { name: 'Credit Card', icon: 'credit-card', initialBalance: -2500 },
+      { name: 'CARD', icon: 'credit-card', initialBalance: 0 },
+      { name: 'CASH', icon: 'wallet', initialBalance: 0 },
+      { name: 'SAVING', icon: 'piggy-bank', initialBalance: 0 },
     ]);
 
     // Seed Categories
@@ -89,7 +88,7 @@ export async function POST() {
         const type = isExpense ? 'expense' : 'income';
         const categories = isExpense ? expenseCategories : incomeCategories;
         const category = categories[Math.floor(Math.random() * categories.length)];
-        const account = accounts[Math.floor(Math.random() * (accounts.length - 1))];
+        const account = accounts[Math.floor(Math.random() * accounts.length)];
         const descList = descriptions[type][category._id] || ['Transaction'];
         const description = descList[Math.floor(Math.random() * descList.length)];
 
@@ -113,15 +112,15 @@ export async function POST() {
       {
         type: 'transfer',
         amount: 5000,
-        description: 'Cash to Bank',
-        account: accounts[0]._id,
-        toAccount: accounts[1]._id,
+        description: 'Cash to Card',
+        account: accounts[1]._id,
+        toAccount: accounts[0]._id,
         date: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
       },
       {
         type: 'transfer',
         amount: 2000,
-        description: 'Bank to Savings',
+        description: 'Cash to Saving',
         account: accounts[1]._id,
         toAccount: accounts[2]._id,
         date: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000),
