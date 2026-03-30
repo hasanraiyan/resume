@@ -18,6 +18,9 @@ const accountIcons = [
   'hand-coins',
   'vault',
   'smartphone',
+  'rupay',
+  'ippb',
+  'pnb',
 ];
 
 const iconColors = [
