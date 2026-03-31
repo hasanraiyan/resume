@@ -42,6 +42,7 @@ export async function GET() {
           isActive: agent.isActive,
           tools: agent.tools || [],
           activeMCPs: agent.activeMCPs || [],
+          activeSkills: agent.activeSkills || [],
           metadata: agent.metadata || {},
         });
       });

@@ -97,7 +97,7 @@ export function useChatStreaming() {
         chatHistory,
         sessionId: analytics.sessionId,
         path: window.location.pathname,
-        activeMCPs: activeMCPs, // Pass array of IDs directly
+        activeMCPs: activeMCPs,
         agentId: selectedAgentId,
       }),
     });

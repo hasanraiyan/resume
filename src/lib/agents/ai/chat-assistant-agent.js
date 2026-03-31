@@ -12,8 +12,10 @@ import Analytics from '@/models/Analytics';
 import ChatLog from '@/models/ChatLog';
 import { getToolStatusMessage } from '../utils/chatbot-utils';
 import { getBackendMCPConfig } from '@/lib/mcpConfig';
+import { getBackendSkillConfig } from '@/lib/skillConfig';
 import { portfolioTools } from '../utils/portfolio-tools';
 import { createAdminTools } from '../utils/admin-tools';
+import { createLoadSkillTool, buildSkillsSystemPrompt } from '../utils/skill-tools';
 import { MultiServerMCPClient } from '@langchain/mcp-adapters';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import {
@@ -33,7 +35,7 @@ function sanitizeMessages(messages) {
 // System message builder moved to a static or instance method if preferred,
 // but keeping it as a standalone function for now.
 
-export function buildSystemMessages(context, path) {
+export function buildSystemMessages(context, path, skillsSummary = '') {
   const { chatbotSettings } = context || {};
   if (!chatbotSettings) return [];
 
@@ -65,7 +67,8 @@ CONTACT FORM INSTRUCTIONS:
 
 GOAL: Convert visitors to clients by using the call to action: "${settings.callToAction}"
 RULES: ${settings.rules?.join('. ') || ''}
-PAGE CONTEXT: The user is currently on: "${path || '/'}"`,
+PAGE CONTEXT: The user is currently on: "${path || '/'}"
+${skillsSummary}`,
     },
   ];
 }
@@ -97,6 +100,9 @@ class ChatAgent extends BaseAgent {
       isAdmin = false,
     } = input;
 
+    // Skills are read from the agent's DB config (admin-assigned), not from client input
+    const activeSkills = this.config.activeSkills || [];
+
     const startTime = Date.now();
     let toolsUsed = [];
     let assistantContent = '';
@@ -121,7 +127,24 @@ class ChatAgent extends BaseAgent {
       }
 
       const llm = await this.createChatModel();
-      const systemMessages = buildSystemMessages(context, path);
+
+      // --- Skills: Progressive Disclosure (must be before buildSystemMessages) ---
+      const backendSkills = await getBackendSkillConfig(isAdmin);
+      const defaultSkillConfigs = backendSkills.filter((s) => s.isDefault);
+      const selectedSkillConfigs = backendSkills.filter((s) => activeSkills.includes(s.id));
+      const allActiveSkillConfigs = [...new Set([...defaultSkillConfigs, ...selectedSkillConfigs])];
+
+      // Build skills summary for system prompt (only descriptions, no full content)
+      const skillsSummary = buildSkillsSystemPrompt(allActiveSkillConfigs);
+
+      // Create loadSkill tool if there are active skills
+      if (allActiveSkillConfigs.length > 0) {
+        const loadSkillTool = createLoadSkillTool(allActiveSkillConfigs);
+        allTools.push(loadSkillTool);
+      }
+      // --- End Skills ---
+
+      const systemMessages = buildSystemMessages(context, path, skillsSummary);
 
       const filteredHistory = chatHistory.filter((msg) => msg && msg.role);
       const messages = [

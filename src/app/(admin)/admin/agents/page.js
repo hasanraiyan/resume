@@ -26,6 +26,7 @@ import {
   RotateCcw,
   PlusCircle,
   X,
+  Wrench,
 } from 'lucide-react';
 import AgentConfigurationModal from '@/components/admin/AgentConfigurationModal';
 import { Card, Skeleton } from '@/components/ui';
@@ -100,6 +101,24 @@ export default function AgentsDashboard() {
     isDefault: false,
   });
 
+  // Skills State
+  const [skills, setSkills] = useState([]);
+  const [savingSkill, setSavingSkill] = useState(false);
+  const [editingSkill, setEditingSkill] = useState(null);
+  const [newSkill, setNewSkill] = useState({
+    name: '',
+    displayName: '',
+    description: '',
+    content: '',
+    category: 'general',
+    icon: 'Wrench',
+    color: 'purple-500',
+    isActive: true,
+    adminOnly: false,
+    isDefault: false,
+    allowedTools: [],
+  });
+
   // Assistant / Chatbot State
   const [chatbotSettings, setChatbotSettings] = useState({
     aiName: 'Kiro',
@@ -126,12 +145,13 @@ export default function AgentsDashboard() {
     fetchAgents();
     fetchIntegrations();
     fetchMcpServers();
+    fetchSkills();
     fetchChatbotSettings();
 
     // Check for tab in URL
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab');
-    if (tab && ['providers', 'agents', 'channels', 'mcp', 'assistant'].includes(tab)) {
+    if (tab && ['providers', 'agents', 'channels', 'mcp', 'skills', 'assistant'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [session, status, router]);
@@ -176,6 +196,16 @@ export default function AgentsDashboard() {
       if (res.ok) setMcpServers(data.servers || []);
     } catch (error) {
       console.error('Failed to fetch MCP servers:', error);
+    }
+  };
+
+  const fetchSkills = async () => {
+    try {
+      const res = await fetch('/api/admin/skills');
+      const data = await res.json();
+      if (res.ok) setSkills(data.skills || []);
+    } catch (error) {
+      console.error('Failed to fetch skills:', error);
     }
   };
 
@@ -421,6 +451,53 @@ export default function AgentsDashboard() {
     }
   };
 
+  // --- Skill Handlers ---
+  const handleAddSkill = () => {
+    setEditingSkill({ id: 'new', ...newSkill });
+  };
+
+  const handleEditSkill = (skill) => {
+    setEditingSkill({ ...skill, id: skill._id });
+  };
+
+  const handleSaveSkill = async () => {
+    if (!editingSkill.name || !editingSkill.displayName || !editingSkill.description) return;
+
+    setSavingSkill(true);
+    try {
+      const isNew = editingSkill.id === 'new';
+      const url = isNew ? '/api/admin/skills' : `/api/admin/skills/${editingSkill.id}`;
+      const method = isNew ? 'POST' : 'PUT';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingSkill),
+      });
+
+      if (res.ok) {
+        setEditingSkill(null);
+        fetchSkills();
+      } else {
+        alert('Failed to save skill.');
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setSavingSkill(false);
+    }
+  };
+
+  const handleDeleteSkill = async (skillId) => {
+    if (!confirm('Are you sure you want to delete this Skill?')) return;
+    try {
+      const res = await fetch(`/api/admin/skills/${skillId}`, { method: 'DELETE' });
+      if (res.ok) fetchSkills();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   // --- Assistant Handlers ---
   const handleSaveChatbot = async () => {
     setSavingChatbot(true);
@@ -515,6 +592,14 @@ export default function AgentsDashboard() {
     (s) =>
       s.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.url?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredSkills = skills.filter(
+    (s) =>
+      s.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.category?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -619,6 +704,18 @@ export default function AgentsDashboard() {
               <Activity className="w-4 h-4" />
               <span>MCP Servers</span>
               {activeTab === 'mcp' && (
+                <span className="absolute bottom-0 left-0 w-full h-[3px] bg-black"></span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('skills')}
+              className={`flex items-center gap-2 py-4 text-sm font-semibold transition-colors cursor-pointer relative px-2 ${
+                activeTab === 'skills' ? 'text-black' : 'text-neutral-500 hover:text-neutral-800'
+              }`}
+            >
+              <BookOpen className="w-4 h-4" />
+              <span>Skills</span>
+              {activeTab === 'skills' && (
                 <span className="absolute bottom-0 left-0 w-full h-[3px] bg-black"></span>
               )}
             </button>
@@ -1738,6 +1835,345 @@ export default function AgentsDashboard() {
                         : editingMcp.id === 'new'
                           ? 'Register Server'
                           : 'Update Server'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Skills Tab */}
+        {activeTab === 'skills' && (
+          <div className="space-y-8 animate-in fade-in">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h2 className="text-2xl font-bold font-['Playfair_Display']">Skills Management</h2>
+                <p className="text-sm text-neutral-500 mt-1">
+                  Manage on-demand skill specializations. Agents match skills by description, then
+                  load full instructions on-demand (progressive disclosure).
+                </p>
+              </div>
+              <button
+                onClick={handleAddSkill}
+                className="px-5 py-2.5 bg-black hover:bg-neutral-800 transition-colors text-white rounded-xl text-sm font-medium flex items-center gap-2 cursor-pointer transition-all active:scale-95 border-2 border-black"
+              >
+                <Plus className="w-4 h-4" /> Add Skill
+              </button>
+            </div>
+
+            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredSkills.map((skill) => (
+                <Card
+                  key={skill._id}
+                  interactive
+                  className="p-6 border-2 border-neutral-100 hover:border-black transition-all bg-white rounded-xl flex flex-col h-full cursor-pointer relative group"
+                >
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-neutral-100 flex items-center justify-center flex-shrink-0 border border-neutral-200/60 group-hover:bg-neutral-200/50 transition-colors">
+                        <Wrench className={`w-5 h-5 text-${skill.color || 'purple-500'}`} />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-base text-neutral-900 leading-tight">
+                          {skill.displayName}
+                        </h3>
+                        <p className="text-[10px] text-neutral-400 font-mono mt-1 uppercase tracking-widest">
+                          {skill.category} | {skill.name}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditSkill(skill);
+                        }}
+                        className="p-1.5 text-neutral-400 hover:text-black hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer"
+                        aria-label="Edit Skill"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSkill(skill._id);
+                        }}
+                        className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                        aria-label="Delete Skill"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {skill.description && (
+                    <p className="text-sm text-neutral-600 mb-4 line-clamp-2 leading-relaxed">
+                      {skill.description}
+                    </p>
+                  )}
+
+                  <div className="mt-auto pt-4 border-t border-neutral-100">
+                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold mb-1.5 flex justify-between items-center">
+                      <span>Status</span>
+                      <span
+                        className={`inline-flex items-center gap-1.5 ${skill.isActive ? 'text-green-600' : 'text-neutral-400'}`}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${skill.isActive ? 'bg-green-500' : 'bg-neutral-300'}`}
+                        ></span>
+                        {skill.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </p>
+                    <div className="flex gap-2 mt-1">
+                      {skill.isDefault && (
+                        <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded-md font-medium">
+                          Default
+                        </span>
+                      )}
+                      {skill.adminOnly && (
+                        <span className="text-[10px] bg-amber-50 text-amber-600 px-2 py-1 rounded-md font-medium">
+                          Admin Only
+                        </span>
+                      )}
+                      {skill.content && (
+                        <span className="text-[10px] bg-green-50 text-green-600 px-2 py-1 rounded-md font-medium">
+                          Has Content
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            {skills.length === 0 ? (
+              <div className="text-center p-16 border-2 border-dashed border-neutral-200 rounded-3xl bg-neutral-50/50 flex flex-col items-center justify-center">
+                <BookOpen className="w-12 h-12 text-neutral-300 mb-4" />
+                <h3 className="text-lg font-semibold text-neutral-700">No Skills Configured</h3>
+                <p className="text-sm text-neutral-500 mt-2 max-w-md">
+                  Skills provide on-demand specialization to your agents. The agent matches
+                  descriptions, then loads full instructions only when needed.
+                </p>
+                <button
+                  onClick={handleAddSkill}
+                  className="mt-6 px-6 py-2.5 bg-white border border-neutral-300 hover:border-black transition-colors rounded-xl text-sm font-medium text-black cursor-pointer transition-all active:scale-95"
+                >
+                  Create Your First Skill
+                </button>
+              </div>
+            ) : filteredSkills.length === 0 && searchQuery ? (
+              <div className="text-center p-12 border border-dashed rounded-2xl bg-neutral-50 text-neutral-500">
+                No skills match your search for "{searchQuery}".
+              </div>
+            ) : null}
+
+            {/* Skill Edit Modal */}
+            {editingSkill && (
+              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="bg-white rounded-3xl max-w-2xl w-full p-8 space-y-6 relative overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-purple-600" />
+
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-xl font-bold font-['Playfair_Display']">
+                      {editingSkill.id === 'new' ? 'Create New Skill' : 'Edit Skill'}
+                    </h3>
+                    <button
+                      onClick={() => setEditingSkill(null)}
+                      className="p-1.5 hover:bg-neutral-100 rounded-full transition-colors text-neutral-400 hover:text-black cursor-pointer"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-5">
+                    <div className="grid grid-cols-2 gap-5">
+                      <div>
+                        <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-2">
+                          Skill Name (ID)
+                        </label>
+                        <input
+                          className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-xl transition-all outline-none text-sm font-mono placeholder:text-neutral-400"
+                          value={editingSkill.name}
+                          onChange={(e) =>
+                            setEditingSkill({ ...editingSkill, name: e.target.value })
+                          }
+                          placeholder="sql-expert"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-2">
+                          Display Name
+                        </label>
+                        <input
+                          className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-xl transition-all outline-none text-sm placeholder:text-neutral-400"
+                          value={editingSkill.displayName}
+                          onChange={(e) =>
+                            setEditingSkill({ ...editingSkill, displayName: e.target.value })
+                          }
+                          placeholder="SQL Expert"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-2">
+                        Category
+                      </label>
+                      <select
+                        className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-xl transition-all outline-none text-sm appearance-none cursor-pointer"
+                        value={editingSkill.category}
+                        onChange={(e) =>
+                          setEditingSkill({ ...editingSkill, category: e.target.value })
+                        }
+                      >
+                        <option value="general">General</option>
+                        <option value="coding">Coding</option>
+                        <option value="writing">Writing</option>
+                        <option value="data">Data</option>
+                        <option value="research">Research</option>
+                        <option value="design">Design</option>
+                        <option value="devops">DevOps</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-2">
+                        Description (for skill matching)
+                      </label>
+                      <textarea
+                        className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-xl transition-all outline-none text-sm min-h-[80px] resize-none placeholder:text-neutral-400 leading-relaxed"
+                        value={editingSkill.description}
+                        onChange={(e) =>
+                          setEditingSkill({ ...editingSkill, description: e.target.value })
+                        }
+                        placeholder="Use this skill when the user asks about SQL queries, database design, or data modeling..."
+                      />
+                      <p className="text-[10px] text-neutral-400 mt-1">
+                        The agent uses this to decide when to load the skill. Max 1024 chars.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-2">
+                        Full Content (SKILL.md instructions)
+                      </label>
+                      <textarea
+                        className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-xl transition-all outline-none text-sm font-mono min-h-[200px] resize-none placeholder:text-neutral-400 leading-relaxed"
+                        value={editingSkill.content}
+                        onChange={(e) =>
+                          setEditingSkill({ ...editingSkill, content: e.target.value })
+                        }
+                        placeholder={`---
+name: my-skill
+description: Description here
+---
+
+# Instructions
+
+Step 1: ...
+Step 2: ...`}
+                      />
+                      <p className="text-[10px] text-neutral-400 mt-1">
+                        Loaded on-demand only when the agent decides this skill matches.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-5">
+                      <div>
+                        <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-2">
+                          Icon
+                        </label>
+                        <input
+                          className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-xl transition-all outline-none text-sm placeholder:text-neutral-400"
+                          value={editingSkill.icon}
+                          onChange={(e) =>
+                            setEditingSkill({ ...editingSkill, icon: e.target.value })
+                          }
+                          placeholder="Wrench"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-2">
+                          Color
+                        </label>
+                        <input
+                          className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 focus:border-black rounded-xl transition-all outline-none text-sm placeholder:text-neutral-400"
+                          value={editingSkill.color}
+                          onChange={(e) =>
+                            setEditingSkill({ ...editingSkill, color: e.target.value })
+                          }
+                          placeholder="purple-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl border border-neutral-100">
+                        <div>
+                          <p className="text-sm font-bold text-neutral-900">Active Status</p>
+                          <p className="text-[10px] text-neutral-500 uppercase tracking-widest mt-0.5">
+                            Toggle availability to agents
+                          </p>
+                        </div>
+                        <Switch
+                          checked={editingSkill.isActive}
+                          onCheckedChange={(val) =>
+                            setEditingSkill({ ...editingSkill, isActive: val })
+                          }
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl border border-neutral-100">
+                        <div>
+                          <p className="text-sm font-bold text-neutral-900">Default Skill</p>
+                          <p className="text-[10px] text-neutral-500 uppercase tracking-widest mt-0.5">
+                            Auto-load for all agents
+                          </p>
+                        </div>
+                        <Switch
+                          checked={editingSkill.isDefault}
+                          onCheckedChange={(val) =>
+                            setEditingSkill({ ...editingSkill, isDefault: val })
+                          }
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl border border-neutral-100">
+                        <div>
+                          <p className="text-sm font-bold text-neutral-900">Admin Only</p>
+                          <p className="text-[10px] text-neutral-500 uppercase tracking-widest mt-0.5">
+                            Restrict to admin users
+                          </p>
+                        </div>
+                        <Switch
+                          checked={editingSkill.adminOnly}
+                          onCheckedChange={(val) =>
+                            setEditingSkill({ ...editingSkill, adminOnly: val })
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-6">
+                    <button
+                      onClick={() => setEditingSkill(null)}
+                      className="flex-1 py-3.5 rounded-xl border-2 border-neutral-100 hover:bg-neutral-50 text-xs font-black uppercase tracking-widest text-neutral-600 transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSaveSkill}
+                      disabled={savingSkill}
+                      className="flex-1 py-3.5 rounded-xl bg-black hover:bg-neutral-800 text-white text-xs font-black uppercase tracking-widest transition-all cursor-pointer disabled:bg-neutral-300 disabled:cursor-not-allowed"
+                    >
+                      {savingSkill
+                        ? 'Saving...'
+                        : editingSkill.id === 'new'
+                          ? 'Create Skill'
+                          : 'Update Skill'}
                     </button>
                   </div>
                 </div>

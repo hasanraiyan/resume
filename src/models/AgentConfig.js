@@ -49,6 +49,11 @@ const AgentConfigSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    // Allows assigning specific Skills to the agent
+    activeSkills: {
+      type: [String],
+      default: [],
+    },
     // Optional Override settings
     rateLimitSettings: {
       requests: { type: Number },

@@ -24,6 +24,8 @@ import {
   BarChart3,
   RefreshCw,
   Activity,
+  BookOpen,
+  Wrench,
 } from 'lucide-react';
 
 import {
@@ -66,6 +68,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
     isActive: true,
     tools: [],
     activeMCPs: [],
+    activeSkills: [],
     metadata: {},
   });
 
@@ -76,6 +79,8 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
   const [saving, setSaving] = useState(false);
   const [mcpServers, setMcpServers] = useState([]);
   const [fetchingMCPs, setFetchingMCPs] = useState(false);
+  const [skills, setSkills] = useState([]);
+  const [fetchingSkills, setFetchingSkills] = useState(false);
 
   // Metrics State
   const [metricsData, setMetricsData] = useState(null);
@@ -125,6 +130,21 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
     }
   };
 
+  const fetchSkills = async () => {
+    setFetchingSkills(true);
+    try {
+      const res = await fetch('/api/admin/skills');
+      if (res.ok) {
+        const data = await res.json();
+        setSkills(Array.isArray(data.skills) ? data.skills : []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch skills:', error);
+    } finally {
+      setFetchingSkills(false);
+    }
+  };
+
   useEffect(() => {
     if (isOpen && agentData) {
       // Clear previous states to avoid flickering stale data
@@ -142,6 +162,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
         isActive: agentData.isActive ?? true,
         tools: agentData.tools || [],
         activeMCPs: agentData.activeMCPs || [],
+        activeSkills: agentData.activeSkills || [],
         metadata: agentData.metadata || {},
       });
 
@@ -161,6 +182,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
       }
 
       fetchMCPs();
+      fetchSkills();
       fetchMetrics(agentData.agentId);
       setActiveTab('engine'); // Reset tab on open
     }
@@ -258,6 +280,16 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
     });
   };
 
+  const toggleSkill = (skillId) => {
+    setSettings((prev) => {
+      const current = prev.activeSkills || [];
+      if (current.includes(skillId)) {
+        return { ...prev, activeSkills: current.filter((id) => id !== skillId) };
+      }
+      return { ...prev, activeSkills: [...current, skillId] };
+    });
+  };
+
   if (!agentData) return null;
 
   const summaryModelOptions = settings.summaryProviderId ? summaryModels : models;
@@ -273,6 +305,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
     { id: 'metrics', label: 'Metrics', icon: BarChart3 },
     { id: 'tools', label: 'Tools', icon: Webhook },
     { id: 'mcp', label: 'MCP', icon: Plug },
+    { id: 'skills', label: 'Skills', icon: BookOpen },
     { id: 'persona', label: 'Persona', icon: Settings2 },
   ];
 
@@ -327,7 +360,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex px-8 border-b border-neutral-100">
+        <div className="flex px-8 border-b border-neutral-100 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -335,7 +368,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-1 py-4 text-xs font-bold uppercase tracking-widest transition-all cursor-pointer relative mr-8 last:mr-0 ${
+                className={`flex items-center gap-1.5 px-1 py-4 text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer relative mr-6 last:mr-0 whitespace-nowrap shrink-0 ${
                   isActive ? 'text-black' : 'text-neutral-400 hover:text-neutral-600'
                 }`}
               >
@@ -849,6 +882,79 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                               className={`text-[11px] truncate mt-1 ${isAssigned ? 'text-neutral-400' : 'text-neutral-500'}`}
                             >
                               {mcp.description}
+                            </p>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Skills Tab */}
+          {activeTab === 'skills' && (
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              {fetchingSkills ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-3">
+                  <RefreshCw className="w-6 h-6 animate-spin text-neutral-300" />
+                  <p className="text-xs font-medium text-neutral-400">Loading skills...</p>
+                </div>
+              ) : skills.length === 0 ? (
+                <div className="text-center py-12 px-6 border-2 border-dashed border-neutral-100 rounded-3xl bg-neutral-50/30 flex flex-col items-center">
+                  <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center mb-4">
+                    <BookOpen className="w-6 h-6 text-neutral-300" />
+                  </div>
+                  <p className="text-sm font-medium text-neutral-600 mb-2">No skills available.</p>
+                  <a
+                    href="/admin/chatbot?tab=skills"
+                    className="text-xs font-bold text-black underline underline-offset-4 hover:text-neutral-500 uppercase tracking-widest transition-colors"
+                  >
+                    Create in Settings
+                  </a>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {skills.map((skill) => {
+                    const isAssigned = (settings.activeSkills || []).includes(skill._id);
+                    return (
+                      <button
+                        key={skill._id}
+                        type="button"
+                        onClick={() => toggleSkill(skill._id)}
+                        className={`w-full flex items-center gap-4 px-5 py-4.5 rounded-2xl text-left border-2 cursor-pointer transition-all ${
+                          isAssigned
+                            ? 'bg-neutral-900 border-neutral-900 text-white shadow-xl shadow-black/10'
+                            : 'bg-white border-neutral-100 hover:border-neutral-200 hover:bg-neutral-50/50'
+                        }`}
+                      >
+                        <div
+                          className={`w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 transition-all ${
+                            isAssigned
+                              ? 'bg-white text-black'
+                              : 'border-2 border-neutral-200 bg-white'
+                          }`}
+                        >
+                          {isAssigned && <CheckCircle2 className="w-3.5 h-3.5" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-bold tracking-tight">{skill.displayName}</p>
+                            <span className="text-[9px] uppercase font-black text-purple-500 bg-purple-50 px-1.5 py-0.5 rounded-md border border-purple-100">
+                              {skill.category}
+                            </span>
+                            {!skill.isActive && (
+                              <span className="text-[9px] uppercase font-black text-red-500 bg-red-50 px-1.5 py-0.5 rounded-md border border-red-100">
+                                Inactive
+                              </span>
+                            )}
+                          </div>
+                          {skill.description && (
+                            <p
+                              className={`text-[11px] truncate mt-1 ${isAssigned ? 'text-neutral-400' : 'text-neutral-500'}`}
+                            >
+                              {skill.description}
                             </p>
                           )}
                         </div>

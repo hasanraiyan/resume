@@ -91,6 +91,7 @@ export async function PUT(request, { params }) {
     if (body.persona !== undefined) updates.persona = body.persona;
     if (body.tools !== undefined) updates.tools = body.tools;
     if (body.activeMCPs !== undefined) updates.activeMCPs = body.activeMCPs;
+    if (body.activeSkills !== undefined) updates.activeSkills = body.activeSkills;
     if (body.rateLimit !== undefined) updates.rateLimit = body.rateLimit;
     if (body.metadata !== undefined) updates.metadata = body.metadata;
 
