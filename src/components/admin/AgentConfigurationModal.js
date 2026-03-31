@@ -147,40 +147,72 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
 
   useEffect(() => {
     if (isOpen && agentData) {
+      // Fetch fresh agent data to ensure activeSkills is up-to-date
+      const fetchFreshAgentData = async () => {
+        try {
+          const res = await fetch(`/api/admin/agents/${agentData.agentId}`);
+          if (res.ok) {
+            const data = await res.json();
+            const fresh = data.agent || agentData;
+
+            setSettings({
+              providerId: fresh.providerId || '',
+              model: fresh.model || '',
+              summaryProviderId: fresh.summaryProviderId || '',
+              summaryModel: fresh.summaryModel || '',
+              persona: fresh.persona || '',
+              isActive: fresh.isActive ?? true,
+              tools: fresh.tools || [],
+              activeMCPs: fresh.activeMCPs || [],
+              activeSkills: fresh.activeSkills || [],
+              metadata: fresh.metadata || {},
+            });
+
+            const initialMainProviderId = fresh.providerId || fresh.defaultProvider || '';
+            if (initialMainProviderId) {
+              fetchModelOptions(initialMainProviderId, setModels, setFetchingModels);
+            } else {
+              setFetchingModels(false);
+              setModels([]);
+            }
+
+            if (fresh.agentId === AGENT_IDS.TELEGRAM_ASSISTANT && fresh.summaryProviderId) {
+              fetchModelOptions(
+                fresh.summaryProviderId,
+                setSummaryModels,
+                setFetchingSummaryModels
+              );
+            } else {
+              setSummaryModels([]);
+              setFetchingSummaryModels(false);
+            }
+          } else {
+            // Fallback to agentData if fetch fails
+            setSettings({
+              providerId: agentData.providerId || '',
+              model: agentData.model || '',
+              summaryProviderId: agentData.summaryProviderId || '',
+              summaryModel: agentData.summaryModel || '',
+              persona: agentData.persona || '',
+              isActive: agentData.isActive ?? true,
+              tools: agentData.tools || [],
+              activeMCPs: agentData.activeMCPs || [],
+              activeSkills: agentData.activeSkills || [],
+              metadata: agentData.metadata || {},
+            });
+          }
+        } catch (error) {
+          console.error('Failed to fetch fresh agent data:', error);
+        }
+      };
+
       // Clear previous states to avoid flickering stale data
       setMetricsData(null);
       setModels([]);
       setFetchingMetrics(true);
       setFetchingModels(true);
 
-      setSettings({
-        providerId: agentData.providerId || '',
-        model: agentData.model || '',
-        summaryProviderId: agentData.summaryProviderId || '',
-        summaryModel: agentData.summaryModel || '',
-        persona: agentData.persona || '',
-        isActive: agentData.isActive ?? true,
-        tools: agentData.tools || [],
-        activeMCPs: agentData.activeMCPs || [],
-        activeSkills: agentData.activeSkills || [],
-        metadata: agentData.metadata || {},
-      });
-
-      const initialMainProviderId = agentData.providerId || agentData.defaultProvider || '';
-      if (initialMainProviderId) {
-        fetchModelOptions(initialMainProviderId, setModels, setFetchingModels);
-      } else {
-        setFetchingModels(false);
-        setModels([]);
-      }
-
-      if (agentData.agentId === AGENT_IDS.TELEGRAM_ASSISTANT && agentData.summaryProviderId) {
-        fetchModelOptions(agentData.summaryProviderId, setSummaryModels, setFetchingSummaryModels);
-      } else {
-        setSummaryModels([]);
-        setFetchingSummaryModels(false);
-      }
-
+      fetchFreshAgentData();
       fetchMCPs();
       fetchSkills();
       fetchMetrics(agentData.agentId);

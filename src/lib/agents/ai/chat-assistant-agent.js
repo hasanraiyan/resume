@@ -15,7 +15,11 @@ import { getBackendMCPConfig } from '@/lib/mcpConfig';
 import { getBackendSkillConfig } from '@/lib/skillConfig';
 import { portfolioTools } from '../utils/portfolio-tools';
 import { createAdminTools } from '../utils/admin-tools';
-import { createLoadSkillTool, buildSkillsSystemPrompt } from '../utils/skill-tools';
+import {
+  createLoadSkillTool,
+  buildSkillsSystemPrompt,
+  createSkillAdminTools,
+} from '../utils/skill-tools';
 import { MultiServerMCPClient } from '@langchain/mcp-adapters';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import {
@@ -196,6 +200,7 @@ class ChatAgent extends BaseAgent {
 
       if (isAdmin) {
         allTools.push(...createAdminTools());
+        allTools.push(...createSkillAdminTools());
       }
 
       if (allActiveConfigs.length > 0) {
