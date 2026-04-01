@@ -1,0 +1,16 @@
+
+> resume@0.1.0 dev
+> next dev --turbopack
+
+ ⚠ Port 3000 is in use by an unknown process, using available port 3003 instead.
+   ▲ Next.js 15.5.9 (Turbopack)
+   - Local:        http://localhost:3003
+   - Network:      http://192.168.0.2:3003
+   - Environments: .env
+   - Experiments (use with caution):
+     · serverActions
+
+ ✓ Starting...
+ ○ Compiling middleware ...
+ ✓ Compiled middleware in 1117ms
+ ✓ Ready in 4.1s

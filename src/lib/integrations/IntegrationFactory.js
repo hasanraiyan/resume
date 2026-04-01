@@ -1,6 +1,7 @@
 import { TelegramAdapter } from './adapters/TelegramAdapter.js';
 import { WhatsAppAdapter } from './adapters/WhatsAppAdapter.js';
 import { TwilioAdapter } from './adapters/TwilioAdapter.js';
+import { TwilioSmsAdapter } from './adapters/TwilioSmsAdapter.js';
 
 /**
  * Integration Factory
@@ -27,6 +28,8 @@ export class IntegrationFactory {
         return new WhatsAppAdapter(credentials);
       case 'twilio':
         return new TwilioAdapter(credentials);
+      case 'sms':
+        return new TwilioSmsAdapter(credentials);
       default:
         console.warn(`No integration adapter found for platform: ${platform}`);
         return null;

@@ -16,7 +16,7 @@ const IntegrationSettingsSchema = new mongoose.Schema(
     platform: {
       type: String,
       required: true,
-      enum: ['telegram', 'whatsapp', 'slack', 'twilio'], // Extendable
+      enum: ['telegram', 'whatsapp', 'slack', 'twilio', 'sms'], // Extendable
     },
     name: {
       type: String,
