@@ -39,15 +39,21 @@ export function evaluateMath(expr) {
   }
 
   function parseFactor() {
-    if (peek() === '-') {
-      consume();
-      return -parseFactor();
+    let sign = 1;
+    // Handle chains of unary + and - iteratively to avoid deep recursion
+    while (pos < sanitized.length) {
+      const ch = peek();
+      if (ch === '+') {
+        consume();
+      } else if (ch === '-') {
+        consume();
+        sign = -sign;
+      } else {
+        break;
+      }
     }
-    if (peek() === '+') {
-      consume();
-      return parseFactor();
-    }
-    return parseNumber();
+    const value = parseNumber();
+    return sign * value;
   }
 
   function parseTerm() {
