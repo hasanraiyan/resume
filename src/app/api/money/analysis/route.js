@@ -97,8 +97,13 @@ export async function GET(request) {
       { $group: { _id: '$type', total: { $sum: '$amount' } } },
     ]);
 
-    const totalExpense = totals.find((t) => t._id === 'expense')?.total || 0;
-    const totalIncome = totals.find((t) => t._id === 'income')?.total || 0;
+    let totalExpense = 0;
+    let totalIncome = 0;
+
+    for (const t of totals) {
+      if (t._id === 'expense') totalExpense = t.total;
+      else if (t._id === 'income') totalIncome = t.total;
+    }
 
     return NextResponse.json({
       success: true,
