@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useMoney } from '@/context/MoneyContext';
 import { Plus, X, Check, ArrowLeftRight } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { evaluateMath } from '@/utils/math';
 
 const IconRenderer = dynamic(() => import('./IconRenderer'), { ssr: false });
 
@@ -52,10 +53,8 @@ export default function AddTransactionModal() {
       setCurrentInput((prev) => prev + val);
     } else if (val === '=') {
       try {
-        // Simple eval for calculator
-        let expr = currentInput.replace(/x/g, '*').replace(/\//g, '/');
-        // eslint-disable-next-line no-eval
-        const result = Function('"use strict"; return (' + expr + ')')();
+        const expr = currentInput.replace(/x/g, '*');
+        const result = evaluateMath(expr);
         setCurrentInput(String(Math.round(result * 100) / 100));
       } catch {
         setCurrentInput('Error');
