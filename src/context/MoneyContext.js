@@ -8,6 +8,7 @@ const initialState = {
   accounts: [],
   categories: [],
   transactions: [],
+  allTransactions: [],
   analysis: null,
   isLoading: false,
   isSyncing: true,
@@ -51,6 +52,8 @@ function moneyReducer(state, action) {
       return { ...state, categories: action.payload };
     case 'SET_TRANSACTIONS':
       return { ...state, transactions: action.payload };
+    case 'SET_ALL_TRANSACTIONS':
+      return { ...state, allTransactions: action.payload };
     case 'SET_ANALYSIS':
       return { ...state, analysis: action.payload };
     case 'SET_PERIOD':
@@ -73,24 +76,23 @@ export function MoneyProvider({ children }) {
 
   const fetchData = useCallback(async () => {
     try {
+      dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_SYNCING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
 
-      const now = new Date();
-      const month = now.getMonth() + 1;
-      const year = now.getFullYear();
-
-      const [accData, catData, transData] = await Promise.all([
+      const [accData, catData, transData, allTransData] = await Promise.all([
         fetch('/api/money/accounts').then(readJson),
         fetch('/api/money/categories').then(readJson),
         fetch(
           `/api/money/transactions?startDate=${encodeURIComponent(state.periodStart)}&endDate=${encodeURIComponent(state.periodEnd)}`
         ).then(readJson),
+        fetch('/api/money/transactions').then(readJson),
       ]);
 
       dispatch({ type: 'SET_ACCOUNTS', payload: accData.accounts || [] });
       dispatch({ type: 'SET_CATEGORIES', payload: catData.categories || [] });
       dispatch({ type: 'SET_TRANSACTIONS', payload: transData.transactions || [] });
+      dispatch({ type: 'SET_ALL_TRANSACTIONS', payload: allTransData.transactions || [] });
     } catch (error) {
       console.error('Failed to fetch finance data:', error);
       dispatch({
@@ -98,6 +100,7 @@ export function MoneyProvider({ children }) {
         payload: 'Failed to load finance data. Please try again.',
       });
     } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
       dispatch({ type: 'SET_SYNCING', payload: false });
     }
   }, [state.periodEnd, state.periodStart]);
@@ -129,6 +132,7 @@ export function MoneyProvider({ children }) {
       return data.transaction;
     } catch (error) {
       console.error('Failed to add transaction:', error);
+      throw error;
     }
   };
 
@@ -138,6 +142,7 @@ export function MoneyProvider({ children }) {
       await fetchData();
     } catch (error) {
       console.error('Failed to delete transaction:', error);
+      throw error;
     }
   };
 
@@ -152,6 +157,7 @@ export function MoneyProvider({ children }) {
       return data.transaction;
     } catch (error) {
       console.error('Failed to update transaction:', error);
+      throw error;
     }
   };
 
@@ -166,6 +172,7 @@ export function MoneyProvider({ children }) {
       return data.account;
     } catch (error) {
       console.error('Failed to add account:', error);
+      throw error;
     }
   };
 
@@ -180,6 +187,7 @@ export function MoneyProvider({ children }) {
       return data.account;
     } catch (error) {
       console.error('Failed to update account:', error);
+      throw error;
     }
   };
 
@@ -189,6 +197,7 @@ export function MoneyProvider({ children }) {
       await fetchData();
     } catch (error) {
       console.error('Failed to delete account:', error);
+      throw error;
     }
   };
 
@@ -203,6 +212,7 @@ export function MoneyProvider({ children }) {
       return data.category;
     } catch (error) {
       console.error('Failed to add category:', error);
+      throw error;
     }
   };
 
@@ -217,6 +227,7 @@ export function MoneyProvider({ children }) {
       return data.category;
     } catch (error) {
       console.error('Failed to update category:', error);
+      throw error;
     }
   };
 
@@ -226,6 +237,7 @@ export function MoneyProvider({ children }) {
       await fetchData();
     } catch (error) {
       console.error('Failed to delete category:', error);
+      throw error;
     }
   };
 
@@ -259,8 +271,8 @@ export function MoneyProvider({ children }) {
   const accountsWithBalance = state.accounts.map((account) => {
     let balance = account.initialBalance || 0;
 
-    // Process all transactions
-    state.transactions.forEach((transaction) => {
+    // Balances must use the full ledger, not the currently selected reporting period.
+    state.allTransactions.forEach((transaction) => {
       if (transaction.type === 'expense' && transaction.account?.id === account.id) {
         balance -= transaction.amount;
       } else if (transaction.type === 'income' && transaction.account?.id === account.id) {

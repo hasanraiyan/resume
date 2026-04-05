@@ -3,17 +3,8 @@ import dbConnect from '@/lib/dbConnect';
 import Account from '@/models/Account';
 import Category from '@/models/Category';
 import Transaction from '@/models/Transaction';
-import FinanceSyncState from '@/models/FinanceSyncState';
 import { serializeAccount, serializeCategory } from '@/lib/money-serializers';
 import { requireAdminAuth } from '@/lib/money-auth';
-
-async function getSyncState() {
-  let state = await FinanceSyncState.findOne({ key: 'singleton' });
-  if (!state) {
-    state = await FinanceSyncState.create({ key: 'singleton', resetVersion: 0, resetAt: null });
-  }
-  return state;
-}
 
 export async function POST() {
   const session = await requireAdminAuth();
@@ -21,10 +12,7 @@ export async function POST() {
 
   try {
     await dbConnect();
-
-    const state = await getSyncState();
     const resetAt = new Date();
-    const nextResetVersion = (state.resetVersion || 0) + 1;
 
     await Promise.all([
       Account.updateMany(
@@ -38,11 +26,6 @@ export async function POST() {
       Transaction.updateMany(
         { deletedAt: null },
         { $set: { deletedAt: resetAt }, $inc: { syncVersion: 1 } }
-      ),
-      FinanceSyncState.updateOne(
-        { key: 'singleton' },
-        { $set: { resetVersion: nextResetVersion, resetAt } },
-        { upsert: true }
       ),
     ]);
 
@@ -123,10 +106,6 @@ export async function POST() {
 
     return NextResponse.json({
       success: true,
-      syncState: {
-        resetVersion: nextResetVersion,
-        resetAt: resetAt.toISOString(),
-      },
       accounts: accounts.map((a) => serializeAccount(a.toObject())),
       categories: [...expenseCategories, ...incomeCategories].map((c) =>
         serializeCategory(c.toObject())

@@ -41,7 +41,10 @@ export async function DELETE(request, { params }) {
     if (!id) {
       return NextResponse.json({ success: false, message: 'Missing id' }, { status: 400 });
     }
-    await Account.deleteOne({ _id: id });
+    await Account.findByIdAndUpdate(id, {
+      $set: { deletedAt: new Date() },
+      $inc: { syncVersion: 1 },
+    });
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(
