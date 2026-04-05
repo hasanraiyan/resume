@@ -255,8 +255,35 @@ export function MoneyProvider({ children }) {
     .filter((transaction) => transaction.type === 'income')
     .reduce((sum, transaction) => sum + transaction.amount, 0);
 
-  const totalBalance = state.accounts.reduce(
-    (sum, account) => sum + (account.initialBalance || 0),
+  // Calculate current balance for each account based on transactions
+  const accountsWithBalance = state.accounts.map((account) => {
+    let balance = account.initialBalance || 0;
+
+    // Process all transactions
+    state.transactions.forEach((transaction) => {
+      if (transaction.type === 'expense' && transaction.account?.id === account.id) {
+        balance -= transaction.amount;
+      } else if (transaction.type === 'income' && transaction.account?.id === account.id) {
+        balance += transaction.amount;
+      } else if (transaction.type === 'transfer') {
+        if (transaction.account?.id === account.id) {
+          balance -= transaction.amount;
+        }
+        if (transaction.toAccount?.id === account.id) {
+          balance += transaction.amount;
+        }
+      }
+    });
+
+    return {
+      ...account,
+      currentBalance: balance,
+    };
+  });
+
+  // Calculate total balance from current balances, not just initial balances
+  const totalBalance = accountsWithBalance.reduce(
+    (sum, account) => sum + (account.currentBalance || 0),
     0
   );
 
@@ -265,6 +292,7 @@ export function MoneyProvider({ children }) {
     totalExpense,
     totalIncome,
     totalBalance,
+    accountsWithBalance,
     fetchData,
     fetchAnalysis,
     addTransaction,

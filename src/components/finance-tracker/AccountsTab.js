@@ -35,6 +35,7 @@ const iconColors = [
 export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
   const {
     accounts,
+    accountsWithBalance,
     totalBalance,
     totalExpense,
     totalIncome,
@@ -42,6 +43,9 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
     updateAccount,
     deleteAccount,
   } = useMoney();
+
+  // Use accountsWithBalance if available, otherwise fall back to accounts
+  const displayAccounts = accountsWithBalance || accounts;
   const [editingAccount, setEditingAccount] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [menuOpen, setMenuOpen] = useState(null);
@@ -148,7 +152,7 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
             </button>
           </div>
 
-          {accounts.length === 0 ? (
+          {displayAccounts.length === 0 ? (
             <div className="bg-white border border-[#e5e3d8] rounded-xl p-12 text-center">
               <div className="w-16 h-16 rounded-2xl bg-[#f0f5f2] flex items-center justify-center mx-auto mb-4">
                 <PurseSVG className="w-8 h-8 text-[#7c8e88]" />
@@ -166,7 +170,7 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {accounts.map((account, index) => {
+              {displayAccounts.map((account, index) => {
                 const colorSet = iconColors[index % iconColors.length];
                 const isCustomSvg = ['rupay', 'ippb', 'pnb'].includes(account.icon);
                 return (
@@ -207,13 +211,29 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
                     </div>
                     <div className="mt-4">
                       <p className="font-bold text-sm text-[#1e3a34]">{account.name}</p>
-                      <p className="text-xs text-[#7c8e88] mt-0.5">Initial Balance</p>
-                      <p className="text-lg font-bold text-[#1e3a34] mt-1">
-                        ₹
-                        {account.initialBalance.toLocaleString('en-IN', {
-                          minimumFractionDigits: 2,
-                        })}
-                      </p>
+                      <div className="mt-2 space-y-1">
+                        <div className="flex justify-between items-center">
+                          <p className="text-xs text-[#7c8e88]">Initial Balance</p>
+                          <p className="text-sm font-bold text-[#1e3a34]">
+                            ₹
+                            {account.initialBalance.toLocaleString('en-IN', {
+                              minimumFractionDigits: 2,
+                            })}
+                          </p>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <p className="text-xs text-[#7c8e88]">Current Balance</p>
+                          <p
+                            className={`text-sm font-bold ${(account.currentBalance || account.initialBalance) >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'}`}
+                          >
+                            ₹
+                            {(account.currentBalance || account.initialBalance).toLocaleString(
+                              'en-IN',
+                              { minimumFractionDigits: 2 }
+                            )}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );
