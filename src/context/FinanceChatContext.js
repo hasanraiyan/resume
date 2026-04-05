@@ -10,8 +10,19 @@ const WELCOME_MESSAGE = {
   content:
     "Hi! I'm your Finance Assistant. I can help you understand your spending habits, track budgets, and get insights about your finances. How can I help you today?",
   steps: [],
+  uiBlocks: [],
   timestamp: new Date(),
 };
+
+function createToolStep(toolName, label, toolCallId) {
+  return {
+    id: toolCallId || `${toolName}-${Date.now()}`,
+    type: 'tool',
+    toolName,
+    label,
+    done: false,
+  };
+}
 
 export function FinanceChatProvider({ children }) {
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
@@ -36,6 +47,7 @@ export function FinanceChatProvider({ children }) {
         role: 'assistant',
         content: '',
         steps: [],
+        uiBlocks: [],
         timestamp: new Date(),
       };
 
@@ -65,34 +77,107 @@ export function FinanceChatProvider({ children }) {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let fullContent = '';
+        let buffer = '';
+        let hasUiBlocks = false;
+
+        const applyStreamEvent = (event) => {
+          if (event.type === 'content') {
+            fullContent += event.message;
+            setMessages((prev) =>
+              prev.map((m) => (m.id === assistantMsgId ? { ...m, content: fullContent } : m))
+            );
+          } else if (event.type === 'tool_start') {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMsgId
+                  ? {
+                      ...m,
+                      steps: [
+                        ...(m.steps || []),
+                        createToolStep(event.toolName, event.label, event.toolCallId),
+                      ],
+                    }
+                  : m
+              )
+            );
+          } else if (event.type === 'tool_end') {
+            if ((event.uiBlocks || []).length > 0) {
+              hasUiBlocks = true;
+            }
+
+            setMessages((prev) =>
+              prev.map((m) => {
+                if (m.id !== assistantMsgId) return m;
+
+                const nextSteps = (m.steps || []).map((step) => {
+                  const matchesById = event.toolCallId && step.id === event.toolCallId;
+                  const matchesFallback =
+                    !event.toolCallId &&
+                    step.toolName === event.toolName &&
+                    step.type === 'tool' &&
+                    !step.done;
+
+                  return matchesById || matchesFallback ? { ...step, done: true } : step;
+                });
+
+                const nextBlocks = [...(m.uiBlocks || [])];
+                for (const block of event.uiBlocks || []) {
+                  const exists = nextBlocks.some(
+                    (existing) =>
+                      existing.kind === block.kind &&
+                      JSON.stringify(existing.data) === JSON.stringify(block.data)
+                  );
+
+                  if (!exists) {
+                    nextBlocks.push(block);
+                  }
+                }
+
+                return {
+                  ...m,
+                  steps: nextSteps,
+                  uiBlocks: nextBlocks,
+                };
+              })
+            );
+          }
+        };
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const text = decoder.decode(value);
-          const lines = text.split('\n').filter((line) => line.trim());
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
 
           for (const line of lines) {
+            if (!line.trim()) continue;
+
             try {
-              const event = JSON.parse(line);
-              if (event.type === 'content') {
-                fullContent += event.message;
-                setMessages((prev) =>
-                  prev.map((m) => (m.id === assistantMsgId ? { ...m, content: fullContent } : m))
-                );
-              }
+              applyStreamEvent(JSON.parse(line));
             } catch {
               // Skip malformed lines
             }
           }
         }
 
-        if (!fullContent.trim()) {
+        if (buffer.trim()) {
+          try {
+            applyStreamEvent(JSON.parse(buffer));
+          } catch {
+            // Ignore trailing partial payload
+          }
+        }
+
+        if (!fullContent.trim() && !hasUiBlocks) {
           setMessages((prev) =>
             prev.map((m) =>
               m.id === assistantMsgId
-                ? { ...m, content: "I wasn't able to generate a response. Please try again." }
+                ? {
+                    ...m,
+                    content: "I wasn't able to generate a response. Please try again.",
+                  }
                 : m
             )
           );
@@ -106,6 +191,9 @@ export function FinanceChatProvider({ children }) {
               ? {
                   ...m,
                   content: `Error: ${error.message || 'Something went wrong. Please try again.'}`,
+                  steps: (m.steps || []).map((step) =>
+                    step.type === 'tool' ? { ...step, done: true } : step
+                  ),
                 }
               : m
           )

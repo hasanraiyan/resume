@@ -2,11 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useFinanceChat } from '@/context/FinanceChatContext';
+import { useMoney } from '@/context/MoneyContext';
 import MessageList from '@/components/chatbot/MessageList';
 import ChatInput from '@/components/chatbot/ChatInput';
 
 export default function ChatTab() {
-  const { messages, sendMessage, isStreaming, clearChat } = useFinanceChat();
+  const { messages, sendMessage, isStreaming } = useFinanceChat();
+  const { setActiveTab } = useMoney();
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -50,6 +52,14 @@ export default function ChatTab() {
     }
   };
 
+  const handleUIInteract = (action) => {
+    if (!action) return;
+
+    if (action.type === 'switch_tab' && action.tab) {
+      setActiveTab(action.tab);
+    }
+  };
+
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col bg-[#fcfbf5] pb-16 lg:pb-0">
       {/* Messages */}
@@ -58,7 +68,7 @@ export default function ChatTab() {
           messages={messages}
           isLoading={isStreaming}
           messagesEndRef={messagesEndRef}
-          handleUIInteract={() => {}}
+          handleUIInteract={handleUIInteract}
           handleLinkClick={() => {}}
         />
       </div>

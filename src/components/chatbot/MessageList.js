@@ -1,16 +1,14 @@
 import { User, Bot } from 'lucide-react';
-import ToolCard from './ToolCard';
 import StepHistory from './StepHistory';
 import MdContent from './MdContent';
+import FinanceChatBlockRenderer from '@/components/finance-tracker/FinanceChatBlockRenderer';
 
 export default function MessageList({
   messages,
-  isLoading,
   messagesEndRef,
   handleUIInteract,
   handleLinkClick,
 }) {
-  const hasAssistantPlaceholder = messages.some((m) => m.role === 'assistant' && !m.content);
   return (
     <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3 bg-gradient-to-b from-white/50 to-neutral-50/50 custom-chat-scrollbar">
       {messages.map((message, index) => {
@@ -55,10 +53,7 @@ export default function MessageList({
             >
               {/* Show tool history for agents */}
               {isAssistant && message.steps?.length > 0 && (
-                <StepHistory
-                  steps={message.steps}
-                  onInteract={(block, action) => handleUIInteract(message.id, block, action)}
-                />
+                <StepHistory steps={message.steps} onInteract={handleUIInteract} />
               )}
 
               {message.content && (
@@ -76,6 +71,18 @@ export default function MessageList({
                       minute: '2-digit',
                     })}
                   </p>
+                </div>
+              )}
+
+              {isAssistant && message.uiBlocks?.length > 0 && (
+                <div className="mt-3 flex w-full flex-col gap-3">
+                  {message.uiBlocks.map((block, blockIndex) => (
+                    <FinanceChatBlockRenderer
+                      key={`${message.id}-block-${block.kind}-${blockIndex}`}
+                      block={block}
+                      onInteract={handleUIInteract}
+                    />
+                  ))}
                 </div>
               )}
             </div>
