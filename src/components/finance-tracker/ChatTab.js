@@ -6,7 +6,7 @@ import MessageList from '@/components/chatbot/MessageList';
 import ChatInput from '@/components/chatbot/ChatInput';
 
 export default function ChatTab() {
-  const { messages, sendMessage, isStreaming } = useFinanceChat();
+  const { messages, sendMessage, isStreaming, clearChat } = useFinanceChat();
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -19,6 +19,17 @@ export default function ChatTab() {
   const [selectedAgentId, setSelectedAgentId] = useState(null);
   const chatbotSettings = { aiName: 'Finance Assistant' };
   const activeQuote = null;
+
+  useEffect(() => {
+    if (messages.length === 1 && messages[0].id === 1) {
+      setInputMessage('');
+      setIsListening(false);
+      setActiveMCPs([]);
+      setIsToolsMenuOpen(false);
+      setIsModelSelectorOpen(false);
+      setSelectedAgentId(null);
+    }
+  }, [messages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
