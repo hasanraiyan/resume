@@ -7,10 +7,10 @@ import {
   ChevronRight,
   TrendingDown,
   TrendingUp,
-  Wallet,
   ArrowLeftRight,
   Search,
 } from 'lucide-react';
+import { PurseSVG } from '@/components/finance-tracker/IconRenderer';
 import dynamic from 'next/dynamic';
 
 import IconRenderer from './IconRenderer';
@@ -101,7 +101,7 @@ export default function RecordsTab() {
               <div
                 className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${netBalance >= 0 ? 'bg-[#1f644e]/10' : 'bg-[#c94c4c]/10'}`}
               >
-                <Wallet
+                <PurseSVG
                   className={`w-6 h-6 ${netBalance >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'}`}
                 />
               </div>

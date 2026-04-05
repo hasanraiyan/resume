@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useMoney } from '@/context/MoneyContext';
-import { MoreVertical, Plus, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import { MoreVertical, Plus, TrendingDown, TrendingUp } from 'lucide-react';
+import { PurseSVG } from '@/components/finance-tracker/IconRenderer';
 import dynamic from 'next/dynamic';
 
 const IconRenderer = dynamic(() => import('./IconRenderer'), { ssr: false });
@@ -101,7 +102,7 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             <div className="bg-white border border-[#e5e3d8] rounded-xl p-5 flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-[#1f644e]/10 flex items-center justify-center shrink-0">
-                <Wallet className="w-6 h-6 text-[#1f644e]" />
+                <PurseSVG className="w-6 h-6 text-[#1f644e]" />
               </div>
               <div>
                 <p className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider">
@@ -150,7 +151,7 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
           {accounts.length === 0 ? (
             <div className="bg-white border border-[#e5e3d8] rounded-xl p-12 text-center">
               <div className="w-16 h-16 rounded-2xl bg-[#f0f5f2] flex items-center justify-center mx-auto mb-4">
-                <Wallet className="w-8 h-8 text-[#7c8e88]" />
+                <PurseSVG className="w-8 h-8 text-[#7c8e88]" />
               </div>
               <p className="text-sm font-bold text-[#1e3a34] mb-1">No accounts yet</p>
               <p className="text-xs text-[#7c8e88] mb-4">

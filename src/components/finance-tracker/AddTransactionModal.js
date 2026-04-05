@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useMoney } from '@/context/MoneyContext';
-import { Plus, X, Check, ArrowLeftRight, ArrowUpRight, ArrowDownLeft, Wallet } from 'lucide-react';
+import { Plus, X, Check, ArrowLeftRight, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { PurseSVG } from '@/components/finance-tracker/IconRenderer';
 import dynamic from 'next/dynamic';
 import { evaluateMath } from '@/utils/math';
 
@@ -181,7 +182,7 @@ export default function AddTransactionModal() {
                     onClick={() => setShowAccountSelector('from')}
                     className="w-full border border-[#e5e3d8] bg-white py-2.5 px-3 rounded-xl text-sm font-bold text-[#1e3a34] flex items-center gap-2 hover:bg-[#f8f9f4] transition cursor-pointer"
                   >
-                    <Wallet className="w-4 h-4 text-[#7c8e88]" />
+                    <PurseSVG className="w-4 h-4 text-[#7c8e88]" />
                     {selectedAccount?.name || 'Select account'}
                   </button>
                 </div>
@@ -193,7 +194,7 @@ export default function AddTransactionModal() {
                     onClick={() => setShowAccountSelector('to')}
                     className="w-full border border-[#e5e3d8] bg-white py-2.5 px-3 rounded-xl text-sm font-bold text-[#1e3a34] flex items-center gap-2 hover:bg-[#f8f9f4] transition cursor-pointer"
                   >
-                    <Wallet className="w-4 h-4 text-[#7c8e88]" />
+                    <PurseSVG className="w-4 h-4 text-[#7c8e88]" />
                     {selectedToAccount?.name || 'Select account'}
                   </button>
                 </div>
@@ -208,7 +209,7 @@ export default function AddTransactionModal() {
                     onClick={() => setShowAccountSelector('main')}
                     className="w-full border border-[#e5e3d8] bg-white py-2.5 px-3 rounded-xl text-sm font-bold text-[#1e3a34] flex items-center gap-2 hover:bg-[#f8f9f4] transition cursor-pointer"
                   >
-                    <Wallet className="w-4 h-4 text-[#7c8e88]" />
+                    <PurseSVG className="w-4 h-4 text-[#7c8e88]" />
                     {selectedAccount?.name || 'Select'}
                   </button>
                 </div>

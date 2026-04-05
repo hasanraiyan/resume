@@ -6,11 +6,11 @@ import {
   ChevronDown,
   TrendingDown,
   TrendingUp,
-  Wallet,
   BarChart3,
   PieChart,
   ArrowLeftRight,
 } from 'lucide-react';
+import { PurseSVG } from '@/components/finance-tracker/IconRenderer';
 import { Shimmer } from './FinanceSkeletons';
 import dynamic from 'next/dynamic';
 
@@ -20,7 +20,7 @@ const viewOptions = [
   { id: 'expense', label: 'Expense', icon: TrendingDown },
   { id: 'income', label: 'Income', icon: TrendingUp },
   { id: 'flow', label: 'Flow', icon: BarChart3 },
-  { id: 'accounts', label: 'Accounts', icon: Wallet },
+  { id: 'accounts', label: 'Accounts', icon: PurseSVG },
 ];
 
 const periodOptions = ['Daily', 'Weekly', 'Monthly', '3 Months', '6 Months', 'Yearly'];

@@ -2,7 +2,8 @@
 
 import { useFinance } from '@/context/FinanceContext';
 import { Card } from '@/components/ui';
-import { Wallet, TrendingUp, TrendingDown, PiggyBank } from 'lucide-react';
+import { TrendingUp, TrendingDown, PiggyBank } from 'lucide-react';
+import { PurseSVG } from '@/components/finance-tracker/IconRenderer';
 
 export default function SummaryCards() {
   const { balance, totalIncome, totalExpenses, monthlyBudget } = useFinance();
@@ -13,7 +14,7 @@ export default function SummaryCards() {
     {
       title: 'Total Balance',
       value: balance,
-      icon: Wallet,
+      icon: PurseSVG,
       isNegative: balance < 0,
       accent: 'border-black',
     },

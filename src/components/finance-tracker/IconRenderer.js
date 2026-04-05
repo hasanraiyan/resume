@@ -61,11 +61,12 @@ function IPPBSVG({ className }) {
 }
 
 function PNBSVG({ className }) {
-  // Prefer using the real PNB logo placed at /public/images/pnb.png.
-  // If that file isn't present this will simply 404 and fall back to the existing
-  // simple SVG in other contexts. Using an <img> keeps sizing consistent with
-  // how IconRenderer is used elsewhere (tailwind className sizing).
   return <img src="/images/pnb.png" className={className} alt="PNB" />;
+}
+
+function PurseSVG({ className }) {
+  // Use the purse.svg from public/images
+  return <img src="/images/purse.svg" className={className} alt="Purse" />;
 }
 
 export default function IconRenderer({ name, className = 'w-4 h-4', fallback = 'circle' }) {
@@ -83,6 +84,10 @@ export default function IconRenderer({ name, className = 'w-4 h-4', fallback = '
   if (name === 'pnb' || name === 'pn-b' || name === 'pn_b') {
     return <PNBSVG className={className} />;
   }
+  // Custom local icon: purse
+  if (name === 'purse' || name === 'wallet') {
+    return <PurseSVG className={className} />;
+  }
 
   const pascalName =
     name
@@ -96,3 +101,5 @@ export default function IconRenderer({ name, className = 'w-4 h-4', fallback = '
     Icons.Circle;
   return <Icon className={className} />;
 }
+
+export { PurseSVG };

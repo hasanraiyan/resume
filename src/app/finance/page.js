@@ -16,7 +16,6 @@ import FinanceSettingsTab from '@/components/finance-tracker/FinanceSettingsTab'
 import {
   Receipt,
   BarChart3,
-  Wallet,
   Tag,
   Menu,
   Search,
@@ -27,12 +26,13 @@ import {
   Loader2,
   MessageCircle,
 } from 'lucide-react';
+import { PurseSVG } from '@/components/finance-tracker/IconRenderer';
 import { useCallback, useState } from 'react';
 
 const tabs = [
   { id: 'records', label: 'Records', icon: Receipt },
   { id: 'analysis', label: 'Analysis', icon: BarChart3 },
-  { id: 'accounts', label: 'Accounts', icon: Wallet },
+  { id: 'accounts', label: 'Accounts', icon: PurseSVG },
   { id: 'categories', label: 'Categories', icon: Tag },
   { id: 'chat', label: 'Chat', icon: MessageCircle },
   { id: 'settings', label: 'Settings', icon: Settings },
