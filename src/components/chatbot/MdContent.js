@@ -45,8 +45,12 @@ export default function MdContent({ content, onLinkClick, isUser = false }) {
           ),
           code({ node, inline, className, children }) {
             const match = /language-(\w+)/.exec(className || '');
+            const code = String(children);
+
             if (!inline && match) return <CodeBlock language={match[1]}>{children}</CodeBlock>;
-            if (!inline && !match) return <CodeBlock language="text">{children}</CodeBlock>;
+            if (!inline && !match && code.includes('\n')) {
+              return <CodeBlock language="text">{children}</CodeBlock>;
+            }
             return (
               <code className="bg-black/10 rounded px-1 py-0.5 font-mono text-[10px]">
                 {children}
