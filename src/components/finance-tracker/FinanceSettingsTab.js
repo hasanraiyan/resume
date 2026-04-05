@@ -104,7 +104,7 @@ export default function FinanceSettingsTab() {
             <div className="space-y-3">
               <div className="flex items-center justify-between py-2 border-b border-[#e5e3d8]/50">
                 <span className="text-sm text-[#7c8e88]">App</span>
-                <span className="text-sm font-bold text-[#1e3a34]">MyMoney</span>
+                <span className="text-sm font-bold text-[#1e3a34]">Pocketly</span>
               </div>
               <div className="flex items-center justify-between py-2 border-b border-[#e5e3d8]/50">
                 <span className="text-sm text-[#7c8e88]">Storage</span>

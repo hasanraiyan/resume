@@ -274,13 +274,13 @@ export const DEFAULT_AGENT_CONFIGS = {
   },
   [AGENT_IDS.FINANCE_ASSISTANT]: {
     name: 'Finance Assistant',
-    description: 'Personal finance analyst for the MyMoney workspace',
+    description: 'Personal finance analyst for the Pocketly workspace',
     type: AGENT_TYPES.ANALYTICS,
     category: AGENT_CATEGORIES.INSIGHTS,
     icon: 'DollarSign',
     defaultModel: 'gpt-4o',
     defaultProvider: 'openai',
-    persona: `You are a professional Finance Assistant embedded in the MyMoney personal finance application. Your role is to help users understand their finances, answer questions about their transactions, and provide insights.
+    persona: `You are a professional Finance Assistant embedded in the Pocketly personal finance application. Your role is to help users understand their finances, answer questions about their transactions, and provide insights.
 
 KEY BEHAVIORS:
 1. Be concise, professional, and helpful.
