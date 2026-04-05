@@ -26,6 +26,13 @@ class FinanceAssistantAgent extends BaseAgent {
     const persona = this.config.persona || '';
     const financeTools = createFinanceTools();
 
+    this.logger.info(`[TOOLS] Created ${financeTools.length} tools:`);
+    financeTools.forEach((t, i) => {
+      this.logger.info(
+        `  Tool ${i + 1}: name="${t.name}", description="${t.description?.substring(0, 80)}..."`
+      );
+    });
+
     const systemMessage = new SystemMessage({
       content: `${persona}
 
@@ -50,13 +57,26 @@ Be concise and provide actionable insights, not just raw data.`,
       messageModifier: async (msgs) => msgs,
     });
 
+    this.logger.info(
+      `[AGENT] Created ReactAgent with ${financeTools.length} tools, starting stream...`
+    );
+
     const eventStream = await agent.streamEvents({ messages }, { version: 'v2' });
 
     for await (const event of eventStream) {
+      this.logger.info(
+        `[EVENT] type="${event.event}", name="${event.name || 'N/A'}"`,
+        JSON.stringify(event.data).substring(0, 200)
+      );
+
       if (event.event === 'on_chat_model_stream' && event.data.chunk?.content) {
         yield { type: 'content', message: event.data.chunk.content };
       } else if (event.event === 'on_tool_start') {
         yield { type: 'status', message: `🔍 Looking up ${event.name}...` };
+      } else if (event.event === 'on_tool_end') {
+        this.logger.info(
+          `[TOOL_RESULT] name="${event.name}", output length="${JSON.stringify(event.data.output || '').length}"`
+        );
       }
     }
   }
