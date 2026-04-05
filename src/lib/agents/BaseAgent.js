@@ -291,8 +291,9 @@ class BaseAgent {
       for await (const chunk of this._onStreamExecute(input)) {
         if (chunk.type === 'tool_result') {
           toolCallCount++;
-          toolNames.push(chunk.name || 'unknown');
-          this.logger.debug(`Tool #${toolCallCount}: ${chunk.name}`);
+          const toolName = chunk.name || chunk.toolName || 'unknown';
+          toolNames.push(toolName);
+          this.logger.debug(`Tool #${toolCallCount}: ${toolName}`);
         }
         yield chunk;
       }

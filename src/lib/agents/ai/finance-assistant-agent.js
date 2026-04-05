@@ -7,6 +7,18 @@ import { createFinanceTools } from '../utils/finance-tools';
 function parseToolOutput(output) {
   if (!output) return null;
 
+  if (output?.output) {
+    return parseToolOutput(output.output);
+  }
+
+  if (Array.isArray(output)) {
+    return output;
+  }
+
+  if (typeof output === 'object') {
+    return output;
+  }
+
   if (typeof output === 'string') {
     try {
       return JSON.parse(output);
@@ -15,7 +27,7 @@ function parseToolOutput(output) {
     }
   }
 
-  return output;
+  return null;
 }
 
 function getToolLabel(toolName) {
@@ -199,12 +211,20 @@ When you use tools, the app may automatically show supporting finance UI cards f
 
         const toolCallId = event.run_id || event.data?.run_id || null;
         const toolName = activeToolCalls.get(toolCallId) || event.name;
+        const uiBlocks = buildUiBlocks(toolName, event.data.output);
+
+        yield {
+          type: 'tool_result',
+          name: toolName,
+          toolCallId,
+          output: event.data.output,
+        };
 
         yield {
           type: 'tool_end',
           toolName,
           toolCallId,
-          uiBlocks: buildUiBlocks(toolName, event.data.output),
+          uiBlocks,
         };
 
         if (toolCallId) {

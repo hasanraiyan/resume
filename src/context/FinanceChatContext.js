@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { Landmark, ListTree, ReceiptText, Tags } from 'lucide-react';
 
 const FinanceChatContext = createContext(null);
 
@@ -14,12 +15,20 @@ const WELCOME_MESSAGE = {
   timestamp: new Date(),
 };
 
+const TOOL_ICONS = {
+  get_accounts: Landmark,
+  get_analysis: ListTree,
+  get_transactions: ReceiptText,
+  get_categories: Tags,
+};
+
 function createToolStep(toolName, label, toolCallId) {
   return {
     id: toolCallId || `${toolName}-${Date.now()}`,
     type: 'tool',
     toolName,
     label,
+    Icon: TOOL_ICONS[toolName] || Landmark,
     done: false,
   };
 }
