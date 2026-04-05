@@ -99,7 +99,7 @@ export default function RecordsTab() {
   };
 
   return (
-    <div className="pb-4 pt-6">
+    <div className="mb-6 pb-4 pt-6">
       <div className="w-full px-4 lg:px-6">
         <div className="w-full max-w-6xl mx-auto">
           {/* Summary Cards */}
