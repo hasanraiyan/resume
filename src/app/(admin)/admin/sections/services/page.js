@@ -3,6 +3,8 @@ import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 import { Button, Card, Badge } from '@/components/ui';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export default async function ServicesPage() {
   console.log('📋 [ADMIN SERVICES PAGE] Loading services admin page...');
   const services = await getAllServices();
