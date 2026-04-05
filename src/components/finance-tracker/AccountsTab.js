@@ -32,6 +32,18 @@ const iconColors = [
   { bg: 'bg-red-100', text: 'text-red-500', border: 'border-red-200' },
 ];
 
+const getAccountIconClass = (icon, context = 'card') => {
+  if (context === 'picker') {
+    if (icon === 'ippb' || icon === 'pnb') return 'w-7 h-5 object-contain';
+    if (icon === 'rupay') return 'w-5 h-5 object-contain';
+    return 'w-4 h-4';
+  }
+
+  if (icon === 'ippb' || icon === 'pnb') return 'w-10 h-8 object-contain';
+  if (icon === 'rupay') return 'w-7 h-7 object-contain';
+  return 'w-6 h-6';
+};
+
 export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
   const {
     accounts,
@@ -172,7 +184,6 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {displayAccounts.map((account, index) => {
                 const colorSet = iconColors[index % iconColors.length];
-                const isCustomSvg = ['rupay', 'ippb', 'pnb'].includes(account.icon);
                 return (
                   <div
                     key={account.id}
@@ -180,9 +191,12 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
                   >
                     <div className="flex items-start justify-between">
                       <div
-                        className={`${isCustomSvg ? 'w-12 h-9' : 'w-12 h-12'} ${colorSet.bg} ${colorSet.text} rounded-xl ${colorSet.border} border flex items-center justify-center`}
+                        className={`w-12 h-12 ${colorSet.bg} ${colorSet.text} rounded-xl ${colorSet.border} border flex items-center justify-center overflow-hidden shrink-0`}
                       >
-                        <IconRenderer name={account.icon} className="w-full h-full" />
+                        <IconRenderer
+                          name={account.icon}
+                          className={getAccountIconClass(account.icon)}
+                        />
                       </div>
                       <div className="relative">
                         <button
@@ -293,7 +307,7 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
                           : 'bg-[#f0f5f2] text-[#7c8e88] hover:bg-[#d6dfd9]'
                       }`}
                     >
-                      <IconRenderer name={icon} className="w-4 h-4" />
+                      <IconRenderer name={icon} className={getAccountIconClass(icon, 'picker')} />
                     </button>
                   ))}
                 </div>
