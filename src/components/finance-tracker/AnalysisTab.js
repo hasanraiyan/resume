@@ -2,20 +2,33 @@
 
 import { useState, useEffect } from 'react';
 import { useMoney } from '@/context/MoneyContext';
-import { ChevronDown, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import {
+  ChevronDown,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
+  BarChart3,
+  PieChart,
+  ArrowLeftRight,
+} from 'lucide-react';
 import { Shimmer } from './FinanceSkeletons';
 import dynamic from 'next/dynamic';
 
 const IconRenderer = dynamic(() => import('./IconRenderer'), { ssr: false });
 
-const viewOptions = ['Expense overview', 'Income overview', 'Expense flow', 'Account analysis'];
+const viewOptions = [
+  { id: 'expense', label: 'Expense', icon: TrendingDown },
+  { id: 'income', label: 'Income', icon: TrendingUp },
+  { id: 'flow', label: 'Flow', icon: BarChart3 },
+  { id: 'accounts', label: 'Accounts', icon: Wallet },
+];
+
 const periodOptions = ['Daily', 'Weekly', 'Monthly', '3 Months', '6 Months', 'Yearly'];
 
 export default function AnalysisTab() {
   const { analysis, fetchAnalysis, periodStart, periodEnd, setPeriod } = useMoney();
-  const [viewMode, setViewMode] = useState('Expense overview');
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [showFilter, setShowFilter] = useState(false);
+  const [viewMode, setViewMode] = useState('expense');
+  const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('Weekly');
 
   useEffect(() => {
@@ -47,7 +60,7 @@ export default function AnalysisTab() {
     }
     setSelectedPeriod(period);
     setPeriod(start.toISOString(), now.toISOString());
-    setShowFilter(false);
+    setShowPeriodDropdown(false);
   };
 
   const formatPeriodRange = () => {
@@ -61,7 +74,7 @@ export default function AnalysisTab() {
     analysis?.categoryBreakdown?.filter((item) => item.type === 'expense') || [];
   const incomeCategories =
     analysis?.categoryBreakdown?.filter((item) => item.type === 'income') || [];
-  const currentCategories = viewMode === 'Income overview' ? incomeCategories : expenseCategories;
+  const currentCategories = viewMode === 'income' ? incomeCategories : expenseCategories;
   const total = currentCategories.reduce((sum, item) => sum + item.total, 0) || 1;
 
   const dailyFlowMap = (analysis?.dailyFlow || []).reduce((acc, entry) => {
@@ -72,17 +85,15 @@ export default function AnalysisTab() {
     return acc;
   }, {});
   const dailyEntries = Object.entries(dailyFlowMap);
-  const maxDaily = Math.max(...dailyEntries.map(([, data]) => data.expense), 1);
+  const maxDaily = Math.max(
+    ...dailyEntries.map(([, data]) => Math.max(data.expense, data.income)),
+    1
+  );
 
   const accountData = (analysis?.accountAnalysis || []).reduce((acc, entry) => {
     const key = entry.accountId || entry.name;
     if (!acc[key]) {
-      acc[key] = {
-        name: entry.name,
-        icon: entry.icon,
-        expense: 0,
-        income: 0,
-      };
+      acc[key] = { name: entry.name, icon: entry.icon, expense: 0, income: 0 };
     }
     acc[key][entry.type] = entry.total;
     return acc;
@@ -92,341 +103,387 @@ export default function AnalysisTab() {
     1
   );
 
-  const DataSkeleton = () => (
-    <div className="px-4 space-y-3 mt-4">
-      <div className="flex items-center gap-4 mb-6 justify-center">
-        <Shimmer className="w-[140px] h-[140px] rounded-full" />
-        <div className="space-y-2.5">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="flex items-center gap-2">
-              <Shimmer className="w-2.5 h-2.5 rounded-full" />
-              <Shimmer className="w-16 h-3" />
-              <Shimmer className="w-10 h-3" />
+  const chartColors = [
+    '#1f644e',
+    '#2d8a6e',
+    '#3ba88a',
+    '#5cbfa6',
+    '#7ed6c2',
+    '#4a86e8',
+    '#9333ea',
+    '#f59e0b',
+  ];
+
+  const EmptyState = ({ title, description }) => (
+    <div className="flex flex-col items-center justify-center py-16 px-6">
+      <div className="w-16 h-16 rounded-2xl bg-[#f0f5f2] flex items-center justify-center mb-4">
+        <PieChart className="w-8 h-8 text-[#7c8e88]" />
+      </div>
+      <p className="text-sm font-bold text-[#1e3a34] mb-1">{title}</p>
+      <p className="text-xs text-[#7c8e88] text-center">{description}</p>
+    </div>
+  );
+
+  const renderCategoryOverview = () => {
+    if (currentCategories.length === 0) {
+      return (
+        <EmptyState
+          title={`No ${viewMode === 'income' ? 'income' : 'expense'} data`}
+          description="Transactions in this period will appear here"
+        />
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* Donut Chart + Legend */}
+        <div className="bg-white border border-[#e5e3d8] rounded-xl p-6">
+          <div className="flex flex-col sm:flex-row items-center gap-6">
+            {/* Donut */}
+            <div className="relative shrink-0">
+              <svg width="160" height="160" className="-rotate-90">
+                <circle cx="80" cy="80" r="56" fill="none" stroke="#f0f5f2" strokeWidth="24" />
+                {(() => {
+                  let cum = 0;
+                  return currentCategories.slice(0, 6).map((cat, i) => {
+                    const pct = cat.total / total;
+                    const circ = 2 * Math.PI * 56;
+                    const dash = circ * pct;
+                    const offset = -circ * cum;
+                    cum += pct;
+                    return (
+                      <circle
+                        key={cat.categoryId || i}
+                        cx="80"
+                        cy="80"
+                        r="56"
+                        fill="none"
+                        stroke={chartColors[i % chartColors.length]}
+                        strokeWidth="24"
+                        strokeDasharray={`${dash} ${circ - dash}`}
+                        strokeDashoffset={offset}
+                        className="transition-all duration-700"
+                      />
+                    );
+                  });
+                })()}
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider">
+                  Total
+                </span>
+                <span className="text-lg font-bold text-[#1e3a34]">
+                  ₹{total.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                </span>
+              </div>
+            </div>
+
+            {/* Legend */}
+            <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-2">
+              {currentCategories.slice(0, 6).map((cat, i) => (
+                <div key={cat.categoryId || i} className="flex items-center gap-2">
+                  <div
+                    className="w-3 h-3 rounded-full shrink-0"
+                    style={{ backgroundColor: chartColors[i % chartColors.length] }}
+                  />
+                  <span className="text-xs text-[#7c8e88] truncate flex-1">{cat.name}</span>
+                  <span className="text-xs font-bold text-[#1e3a34]">
+                    {((cat.total / total) * 100).toFixed(0)}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Category Bars */}
+        <div className="bg-white border border-[#e5e3d8] rounded-xl p-6">
+          <h3 className="text-sm font-bold text-[#1e3a34] mb-4">Breakdown</h3>
+          <div className="space-y-4">
+            {currentCategories.map((cat, i) => {
+              const pct = (cat.total / total) * 100;
+              return (
+                <div key={cat.categoryId || i}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                        style={{ backgroundColor: chartColors[i % chartColors.length] }}
+                      >
+                        <IconRenderer name={cat.icon} className="w-4 h-4" />
+                      </div>
+                      <span className="text-sm font-bold text-[#1e3a34]">{cat.name}</span>
+                    </div>
+                    <span className="text-sm font-bold text-[#1e3a34]">
+                      ₹{cat.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-2 bg-[#f0f5f2] rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{
+                          width: `${pct}%`,
+                          backgroundColor: chartColors[i % chartColors.length],
+                        }}
+                      />
+                    </div>
+                    <span className="text-xs font-bold text-[#7c8e88] w-10 text-right">
+                      {pct.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderExpenseFlow = () => {
+    if (dailyEntries.length === 0) {
+      return (
+        <EmptyState title="No flow data" description="Daily transaction data will appear here" />
+      );
+    }
+
+    return (
+      <div className="bg-white border border-[#e5e3d8] rounded-xl p-6">
+        <h3 className="text-sm font-bold text-[#1e3a34] mb-4">Daily Flow</h3>
+        <div className="h-48 flex items-end gap-1.5 mb-4">
+          {dailyEntries.map(([date, data], i) => {
+            const height = (data.expense / maxDaily) * 100;
+            const incomeHeight = (data.income / maxDaily) * 100;
+            return (
+              <div
+                key={date}
+                className="flex-1 flex flex-col items-center justify-end h-full group relative"
+              >
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1e3a34] text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap z-10">
+                  ₹{data.expense.toFixed(0)}
+                </div>
+                <div className="w-full flex gap-0.5 items-end h-full">
+                  <div
+                    className="flex-1 bg-[#c94c4c]/70 rounded-t-sm hover:bg-[#c94c4c] transition-all"
+                    style={{ height: `${Math.max(height, 2)}%` }}
+                  />
+                  <div
+                    className="flex-1 bg-[#1f644e]/70 rounded-t-sm hover:bg-[#1f644e] transition-all"
+                    style={{ height: `${Math.max(incomeHeight, 2)}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex gap-1.5">
+          {dailyEntries.map(([date]) => (
+            <div key={date} className="flex-1 text-center">
+              <span className="text-[10px] font-bold text-[#7c8e88]">
+                {new Date(date).toLocaleDateString('en-US', { weekday: 'short' })}
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-[#e5e3d8]">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-sm bg-[#c94c4c]/70" />
+            <span className="text-[10px] font-bold text-[#7c8e88]">Expense</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-sm bg-[#1f644e]/70" />
+            <span className="text-[10px] font-bold text-[#7c8e88]">Income</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderAccountAnalysis = () => {
+    const accounts = Object.values(accountData);
+    if (accounts.length === 0) {
+      return <EmptyState title="No account data" description="Account activity will appear here" />;
+    }
+
+    return (
+      <div className="space-y-4">
+        {/* Chart */}
+        <div className="bg-white border border-[#e5e3d8] rounded-xl p-6">
+          <h3 className="text-sm font-bold text-[#1e3a34] mb-4">Account Activity</h3>
+          <div className="h-40 flex items-end gap-2 mb-4">
+            {accounts.map((account, i) => (
+              <div key={i} className="flex-1 flex gap-0.5 items-end h-full">
+                <div
+                  className="flex-1 bg-[#c94c4c]/60 rounded-t-sm transition-all duration-700"
+                  style={{ height: `${(account.expense / maxAccountValue) * 100}%` }}
+                />
+                <div
+                  className="flex-1 bg-[#1f644e]/60 rounded-t-sm transition-all duration-700"
+                  style={{ height: `${(account.income / maxAccountValue) * 100}%` }}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center justify-center gap-4 pt-4 border-t border-[#e5e3d8]">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-sm bg-[#c94c4c]/60" />
+              <span className="text-[10px] font-bold text-[#7c8e88]">Expense</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-sm bg-[#1f644e]/60" />
+              <span className="text-[10px] font-bold text-[#7c8e88]">Income</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Account Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {accounts.map((account, i) => (
+            <div key={i} className="bg-white border border-[#e5e3d8] rounded-xl p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-[#f0f5f2] flex items-center justify-center">
+                  <IconRenderer name={account.icon} className="w-5 h-5 text-[#7c8e88]" />
+                </div>
+                <span className="text-sm font-bold text-[#1e3a34]">{account.name}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider">
+                    Expense
+                  </p>
+                  <p className="text-sm font-bold text-[#c94c4c] mt-0.5">
+                    ₹{account.expense.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider">
+                    Income
+                  </p>
+                  <p className="text-sm font-bold text-[#1f644e] mt-0.5">
+                    ₹{account.income.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+              </div>
             </div>
           ))}
         </div>
       </div>
-      {[1, 2, 3, 4].map((i) => (
-        <div key={i}>
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-2">
-              <Shimmer className="w-6 h-6 rounded-full" />
-              <Shimmer className="w-20 h-3.5" />
-            </div>
-            <Shimmer className="w-16 h-3.5" />
-          </div>
-          <div className="flex items-center gap-2">
-            <Shimmer className="flex-1 h-1.5 rounded-full" />
-            <Shimmer className="w-10 h-3" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+    );
+  };
 
   return (
-    <div className="pb-4">
-      {/* Period Header - Full width, left-aligned */}
-      <div className="flex items-center justify-between px-4 py-2.5">
-        <button className="text-[#1f644e] hover:bg-[#1f644e]/10 p-1 rounded">
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-        <span className="text-sm font-bold text-[#1f644e]">{formatPeriodRange()}</span>
-        <div className="flex items-center gap-1">
-          <button className="text-[#1f644e] hover:bg-[#1f644e]/10 p-1 rounded">
-            <ChevronRight className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => setShowFilter(!showFilter)}
-            className="text-[#1f644e] hover:bg-[#1f644e]/10 p-1 rounded"
-          >
-            <Filter className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* Content - Centered horizontally */}
-      <div className="flex justify-center">
-        <div className="w-full max-w-2xl">
-          {/* Summary */}
-          <div className="flex text-center border-b border-[#e5e3d8] pb-2 mb-4 px-4">
-            <div className="flex-1">
-              <div className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider mb-1">
-                Expense
+    <div className="pb-4 pt-6">
+      <div className="w-full px-4 lg:px-6">
+        <div className="w-full max-w-6xl mx-auto">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <div className="bg-white border border-[#e5e3d8] rounded-xl p-5 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-[#c94c4c]/10 flex items-center justify-center shrink-0">
+                <TrendingDown className="w-6 h-6 text-[#c94c4c]" />
               </div>
-              <div className="text-sm font-bold text-[#c94c4c]">
-                {analysis ? (
-                  `₹${analysis.totalExpense.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
-                ) : (
-                  <Shimmer className="w-20 h-4 mx-auto" />
-                )}
+              <div>
+                <p className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider">
+                  Total Expense
+                </p>
+                <p className="text-xl font-bold text-[#c94c4c] mt-0.5">
+                  {analysis ? (
+                    `₹${analysis.totalExpense.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+                  ) : (
+                    <Shimmer className="w-20 h-5" />
+                  )}
+                </p>
               </div>
             </div>
-            <div className="flex-1">
-              <div className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider mb-1">
-                Income
+            <div className="bg-white border border-[#e5e3d8] rounded-xl p-5 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-[#1f644e]/10 flex items-center justify-center shrink-0">
+                <TrendingUp className="w-6 h-6 text-[#1f644e]" />
               </div>
-              <div className="text-sm font-bold text-[#5cb85c]">
-                {analysis ? (
-                  `₹${analysis.totalIncome.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
-                ) : (
-                  <Shimmer className="w-20 h-4 mx-auto" />
-                )}
+              <div>
+                <p className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider">
+                  Total Income
+                </p>
+                <p className="text-xl font-bold text-[#1f644e] mt-0.5">
+                  {analysis ? (
+                    `₹${analysis.totalIncome.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+                  ) : (
+                    <Shimmer className="w-20 h-5" />
+                  )}
+                </p>
               </div>
             </div>
           </div>
 
-          {/* View Dropdown */}
-          <div className="flex justify-center mb-6 relative">
-            <button
-              onClick={() => setShowDropdown(!showDropdown)}
-              className="border border-[#1f644e] text-[#1f644e] rounded px-4 py-1.5 text-sm font-bold flex items-center gap-2 bg-white uppercase"
-            >
-              {viewMode} <ChevronDown className="w-4 h-4" />
-            </button>
-            {showDropdown && (
-              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-white border border-[#e5e3d8] rounded shadow-lg w-52 z-20 text-sm">
-                {viewOptions.map((opt) => (
-                  <div
-                    key={opt}
-                    onClick={() => {
-                      setViewMode(opt);
-                      setShowDropdown(false);
-                    }}
-                    className={`px-4 py-2.5 hover:bg-[#f0f5f2] cursor-pointer first:rounded-t last:rounded-b ${
-                      viewMode === opt ? 'font-bold text-[#1f644e]' : 'text-[#7c8e88]'
-                    }`}
-                  >
-                    {opt}
-                  </div>
-                ))}
-              </div>
-            )}
+          {/* Controls */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+            {/* View Tabs */}
+            <div className="flex bg-white border border-[#e5e3d8] rounded-xl p-1 gap-0.5">
+              {viewOptions.map((opt) => (
+                <button
+                  key={opt.id}
+                  onClick={() => setViewMode(opt.id)}
+                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                    viewMode === opt.id
+                      ? 'bg-[#1f644e] text-white shadow-sm'
+                      : 'text-[#7c8e88] hover:text-[#1e3a34]'
+                  }`}
+                >
+                  <opt.icon className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">{opt.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Period Selector */}
+            <div className="relative">
+              <button
+                onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
+                className="flex items-center gap-2 bg-white border border-[#e5e3d8] rounded-xl px-3 py-2 text-xs font-bold text-[#1e3a34] hover:bg-[#f8f9f4] transition cursor-pointer"
+              >
+                {selectedPeriod}
+                <ChevronDown className="w-3.5 h-3.5 text-[#7c8e88]" />
+              </button>
+              {showPeriodDropdown && (
+                <div className="absolute right-0 top-full mt-1 bg-white border border-[#e5e3d8] rounded-xl shadow-lg py-1 z-20 min-w-[140px]">
+                  {periodOptions.map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => handlePeriodChange(p)}
+                      className={`w-full text-left px-3 py-2 text-xs font-bold transition cursor-pointer ${
+                        selectedPeriod === p
+                          ? 'bg-[#1f644e] text-white'
+                          : 'text-[#7c8e88] hover:bg-[#f0f5f2]'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Filter Panel */}
-          {showFilter && (
-            <div className="px-4 mb-4 p-3 bg-white border border-[#e5e3d8] rounded-lg animate-in slide-in-from-top duration-200">
-              <p className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider mb-2">
-                View mode
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {periodOptions.map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => handlePeriodChange(p)}
-                    className={`px-3 py-1.5 text-xs font-bold rounded transition ${
-                      selectedPeriod === p
-                        ? 'bg-[#1f644e] text-white'
-                        : 'bg-[#f0f5f2] text-[#7c8e88] hover:bg-[#d6dfd9]'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          {/* Loading / Data */}
+          {/* Content */}
           {!analysis ? (
-            <DataSkeleton />
+            <div className="px-4 space-y-3 mt-4">
+              <div className="flex items-center gap-4 mb-6 justify-center">
+                <Shimmer className="w-[140px] h-[140px] rounded-full" />
+                <div className="space-y-2.5">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <Shimmer className="w-2.5 h-2.5 rounded-full" />
+                      <Shimmer className="w-16 h-3" />
+                      <Shimmer className="w-10 h-3" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           ) : (
             <>
-              {/* Expense/Income Overview */}
-              {(viewMode === 'Expense overview' || viewMode === 'Income overview') && (
-                <div className="px-4">
-                  {/* Donut Chart */}
-                  {currentCategories.length > 0 && (
-                    <div className="flex items-center gap-4 mb-6 justify-center">
-                      <svg width="140" height="140" className="-rotate-90">
-                        <circle
-                          cx="70"
-                          cy="70"
-                          r="48"
-                          fill="none"
-                          stroke="#e5e3d8"
-                          strokeWidth="28"
-                        />
-                        {(() => {
-                          let cum = 0;
-                          const colors = ['#1f644e', '#2d8a6e', '#3ba88a', '#5cbfa6', '#7ed6c2'];
-                          return currentCategories.slice(0, 5).map((cat, i) => {
-                            const pct = cat.total / total;
-                            const circ = 2 * Math.PI * 48;
-                            const dash = circ * pct;
-                            const offset = -circ * cum;
-                            cum += pct;
-                            return (
-                              <circle
-                                key={cat.categoryId || i}
-                                cx="70"
-                                cy="70"
-                                r="48"
-                                fill="none"
-                                stroke={colors[i]}
-                                strokeWidth="28"
-                                strokeDasharray={`${dash} ${circ - dash}`}
-                                strokeDashoffset={offset}
-                                className="transition-all duration-700"
-                              />
-                            );
-                          });
-                        })()}
-                      </svg>
-                      <div className="space-y-1.5">
-                        {currentCategories.slice(0, 5).map((cat, i) => {
-                          const colors = [
-                            'bg-[#1f644e]',
-                            'bg-[#2d8a6e]',
-                            'bg-[#3ba88a]',
-                            'bg-[#5cbfa6]',
-                            'bg-[#7ed6c2]',
-                          ];
-                          return (
-                            <div
-                              key={cat.categoryId || i}
-                              className="flex items-center gap-2 text-xs"
-                            >
-                              <div className={`w-2.5 h-2.5 rounded-full ${colors[i]}`} />
-                              <span className="text-[#7c8e88] w-16 truncate">{cat.name}</span>
-                              <span className="font-bold">
-                                {((cat.total / total) * 100).toFixed(1)}%
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Category Bars */}
-                  <div className="space-y-3">
-                    {currentCategories.map((cat, i) => {
-                      const pct = ((cat.total / total) * 100).toFixed(2);
-                      return (
-                        <div key={cat.categoryId || i}>
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 rounded-full bg-[#1f644e] flex items-center justify-center text-white">
-                                <IconRenderer name={cat.icon} className="w-3 h-3" />
-                              </div>
-                              <span className="text-sm font-bold">{cat.name}</span>
-                            </div>
-                            <span className="text-sm font-bold text-[#c94c4c]">
-                              -₹{cat.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-1.5 bg-[#e5e3d8] rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-[#1f644e] rounded-full transition-all duration-700"
-                                style={{ width: `${pct}%` }}
-                              />
-                            </div>
-                            <span className="text-[10px] font-bold text-[#7c8e88] w-10 text-right">
-                              {pct}%
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Expense Flow */}
-              {viewMode === 'Expense flow' && (
-                <div className="px-4">
-                  <div className="h-48 mb-2 border-b border-[#e5e3d8] pb-2">
-                    <div className="h-full flex items-end gap-1">
-                      {dailyEntries.map(([date, data], i) => {
-                        const height = (data.expense / maxDaily) * 100;
-                        return (
-                          <div
-                            key={date}
-                            className="flex-1 flex flex-col items-center justify-end h-full group cursor-pointer relative"
-                          >
-                            <div className="absolute -top-6 text-[9px] font-bold text-[#c94c4c] opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
-                              ₹{data.expense.toFixed(0)}
-                            </div>
-                            <div
-                              className="w-full bg-[#c94c4c]/80 rounded-t hover:bg-[#c94c4c] transition-all"
-                              style={{ height: `${Math.max(height, 2)}%` }}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div className="border-t border-[#e5e3d8] pt-2 text-[10px] font-bold text-[#1f644e] text-center mb-2">
-                    {formatPeriodRange()}
-                  </div>
-                  <div className="flex text-center text-xs text-[#7c8e88] border-b border-[#e5e3d8] pb-1">
-                    {dailyEntries.map(([date]) => (
-                      <div key={date} className="flex-1">
-                        {new Date(date).toLocaleDateString('en-US', { weekday: 'short' })}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex text-center text-[10px] pt-1 text-[#7c8e88]">
-                    {dailyEntries.map(([date, data]) => (
-                      <div key={date} className="flex-1 border-l border-[#e5e3d8] first:border-0">
-                        <div>{new Date(date).getDate()}</div>
-                        <div className={data.expense > 0 ? 'text-[#c94c4c] font-bold' : '.'}>
-                          {data.expense > 0 ? `-₹${(data.expense / 1000).toFixed(1)}k` : '.'}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Account Analysis */}
-              {viewMode === 'Account analysis' && (
-                <div className="px-4">
-                  <div className="flex justify-end mb-2 text-[10px] font-bold items-center gap-3 text-[#7c8e88]">
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-[#c94c4c]" /> Expense
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-[#5cb85c]" /> Income
-                    </div>
-                  </div>
-                  <div className="h-48 mb-6 border-b border-[#e5e3d8] pb-2">
-                    <div className="h-full flex items-end gap-2">
-                      {Object.values(accountData).map((account, i) => (
-                        <div key={i} className="flex-1 flex gap-0.5 items-end h-full">
-                          <div
-                            className="flex-1 bg-[#c94c4c]/60 rounded-t transition-all duration-700"
-                            style={{ height: `${(account.expense / maxAccountValue) * 100}%` }}
-                          />
-                          <div
-                            className="flex-1 bg-[#5cb85c]/60 rounded-t transition-all duration-700"
-                            style={{ height: `${(account.income / maxAccountValue) * 100}%` }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    {Object.values(accountData).map((account, i) => (
-                      <div
-                        key={i}
-                        className="border border-[#e5e3d8] bg-[#faf9ed] rounded-lg p-3 flex items-center justify-between"
-                      >
-                        <div className="flex items-center gap-3">
-                          <IconRenderer name={account.icon} className="w-5 h-5 text-[#7c8e88]" />
-                          <span className="font-bold text-sm">{account.name}</span>
-                        </div>
-                        <div className="text-right text-xs">
-                          <div className="text-[#c94c4c]">-₹{account.expense.toLocaleString()}</div>
-                          <div className="text-[#5cb85c]">+₹{account.income.toLocaleString()}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {(viewMode === 'expense' || viewMode === 'income') && renderCategoryOverview()}
+              {viewMode === 'flow' && renderExpenseFlow()}
+              {viewMode === 'accounts' && renderAccountAnalysis()}
             </>
           )}
         </div>

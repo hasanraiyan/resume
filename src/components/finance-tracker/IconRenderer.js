@@ -61,15 +61,11 @@ function IPPBSVG({ className }) {
 }
 
 function PNBSVG({ className }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} xmlns="http://www.w3.org/2000/svg">
-      <rect width="24" height="24" rx="4" fill="#8d153a" />
-      <rect x="8" y="6" width="10" height="12" rx="2" fill="#ffd100" />
-      <path d="M9.5 9.5h6" stroke="#8d153a" strokeWidth="1.2" strokeLinecap="round" />
-      <path d="M9.5 12h6" stroke="#8d153a" strokeWidth="1.2" strokeLinecap="round" />
-      <path d="M9.5 14.5h6" stroke="#8d153a" strokeWidth="1.2" strokeLinecap="round" />
-    </svg>
-  );
+  // Prefer using the real PNB logo placed at /public/images/pnb.png.
+  // If that file isn't present this will simply 404 and fall back to the existing
+  // simple SVG in other contexts. Using an <img> keeps sizing consistent with
+  // how IconRenderer is used elsewhere (tailwind className sizing).
+  return <img src="/images/pnb.png" className={className} alt="PNB" />;
 }
 
 export default function IconRenderer({ name, className = 'w-4 h-4', fallback = 'circle' }) {
