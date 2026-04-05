@@ -7,7 +7,7 @@ import CategoriesTab from '@/components/finance-tracker/CategoriesTab';
 import AnalysisTab from '@/components/finance-tracker/AnalysisTab';
 import BudgetsTab from '@/components/finance-tracker/BudgetsTab';
 import AddTransactionModal from '@/components/finance-tracker/AddTransactionModal';
-import FinanceAgentPanel from '@/components/finance-tracker/FinanceAgentPanel';
+import FinanceChatTab from '@/components/finance-tracker/FinanceChatTab';
 import FinanceSettingsTab from '@/components/finance-tracker/FinanceSettingsTab';
 import {
   Receipt,
@@ -22,6 +22,7 @@ import {
   AlertTriangle,
   Settings,
   Loader2,
+  MessageCircle,
 } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
@@ -32,6 +33,7 @@ const tabs = [
   { id: 'accounts', label: 'Accounts', icon: Wallet },
   { id: 'categories', label: 'Categories', icon: Tag },
   { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'chat', label: 'Chat', icon: MessageCircle },
 ];
 
 function FinanceContent() {
@@ -47,6 +49,7 @@ function FinanceContent() {
     accounts: 'Accounts',
     categories: 'Categories',
     settings: 'Settings',
+    chat: 'Chat Assistant',
   };
 
   const renderTab = () => {
@@ -86,6 +89,8 @@ function FinanceContent() {
         return <CategoriesTab />;
       case 'settings':
         return <FinanceSettingsTab />;
+      case 'chat':
+        return <FinanceChatTab />;
       default:
         return <RecordsTab />;
     }
@@ -187,9 +192,6 @@ function FinanceContent() {
 
       {/* FAB */}
       {accounts.length > 0 && activeTab !== 'settings' && <AddTransactionModal />}
-      {accounts.length > 0 && activeTab !== 'settings' && (
-        <FinanceAgentPanel activeTab={tabTitles[activeTab]} />
-      )}
 
       {/* Mobile Bottom Nav */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#fcfbf5] dark:bg-[#121212] border-t border-[#e5e3d8] dark:border-[#333333] z-30 flex">

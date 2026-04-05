@@ -16,6 +16,18 @@ const initialState = {
   activeTab: 'records',
   periodStart: getWeekStart(),
   periodEnd: getWeekEnd(),
+
+  chatMessages: [
+    {
+      id: 1,
+      role: 'assistant',
+      content:
+        'I am the finance agent for this workspace. The chat UI is now aligned with the main site chatbot, but the finance backend is still placeholder-only.',
+      steps: [],
+      timestamp: new Date(),
+    },
+  ],
+  chatInput: '',
 };
 
 function getWeekStart(date = new Date()) {
@@ -58,6 +70,11 @@ function moneyReducer(state, action) {
       return { ...state, analysis: action.payload };
     case 'SET_PERIOD':
       return { ...state, periodStart: action.payload.start, periodEnd: action.payload.end };
+
+    case 'SET_CHAT_MESSAGES':
+      return { ...state, chatMessages: action.payload };
+    case 'SET_CHAT_INPUT':
+      return { ...state, chatInput: action.payload };
     default:
       return state;
   }
@@ -244,6 +261,10 @@ export function MoneyProvider({ children }) {
     }
   };
 
+
+  const setChatMessages = (messages) => dispatch({ type: 'SET_CHAT_MESSAGES', payload: messages });
+  const setChatInput = (input) => dispatch({ type: 'SET_CHAT_INPUT', payload: input });
+
   const setPeriod = (start, end) => {
     dispatch({ type: 'SET_PERIOD', payload: { start, end } });
   };
@@ -284,6 +305,8 @@ export function MoneyProvider({ children }) {
     clearFinanceData,
     setPeriod,
     setActiveTab,
+    setChatMessages,
+    setChatInput,
   };
 
   return <MoneyContext.Provider value={value}>{children}</MoneyContext.Provider>;

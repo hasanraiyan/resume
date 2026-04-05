@@ -1,7 +1,90 @@
 
-> resume@0.1.0 dev /app
+> resume@0.1.0 dev
 > next dev --turbopack
 
-sh: 1: next: not found
- ELIFECYCLE  Command failed.
- WARN   Local package.json exists, but node_modules missing, did you mean to install?
+   ▲ Next.js 15.5.9 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.2:3000
+   - Experiments (use with caution):
+     · serverActions
+
+ ✓ Starting...
+ ○ Compiling middleware ...
+ ✓ Compiled middleware in 683ms
+ ✓ Ready in 2.1s
+ ○ Compiling /finance ...
+ ✓ Compiled /finance in 17.1s
+WARNING: MONGODB_URI environment variable is not defined.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+ GET /finance 200 in 29922ms
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+ GET /finance 200 in 20358ms
+ ○ Compiling /api/analytics ...
+ ✓ Compiled /api/analytics in 1884ms
+WARNING: MONGODB_URI environment variable is not defined.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+ GET /api/money/budgets?month=4&year=2026 200 in 3757ms
+ POST /api/analytics 200 in 3940ms
+ GET /api/money/categories 200 in 3776ms
+ POST /api/analytics 200 in 3943ms
+ GET /api/money/accounts 200 in 3778ms
+ GET /api/money/transactions?startDate=2026-03-30T00%3A00%3A00.000Z&endDate=2026-04-05T23%3A59%3A59.999Z 200 in 3777ms
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+ GET /finance 200 in 20479ms
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+ GET /api/money/accounts 200 in 3698ms
+ POST /api/analytics 200 in 3797ms
+ GET /api/money/categories 200 in 3700ms
+ POST /api/analytics 200 in 3796ms
+ GET /api/money/budgets?month=4&year=2026 200 in 3697ms
+ GET /api/money/transactions?startDate=2026-03-30T00%3A00%3A00.000Z&endDate=2026-04-05T23%3A59%3A59.999Z 200 in 3697ms
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+ GET /finance 200 in 20368ms
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+ GET /api/money/transactions?startDate=2026-03-30T00%3A00%3A00.000Z&endDate=2026-04-05T23%3A59%3A59.999Z 200 in 9088ms
+ POST /api/analytics 200 in 9212ms
+ POST /api/analytics 200 in 9211ms
+ GET /api/money/categories 200 in 9092ms
+ GET /api/money/budgets?month=4&year=2026 200 in 9096ms
+ GET /api/money/accounts 200 in 9101ms
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
