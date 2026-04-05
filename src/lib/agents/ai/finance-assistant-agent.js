@@ -4,27 +4,68 @@ import { AIMessage, HumanMessage, SystemMessage } from '@langchain/core/messages
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { createFinanceTools } from '../utils/finance-tools';
 
+function tryParseJson(value) {
+  if (typeof value !== 'string') return null;
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return null;
+
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return null;
+  }
+}
+
 function parseToolOutput(output) {
   if (!output) return null;
-
-  if (output?.output) {
-    return parseToolOutput(output.output);
-  }
 
   if (Array.isArray(output)) {
     return output;
   }
 
-  if (typeof output === 'object') {
-    return output;
+  if (typeof output === 'string') {
+    return tryParseJson(output);
   }
 
-  if (typeof output === 'string') {
-    try {
-      return JSON.parse(output);
-    } catch {
-      return null;
+  if (typeof output !== 'object') {
+    return null;
+  }
+
+  if (Array.isArray(output.messages)) {
+    for (const message of output.messages) {
+      const parsedMessage = parseToolOutput(message);
+      if (parsedMessage) return parsedMessage;
     }
+  }
+
+  if (output.output) {
+    const parsedOutput = parseToolOutput(output.output);
+    if (parsedOutput) return parsedOutput;
+  }
+
+  if (output.content) {
+    const parsedContent = parseToolOutput(output.content);
+    if (parsedContent) return parsedContent;
+  }
+
+  if (output.kwargs?.content) {
+    const parsedKwargsContent = parseToolOutput(output.kwargs.content);
+    if (parsedKwargsContent) return parsedKwargsContent;
+  }
+
+  if (typeof output.text === 'string') {
+    const parsedText = tryParseJson(output.text);
+    if (parsedText) return parsedText;
+  }
+
+  if (
+    typeof output.totalIncome === 'number' ||
+    typeof output.totalExpense === 'number' ||
+    Array.isArray(output.topExpenseCategories)
+  ) {
+    return output;
   }
 
   return null;
@@ -156,7 +197,7 @@ class FinanceAssistantAgent extends BaseAgent {
       content: `${persona}
 
 You have access to real financial data through tools. Use them to answer questions accurately.
-Format currency amounts with ₹ symbol and Indian number format (e.g., ₹1,50,000).
+Format currency amounts with \u20B9 symbol and Indian number format (e.g., \u20B91,50,000).
 Be concise and provide actionable insights, not just raw data.
 When you use tools, the app may automatically show supporting finance UI cards for the user.`,
     });
@@ -212,6 +253,10 @@ When you use tools, the app may automatically show supporting finance UI cards f
         const toolCallId = event.run_id || event.data?.run_id || null;
         const toolName = activeToolCalls.get(toolCallId) || event.name;
         const uiBlocks = buildUiBlocks(toolName, event.data.output);
+
+        this.logger.info(
+          `[UI_BLOCKS] tool="${toolName}", count=${uiBlocks.length}, parsed=${Boolean(parseToolOutput(event.data.output))}`
+        );
 
         yield {
           type: 'tool_result',

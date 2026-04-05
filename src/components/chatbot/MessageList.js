@@ -56,9 +56,23 @@ export default function MessageList({
                 <StepHistory steps={message.steps} onInteract={handleUIInteract} />
               )}
 
+              {isAssistant && message.uiBlocks?.length > 0 && (
+                <div className="mt-3 flex w-full flex-col gap-3">
+                  {message.uiBlocks.map((block, blockIndex) => (
+                    <FinanceChatBlockRenderer
+                      key={`${message.id}-block-${block.kind}-${blockIndex}`}
+                      block={block}
+                      onInteract={handleUIInteract}
+                    />
+                  ))}
+                </div>
+              )}
+
               {message.content && (
                 <div
-                  className={`px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-sm text-[13px] overflow-hidden ${message.role === 'user' ? 'bg-gradient-to-br from-black to-neutral-900 text-white shadow-black/20 rounded-tr-sm' : 'bg-white/90 backdrop-blur-sm text-neutral-900 shadow-neutral-200/50 border border-neutral-200/50 rounded-tl-sm'}`}
+                  className={`${
+                    isAssistant && message.uiBlocks?.length > 0 ? 'mt-3' : ''
+                  } px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-sm text-[13px] overflow-hidden ${message.role === 'user' ? 'bg-gradient-to-br from-black to-neutral-900 text-white shadow-black/20 rounded-tr-sm' : 'bg-white/90 backdrop-blur-sm text-neutral-900 shadow-neutral-200/50 border border-neutral-200/50 rounded-tl-sm'}`}
                 >
                   {message.role === 'assistant' ? (
                     <MdContent content={message.content} onLinkClick={handleLinkClick} />
@@ -71,18 +85,6 @@ export default function MessageList({
                       minute: '2-digit',
                     })}
                   </p>
-                </div>
-              )}
-
-              {isAssistant && message.uiBlocks?.length > 0 && (
-                <div className="mt-3 flex w-full flex-col gap-3">
-                  {message.uiBlocks.map((block, blockIndex) => (
-                    <FinanceChatBlockRenderer
-                      key={`${message.id}-block-${block.kind}-${blockIndex}`}
-                      block={block}
-                      onInteract={handleUIInteract}
-                    />
-                  ))}
                 </div>
               )}
             </div>
