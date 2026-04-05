@@ -5,7 +5,15 @@ import { RefreshCw, Trash2, Database, Shield, Info } from 'lucide-react';
 import { useMoney } from '@/context/MoneyContext';
 
 export default function FinanceSettingsTab() {
-  const { clearFinanceData, fetchData, isSyncing, accounts, transactions, categories } = useMoney();
+  const {
+    clearFinanceData,
+    fetchData,
+    isSyncing,
+    accounts,
+    transactions,
+    allTransactions,
+    categories,
+  } = useMoney();
   const [isClearing, setIsClearing] = useState(false);
 
   const handleClearAll = async () => {
@@ -44,7 +52,7 @@ export default function FinanceSettingsTab() {
                 </p>
               </div>
               <div className="bg-[#f0f5f2] rounded-xl p-4 text-center">
-                <p className="text-2xl font-bold text-[#1f644e]">{transactions.length}</p>
+                <p className="text-2xl font-bold text-[#1f644e]">{allTransactions.length}</p>
                 <p className="text-xs text-[#7c8e88] mt-1 font-bold uppercase tracking-wider">
                   Transactions
                 </p>
@@ -108,7 +116,7 @@ export default function FinanceSettingsTab() {
               </div>
               <div className="flex items-center justify-between py-2 border-b border-[#e5e3d8]/50">
                 <span className="text-sm text-[#7c8e88]">Storage</span>
-                <span className="text-sm font-bold text-[#1e3a34]">Local + Server</span>
+                <span className="text-sm font-bold text-[#1e3a34]">Server</span>
               </div>
               <div className="flex items-center justify-between py-2">
                 <span className="text-sm text-[#7c8e88]">Status</span>

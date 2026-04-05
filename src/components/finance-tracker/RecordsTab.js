@@ -135,7 +135,9 @@ export default function RecordsTab() {
                 />
               </div>
               <div>
-                <p className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider">Balance</p>
+                <p className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider">
+                  Net Flow
+                </p>
                 <p
                   className={`text-xl font-bold mt-0.5 ${netBalance >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'}`}
                 >

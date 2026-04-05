@@ -10,7 +10,7 @@ import { evaluateMath } from '@/utils/math';
 const IconRenderer = dynamic(() => import('./IconRenderer'), { ssr: false });
 
 export default function AddTransactionModal() {
-  const { accounts, categories, addTransaction } = useMoney();
+  const { accounts, accountsWithBalance, categories, addTransaction } = useMoney();
   const [open, setOpen] = useState(false);
   const [type, setType] = useState('expense');
   const [currentInput, setCurrentInput] = useState('0');
@@ -82,8 +82,9 @@ export default function AddTransactionModal() {
   };
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
-  const selectedAccount = accounts.find((a) => a.id === accountId);
-  const selectedToAccount = accounts.find((a) => a.id === toAccountId);
+  const selectableAccounts = accountsWithBalance?.length ? accountsWithBalance : accounts;
+  const selectedAccount = selectableAccounts.find((a) => a.id === accountId);
+  const selectedToAccount = selectableAccounts.find((a) => a.id === toAccountId);
 
   const displayAmount = currentInput === '0' ? '0' : currentInput;
   const displayCurrency = type === 'expense' ? '₹' : type === 'income' ? '₹' : '₹';
@@ -335,7 +336,7 @@ export default function AddTransactionModal() {
             <div className="bg-white rounded-t-2xl p-5 pb-8 animate-in slide-in-from-bottom duration-300">
               <h3 className="text-center font-bold text-[#1e3a34] mb-4">Select an account</h3>
               <div className="space-y-2 max-h-60 overflow-y-auto">
-                {accounts.map((acc) => (
+                {selectableAccounts.map((acc) => (
                   <button
                     key={acc.id}
                     onClick={() => {
@@ -353,7 +354,10 @@ export default function AddTransactionModal() {
                       <span className="font-bold text-sm text-[#1e3a34]">{acc.name}</span>
                     </div>
                     <span className="text-xs font-bold text-[#7c8e88]">
-                      ₹{acc.initialBalance.toLocaleString('en-IN')}
+                      ₹
+                      {(acc.currentBalance ?? acc.initialBalance ?? 0).toLocaleString('en-IN', {
+                        minimumFractionDigits: 2,
+                      })}
                     </span>
                   </button>
                 ))}
