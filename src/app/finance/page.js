@@ -1,7 +1,7 @@
 'use client';
 
 import { MoneyProvider, useMoney } from '@/context/MoneyContext';
-import { FinanceChatProvider } from '@/context/FinanceChatContext';
+import { FinanceChatProvider, useFinanceChat } from '@/context/FinanceChatContext';
 import RecordsTab from '@/components/finance-tracker/RecordsTab';
 import AccountsTab from '@/components/finance-tracker/AccountsTab';
 import CategoriesTab from '@/components/finance-tracker/CategoriesTab';
@@ -36,6 +36,7 @@ const tabs = [
 
 function FinanceContent() {
   const { activeTab, setActiveTab, isSyncing, error, accounts, fetchData } = useMoney();
+  const { clearChat } = useFinanceChat();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [requestAddAccountModal, setRequestAddAccountModal] = useState(false);
   const handleAddModalClose = useCallback(() => setRequestAddAccountModal(false), []);
@@ -138,6 +139,15 @@ function FinanceContent() {
               </h1>
             </div>
             <div className="flex items-center gap-3">
+              {activeTab === 'chat' && (
+                <button
+                  onClick={clearChat}
+                  className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  New Chat
+                </button>
+              )}
               {isSyncing && (
                 <div className="flex items-center gap-1.5 text-xs text-[#7c8e88] dark:text-[#a0a0a0]">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />

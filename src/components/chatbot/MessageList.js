@@ -10,6 +10,7 @@ export default function MessageList({
   handleUIInteract,
   handleLinkClick,
 }) {
+  const hasAssistantPlaceholder = messages.some((m) => m.role === 'assistant' && !m.content);
   return (
     <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3 bg-gradient-to-b from-white/50 to-neutral-50/50 custom-chat-scrollbar">
       {messages.map((message, index) => {
@@ -82,17 +83,6 @@ export default function MessageList({
         );
       })}
 
-      {isLoading && !messages.some((m) => m.role === 'tool_action' && !m.done) && (
-        <div className="flex gap-3 flex-col animate-in slide-in-from-bottom-2 duration-300 w-full mt-1">
-          <div className="flex gap-3">
-            <div className="relative w-7 h-7 shrink-0 flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full border-[1.5px] border-neutral-200" />
-              <div className="absolute inset-0 rounded-full border-[1.5px] border-transparent border-t-neutral-800 border-r-neutral-800 animate-spin" />
-              <Bot className="w-3.5 h-3.5 text-neutral-600" />
-            </div>
-          </div>
-        </div>
-      )}
       <div ref={messagesEndRef} />
     </div>
   );

@@ -23,6 +23,7 @@ export default function ChatInput({
   chatbotSettings,
   selectedAgentId,
   setSelectedAgentId,
+  showModelSelector = true,
 }) {
   return (
     <div className="p-3 border-t border-neutral-200/50 bg-white shrink-0">
@@ -67,16 +68,18 @@ export default function ChatInput({
 
           {/* Right: Submit Button or Voice Input */}
           <div className="flex items-center justify-end gap-2">
-            <ModelSelector
-              chatbotSettings={chatbotSettings}
-              selectedAgentId={selectedAgentId}
-              setSelectedAgentId={setSelectedAgentId}
-              isModelSelectorOpen={isModelSelectorOpen}
-              setIsModelSelectorOpen={setIsModelSelectorOpen}
-              setIsToolsMenuOpen={setIsToolsMenuOpen}
-              isLoading={isLoading}
-              inputRef={inputRef}
-            />
+            {showModelSelector && (
+              <ModelSelector
+                chatbotSettings={chatbotSettings}
+                selectedAgentId={selectedAgentId}
+                setSelectedAgentId={setSelectedAgentId}
+                isModelSelectorOpen={isModelSelectorOpen}
+                setIsModelSelectorOpen={setIsModelSelectorOpen}
+                setIsToolsMenuOpen={setIsToolsMenuOpen}
+                isLoading={isLoading}
+                inputRef={inputRef}
+              />
+            )}
 
             {!isListening && (inputMessage.trim() || activeQuote) ? (
               <button

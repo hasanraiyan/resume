@@ -51,22 +51,70 @@ export async function POST() {
 
     // Seed default categories
     const expenseCategories = await Category.insertMany([
-      { name: 'Food & Dining', type: 'expense', icon: 'utensils', color: '#EF4444' },
-      { name: 'Transportation', type: 'expense', icon: 'car', color: '#F59E0B' },
-      { name: 'Shopping', type: 'expense', icon: 'shopping-bag', color: '#8B5CF6' },
-      { name: 'Bills & Utilities', type: 'expense', icon: 'receipt', color: '#3B82F6' },
-      { name: 'Entertainment', type: 'expense', icon: 'film', color: '#EC4899' },
-      { name: 'Health', type: 'expense', icon: 'heart-pulse', color: '#10B981' },
-      { name: 'Social', type: 'expense', icon: 'users', color: '#6366F1' },
-      { name: 'Education', type: 'expense', icon: 'book-open', color: '#14B8A6' },
+      {
+        name: 'Food & Dining',
+        type: 'expense',
+        icon: 'utensils',
+        color: '#EF4444',
+        bgColor: '#E6F4EA',
+      },
+      {
+        name: 'Transportation',
+        type: 'expense',
+        icon: 'car',
+        color: '#F59E0B',
+        bgColor: '#E6F4EA',
+      },
+      {
+        name: 'Shopping',
+        type: 'expense',
+        icon: 'shopping-bag',
+        color: '#8B5CF6',
+        bgColor: '#E6F4EA',
+      },
+      {
+        name: 'Bills & Utilities',
+        type: 'expense',
+        icon: 'receipt',
+        color: '#3B82F6',
+        bgColor: '#E6F4EA',
+      },
+      {
+        name: 'Entertainment',
+        type: 'expense',
+        icon: 'film',
+        color: '#EC4899',
+        bgColor: '#E6F4EA',
+      },
+      {
+        name: 'Health',
+        type: 'expense',
+        icon: 'heart-pulse',
+        color: '#10B981',
+        bgColor: '#E6F4EA',
+      },
+      { name: 'Social', type: 'expense', icon: 'users', color: '#6366F1', bgColor: '#E6F4EA' },
+      {
+        name: 'Education',
+        type: 'expense',
+        icon: 'book-open',
+        color: '#14B8A6',
+        bgColor: '#E6F4EA',
+      },
     ]);
 
     const incomeCategories = await Category.insertMany([
-      { name: 'Salary', type: 'income', icon: 'briefcase', color: '#22C55E' },
-      { name: 'Freelance', type: 'income', icon: 'laptop', color: '#06B6D4' },
-      { name: 'Awards', type: 'income', icon: 'trophy', color: '#F59E0B' },
-      { name: 'Sale', type: 'income', icon: 'tag', color: '#A855F7' },
-      { name: 'Interest', type: 'income', icon: 'trending-up', color: '#0EA5E9' },
+      { name: 'Salary', type: 'income', icon: 'briefcase', color: '#22C55E', bgColor: '#E6F4EA' },
+      { name: 'Freelance', type: 'income', icon: 'laptop', color: '#06B6D4', bgColor: '#E6F4EA' },
+      { name: 'Awards', type: 'income', icon: 'trophy', color: '#F59E0B', bgColor: '#E6F4EA' },
+      { name: 'Sale', type: 'income', icon: 'tag', color: '#A855F7', bgColor: '#E6F4EA' },
+      {
+        name: 'Interest',
+        type: 'income',
+        icon: 'trending-up',
+        color: '#0EA5E9',
+        bgColor: '#E6F4EA',
+      },
     ]);
 
     return NextResponse.json({
