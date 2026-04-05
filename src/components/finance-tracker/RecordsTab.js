@@ -79,7 +79,7 @@ export default function RecordsTab() {
     return 'text-[#1e3a34]';
   };
 
-  const netBalance = totalIncome - totalExpense;
+  const netFlow = totalIncome - totalExpense;
 
   const handleDeleteClick = (id) => {
     setDeleteConfirmId(id);
@@ -128,10 +128,10 @@ export default function RecordsTab() {
             </div>
             <div className="bg-white border border-[#e5e3d8] rounded-xl p-5 flex items-center gap-4">
               <div
-                className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${netBalance >= 0 ? 'bg-[#1f644e]/10' : 'bg-[#c94c4c]/10'}`}
+                className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${netFlow >= 0 ? 'bg-[#1f644e]/10' : 'bg-[#c94c4c]/10'}`}
               >
                 <PurseSVG
-                  className={`w-6 h-6 ${netBalance >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'}`}
+                  className={`w-6 h-6 ${netFlow >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'}`}
                 />
               </div>
               <div>
@@ -139,10 +139,10 @@ export default function RecordsTab() {
                   Net Flow
                 </p>
                 <p
-                  className={`text-xl font-bold mt-0.5 ${netBalance >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'}`}
+                  className={`text-xl font-bold mt-0.5 ${netFlow >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'}`}
                 >
-                  {netBalance < 0 ? '-' : ''}₹
-                  {Math.abs(netBalance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  {netFlow < 0 ? '-' : ''}₹
+                  {Math.abs(netFlow).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </p>
               </div>
             </div>

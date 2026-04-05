@@ -95,6 +95,41 @@ export async function GET(request) {
       },
     ]);
 
+    const allAccounts = await Account.find({ deletedAt: null }).lean();
+    const allLedgerTransactions = await Transaction.find({ deletedAt: null })
+      .select('type amount account toAccount')
+      .lean();
+
+    const accountBalanceMap = new Map();
+    for (const account of allAccounts) {
+      accountBalanceMap.set(account._id.toString(), Number(account.initialBalance) || 0);
+    }
+
+    for (const transaction of allLedgerTransactions) {
+      const amount = Number(transaction.amount) || 0;
+      const accountId = transaction.account?.toString?.() || null;
+      const toAccountId = transaction.toAccount?.toString?.() || null;
+
+      if (transaction.type === 'expense' && accountId && accountBalanceMap.has(accountId)) {
+        accountBalanceMap.set(accountId, accountBalanceMap.get(accountId) - amount);
+        continue;
+      }
+
+      if (transaction.type === 'income' && accountId && accountBalanceMap.has(accountId)) {
+        accountBalanceMap.set(accountId, accountBalanceMap.get(accountId) + amount);
+        continue;
+      }
+
+      if (transaction.type === 'transfer') {
+        if (accountId && accountBalanceMap.has(accountId)) {
+          accountBalanceMap.set(accountId, accountBalanceMap.get(accountId) - amount);
+        }
+        if (toAccountId && accountBalanceMap.has(toAccountId)) {
+          accountBalanceMap.set(toAccountId, accountBalanceMap.get(toAccountId) + amount);
+        }
+      }
+    }
+
     // Totals
     const totals = await Transaction.aggregate([
       { $match: { ...query, type: { $in: ['income', 'expense'] } } },
@@ -124,10 +159,15 @@ export async function GET(request) {
         accountAnalysis: accountAnalysis.map((a) => ({
           ...a,
           accountId: a.accountId?.toString(),
+          currentBalance: a.accountId ? (accountBalanceMap.get(a.accountId.toString()) ?? 0) : 0,
         })),
         totalExpense,
         totalIncome,
-        netBalance: totalIncome - totalExpense,
+        netFlow: totalIncome - totalExpense,
+        totalAccountBalance: Array.from(accountBalanceMap.values()).reduce(
+          (sum, balance) => sum + balance,
+          0
+        ),
       },
     });
   } catch (error) {

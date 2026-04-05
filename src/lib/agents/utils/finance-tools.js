@@ -219,11 +219,16 @@ export function createGetAnalysisTool() {
       categoryBreakdown.push(...Object.values(categoryMap).sort((a, b) => b.total - a.total));
       dailyFlow.push(...Object.values(dailyMap).sort((a, b) => a.date.localeCompare(b.date)));
       accountAnalysis.push(...Object.values(accountMap));
+      const totalAccountBalance = accounts.reduce(
+        (sum, account) => sum + (account.currentBalance || 0),
+        0
+      );
 
       const result = {
         totalExpense,
         totalIncome,
-        netBalance: totalIncome - totalExpense,
+        netFlow: totalIncome - totalExpense,
+        totalAccountBalance,
         topExpenseCategories: categoryBreakdown
           .filter((c) => c.type === 'expense')
           .slice(0, 10)
@@ -247,6 +252,13 @@ export function createGetAnalysisTool() {
           .filter((d) => d.type === 'expense')
           .slice(-14)
           .map((d) => ({ date: d.date, total: d.total })),
+        accounts: accounts.map((account) => ({
+          id: account._id.toString(),
+          name: account.name,
+          balance: account.currentBalance || 0,
+          initialBalance: account.initialBalance || 0,
+          currency: account.currency || 'INR',
+        })),
       };
 
       return JSON.stringify(result);

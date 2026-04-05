@@ -56,7 +56,7 @@ const categoryColors = [
 ];
 
 export default function CategoriesTab() {
-  const { categories, totalBalance, addCategory, updateCategory, deleteCategory } = useMoney();
+  const { categories, addCategory, updateCategory, deleteCategory } = useMoney();
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [menuOpen, setMenuOpen] = useState(null);
