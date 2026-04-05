@@ -5,7 +5,6 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { LayoutDashboard, Link2, BarChart3, Settings, Menu } from 'lucide-react';
-import { SessionProvider } from 'next-auth/react';
 
 const DashboardTab = dynamic(() => import('@/components/snaplinks/DashboardTab'), {
   loading: () => <div className="p-6">Loading Dashboard...</div>,
@@ -183,9 +182,5 @@ function SnapLinksContent() {
 }
 
 export default function SnapLinksPage() {
-  return (
-    <SessionProvider>
-      <SnapLinksContent />
-    </SessionProvider>
-  );
+  return <SnapLinksContent />;
 }

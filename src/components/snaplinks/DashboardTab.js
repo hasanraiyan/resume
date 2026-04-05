@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, Skeleton } from '@/components/ui';
-import { BarChart3, Link2, Eye, Activity } from 'lucide-react';
+import { Link2, Eye, Activity } from 'lucide-react';
 
 export default function DashboardTab({ navigateTo }) {
   const [stats, setStats] = useState(null);

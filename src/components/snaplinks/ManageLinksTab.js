@@ -81,6 +81,7 @@ export default function ManageLinksTab() {
 
     try {
       const payload = {
+        ...(isEditing && { id: formData.id }),
         title: formData.title,
         slug: formData.slug,
         destination: formData.destination,

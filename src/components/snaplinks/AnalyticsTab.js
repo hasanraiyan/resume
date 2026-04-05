@@ -14,7 +14,7 @@ import {
   Filler,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { ArrowLeft, ExternalLink, CalendarDays, Globe, Smartphone, Laptop } from 'lucide-react';
+import { ArrowLeft, ExternalLink, CalendarDays, Globe, Smartphone } from 'lucide-react';
 
 ChartJS.register(
   CategoryScale,
@@ -54,7 +54,9 @@ export default function AnalyticsTab() {
   const fetchAnalytics = async (slug) => {
     setAnalyticsLoading(true);
     try {
-      const response = await fetch(`/api/admin/short-links/analytics?slug=${slug}&timeframe=30d`);
+      const response = await fetch(
+        `/api/admin/short-links/analytics?slug=${encodeURIComponent(slug)}&days=30`
+      );
       if (!response.ok) throw new Error('Failed to fetch analytics');
       const result = await response.json();
       if (result.success) setAnalytics(result.data);
