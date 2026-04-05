@@ -27,8 +27,13 @@ function RuPaySVG({ className }) {
 
 function IPPBSVG({ className }) {
   return (
-    <svg viewBox="0 0 24 24" className={className} xmlns="http://www.w3.org/2000/svg">
-      <rect width="24" height="24" rx="4" fill="#3a0f1a" />
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="none"
+    >
+      <rect width="24" height="24" rx="3" fill="#3a0f1a" />
       <circle cx="9.5" cy="10.5" r="3.2" fill="#d92b2b" />
       <path
         d="M4 8c2 0 4 2 7 2"

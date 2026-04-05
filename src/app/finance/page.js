@@ -1,13 +1,14 @@
 'use client';
 
 import { MoneyProvider, useMoney } from '@/context/MoneyContext';
+import { FinanceChatProvider } from '@/context/FinanceChatContext';
 import RecordsTab from '@/components/finance-tracker/RecordsTab';
 import AccountsTab from '@/components/finance-tracker/AccountsTab';
 import CategoriesTab from '@/components/finance-tracker/CategoriesTab';
 import AnalysisTab from '@/components/finance-tracker/AnalysisTab';
 import BudgetsTab from '@/components/finance-tracker/BudgetsTab';
 import AddTransactionModal from '@/components/finance-tracker/AddTransactionModal';
-import FinanceAgentPanel from '@/components/finance-tracker/FinanceAgentPanel';
+import ChatTab from '@/components/finance-tracker/ChatTab';
 import FinanceSettingsTab from '@/components/finance-tracker/FinanceSettingsTab';
 import {
   Receipt,
@@ -22,6 +23,7 @@ import {
   AlertTriangle,
   Settings,
   Loader2,
+  MessageCircle,
 } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
@@ -31,6 +33,7 @@ const tabs = [
   { id: 'budgets', label: 'Budgets', icon: Calculator },
   { id: 'accounts', label: 'Accounts', icon: Wallet },
   { id: 'categories', label: 'Categories', icon: Tag },
+  { id: 'chat', label: 'Chat', icon: MessageCircle },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
@@ -46,6 +49,7 @@ function FinanceContent() {
     budgets: 'Budgets',
     accounts: 'Accounts',
     categories: 'Categories',
+    chat: 'Chat',
     settings: 'Settings',
   };
 
@@ -84,6 +88,8 @@ function FinanceContent() {
         );
       case 'categories':
         return <CategoriesTab />;
+      case 'chat':
+        return <ChatTab />;
       case 'settings':
         return <FinanceSettingsTab />;
       default:
@@ -184,9 +190,8 @@ function FinanceContent() {
       )}
 
       {/* FAB */}
-      {accounts.length > 0 && activeTab !== 'settings' && <AddTransactionModal />}
-      {accounts.length > 0 && activeTab !== 'settings' && (
-        <FinanceAgentPanel activeTab={tabTitles[activeTab]} />
+      {accounts.length > 0 && activeTab !== 'settings' && activeTab !== 'chat' && (
+        <AddTransactionModal />
       )}
 
       {/* Mobile Bottom Nav */}
@@ -214,7 +219,9 @@ function FinanceContent() {
 export default function FinancePage() {
   return (
     <MoneyProvider>
-      <FinanceContent />
+      <FinanceChatProvider>
+        <FinanceContent />
+      </FinanceChatProvider>
     </MoneyProvider>
   );
 }

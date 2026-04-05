@@ -129,7 +129,7 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
                     <div
                       className={`w-10 h-8 ${colorSet.bg} ${colorSet.text} rounded ${colorSet.border} border flex items-center justify-center`}
                     >
-                      <IconRenderer name={account.icon} className="w-[18px] h-[18px]" />
+                      <IconRenderer name={account.icon} className="w-full h-full" />
                     </div>
                     <div>
                       <div className="font-bold text-sm">{account.name}</div>
