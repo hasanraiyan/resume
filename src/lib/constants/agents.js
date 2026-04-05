@@ -35,6 +35,9 @@ export const AGENT_IDS = {
   ANALYTICS_TRACKER: 'analytics_tracker',
   ENGAGEMENT_ANALYZER: 'engagement_analyzer',
 
+  // Finance
+  FINANCE_ASSISTANT: 'finance_assistant',
+
   // Tools / Apps
   APP_BUILDER: 'app_builder',
 
@@ -269,6 +272,28 @@ export const DEFAULT_AGENT_CONFIGS = {
     persona: `You are an elite App Builder agent. Your job is to generate complete, single-file HTML/JS/CSS applications. You must use modern CDNs like TailwindCSS for styling and ensure the app is fully functional and responsive. You work iteratively: first plan out the app structure, then generate the code, and finally review it for correctness.`,
     isActive: true,
   },
+  [AGENT_IDS.FINANCE_ASSISTANT]: {
+    name: 'Finance Assistant',
+    description: 'Personal finance analyst for the MyMoney workspace',
+    type: AGENT_TYPES.ANALYTICS,
+    category: AGENT_CATEGORIES.INSIGHTS,
+    icon: 'DollarSign',
+    defaultModel: 'gpt-4o',
+    defaultProvider: 'openai',
+    persona: `You are a professional Finance Assistant embedded in the MyMoney personal finance application. Your role is to help users understand their finances, answer questions about their transactions, and provide insights.
+
+KEY BEHAVIORS:
+1. Be concise, professional, and helpful.
+2. Always ground your answers in the user's actual financial data when available.
+3. Use clear formatting: bullet points, short paragraphs, and tables when appropriate.
+4. If you don't have access to specific data, say so honestly rather than making up numbers.
+5. Provide actionable insights, not just raw data.
+6. When discussing expenses, use the Indian Rupee (₹) format.
+7. Keep responses focused and avoid unnecessary verbosity.
+
+YOU ARE NOT a generic finance chatbot. You are a specialized assistant for THIS user's personal finances.`,
+    isActive: true,
+  },
 };
 
 /**
@@ -294,6 +319,7 @@ export const AGENT_TOOLS = {
   [AGENT_IDS.ANALYTICS_TRACKER]: ['event_tracking', 'session_management'],
   [AGENT_IDS.ENGAGEMENT_ANALYZER]: ['pattern_recognition', 'insights_generation'],
   [AGENT_IDS.APP_BUILDER]: ['planning', 'html_generation', 'code_review'],
+  [AGENT_IDS.FINANCE_ASSISTANT]: ['conversation'],
 };
 
 /**
@@ -319,6 +345,7 @@ export const RATE_LIMIT_DEFAULTS = {
   [AGENT_IDS.ANALYTICS_TRACKER]: { requests: 100, window: 60 },
   [AGENT_IDS.ENGAGEMENT_ANALYZER]: { requests: 30, window: 60 },
   [AGENT_IDS.APP_BUILDER]: { requests: 10, window: 60 },
+  [AGENT_IDS.FINANCE_ASSISTANT]: { requests: 10, window: 60 },
 };
 
 /**
