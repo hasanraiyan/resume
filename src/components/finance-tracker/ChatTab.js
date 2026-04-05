@@ -61,9 +61,9 @@ export default function ChatTab() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col bg-[#fcfbf5] pb-16 lg:pb-0">
+    <div className="flex h-[calc(100vh-4rem)] min-w-0 flex-col overflow-x-hidden bg-[#fcfbf5] pb-16 lg:pb-0">
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto custom-chat-scrollbar px-4 py-4 sm:px-6">
+      <div className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden custom-chat-scrollbar px-4 py-4 sm:px-6">
         <MessageList
           messages={messages}
           isLoading={isStreaming}

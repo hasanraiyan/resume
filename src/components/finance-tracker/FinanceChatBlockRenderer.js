@@ -181,7 +181,7 @@ function AccountsSnapshotBlock({ block, onInteract }) {
   const items = block.data?.items || [];
 
   return (
-    <div className="w-full max-w-full rounded-2xl border border-neutral-200/70 bg-[#f8f8f4] p-3 shadow-sm overflow-hidden">
+    <div className="self-stretch min-w-0 w-full max-w-full rounded-2xl border border-neutral-200/70 bg-[#f8f8f4] p-3 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs font-semibold text-neutral-800">{block.title}</p>
         <div className="hidden sm:block">
@@ -189,24 +189,24 @@ function AccountsSnapshotBlock({ block, onInteract }) {
         </div>
       </div>
 
-      <div className="mt-3 overflow-x-auto pb-2 custom-chat-scrollbar snap-x snap-mandatory">
-        <div className="flex min-w-max gap-2.5 pr-1">
+      <div className="mt-3 min-w-0 w-full max-w-full overflow-x-auto overflow-y-hidden overscroll-x-contain pb-2 custom-chat-scrollbar touch-pan-x">
+        <div className="inline-flex h-full gap-2 pr-1 snap-x snap-mandatory">
           {items.map((item, index) => {
             const colorSet = accountIconColors[index % accountIconColors.length];
 
             return (
               <div
                 key={item.id}
-                className="w-[228px] sm:w-[248px] shrink-0 snap-start rounded-2xl border border-neutral-200/70 bg-white p-4 shadow-[0_4px_16px_rgba(30,58,52,0.04)]"
+                className="w-[184px] sm:w-[204px] shrink-0 snap-start rounded-2xl border border-neutral-200/70 bg-white p-3 shadow-[0_4px_16px_rgba(30,58,52,0.04)]"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div
-                    className={`flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border ${colorSet.bg} ${colorSet.text} ${colorSet.border}`}
+                    className={`flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border ${colorSet.bg} ${colorSet.text} ${colorSet.border}`}
                   >
                     <IconRenderer name={item.icon} className={getAccountIconClass(item.icon)} />
                   </div>
                   <p
-                    className={`text-sm font-bold ${
+                    className={`text-[14px] font-bold ${
                       (item.balance || 0) >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'
                     }`}
                   >
@@ -214,9 +214,9 @@ function AccountsSnapshotBlock({ block, onInteract }) {
                   </p>
                 </div>
 
-                <div className="mt-4">
-                  <p className="line-clamp-2 text-sm font-bold text-[#1e3a34]">{item.name}</p>
-                  <div className="mt-3 space-y-2">
+                <div className="mt-3">
+                  <p className="line-clamp-2 text-[13px] font-bold text-[#1e3a34]">{item.name}</p>
+                  <div className="mt-2 space-y-1.5">
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-[11px] text-[#7c8e88]">Initial</span>
                       <span className="text-xs font-bold text-[#1e3a34]">

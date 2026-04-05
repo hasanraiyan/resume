@@ -158,7 +158,9 @@ function FinanceContent() {
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 bg-white dark:bg-[#1e1e1e] border-r border-[#e5e3d8] dark:border-[#333333] fixed inset-y-0 left-0 z-30">
         <div className="p-6 border-b border-[#e5e3d8] dark:border-[#333333]">
-          <h1 className="font-[family-name:var(--font-logo)] text-2xl text-[#1f644e]">MyMoney</h1>
+          <h1 className="font-[family-name:var(--font-logo)] text-2xl text-black dark:text-white">
+            MyMoney
+          </h1>
         </div>
         <nav className="flex-1 py-4 px-3 space-y-1">
           {tabs.map((tab) => (
@@ -184,7 +186,7 @@ function FinanceContent() {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
+      <div className="flex min-w-0 flex-1 flex-col lg:ml-64 min-h-screen overflow-x-hidden">
         {/* Header */}
         <header className="bg-[#fcfbf5] dark:bg-[#121212] sticky top-0 z-20 border-b border-[#e5e3d8] dark:border-[#333333]/50">
           <div className="w-full px-4 lg:px-6 py-3 flex items-center justify-between">
@@ -192,7 +194,7 @@ function FinanceContent() {
               <button className="lg:hidden p-1" onClick={() => setSidebarOpen(true)}>
                 <Menu className="w-5 h-5 text-[#1e3a34] dark:text-[#e0e0e0]" />
               </button>
-              <h1 className="font-[family-name:var(--font-logo)] text-xl lg:text-2xl text-[#1f644e] lg:hidden">
+              <h1 className="font-[family-name:var(--font-logo)] text-xl lg:text-2xl text-black dark:text-white lg:hidden">
                 MyMoney
               </h1>
               <h1 className="hidden lg:block text-lg font-bold text-[#1e3a34] dark:text-[#e0e0e0]">
@@ -220,7 +222,7 @@ function FinanceContent() {
         </header>
 
         {/* Content */}
-        <main className="flex-1 w-full">
+        <main className="min-w-0 flex-1 w-full overflow-x-hidden">
           {isBootstrapLoading && activeTab === 'records' ? (
             <div className="p-6 space-y-4">
               <Shimmer className="h-28 w-full rounded-3xl" />
@@ -240,7 +242,7 @@ function FinanceContent() {
           <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
           <aside className="absolute inset-y-0 left-0 w-64 bg-white dark:bg-[#1e1e1e] shadow-xl animate-in slide-in-from-left duration-300">
             <div className="p-6 border-b border-[#e5e3d8] dark:border-[#333333]">
-              <h1 className="font-[family-name:var(--font-logo)] text-2xl text-[#1f644e]">
+              <h1 className="font-[family-name:var(--font-logo)] text-2xl text-black dark:text-white">
                 MyMoney
               </h1>
             </div>

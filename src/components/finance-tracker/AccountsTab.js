@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMoney } from '@/context/MoneyContext';
 import { MoreVertical, Plus, TrendingDown, TrendingUp } from 'lucide-react';
 import { PurseSVG } from '@/components/finance-tracker/IconRenderer';
@@ -64,8 +64,10 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
   const [showForm, setShowForm] = useState(false);
   const [menuOpen, setMenuOpen] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [deletingAccountId, setDeletingAccountId] = useState(null);
   const [error, setError] = useState('');
   const [form, setForm] = useState({ name: '', icon: 'wallet', initialBalance: 0 });
+  const menuRef = useRef(null);
 
   useEffect(() => {
     if (openAddModal) {
@@ -73,6 +75,32 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
       onAddModalClose?.();
     }
   }, [openAddModal, onAddModalClose]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const handlePointerDown = (event) => {
+      if (!menuRef.current?.contains(event.target)) {
+        setMenuOpen(null);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setMenuOpen(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [menuOpen]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -106,10 +134,20 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
   };
 
   const handleDelete = async (id) => {
-    if (confirm('Delete this account?')) {
-      await deleteAccount(id);
+    if (!confirm('Delete this account?')) {
+      setMenuOpen(null);
+      return;
     }
-    setMenuOpen(null);
+
+    setDeletingAccountId(id);
+    try {
+      await deleteAccount(id);
+      setMenuOpen(null);
+    } catch (err) {
+      setError(err.message || 'Failed to delete account');
+    } finally {
+      setDeletingAccountId(null);
+    }
   };
 
   return (
@@ -200,26 +238,30 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
                           className={getAccountIconClass(account.icon)}
                         />
                       </div>
-                      <div className="relative">
+                      <div className="relative" ref={menuOpen === account.id ? menuRef : null}>
                         <button
                           onClick={() => setMenuOpen(menuOpen === account.id ? null : account.id)}
-                          className="p-1.5 text-[#7c8e88] hover:text-[#1e3a34] transition rounded-lg hover:bg-[#f0f5f2]"
+                          aria-haspopup="menu"
+                          aria-expanded={menuOpen === account.id}
+                          disabled={deletingAccountId === account.id}
+                          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl text-[#7c8e88] transition hover:bg-[#f0f5f2] hover:text-[#1e3a34] disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <MoreVertical className="w-4 h-4" />
                         </button>
                         {menuOpen === account.id && (
-                          <div className="absolute right-0 top-full mt-1 bg-white border border-[#e5e3d8] shadow-lg rounded-lg py-1 z-20 w-28">
+                          <div className="absolute right-0 top-full z-20 mt-2 w-36 overflow-hidden rounded-xl border border-[#e5e3d8] bg-white py-1 shadow-lg">
                             <button
                               onClick={() => startEdit(account)}
-                              className="px-3 py-2 text-xs font-bold hover:bg-[#f0f5f2] w-full text-left"
+                              className="flex min-h-10 w-full cursor-pointer items-center px-3 py-2 text-left text-xs font-bold text-[#1e3a34] transition hover:bg-[#f0f5f2]"
                             >
                               Edit
                             </button>
                             <button
                               onClick={() => handleDelete(account.id)}
-                              className="px-3 py-2 text-xs font-bold hover:bg-[#f0f5f2] w-full text-left text-[#c94c4c]"
+                              disabled={deletingAccountId === account.id}
+                              className="flex min-h-10 w-full cursor-pointer items-center px-3 py-2 text-left text-xs font-bold text-[#c94c4c] transition hover:bg-[#fef2f2] disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                              Delete
+                              {deletingAccountId === account.id ? 'Deleting...' : 'Delete'}
                             </button>
                           </div>
                         )}
