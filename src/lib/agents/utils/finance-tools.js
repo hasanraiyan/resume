@@ -10,18 +10,62 @@ async function ensureDb() {
   await dbConnect();
 }
 
+async function getAccountsWithComputedBalances() {
+  const [accounts, transactions] = await Promise.all([
+    Account.find({ deletedAt: null }).sort({ createdAt: 1 }).lean(),
+    Transaction.find({ deletedAt: null }).select('type amount account toAccount').lean(),
+  ]);
+
+  const balanceMap = new Map();
+
+  for (const account of accounts) {
+    balanceMap.set(account._id.toString(), Number(account.initialBalance) || 0);
+  }
+
+  for (const transaction of transactions) {
+    const amount = Number(transaction.amount) || 0;
+    const accountId = transaction.account?.toString?.() || null;
+    const toAccountId = transaction.toAccount?.toString?.() || null;
+
+    if (transaction.type === 'expense' && accountId && balanceMap.has(accountId)) {
+      balanceMap.set(accountId, balanceMap.get(accountId) - amount);
+      continue;
+    }
+
+    if (transaction.type === 'income' && accountId && balanceMap.has(accountId)) {
+      balanceMap.set(accountId, balanceMap.get(accountId) + amount);
+      continue;
+    }
+
+    if (transaction.type === 'transfer') {
+      if (accountId && balanceMap.has(accountId)) {
+        balanceMap.set(accountId, balanceMap.get(accountId) - amount);
+      }
+      if (toAccountId && balanceMap.has(toAccountId)) {
+        balanceMap.set(toAccountId, balanceMap.get(toAccountId) + amount);
+      }
+    }
+  }
+
+  return accounts.map((account) => ({
+    ...account,
+    currentBalance: balanceMap.get(account._id.toString()) ?? 0,
+  }));
+}
+
 export function createGetAccountsTool() {
   return tool(
     async () => {
       await ensureDb();
-      const accounts = await Account.find({ deletedAt: null }).sort({ createdAt: 1 }).lean();
+      const accounts = await getAccountsWithComputedBalances();
       const serialized = accounts.map(serializeAccount);
       return JSON.stringify(
         serialized.map((a) => ({
           id: a.id,
           name: a.name,
           icon: a.icon,
-          balance: a.initialBalance,
+          balance: a.currentBalance,
+          initialBalance: a.initialBalance,
           currency: a.currency,
         }))
       );
@@ -111,13 +155,16 @@ export function createGetAnalysisTool() {
   return tool(
     async () => {
       await ensureDb();
-      const transactions = await Transaction.find({
-        deletedAt: null,
-        type: { $in: ['income', 'expense'] },
-      })
-        .populate('category', 'name icon type color')
-        .populate('account', 'name icon')
-        .lean();
+      const [transactions, accounts] = await Promise.all([
+        Transaction.find({
+          deletedAt: null,
+          type: { $in: ['income', 'expense'] },
+        })
+          .populate('category', 'name icon type color')
+          .populate('account', 'name icon')
+          .lean(),
+        getAccountsWithComputedBalances(),
+      ]);
 
       const categoryBreakdown = [];
       const dailyFlow = [];
@@ -193,6 +240,8 @@ export function createGetAnalysisTool() {
           income:
             accountAnalysis.find((x) => x.accountId === a.accountId && x.type === 'income')
               ?.total || 0,
+          balance:
+            accounts.find((account) => account._id.toString() === a.accountId)?.currentBalance || 0,
         })),
         dailyExpenseFlow: dailyFlow
           .filter((d) => d.type === 'expense')
