@@ -9,6 +9,9 @@ import {
   TrendingUp,
   ArrowLeftRight,
   Search,
+  Trash2,
+  X,
+  Check,
 } from 'lucide-react';
 import { PurseSVG } from '@/components/finance-tracker/IconRenderer';
 import dynamic from 'next/dynamic';
@@ -16,9 +19,18 @@ import dynamic from 'next/dynamic';
 import IconRenderer from './IconRenderer';
 
 export default function RecordsTab() {
-  const { transactions, totalExpense, totalIncome, periodStart, periodEnd, setPeriod } = useMoney();
+  const {
+    transactions,
+    totalExpense,
+    totalIncome,
+    periodStart,
+    periodEnd,
+    setPeriod,
+    deleteTransaction,
+  } = useMoney();
   const [showFilter, setShowFilter] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   const navigateWeek = (direction) => {
     const start = new Date(periodStart);
@@ -68,6 +80,23 @@ export default function RecordsTab() {
   };
 
   const netBalance = totalIncome - totalExpense;
+
+  const handleDeleteClick = (id) => {
+    setDeleteConfirmId(id);
+  };
+
+  const handleDeleteConfirm = async (id) => {
+    try {
+      await deleteTransaction(id);
+      setDeleteConfirmId(null);
+    } catch (error) {
+      console.error('Failed to delete transaction:', error);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirmId(null);
+  };
 
   return (
     <div className="pb-4 pt-6">
@@ -185,12 +214,15 @@ export default function RecordsTab() {
                       const catIcon = t.category?.icon || 'tag';
                       const catName = t.category?.name || 'Uncategorized';
 
+                      // Check if this transaction is being deleted
+                      const isDeleteConfirm = deleteConfirmId === t.id;
+
                       return (
                         <div
                           key={t.id}
                           className="flex items-center justify-between p-4 hover:bg-[#f8f9f4] transition"
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 flex-1">
                             <div
                               className={`w-10 h-10 rounded-xl flex items-center justify-center text-white ${
                                 isTransfer
@@ -205,7 +237,7 @@ export default function RecordsTab() {
                                 className="w-5 h-5"
                               />
                             </div>
-                            <div>
+                            <div className="flex-1">
                               <div className="text-sm font-bold text-[#1e3a34]">
                                 {isTransfer ? 'Transfer' : catName}
                               </div>
@@ -220,12 +252,47 @@ export default function RecordsTab() {
                                   t.account?.name || 'Account'
                                 )}
                               </div>
+                              {t.description &&
+                                t.description !== 'Transaction' &&
+                                t.description !== 'Transfer' && (
+                                  <div className="text-xs text-[#7c8e88] mt-0.5">
+                                    {t.description}
+                                  </div>
+                                )}
                             </div>
                           </div>
-                          <div
-                            className={`text-sm font-bold tabular-nums ${getAmountClass(t.type)}`}
-                          >
-                            {formatAmount(t.amount, t.type)}
+
+                          <div className="flex items-center gap-2">
+                            {isDeleteConfirm ? (
+                              <>
+                                <button
+                                  onClick={() => handleDeleteConfirm(t.id)}
+                                  className="px-2 py-1 text-xs bg-[#c94c4c] text-white rounded-lg hover:bg-[#b03c3c] transition"
+                                >
+                                  Confirm
+                                </button>
+                                <button
+                                  onClick={handleDeleteCancel}
+                                  className="px-2 py-1 text-xs bg-[#7c8e88] text-white rounded-lg hover:bg-[#6a7c76] transition"
+                                >
+                                  Cancel
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <div
+                                  className={`text-sm font-bold tabular-nums ${getAmountClass(t.type)}`}
+                                >
+                                  {formatAmount(t.amount, t.type)}
+                                </div>
+                                <button
+                                  onClick={() => handleDeleteClick(t.id)}
+                                  className="p-1.5 rounded-lg text-[#7c8e88] hover:text-[#c94c4c] hover:bg-[#fdf2f2] transition"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
                       );

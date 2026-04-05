@@ -141,6 +141,20 @@ export function MoneyProvider({ children }) {
     }
   };
 
+  const updateTransaction = async (id, transaction) => {
+    try {
+      const data = await fetch(`/api/money/transactions/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(transaction),
+      }).then(readJson);
+      await fetchData();
+      return data.transaction;
+    } catch (error) {
+      console.error('Failed to update transaction:', error);
+    }
+  };
+
   const addAccount = async (account) => {
     try {
       const data = await fetch('/api/money/accounts', {
@@ -255,6 +269,7 @@ export function MoneyProvider({ children }) {
     fetchAnalysis,
     addTransaction,
     deleteTransaction,
+    updateTransaction,
     addAccount,
     updateAccount,
     deleteAccount,
