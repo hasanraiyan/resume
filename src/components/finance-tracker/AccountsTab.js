@@ -34,14 +34,16 @@ const iconColors = [
 
 const getAccountIconClass = (icon, context = 'card') => {
   if (context === 'picker') {
+    if (icon === 'wallet' || icon === 'purse') return 'w-7 h-7 object-contain';
     if (icon === 'ippb' || icon === 'pnb') return 'w-7 h-5 object-contain';
     if (icon === 'rupay') return 'w-5 h-5 object-contain';
-    return 'w-4 h-4';
+    return 'w-4 h-4 scale-125';
   }
 
+  if (icon === 'wallet' || icon === 'purse') return 'w-10 h-10 object-contain';
   if (icon === 'ippb' || icon === 'pnb') return 'w-10 h-8 object-contain';
   if (icon === 'rupay') return 'w-7 h-7 object-contain';
-  return 'w-6 h-6';
+  return 'w-6 h-6 scale-125';
 };
 
 export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
