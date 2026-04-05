@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Account from '@/models/Account';
+import Transaction from '@/models/Transaction';
 import { serializeAccount } from '@/lib/money-serializers';
 import { requireAdminAuth } from '@/lib/money-auth';
+import { computeAccountSummaries } from '@/lib/money-account-summary';
 
 export async function GET() {
   const session = await requireAdminAuth();
@@ -10,9 +12,17 @@ export async function GET() {
 
   try {
     await dbConnect();
-    const accounts = await Account.find({ deletedAt: null }).sort({ createdAt: 1 }).lean();
-    const serialized = accounts.map(serializeAccount);
-    return NextResponse.json({ success: true, accounts: serialized });
+    const [accounts, transactions] = await Promise.all([
+      Account.find({ deletedAt: null }).sort({ createdAt: 1 }).lean(),
+      Transaction.find({ deletedAt: null }).select('type amount account toAccount').lean(),
+    ]);
+
+    const accountSummary = computeAccountSummaries(accounts, transactions);
+    return NextResponse.json({
+      success: true,
+      accounts: accountSummary.accounts.map(serializeAccount),
+      totalAccountBalance: accountSummary.totalAccountBalance,
+    });
   } catch (error) {
     return NextResponse.json(
       { success: false, message: 'Failed to fetch accounts' },

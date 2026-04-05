@@ -5,6 +5,7 @@ import Account from '@/models/Account';
 import Category from '@/models/Category';
 import Transaction from '@/models/Transaction';
 import { serializeAccount, serializeCategory, serializeTransaction } from '@/lib/money-serializers';
+import { computeAccountSummaries } from '@/lib/money-account-summary';
 
 async function ensureDb() {
   await dbConnect();
@@ -15,42 +16,7 @@ async function getAccountsWithComputedBalances() {
     Account.find({ deletedAt: null }).sort({ createdAt: 1 }).lean(),
     Transaction.find({ deletedAt: null }).select('type amount account toAccount').lean(),
   ]);
-
-  const balanceMap = new Map();
-
-  for (const account of accounts) {
-    balanceMap.set(account._id.toString(), Number(account.initialBalance) || 0);
-  }
-
-  for (const transaction of transactions) {
-    const amount = Number(transaction.amount) || 0;
-    const accountId = transaction.account?.toString?.() || null;
-    const toAccountId = transaction.toAccount?.toString?.() || null;
-
-    if (transaction.type === 'expense' && accountId && balanceMap.has(accountId)) {
-      balanceMap.set(accountId, balanceMap.get(accountId) - amount);
-      continue;
-    }
-
-    if (transaction.type === 'income' && accountId && balanceMap.has(accountId)) {
-      balanceMap.set(accountId, balanceMap.get(accountId) + amount);
-      continue;
-    }
-
-    if (transaction.type === 'transfer') {
-      if (accountId && balanceMap.has(accountId)) {
-        balanceMap.set(accountId, balanceMap.get(accountId) - amount);
-      }
-      if (toAccountId && balanceMap.has(toAccountId)) {
-        balanceMap.set(toAccountId, balanceMap.get(toAccountId) + amount);
-      }
-    }
-  }
-
-  return accounts.map((account) => ({
-    ...account,
-    currentBalance: balanceMap.get(account._id.toString()) ?? 0,
-  }));
+  return computeAccountSummaries(accounts, transactions).accounts;
 }
 
 export function createGetAccountsTool() {

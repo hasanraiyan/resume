@@ -4,15 +4,17 @@ import { MoneyProvider, useMoney } from '@/context/MoneyContext';
 import { FinanceChatProvider, useFinanceChat } from '@/context/FinanceChatContext';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { useEffect } from 'react';
 import SessionProvider from '@/components/SessionProvider';
 import RecordsTab from '@/components/finance-tracker/RecordsTab';
-import AccountsTab from '@/components/finance-tracker/AccountsTab';
-import CategoriesTab from '@/components/finance-tracker/CategoriesTab';
-import AnalysisTab from '@/components/finance-tracker/AnalysisTab';
 import AddTransactionModal from '@/components/finance-tracker/AddTransactionModal';
-import ChatTab from '@/components/finance-tracker/ChatTab';
-import FinanceSettingsTab from '@/components/finance-tracker/FinanceSettingsTab';
+import {
+  AccountsSkeleton,
+  AnalysisSkeleton,
+  CategoriesSkeleton,
+  Shimmer,
+} from '@/components/finance-tracker/FinanceSkeletons';
 import {
   Receipt,
   BarChart3,
@@ -29,6 +31,38 @@ import {
 import { PurseSVG } from '@/components/finance-tracker/IconRenderer';
 import { useCallback, useState } from 'react';
 
+const AccountsTab = dynamic(() => import('@/components/finance-tracker/AccountsTab'), {
+  loading: () => <AccountsSkeleton />,
+});
+const CategoriesTab = dynamic(() => import('@/components/finance-tracker/CategoriesTab'), {
+  loading: () => <CategoriesSkeleton />,
+});
+const AnalysisTab = dynamic(() => import('@/components/finance-tracker/AnalysisTab'), {
+  loading: () => <AnalysisSkeleton />,
+});
+const ChatTab = dynamic(() => import('@/components/finance-tracker/ChatTab'), {
+  loading: () => (
+    <div className="p-6 space-y-4">
+      <Shimmer className="h-12 w-40 rounded-2xl" />
+      <Shimmer className="h-28 w-full rounded-3xl" />
+      <Shimmer className="h-24 w-4/5 rounded-3xl" />
+      <Shimmer className="h-24 w-3/4 rounded-3xl" />
+    </div>
+  ),
+});
+const FinanceSettingsTab = dynamic(
+  () => import('@/components/finance-tracker/FinanceSettingsTab'),
+  {
+    loading: () => (
+      <div className="p-6 space-y-6">
+        <Shimmer className="h-32 w-full rounded-3xl" />
+        <Shimmer className="h-28 w-full rounded-3xl" />
+        <Shimmer className="h-32 w-full rounded-3xl" />
+      </div>
+    ),
+  }
+);
+
 const tabs = [
   { id: 'records', label: 'Records', icon: Receipt },
   { id: 'analysis', label: 'Analysis', icon: BarChart3 },
@@ -41,7 +75,8 @@ const tabs = [
 function FinanceContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const { activeTab, setActiveTab, isSyncing, error, accounts, fetchData } = useMoney();
+  const { activeTab, setActiveTab, isSyncing, error, accounts, fetchData, isBootstrapLoading } =
+    useMoney();
   const { clearChat } = useFinanceChat();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [requestAddAccountModal, setRequestAddAccountModal] = useState(false);
@@ -185,7 +220,18 @@ function FinanceContent() {
         </header>
 
         {/* Content */}
-        <main className="flex-1 w-full">{renderTab()}</main>
+        <main className="flex-1 w-full">
+          {isBootstrapLoading && activeTab === 'records' ? (
+            <div className="p-6 space-y-4">
+              <Shimmer className="h-28 w-full rounded-3xl" />
+              <Shimmer className="h-14 w-56 rounded-2xl" />
+              <Shimmer className="h-24 w-full rounded-3xl" />
+              <Shimmer className="h-24 w-full rounded-3xl" />
+            </div>
+          ) : (
+            renderTab()
+          )}
+        </main>
       </div>
 
       {/* Mobile Sidebar Overlay */}

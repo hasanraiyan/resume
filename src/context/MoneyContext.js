@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
+import { createContext, useContext, useReducer, useEffect, useCallback, useRef } from 'react';
 
 const MoneyContext = createContext(null);
 
@@ -8,9 +8,16 @@ const initialState = {
   accounts: [],
   categories: [],
   transactions: [],
-  allTransactions: [],
+  stats: {
+    totalAccountBalance: 0,
+    totalTransactionCount: 0,
+    accountCount: 0,
+    categoryCount: 0,
+  },
   analysis: null,
   isLoading: false,
+  isBootstrapLoading: true,
+  isTabLoading: false,
   isSyncing: true,
   error: null,
   activeTab: 'records',
@@ -52,12 +59,16 @@ function moneyReducer(state, action) {
       return { ...state, categories: action.payload };
     case 'SET_TRANSACTIONS':
       return { ...state, transactions: action.payload };
-    case 'SET_ALL_TRANSACTIONS':
-      return { ...state, allTransactions: action.payload };
+    case 'SET_STATS':
+      return { ...state, stats: { ...state.stats, ...action.payload } };
     case 'SET_ANALYSIS':
       return { ...state, analysis: action.payload };
     case 'SET_PERIOD':
       return { ...state, periodStart: action.payload.start, periodEnd: action.payload.end };
+    case 'SET_BOOTSTRAP_LOADING':
+      return { ...state, isBootstrapLoading: action.payload };
+    case 'SET_TAB_LOADING':
+      return { ...state, isTabLoading: action.payload };
     default:
       return state;
   }
@@ -73,33 +84,68 @@ async function readJson(response) {
 
 export function MoneyProvider({ children }) {
   const [state, dispatch] = useReducer(moneyReducer, initialState);
+  const hasBootstrappedRef = useRef(false);
 
-  const fetchData = useCallback(async () => {
+  const fetchAccountsSummary = useCallback(async () => {
     try {
+      const data = await fetch('/api/money/accounts').then(readJson);
+      dispatch({ type: 'SET_ACCOUNTS', payload: data.accounts || [] });
+      dispatch({
+        type: 'SET_STATS',
+        payload: {
+          totalAccountBalance: data.totalAccountBalance || 0,
+          accountCount: data.accounts?.length || 0,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to fetch account summary:', error);
+      throw error;
+    }
+  }, []);
+
+  const fetchTransactionsForPeriod = useCallback(async (startDate, endDate) => {
+    try {
+      dispatch({ type: 'SET_TAB_LOADING', payload: true });
+      const params = new URLSearchParams();
+      if (startDate) params.set('startDate', startDate);
+      if (endDate) params.set('endDate', endDate);
+      const data = await fetch(`/api/money/transactions?${params}`).then(readJson);
+      dispatch({ type: 'SET_TRANSACTIONS', payload: data.transactions || [] });
+      return data.transactions || [];
+    } catch (error) {
+      console.error('Failed to fetch period transactions:', error);
+      throw error;
+    } finally {
+      dispatch({ type: 'SET_TAB_LOADING', payload: false });
+    }
+  }, []);
+
+  const fetchBootstrap = useCallback(async () => {
+    try {
+      dispatch({ type: 'SET_BOOTSTRAP_LOADING', payload: true });
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_SYNCING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
 
-      const [accData, catData, transData, allTransData] = await Promise.all([
-        fetch('/api/money/accounts').then(readJson),
-        fetch('/api/money/categories').then(readJson),
-        fetch(
-          `/api/money/transactions?startDate=${encodeURIComponent(state.periodStart)}&endDate=${encodeURIComponent(state.periodEnd)}`
-        ).then(readJson),
-        fetch('/api/money/transactions').then(readJson),
-      ]);
+      const params = new URLSearchParams({
+        startDate: state.periodStart,
+        endDate: state.periodEnd,
+      });
+      const data = await fetch(`/api/money/bootstrap?${params}`).then(readJson);
 
-      dispatch({ type: 'SET_ACCOUNTS', payload: accData.accounts || [] });
-      dispatch({ type: 'SET_CATEGORIES', payload: catData.categories || [] });
-      dispatch({ type: 'SET_TRANSACTIONS', payload: transData.transactions || [] });
-      dispatch({ type: 'SET_ALL_TRANSACTIONS', payload: allTransData.transactions || [] });
+      dispatch({ type: 'SET_ACCOUNTS', payload: data.accounts || [] });
+      dispatch({ type: 'SET_CATEGORIES', payload: data.categories || [] });
+      dispatch({ type: 'SET_TRANSACTIONS', payload: data.transactions || [] });
+      dispatch({ type: 'SET_STATS', payload: data.stats || {} });
     } catch (error) {
-      console.error('Failed to fetch finance data:', error);
+      console.error('Failed to fetch finance bootstrap:', error);
       dispatch({
         type: 'SET_ERROR',
         payload: 'Failed to load finance data. Please try again.',
       });
     } finally {
+      hasBootstrappedRef.current = true;
+      dispatch({ type: 'SET_BOOTSTRAP_LOADING', payload: false });
       dispatch({ type: 'SET_LOADING', payload: false });
       dispatch({ type: 'SET_SYNCING', payload: false });
     }
@@ -107,6 +153,7 @@ export function MoneyProvider({ children }) {
 
   const fetchAnalysis = useCallback(async (startDate, endDate) => {
     try {
+      dispatch({ type: 'SET_TAB_LOADING', payload: true });
       const params = new URLSearchParams();
       if (startDate) params.set('startDate', startDate);
       if (endDate) params.set('endDate', endDate);
@@ -114,12 +161,21 @@ export function MoneyProvider({ children }) {
       dispatch({ type: 'SET_ANALYSIS', payload: data.analysis });
     } catch (error) {
       console.error('Failed to fetch analysis:', error);
+    } finally {
+      dispatch({ type: 'SET_TAB_LOADING', payload: false });
     }
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchBootstrap();
+  }, []);
+
+  useEffect(() => {
+    if (!hasBootstrappedRef.current) return;
+    fetchTransactionsForPeriod(state.periodStart, state.periodEnd).catch((error) => {
+      console.error('Failed to refresh period transactions:', error);
+    });
+  }, [fetchTransactionsForPeriod, state.periodEnd, state.periodStart]);
 
   const addTransaction = async (transaction) => {
     try {
@@ -128,7 +184,11 @@ export function MoneyProvider({ children }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(transaction),
       }).then(readJson);
-      await fetchData();
+      await Promise.all([
+        fetchTransactionsForPeriod(state.periodStart, state.periodEnd),
+        fetchAccountsSummary(),
+        state.analysis ? fetchAnalysis(state.periodStart, state.periodEnd) : Promise.resolve(),
+      ]);
       return data.transaction;
     } catch (error) {
       console.error('Failed to add transaction:', error);
@@ -139,7 +199,11 @@ export function MoneyProvider({ children }) {
   const deleteTransaction = async (id) => {
     try {
       await fetch(`/api/money/transactions/${id}`, { method: 'DELETE' }).then(readJson);
-      await fetchData();
+      await Promise.all([
+        fetchTransactionsForPeriod(state.periodStart, state.periodEnd),
+        fetchAccountsSummary(),
+        state.analysis ? fetchAnalysis(state.periodStart, state.periodEnd) : Promise.resolve(),
+      ]);
     } catch (error) {
       console.error('Failed to delete transaction:', error);
       throw error;
@@ -153,7 +217,11 @@ export function MoneyProvider({ children }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(transaction),
       }).then(readJson);
-      await fetchData();
+      await Promise.all([
+        fetchTransactionsForPeriod(state.periodStart, state.periodEnd),
+        fetchAccountsSummary(),
+        state.analysis ? fetchAnalysis(state.periodStart, state.periodEnd) : Promise.resolve(),
+      ]);
       return data.transaction;
     } catch (error) {
       console.error('Failed to update transaction:', error);
@@ -168,7 +236,7 @@ export function MoneyProvider({ children }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(account),
       }).then(readJson);
-      await fetchData();
+      await fetchAccountsSummary();
       return data.account;
     } catch (error) {
       console.error('Failed to add account:', error);
@@ -183,7 +251,7 @@ export function MoneyProvider({ children }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(account),
       }).then(readJson);
-      await fetchData();
+      await fetchAccountsSummary();
       return data.account;
     } catch (error) {
       console.error('Failed to update account:', error);
@@ -194,7 +262,7 @@ export function MoneyProvider({ children }) {
   const deleteAccount = async (id) => {
     try {
       await fetch(`/api/money/accounts/${id}`, { method: 'DELETE' }).then(readJson);
-      await fetchData();
+      await fetchAccountsSummary();
     } catch (error) {
       console.error('Failed to delete account:', error);
       throw error;
@@ -208,7 +276,12 @@ export function MoneyProvider({ children }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(category),
       }).then(readJson);
-      await fetchData();
+      const categoriesData = await fetch('/api/money/categories').then(readJson);
+      dispatch({ type: 'SET_CATEGORIES', payload: categoriesData.categories || [] });
+      dispatch({
+        type: 'SET_STATS',
+        payload: { categoryCount: categoriesData.categories?.length || 0 },
+      });
       return data.category;
     } catch (error) {
       console.error('Failed to add category:', error);
@@ -223,7 +296,12 @@ export function MoneyProvider({ children }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(category),
       }).then(readJson);
-      await fetchData();
+      const categoriesData = await fetch('/api/money/categories').then(readJson);
+      dispatch({ type: 'SET_CATEGORIES', payload: categoriesData.categories || [] });
+      dispatch({
+        type: 'SET_STATS',
+        payload: { categoryCount: categoriesData.categories?.length || 0 },
+      });
       return data.category;
     } catch (error) {
       console.error('Failed to update category:', error);
@@ -234,7 +312,12 @@ export function MoneyProvider({ children }) {
   const deleteCategory = async (id) => {
     try {
       await fetch(`/api/money/categories/${id}`, { method: 'DELETE' }).then(readJson);
-      await fetchData();
+      const categoriesData = await fetch('/api/money/categories').then(readJson);
+      dispatch({ type: 'SET_CATEGORIES', payload: categoriesData.categories || [] });
+      dispatch({
+        type: 'SET_STATS',
+        payload: { categoryCount: categoriesData.categories?.length || 0 },
+      });
     } catch (error) {
       console.error('Failed to delete category:', error);
       throw error;
@@ -244,7 +327,7 @@ export function MoneyProvider({ children }) {
   const clearFinanceData = async () => {
     try {
       await fetch('/api/money/reset', { method: 'POST' }).then(readJson);
-      await fetchData();
+      await fetchBootstrap();
     } catch (error) {
       console.error('Failed to clear finance data:', error);
       throw error;
@@ -267,37 +350,8 @@ export function MoneyProvider({ children }) {
     .filter((transaction) => transaction.type === 'income')
     .reduce((sum, transaction) => sum + transaction.amount, 0);
 
-  // Calculate current balance for each account based on transactions
-  const accountsWithBalance = state.accounts.map((account) => {
-    let balance = account.initialBalance || 0;
-
-    // Balances must use the full ledger, not the currently selected reporting period.
-    state.allTransactions.forEach((transaction) => {
-      if (transaction.type === 'expense' && transaction.account?.id === account.id) {
-        balance -= transaction.amount;
-      } else if (transaction.type === 'income' && transaction.account?.id === account.id) {
-        balance += transaction.amount;
-      } else if (transaction.type === 'transfer') {
-        if (transaction.account?.id === account.id) {
-          balance -= transaction.amount;
-        }
-        if (transaction.toAccount?.id === account.id) {
-          balance += transaction.amount;
-        }
-      }
-    });
-
-    return {
-      ...account,
-      currentBalance: balance,
-    };
-  });
-
-  // Calculate total balance from current balances, not just initial balances
-  const totalBalance = accountsWithBalance.reduce(
-    (sum, account) => sum + (account.currentBalance || 0),
-    0
-  );
+  const accountsWithBalance = state.accounts;
+  const totalBalance = state.stats.totalAccountBalance || 0;
 
   const value = {
     ...state,
@@ -305,7 +359,10 @@ export function MoneyProvider({ children }) {
     totalIncome,
     totalBalance,
     accountsWithBalance,
-    fetchData,
+    fetchData: fetchBootstrap,
+    fetchBootstrap,
+    fetchTransactionsForPeriod,
+    fetchAccountsSummary,
     fetchAnalysis,
     addTransaction,
     deleteTransaction,

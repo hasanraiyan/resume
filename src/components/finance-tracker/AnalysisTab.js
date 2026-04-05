@@ -1,15 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMoney } from '@/context/MoneyContext';
-import {
-  ChevronDown,
-  TrendingDown,
-  TrendingUp,
-  BarChart3,
-  PieChart,
-  ArrowLeftRight,
-} from 'lucide-react';
+import { ChevronDown, TrendingDown, TrendingUp, BarChart3, PieChart } from 'lucide-react';
 import { PurseSVG } from '@/components/finance-tracker/IconRenderer';
 import { Shimmer } from './FinanceSkeletons';
 import dynamic from 'next/dynamic';
@@ -24,6 +17,10 @@ const viewOptions = [
 ];
 
 const periodOptions = ['Daily', 'Weekly', 'Monthly', '3 Months', '6 Months', 'Yearly'];
+const currencyFormatter = new Intl.NumberFormat('en-IN', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
 export default function AnalysisTab() {
   const { analysis, fetchAnalysis, periodStart, periodEnd, setPeriod } = useMoney();
@@ -33,11 +30,12 @@ export default function AnalysisTab() {
 
   useEffect(() => {
     fetchAnalysis(periodStart, periodEnd);
-  }, [fetchAnalysis, periodStart, periodEnd]);
+  }, [fetchAnalysis, periodEnd, periodStart]);
 
   const handlePeriodChange = (period) => {
     const now = new Date();
     const start = new Date();
+
     switch (period) {
       case 'Daily':
         start.setHours(0, 0, 0, 0);
@@ -57,51 +55,67 @@ export default function AnalysisTab() {
       case 'Yearly':
         start.setFullYear(now.getFullYear() - 1);
         break;
+      default:
+        break;
     }
+
     setSelectedPeriod(period);
     setPeriod(start.toISOString(), now.toISOString());
     setShowPeriodDropdown(false);
   };
 
-  const formatPeriodRange = () => {
-    const start = new Date(periodStart);
-    const end = new Date(periodEnd);
-    const opts = { month: 'short', day: 'numeric' };
-    return `${start.toLocaleDateString('en-US', opts)} - ${end.toLocaleDateString('en-US', opts)}`;
-  };
-
-  const expenseCategories =
-    analysis?.categoryBreakdown?.filter((item) => item.type === 'expense') || [];
-  const incomeCategories =
-    analysis?.categoryBreakdown?.filter((item) => item.type === 'income') || [];
-  const currentCategories = viewMode === 'income' ? incomeCategories : expenseCategories;
-  const total = currentCategories.reduce((sum, item) => sum + item.total, 0) || 1;
-
-  const dailyFlowMap = (analysis?.dailyFlow || []).reduce((acc, entry) => {
-    if (!acc[entry.date]) {
-      acc[entry.date] = { expense: 0, income: 0 };
-    }
-    acc[entry.date][entry.type] = entry.total;
-    return acc;
-  }, {});
-  const dailyEntries = Object.entries(dailyFlowMap);
-  const maxDaily = Math.max(
-    ...dailyEntries.map(([, data]) => Math.max(data.expense, data.income)),
-    1
+  const expenseCategories = useMemo(
+    () => analysis?.categoryBreakdown?.filter((item) => item.type === 'expense') || [],
+    [analysis]
+  );
+  const incomeCategories = useMemo(
+    () => analysis?.categoryBreakdown?.filter((item) => item.type === 'income') || [],
+    [analysis]
+  );
+  const currentCategories = useMemo(
+    () => (viewMode === 'income' ? incomeCategories : expenseCategories),
+    [expenseCategories, incomeCategories, viewMode]
+  );
+  const total = useMemo(
+    () => currentCategories.reduce((sum, item) => sum + item.total, 0) || 1,
+    [currentCategories]
   );
 
-  const accountData = (analysis?.accountAnalysis || []).reduce((acc, entry) => {
-    const key = entry.accountId || entry.name;
-    if (!acc[key]) {
-      acc[key] = { name: entry.name, icon: entry.icon, expense: 0, income: 0 };
-    }
-    acc[key][entry.type] = entry.total;
-    return acc;
-  }, {});
-  const maxAccountValue = Math.max(
-    ...Object.values(accountData).flatMap((account) => [account.expense, account.income]),
-    1
-  );
+  const { dailyEntries, maxDaily } = useMemo(() => {
+    const dailyFlowMap = (analysis?.dailyFlow || []).reduce((accumulator, entry) => {
+      if (!accumulator[entry.date]) {
+        accumulator[entry.date] = { expense: 0, income: 0 };
+      }
+      accumulator[entry.date][entry.type] = entry.total;
+      return accumulator;
+    }, {});
+
+    const entries = Object.entries(dailyFlowMap);
+    return {
+      dailyEntries: entries,
+      maxDaily: Math.max(...entries.map(([, data]) => Math.max(data.expense, data.income)), 1),
+    };
+  }, [analysis]);
+
+  const { accounts, maxAccountValue } = useMemo(() => {
+    const accountData = (analysis?.accountAnalysis || []).reduce((accumulator, entry) => {
+      const key = entry.accountId || entry.name;
+      if (!accumulator[key]) {
+        accumulator[key] = { name: entry.name, icon: entry.icon, expense: 0, income: 0 };
+      }
+      accumulator[key][entry.type] = entry.total;
+      return accumulator;
+    }, {});
+
+    const values = Object.values(accountData);
+    return {
+      accounts: values,
+      maxAccountValue: Math.max(
+        ...values.flatMap((account) => [account.expense, account.income]),
+        1
+      ),
+    };
+  }, [analysis]);
 
   const chartColors = [
     '#1f644e',
@@ -115,12 +129,12 @@ export default function AnalysisTab() {
   ];
 
   const EmptyState = ({ title, description }) => (
-    <div className="flex flex-col items-center justify-center py-16 px-6">
-      <div className="w-16 h-16 rounded-2xl bg-[#f0f5f2] flex items-center justify-center mb-4">
-        <PieChart className="w-8 h-8 text-[#7c8e88]" />
+    <div className="flex flex-col items-center justify-center px-6 py-16">
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#f0f5f2]">
+        <PieChart className="h-8 w-8 text-[#7c8e88]" />
       </div>
-      <p className="text-sm font-bold text-[#1e3a34] mb-1">{title}</p>
-      <p className="text-xs text-[#7c8e88] text-center">{description}</p>
+      <p className="mb-1 text-sm font-bold text-[#1e3a34]">{title}</p>
+      <p className="text-center text-xs text-[#7c8e88]">{description}</p>
     </div>
   );
 
@@ -136,31 +150,30 @@ export default function AnalysisTab() {
 
     return (
       <div className="space-y-6">
-        {/* Donut Chart + Legend */}
-        <div className="bg-white border border-[#e5e3d8] rounded-xl p-6">
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            {/* Donut */}
+        <div className="rounded-xl border border-[#e5e3d8] bg-white p-6">
+          <div className="flex flex-col items-center gap-6 sm:flex-row">
             <div className="relative shrink-0">
               <svg width="160" height="160" className="-rotate-90">
                 <circle cx="80" cy="80" r="56" fill="none" stroke="#f0f5f2" strokeWidth="24" />
                 {(() => {
-                  let cum = 0;
-                  return currentCategories.slice(0, 6).map((cat, i) => {
-                    const pct = cat.total / total;
-                    const circ = 2 * Math.PI * 56;
-                    const dash = circ * pct;
-                    const offset = -circ * cum;
-                    cum += pct;
+                  let cumulative = 0;
+                  return currentCategories.slice(0, 6).map((category, index) => {
+                    const percentage = category.total / total;
+                    const circumference = 2 * Math.PI * 56;
+                    const dash = circumference * percentage;
+                    const offset = -circumference * cumulative;
+                    cumulative += percentage;
+
                     return (
                       <circle
-                        key={cat.categoryId || i}
+                        key={category.categoryId || index}
                         cx="80"
                         cy="80"
                         r="56"
                         fill="none"
-                        stroke={chartColors[i % chartColors.length]}
+                        stroke={chartColors[index % chartColors.length]}
                         strokeWidth="24"
-                        strokeDasharray={`${dash} ${circ - dash}`}
+                        strokeDasharray={`${dash} ${circumference - dash}`}
                         strokeDashoffset={offset}
                         className="transition-all duration-700"
                       />
@@ -169,7 +182,7 @@ export default function AnalysisTab() {
                 })()}
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
                   Total
                 </span>
                 <span className="text-lg font-bold text-[#1e3a34]">
@@ -178,17 +191,16 @@ export default function AnalysisTab() {
               </div>
             </div>
 
-            {/* Legend */}
-            <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-2">
-              {currentCategories.slice(0, 6).map((cat, i) => (
-                <div key={cat.categoryId || i} className="flex items-center gap-2">
+            <div className="grid flex-1 grid-cols-2 gap-x-4 gap-y-2">
+              {currentCategories.slice(0, 6).map((category, index) => (
+                <div key={category.categoryId || index} className="flex items-center gap-2">
                   <div
-                    className="w-3 h-3 rounded-full shrink-0"
-                    style={{ backgroundColor: chartColors[i % chartColors.length] }}
+                    className="h-3 w-3 shrink-0 rounded-full"
+                    style={{ backgroundColor: chartColors[index % chartColors.length] }}
                   />
-                  <span className="text-xs text-[#7c8e88] truncate flex-1">{cat.name}</span>
+                  <span className="flex-1 truncate text-xs text-[#7c8e88]">{category.name}</span>
                   <span className="text-xs font-bold text-[#1e3a34]">
-                    {((cat.total / total) * 100).toFixed(0)}%
+                    {((category.total / total) * 100).toFixed(0)}%
                   </span>
                 </div>
               ))}
@@ -196,40 +208,39 @@ export default function AnalysisTab() {
           </div>
         </div>
 
-        {/* Category Bars */}
-        <div className="bg-white border border-[#e5e3d8] rounded-xl p-6">
-          <h3 className="text-sm font-bold text-[#1e3a34] mb-4">Breakdown</h3>
+        <div className="rounded-xl border border-[#e5e3d8] bg-white p-6">
+          <h3 className="mb-4 text-sm font-bold text-[#1e3a34]">Breakdown</h3>
           <div className="space-y-4">
-            {currentCategories.map((cat, i) => {
-              const pct = (cat.total / total) * 100;
+            {currentCategories.map((category, index) => {
+              const percentage = (category.total / total) * 100;
               return (
-                <div key={cat.categoryId || i}>
-                  <div className="flex items-center justify-between mb-1.5">
+                <div key={category.categoryId || index}>
+                  <div className="mb-1.5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
-                        style={{ backgroundColor: chartColors[i % chartColors.length] }}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-white"
+                        style={{ backgroundColor: chartColors[index % chartColors.length] }}
                       >
-                        <IconRenderer name={cat.icon} className="w-4 h-4" />
+                        <IconRenderer name={category.icon} className="h-4 w-4" />
                       </div>
-                      <span className="text-sm font-bold text-[#1e3a34]">{cat.name}</span>
+                      <span className="text-sm font-bold text-[#1e3a34]">{category.name}</span>
                     </div>
                     <span className="text-sm font-bold text-[#1e3a34]">
-                      ₹{cat.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      ₹{currencyFormatter.format(category.total)}
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="flex-1 h-2 bg-[#f0f5f2] rounded-full overflow-hidden">
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#f0f5f2]">
                       <div
                         className="h-full rounded-full transition-all duration-700"
                         style={{
-                          width: `${pct}%`,
-                          backgroundColor: chartColors[i % chartColors.length],
+                          width: `${percentage}%`,
+                          backgroundColor: chartColors[index % chartColors.length],
                         }}
                       />
                     </div>
-                    <span className="text-xs font-bold text-[#7c8e88] w-10 text-right">
-                      {pct.toFixed(1)}%
+                    <span className="w-10 text-right text-xs font-bold text-[#7c8e88]">
+                      {percentage.toFixed(1)}%
                     </span>
                   </div>
                 </div>
@@ -249,27 +260,28 @@ export default function AnalysisTab() {
     }
 
     return (
-      <div className="bg-white border border-[#e5e3d8] rounded-xl p-6">
-        <h3 className="text-sm font-bold text-[#1e3a34] mb-4">Daily Flow</h3>
-        <div className="h-48 flex items-end gap-1.5 mb-4">
-          {dailyEntries.map(([date, data], i) => {
-            const height = (data.expense / maxDaily) * 100;
+      <div className="rounded-xl border border-[#e5e3d8] bg-white p-6">
+        <h3 className="mb-4 text-sm font-bold text-[#1e3a34]">Daily Flow</h3>
+        <div className="mb-4 flex h-48 items-end gap-1.5">
+          {dailyEntries.map(([date, data]) => {
+            const expenseHeight = (data.expense / maxDaily) * 100;
             const incomeHeight = (data.income / maxDaily) * 100;
+
             return (
               <div
                 key={date}
-                className="flex-1 flex flex-col items-center justify-end h-full group relative"
+                className="group relative flex h-full flex-1 flex-col items-center justify-end"
               >
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1e3a34] text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap z-10">
+                <div className="absolute -top-8 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded bg-[#1e3a34] px-2 py-1 text-[10px] font-bold text-white opacity-0 transition group-hover:opacity-100">
                   ₹{data.expense.toFixed(0)}
                 </div>
-                <div className="w-full flex gap-0.5 items-end h-full">
+                <div className="flex h-full w-full items-end gap-0.5">
                   <div
-                    className="flex-1 bg-[#c94c4c]/70 rounded-t-sm hover:bg-[#c94c4c] transition-all"
-                    style={{ height: `${Math.max(height, 2)}%` }}
+                    className="flex-1 rounded-t-sm bg-[#c94c4c]/70 transition-all hover:bg-[#c94c4c]"
+                    style={{ height: `${Math.max(expenseHeight, 2)}%` }}
                   />
                   <div
-                    className="flex-1 bg-[#1f644e]/70 rounded-t-sm hover:bg-[#1f644e] transition-all"
+                    className="flex-1 rounded-t-sm bg-[#1f644e]/70 transition-all hover:bg-[#1f644e]"
                     style={{ height: `${Math.max(incomeHeight, 2)}%` }}
                   />
                 </div>
@@ -286,13 +298,13 @@ export default function AnalysisTab() {
             </div>
           ))}
         </div>
-        <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-[#e5e3d8]">
+        <div className="mt-4 flex items-center justify-center gap-4 border-t border-[#e5e3d8] pt-4">
           <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-sm bg-[#c94c4c]/70" />
+            <div className="h-2.5 w-2.5 rounded-sm bg-[#c94c4c]/70" />
             <span className="text-[10px] font-bold text-[#7c8e88]">Expense</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-sm bg-[#1f644e]/70" />
+            <div className="h-2.5 w-2.5 rounded-sm bg-[#1f644e]/70" />
             <span className="text-[10px] font-bold text-[#7c8e88]">Income</span>
           </div>
         </div>
@@ -301,67 +313,70 @@ export default function AnalysisTab() {
   };
 
   const renderAccountAnalysis = () => {
-    const accounts = Object.values(accountData);
     if (accounts.length === 0) {
       return <EmptyState title="No account data" description="Account activity will appear here" />;
     }
 
     return (
       <div className="space-y-4">
-        {/* Chart */}
-        <div className="bg-white border border-[#e5e3d8] rounded-xl p-6">
-          <h3 className="text-sm font-bold text-[#1e3a34] mb-4">Account Activity</h3>
-          <div className="h-40 flex items-end gap-2 mb-4">
-            {accounts.map((account, i) => (
-              <div key={i} className="flex-1 flex gap-0.5 items-end h-full">
+        <div className="rounded-xl border border-[#e5e3d8] bg-white p-6">
+          <h3 className="mb-4 text-sm font-bold text-[#1e3a34]">Account Activity</h3>
+          <div className="mb-4 flex h-40 items-end gap-2">
+            {accounts.map((account, index) => (
+              <div
+                key={`${account.name}-${index}`}
+                className="flex h-full flex-1 items-end gap-0.5"
+              >
                 <div
-                  className="flex-1 bg-[#c94c4c]/60 rounded-t-sm transition-all duration-700"
+                  className="flex-1 rounded-t-sm bg-[#c94c4c]/60 transition-all duration-700"
                   style={{ height: `${(account.expense / maxAccountValue) * 100}%` }}
                 />
                 <div
-                  className="flex-1 bg-[#1f644e]/60 rounded-t-sm transition-all duration-700"
+                  className="flex-1 rounded-t-sm bg-[#1f644e]/60 transition-all duration-700"
                   style={{ height: `${(account.income / maxAccountValue) * 100}%` }}
                 />
               </div>
             ))}
           </div>
-          <div className="flex items-center justify-center gap-4 pt-4 border-t border-[#e5e3d8]">
+          <div className="flex items-center justify-center gap-4 border-t border-[#e5e3d8] pt-4">
             <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-sm bg-[#c94c4c]/60" />
+              <div className="h-2.5 w-2.5 rounded-sm bg-[#c94c4c]/60" />
               <span className="text-[10px] font-bold text-[#7c8e88]">Expense</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-sm bg-[#1f644e]/60" />
+              <div className="h-2.5 w-2.5 rounded-sm bg-[#1f644e]/60" />
               <span className="text-[10px] font-bold text-[#7c8e88]">Income</span>
             </div>
           </div>
         </div>
 
-        {/* Account Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {accounts.map((account, i) => (
-            <div key={i} className="bg-white border border-[#e5e3d8] rounded-xl p-4">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-[#f0f5f2] flex items-center justify-center">
-                  <IconRenderer name={account.icon} className="w-5 h-5 text-[#7c8e88]" />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {accounts.map((account, index) => (
+            <div
+              key={`${account.name}-${index}`}
+              className="rounded-xl border border-[#e5e3d8] bg-white p-4"
+            >
+              <div className="mb-3 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f0f5f2]">
+                  <IconRenderer name={account.icon} className="h-5 w-5 text-[#7c8e88]" />
                 </div>
                 <span className="text-sm font-bold text-[#1e3a34]">{account.name}</span>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
                     Expense
                   </p>
-                  <p className="text-sm font-bold text-[#c94c4c] mt-0.5">
-                    ₹{account.expense.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  <p className="mt-0.5 text-sm font-bold text-[#c94c4c]">
+                    ₹{currencyFormatter.format(account.expense)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
                     Income
                   </p>
-                  <p className="text-sm font-bold text-[#1f644e] mt-0.5">
-                    ₹{account.income.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  <p className="mt-0.5 text-sm font-bold text-[#1f644e]">
+                    ₹{currencyFormatter.format(account.income)}
                   </p>
                 </div>
               </div>
@@ -376,86 +391,82 @@ export default function AnalysisTab() {
     <div className="mb-6 pb-4 pt-6">
       <div className="w-full px-4 lg:px-6">
         <div className="w-full max-w-6xl mx-auto">
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            <div className="bg-white border border-[#e5e3d8] rounded-xl p-5 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-[#c94c4c]/10 flex items-center justify-center shrink-0">
-                <TrendingDown className="w-6 h-6 text-[#c94c4c]" />
+          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="flex items-center gap-4 rounded-xl border border-[#e5e3d8] bg-white p-5">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#c94c4c]/10">
+                <TrendingDown className="h-6 w-6 text-[#c94c4c]" />
               </div>
               <div>
-                <p className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider">
+                <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
                   Total Expense
                 </p>
-                <p className="text-xl font-bold text-[#c94c4c] mt-0.5">
+                <p className="mt-0.5 text-xl font-bold text-[#c94c4c]">
                   {analysis ? (
-                    `₹${analysis.totalExpense.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+                    `₹${currencyFormatter.format(analysis.totalExpense)}`
                   ) : (
-                    <Shimmer className="w-20 h-5" />
+                    <Shimmer className="h-5 w-20" />
                   )}
                 </p>
               </div>
             </div>
-            <div className="bg-white border border-[#e5e3d8] rounded-xl p-5 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-[#1f644e]/10 flex items-center justify-center shrink-0">
-                <TrendingUp className="w-6 h-6 text-[#1f644e]" />
+            <div className="flex items-center gap-4 rounded-xl border border-[#e5e3d8] bg-white p-5">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#1f644e]/10">
+                <TrendingUp className="h-6 w-6 text-[#1f644e]" />
               </div>
               <div>
-                <p className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider">
+                <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
                   Total Income
                 </p>
-                <p className="text-xl font-bold text-[#1f644e] mt-0.5">
+                <p className="mt-0.5 text-xl font-bold text-[#1f644e]">
                   {analysis ? (
-                    `₹${analysis.totalIncome.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+                    `₹${currencyFormatter.format(analysis.totalIncome)}`
                   ) : (
-                    <Shimmer className="w-20 h-5" />
+                    <Shimmer className="h-5 w-20" />
                   )}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Controls */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
-            {/* View Tabs */}
-            <div className="flex bg-white border border-[#e5e3d8] rounded-xl p-1 gap-0.5">
-              {viewOptions.map((opt) => (
+          <div className="mb-6 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+            <div className="flex gap-0.5 rounded-xl border border-[#e5e3d8] bg-white p-1">
+              {viewOptions.map((option) => (
                 <button
-                  key={opt.id}
-                  onClick={() => setViewMode(opt.id)}
-                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                    viewMode === opt.id
+                  key={option.id}
+                  onClick={() => setViewMode(option.id)}
+                  className={`flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-all ${
+                    viewMode === option.id
                       ? 'bg-[#1f644e] text-white shadow-sm'
                       : 'text-[#7c8e88] hover:text-[#1e3a34]'
                   }`}
                 >
-                  <opt.icon className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{opt.label}</span>
+                  <option.icon className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">{option.label}</span>
                 </button>
               ))}
             </div>
 
-            {/* Period Selector */}
             <div className="relative">
               <button
                 onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
-                className="flex items-center gap-2 bg-white border border-[#e5e3d8] rounded-xl px-3 py-2 text-xs font-bold text-[#1e3a34] hover:bg-[#f8f9f4] transition cursor-pointer"
+                className="flex cursor-pointer items-center gap-2 rounded-xl border border-[#e5e3d8] bg-white px-3 py-2 text-xs font-bold text-[#1e3a34] transition hover:bg-[#f8f9f4]"
               >
                 {selectedPeriod}
-                <ChevronDown className="w-3.5 h-3.5 text-[#7c8e88]" />
+                <ChevronDown className="h-3.5 w-3.5 text-[#7c8e88]" />
               </button>
               {showPeriodDropdown && (
-                <div className="absolute right-0 top-full mt-1 bg-white border border-[#e5e3d8] rounded-xl shadow-lg py-1 z-20 min-w-[140px]">
-                  {periodOptions.map((p) => (
+                <div className="absolute right-0 top-full z-20 mt-1 min-w-[140px] rounded-xl border border-[#e5e3d8] bg-white py-1 shadow-lg">
+                  {periodOptions.map((period) => (
                     <button
-                      key={p}
-                      onClick={() => handlePeriodChange(p)}
-                      className={`w-full text-left px-3 py-2 text-xs font-bold transition cursor-pointer ${
-                        selectedPeriod === p
+                      key={period}
+                      onClick={() => handlePeriodChange(period)}
+                      className={`w-full cursor-pointer px-3 py-2 text-left text-xs font-bold transition ${
+                        selectedPeriod === period
                           ? 'bg-[#1f644e] text-white'
                           : 'text-[#7c8e88] hover:bg-[#f0f5f2]'
                       }`}
                     >
-                      {p}
+                      {period}
                     </button>
                   ))}
                 </div>
@@ -463,17 +474,16 @@ export default function AnalysisTab() {
             </div>
           </div>
 
-          {/* Content */}
           {!analysis ? (
-            <div className="px-4 space-y-3 mt-4">
-              <div className="flex items-center gap-4 mb-6 justify-center">
-                <Shimmer className="w-[140px] h-[140px] rounded-full" />
+            <div className="mt-4 space-y-3 px-4">
+              <div className="mb-6 flex items-center justify-center gap-4">
+                <Shimmer className="h-[140px] w-[140px] rounded-full" />
                 <div className="space-y-2.5">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <Shimmer className="w-2.5 h-2.5 rounded-full" />
-                      <Shimmer className="w-16 h-3" />
-                      <Shimmer className="w-10 h-3" />
+                  {[1, 2, 3, 4, 5].map((item) => (
+                    <div key={item} className="flex items-center gap-2">
+                      <Shimmer className="h-2.5 w-2.5 rounded-full" />
+                      <Shimmer className="h-3 w-16" />
+                      <Shimmer className="h-3 w-10" />
                     </div>
                   ))}
                 </div>
