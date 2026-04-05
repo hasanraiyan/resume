@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useMoney } from '@/context/MoneyContext';
-import { MoreVertical, Edit3, Trash2, Plus } from 'lucide-react';
+import { MoreVertical, Plus, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 const IconRenderer = dynamic(() => import('./IconRenderer'), { ssr: false });
@@ -84,113 +84,143 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
   };
 
   return (
-    <div className="pb-4">
-      {/* Content */}
-      <div className="w-full px-4">
-        <div className="w-full max-w-5xl">
-          {/* Net Worth Header */}
-          <div className="font-bold text-sm my-4 px-4 text-center">
-            [ All Accounts ₹{totalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })} ]
-          </div>
-
-          {/* Summary */}
-          <div className="flex text-center border-b border-[#e5e3d8] pb-2 mb-4 px-4">
-            <div className="flex-1">
-              <div className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider mb-1">
-                Expense so far
+    <div className="pb-4 pt-6">
+      <div className="w-full px-4 lg:px-6">
+        <div className="w-full max-w-6xl mx-auto">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <div className="bg-white border border-[#e5e3d8] rounded-xl p-5 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-[#1f644e]/10 flex items-center justify-center shrink-0">
+                <Wallet className="w-6 h-6 text-[#1f644e]" />
               </div>
-              <div className="text-sm font-bold text-[#c94c4c]">
-                ₹{totalExpense.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-              </div>
-            </div>
-            <div className="flex-1">
-              <div className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider mb-1">
-                Income so far
-              </div>
-              <div className="text-sm font-bold text-[#1e3a34]">
-                ₹{totalIncome.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              <div>
+                <p className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider">
+                  Total Balance
+                </p>
+                <p className="text-xl font-bold text-[#1e3a34] mt-0.5">
+                  ₹{totalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </p>
               </div>
             </div>
+            <div className="bg-white border border-[#e5e3d8] rounded-xl p-5 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-[#c94c4c]/10 flex items-center justify-center shrink-0">
+                <TrendingDown className="w-6 h-6 text-[#c94c4c]" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider">Expense</p>
+                <p className="text-xl font-bold text-[#c94c4c] mt-0.5">
+                  ₹{totalExpense.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+            </div>
+            <div className="bg-white border border-[#e5e3d8] rounded-xl p-5 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-[#1f644e]/10 flex items-center justify-center shrink-0">
+                <TrendingUp className="w-6 h-6 text-[#1f644e]" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider">Income</p>
+                <p className="text-xl font-bold text-[#1e3a34] mt-0.5">
+                  ₹{totalIncome.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* Section Label */}
-          <div className="text-xs font-bold text-[#1f644e] mb-2 px-4">Accounts</div>
+          {/* Accounts Grid */}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-bold text-[#1f644e]">Your Accounts</h2>
+            <button
+              onClick={() => setShowForm(true)}
+              className="flex items-center gap-1.5 border border-[#1f644e] text-[#1f644e] px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#1f644e] hover:text-white transition cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add Account
+            </button>
+          </div>
 
-          {/* Account List */}
-          <div className="px-4 space-y-3">
-            {accounts.map((account, index) => {
-              const colorSet = iconColors[index % iconColors.length];
-              return (
-                <div
-                  key={account.id}
-                  className="border border-[#e5e3d8] bg-[#faf9ed] rounded-lg p-3 flex justify-between items-center relative"
-                >
-                  <div className="flex gap-3 items-center">
-                    <div
-                      className={`w-10 h-8 ${colorSet.bg} ${colorSet.text} rounded ${colorSet.border} border flex items-center justify-center`}
-                    >
-                      <IconRenderer name={account.icon} className="w-full h-full" />
+          {accounts.length === 0 ? (
+            <div className="bg-white border border-[#e5e3d8] rounded-xl p-12 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-[#f0f5f2] flex items-center justify-center mx-auto mb-4">
+                <Wallet className="w-8 h-8 text-[#7c8e88]" />
+              </div>
+              <p className="text-sm font-bold text-[#1e3a34] mb-1">No accounts yet</p>
+              <p className="text-xs text-[#7c8e88] mb-4">
+                Create your first account to start tracking money
+              </p>
+              <button
+                onClick={() => setShowForm(true)}
+                className="bg-[#1f644e] text-white px-5 py-2 rounded-lg text-sm font-bold hover:bg-[#17503e] transition cursor-pointer"
+              >
+                Create Account
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {accounts.map((account, index) => {
+                const colorSet = iconColors[index % iconColors.length];
+                const isCustomSvg = ['rupay', 'ippb', 'pnb'].includes(account.icon);
+                return (
+                  <div
+                    key={account.id}
+                    className="bg-white border border-[#e5e3d8] rounded-xl p-5 relative hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div
+                        className={`${isCustomSvg ? 'w-12 h-9' : 'w-12 h-12'} ${colorSet.bg} ${colorSet.text} rounded-xl ${colorSet.border} border flex items-center justify-center`}
+                      >
+                        <IconRenderer name={account.icon} className="w-full h-full" />
+                      </div>
+                      <div className="relative">
+                        <button
+                          onClick={() => setMenuOpen(menuOpen === account.id ? null : account.id)}
+                          className="p-1.5 text-[#7c8e88] hover:text-[#1e3a34] transition rounded-lg hover:bg-[#f0f5f2]"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                        {menuOpen === account.id && (
+                          <div className="absolute right-0 top-full mt-1 bg-white border border-[#e5e3d8] shadow-lg rounded-lg py-1 z-20 w-28">
+                            <button
+                              onClick={() => startEdit(account)}
+                              className="px-3 py-2 text-xs font-bold hover:bg-[#f0f5f2] w-full text-left"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(account.id)}
+                              className="px-3 py-2 text-xs font-bold hover:bg-[#f0f5f2] w-full text-left text-[#c94c4c]"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-bold text-sm">{account.name}</div>
-                      <div className="text-xs text-[#7c8e88]">
-                        Balance: ₹
+                    <div className="mt-4">
+                      <p className="font-bold text-sm text-[#1e3a34]">{account.name}</p>
+                      <p className="text-xs text-[#7c8e88] mt-0.5">Initial Balance</p>
+                      <p className="text-lg font-bold text-[#1e3a34] mt-1">
+                        ₹
                         {account.initialBalance.toLocaleString('en-IN', {
                           minimumFractionDigits: 2,
                         })}
-                      </div>
+                      </p>
                     </div>
                   </div>
-                  <div className="relative">
-                    <button
-                      onClick={() => setMenuOpen(menuOpen === account.id ? null : account.id)}
-                      className="p-1 text-[#7c8e88] hover:text-[#1e3a34] transition"
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
-                    {menuOpen === account.id && (
-                      <div className="absolute right-0 top-full mt-1 bg-white border border-[#e5e3d8] shadow-md rounded py-1 z-20 w-24">
-                        <button
-                          onClick={() => startEdit(account)}
-                          className="px-3 py-1.5 text-xs font-bold hover:bg-[#f0f5f2] w-full text-left"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(account.id)}
-                          className="px-3 py-1.5 text-xs font-bold hover:bg-[#f0f5f2] w-full text-left text-[#c94c4c]"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Add Button */}
-          <div className="flex justify-center mt-6 px-4">
-            <button
-              onClick={() => setShowForm(true)}
-              className="border border-[#1f644e] text-[#1f644e] px-4 py-2 rounded text-sm font-bold flex items-center gap-1 hover:bg-[#1f644e] hover:text-white transition"
-            >
-              <Plus className="w-4 h-4" /> ADD NEW ACCOUNT
-            </button>
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Add/Edit Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-[#fcfbf5] w-full max-w-sm rounded-lg border border-[#e5e3d8] shadow-xl p-5 animate-in zoom-in-95 duration-200">
+          <div className="bg-[#fcfbf5] w-full max-w-sm rounded-xl border border-[#e5e3d8] shadow-xl p-5 animate-in zoom-in-95 duration-200">
             <h3 className="text-center font-bold text-[#1f644e] mb-4 text-sm">
               {editingAccount ? 'Edit account' : 'Add account'}
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="border border-[#1f644e] rounded px-3 py-2 bg-[#f0f5f2]">
+              <div className="border border-[#1f644e] rounded-lg px-3 py-2 bg-[#f0f5f2]">
                 <div className="text-[10px] text-[#1f644e] font-bold">Name</div>
                 <input
                   type="text"
@@ -201,7 +231,7 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
                   className="w-full bg-transparent outline-none font-bold text-sm"
                 />
               </div>
-              <div className="border border-[#1f644e] rounded px-3 py-2 bg-[#f0f5f2]">
+              <div className="border border-[#1f644e] rounded-lg px-3 py-2 bg-[#f0f5f2]">
                 <div className="text-[10px] text-[#1f644e] font-bold">Initial Amount</div>
                 <input
                   type="number"
@@ -236,13 +266,13 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="border border-[#1f644e] text-[#1f644e] px-6 py-1.5 rounded text-sm font-bold"
+                  className="border border-[#1f644e] text-[#1f644e] px-6 py-1.5 rounded-lg text-sm font-bold"
                 >
                   CANCEL
                 </button>
                 <button
                   type="submit"
-                  className="bg-[#1f644e] text-white px-6 py-1.5 rounded text-sm font-bold"
+                  className="bg-[#1f644e] text-white px-6 py-1.5 rounded-lg text-sm font-bold"
                 >
                   {editingAccount ? 'SAVE' : 'ADD'}
                 </button>

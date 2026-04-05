@@ -6,7 +6,6 @@ import RecordsTab from '@/components/finance-tracker/RecordsTab';
 import AccountsTab from '@/components/finance-tracker/AccountsTab';
 import CategoriesTab from '@/components/finance-tracker/CategoriesTab';
 import AnalysisTab from '@/components/finance-tracker/AnalysisTab';
-import BudgetsTab from '@/components/finance-tracker/BudgetsTab';
 import AddTransactionModal from '@/components/finance-tracker/AddTransactionModal';
 import ChatTab from '@/components/finance-tracker/ChatTab';
 import FinanceSettingsTab from '@/components/finance-tracker/FinanceSettingsTab';
@@ -15,7 +14,6 @@ import {
   BarChart3,
   Wallet,
   Tag,
-  Calculator,
   Menu,
   Search,
   Plus,
@@ -30,7 +28,6 @@ import { useCallback, useState } from 'react';
 const tabs = [
   { id: 'records', label: 'Records', icon: Receipt },
   { id: 'analysis', label: 'Analysis', icon: BarChart3 },
-  { id: 'budgets', label: 'Budgets', icon: Calculator },
   { id: 'accounts', label: 'Accounts', icon: Wallet },
   { id: 'categories', label: 'Categories', icon: Tag },
   { id: 'chat', label: 'Chat', icon: MessageCircle },
@@ -46,7 +43,6 @@ function FinanceContent() {
   const tabTitles = {
     records: 'Records',
     analysis: 'Analysis',
-    budgets: 'Budgets',
     accounts: 'Accounts',
     categories: 'Categories',
     chat: 'Chat',
@@ -77,8 +73,6 @@ function FinanceContent() {
         return <RecordsTab />;
       case 'analysis':
         return <AnalysisTab />;
-      case 'budgets':
-        return <BudgetsTab />;
       case 'accounts':
         return (
           <AccountsTab
