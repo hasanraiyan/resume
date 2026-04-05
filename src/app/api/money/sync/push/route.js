@@ -3,26 +3,18 @@ import dbConnect from '@/lib/dbConnect';
 import Account from '@/models/Account';
 import Category from '@/models/Category';
 import Transaction from '@/models/Transaction';
-import Budget from '@/models/Budget';
-import {
-  serializeAccount,
-  serializeBudget,
-  serializeCategory,
-  serializeTransaction,
-} from '@/lib/money-serializers';
+import { serializeAccount, serializeCategory, serializeTransaction } from '@/lib/money-serializers';
 
 const serializers = {
   accounts: serializeAccount,
   categories: serializeCategory,
   transactions: serializeTransaction,
-  budgets: serializeBudget,
 };
 
 const modelMap = {
   accounts: Account,
   categories: Category,
   transactions: Transaction,
-  budgets: Budget,
 };
 
 function remapValue(value, tempIdMap) {
@@ -49,10 +41,6 @@ async function populateForStore(storeName, id) {
       .populate('account', 'name icon')
       .populate('toAccount', 'name icon')
       .lean();
-  }
-
-  if (storeName === 'budgets') {
-    return modelMap[storeName].findById(id).populate('category', 'name icon type color').lean();
   }
 
   return modelMap[storeName].findById(id).lean();
@@ -120,27 +108,6 @@ export async function POST(request) {
           deleted: true,
         });
         continue;
-      }
-
-      if (operation.type === 'budget-upsert' && storeName === 'budgets') {
-        const targetId = payload._id || payload.id;
-        const filter =
-          targetId && !String(targetId).startsWith('local_')
-            ? { _id: targetId }
-            : { category: payload.category, month: payload.month, year: payload.year };
-        const updated = await Budget.findOneAndUpdate(
-          filter,
-          { $set: { ...payload, deletedAt: null }, $inc: { syncVersion: 1 } },
-          { new: true, upsert: true, setDefaultsOnInsert: true }
-        );
-        const populated = await populateForStore(storeName, updated._id);
-        applied.push({
-          queueId: operation.id,
-          storeName,
-          recordId: operation.recordId,
-          serverId: updated._id.toString(),
-          record: serializers[storeName](populated),
-        });
       }
     }
 

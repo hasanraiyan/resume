@@ -1,6 +1,6 @@
 const DB_NAME = 'finance-local-db';
 const DB_VERSION = 1;
-const STORE_NAMES = ['accounts', 'categories', 'transactions', 'budgets', 'meta', 'syncQueue'];
+const STORE_NAMES = ['accounts', 'categories', 'transactions', 'meta', 'syncQueue'];
 
 let dbPromise;
 

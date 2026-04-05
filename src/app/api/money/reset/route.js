@@ -3,7 +3,6 @@ import dbConnect from '@/lib/dbConnect';
 import Account from '@/models/Account';
 import Category from '@/models/Category';
 import Transaction from '@/models/Transaction';
-import Budget from '@/models/Budget';
 import FinanceSyncState from '@/models/FinanceSyncState';
 import { serializeAccount, serializeCategory } from '@/lib/money-serializers';
 
@@ -33,10 +32,6 @@ export async function POST() {
         { $set: { deletedAt: resetAt }, $inc: { syncVersion: 1 } }
       ),
       Transaction.updateMany(
-        { deletedAt: null },
-        { $set: { deletedAt: resetAt }, $inc: { syncVersion: 1 } }
-      ),
-      Budget.updateMany(
         { deletedAt: null },
         { $set: { deletedAt: resetAt }, $inc: { syncVersion: 1 } }
       ),

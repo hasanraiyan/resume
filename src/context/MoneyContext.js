@@ -8,7 +8,6 @@ const initialState = {
   accounts: [],
   categories: [],
   transactions: [],
-  budgets: [],
   analysis: null,
   isLoading: false,
   isSyncing: true,
@@ -52,8 +51,6 @@ function moneyReducer(state, action) {
       return { ...state, categories: action.payload };
     case 'SET_TRANSACTIONS':
       return { ...state, transactions: action.payload };
-    case 'SET_BUDGETS':
-      return { ...state, budgets: action.payload };
     case 'SET_ANALYSIS':
       return { ...state, analysis: action.payload };
     case 'SET_PERIOD':
@@ -83,19 +80,17 @@ export function MoneyProvider({ children }) {
       const month = now.getMonth() + 1;
       const year = now.getFullYear();
 
-      const [accData, catData, transData, budgetData] = await Promise.all([
+      const [accData, catData, transData] = await Promise.all([
         fetch('/api/money/accounts').then(readJson),
         fetch('/api/money/categories').then(readJson),
         fetch(
           `/api/money/transactions?startDate=${encodeURIComponent(state.periodStart)}&endDate=${encodeURIComponent(state.periodEnd)}`
         ).then(readJson),
-        fetch(`/api/money/budgets?month=${month}&year=${year}`).then(readJson),
       ]);
 
       dispatch({ type: 'SET_ACCOUNTS', payload: accData.accounts || [] });
       dispatch({ type: 'SET_CATEGORIES', payload: catData.categories || [] });
       dispatch({ type: 'SET_TRANSACTIONS', payload: transData.transactions || [] });
-      dispatch({ type: 'SET_BUDGETS', payload: budgetData.budgets || [] });
     } catch (error) {
       console.error('Failed to fetch finance data:', error);
       dispatch({
@@ -220,20 +215,6 @@ export function MoneyProvider({ children }) {
     }
   };
 
-  const saveBudget = async (budget) => {
-    try {
-      const data = await fetch('/api/money/budgets', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(budget),
-      }).then(readJson);
-      await fetchData();
-      return data.budget;
-    } catch (error) {
-      console.error('Failed to save budget:', error);
-    }
-  };
-
   const clearFinanceData = async () => {
     try {
       await fetch('/api/money/reset', { method: 'POST' }).then(readJson);
@@ -280,7 +261,6 @@ export function MoneyProvider({ children }) {
     addCategory,
     updateCategory,
     deleteCategory,
-    saveBudget,
     clearFinanceData,
     setPeriod,
     setActiveTab,

@@ -8,54 +8,6 @@ export function Shimmer({ className = '' }) {
   );
 }
 
-export function RecordsSkeleton() {
-  return (
-    <div className="pb-4">
-      {/* Period Header */}
-      <div className="flex items-center justify-between px-4 py-2.5">
-        <Shimmer className="w-6 h-6 rounded-full" />
-        <Shimmer className="w-32 h-4" />
-        <div className="flex items-center gap-1">
-          <Shimmer className="w-6 h-6 rounded-full" />
-          <Shimmer className="w-6 h-6 rounded-full" />
-        </div>
-      </div>
-
-      {/* Summary Bar */}
-      <div className="flex text-center border-b border-[#e5e3d8] pb-2 mb-4 mx-4">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="flex-1 flex flex-col items-center gap-1">
-            <Shimmer className="w-14 h-2.5" />
-            <Shimmer className="w-20 h-4" />
-          </div>
-        ))}
-      </div>
-
-      {/* Transaction Groups */}
-      {[1, 2, 3].map((group) => (
-        <div key={group} className="px-4 mb-4">
-          <Shimmer className="w-40 h-3 mb-2" />
-          {[1, 2].map((item) => (
-            <div
-              key={item}
-              className="flex items-center justify-between py-3 border-b border-[#e5e3d8]"
-            >
-              <div className="flex items-center gap-3">
-                <Shimmer className="w-9 h-9 rounded-full" />
-                <div className="space-y-1">
-                  <Shimmer className="w-24 h-3.5" />
-                  <Shimmer className="w-16 h-2.5" />
-                </div>
-              </div>
-              <Shimmer className="w-20 h-4" />
-            </div>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function AnalysisSkeleton() {
   return (
     <div className="pb-4">
@@ -213,37 +165,6 @@ export function CategoriesSkeleton() {
       {/* Add Button */}
       <div className="flex justify-center mt-6">
         <Shimmer className="w-48 h-9 rounded" />
-      </div>
-    </div>
-  );
-}
-
-export function BudgetsSkeleton() {
-  return (
-    <div className="pb-4 px-4">
-      {/* Month Label */}
-      <div className="flex justify-center my-4">
-        <Shimmer className="w-28 h-3" />
-      </div>
-
-      {/* Budget Cards */}
-      <div className="space-y-3">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="border border-[#e5e3d8] bg-[#faf9ed] rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Shimmer className="w-7 h-7 rounded-full" />
-                <Shimmer className="w-20 h-3.5" />
-              </div>
-              <Shimmer className="w-24 h-3" />
-            </div>
-            <Shimmer className="h-1.5 rounded-full mb-1" />
-            <div className="flex justify-between">
-              <Shimmer className="w-12 h-2.5" />
-              <Shimmer className="w-16 h-2.5" />
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );

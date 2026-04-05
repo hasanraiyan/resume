@@ -3,14 +3,8 @@ import dbConnect from '@/lib/dbConnect';
 import Account from '@/models/Account';
 import Category from '@/models/Category';
 import Transaction from '@/models/Transaction';
-import Budget from '@/models/Budget';
 import FinanceSyncState from '@/models/FinanceSyncState';
-import {
-  serializeAccount,
-  serializeBudget,
-  serializeCategory,
-  serializeTransaction,
-} from '@/lib/money-serializers';
+import { serializeAccount, serializeCategory, serializeTransaction } from '@/lib/money-serializers';
 
 function buildChangeQuery(since) {
   if (!since) {
@@ -31,7 +25,7 @@ export async function GET(request) {
       syncState = { resetVersion: 0, resetAt: null };
     }
 
-    const [accounts, categories, transactions, budgets] = await Promise.all([
+    const [accounts, categories, transactions] = await Promise.all([
       Account.find(query).sort({ updatedAt: 1 }).lean(),
       Category.find(query).sort({ updatedAt: 1 }).lean(),
       Transaction.find(query)
@@ -40,7 +34,6 @@ export async function GET(request) {
         .populate('toAccount', 'name icon')
         .sort({ updatedAt: 1 })
         .lean(),
-      Budget.find(query).populate('category', 'name icon type color').sort({ updatedAt: 1 }).lean(),
     ]);
 
     return NextResponse.json({
@@ -49,7 +42,6 @@ export async function GET(request) {
         accounts: accounts.map(serializeAccount),
         categories: categories.map(serializeCategory),
         transactions: transactions.map(serializeTransaction),
-        budgets: budgets.map(serializeBudget),
       },
       syncState: {
         resetVersion: syncState.resetVersion || 0,

@@ -71,11 +71,10 @@ async function requestBackgroundSync() {
 }
 
 async function readStoreSnapshot() {
-  const [accounts, categories, transactions, budgets] = await Promise.all([
+  const [accounts, categories, transactions] = await Promise.all([
     getAllRecords('accounts'),
     getAllRecords('categories'),
     getAllRecords('transactions'),
-    getAllRecords('budgets'),
   ]);
 
   return {
@@ -84,7 +83,6 @@ async function readStoreSnapshot() {
     transactions: transactions
       .filter((record) => !record.deletedAt)
       .sort((a, b) => new Date(b.date) - new Date(a.date)),
-    budgets: budgets.filter((record) => !record.deletedAt),
   };
 }
 
@@ -108,7 +106,7 @@ async function applyRemoteRecords(storeName, records) {
 }
 
 async function wipeLocalFinanceData() {
-  await clearStores(['accounts', 'categories', 'transactions', 'budgets', 'syncQueue']);
+  await clearStores(['accounts', 'categories', 'transactions', 'syncQueue']);
   await setMeta('financeIdMap', {});
 }
 
@@ -140,7 +138,6 @@ async function pullRemoteChanges() {
     applyRemoteRecords('accounts', changes.accounts || []),
     applyRemoteRecords('categories', changes.categories || []),
     applyRemoteRecords('transactions', changes.transactions || []),
-    applyRemoteRecords('budgets', changes.budgets || []),
   ]);
 
   await setMeta('lastRemoteSyncAt', data.serverTime || nowIso());
@@ -241,11 +238,7 @@ export async function refreshFinanceData({ periodStart, periodEnd }) {
 }
 
 async function rewriteReferences(oldId, newId) {
-  const [transactions, budgets, queue] = await Promise.all([
-    getAllRecords('transactions'),
-    getAllRecords('budgets'),
-    getSyncQueue(),
-  ]);
+  const [transactions, queue] = await Promise.all([getAllRecords('transactions'), getSyncQueue()]);
 
   const updatedTransactions = transactions
     .map((transaction) => {
@@ -280,18 +273,6 @@ async function rewriteReferences(oldId, newId) {
     })
     .filter(Boolean);
 
-  const updatedBudgets = budgets
-    .map((budget) => {
-      if (budget.category?.id === oldId) {
-        return { ...budget, category: { ...budget.category, id: newId, _id: newId } };
-      }
-      if (budget.category === oldId) {
-        return { ...budget, category: newId };
-      }
-      return null;
-    })
-    .filter(Boolean);
-
   const updatedQueue = queue
     .map((item) => {
       const payloadText = JSON.stringify(item.payload);
@@ -305,7 +286,6 @@ async function rewriteReferences(oldId, newId) {
 
   await Promise.all([
     ...updatedTransactions.map((record) => putRecord('transactions', record)),
-    ...updatedBudgets.map((record) => putRecord('budgets', record)),
     ...updatedQueue.map((record) => putRecord('syncQueue', record)),
   ]);
 }
@@ -528,44 +508,6 @@ export function deleteCategoryRecord(id) {
     id,
     label: 'category',
   });
-}
-
-export async function upsertBudget(record) {
-  const categoryRecord =
-    typeof record.category === 'string'
-      ? await getRecord('categories', record.category)
-      : record.category;
-  const localRecord = attachLocalMeta(
-    {
-      ...record,
-      id: record.id || record._id || createLocalId('budget'),
-      category: categoryRecord || record.category,
-    },
-    'pending_update'
-  );
-  await putRecord('budgets', localRecord);
-
-  if (isOnline()) {
-    const payload = await normalizePayloadReferences(record);
-    const data = await fetchJson('/api/money/budgets', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    await putRecord('budgets', data.budget);
-    notifyChange('budget-upserted');
-    return data.budget;
-  }
-
-  await enqueueOperation({
-    type: 'budget-upsert',
-    storeName: 'budgets',
-    endpoint: '/api/money/budgets',
-    responseKey: 'budget',
-    recordId: localRecord.id,
-    payload: record,
-  });
-  return localRecord;
 }
 
 export function subscribeToFinanceChanges(callback) {
