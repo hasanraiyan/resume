@@ -5,7 +5,7 @@ import { useMoney } from '@/context/MoneyContext';
 import { ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
-const IconRenderer = dynamic(() => import('./IconRenderer'), { ssr: false });
+import IconRenderer from './IconRenderer';
 
 export default function RecordsTab() {
   const { transactions, totalExpense, totalIncome, periodStart, periodEnd, setPeriod } = useMoney();
@@ -46,7 +46,7 @@ export default function RecordsTab() {
   const getAmountClass = (type) => {
     if (type === 'expense') return 'text-[#c94c4c]';
     if (type === 'income') return 'text-[#5cb85c]';
-    return 'text-[#1e3a34]';
+    return 'text-[#1e3a34] dark:text-[#e0e0e0]';
   };
 
   const netBalance = totalIncome - totalExpense;
@@ -82,9 +82,9 @@ export default function RecordsTab() {
       <div className="w-full px-4">
         <div className="w-full max-w-5xl">
           {/* Summary Bar */}
-          <div className="flex text-center border-b border-[#e5e3d8] pb-2 mb-4 px-4">
+          <div className="flex text-center border-b border-[#e5e3d8] dark:border-[#333333] pb-2 mb-4 px-4">
             <div className="flex-1">
-              <div className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider mb-1">
+              <div className="text-[10px] font-bold text-[#7c8e88] dark:text-[#a0a0a0] uppercase tracking-wider mb-1">
                 Expense
               </div>
               <div className="text-sm font-bold text-[#c94c4c]">
@@ -92,7 +92,7 @@ export default function RecordsTab() {
               </div>
             </div>
             <div className="flex-1">
-              <div className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider mb-1">
+              <div className="text-[10px] font-bold text-[#7c8e88] dark:text-[#a0a0a0] uppercase tracking-wider mb-1">
                 Income
               </div>
               <div className="text-sm font-bold text-[#5cb85c]">
@@ -100,11 +100,11 @@ export default function RecordsTab() {
               </div>
             </div>
             <div className="flex-1">
-              <div className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider mb-1">
+              <div className="text-[10px] font-bold text-[#7c8e88] dark:text-[#a0a0a0] uppercase tracking-wider mb-1">
                 Balance
               </div>
               <div
-                className={`text-sm font-bold ${netBalance < 0 ? 'text-[#c94c4c]' : 'text-[#1e3a34]'}`}
+                className={`text-sm font-bold ${netBalance < 0 ? 'text-[#c94c4c]' : 'text-[#1e3a34] dark:text-[#e0e0e0]'}`}
               >
                 {netBalance < 0 ? '-' : ''}₹
                 {Math.abs(netBalance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
@@ -115,7 +115,9 @@ export default function RecordsTab() {
           {/* Transaction Groups */}
           {Object.keys(grouped).length === 0 ? (
             <div className="text-center py-16 px-4">
-              <p className="text-[#7c8e88] text-sm">No transactions for this period</p>
+              <p className="text-[#7c8e88] dark:text-[#a0a0a0] text-sm">
+                No transactions for this period
+              </p>
             </div>
           ) : (
             Object.entries(grouped).map(([dateLabel, items]) => (
@@ -132,7 +134,7 @@ export default function RecordsTab() {
                   return (
                     <div
                       key={t.id}
-                      className="flex items-center justify-between py-3 border-b border-[#e5e3d8]"
+                      className="flex items-center justify-between py-3 border-b border-[#e5e3d8] dark:border-[#333333]"
                     >
                       <div className="flex items-center gap-3">
                         <div
@@ -153,7 +155,7 @@ export default function RecordsTab() {
                           <div className="font-bold text-sm">
                             {isTransfer ? 'Transfer' : catName}
                           </div>
-                          <div className="text-[11px] text-[#7c8e88] flex items-center gap-1 mt-0.5">
+                          <div className="text-[11px] text-[#7c8e88] dark:text-[#a0a0a0] flex items-center gap-1 mt-0.5">
                             {isTransfer ? (
                               <>
                                 {t.account?.name || 'Account'}

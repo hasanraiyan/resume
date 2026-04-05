@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useMoney } from '@/context/MoneyContext';
 import dynamic from 'next/dynamic';
 
-const IconRenderer = dynamic(() => import('./IconRenderer'), { ssr: false });
+import IconRenderer from './IconRenderer';
 
 export default function BudgetsTab() {
   const { categories, transactions, budgets, saveBudget } = useMoney();
@@ -57,14 +57,14 @@ export default function BudgetsTab() {
     <div className="pb-4">
       {/* Header - Full width, left-aligned */}
       <div className="px-4 py-2.5">
-        <p className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider">
+        <p className="text-[10px] font-bold text-[#7c8e88] dark:text-[#a0a0a0] uppercase tracking-wider">
           {now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
         </p>
       </div>
 
       {/* Content - Centered horizontally */}
-      <div className="flex justify-center">
-        <div className="w-full max-w-2xl px-4">
+      <div className="w-full px-4 flex justify-center">
+        <div className="w-full max-w-5xl">
           <div className="space-y-3">
             {categorySpending.map((cat) => {
               const percentage = cat.budget > 0 ? Math.min((cat.spent / cat.budget) * 100, 100) : 0;
@@ -72,7 +72,10 @@ export default function BudgetsTab() {
               const remaining = cat.budget - cat.spent;
 
               return (
-                <div key={cat.id} className="border border-[#e5e3d8] bg-[#faf9ed] rounded-lg p-4">
+                <div
+                  key={cat.id}
+                  className="border border-[#e5e3d8] dark:border-[#333333] bg-[#faf9ed] dark:bg-[#1e1e1e] rounded-lg p-4"
+                >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <div
@@ -83,7 +86,7 @@ export default function BudgetsTab() {
                       <span className="text-sm font-bold">{cat.name}</span>
                     </div>
                     {cat.hasBudget ? (
-                      <span className="text-xs text-[#7c8e88]">
+                      <span className="text-xs text-[#7c8e88] dark:text-[#a0a0a0]">
                         ₹{cat.spent.toFixed(0)} / ₹{cat.budget}
                       </span>
                     ) : (
@@ -106,7 +109,7 @@ export default function BudgetsTab() {
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         placeholder="Amount"
-                        className="flex-1 px-3 py-2 border border-[#e5e3d8] rounded text-sm focus:outline-none focus:border-[#1f644e]"
+                        className="flex-1 px-3 py-2 border border-[#e5e3d8] dark:border-[#333333] rounded text-sm focus:outline-none focus:border-[#1f644e]"
                         autoFocus
                       />
                       <button
@@ -117,7 +120,7 @@ export default function BudgetsTab() {
                       </button>
                       <button
                         onClick={() => setBudgetForm(null)}
-                        className="px-3 py-2 text-xs text-[#7c8e88]"
+                        className="px-3 py-2 text-xs text-[#7c8e88] dark:text-[#a0a0a0]"
                       >
                         Cancel
                       </button>
@@ -134,9 +137,9 @@ export default function BudgetsTab() {
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
-                      <div className="flex justify-between text-[10px] text-[#7c8e88]">
+                      <div className="flex justify-between text-[10px] text-[#7c8e88] dark:text-[#a0a0a0]">
                         <span>{percentage.toFixed(0)}% used</span>
-                        <span className={remaining < 0 ? 'text-[#7c8e88]' : ''}>
+                        <span className={remaining < 0 ? 'text-[#7c8e88] dark:text-[#a0a0a0]' : ''}>
                           {remaining < 0 ? '-' : ''}₹{Math.abs(remaining).toFixed(0)}{' '}
                           {remaining < 0 ? 'over' : 'left'}
                         </span>

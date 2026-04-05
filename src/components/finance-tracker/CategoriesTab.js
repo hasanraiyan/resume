@@ -5,7 +5,7 @@ import { useMoney } from '@/context/MoneyContext';
 import { MoreVertical, Edit3, Trash2, Plus } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
-const IconRenderer = dynamic(() => import('./IconRenderer'), { ssr: false });
+import IconRenderer from './IconRenderer';
 
 const categoryIcons = [
   'utensils',
@@ -113,7 +113,7 @@ export default function CategoriesTab() {
       {cats.map((cat) => (
         <div
           key={cat.id}
-          className="flex items-center justify-between py-2 px-4 relative hover:bg-[#f8f9f4] transition"
+          className="flex items-center justify-between py-2 px-4 relative hover:bg-[#f8f9f4] dark:hover:bg-[#2a2a2a] transition"
         >
           <div className="flex items-center gap-3">
             <div
@@ -126,21 +126,21 @@ export default function CategoriesTab() {
           <div className="relative">
             <button
               onClick={() => setMenuOpen(menuOpen === cat.id ? null : cat.id)}
-              className="p-1 text-[#7c8e88] hover:text-[#1e3a34] transition"
+              className="p-1 text-[#7c8e88] dark:text-[#a0a0a0] hover:text-[#1e3a34] dark:text-[#e0e0e0] transition"
             >
               <MoreVertical className="w-4 h-4" />
             </button>
             {menuOpen === cat.id && (
-              <div className="absolute right-0 top-full mt-1 bg-white border border-[#e5e3d8] shadow-md rounded py-1 z-20 w-24">
+              <div className="absolute right-0 top-full mt-1 bg-white dark:bg-[#1e1e1e] border border-[#e5e3d8] dark:border-[#333333] shadow-md rounded py-1 z-20 w-24">
                 <button
                   onClick={() => startEdit(cat)}
-                  className="px-3 py-1.5 text-xs font-bold hover:bg-[#f0f5f2] w-full text-left"
+                  className="px-3 py-1.5 text-xs font-bold hover:bg-[#f0f5f2] dark:hover:bg-[#2c3e3a] dark:bg-[#2c3e3a] w-full text-left"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => handleDelete(cat.id)}
-                  className="px-3 py-1.5 text-xs font-bold hover:bg-[#f0f5f2] w-full text-left text-[#c94c4c]"
+                  className="px-3 py-1.5 text-xs font-bold hover:bg-[#f0f5f2] dark:hover:bg-[#2c3e3a] dark:bg-[#2c3e3a] w-full text-left text-[#c94c4c]"
                 >
                   Delete
                 </button>
@@ -155,8 +155,8 @@ export default function CategoriesTab() {
   return (
     <div className="pb-4">
       {/* Content - Centered horizontally */}
-      <div className="flex justify-center">
-        <div className="w-full max-w-2xl">
+      <div className="w-full px-4 flex justify-center">
+        <div className="w-full max-w-5xl">
           {/* Net Worth Header */}
           <div className="font-bold text-sm my-4 px-4">
             [ All Accounts ₹{totalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })} ]
@@ -180,12 +180,12 @@ export default function CategoriesTab() {
       {/* Add/Edit Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-[#fcfbf5] w-full max-w-sm rounded-lg border border-[#e5e3d8] shadow-xl p-5 max-h-[85vh] overflow-y-auto animate-in zoom-in-95 duration-200">
+          <div className="bg-[#fcfbf5] dark:bg-[#121212] w-full max-w-sm rounded-lg border border-[#e5e3d8] dark:border-[#333333] shadow-xl p-5 max-h-[85vh] overflow-y-auto animate-in zoom-in-95 duration-200">
             <h3 className="text-center font-bold text-[#1f644e] mb-4 text-sm">
               {editingCategory ? 'Edit category' : 'Add category'}
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="border border-[#1f644e] rounded px-3 py-2 bg-[#f0f5f2]">
+              <div className="border border-[#1f644e] rounded px-3 py-2 bg-[#f0f5f2] dark:bg-[#2c3e3a]">
                 <div className="text-[10px] text-[#1f644e] font-bold">Name</div>
                 <input
                   type="text"
@@ -197,15 +197,19 @@ export default function CategoriesTab() {
                 />
               </div>
               <div>
-                <div className="text-[10px] text-[#7c8e88] font-bold mb-2">Type</div>
-                <div className="flex bg-[#f0f5f2] rounded-lg p-1">
+                <div className="text-[10px] text-[#7c8e88] dark:text-[#a0a0a0] font-bold mb-2">
+                  Type
+                </div>
+                <div className="flex bg-[#f0f5f2] dark:bg-[#2c3e3a] rounded-lg p-1">
                   {['expense', 'income'].map((t) => (
                     <button
                       key={t}
                       type="button"
                       onClick={() => setForm({ ...form, type: t })}
                       className={`flex-1 py-2 text-xs font-bold uppercase rounded transition ${
-                        form.type === t ? 'bg-[#1f644e] text-white' : 'text-[#7c8e88]'
+                        form.type === t
+                          ? 'bg-[#1f644e] text-white'
+                          : 'text-[#7c8e88] dark:text-[#a0a0a0]'
                       }`}
                     >
                       {t}
@@ -214,7 +218,9 @@ export default function CategoriesTab() {
                 </div>
               </div>
               <div>
-                <div className="text-[10px] text-[#7c8e88] font-bold mb-2">Color</div>
+                <div className="text-[10px] text-[#7c8e88] dark:text-[#a0a0a0] font-bold mb-2">
+                  Color
+                </div>
                 <div className="flex gap-2 overflow-x-auto pb-2">
                   {categoryColors.map((color) => (
                     <button
@@ -229,7 +235,9 @@ export default function CategoriesTab() {
                 </div>
               </div>
               <div>
-                <div className="text-[10px] text-[#7c8e88] font-bold mb-2">Icon</div>
+                <div className="text-[10px] text-[#7c8e88] dark:text-[#a0a0a0] font-bold mb-2">
+                  Icon
+                </div>
                 <div className="grid grid-cols-6 gap-2">
                   {categoryIcons.map((icon) => (
                     <button
@@ -239,7 +247,7 @@ export default function CategoriesTab() {
                       className={`w-10 h-10 rounded-full flex items-center justify-center transition ${
                         form.icon === icon
                           ? 'bg-[#1f644e] text-white'
-                          : 'bg-[#f0f5f2] text-[#7c8e88] hover:bg-[#d6dfd9]'
+                          : 'bg-[#f0f5f2] dark:bg-[#2c3e3a] text-[#7c8e88] dark:text-[#a0a0a0] hover:bg-[#d6dfd9]'
                       }`}
                     >
                       <IconRenderer name={icon} className="w-4 h-4" />
