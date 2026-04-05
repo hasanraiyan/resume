@@ -2,8 +2,12 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Account from '@/models/Account';
 import { serializeAccount } from '@/lib/money-serializers';
+import { requireAdminAuth } from '@/lib/money-auth';
 
 export async function GET() {
+  const session = await requireAdminAuth();
+  if (typeof session !== 'object') return session;
+
   try {
     await dbConnect();
     const accounts = await Account.find({ deletedAt: null }).sort({ createdAt: 1 }).lean();
@@ -18,6 +22,9 @@ export async function GET() {
 }
 
 export async function POST(request) {
+  const session = await requireAdminAuth();
+  if (typeof session !== 'object') return session;
+
   try {
     await dbConnect();
     const body = await request.json();

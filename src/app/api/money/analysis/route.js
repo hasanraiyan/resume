@@ -2,8 +2,12 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Transaction from '@/models/Transaction';
 import Account from '@/models/Account';
+import { requireAdminAuth } from '@/lib/money-auth';
 
 export async function GET(request) {
+  const session = await requireAdminAuth();
+  if (typeof session !== 'object') return session;
+
   try {
     await dbConnect();
     const { searchParams } = new URL(request.url);

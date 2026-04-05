@@ -3,8 +3,12 @@ import dbConnect from '@/lib/dbConnect';
 import Account from '@/models/Account';
 import Category from '@/models/Category';
 import Transaction from '@/models/Transaction';
+import { requireAdminAuth } from '@/lib/money-auth';
 
 export async function POST() {
+  const session = await requireAdminAuth();
+  if (typeof session !== 'object') return session;
+
   try {
     await dbConnect();
 

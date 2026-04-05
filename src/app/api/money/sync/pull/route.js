@@ -5,6 +5,7 @@ import Category from '@/models/Category';
 import Transaction from '@/models/Transaction';
 import FinanceSyncState from '@/models/FinanceSyncState';
 import { serializeAccount, serializeCategory, serializeTransaction } from '@/lib/money-serializers';
+import { requireAdminAuth } from '@/lib/money-auth';
 
 function buildChangeQuery(since) {
   if (!since) {
@@ -14,6 +15,9 @@ function buildChangeQuery(since) {
 }
 
 export async function GET(request) {
+  const session = await requireAdminAuth();
+  if (typeof session !== 'object') return session;
+
   try {
     await dbConnect();
     const { searchParams } = new URL(request.url);

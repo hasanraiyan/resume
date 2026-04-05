@@ -4,6 +4,7 @@ import Account from '@/models/Account';
 import Category from '@/models/Category';
 import Transaction from '@/models/Transaction';
 import { serializeAccount, serializeCategory, serializeTransaction } from '@/lib/money-serializers';
+import { requireAdminAuth } from '@/lib/money-auth';
 
 const serializers = {
   accounts: serializeAccount,
@@ -47,6 +48,9 @@ async function populateForStore(storeName, id) {
 }
 
 export async function POST(request) {
+  const session = await requireAdminAuth();
+  if (typeof session !== 'object') return session;
+
   try {
     await dbConnect();
     const body = await request.json();

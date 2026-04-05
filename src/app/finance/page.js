@@ -2,6 +2,10 @@
 
 import { MoneyProvider, useMoney } from '@/context/MoneyContext';
 import { FinanceChatProvider, useFinanceChat } from '@/context/FinanceChatContext';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import SessionProvider from '@/components/SessionProvider';
 import RecordsTab from '@/components/finance-tracker/RecordsTab';
 import AccountsTab from '@/components/finance-tracker/AccountsTab';
 import CategoriesTab from '@/components/finance-tracker/CategoriesTab';
@@ -35,11 +39,33 @@ const tabs = [
 ];
 
 function FinanceContent() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const { activeTab, setActiveTab, isSyncing, error, accounts, fetchData } = useMoney();
   const { clearChat } = useFinanceChat();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [requestAddAccountModal, setRequestAddAccountModal] = useState(false);
   const handleAddModalClose = useCallback(() => setRequestAddAccountModal(false), []);
+
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (!session) router.push('/login');
+  }, [session, status, router]);
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#fcfbf5]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#1f644e] border-t-transparent mx-auto"></div>
+          <p className="mt-4 text-[#7c8e88] font-medium">Loading finance...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return null;
+  }
 
   const tabTitles = {
     records: 'Records',
@@ -224,10 +250,12 @@ function FinanceContent() {
 
 export default function FinancePage() {
   return (
-    <MoneyProvider>
-      <FinanceChatProvider>
-        <FinanceContent />
-      </FinanceChatProvider>
-    </MoneyProvider>
+    <SessionProvider>
+      <MoneyProvider>
+        <FinanceChatProvider>
+          <FinanceContent />
+        </FinanceChatProvider>
+      </MoneyProvider>
+    </SessionProvider>
   );
 }

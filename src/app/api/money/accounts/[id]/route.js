@@ -2,8 +2,12 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Account from '@/models/Account';
 import { serializeAccount } from '@/lib/money-serializers';
+import { requireAdminAuth } from '@/lib/money-auth';
 
 export async function PUT(request, { params }) {
+  const session = await requireAdminAuth();
+  if (typeof session !== 'object') return session;
+
   try {
     await dbConnect();
     const { id } = await params;
@@ -28,6 +32,9 @@ export async function PUT(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
+  const session = await requireAdminAuth();
+  if (typeof session !== 'object') return session;
+
   try {
     await dbConnect();
     const { id } = await params;

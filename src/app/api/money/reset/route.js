@@ -5,6 +5,7 @@ import Category from '@/models/Category';
 import Transaction from '@/models/Transaction';
 import FinanceSyncState from '@/models/FinanceSyncState';
 import { serializeAccount, serializeCategory } from '@/lib/money-serializers';
+import { requireAdminAuth } from '@/lib/money-auth';
 
 async function getSyncState() {
   let state = await FinanceSyncState.findOne({ key: 'singleton' });
@@ -15,6 +16,9 @@ async function getSyncState() {
 }
 
 export async function POST() {
+  const session = await requireAdminAuth();
+  if (typeof session !== 'object') return session;
+
   try {
     await dbConnect();
 

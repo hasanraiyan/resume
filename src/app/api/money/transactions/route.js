@@ -2,8 +2,12 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Transaction from '@/models/Transaction';
 import { serializeTransaction } from '@/lib/money-serializers';
+import { requireAdminAuth } from '@/lib/money-auth';
 
 export async function GET(request) {
+  const session = await requireAdminAuth();
+  if (typeof session !== 'object') return session;
+
   try {
     await dbConnect();
     const { searchParams } = new URL(request.url);
@@ -42,6 +46,9 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  const session = await requireAdminAuth();
+  if (typeof session !== 'object') return session;
+
   try {
     await dbConnect();
     const body = await request.json();
