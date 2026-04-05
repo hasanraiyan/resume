@@ -9,6 +9,12 @@ import { evaluateMath } from '@/utils/math';
 
 const IconRenderer = dynamic(() => import('./IconRenderer'), { ssr: false });
 
+const getCategoryColorPresentation = (color) => {
+  if (!color) return { className: 'bg-[#1f644e]', style: undefined };
+  if (color.startsWith('#')) return { className: '', style: { backgroundColor: color } };
+  return { className: color, style: undefined };
+};
+
 export default function AddTransactionModal() {
   const { accounts, accountsWithBalance, categories, addTransaction } = useMoney();
   const [open, setOpen] = useState(false);
@@ -85,6 +91,7 @@ export default function AddTransactionModal() {
   const selectableAccounts = accountsWithBalance?.length ? accountsWithBalance : accounts;
   const selectedAccount = selectableAccounts.find((a) => a.id === accountId);
   const selectedToAccount = selectableAccounts.find((a) => a.id === toAccountId);
+  const selectedCategoryColor = getCategoryColorPresentation(selectedCategory?.color);
 
   const displayAmount = currentInput === '0' ? '0' : currentInput;
   const displayCurrency = type === 'expense' ? '₹' : type === 'income' ? '₹' : '₹';
@@ -225,7 +232,8 @@ export default function AddTransactionModal() {
                     {selectedCategory ? (
                       <>
                         <div
-                          className={`w-5 h-5 rounded-full ${selectedCategory.color || 'bg-[#1f644e]'} flex items-center justify-center`}
+                          className={`w-5 h-5 rounded-full ${selectedCategoryColor.className} flex items-center justify-center`}
+                          style={selectedCategoryColor.style}
                         >
                           <IconRenderer
                             name={selectedCategory.icon}
@@ -373,25 +381,29 @@ export default function AddTransactionModal() {
             <div className="bg-white rounded-t-2xl p-5 pb-8 animate-in slide-in-from-bottom duration-300">
               <h3 className="text-center font-bold text-[#1e3a34] mb-4">Select a category</h3>
               <div className="grid grid-cols-4 gap-4 max-h-60 overflow-y-auto">
-                {filteredCategories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => {
-                      setCategoryId(cat.id);
-                      setShowCategorySelector(false);
-                    }}
-                    className="flex flex-col items-center gap-1.5 cursor-pointer"
-                  >
-                    <div
-                      className={`w-14 h-14 rounded-2xl ${cat.color || 'bg-[#1f644e]'} text-white flex items-center justify-center shadow-md active:scale-95 transition`}
+                {filteredCategories.map((cat) => {
+                  const colorPresentation = getCategoryColorPresentation(cat.color);
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => {
+                        setCategoryId(cat.id);
+                        setShowCategorySelector(false);
+                      }}
+                      className="flex flex-col items-center gap-1.5 cursor-pointer"
                     >
-                      <IconRenderer name={cat.icon} className="w-6 h-6" />
-                    </div>
-                    <span className="text-[10px] font-bold text-[#7c8e88] text-center leading-tight">
-                      {cat.name}
-                    </span>
-                  </button>
-                ))}
+                      <div
+                        className={`w-14 h-14 rounded-2xl ${colorPresentation.className} text-white flex items-center justify-center shadow-md active:scale-95 transition`}
+                        style={colorPresentation.style}
+                      >
+                        <IconRenderer name={cat.icon} className="w-6 h-6" />
+                      </div>
+                      <span className="text-[10px] font-bold text-[#7c8e88] text-center leading-tight">
+                        {cat.name}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>

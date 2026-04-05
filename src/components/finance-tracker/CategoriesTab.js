@@ -55,6 +55,12 @@ const categoryColors = [
   'bg-[#8b5cf6]',
 ];
 
+const getCategoryColorPresentation = (color) => {
+  if (!color) return { className: 'bg-[#1f644e]', style: undefined };
+  if (color.startsWith('#')) return { className: '', style: { backgroundColor: color } };
+  return { className: color, style: undefined };
+};
+
 export default function CategoriesTab() {
   const { categories, addCategory, updateCategory, deleteCategory } = useMoney();
   const [showForm, setShowForm] = useState(false);
@@ -133,45 +139,49 @@ export default function CategoriesTab() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {cats.map((cat) => (
-            <div
-              key={cat.id}
-              className="bg-white border border-[#e5e3d8] rounded-xl p-4 flex items-center gap-3 hover:shadow-md transition-shadow relative"
-            >
+          {cats.map((cat) => {
+            const colorPresentation = getCategoryColorPresentation(cat.color);
+            return (
               <div
-                className={`w-10 h-10 rounded-xl ${cat.color || 'bg-[#1f644e]'} text-white flex items-center justify-center shrink-0`}
+                key={cat.id}
+                className="bg-white border border-[#e5e3d8] rounded-xl p-4 flex items-center gap-3 hover:shadow-md transition-shadow relative"
               >
-                <IconRenderer name={cat.icon} className="w-4 h-4" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-[#1e3a34] truncate">{cat.name}</p>
-              </div>
-              <div className="relative">
-                <button
-                  onClick={() => setMenuOpen(menuOpen === cat.id ? null : cat.id)}
-                  className="p-1.5 text-[#7c8e88] hover:text-[#1e3a34] transition rounded-lg hover:bg-[#f0f5f2] cursor-pointer"
+                <div
+                  className={`w-10 h-10 rounded-xl ${colorPresentation.className} text-white flex items-center justify-center shrink-0`}
+                  style={colorPresentation.style}
                 >
-                  <MoreVertical className="w-4 h-4" />
-                </button>
-                {menuOpen === cat.id && (
-                  <div className="absolute right-0 top-full mt-1 bg-white border border-[#e5e3d8] shadow-lg rounded-lg py-1 z-20 w-28">
-                    <button
-                      onClick={() => startEdit(cat)}
-                      className="px-3 py-2 text-xs font-bold hover:bg-[#f0f5f2] w-full text-left"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(cat.id)}
-                      className="px-3 py-2 text-xs font-bold hover:bg-[#f0f5f2] w-full text-left text-[#c94c4c]"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                )}
+                  <IconRenderer name={cat.icon} className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-[#1e3a34] truncate">{cat.name}</p>
+                </div>
+                <div className="relative">
+                  <button
+                    onClick={() => setMenuOpen(menuOpen === cat.id ? null : cat.id)}
+                    className="p-1.5 text-[#7c8e88] hover:text-[#1e3a34] transition rounded-lg hover:bg-[#f0f5f2] cursor-pointer"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                  {menuOpen === cat.id && (
+                    <div className="absolute right-0 top-full mt-1 bg-white border border-[#e5e3d8] shadow-lg rounded-lg py-1 z-20 w-28">
+                      <button
+                        onClick={() => startEdit(cat)}
+                        className="px-3 py-2 text-xs font-bold hover:bg-[#f0f5f2] w-full text-left"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(cat.id)}
+                        className="px-3 py-2 text-xs font-bold hover:bg-[#f0f5f2] w-full text-left text-[#c94c4c]"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
