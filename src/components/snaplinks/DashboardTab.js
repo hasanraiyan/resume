@@ -14,27 +14,12 @@ export default function DashboardTab({ navigateTo }) {
 
   const fetchStats = async () => {
     try {
-      // In a real scenario we'd create a dedicated endpoint for dashboard stats
-      // but for now we can just fetch all links and compute basic stats here.
-      const response = await fetch('/api/admin/short-links');
+      const response = await fetch('/api/admin/short-links/dashboard');
       if (!response.ok) throw new Error('Failed to fetch stats');
       const result = await response.json();
 
       if (result.success) {
-        const links = result.data;
-        const totalLinks = links.length;
-        const activeLinks = links.filter((l) => l.isActive).length;
-        const totalClicks = links.reduce((sum, l) => sum + (l.totalClicks || 0), 0);
-
-        // Find top performing link
-        const topLink = [...links].sort((a, b) => (b.totalClicks || 0) - (a.totalClicks || 0))[0];
-
-        setStats({
-          totalLinks,
-          activeLinks,
-          totalClicks,
-          topLink,
-        });
+        setStats(result.data);
       }
     } catch (err) {
       console.error(err);
