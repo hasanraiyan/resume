@@ -13,6 +13,8 @@ import {
   AccountsSkeleton,
   AnalysisSkeleton,
   CategoriesSkeleton,
+  ChatSkeleton,
+  RecordsSkeleton,
   Shimmer,
 } from '@/components/finance-tracker/FinanceSkeletons';
 import {
@@ -41,14 +43,7 @@ const AnalysisTab = dynamic(() => import('@/components/finance-tracker/AnalysisT
   loading: () => <AnalysisSkeleton />,
 });
 const ChatTab = dynamic(() => import('@/components/finance-tracker/ChatTab'), {
-  loading: () => (
-    <div className="p-6 space-y-4">
-      <Shimmer className="h-12 w-40 rounded-2xl" />
-      <Shimmer className="h-28 w-full rounded-3xl" />
-      <Shimmer className="h-24 w-4/5 rounded-3xl" />
-      <Shimmer className="h-24 w-3/4 rounded-3xl" />
-    </div>
-  ),
+  loading: () => <ChatSkeleton />,
 });
 const FinanceSettingsTab = dynamic(
   () => import('@/components/finance-tracker/FinanceSettingsTab'),
@@ -223,16 +218,7 @@ function FinanceContent() {
 
         {/* Content */}
         <main className="min-w-0 flex-1 w-full overflow-x-hidden">
-          {isBootstrapLoading && activeTab === 'records' ? (
-            <div className="p-6 space-y-4">
-              <Shimmer className="h-28 w-full rounded-3xl" />
-              <Shimmer className="h-14 w-56 rounded-2xl" />
-              <Shimmer className="h-24 w-full rounded-3xl" />
-              <Shimmer className="h-24 w-full rounded-3xl" />
-            </div>
-          ) : (
-            renderTab()
-          )}
+          {isBootstrapLoading && activeTab === 'records' ? <RecordsSkeleton /> : renderTab()}
         </main>
       </div>
 
