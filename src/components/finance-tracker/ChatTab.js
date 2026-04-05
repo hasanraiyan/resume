@@ -34,8 +34,8 @@ export default function ChatTab() {
   }, [messages]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    messagesEndRef.current?.scrollIntoView({ behavior: isStreaming ? 'auto' : 'smooth' });
+  }, [isStreaming, messages]);
 
   useEffect(() => {
     setTimeout(() => inputRef.current?.focus(), 100);

@@ -10,7 +10,12 @@ import { createContext, useContext } from 'react';
 /**
  * Context for site-wide data and configuration.
  */
-const SiteContext = createContext(null);
+const DEFAULT_SITE_CONTEXT = {
+  heroData: { socialLinks: [] },
+  initials: 'MM',
+};
+
+const SiteContext = createContext(DEFAULT_SITE_CONTEXT);
 
 /**
  * Provider component for site context.
@@ -35,8 +40,5 @@ export function SiteProvider({ children, value }) {
  */
 export function useSiteContext() {
   const context = useContext(SiteContext);
-  if (!context) {
-    throw new Error('useSiteContext must be used within a SiteProvider');
-  }
-  return context;
+  return context || DEFAULT_SITE_CONTEXT;
 }
