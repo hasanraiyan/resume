@@ -44,6 +44,8 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
   const [editingAccount, setEditingAccount] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [menuOpen, setMenuOpen] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
   const [form, setForm] = useState({ name: '', icon: 'wallet', initialBalance: 0 });
 
   useEffect(() => {
@@ -55,12 +57,20 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editingAccount) {
-      await updateAccount(editingAccount.id, form);
-    } else {
-      await addAccount(form);
+    setError('');
+    setSubmitting(true);
+    try {
+      if (editingAccount) {
+        await updateAccount(editingAccount.id, form);
+      } else {
+        await addAccount(form);
+      }
+      resetForm();
+    } catch (err) {
+      setError(err.message || 'Failed to save account');
+    } finally {
+      setSubmitting(false);
     }
-    resetForm();
   };
 
   const resetForm = () => {
@@ -219,6 +229,11 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
             <h3 className="text-center font-bold text-[#1f644e] mb-4 text-sm">
               {editingAccount ? 'Edit account' : 'Add account'}
             </h3>
+            {error && (
+              <div className="mb-4 bg-[#fef2f2] border border-[#f0d2d2] rounded-lg p-3 text-xs font-bold text-[#c94c4c] text-center">
+                {error}
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="border border-[#1f644e] rounded-lg px-3 py-2 bg-[#f0f5f2]">
                 <div className="text-[10px] text-[#1f644e] font-bold">Name</div>
@@ -266,15 +281,42 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="border border-[#1f644e] text-[#1f644e] px-6 py-1.5 rounded-lg text-sm font-bold"
+                  disabled={submitting}
+                  className="border border-[#1f644e] text-[#1f644e] px-6 py-1.5 rounded-lg text-sm font-bold cursor-pointer disabled:opacity-50"
                 >
                   CANCEL
                 </button>
                 <button
                   type="submit"
-                  className="bg-[#1f644e] text-white px-6 py-1.5 rounded-lg text-sm font-bold"
+                  disabled={submitting}
+                  className="bg-[#1f644e] text-white px-6 py-1.5 rounded-lg text-sm font-bold cursor-pointer disabled:opacity-60 flex items-center gap-2"
                 >
-                  {editingAccount ? 'SAVE' : 'ADD'}
+                  {submitting ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          className="opacity-25"
+                        />
+                        <path
+                          d="M4 12a8 8 0 018-8"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          className="opacity-75"
+                        />
+                      </svg>
+                      Saving...
+                    </>
+                  ) : editingAccount ? (
+                    'SAVE'
+                  ) : (
+                    'ADD'
+                  )}
                 </button>
               </div>
             </form>

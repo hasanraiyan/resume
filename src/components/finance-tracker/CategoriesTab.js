@@ -60,6 +60,8 @@ export default function CategoriesTab() {
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [menuOpen, setMenuOpen] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
   const [form, setForm] = useState({
     name: '',
     type: 'expense',
@@ -72,12 +74,20 @@ export default function CategoriesTab() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editingCategory) {
-      await updateCategory(editingCategory.id, form);
-    } else {
-      await addCategory(form);
+    setError('');
+    setSubmitting(true);
+    try {
+      if (editingCategory) {
+        await updateCategory(editingCategory.id, form);
+      } else {
+        await addCategory(form);
+      }
+      resetForm();
+    } catch (err) {
+      setError(err.message || 'Failed to save category');
+    } finally {
+      setSubmitting(false);
     }
-    resetForm();
   };
 
   const resetForm = () => {
@@ -139,7 +149,7 @@ export default function CategoriesTab() {
               <div className="relative">
                 <button
                   onClick={() => setMenuOpen(menuOpen === cat.id ? null : cat.id)}
-                  className="p-1.5 text-[#7c8e88] hover:text-[#1e3a34] transition rounded-lg hover:bg-[#f0f5f2]"
+                  className="p-1.5 text-[#7c8e88] hover:text-[#1e3a34] transition rounded-lg hover:bg-[#f0f5f2] cursor-pointer"
                 >
                   <MoreVertical className="w-4 h-4" />
                 </button>
@@ -236,6 +246,11 @@ export default function CategoriesTab() {
             <h3 className="text-center font-bold text-[#1f644e] mb-4 text-sm">
               {editingCategory ? 'Edit category' : 'Add category'}
             </h3>
+            {error && (
+              <div className="mb-4 bg-[#fef2f2] border border-[#f0d2d2] rounded-lg p-3 text-xs font-bold text-[#c94c4c] text-center">
+                {error}
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="border border-[#1f644e] rounded-lg px-3 py-2 bg-[#f0f5f2]">
                 <div className="text-[10px] text-[#1f644e] font-bold">Name</div>
@@ -267,13 +282,13 @@ export default function CategoriesTab() {
               </div>
               <div>
                 <div className="text-[10px] text-[#7c8e88] font-bold mb-2">Color</div>
-                <div className="flex gap-2 overflow-x-auto pb-2">
+                <div className="grid grid-cols-6 gap-3">
                   {categoryColors.map((color) => (
                     <button
                       key={color}
                       type="button"
                       onClick={() => setForm({ ...form, color })}
-                      className={`w-8 h-8 rounded-full flex-shrink-0 transition cursor-pointer ${
+                      className={`w-10 h-10 rounded-full transition cursor-pointer ${
                         form.color === color ? 'ring-2 ring-[#1f644e] ring-offset-2' : ''
                       } ${color}`}
                     />
@@ -303,15 +318,42 @@ export default function CategoriesTab() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="border border-[#1f644e] text-[#1f644e] px-6 py-1.5 rounded-lg text-sm font-bold cursor-pointer"
+                  disabled={submitting}
+                  className="border border-[#1f644e] text-[#1f644e] px-6 py-1.5 rounded-lg text-sm font-bold cursor-pointer disabled:opacity-50"
                 >
                   CANCEL
                 </button>
                 <button
                   type="submit"
-                  className="bg-[#1f644e] text-white px-6 py-1.5 rounded-lg text-sm font-bold cursor-pointer"
+                  disabled={submitting}
+                  className="bg-[#1f644e] text-white px-6 py-1.5 rounded-lg text-sm font-bold cursor-pointer disabled:opacity-60 flex items-center gap-2"
                 >
-                  {editingCategory ? 'SAVE' : 'ADD'}
+                  {submitting ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          className="opacity-25"
+                        />
+                        <path
+                          d="M4 12a8 8 0 018-8"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          className="opacity-75"
+                        />
+                      </svg>
+                      Saving...
+                    </>
+                  ) : editingCategory ? (
+                    'SAVE'
+                  ) : (
+                    'ADD'
+                  )}
                 </button>
               </div>
             </form>
