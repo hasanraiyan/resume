@@ -85,6 +85,7 @@ export default function MdContent({ content, onLinkClick, isUser = false }) {
             );
           },
           strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+          hr: () => <hr className="my-4 border-0 border-t border-neutral-200" />,
           ul: ({ children }) => <ul className="list-disc pl-4 my-1 space-y-0.5">{children}</ul>,
           ol: ({ children }) => <ol className="list-decimal pl-4 my-1 space-y-0.5">{children}</ol>,
           li: ({ children }) => <li className="leading-relaxed">{children}</li>,
