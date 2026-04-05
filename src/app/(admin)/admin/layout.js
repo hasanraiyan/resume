@@ -61,7 +61,7 @@ function AdminLayoutContent({ children }) {
     {
       title: 'Apps',
       items: [
-        { name: 'SnapLinks', href: '/admin/short-links', icon: LinkIcon },
+        { name: 'SnapLinks', href: '/snaplinks', icon: LinkIcon },
         {
           name: 'SmallClaw',
           href: '/admin/agents',
