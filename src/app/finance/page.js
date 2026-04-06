@@ -154,7 +154,7 @@ function FinanceContent() {
       <aside className="hidden lg:flex flex-col w-64 bg-white dark:bg-[#1e1e1e] border-r border-[#e5e3d8] dark:border-[#333333] fixed inset-y-0 left-0 z-30">
         <div className="p-6 border-b border-[#e5e3d8] dark:border-[#333333]">
           <h1 className="font-[family-name:var(--font-logo)] text-2xl text-black dark:text-white">
-            MyMoney
+            Pocketly
           </h1>
         </div>
         <nav className="flex-1 py-4 px-3 space-y-1">
@@ -175,7 +175,7 @@ function FinanceContent() {
         </nav>
         <div className="p-4 border-t border-[#e5e3d8] dark:border-[#333333]">
           <p className="text-[10px] text-[#7c8e88] dark:text-[#a0a0a0] text-center">
-            Powered by MyMoney
+            Powered by Pocketly
           </p>
         </div>
       </aside>
@@ -190,7 +190,7 @@ function FinanceContent() {
                 <Menu className="w-5 h-5 text-[#1e3a34] dark:text-[#e0e0e0]" />
               </button>
               <h1 className="font-[family-name:var(--font-logo)] text-xl lg:text-2xl text-black dark:text-white lg:hidden">
-                MyMoney
+                Pocketly
               </h1>
               <h1 className="hidden lg:block text-lg font-bold text-[#1e3a34] dark:text-[#e0e0e0]">
                 {tabTitles[activeTab]}
@@ -229,7 +229,7 @@ function FinanceContent() {
           <aside className="absolute inset-y-0 left-0 w-64 bg-white dark:bg-[#1e1e1e] shadow-xl animate-in slide-in-from-left duration-300">
             <div className="p-6 border-b border-[#e5e3d8] dark:border-[#333333]">
               <h1 className="font-[family-name:var(--font-logo)] text-2xl text-black dark:text-white">
-                MyMoney
+                Pocketly
               </h1>
             </div>
             <nav className="py-4 px-3 space-y-1">

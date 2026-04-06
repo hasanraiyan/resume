@@ -15,7 +15,7 @@ const nunito = Nunito({
 });
 
 export const metadata = {
-  title: 'MyMoney - Finance Tracker',
+  title: 'Pocketly - Finance Tracker',
   description: 'Personal finance and expense tracker',
 };
 
