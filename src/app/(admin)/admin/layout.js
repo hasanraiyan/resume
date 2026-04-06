@@ -22,6 +22,7 @@ import {
   Cloud,
   TerminalSquare,
   CreditCard,
+  CheckSquare2,
 } from 'lucide-react';
 
 function AdminLayoutContent({ children }) {
@@ -70,6 +71,7 @@ function AdminLayoutContent({ children }) {
           ),
         },
         { name: 'Pocketly', href: '/pocketly', icon: CreditCard },
+        { name: 'Taskly', href: '/taskly', icon: CheckSquare2 },
         { name: 'Prisma', href: '/admin/media', icon: Image },
         { name: 'App Builder', href: '/admin/apps', icon: TerminalSquare },
       ],

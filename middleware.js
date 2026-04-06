@@ -30,8 +30,12 @@ export default withAuth(
        */
       authorized: ({ token, req }) => {
         const path = req.nextUrl.pathname;
-        // Check if user has admin role for admin routes and pocketly app
-        if (path.startsWith('/admin') || path.startsWith('/pocketly')) {
+        // Check if user has admin role for admin routes and pocketly and taskly apps
+        if (
+          path.startsWith('/admin') ||
+          path.startsWith('/pocketly') ||
+          path.startsWith('/taskly')
+        ) {
           return token?.role === 'admin';
         }
         return true;
@@ -41,5 +45,9 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ['/admin/((?!api|_next/static|_next/image|favicon.ico).*)', '/pocketly/:path*'],
+  matcher: [
+    '/admin/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/pocketly/:path*',
+    '/taskly/:path*',
+  ],
 };
