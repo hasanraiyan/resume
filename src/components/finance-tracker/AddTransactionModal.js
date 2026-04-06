@@ -26,6 +26,7 @@ export default function AddTransactionModal() {
   const [toAccountId, setToAccountId] = useState('');
   const [showAccountSelector, setShowAccountSelector] = useState(null);
   const [showCategorySelector, setShowCategorySelector] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filteredCategories = categories.filter((c) => c.type === type);
 
@@ -62,6 +63,7 @@ export default function AddTransactionModal() {
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
     const amount = parseFloat(currentInput);
     if (!amount || amount <= 0) return;
     if (!accountId) return;
@@ -82,9 +84,14 @@ export default function AddTransactionModal() {
       payload.account = accountId;
     }
 
-    await addTransaction(payload);
-    resetForm();
-    setOpen(false);
+    setIsSubmitting(true);
+    try {
+      await addTransaction(payload);
+      resetForm();
+      setOpen(false);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
@@ -141,10 +148,10 @@ export default function AddTransactionModal() {
           </span>
           <button
             onClick={handleSubmit}
-            disabled={parseFloat(currentInput) <= 0}
+            disabled={parseFloat(currentInput) <= 0 || isSubmitting}
             className="flex items-center gap-1.5 text-sm font-bold text-[#1f644e] hover:text-[#17503e] transition disabled:opacity-30 cursor-pointer"
           >
-            <Check className="w-4 h-4" /> Save
+            <Check className="w-4 h-4" /> {isSubmitting ? 'Saving...' : 'Save'}
           </button>
         </div>
 
