@@ -24,7 +24,9 @@ export default function ChatInput({
   selectedAgentId,
   setSelectedAgentId,
   showModelSelector = true,
+  theme = 'default',
 }) {
+  const isGreenTheme = theme === 'green';
   return (
     <div className="p-3 border-t border-neutral-200/50 bg-white shrink-0">
       <div className="rounded-3xl border border-neutral-200/80 bg-white shadow-sm focus-within:border-black/50 focus-within:ring-1 focus-within:ring-black/20 transition-all flex flex-col">
@@ -86,7 +88,7 @@ export default function ChatInput({
                 type="button"
                 onClick={handleSubmit}
                 disabled={isLoading}
-                className="w-8 h-8 rounded-full flex items-center justify-center transition-all bg-black text-white hover:opacity-90 active:scale-95"
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isGreenTheme ? 'bg-[#1f644e] text-white hover:bg-[#1a5542]' : 'bg-black text-white hover:opacity-90'} active:scale-95`}
               >
                 {isLoading ? (
                   <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />

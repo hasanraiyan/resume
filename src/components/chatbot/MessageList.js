@@ -8,7 +8,10 @@ export default function MessageList({
   messagesEndRef,
   handleUIInteract,
   handleLinkClick,
+  theme = 'default',
 }) {
+  const isGreenTheme = theme === 'green';
+
   return (
     <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5 space-y-3 bg-gradient-to-b from-white/50 to-neutral-50/50 custom-chat-scrollbar">
       {messages.map((message, index) => {
@@ -37,7 +40,7 @@ export default function MessageList({
             <div className="relative w-7 h-7 shrink-0 mt-1 flex items-center justify-center">
               {!isConsecutive && (
                 <div
-                  className={`w-full h-full rounded-full flex items-center justify-center shadow-sm ${message.role === 'user' ? 'bg-black ring-2 ring-black/10' : 'bg-neutral-100 border border-neutral-200/60'}`}
+                  className={`w-full h-full rounded-full flex items-center justify-center shadow-sm ${message.role === 'user' ? (isGreenTheme ? 'bg-[#1f644e] ring-2 ring-[#1f644e]/10' : 'bg-black ring-2 ring-black/10') : 'bg-neutral-100 border border-neutral-200/60'}`}
                 >
                   {message.role === 'user' ? (
                     <User className="w-3.5 h-3.5 text-white" />
@@ -72,7 +75,7 @@ export default function MessageList({
                 <div
                   className={`${
                     isAssistant && message.uiBlocks?.length > 0 ? 'mt-3' : ''
-                  } px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-sm text-[13px] overflow-hidden ${message.role === 'user' ? 'bg-gradient-to-br from-black to-neutral-900 text-white shadow-black/20 rounded-tr-sm' : 'bg-white/90 backdrop-blur-sm text-neutral-900 shadow-neutral-200/50 border border-neutral-200/50 rounded-tl-sm'}`}
+                  } px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-sm text-[13px] overflow-hidden ${message.role === 'user' ? (isGreenTheme ? 'bg-[#1f644e] text-white shadow-[#1f644e]/20 rounded-tr-sm' : 'bg-gradient-to-br from-black to-neutral-900 text-white shadow-black/20 rounded-tr-sm') : 'bg-white/90 backdrop-blur-sm text-neutral-900 shadow-neutral-200/50 border border-neutral-200/50 rounded-tl-sm'}`}
                 >
                   {message.role === 'assistant' ? (
                     <MdContent content={message.content} onLinkClick={handleLinkClick} />

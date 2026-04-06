@@ -70,6 +70,7 @@ export default function ChatTab() {
           messagesEndRef={messagesEndRef}
           handleUIInteract={handleUIInteract}
           handleLinkClick={() => {}}
+          theme="green"
         />
       </div>
 
@@ -94,6 +95,7 @@ export default function ChatTab() {
         selectedAgentId={selectedAgentId}
         setSelectedAgentId={setSelectedAgentId}
         showModelSelector={false}
+        theme="green"
       />
     </div>
   );
