@@ -1,0 +1,83 @@
+
+> resume@0.1.0 dev
+> next dev --turbopack
+
+   ▲ Next.js 15.5.9 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.2:3000
+   - Experiments (use with caution):
+     · serverActions
+
+ ✓ Starting...
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+ ○ Compiling middleware ...
+ ✓ Compiled middleware in 564ms
+ ✓ Ready in 1871ms
+ ○ Compiling /finance ...
+ ✓ Compiled /finance in 19.3s
+WARNING: MONGODB_URI environment variable is not defined.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+ GET /finance 200 in 29935ms
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+ GET /finance 200 in 20465ms
+ ○ Compiling /api/analytics ...
+WARNING: MONGODB_URI environment variable is not defined.
+Analytics tracking error: SyntaxError: Unexpected end of JSON input
+    at JSON.parse (<anonymous>)
+    at POST (src/app/api/analytics/route.js:107:32)
+  105 | export async function POST(request) {
+  106 |   try {
+> 107 |     const body = await request.json();
+      |                                ^
+  108 |     // Handle both single event objects and arrays of events
+  109 |     const events = Array.isArray(body) ? body : [body];
+  110 |
+Analytics tracking error: SyntaxError: Unexpected end of JSON input
+    at JSON.parse (<anonymous>)
+    at POST (src/app/api/analytics/route.js:107:32)
+  105 | export async function POST(request) {
+  106 |   try {
+> 107 |     const body = await request.json();
+      |                                ^
+  108 |     // Handle both single event objects and arrays of events
+  109 |     const events = Array.isArray(body) ? body : [body];
+  110 |
+ ✓ Compiled /api/analytics in 5.7s
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/chatbot'
+}
+[next-auth][warn][NEXTAUTH_URL]
+https://next-auth.js.org/warnings#nextauth_url
+[next-auth][warn][NO_SECRET]
+https://next-auth.js.org/warnings#no_secret
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 3.4s
+Error fetching dynamic MCP config: [MongooseError: Operation `mcpservers.find()` buffering timed out after 10000ms]
+Failed to fetch finance bootstrap: [MongooseError: Operation `accounts.find()` buffering timed out after 10000ms]
