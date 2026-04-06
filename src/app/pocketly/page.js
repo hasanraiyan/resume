@@ -7,8 +7,8 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useEffect } from 'react';
 import SessionProvider from '@/components/SessionProvider';
-import RecordsTab from '@/components/finance-tracker/RecordsTab';
-import AddTransactionModal from '@/components/finance-tracker/AddTransactionModal';
+import RecordsTab from '@/components/pocketly-tracker/RecordsTab';
+import AddTransactionModal from '@/components/pocketly-tracker/AddTransactionModal';
 import {
   AccountsSkeleton,
   AnalysisSkeleton,
@@ -16,7 +16,7 @@ import {
   ChatSkeleton,
   RecordsSkeleton,
   Shimmer,
-} from '@/components/finance-tracker/FinanceSkeletons';
+} from '@/components/pocketly-tracker/FinanceSkeletons';
 import {
   Receipt,
   BarChart3,
@@ -33,20 +33,20 @@ import {
 } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
-const AccountsTab = dynamic(() => import('@/components/finance-tracker/AccountsTab'), {
+const AccountsTab = dynamic(() => import('@/components/pocketly-tracker/AccountsTab'), {
   loading: () => <AccountsSkeleton />,
 });
-const CategoriesTab = dynamic(() => import('@/components/finance-tracker/CategoriesTab'), {
+const CategoriesTab = dynamic(() => import('@/components/pocketly-tracker/CategoriesTab'), {
   loading: () => <CategoriesSkeleton />,
 });
-const AnalysisTab = dynamic(() => import('@/components/finance-tracker/AnalysisTab'), {
+const AnalysisTab = dynamic(() => import('@/components/pocketly-tracker/AnalysisTab'), {
   loading: () => <AnalysisSkeleton />,
 });
-const ChatTab = dynamic(() => import('@/components/finance-tracker/ChatTab'), {
+const ChatTab = dynamic(() => import('@/components/pocketly-tracker/ChatTab'), {
   loading: () => <ChatSkeleton />,
 });
 const FinanceSettingsTab = dynamic(
-  () => import('@/components/finance-tracker/FinanceSettingsTab'),
+  () => import('@/components/pocketly-tracker/FinanceSettingsTab'),
   {
     loading: () => (
       <div className="p-6 space-y-6">

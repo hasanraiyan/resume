@@ -69,7 +69,7 @@ function AdminLayoutContent({ children }) {
             <span className={`flex items-center justify-center ${className}`}>🦞</span>
           ),
         },
-        { name: 'Pocketly', href: '/finance', icon: CreditCard },
+        { name: 'Pocketly', href: '/pocketly', icon: CreditCard },
         { name: 'Prisma', href: '/admin/media', icon: Image },
         { name: 'App Builder', href: '/admin/apps', icon: TerminalSquare },
       ],

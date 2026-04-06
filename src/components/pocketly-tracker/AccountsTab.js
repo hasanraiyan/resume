@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMoney } from '@/context/MoneyContext';
 import { MoreVertical, Plus, TrendingDown, TrendingUp } from 'lucide-react';
-import { PurseSVG } from '@/components/finance-tracker/IconRenderer';
+import { PurseSVG } from '@/components/pocketly-tracker/IconRenderer';
 import dynamic from 'next/dynamic';
 
 const IconRenderer = dynamic(() => import('./IconRenderer'), { ssr: false });

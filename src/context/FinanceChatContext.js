@@ -70,7 +70,7 @@ export function FinanceChatProvider({ children }) {
           .filter((m) => m.content)
           .map((m) => ({ role: m.role, content: m.content }));
 
-        const response = await fetch('/api/finance/chat', {
+        const response = await fetch('/api/pocketly/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userMessage: userMessage.trim(), chatHistory }),

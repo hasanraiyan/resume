@@ -3,7 +3,7 @@
 import { useFinance } from '@/context/FinanceContext';
 import { Card } from '@/components/ui';
 import { TrendingUp, TrendingDown, PiggyBank } from 'lucide-react';
-import { PurseSVG } from '@/components/finance-tracker/IconRenderer';
+import { PurseSVG } from '@/components/pocketly-tracker/IconRenderer';
 
 export default function SummaryCards() {
   const { balance, totalIncome, totalExpenses, monthlyBudget } = useFinance();

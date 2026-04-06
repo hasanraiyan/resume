@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMoney } from '@/context/MoneyContext';
 import { ChevronDown, TrendingDown, TrendingUp, BarChart3, PieChart } from 'lucide-react';
-import { PurseSVG } from '@/components/finance-tracker/IconRenderer';
+import { PurseSVG } from '@/components/pocketly-tracker/IconRenderer';
 import { Shimmer } from './FinanceSkeletons';
 import dynamic from 'next/dynamic';
 
