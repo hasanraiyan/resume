@@ -2,6 +2,230 @@
 > resume@0.1.0 dev /app
 > next dev --turbopack
 
-sh: 1: next: not found
- ELIFECYCLE  Command failed.
- WARN   Local package.json exists, but node_modules missing, did you mean to install?
+   ▲ Next.js 15.5.9 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.2:3000
+   - Experiments (use with caution):
+     · serverActions
+
+ ✓ Starting...
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+ ○ Compiling middleware ...
+ ✓ Compiled middleware in 629ms
+ ✓ Ready in 1968ms
+ ○ Compiling /pocketly ...
+ ✓ Compiled /pocketly in 24.7s
+WARNING: MONGODB_URI environment variable is not defined.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+ GET /pocketly 200 in 29925ms
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+ GET /pocketly 200 in 20335ms
+ ○ Compiling /api/analytics ...
+WARNING: MONGODB_URI environment variable is not defined.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+ ✓ Compiled /api/analytics in 3.6s
+[next-auth][warn][NEXTAUTH_URL]
+https://next-auth.js.org/warnings#nextauth_url
+[next-auth][warn][NO_SECRET]
+https://next-auth.js.org/warnings#no_secret
+Skipping dbConnect because MONGODB_URI is not set.
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/chatbot'
+}
+Skipping dbConnect because MONGODB_URI is not set.
+ ○ Compiling /_error ...
+ GET /api/auth/session 200 in 5293ms
+ GET /api/auth/session 200 in 391ms
+ GET /api/admin/chatbot 500 in 8485ms
+Skipping dbConnect because MONGODB_URI is not set.
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+ POST /api/analytics 500 in 12102ms
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+ POST /api/analytics 500 in 12125ms
+Skipping dbConnect because MONGODB_URI is not set.
+Failed to fetch finance bootstrap: [MongooseError: Operation `accounts.find()` buffering timed out after 10000ms]
+ GET /api/money/bootstrap?startDate=2026-04-06T00%3A00%3A00.000Z&endDate=2026-04-12T23%3A59%3A59.999Z 500 in 13456ms
+Error fetching dynamic MCP config: [MongooseError: Operation `mcpservers.find()` buffering timed out after 10000ms]
+ GET /api/mcps 200 in 13874ms
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+ ✓ Compiled /_error in 12.8s
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/actions/contactActions.js:11:1)
+    at __TURBOPACK__module__evaluation__ (.next-internal/server/app/page/actions.js (server actions loader):40:1)
+    at __TURBOPACK__module__evaluation__ (.next/server/chunks/ssr/[root-of-the-server]__a4064c7d._.js:3917:2440)
+    at Object.<anonymous> (.next/server/app/page.js:17:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/'
+}
+ GET / 500 in 8247ms
+ GET /3D.png 404 in 5465ms
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+ GET /login 200 in 14429ms
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+ POST /api/analytics 500 in 10469ms
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+ POST /api/analytics 200 in 1988ms
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+ GET /pocketly 200 in 20376ms
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/chatbot'
+}
+Skipping dbConnect because MONGODB_URI is not set.
+ GET /api/auth/session 200 in 756ms
+ GET /api/admin/chatbot 500 in 1035ms
+Skipping dbConnect because MONGODB_URI is not set.
+ GET /api/auth/session 200 in 526ms
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/actions/contactActions.js:11:1)
+    at __TURBOPACK__module__evaluation__ (.next-internal/server/app/page/actions.js (server actions loader):40:1)
+    at __TURBOPACK__module__evaluation__ (.next/server/chunks/ssr/[root-of-the-server]__a4064c7d._.js:3917:2440)
+    at Object.<anonymous> (.next/server/app/page.js:17:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/'
+}
+ GET / 500 in 300ms
+Skipping dbConnect because MONGODB_URI is not set.
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+ POST /api/analytics 500 in 10487ms
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+ POST /api/analytics 500 in 10490ms
+Failed to fetch finance bootstrap: [MongooseError: Operation `accounts.find()` buffering timed out after 10000ms]
+ GET /api/money/bootstrap?startDate=2026-04-06T00%3A00%3A00.000Z&endDate=2026-04-12T23%3A59%3A59.999Z 500 in 10645ms
+Error fetching dynamic MCP config: [MongooseError: Operation `mcpservers.find()` buffering timed out after 10000ms]
+ GET /api/mcps 200 in 10807ms
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+ GET /login 200 in 10313ms
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+ POST /api/analytics 500 in 10367ms
+Skipping dbConnect because MONGODB_URI is not set.
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+ POST /api/analytics 500 in 10325ms
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+ GET /pocketly 200 in 20357ms
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/api/admin/chatbot/route.js:23:1)
+    at Object.<anonymous> (.next/server/app/api/admin/chatbot/route.js:9:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/api/admin/chatbot'
+}
+Skipping dbConnect because MONGODB_URI is not set.
+ GET /api/auth/session 200 in 929ms
+ GET /api/admin/chatbot 500 in 1246ms
+Skipping dbConnect because MONGODB_URI is not set.
+ GET /api/auth/session 200 in 596ms
+ ⨯ Error: ENCRYPTION_SECRET environment variable is required
+    at deriveKey (src/lib/crypto.js:77:11)
+    at __TURBOPACK__module__evaluation__ (src/lib/crypto.js:94:24)
+    at __TURBOPACK__module__evaluation__ (src/app/actions/contactActions.js:11:1)
+    at __TURBOPACK__module__evaluation__ (.next-internal/server/app/page/actions.js (server actions loader):40:1)
+    at __TURBOPACK__module__evaluation__ (.next/server/chunks/ssr/[root-of-the-server]__a4064c7d._.js:3917:2440)
+    at Object.<anonymous> (.next/server/app/page.js:17:3)
+  75 | function deriveKey(secret) {
+  76 |   if (!secret) {
+> 77 |     throw new Error('ENCRYPTION_SECRET environment variable is required');
+     |           ^
+  78 |   }
+  79 |
+  80 |   // If a proper hex string is provided, use it directly {
+  page: '/'
+}
+ GET / 500 in 273ms
+Skipping dbConnect because MONGODB_URI is not set.
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+ POST /api/analytics 500 in 10499ms
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+ POST /api/analytics 500 in 10503ms
+Failed to fetch finance bootstrap: [MongooseError: Operation `accounts.find()` buffering timed out after 10000ms]
+ GET /api/money/bootstrap?startDate=2026-04-06T00%3A00%3A00.000Z&endDate=2026-04-12T23%3A59%3A59.999Z 500 in 10852ms
+Error fetching dynamic MCP config: [MongooseError: Operation `mcpservers.find()` buffering timed out after 10000ms]
+ GET /api/mcps 200 in 10968ms
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+ GET /login 200 in 10309ms
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
+ POST /api/analytics 500 in 10342ms
+Skipping dbConnect because MONGODB_URI is not set.
+ POST /api/analytics 200 in 10020ms
+Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
