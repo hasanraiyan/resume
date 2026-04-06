@@ -269,28 +269,16 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
                     </div>
                     <div className="mt-4">
                       <p className="font-bold text-sm text-[#1e3a34]">{account.name}</p>
-                      <div className="mt-2 space-y-1">
-                        <div className="flex justify-between items-center">
-                          <p className="text-xs text-[#7c8e88]">Initial Balance</p>
-                          <p className="text-sm font-bold text-[#1e3a34]">
-                            ₹
-                            {account.initialBalance.toLocaleString('en-IN', {
-                              minimumFractionDigits: 2,
-                            })}
-                          </p>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <p className="text-xs text-[#7c8e88]">Current Balance</p>
-                          <p
-                            className={`text-sm font-bold ${(account.currentBalance || account.initialBalance) >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'}`}
-                          >
-                            ₹
-                            {(account.currentBalance || account.initialBalance).toLocaleString(
-                              'en-IN',
-                              { minimumFractionDigits: 2 }
-                            )}
-                          </p>
-                        </div>
+                      <div className="mt-1">
+                        <p
+                          className={`text-xl font-bold ${(account.currentBalance ?? account.initialBalance) >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'}`}
+                        >
+                          ₹
+                          {(account.currentBalance ?? account.initialBalance).toLocaleString(
+                            'en-IN',
+                            { minimumFractionDigits: 2 }
+                          )}
+                        </p>
                       </div>
                     </div>
                   </div>
