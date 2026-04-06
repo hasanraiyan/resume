@@ -11,7 +11,7 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
-import { PurseSVG } from '@/components/finance-tracker/IconRenderer';
+import { PurseSVG } from '@/components/pocketly-tracker/IconRenderer';
 
 import IconRenderer from './IconRenderer';
 

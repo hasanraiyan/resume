@@ -1,7 +1,7 @@
 import { User, Bot } from 'lucide-react';
 import StepHistory from './StepHistory';
 import MdContent from './MdContent';
-import FinanceChatBlockRenderer from '@/components/finance-tracker/FinanceChatBlockRenderer';
+import FinanceChatBlockRenderer from '@/components/pocketly-tracker/FinanceChatBlockRenderer';
 
 export default function MessageList({
   messages,

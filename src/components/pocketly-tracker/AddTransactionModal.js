@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useMoney } from '@/context/MoneyContext';
 import { Plus, X, Check, ArrowLeftRight, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
-import { PurseSVG } from '@/components/finance-tracker/IconRenderer';
+import { PurseSVG } from '@/components/pocketly-tracker/IconRenderer';
 import dynamic from 'next/dynamic';
 import { evaluateMath } from '@/utils/math';
 
