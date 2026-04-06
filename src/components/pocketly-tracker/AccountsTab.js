@@ -271,10 +271,10 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
                       <p className="font-bold text-sm text-[#1e3a34]">{account.name}</p>
                       <div className="mt-1">
                         <p
-                          className={`text-xl font-bold ${(account.currentBalance || account.initialBalance) >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'}`}
+                          className={`text-xl font-bold ${(account.currentBalance ?? account.initialBalance) >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'}`}
                         >
                           ₹
-                          {(account.currentBalance || account.initialBalance).toLocaleString(
+                          {(account.currentBalance ?? account.initialBalance).toLocaleString(
                             'en-IN',
                             { minimumFractionDigits: 2 }
                           )}
