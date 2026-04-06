@@ -218,7 +218,7 @@ export default function FinanceAgentPanel({ activeTab }) {
           <button
             type="submit"
             disabled={!inputMessage.trim()}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-black text-white transition-all hover:opacity-90 active:scale-95 disabled:cursor-default disabled:bg-neutral-200 disabled:text-neutral-400"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1f644e] text-white transition-all hover:bg-[#1a5542] active:scale-95 disabled:cursor-default disabled:bg-neutral-200 disabled:text-neutral-400"
           >
             <Send className="h-4 w-4" />
           </button>
@@ -238,6 +238,7 @@ export default function FinanceAgentPanel({ activeTab }) {
           messagesEndRef={messagesEndRef}
           handleUIInteract={() => {}}
           handleLinkClick={() => {}}
+          theme="green"
         />
         {financeInput}
       </div>
