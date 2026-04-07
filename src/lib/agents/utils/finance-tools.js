@@ -249,28 +249,12 @@ export function createBuildFinanceUiTool() {
       name: 'build_finance_ui',
       description:
         'Designs rich finance UI blocks (cards, tables, account overviews) to show inside the chat bubble. Use this AFTER fetching real data with other tools to decide how to visually present it.',
+      // Keep the runtime schema intentionally loose; we do stricter validation
+      // when reading the tool output on the agent side.
       schema: z.object({
         blocks: z
-          .array(
-            z.object({
-              kind: z.enum([
-                'summary_cards',
-                'transaction_list',
-                'accounts_snapshot',
-                'category_breakdown',
-              ]),
-              title: z.string().min(1),
-              action: z
-                .object({
-                  type: z.literal('switch_tab'),
-                  tab: z.enum(['accounts', 'records', 'analysis', 'categories']),
-                  label: z.string().optional(),
-                })
-                .optional(),
-              data: z.record(z.any()),
-            })
-          )
-          .max(4),
+          .array(z.any())
+          .describe('Array of finance UI block objects to render inside the chat bubble.'),
       }),
     }
   );
