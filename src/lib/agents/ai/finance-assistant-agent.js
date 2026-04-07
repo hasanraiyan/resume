@@ -77,6 +77,7 @@ function getToolLabel(toolName) {
     get_transactions: 'Reviewing transactions',
     get_accounts: 'Checking accounts',
     get_categories: 'Reviewing categories',
+    build_finance_ui: 'Designing the finance view',
   };
 
   return labels[toolName] || `Using ${toolName}`;
@@ -206,6 +207,11 @@ When tools return structured data, you should:
 - Use your written response to explain what the user is seeing, call out important patterns, and suggest clear next steps.
 - Only ask for more tool calls when they are needed to answer the user.
 
+You also have a dedicated tool called "build_finance_ui" that lets you design which finance UI blocks to show. Typical pattern:
+- First, use data tools (get_accounts, get_transactions, get_analysis, get_categories) to fetch any missing information.
+- Then, call build_finance_ui with 1-3 blocks that best visualize the answer (for example, an accounts_snapshot block plus a summary_cards block).
+Always base the numbers in those blocks on real tool outputs, not guesses.
+
 Avoid repeating all numbers in text if they are already visible in the UI cards. Focus your words on interpretation and guidance.`,
     });
 
@@ -259,10 +265,64 @@ Avoid repeating all numbers in text if they are already visible in the UI cards.
 
         const toolCallId = event.run_id || event.data?.run_id || null;
         const toolName = activeToolCalls.get(toolCallId) || event.name;
-        const uiBlocks = buildUiBlocks(toolName, event.data.output);
+
+        let uiBlocks = [];
+
+        if (toolName === 'build_finance_ui') {
+          const parsed = parseToolOutput(event.data.output) || {};
+          if (Array.isArray(parsed.blocks)) {
+            // Lightweight validation to ensure only supported block kinds/tabs are rendered.
+            const allowedKinds = new Set([
+              'summary_cards',
+              'transaction_list',
+              'accounts_snapshot',
+              'category_breakdown',
+            ]);
+            const allowedTabs = new Set(['accounts', 'records', 'analysis', 'categories']);
+
+            uiBlocks = parsed.blocks
+              .slice(0, 4)
+              .filter((block) => block && typeof block === 'object')
+              .map((block) => {
+                const kind = allowedKinds.has(block.kind) ? block.kind : null;
+                if (!kind) return null;
+
+                const safeBlock = {
+                  kind,
+                  title:
+                    typeof block.title === 'string' && block.title.trim()
+                      ? block.title.trim()
+                      : 'Finance overview',
+                  data: typeof block.data === 'object' && block.data ? block.data : {},
+                };
+
+                if (
+                  block.action &&
+                  block.action.type === 'switch_tab' &&
+                  allowedTabs.has(block.action.tab)
+                ) {
+                  safeBlock.action = {
+                    type: 'switch_tab',
+                    tab: block.action.tab,
+                    label:
+                      typeof block.action.label === 'string' && block.action.label.trim()
+                        ? block.action.label.trim()
+                        : 'Open details',
+                  };
+                }
+
+                return safeBlock;
+              })
+              .filter(Boolean);
+          }
+        } else {
+          uiBlocks = buildUiBlocks(toolName, event.data.output);
+        }
 
         this.logger.info(
-          `[UI_BLOCKS] tool="${toolName}", count=${uiBlocks.length}, parsed=${Boolean(parseToolOutput(event.data.output))}`
+          `[UI_BLOCKS] tool="${toolName}", count=${uiBlocks.length}, parsed=${Boolean(
+            parseToolOutput(event.data.output)
+          )}`
         );
 
         yield {

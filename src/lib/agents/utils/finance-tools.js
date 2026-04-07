@@ -238,11 +238,50 @@ export function createGetAnalysisTool() {
   );
 }
 
+export function createBuildFinanceUiTool() {
+  return tool(
+    async ({ blocks }) => {
+      // This tool is intentionally simple: it just echoes back the blocks
+      // so the agent can design UI using existing data it already has.
+      return JSON.stringify({ blocks });
+    },
+    {
+      name: 'build_finance_ui',
+      description:
+        'Designs rich finance UI blocks (cards, tables, account overviews) to show inside the chat bubble. Use this AFTER fetching real data with other tools to decide how to visually present it.',
+      schema: z.object({
+        blocks: z
+          .array(
+            z.object({
+              kind: z.enum([
+                'summary_cards',
+                'transaction_list',
+                'accounts_snapshot',
+                'category_breakdown',
+              ]),
+              title: z.string().min(1),
+              action: z
+                .object({
+                  type: z.literal('switch_tab'),
+                  tab: z.enum(['accounts', 'records', 'analysis', 'categories']),
+                  label: z.string().optional(),
+                })
+                .optional(),
+              data: z.record(z.any()),
+            })
+          )
+          .max(4),
+      }),
+    }
+  );
+}
+
 export function createFinanceTools() {
   return [
     createGetAccountsTool(),
     createGetCategoriesTool(),
     createGetTransactionsTool(),
     createGetAnalysisTool(),
+    createBuildFinanceUiTool(),
   ];
 }
