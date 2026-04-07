@@ -18,3 +18,22 @@ export function TasklyTabSkeleton() {
     </div>
   );
 }
+
+export function ChatSkeleton() {
+  return (
+    <div className="flex flex-col h-full p-4 space-y-4">
+      <div className="flex items-start gap-4 w-3/4">
+        <Shimmer className="w-10 h-10 rounded-full flex-shrink-0" />
+        <Shimmer className="h-16 flex-1" />
+      </div>
+      <div className="flex items-start gap-4 w-3/4 self-end flex-row-reverse">
+        <Shimmer className="w-10 h-10 rounded-full flex-shrink-0" />
+        <Shimmer className="h-12 flex-1" />
+      </div>
+      <div className="flex items-start gap-4 w-3/4">
+        <Shimmer className="w-10 h-10 rounded-full flex-shrink-0" />
+        <Shimmer className="h-24 flex-1" />
+      </div>
+    </div>
+  );
+}
