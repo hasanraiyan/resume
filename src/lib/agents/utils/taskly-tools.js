@@ -3,6 +3,7 @@ import { z } from 'zod';
 import dbConnect from '@/lib/dbConnect';
 import TaskItem from '@/models/TaskItem';
 import TaskProject from '@/models/TaskProject';
+import { buildTaskInsights } from '@/lib/taskly';
 
 async function ensureDb() {
   await dbConnect();
@@ -44,14 +45,8 @@ export function createGetTasksTool() {
           .enum(['todo', 'in_progress', 'done'])
           .optional()
           .describe('Filter by task status'),
-        priority: z
-          .enum(['low', 'medium', 'high'])
-          .optional()
-          .describe('Filter by task priority'),
-        limit: z
-          .number()
-          .optional()
-          .describe('Maximum number of tasks to return (default 20)'),
+        priority: z.enum(['low', 'medium', 'high']).optional().describe('Filter by task priority'),
+        limit: z.number().optional().describe('Maximum number of tasks to return (default 20)'),
       }),
     }
   );
@@ -64,9 +59,7 @@ export function createGetProjectsTool() {
       const query = { deletedAt: null };
       if (status) query.status = status;
 
-      const projects = await TaskProject.find(query)
-        .sort({ createdAt: -1 })
-        .lean();
+      const projects = await TaskProject.find(query).sort({ createdAt: -1 }).lean();
 
       return JSON.stringify(
         projects.map((p) => ({
@@ -102,39 +95,17 @@ export function createGetInsightsTool() {
         TaskProject.find({ deletedAt: null }).lean(),
       ]);
 
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-      let totalTasks = tasks.length;
-      let completedTasks = 0;
-      let overdueTasks = 0;
-      let dueTodayTasks = 0;
-
-      tasks.forEach((t) => {
-        if (t.status === 'done') completedTasks++;
-
-        if (t.dueDate) {
-          const taskDueDate = new Date(t.dueDate);
-          const taskDateOnly = new Date(taskDueDate.getFullYear(), taskDueDate.getMonth(), taskDueDate.getDate());
-
-          if (t.status !== 'done' && taskDateOnly < today) {
-            overdueTasks++;
-          } else if (t.status !== 'done' && taskDateOnly.getTime() === today.getTime()) {
-            dueTodayTasks++;
-          }
-        }
-      });
-
-      const activeProjects = projects.filter(p => p.status === 'active').length;
+      const insights = buildTaskInsights(tasks);
+      const activeProjects = projects.filter((p) => p.status === 'active').length;
 
       return JSON.stringify({
-        totalTasks,
-        completedTasks,
-        completionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
-        overdueTasks,
-        dueTodayTasks,
+        totalTasks: insights.totalTasks,
+        completedTasks: insights.completedTasks,
+        completionRate: insights.completionRate,
+        overdueTasks: insights.overdueTasks,
+        dueTodayTasks: insights.dueTodayTasks,
         activeProjects,
-        totalProjects: projects.length
+        totalProjects: projects.length,
       });
     },
     {
@@ -147,9 +118,5 @@ export function createGetInsightsTool() {
 }
 
 export function createTasklyTools() {
-  return [
-    createGetTasksTool(),
-    createGetProjectsTool(),
-    createGetInsightsTool(),
-  ];
+  return [createGetTasksTool(), createGetProjectsTool(), createGetInsightsTool()];
 }

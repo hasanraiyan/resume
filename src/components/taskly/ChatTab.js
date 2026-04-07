@@ -23,7 +23,7 @@ export default function ChatTab() {
   const activeQuote = null;
 
   useEffect(() => {
-    if (messages.length === 1 && messages[0].id === 1) {
+    if (messages.length === 1 && messages[0].role === 'assistant') {
       setInputMessage('');
       setIsListening(false);
       setActiveMCPs([]);
@@ -70,7 +70,7 @@ export default function ChatTab() {
           messagesEndRef={messagesEndRef}
           handleUIInteract={handleUIInteract}
           handleLinkClick={() => {}}
-          theme="green"
+          theme="taskly"
         />
       </div>
 

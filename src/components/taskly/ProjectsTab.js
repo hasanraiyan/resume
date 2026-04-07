@@ -3,7 +3,18 @@
 import { useMemo, useState } from 'react';
 import { useTaskly } from '@/context/TasklyContext';
 import { isTaskOverdue } from '@/lib/taskly';
-import { Archive, FolderKanban, Pencil, Plus, Trash2, MoreVertical, ArrowRight, CheckCircle2, Clock, ListTodo } from 'lucide-react';
+import {
+  Archive,
+  FolderKanban,
+  Pencil,
+  Plus,
+  Trash2,
+  MoreVertical,
+  ArrowRight,
+  CheckCircle2,
+  Clock,
+  ListTodo,
+} from 'lucide-react';
 
 const emptyProjectForm = {
   name: '',
@@ -240,7 +251,9 @@ export default function ProjectsTab() {
                     </div>
                     <div>
                       <div className="flex items-center gap-3">
-                        <h3 className="text-xl font-bold text-[#1e3a34] leading-tight">{project.name}</h3>
+                        <h3 className="text-xl font-bold text-[#1e3a34] leading-tight">
+                          {project.name}
+                        </h3>
                         <span
                           className="rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
                           style={{ backgroundColor: `${project.color}15`, color: project.color }}
@@ -249,7 +262,9 @@ export default function ProjectsTab() {
                         </span>
                       </div>
                       {project.description && (
-                        <p className="mt-1.5 text-sm text-[#7c8e88] line-clamp-2">{project.description}</p>
+                        <p className="mt-1.5 text-sm text-[#7c8e88] line-clamp-2">
+                          {project.description}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -264,10 +279,7 @@ export default function ProjectsTab() {
 
                     {openMenuId === project.id && (
                       <>
-                        <div
-                          className="fixed inset-0 z-10"
-                          onClick={() => setOpenMenuId(null)}
-                        />
+                        <div className="fixed inset-0 z-10" onClick={() => setOpenMenuId(null)} />
                         <div className="absolute right-0 mt-2 w-48 rounded-xl bg-white border border-[#e5e3d8] shadow-lg overflow-hidden z-20 py-1">
                           <button
                             onClick={() => {
@@ -324,24 +336,34 @@ export default function ProjectsTab() {
                   <div className="rounded-xl border border-[#e5e3d8] bg-[#f0fbf4] p-3 flex flex-col justify-between">
                     <div className="flex items-center gap-1.5 text-[#2e8a5b]">
                       <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span className="text-[10px] font-bold uppercase tracking-wider">Completed</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider">
+                        Completed
+                      </span>
                     </div>
-                    <p className="mt-2 text-xl font-bold text-[#2e8a5b]">{project.completedTasks}</p>
+                    <p className="mt-2 text-xl font-bold text-[#2e8a5b]">
+                      {project.completedTasks}
+                    </p>
                   </div>
 
                   <div className="rounded-xl border border-[#e5e3d8] bg-[#fef2f2] p-3 flex flex-col justify-between">
                     <div className="flex items-center gap-1.5 text-[#c94c4c]">
                       <Clock className="w-3.5 h-3.5" />
-                      <span className="text-[10px] font-bold uppercase tracking-wider">Overdue</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider">
+                        Overdue
+                      </span>
                     </div>
                     <p className="mt-2 text-xl font-bold text-[#c94c4c]">{project.overdueTasks}</p>
                   </div>
 
                   <div className="rounded-xl border border-[#e5e3d8] bg-[#f0f7fb] p-3 flex flex-col justify-between">
                     <div className="flex items-center gap-1.5 text-[#2e748a]">
-                      <span className="text-[10px] font-bold uppercase tracking-wider">Progress</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider">
+                        Progress
+                      </span>
                     </div>
-                    <p className="mt-2 text-xl font-bold text-[#2e748a]">{project.completionRate}%</p>
+                    <p className="mt-2 text-xl font-bold text-[#2e748a]">
+                      {project.completionRate}%
+                    </p>
                   </div>
                 </div>
 
@@ -363,7 +385,8 @@ export default function ProjectsTab() {
                       <>
                         <Clock className="w-4 h-4" />
                         <span>
-                          Due {new Date(project.deadline).toLocaleDateString('en-US', {
+                          Due{' '}
+                          {new Date(project.deadline).toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',
                             year: 'numeric',

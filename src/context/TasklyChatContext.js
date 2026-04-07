@@ -5,15 +5,15 @@ import { FolderKanban, LayoutList, BarChart3 } from 'lucide-react';
 
 const TasklyChatContext = createContext(null);
 
-const WELCOME_MESSAGE = {
-  id: 1,
+const createWelcomeMessage = () => ({
+  id: Date.now() + Math.random(),
   role: 'assistant',
   content:
     "Hi! I'm your Taskly Assistant. I can help you manage your tasks, check on projects, and get insights about your productivity. How can I help you today?",
   steps: [],
   uiBlocks: [],
   timestamp: new Date(),
-};
+});
 
 const TOOL_ICONS = {
   get_tasks: LayoutList,
@@ -33,7 +33,7 @@ function createToolStep(toolName, label, toolCallId) {
 }
 
 export function TasklyChatProvider({ children }) {
-  const [messages, setMessages] = useState([WELCOME_MESSAGE]);
+  const [messages, setMessages] = useState([createWelcomeMessage()]);
   const [isStreaming, setIsStreaming] = useState(false);
   const abortRef = useRef(null);
 
@@ -220,7 +220,7 @@ export function TasklyChatProvider({ children }) {
       abortRef.current = null;
     }
     setIsStreaming(false);
-    setMessages([WELCOME_MESSAGE]);
+    setMessages([createWelcomeMessage()]);
   }, []);
 
   return (
