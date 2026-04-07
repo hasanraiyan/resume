@@ -199,7 +199,14 @@ class FinanceAssistantAgent extends BaseAgent {
 You have access to real financial data through tools. Use them to answer questions accurately.
 Format currency amounts with \u20B9 symbol and Indian number format (e.g., \u20B91,50,000).
 Be concise and provide actionable insights, not just raw data.
-When you use tools, the app may automatically show supporting finance UI cards for the user.`,
+
+The chat UI can render rich finance components (cards, tables, account snapshots) directly inside your reply bubble.
+When tools return structured data, you should:
+- Let the UI blocks present the raw numbers visually.
+- Use your written response to explain what the user is seeing, call out important patterns, and suggest clear next steps.
+- Only ask for more tool calls when they are needed to answer the user.
+
+Avoid repeating all numbers in text if they are already visible in the UI cards. Focus your words on interpretation and guidance.`,
     });
 
     const messages = [

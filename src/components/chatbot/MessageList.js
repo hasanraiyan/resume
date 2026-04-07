@@ -23,6 +23,7 @@ export default function MessageList({
 
         if (message.hidden) return null;
         const isAssistant = message.role === 'assistant';
+        const hasUiBlocks = isAssistant && message.uiBlocks?.length > 0;
 
         let isConsecutive = false;
         for (let i = index - 1; i >= 0; i--) {
@@ -53,41 +54,54 @@ export default function MessageList({
             </div>
 
             <div
-              className={`min-w-0 ${message.role === 'user' ? 'max-w-[85%] items-end' : 'w-full max-w-[95%] items-stretch'} flex flex-1 flex-col`}
+              className={`min-w-0 ${
+                message.role === 'user'
+                  ? 'max-w-[85%] items-end'
+                  : 'w-full max-w-[95%] items-stretch'
+              } flex flex-1 flex-col`}
             >
               {/* Show tool history for agents */}
               {isAssistant && message.steps?.length > 0 && (
                 <StepHistory steps={message.steps} onInteract={handleUIInteract} />
               )}
 
-              {isAssistant && message.uiBlocks?.length > 0 && (
-                <div className="mt-3 flex min-w-0 w-full max-w-full self-stretch flex-col gap-3 overflow-x-hidden">
-                  {message.uiBlocks.map((block, blockIndex) => {
-                    const Renderer =
-                      theme === 'taskly' ? TasklyChatBlockRenderer : FinanceChatBlockRenderer;
-                    return (
-                      <Renderer
-                        key={`${message.id}-block-${block.kind}-${blockIndex}`}
-                        block={block}
-                        onInteract={handleUIInteract}
-                      />
-                    );
-                  })}
-                </div>
-              )}
-
-              {message.content && (
+              {(message.content || hasUiBlocks) && (
                 <div
-                  className={`${
-                    isAssistant && message.uiBlocks?.length > 0 ? 'mt-3' : ''
-                  } px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-sm text-[13px] overflow-hidden ${message.role === 'user' ? (isGreenTheme ? 'bg-[#1f644e] text-white shadow-[#1f644e]/20 rounded-tr-sm' : 'bg-gradient-to-br from-black to-neutral-900 text-white shadow-black/20 rounded-tr-sm') : 'bg-white/90 backdrop-blur-sm text-neutral-900 shadow-neutral-200/50 border border-neutral-200/50 rounded-tl-sm'}`}
+                  className={`px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-sm text-[13px] overflow-hidden ${
+                    message.role === 'user'
+                      ? isGreenTheme
+                        ? 'bg-[#1f644e] text-white shadow-[#1f644e]/20 rounded-tr-sm'
+                        : 'bg-gradient-to-br from-black to-neutral-900 text-white shadow-black/20 rounded-tr-sm'
+                      : 'bg-white/90 backdrop-blur-sm text-neutral-900 shadow-neutral-200/50 border border-neutral-200/50 rounded-tl-sm'
+                  }`}
                 >
-                  {message.role === 'assistant' ? (
-                    <MdContent content={message.content} onLinkClick={handleLinkClick} />
-                  ) : (
-                    <MdContent content={message.content} isUser={true} />
+                  {hasUiBlocks && (
+                    <div className="mb-3 flex min-w-0 w-full max-w-full self-stretch flex-col gap-3 overflow-x-hidden">
+                      {message.uiBlocks.map((block, blockIndex) => {
+                        const Renderer =
+                          theme === 'taskly' ? TasklyChatBlockRenderer : FinanceChatBlockRenderer;
+                        return (
+                          <Renderer
+                            key={`${message.id}-block-${block.kind}-${blockIndex}`}
+                            block={block}
+                            onInteract={handleUIInteract}
+                          />
+                        );
+                      })}
+                    </div>
                   )}
-                  <p className={`text-[10px] mt-1.5 text-neutral-400`}>
+
+                  {message.content && (
+                    <>
+                      {message.role === 'assistant' ? (
+                        <MdContent content={message.content} onLinkClick={handleLinkClick} />
+                      ) : (
+                        <MdContent content={message.content} isUser={true} />
+                      )}
+                    </>
+                  )}
+
+                  <p className="text-[10px] mt-1.5 text-neutral-400">
                     {message.timestamp.toLocaleTimeString([], {
                       hour: '2-digit',
                       minute: '2-digit',

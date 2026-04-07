@@ -6,8 +6,6 @@ export default function StepHistory({ steps, onInteract }) {
   if (!steps || steps.length === 0) return null;
 
   const tools = steps.filter((s) => s.type === 'tool');
-  const uniqueIcons = [...new Set(tools.map((t) => t.Icon).filter(Boolean))];
-  const completedTools = tools.filter((t) => t.done).length;
 
   return (
     <div className="flex flex-col w-full mb-4 group/history">
@@ -16,7 +14,7 @@ export default function StepHistory({ steps, onInteract }) {
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 hover:bg-neutral-200 transition-colors w-fit"
       >
         <span className="text-sm font-medium text-neutral-700">
-          Performed {tools.length} action{tools.length > 1 ? 's' : ''}
+          Used {tools.length} data lookup{tools.length > 1 ? 's' : ''}
         </span>
         <ChevronDown
           className={`w-4 h-4 transition-transform duration-300 flex-shrink-0 text-neutral-600 ${
