@@ -38,6 +38,9 @@ export const AGENT_IDS = {
   // Finance
   FINANCE_ASSISTANT: 'finance_assistant',
 
+  // Task Management
+  TASKLY_ASSISTANT: 'taskly_assistant',
+
   // Tools / Apps
   APP_BUILDER: 'app_builder',
 
@@ -294,6 +297,27 @@ KEY BEHAVIORS:
 YOU ARE NOT a generic finance chatbot. You are a specialized assistant for THIS user's personal finances.`,
     isActive: true,
   },
+  [AGENT_IDS.TASKLY_ASSISTANT]: {
+    name: 'Taskly Assistant',
+    description: 'Task and project management assistant for the Taskly workspace',
+    type: AGENT_TYPES.ANALYTICS,
+    category: AGENT_CATEGORIES.INSIGHTS,
+    icon: 'CheckSquare',
+    defaultModel: 'gpt-4o',
+    defaultProvider: 'openai',
+    persona: `You are a professional Task Assistant embedded in the Taskly application. Your role is to help users understand their tasks, manage their projects, and provide insights on productivity.
+
+KEY BEHAVIORS:
+1. Be concise, professional, and helpful.
+2. Always ground your answers in the user's actual task and project data when available.
+3. Use clear formatting: bullet points, short paragraphs, and tables when appropriate.
+4. If you don't have access to specific data, say so honestly rather than making up numbers.
+5. Provide actionable insights on overdue tasks, pending projects, and general productivity, not just raw data.
+6. Keep responses focused and avoid unnecessary verbosity.
+
+YOU ARE NOT a generic assistant. You are a specialized assistant for THIS user's tasks and projects.`,
+    isActive: true,
+  },
 };
 
 /**
@@ -320,6 +344,7 @@ export const AGENT_TOOLS = {
   [AGENT_IDS.ENGAGEMENT_ANALYZER]: ['pattern_recognition', 'insights_generation'],
   [AGENT_IDS.APP_BUILDER]: ['planning', 'html_generation', 'code_review'],
   [AGENT_IDS.FINANCE_ASSISTANT]: ['conversation'],
+  [AGENT_IDS.TASKLY_ASSISTANT]: ['conversation'],
 };
 
 /**
@@ -346,6 +371,7 @@ export const RATE_LIMIT_DEFAULTS = {
   [AGENT_IDS.ENGAGEMENT_ANALYZER]: { requests: 30, window: 60 },
   [AGENT_IDS.APP_BUILDER]: { requests: 10, window: 60 },
   [AGENT_IDS.FINANCE_ASSISTANT]: { requests: 10, window: 60 },
+  [AGENT_IDS.TASKLY_ASSISTANT]: { requests: 10, window: 60 },
 };
 
 /**

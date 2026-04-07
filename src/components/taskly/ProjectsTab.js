@@ -3,7 +3,18 @@
 import { useMemo, useState } from 'react';
 import { useTaskly } from '@/context/TasklyContext';
 import { isTaskOverdue } from '@/lib/taskly';
-import { Archive, FolderKanban, Pencil, Plus, Trash2 } from 'lucide-react';
+import {
+  Archive,
+  FolderKanban,
+  Pencil,
+  Plus,
+  Trash2,
+  MoreVertical,
+  ArrowRight,
+  CheckCircle2,
+  Clock,
+  ListTodo,
+} from 'lucide-react';
 
 const emptyProjectForm = {
   name: '',
@@ -14,6 +25,8 @@ const emptyProjectForm = {
 };
 
 export default function ProjectsTab() {
+  const [openMenuId, setOpenMenuId] = useState(null);
+
   const {
     projects,
     tasks,
@@ -229,102 +242,135 @@ export default function ProjectsTab() {
             {projectStats.map((project) => (
               <div key={project.id} className="rounded-2xl border border-[#e5e3d8] bg-white p-5">
                 <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-center gap-4">
                     <div
-                      className="flex h-12 w-12 items-center justify-center rounded-xl"
-                      style={{ backgroundColor: `${project.color}20`, color: project.color }}
+                      className="flex h-14 w-14 items-center justify-center rounded-xl shrink-0"
+                      style={{ backgroundColor: `${project.color}15`, color: project.color }}
                     >
-                      <FolderKanban className="h-6 w-6" />
+                      <FolderKanban className="h-7 w-7" />
                     </div>
                     <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-base font-bold text-[#1e3a34]">{project.name}</h3>
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-xl font-bold text-[#1e3a34] leading-tight">
+                          {project.name}
+                        </h3>
                         <span
-                          className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
-                          style={{ backgroundColor: `${project.color}20`, color: project.color }}
+                          className="rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                          style={{ backgroundColor: `${project.color}15`, color: project.color }}
                         >
                           {project.status}
                         </span>
                       </div>
                       {project.description && (
-                        <p className="mt-1 text-sm text-[#7c8e88]">{project.description}</p>
+                        <p className="mt-1.5 text-sm text-[#7c8e88] line-clamp-2">
+                          {project.description}
+                        </p>
                       )}
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+
+                  <div className="relative">
                     <button
-                      onClick={() => handleEdit(project)}
-                      className="rounded-xl border border-[#e5e3d8] px-3 py-2 text-xs font-bold text-[#1e3a34] transition hover:bg-[#f8f9f4] inline-flex items-center gap-1.5"
+                      onClick={() => setOpenMenuId(openMenuId === project.id ? null : project.id)}
+                      className="p-2 rounded-xl text-[#7c8e88] hover:bg-[#f0f5f2] hover:text-[#1e3a34] transition-colors"
                     >
-                      <Pencil className="w-3.5 h-3.5" />
-                      Edit
+                      <MoreVertical className="w-5 h-5" />
                     </button>
-                    <button
-                      onClick={() =>
-                        updateProject(project.id, {
-                          ...project,
-                          deadline: project.deadline || null,
-                          status: 'archived',
-                        })
-                      }
-                      className="rounded-xl border border-[#e5e3d8] px-3 py-2 text-xs font-bold text-[#1e3a34] transition hover:bg-[#f8f9f4] inline-flex items-center gap-1.5"
-                    >
-                      <Archive className="w-3.5 h-3.5" />
-                      Archive
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (settings.confirmDelete && !window.confirm('Delete this project?'))
-                          return;
-                        deleteProject(project.id);
-                      }}
-                      className="rounded-xl border border-[#f4d2d2] px-3 py-2 text-xs font-bold text-[#c94c4c] transition hover:bg-[#fef2f2] inline-flex items-center gap-1.5"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Delete
-                    </button>
+
+                    {openMenuId === project.id && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setOpenMenuId(null)} />
+                        <div className="absolute right-0 mt-2 w-48 rounded-xl bg-white border border-[#e5e3d8] shadow-lg overflow-hidden z-20 py-1">
+                          <button
+                            onClick={() => {
+                              handleEdit(project);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full text-left px-4 py-2.5 text-sm font-medium text-[#1e3a34] hover:bg-[#f8f9f4] flex items-center gap-2"
+                          >
+                            <Pencil className="w-4 h-4" />
+                            Edit Project
+                          </button>
+                          <button
+                            onClick={() => {
+                              updateProject(project.id, {
+                                ...project,
+                                deadline: project.deadline || null,
+                                status: 'archived',
+                              });
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full text-left px-4 py-2.5 text-sm font-medium text-[#1e3a34] hover:bg-[#f8f9f4] flex items-center gap-2"
+                          >
+                            <Archive className="w-4 h-4" />
+                            Archive
+                          </button>
+                          <div className="h-px bg-[#e5e3d8] my-1" />
+                          <button
+                            onClick={() => {
+                              if (settings.confirmDelete && !window.confirm('Delete this project?'))
+                                return;
+                              deleteProject(project.id);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full text-left px-4 py-2.5 text-sm font-medium text-[#c94c4c] hover:bg-[#fef2f2] flex items-center gap-2"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Delete Project
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
-                <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <div className="rounded-xl bg-[#f8f9f4] p-3">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
-                      Tasks
-                    </p>
-                    <p className="mt-1 text-lg font-bold text-[#1e3a34]">{project.totalTasks}</p>
+                <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] p-3 flex flex-col justify-between">
+                    <div className="flex items-center gap-1.5 text-[#7c8e88]">
+                      <ListTodo className="w-3.5 h-3.5" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Tasks</span>
+                    </div>
+                    <p className="mt-2 text-xl font-bold text-[#1e3a34]">{project.totalTasks}</p>
                   </div>
-                  <div className="rounded-xl bg-[#f8f9f4] p-3">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
-                      Completed
-                    </p>
-                    <p className="mt-1 text-lg font-bold text-[#1e3a34]">
+
+                  <div className="rounded-xl border border-[#e5e3d8] bg-[#f0fbf4] p-3 flex flex-col justify-between">
+                    <div className="flex items-center gap-1.5 text-[#2e8a5b]">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider">
+                        Completed
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xl font-bold text-[#2e8a5b]">
                       {project.completedTasks}
                     </p>
                   </div>
-                  <div className="rounded-xl bg-[#f8f9f4] p-3">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
-                      Overdue
-                    </p>
-                    <p className="mt-1 text-lg font-bold text-[#1e3a34]">{project.overdueTasks}</p>
+
+                  <div className="rounded-xl border border-[#e5e3d8] bg-[#fef2f2] p-3 flex flex-col justify-between">
+                    <div className="flex items-center gap-1.5 text-[#c94c4c]">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider">
+                        Overdue
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xl font-bold text-[#c94c4c]">{project.overdueTasks}</p>
                   </div>
-                  <div className="rounded-xl bg-[#f8f9f4] p-3">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
-                      Progress
-                    </p>
-                    <p className="mt-1 text-lg font-bold text-[#1e3a34]">
+
+                  <div className="rounded-xl border border-[#e5e3d8] bg-[#f0f7fb] p-3 flex flex-col justify-between">
+                    <div className="flex items-center gap-1.5 text-[#2e748a]">
+                      <span className="text-[10px] font-bold uppercase tracking-wider">
+                        Progress
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xl font-bold text-[#2e748a]">
                       {project.completionRate}%
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-4">
-                  <div className="mb-2 flex items-center justify-between text-xs text-[#7c8e88]">
-                    <span>Completion</span>
-                    <span>{project.completionRate}%</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-[#f0f5f2]">
+                <div className="mt-6">
+                  <div className="h-2.5 overflow-hidden rounded-full bg-[#f0f5f2] w-full relative">
                     <div
-                      className="h-full rounded-full transition-all"
+                      className="absolute top-0 left-0 h-full rounded-full transition-all duration-500 ease-out"
                       style={{
                         width: `${project.completionRate}%`,
                         backgroundColor: project.color,
@@ -333,25 +379,34 @@ export default function ProjectsTab() {
                   </div>
                 </div>
 
-                <div className="mt-4 flex flex-wrap gap-3 text-xs text-[#7c8e88]">
-                  {project.deadline && (
-                    <span>
-                      Deadline:{' '}
-                      {new Date(project.deadline).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
-                    </span>
-                  )}
+                <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-[#e5e3d8]">
+                  <div className="text-sm text-[#7c8e88] flex items-center gap-2">
+                    {project.deadline ? (
+                      <>
+                        <Clock className="w-4 h-4" />
+                        <span>
+                          Due{' '}
+                          {new Date(project.deadline).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
+                        </span>
+                      </>
+                    ) : (
+                      <span>No deadline set</span>
+                    )}
+                  </div>
+
                   <button
                     onClick={() => {
                       setSelectedProject(project.id);
                       setActiveTab('tasks');
                     }}
-                    className="font-bold text-[#1f644e]"
+                    className="flex items-center justify-center gap-2 rounded-xl bg-[#1f644e] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#17503e] w-full sm:w-auto"
                   >
-                    View tasks
+                    View Tasks
+                    <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
