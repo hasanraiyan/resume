@@ -128,13 +128,7 @@ function TaskForm({ projects, initialValues, onSubmit, onCancel, submitLabel }) 
           />
         </div>
       </div>
-      <div className="flex flex-wrap gap-3">
-        <button
-          type="submit"
-          className="rounded-xl bg-[#1f644e] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#17503e]"
-        >
-          {submitLabel}
-        </button>
+      <div className="flex flex-wrap gap-3 justify-end mt-4">
         {onCancel && (
           <button
             type="button"
@@ -144,8 +138,31 @@ function TaskForm({ projects, initialValues, onSubmit, onCancel, submitLabel }) 
             Cancel
           </button>
         )}
+        <button
+          type="submit"
+          className="rounded-xl bg-[#1f644e] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#17503e]"
+        >
+          {submitLabel}
+        </button>
       </div>
     </form>
+  );
+}
+
+function Modal({ isOpen, onClose, title, children }) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between border-b border-[#e5e3d8] p-5">
+          <h2 className="text-lg font-bold text-[#1e3a34]">{title}</h2>
+          <button onClick={onClose} className="text-[#7c8e88] hover:text-[#1e3a34] transition p-1">
+            ✕
+          </button>
+        </div>
+        <div className="p-5 overflow-y-auto">{children}</div>
+      </div>
+    </div>
   );
 }
 
@@ -328,7 +345,11 @@ export default function TasksTab() {
               </div>
             </div>
 
-            {showCreateForm && (
+            <Modal
+              isOpen={showCreateForm}
+              onClose={() => setShowCreateForm(false)}
+              title="Create New Task"
+            >
               <TaskForm
                 projects={projects.filter((project) => project.status !== 'archived')}
                 initialValues={{ ...emptyTaskForm, status: settings.defaultTaskStatus }}
@@ -337,29 +358,32 @@ export default function TasksTab() {
                   await addTask(buildPayload(form));
                   setShowCreateForm(false);
                 }}
+                onCancel={() => setShowCreateForm(false)}
               />
-            )}
+            </Modal>
 
-            {editingTask && (
-              <TaskForm
-                projects={projects.filter((project) => project.status !== 'archived')}
-                initialValues={{
-                  title: editingTask.title,
-                  description: editingTask.description || '',
-                  project: editingTask.project?.id || '',
-                  priority: editingTask.priority,
-                  dueDate: toInputDate(editingTask.dueDate),
-                  tags: (editingTask.tags || []).join(', '),
-                  status: editingTask.status,
-                }}
-                submitLabel="Save Changes"
-                onSubmit={async (form) => {
-                  await updateTask(editingTask.id, buildPayload(form));
-                  setEditingTaskId(null);
-                }}
-                onCancel={() => setEditingTaskId(null)}
-              />
-            )}
+            <Modal isOpen={!!editingTask} onClose={() => setEditingTaskId(null)} title="Edit Task">
+              {editingTask && (
+                <TaskForm
+                  projects={projects.filter((project) => project.status !== 'archived')}
+                  initialValues={{
+                    title: editingTask.title,
+                    description: editingTask.description || '',
+                    project: editingTask.project?.id || '',
+                    priority: editingTask.priority,
+                    dueDate: toInputDate(editingTask.dueDate),
+                    tags: (editingTask.tags || []).join(', '),
+                    status: editingTask.status,
+                  }}
+                  submitLabel="Save Changes"
+                  onSubmit={async (form) => {
+                    await updateTask(editingTask.id, buildPayload(form));
+                    setEditingTaskId(null);
+                  }}
+                  onCancel={() => setEditingTaskId(null)}
+                />
+              )}
+            </Modal>
           </div>
 
           <div className="grid grid-cols-1 gap-3 rounded-2xl border border-[#e5e3d8] bg-white p-5 lg:grid-cols-[1.5fr_repeat(3,minmax(0,1fr))]">

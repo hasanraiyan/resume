@@ -45,9 +45,12 @@ export default function ProjectsTab() {
     [projects, tasks]
   );
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const resetForm = () => {
     setForm({ ...emptyProjectForm, color: settings.defaultProjectColor });
     setEditingId(null);
+    setIsModalOpen(false);
   };
 
   const handleSubmit = async (event) => {
@@ -76,6 +79,7 @@ export default function ProjectsTab() {
       status: project.status || 'active',
       deadline: project.deadline ? new Date(project.deadline).toISOString().slice(0, 10) : '',
     });
+    setIsModalOpen(true);
   };
 
   return (
@@ -83,114 +87,143 @@ export default function ProjectsTab() {
       <div className="w-full px-4 lg:px-6">
         <div className="w-full max-w-6xl mx-auto space-y-6">
           <div className="rounded-2xl border border-[#e5e3d8] bg-white p-5">
-            <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h2 className="text-lg font-bold text-[#1e3a34]">Projects</h2>
                 <p className="text-sm text-[#7c8e88]">
                   Group tasks into focused workstreams with color, deadline, and progress tracking.
                 </p>
               </div>
+              <button
+                onClick={() => {
+                  setForm({ ...emptyProjectForm, color: settings.defaultProjectColor });
+                  setEditingId(null);
+                  setIsModalOpen(true);
+                }}
+                className="rounded-xl bg-[#1f644e] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#17503e] inline-flex items-center gap-2 justify-center"
+              >
+                <Plus className="w-4 h-4" />
+                Add Project
+              </button>
             </div>
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
-                  Project name
-                </label>
-                <input
-                  value={form.name}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, name: event.target.value }))
-                  }
-                  placeholder="Taskly Launch"
-                  className="mt-2 w-full rounded-xl border border-[#e5e3d8] bg-white px-4 py-3 text-sm outline-none focus:border-[#1f644e]"
-                  required
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
-                  Status
-                </label>
-                <select
-                  value={form.status}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, status: event.target.value }))
-                  }
-                  className="mt-2 w-full rounded-xl border border-[#e5e3d8] bg-white px-4 py-3 text-sm outline-none focus:border-[#1f644e]"
-                >
-                  <option value="active">Active</option>
-                  <option value="completed">Completed</option>
-                  <option value="archived">Archived</option>
-                </select>
-              </div>
-              <div className="md:col-span-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
-                  Description
-                </label>
-                <textarea
-                  value={form.description}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, description: event.target.value }))
-                  }
-                  rows={3}
-                  className="mt-2 w-full rounded-xl border border-[#e5e3d8] bg-white px-4 py-3 text-sm outline-none focus:border-[#1f644e]"
-                  placeholder="A clean launch checklist for Taskly"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
-                  Color
-                </label>
-                <div className="mt-2 flex items-center gap-3">
-                  <input
-                    type="color"
-                    value={form.color}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, color: event.target.value }))
-                    }
-                    className="h-12 w-16 rounded-xl border border-[#e5e3d8] bg-white px-1 py-1"
-                  />
-                  <input
-                    value={form.color}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, color: event.target.value }))
-                    }
-                    className="flex-1 rounded-xl border border-[#e5e3d8] bg-white px-4 py-3 text-sm outline-none focus:border-[#1f644e]"
-                  />
+          </div>
+
+          {isModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+              <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl flex flex-col max-h-[90vh]">
+                <div className="flex items-center justify-between border-b border-[#e5e3d8] p-5">
+                  <h2 className="text-lg font-bold text-[#1e3a34]">
+                    {editingId ? 'Edit Project' : 'Create New Project'}
+                  </h2>
+                  <button
+                    onClick={resetForm}
+                    className="text-[#7c8e88] hover:text-[#1e3a34] transition p-1"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="p-5 overflow-y-auto">
+                  <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
+                        Project name
+                      </label>
+                      <input
+                        value={form.name}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, name: event.target.value }))
+                        }
+                        placeholder="Taskly Launch"
+                        className="mt-2 w-full rounded-xl border border-[#e5e3d8] bg-white px-4 py-3 text-sm outline-none focus:border-[#1f644e]"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
+                        Status
+                      </label>
+                      <select
+                        value={form.status}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, status: event.target.value }))
+                        }
+                        className="mt-2 w-full rounded-xl border border-[#e5e3d8] bg-white px-4 py-3 text-sm outline-none focus:border-[#1f644e]"
+                      >
+                        <option value="active">Active</option>
+                        <option value="completed">Completed</option>
+                        <option value="archived">Archived</option>
+                      </select>
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
+                        Description
+                      </label>
+                      <textarea
+                        value={form.description}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, description: event.target.value }))
+                        }
+                        rows={3}
+                        className="mt-2 w-full rounded-xl border border-[#e5e3d8] bg-white px-4 py-3 text-sm outline-none focus:border-[#1f644e]"
+                        placeholder="A clean launch checklist for Taskly"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
+                        Color
+                      </label>
+                      <div className="mt-2 flex items-center gap-3">
+                        <input
+                          type="color"
+                          value={form.color}
+                          onChange={(event) =>
+                            setForm((current) => ({ ...current, color: event.target.value }))
+                          }
+                          className="h-12 w-16 rounded-xl border border-[#e5e3d8] bg-white px-1 py-1"
+                        />
+                        <input
+                          value={form.color}
+                          onChange={(event) =>
+                            setForm((current) => ({ ...current, color: event.target.value }))
+                          }
+                          className="flex-1 rounded-xl border border-[#e5e3d8] bg-white px-4 py-3 text-sm outline-none focus:border-[#1f644e]"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
+                        Deadline
+                      </label>
+                      <input
+                        type="date"
+                        value={form.deadline}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, deadline: event.target.value }))
+                        }
+                        className="mt-2 w-full rounded-xl border border-[#e5e3d8] bg-white px-4 py-3 text-sm outline-none focus:border-[#1f644e]"
+                      />
+                    </div>
+                    <div className="md:col-span-2 flex justify-end gap-3 mt-4">
+                      <button
+                        type="button"
+                        onClick={resetForm}
+                        className="rounded-xl border border-[#e5e3d8] px-4 py-2.5 text-sm font-bold text-[#7c8e88] transition hover:bg-[#f8f9f4]"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="rounded-xl bg-[#1f644e] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#17503e] inline-flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        {editingId ? 'Update Project' : 'Create Project'}
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
-                  Deadline
-                </label>
-                <input
-                  type="date"
-                  value={form.deadline}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, deadline: event.target.value }))
-                  }
-                  className="mt-2 w-full rounded-xl border border-[#e5e3d8] bg-white px-4 py-3 text-sm outline-none focus:border-[#1f644e]"
-                />
-              </div>
-              <div className="md:col-span-2 flex flex-wrap gap-3">
-                <button
-                  type="submit"
-                  className="rounded-xl bg-[#1f644e] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#17503e] inline-flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  {editingId ? 'Save Project' : 'Create Project'}
-                </button>
-                {editingId && (
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="rounded-xl border border-[#e5e3d8] px-4 py-2.5 text-sm font-bold text-[#7c8e88] transition hover:bg-[#f8f9f4]"
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
-            </form>
-          </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
             {projectStats.map((project) => (
