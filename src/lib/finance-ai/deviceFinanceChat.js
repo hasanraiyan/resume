@@ -9,7 +9,8 @@ function createDeviceAction(toolName, label, options = {}) {
   };
 }
 
-const MAX_HISTORY_MESSAGES = 12;
+// Keep a short conversation window for the on-device model to reduce tokens
+const MAX_HISTORY_MESSAGES = 6;
 
 function normalizeText(value) {
   return String(value || '')
@@ -195,22 +196,9 @@ function parseStructuredDeviceResult(rawResult, userMessage, pendingDraft) {
       userMessage
     );
   } catch (error) {
-    const preview = createDebugPreview(candidate || rawResult);
-
-    if (typeof window !== 'undefined') {
-      window.__POCKETLY_DEVICE_AI_DEBUG__ = {
-        rawResult,
-        candidate,
-        preview,
-        error: error.message,
-        timestamp: new Date().toISOString(),
-      };
-    }
-
+    // Log a minimal error for local debugging only.
     console.error('[Pocketly Device AI] Failed to parse structured output', {
       error: error.message,
-      preview,
-      rawResult,
     });
 
     return buildFallbackStructuredResult(rawResult, userMessage, pendingDraft);
@@ -273,28 +261,17 @@ function createFinanceSnapshot({
 }
 
 function buildSystemPrompt() {
-  return `You are Pocketly's on-device Finance Assistant.
-You help with personal finance questions using only the local finance snapshot provided in the prompt.
-Return valid JSON only.
-Be concise, accurate, and practical.
+  return `You are Pocketly's on-device finance assistant.
 
-When helping create a transaction draft:
-- Never invent account IDs or category IDs.
-- Work with account names and category names from the local snapshot.
-- Ask one follow-up question at a time when information is missing.
-- Required fields before a draft is considered complete:
-  - type
-  - amount
-  - source account name
-  - category name for income and expense
-  - destination account name for transfers
-- Date may be null if the user did not specify one.
-- Description may be empty if the user did not specify one.
+Use only the local snapshot in the prompt (accounts, categories, recent transactions, optional analysis). Do not use or invent any other data.
 
-Use these UI intent rules consistently:
-- If the user says "show", "list", "display", "open", "visualize", "breakdown", "browse", or asks to see a snapshot, set needsGui=true for the matching show_* intent.
-- If the user asks a direct question like "what is my balance?", "how much did I spend?", or "which category is highest?", set needsGui=false unless they also asked to see it.
-- Do not request visual UI just because you used local data. Request it only when the user-facing answer benefits from a card or list.`;
+Always respond with valid JSON matching the provided schema.
+
+Answer finance questions briefly using the snapshot. If data is missing, say so.
+
+If you set intent to show_accounts, show_transactions, show_analysis, or show_categories and the user asked to show/list/display/open/visualize/breakdown/browse/see something, set needsGui=true. Otherwise keep needsGui=false.
+
+For draft_transaction, fill as many fields as you can from the message and snapshot; missing fields are allowed and will be resolved outside the model.`;
 }
 
 function getResponseSchema() {
@@ -841,7 +818,21 @@ export async function runDeviceFinanceChat(
     throw new Error(availability.reason);
   }
 
-  const snapshot = createFinanceSnapshot({ accounts, categories, transactions, analysis });
+  const nowTs = () =>
+    typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+  const debugEnabled = Boolean(options?.debug);
+  const timings = {};
+  const t0 = nowTs();
+  timings.start = t0;
+
+  // Allow passing a pre-built snapshot for testing/debugging to avoid re-serializing
+  const snapshotStart = nowTs();
+  const snapshot =
+    options?.snapshot || createFinanceSnapshot({ accounts, categories, transactions, analysis });
+  const snapshotEnd = nowTs();
+  timings.snapshotMs = snapshotEnd - snapshotStart;
+
+  const sessionStart = nowTs();
   const session = await createSession([
     {
       role: 'system',
@@ -849,34 +840,37 @@ export async function runDeviceFinanceChat(
     },
     ...toPromptMessages(history),
   ]);
+  const sessionEnd = nowTs();
+  timings.sessionMs = sessionEnd - sessionStart;
 
   const allowDrafts = options?.allowDrafts === true;
 
-  const prompt = `Current finance snapshot:
-${JSON.stringify(snapshot)}
+  const prompt = `Current finance snapshot:\n${JSON.stringify(snapshot)}\n\nCurrent pending transaction draft:\n${JSON.stringify(pendingDraft || null)}\n\nUser message:\n${userMessage}\n\nReturn JSON only using the required schema.`;
 
-Current pending transaction draft:
-${JSON.stringify(pendingDraft || null)}
-
-User message:
-${userMessage}
-
-Return JSON only using the required schema.`;
-
+  const promptStart = nowTs();
   const rawResult = await promptSession(session, prompt, signal);
+  const promptEnd = nowTs();
+  timings.promptMs = promptEnd - promptStart;
+
+  const parseStart = nowTs();
   const parsed = parseStructuredDeviceResult(rawResult, userMessage, pendingDraft);
+  const parseEnd = nowTs();
+  timings.parseMs = parseEnd - parseStart;
   const uiBlocks = createUiBlocksFromIntent(parsed, snapshot);
 
   if (parsed.intent === 'draft_transaction') {
+    const resolveStart = nowTs();
     const mergedDraft = mergeDefinedValues(
       pendingDraft || {},
       extractDraftHintsFromUserMessage(userMessage, snapshot, pendingDraft),
       parsed.draftTransaction || {}
     );
     const resolved = validateAndResolveDraft(mergedDraft, snapshot);
+    const resolveEnd = nowTs();
+    timings.resolveDraftMs = resolveEnd - resolveStart;
 
     if (!resolved.complete) {
-      return {
+      const result = {
         replyText: parsed.followUpQuestion || parsed.replyText || resolved.question,
         uiBlocks: [],
         actions: createDeviceActions(parsed, {
@@ -887,9 +881,21 @@ Return JSON only using the required schema.`;
         }),
         pendingDraft: resolved.draft,
       };
+
+      if (debugEnabled) {
+        const totalEnd = nowTs();
+        timings.totalMs = totalEnd - t0;
+        result.debug = {
+          timings,
+          promptSize: prompt.length,
+          snapshotSize: JSON.stringify(snapshot).length,
+        };
+      }
+
+      return result;
     }
 
-    return {
+    const result = {
       replyText: parsed.replyText || formatDraftReply(resolved.draft),
       uiBlocks: [
         {
@@ -912,9 +918,21 @@ Return JSON only using the required schema.`;
       }),
       pendingDraft: null,
     };
+
+    if (debugEnabled) {
+      const totalEnd = nowTs();
+      timings.totalMs = totalEnd - t0;
+      result.debug = {
+        timings,
+        promptSize: prompt.length,
+        snapshotSize: JSON.stringify(snapshot).length,
+      };
+    }
+
+    return result;
   }
 
-  return {
+  const result = {
     replyText: parsed.replyText || parsed.followUpQuestion || 'Done.',
     uiBlocks,
     actions: createDeviceActions(parsed, {
@@ -927,4 +945,24 @@ Return JSON only using the required schema.`;
     }),
     pendingDraft: null,
   };
+
+  if (debugEnabled) {
+    const totalEnd = nowTs();
+    timings.totalMs = totalEnd - t0;
+    result.debug = {
+      timings,
+      promptSize: prompt.length,
+      snapshotSize: JSON.stringify(snapshot).length,
+    };
+    if (typeof window !== 'undefined') {
+      window.__POCKETLY_DEVICE_AI_DEBUG__ = result.debug;
+      // eslint-disable-next-line no-console
+      console.info('[Pocketly device AI debug]', result.debug);
+    }
+  }
+
+  return result;
 }
+
+// Expose a lightweight debug helper to the browser console that uses the current app snapshot
+// Removed window-scoped debug  to avoid leaking internal state into the global scope.

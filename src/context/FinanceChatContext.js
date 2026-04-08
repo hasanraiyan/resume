@@ -10,7 +10,7 @@ import {
   useMemo,
 } from 'react';
 import { useMoney } from '@/context/MoneyContext';
-import { getDeviceAiAvailability } from '@/lib/finance-ai/deviceFinanceChat';
+import { getDeviceAiAvailability, runDeviceFinanceChat } from '@/lib/finance-ai/deviceFinanceChat';
 import { runCloudFinanceChat } from '@/lib/finance-chat/cloudChatRunner';
 import { runDeviceFinanceChatMessage } from '@/lib/finance-chat/deviceChatRunner';
 import {
