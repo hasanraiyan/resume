@@ -19,7 +19,6 @@ const TOOL_ICONS = {
   local_analysis: ListTree,
   local_transactions: ReceiptText,
   local_categories: Tags,
-  local_draft: ReceiptText,
 };
 
 export function createToolStep(toolName, label, toolCallId, guiRequested = false) {

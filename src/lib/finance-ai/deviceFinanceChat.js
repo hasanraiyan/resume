@@ -704,12 +704,6 @@ function createDeviceActions(result, options = {}) {
   }
 
   if (options.preparedDraft) {
-    actions.push(
-      createDeviceAction('local_draft', 'Preparing transaction draft', {
-        guiRequested: Boolean(guiRequested || guiRendered),
-        guiRendered,
-      })
-    );
   }
 
   return actions;
@@ -838,16 +832,10 @@ function validateAndResolveDraft(draftTransaction, snapshot) {
   };
 }
 
-export async function runDeviceFinanceChat({
-  userMessage,
-  history,
-  accounts,
-  categories,
-  transactions,
-  analysis,
-  pendingDraft,
-  signal,
-}) {
+export async function runDeviceFinanceChat(
+  { userMessage, history, accounts, categories, transactions, analysis, pendingDraft, signal },
+  options = {}
+) {
   const availability = getDeviceAiAvailability();
   if (!availability.supported) {
     throw new Error(availability.reason);
@@ -861,6 +849,8 @@ export async function runDeviceFinanceChat({
     },
     ...toPromptMessages(history),
   ]);
+
+  const allowDrafts = options?.allowDrafts === true;
 
   const prompt = `Current finance snapshot:
 ${JSON.stringify(snapshot)}
@@ -893,6 +883,7 @@ Return JSON only using the required schema.`;
           checkedAccounts: true,
           checkedCategories: Boolean(resolved.draft.type && resolved.draft.type !== 'transfer'),
           preparedDraft: true,
+          allowDrafts,
         }),
         pendingDraft: resolved.draft,
       };
@@ -917,6 +908,7 @@ Return JSON only using the required schema.`;
             kind: 'transaction_confirmation',
           },
         ],
+        allowDrafts,
       }),
       pendingDraft: null,
     };
@@ -931,6 +923,7 @@ Return JSON only using the required schema.`;
       checkedTransactions: parsed.intent === 'show_transactions',
       checkedAnalysis: parsed.intent === 'show_analysis',
       uiBlocks,
+      allowDrafts,
     }),
     pendingDraft: null,
   };
