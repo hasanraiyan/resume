@@ -1,5 +1,14 @@
 'use client';
 
+function createDeviceAction(toolName, label, options = {}) {
+  return {
+    toolName,
+    label,
+    guiRequested: options.guiRequested || false,
+    guiRendered: options.guiRendered || false,
+  };
+}
+
 const MAX_HISTORY_MESSAGES = 12;
 
 function normalizeText(value) {
@@ -50,15 +59,148 @@ function createDebugPreview(value, maxLength = 800) {
   return `${text.slice(0, maxLength)}...`;
 }
 
-function parseStructuredDeviceResult(rawResult) {
+function stripCodeFences(value) {
+  const text = String(value || '').trim();
+  if (!text.startsWith('```')) return text;
+  return text
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/, '')
+    .trim();
+}
+
+function extractJsonCandidate(rawResult) {
+  const cleaned = stripCodeFences(rawResult);
+  if (!cleaned) return '';
+  if (
+    (cleaned.startsWith('{') && cleaned.endsWith('}')) ||
+    (cleaned.startsWith('[') && cleaned.endsWith(']'))
+  ) {
+    return cleaned;
+  }
+
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    return cleaned.slice(firstBrace, lastBrace + 1);
+  }
+
+  return cleaned;
+}
+
+function normalizeStructuredResult(parsed) {
+  return {
+    replyText: parsed?.replyText || '',
+    intent: parsed?.intent || 'answer',
+    needsGui: Boolean(parsed?.needsGui),
+    followUpQuestion: parsed?.followUpQuestion || null,
+    transactionFilterType: parsed?.transactionFilterType || 'all',
+    limit: parsed?.limit ?? null,
+    draftTransaction: parsed?.draftTransaction || null,
+  };
+}
+
+function userExplicitlyWantsVisual(normalized) {
+  return /(show|list|display|open|visualize|breakdown|browse|snapshot|table|chart|see)/.test(
+    normalized
+  );
+}
+
+function userLikelyWantsPlainAnswer(normalized) {
+  return /(what|how much|which|why|when|do i|did i|have i|is my|are my)/.test(normalized);
+}
+
+function applyPresentationHeuristics(result, userMessage) {
+  const normalized = normalizeText(userMessage);
+  const explicitVisual = userExplicitlyWantsVisual(normalized);
+  const likelyPlain = userLikelyWantsPlainAnswer(normalized);
+  const next = {
+    ...result,
+    needsGui: Boolean(result?.needsGui),
+  };
+
+  if (next.intent === 'draft_transaction') {
+    next.needsGui = false;
+    return next;
+  }
+
+  if (
+    ['show_accounts', 'show_transactions', 'show_analysis', 'show_categories'].includes(next.intent)
+  ) {
+    if (explicitVisual) {
+      next.needsGui = true;
+    } else if (likelyPlain) {
+      next.needsGui = false;
+    }
+  }
+
+  return next;
+}
+
+function createIntentFallback(userMessage, pendingDraft) {
+  const normalized = normalizeText(userMessage);
+
+  if (pendingDraft) return 'draft_transaction';
+  if (/(show|list|display).*(account|balance)|account balance/.test(normalized)) {
+    return 'show_accounts';
+  }
+  if (/(show|list|display).*(transaction|record)|last \d+/.test(normalized)) {
+    return 'show_transactions';
+  }
+  if (/(analysis|summary|net flow|spending|expense breakdown|insight)/.test(normalized)) {
+    return 'show_analysis';
+  }
+  if (/(category|categories)/.test(normalized)) {
+    return 'show_categories';
+  }
+  if (
+    /(spent|spend|paid|bought|expense|income|earned|received|salary|gift|grant|transfer|sent)/.test(
+      normalized
+    )
+  ) {
+    return 'draft_transaction';
+  }
+
+  return 'answer';
+}
+
+function buildFallbackStructuredResult(rawResult, userMessage, pendingDraft) {
+  const cleaned = stripCodeFences(rawResult);
+  const intent = createIntentFallback(userMessage, pendingDraft);
+  const text = cleaned && cleaned !== '}' ? cleaned : '';
+
+  return applyPresentationHeuristics(
+    normalizeStructuredResult({
+      replyText:
+        text ||
+        (intent === 'draft_transaction'
+          ? 'I started working on your transaction locally.'
+          : 'I checked your local finance data.'),
+      intent,
+      needsGui: userExplicitlyWantsVisual(normalizeText(userMessage)),
+      followUpQuestion: null,
+      transactionFilterType: 'all',
+      limit: null,
+      draftTransaction: null,
+    }),
+    userMessage
+  );
+}
+
+function parseStructuredDeviceResult(rawResult, userMessage, pendingDraft) {
+  const candidate = extractJsonCandidate(rawResult);
+
   try {
-    return JSON.parse(rawResult);
+    return applyPresentationHeuristics(
+      normalizeStructuredResult(JSON.parse(candidate)),
+      userMessage
+    );
   } catch (error) {
-    const preview = createDebugPreview(rawResult);
+    const preview = createDebugPreview(candidate || rawResult);
 
     if (typeof window !== 'undefined') {
       window.__POCKETLY_DEVICE_AI_DEBUG__ = {
         rawResult,
+        candidate,
         preview,
         error: error.message,
         timestamp: new Date().toISOString(),
@@ -71,7 +213,7 @@ function parseStructuredDeviceResult(rawResult) {
       rawResult,
     });
 
-    throw new Error(`On-device AI returned invalid JSON. ${error.message}. Preview: ${preview}`);
+    return buildFallbackStructuredResult(rawResult, userMessage, pendingDraft);
   }
 }
 
@@ -149,8 +291,10 @@ When helping create a transaction draft:
 - Date may be null if the user did not specify one.
 - Description may be empty if the user did not specify one.
 
-When the user explicitly asks to show or list finance data visually, set needsGui=true and choose the matching intent.
-When the user just wants a plain answer, set needsGui=false.`;
+Use these UI intent rules consistently:
+- If the user says "show", "list", "display", "open", "visualize", "breakdown", "browse", or asks to see a snapshot, set needsGui=true for the matching show_* intent.
+- If the user asks a direct question like "what is my balance?", "how much did I spend?", or "which category is highest?", set needsGui=false unless they also asked to see it.
+- Do not request visual UI just because you used local data. Request it only when the user-facing answer benefits from a card or list.`;
 }
 
 function getResponseSchema() {
@@ -391,6 +535,186 @@ function createUiBlocksFromIntent(result, snapshot) {
   return [];
 }
 
+function mergeDefinedValues(...sources) {
+  return sources.reduce((acc, source) => {
+    if (!source || typeof source !== 'object') return acc;
+
+    for (const [key, value] of Object.entries(source)) {
+      if (value === undefined || value === null) continue;
+      if (typeof value === 'string' && !value.trim()) continue;
+      acc[key] = value;
+    }
+
+    return acc;
+  }, {});
+}
+
+function detectTransactionTypeFromText(normalized) {
+  if (/(transfer|transferred|send to|move to)/.test(normalized)) return 'transfer';
+  if (/(spent|spend|paid|bought|expense|debited)/.test(normalized)) return 'expense';
+  if (/(income|earned|received|salary|gift|grant|credited)/.test(normalized)) return 'income';
+  return null;
+}
+
+function detectAmountFromText(userMessage) {
+  const match = String(userMessage || '').match(
+    /(?:₹|rs\.?|inr)?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i
+  );
+  if (!match) return null;
+
+  const amount = Number(match[1].replace(/,/g, ''));
+  return Number.isFinite(amount) && amount > 0 ? amount : null;
+}
+
+function detectSingleEntityName(items, userMessage, accessor) {
+  const normalizedMessage = normalizeText(userMessage);
+  if (!normalizedMessage) return null;
+
+  const matches = items.filter((item) => {
+    const name = normalizeText(accessor(item));
+    return name && normalizedMessage.includes(name);
+  });
+
+  if (matches.length === 1) return accessor(matches[0]);
+  return null;
+}
+
+function escapeRegex(value) {
+  return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function detectTransferAccounts(snapshot, userMessage) {
+  const normalizedMessage = normalizeText(userMessage);
+  const result = { accountName: null, toAccountName: null };
+
+  for (const account of snapshot.accounts) {
+    const name = normalizeText(account.name);
+    if (!name || !normalizedMessage.includes(name)) continue;
+
+    const escapedName = escapeRegex(name).replace(/\s+/g, '\\s+');
+    const fromPattern = new RegExp(`from\\s+${escapedName}`);
+    const toPattern = new RegExp(`to\\s+${escapedName}`);
+
+    if (fromPattern.test(normalizedMessage)) {
+      result.accountName = account.name;
+    } else if (toPattern.test(normalizedMessage)) {
+      result.toAccountName = account.name;
+    } else if (!result.accountName) {
+      result.accountName = account.name;
+    } else if (!result.toAccountName && result.accountName !== account.name) {
+      result.toAccountName = account.name;
+    }
+  }
+
+  return result;
+}
+
+function detectDateHint(userMessage) {
+  const normalized = normalizeText(userMessage);
+  if (/\btoday\b/.test(normalized)) {
+    return new Date().toISOString();
+  }
+  if (/\byesterday\b/.test(normalized)) {
+    const date = new Date();
+    date.setDate(date.getDate() - 1);
+    return date.toISOString();
+  }
+  return null;
+}
+
+function detectAmountFromInput(userMessage) {
+  const match = String(userMessage || '').match(
+    /(?:₹|rs\.?|inr)?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i
+  );
+  if (!match) return null;
+
+  const amount = Number(match[1].replace(/,/g, ''));
+  return Number.isFinite(amount) && amount > 0 ? amount : null;
+}
+
+function formatDraftReply(draft) {
+  return `I prepared a ${draft.type} draft for Rs ${draft.amount}. Please confirm it below.`;
+}
+
+function extractDraftHintsFromUserMessage(userMessage, snapshot, pendingDraft) {
+  const normalized = normalizeText(userMessage);
+  const inferredType = detectTransactionTypeFromText(normalized) || pendingDraft?.type || null;
+  const categoriesForType = snapshot.categories.filter((item) => item.type === inferredType);
+  const transferAccounts = detectTransferAccounts(snapshot, userMessage);
+
+  return {
+    type: inferredType,
+    amount: detectAmountFromInput(userMessage),
+    accountName:
+      transferAccounts.accountName ||
+      detectSingleEntityName(snapshot.accounts, userMessage, (item) => item.name),
+    categoryName: detectSingleEntityName(
+      categoriesForType.length > 0 ? categoriesForType : snapshot.categories,
+      userMessage,
+      (item) => item.name
+    ),
+    toAccountName:
+      transferAccounts.toAccountName ||
+      (inferredType === 'transfer'
+        ? detectSingleEntityName(snapshot.accounts, userMessage, (item) => item.name)
+        : null),
+    date: detectDateHint(userMessage),
+  };
+}
+
+function createDeviceActions(result, options = {}) {
+  const actions = [];
+  const guiRequested = Boolean(result?.needsGui);
+  const guiRendered = Boolean(options.uiBlocks?.length);
+
+  if (options.checkedAccounts) {
+    actions.push(
+      createDeviceAction('local_accounts', 'Checking accounts', {
+        guiRequested,
+        guiRendered,
+      })
+    );
+  }
+
+  if (options.checkedCategories) {
+    actions.push(
+      createDeviceAction('local_categories', 'Checking categories', {
+        guiRequested,
+        guiRendered,
+      })
+    );
+  }
+
+  if (options.checkedTransactions) {
+    actions.push(
+      createDeviceAction('local_transactions', 'Reviewing recent transactions', {
+        guiRequested,
+        guiRendered,
+      })
+    );
+  }
+
+  if (options.checkedAnalysis) {
+    actions.push(
+      createDeviceAction('local_analysis', 'Generating local summary', {
+        guiRequested,
+        guiRendered,
+      })
+    );
+  }
+
+  if (options.preparedDraft) {
+    actions.push(
+      createDeviceAction('local_draft', 'Preparing transaction draft', {
+        guiRequested: Boolean(guiRequested || guiRendered),
+        guiRendered,
+      })
+    );
+  }
+
+  return actions;
+}
+
 function validateAndResolveDraft(draftTransaction, snapshot) {
   const draft = {
     type: draftTransaction?.type || null,
@@ -550,27 +874,32 @@ ${userMessage}
 Return JSON only using the required schema.`;
 
   const rawResult = await promptSession(session, prompt, signal);
-  const parsed = parseStructuredDeviceResult(rawResult);
+  const parsed = parseStructuredDeviceResult(rawResult, userMessage, pendingDraft);
+  const uiBlocks = createUiBlocksFromIntent(parsed, snapshot);
 
   if (parsed.intent === 'draft_transaction') {
-    const mergedDraft = {
-      ...(pendingDraft || {}),
-      ...(parsed.draftTransaction || {}),
-    };
+    const mergedDraft = mergeDefinedValues(
+      pendingDraft || {},
+      extractDraftHintsFromUserMessage(userMessage, snapshot, pendingDraft),
+      parsed.draftTransaction || {}
+    );
     const resolved = validateAndResolveDraft(mergedDraft, snapshot);
 
     if (!resolved.complete) {
       return {
-        replyText: parsed.replyText || resolved.question,
+        replyText: parsed.followUpQuestion || parsed.replyText || resolved.question,
         uiBlocks: [],
+        actions: createDeviceActions(parsed, {
+          checkedAccounts: true,
+          checkedCategories: Boolean(resolved.draft.type && resolved.draft.type !== 'transfer'),
+          preparedDraft: true,
+        }),
         pendingDraft: resolved.draft,
       };
     }
 
     return {
-      replyText:
-        parsed.replyText ||
-        `I prepared a ${resolved.draft.type} draft for ₹${resolved.draft.amount}. Please confirm it below.`,
+      replyText: parsed.replyText || formatDraftReply(resolved.draft),
       uiBlocks: [
         {
           kind: 'transaction_confirmation',
@@ -579,13 +908,30 @@ Return JSON only using the required schema.`;
           data: resolved.draft,
         },
       ],
+      actions: createDeviceActions(parsed, {
+        checkedAccounts: true,
+        checkedCategories: resolved.draft.type !== 'transfer',
+        preparedDraft: true,
+        uiBlocks: [
+          {
+            kind: 'transaction_confirmation',
+          },
+        ],
+      }),
       pendingDraft: null,
     };
   }
 
   return {
     replyText: parsed.replyText || parsed.followUpQuestion || 'Done.',
-    uiBlocks: createUiBlocksFromIntent(parsed, snapshot),
+    uiBlocks,
+    actions: createDeviceActions(parsed, {
+      checkedAccounts: parsed.intent === 'show_accounts',
+      checkedCategories: parsed.intent === 'show_categories',
+      checkedTransactions: parsed.intent === 'show_transactions',
+      checkedAnalysis: parsed.intent === 'show_analysis',
+      uiBlocks,
+    }),
     pendingDraft: null,
   };
 }

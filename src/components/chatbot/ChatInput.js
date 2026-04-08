@@ -32,6 +32,16 @@ export default function ChatInput({
   const isGreenTheme = theme === 'green';
   const showModeToggle = typeof setChatMode === 'function';
   const showDeviceOption = Boolean(deviceAvailability?.supported);
+  const modeOptions = showDeviceOption
+    ? [
+        { id: 'cloud', label: 'Cloud' },
+        { id: 'device', label: 'On-device' },
+      ]
+    : [{ id: 'cloud', label: 'Cloud' }];
+  const activeModeIndex = Math.max(
+    0,
+    modeOptions.findIndex((option) => option.id === chatMode)
+  );
 
   return (
     <div className="p-3 border-t border-neutral-200/50 bg-white shrink-0">
@@ -60,7 +70,7 @@ export default function ChatInput({
         />
 
         <div
-          className={`flex ${!availableMCPs || availableMCPs.length === 0 ? 'justify-end' : 'justify-between'} items-center px-2 pb-2 mt-auto`}
+          className={`flex ${!availableMCPs || availableMCPs.length === 0 ? 'justify-end' : 'justify-between'} items-center gap-1.5 px-2 pb-2 mt-auto`}
         >
           {/* Left: Settings Menu & Active Tools */}
           <div className="flex items-center gap-2">
@@ -76,38 +86,44 @@ export default function ChatInput({
             />
 
             {showModeToggle && (
-              <div className="flex items-center gap-1 rounded-full border border-neutral-200 bg-neutral-50 p-1">
-                <button
-                  type="button"
-                  onClick={() => setChatMode('cloud')}
-                  disabled={isLoading}
-                  className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
-                    chatMode === 'cloud'
-                      ? isGreenTheme
-                        ? 'bg-[#1f644e] text-white'
-                        : 'bg-black text-white'
-                      : 'text-neutral-600 hover:bg-white'
-                  }`}
-                >
-                  Cloud
-                </button>
-                {showDeviceOption && (
+              <div className="relative flex items-center rounded-full border border-neutral-200 bg-neutral-50 p-1">
+                <div
+                  className={`absolute top-1 bottom-1 rounded-full shadow-sm transition-all duration-300 ease-out ${
+                    isGreenTheme ? 'bg-[#1f644e]' : 'bg-black'
+                  } ${modeOptions.length === 2 ? 'w-[calc(50%-2px)]' : 'left-1 right-1'}`}
+                  style={
+                    modeOptions.length === 2
+                      ? {
+                          left: activeModeIndex === 0 ? '4px' : 'calc(50% + 2px)',
+                        }
+                      : undefined
+                  }
+                />
+
+                {modeOptions.map((option) => (
                   <button
+                    key={option.id}
                     type="button"
-                    onClick={() => setChatMode('device')}
+                    onClick={() => setChatMode(option.id)}
                     disabled={isLoading}
-                    title="Run locally in this browser"
-                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
-                      chatMode === 'device'
+                    title={
+                      option.id === 'device'
+                        ? 'Run locally in this browser'
+                        : 'Use the server-powered finance assistant'
+                    }
+                    className={`relative z-10 cursor-pointer rounded-full px-3 py-1 text-[11px] font-semibold transition-colors duration-300 ${
+                      option.id === chatMode
                         ? isGreenTheme
-                          ? 'bg-[#1f644e] text-white'
+                          ? 'text-white'
                           : 'bg-black text-white'
-                        : 'text-neutral-600 hover:bg-white'
+                        : 'text-neutral-600 hover:text-neutral-900'
+                    } ${modeOptions.length === 2 ? 'min-w-[112px]' : 'min-w-[88px]'} ${
+                      isLoading ? 'cursor-not-allowed opacity-70' : ''
                     }`}
                   >
-                    On-device
+                    {option.label}
                   </button>
-                )}
+                ))}
               </div>
             )}
           </div>
