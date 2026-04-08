@@ -1,4 +1,6 @@
 'use client';
+
+import { useState } from 'react';
 import { Send } from 'lucide-react';
 import ToolSelector from './ToolSelector';
 import ModelSelector from './ModelSelector';
@@ -29,6 +31,7 @@ export default function ChatInput({
   setChatMode,
   deviceAvailability,
 }) {
+  const [showImageWarning, setShowImageWarning] = useState(false);
   const isGreenTheme = theme === 'green';
   const showModeToggle = typeof setChatMode === 'function';
   const showDeviceOption = Boolean(deviceAvailability?.supported);
@@ -43,9 +46,24 @@ export default function ChatInput({
     modeOptions.findIndex((option) => option.id === chatMode)
   );
 
+  const containerBg = isGreenTheme ? 'bg-[#fcfbf5]' : 'bg-white';
+  const borderColor = isGreenTheme ? 'border-[#e5e3d8]' : 'border-neutral-200/80';
+  const focusBorder = isGreenTheme
+    ? 'focus-within:border-[#1f644e]/50'
+    : 'focus-within:border-black/50';
+  const textColor = isGreenTheme ? 'text-[#1e3a34]' : 'text-neutral-900';
+  const placeholderColor = isGreenTheme
+    ? 'placeholder:text-[#7c8e88]'
+    : 'placeholder:text-neutral-400';
+  const warningBg = isGreenTheme ? 'bg-[#fef3c7]' : 'bg-amber-50';
+  const warningText = isGreenTheme ? 'text-[#92400e]' : 'text-amber-700';
+  const warningBorder = isGreenTheme ? 'border-[#fcd34d]' : 'border-amber-200';
+
   return (
-    <div className="p-3 border-t border-neutral-200/50 bg-white shrink-0">
-      <div className="rounded-3xl border border-neutral-200/80 bg-white shadow-sm focus-within:border-black/50 focus-within:ring-1 focus-within:ring-black/20 transition-all flex flex-col">
+    <div className={`p-3 border-t ${borderColor} ${containerBg} shrink-0`}>
+      <div
+        className={`rounded-3xl border ${borderColor} ${containerBg} shadow-sm ${focusBorder} focus-within:ring-1 ${isGreenTheme ? 'focus-within:ring-[#1f644e]/20' : 'focus-within:ring-black/20'} transition-all flex flex-col`}
+      >
         <textarea
           ref={inputRef}
           value={inputMessage}
@@ -53,6 +71,16 @@ export default function ChatInput({
             setInputMessage(e.target.value);
             e.target.style.height = 'auto';
             e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px';
+          }}
+          onPaste={(e) => {
+            const hasImage = Array.from(e.clipboardData?.items || []).some((item) =>
+              item.type.startsWith('image/')
+            );
+            if (hasImage) {
+              e.preventDefault();
+              setShowImageWarning(true);
+              setTimeout(() => setShowImageWarning(false), 3000);
+            }
           }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -65,9 +93,17 @@ export default function ChatInput({
           placeholder={`Ask ${chatbotSettings?.aiName || 'Kiro'} a question...`}
           rows={1}
           disabled={isLoading}
-          className="w-full resize-none bg-transparent px-4 pt-3 pb-2 text-[13px] leading-relaxed outline-none placeholder:text-neutral-400 disabled:opacity-50 max-h-40 overflow-hidden text-neutral-900 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className={`w-full resize-none bg-transparent px-4 pt-3 pb-2 text-[13px] leading-relaxed outline-none ${placeholderColor} disabled:opacity-50 max-h-40 overflow-hidden ${textColor} [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}
           style={{ height: '44px' }}
         />
+
+        {showImageWarning && (
+          <div
+            className={`mx-4 mb-2 px-3 py-2 text-xs ${warningBg} ${warningText} rounded-lg border ${warningBorder}`}
+          >
+            Image input not supported. Please paste a description or use text instead.
+          </div>
+        )}
 
         <div
           className={`flex ${!availableMCPs || availableMCPs.length === 0 ? 'justify-end' : 'justify-between'} items-center gap-1.5 px-2 pb-2 mt-auto`}
@@ -117,7 +153,7 @@ export default function ChatInput({
                           ? 'text-white'
                           : 'bg-black text-white'
                         : 'text-neutral-600 hover:text-neutral-900'
-                    } ${modeOptions.length === 2 ? 'min-w-[112px]' : 'min-w-[88px]'} ${
+                    } ${modeOptions.length === 2 ? 'min-w-28' : 'min-w-[88px]'} ${
                       isLoading ? 'cursor-not-allowed opacity-70' : ''
                     }`}
                   >

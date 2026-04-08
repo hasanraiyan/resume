@@ -114,8 +114,7 @@ export default function ChatTab() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] min-w-0 flex-col overflow-x-hidden bg-[#fcfbf5] pb-16 lg:pb-0">
-      {/* Messages */}
+    <div className="flex h-[calc(100vh-8.5rem)] lg:h-[calc(100vh-4rem)] min-w-0 flex-col overflow-x-hidden bg-[#fcfbf5]">
       <div className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden custom-chat-scrollbar px-4 py-4 sm:px-6">
         <MessageList
           messages={messages}

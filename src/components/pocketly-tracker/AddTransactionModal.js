@@ -214,6 +214,7 @@ export default function AddTransactionModal() {
       <button
         onClick={() => setOpen(true)}
         className="fixed bottom-20 right-4 lg:bottom-8 lg:right-8 w-12 h-12 bg-[#1f644e] rounded-full shadow-lg flex items-center justify-center text-white hover:bg-[#17503e] hover:shadow-xl transition-all active:scale-95 z-30"
+        style={{ right: 'calc(1rem + env(safe-area-inset-right))' }}
       >
         <Plus className="w-6 h-6" strokeWidth={2.5} />
       </button>
