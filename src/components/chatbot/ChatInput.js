@@ -25,8 +25,13 @@ export default function ChatInput({
   setSelectedAgentId,
   showModelSelector = true,
   theme = 'default',
+  chatMode,
+  setChatMode,
+  deviceAvailability,
 }) {
   const isGreenTheme = theme === 'green';
+  const showModeToggle = typeof setChatMode === 'function';
+
   return (
     <div className="p-3 border-t border-neutral-200/50 bg-white shrink-0">
       <div className="rounded-3xl border border-neutral-200/80 bg-white shadow-sm focus-within:border-black/50 focus-within:ring-1 focus-within:ring-black/20 transition-all flex flex-col">
@@ -57,16 +62,56 @@ export default function ChatInput({
           className={`flex ${!availableMCPs || availableMCPs.length === 0 ? 'justify-end' : 'justify-between'} items-center px-2 pb-2 mt-auto`}
         >
           {/* Left: Settings Menu & Active Tools */}
-          <ToolSelector
-            activeMCPs={activeMCPs}
-            setActiveMCPs={setActiveMCPs}
-            availableMCPs={availableMCPs}
-            isToolsMenuOpen={isToolsMenuOpen}
-            setIsToolsMenuOpen={setIsToolsMenuOpen}
-            setIsModelSelectorOpen={setIsModelSelectorOpen}
-            isLoading={isLoading}
-            inputRef={inputRef}
-          />
+          <div className="flex items-center gap-2">
+            <ToolSelector
+              activeMCPs={activeMCPs}
+              setActiveMCPs={setActiveMCPs}
+              availableMCPs={availableMCPs}
+              isToolsMenuOpen={isToolsMenuOpen}
+              setIsToolsMenuOpen={setIsToolsMenuOpen}
+              setIsModelSelectorOpen={setIsModelSelectorOpen}
+              isLoading={isLoading}
+              inputRef={inputRef}
+            />
+
+            {showModeToggle && (
+              <div className="flex items-center gap-1 rounded-full border border-neutral-200 bg-neutral-50 p-1">
+                <button
+                  type="button"
+                  onClick={() => setChatMode('cloud')}
+                  disabled={isLoading}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+                    chatMode === 'cloud'
+                      ? isGreenTheme
+                        ? 'bg-[#1f644e] text-white'
+                        : 'bg-black text-white'
+                      : 'text-neutral-600 hover:bg-white'
+                  }`}
+                >
+                  Cloud
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChatMode('device')}
+                  disabled={isLoading || !deviceAvailability?.supported}
+                  title={
+                    deviceAvailability?.supported
+                      ? 'Run locally in this browser'
+                      : deviceAvailability?.reason
+                  }
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+                    chatMode === 'device'
+                      ? isGreenTheme
+                        ? 'bg-[#1f644e] text-white'
+                        : 'bg-black text-white'
+                      : 'text-neutral-600 hover:bg-white'
+                  } ${!deviceAvailability?.supported ? 'cursor-not-allowed opacity-45' : ''}`}
+                >
+                  On-device
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Right: Submit Button or Voice Input */}
           <div className="flex items-center justify-end gap-2">

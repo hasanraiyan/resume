@@ -7,7 +7,15 @@ import MessageList from '@/components/chatbot/MessageList';
 import ChatInput from '@/components/chatbot/ChatInput';
 
 export default function ChatTab() {
-  const { messages, sendMessage, isStreaming } = useFinanceChat();
+  const {
+    messages,
+    sendMessage,
+    isStreaming,
+    chatMode,
+    setChatMode,
+    deviceAvailability,
+    appendAssistantMessage,
+  } = useFinanceChat();
   const { setActiveTab, addTransaction, openEditTransaction } = useMoney();
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef(null);
@@ -83,11 +91,11 @@ export default function ChatTab() {
         if (setLocalState) {
           setLocalState('success');
         } else {
-          sendMessage('Transaction confirmed and saved successfully!');
+          appendAssistantMessage('Transaction confirmed and saved successfully!');
         }
       } catch (err) {
         if (setLocalState) setLocalState('error');
-        sendMessage('Sorry, there was an error saving the transaction.');
+        appendAssistantMessage('Sorry, there was an error saving the transaction.');
       }
     }
 
@@ -141,6 +149,9 @@ export default function ChatTab() {
         setSelectedAgentId={setSelectedAgentId}
         showModelSelector={false}
         theme="green"
+        chatMode={chatMode}
+        setChatMode={setChatMode}
+        deviceAvailability={deviceAvailability}
       />
     </div>
   );
