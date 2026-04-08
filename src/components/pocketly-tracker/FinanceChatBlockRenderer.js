@@ -341,22 +341,31 @@ function TransactionConfirmationBlock({ block, onInteract }) {
   const isExpense = data.type === 'expense';
   const isTransfer = data.type === 'transfer';
 
-  const amountColor = isExpense ? 'text-[#c94c4c]' : isTransfer ? 'text-[#1e3a34]' : 'text-[#1f644e]';
+  const amountColor = isExpense
+    ? 'text-[#c94c4c]'
+    : isTransfer
+      ? 'text-[#1e3a34]'
+      : 'text-[#1f644e]';
   const amountPrefix = isExpense ? '-' : isTransfer ? '' : '+';
 
   return (
     <div className="rounded-2xl border border-neutral-200/70 bg-[#f8f8f4] p-3 shadow-sm">
-      <p className="text-xs font-semibold text-neutral-800 mb-3">{block.title || 'Confirm Transaction'}</p>
+      <p className="text-xs font-semibold text-neutral-800 mb-3">
+        {block.title || 'Confirm Transaction'}
+      </p>
 
       <div className="rounded-xl border border-neutral-200 bg-white p-3 space-y-3">
         <div className="flex justify-between items-start gap-4 border-b border-neutral-100 pb-3">
-           <div>
-             <p className="text-sm font-semibold text-neutral-900">{data.description || 'Draft Transaction'}</p>
-             <p className="text-[11px] text-neutral-500 capitalize">{data.type}</p>
-           </div>
-           <p className={`text-sm font-bold shrink-0 ${amountColor}`}>
-              {amountPrefix}{formatCurrency(data.amount)}
-           </p>
+          <div>
+            <p className="text-sm font-semibold text-neutral-900">
+              {data.description || 'Draft Transaction'}
+            </p>
+            <p className="text-[11px] text-neutral-500 capitalize">{data.type}</p>
+          </div>
+          <p className={`text-sm font-bold shrink-0 ${amountColor}`}>
+            {amountPrefix}
+            {formatCurrency(data.amount)}
+          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-2 text-xs">
@@ -366,7 +375,9 @@ function TransactionConfirmationBlock({ block, onInteract }) {
           </div>
           {!isTransfer && (
             <div>
-              <p className="text-[10px] uppercase text-neutral-400 font-semibold mb-0.5">Category</p>
+              <p className="text-[10px] uppercase text-neutral-400 font-semibold mb-0.5">
+                Category
+              </p>
               <p className="font-medium text-neutral-800">{data.categoryHint || 'Uncategorized'}</p>
             </div>
           )}
@@ -375,8 +386,10 @@ function TransactionConfirmationBlock({ block, onInteract }) {
             <p className="font-medium text-neutral-800">{data.accountHint || 'Select later'}</p>
           </div>
           {isTransfer && (
-             <div>
-              <p className="text-[10px] uppercase text-neutral-400 font-semibold mb-0.5">To Account</p>
+            <div>
+              <p className="text-[10px] uppercase text-neutral-400 font-semibold mb-0.5">
+                To Account
+              </p>
               <p className="font-medium text-neutral-800">{data.toAccountHint || 'Select later'}</p>
             </div>
           )}

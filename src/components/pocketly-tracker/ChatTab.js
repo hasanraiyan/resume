@@ -58,6 +58,14 @@ export default function ChatTab() {
     if (action.type === 'switch_tab' && action.tab) {
       setActiveTab(action.tab);
     }
+
+    if (action.type === 'confirm_transaction' || action.type === 'cancel_transaction') {
+      sendMessage(
+        action.type === 'confirm_transaction'
+          ? `I confirm the transaction: ${JSON.stringify(action.data)}`
+          : 'I want to cancel or edit this transaction manually.'
+      );
+    }
   };
 
   return (
