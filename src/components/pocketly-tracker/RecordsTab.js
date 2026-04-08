@@ -167,30 +167,33 @@ export default function RecordsTab() {
           </div>
 
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+            <div className="flex w-full items-center gap-3">
               <button
                 onClick={() => navigateWeek(-1)}
                 disabled={isTabLoading}
-                className="cursor-pointer rounded-lg border border-[#e5e3d8] bg-white p-2 transition hover:bg-[#f8f9f4] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-white"
+                className="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-[#e5e3d8] bg-white transition hover:bg-[#f8f9f4] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-white"
                 aria-label="Previous week"
               >
-                <ChevronLeft className="h-4 w-4 text-[#1e3a34]" />
+                <ChevronLeft className="h-5 w-5 text-[#1e3a34]" />
               </button>
-              <span className="text-sm font-bold text-[#1e3a34]">{periodRangeLabel}</span>
+              <div className="flex min-w-0 flex-1 items-center justify-center rounded-xl border border-[#e5e3d8] bg-white px-4 py-3 text-center">
+                <span className="truncate text-lg font-bold text-[#1e3a34]">
+                  {periodRangeLabel}
+                </span>
+              </div>
               <button
                 onClick={() => navigateWeek(1)}
                 disabled={isTabLoading}
-                className="cursor-pointer rounded-lg border border-[#e5e3d8] bg-white p-2 transition hover:bg-[#f8f9f4] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-white"
+                className="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-[#e5e3d8] bg-white transition hover:bg-[#f8f9f4] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-white"
                 aria-label="Next week"
               >
-                <ChevronRight className="h-4 w-4 text-[#1e3a34]" />
+                <ChevronRight className="h-5 w-5 text-[#1e3a34]" />
               </button>
             </div>
 
             {isRefreshingRecords && (
               <div className="inline-flex items-center gap-2 rounded-full border border-[#d9e6df] bg-[#f0f5f2] px-3 py-1 text-xs font-semibold text-[#1f644e]">
                 <div className="h-2 w-2 rounded-full bg-[#1f644e] animate-pulse" />
-                Refreshing records
               </div>
             )}
           </div>

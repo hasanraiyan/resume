@@ -107,6 +107,7 @@ function getToolLabel(toolName) {
 
 function shouldRenderGui(toolName, toolArgs = {}) {
   if (toolName === 'draft_transaction') return true;
+  if (toolArgs?.presentation === 'card') return true;
   return toolArgs?.isGui === true;
 }
 
@@ -261,10 +262,16 @@ You have access to real financial data through tools. Use them to answer questio
 Format currency amounts with \u20B9 symbol and Indian number format (e.g., \u20B91,50,000).
 Be concise and provide actionable insights, not just raw data.
 When you use tools, the app may automatically show supporting finance UI cards for the user.
-Only enable GUI cards when they clearly add value and the user explicitly wants something shown or listed visually.
-For read-only tools (get_accounts, get_categories, get_transactions, get_analysis), set isGui=true only when you want the app to render a card.
-If the user just wants a normal answer, leave isGui unset or false and answer in text only.
-draft_transaction does not need isGui and should still produce its confirmation UI automatically.
+Only enable finance UI cards when they clearly add value and the user explicitly wants something shown, listed, displayed, browsed, or visualized.
+For read-only tools (get_accounts, get_categories, get_transactions, get_analysis), prefer presentation="card" when the user is asking for a visual list, snapshot, or breakdown.
+Prefer presentation="text" when the user just wants a normal conversational answer.
+The old isGui flag still works, but presentation is preferred because it better captures the use case.
+draft_transaction does not need presentation and should still produce its confirmation UI automatically.
+
+Use these UI intent rules:
+- If the user says "show", "display", "list", "open", "visualize", "breakdown", or asks for a snapshot, prefer presentation="card".
+- If the user asks a direct question like "how much did I spend?", "what is my balance?", or "which category is highest?", prefer presentation="text" unless they also ask to see it.
+- Do not request a card just because you used a tool. Request a card only when the user-facing answer benefits from it.
 
 When the user is trying to record, add, log, save, or draft a transaction, follow this workflow strictly:
 - Identify whether it is income, expense, or transfer.

@@ -98,6 +98,10 @@ function validateDraftTransactionParams(params) {
   };
 }
 
+function createPresentationSchema(description) {
+  return z.enum(['text', 'card']).optional().describe(description);
+}
+
 export function createGetAccountsTool() {
   return tool(
     async () => {
@@ -118,12 +122,17 @@ export function createGetAccountsTool() {
     {
       name: 'get_accounts',
       description:
-        'Get all user accounts with their names, types, and balances. Use this when the user asks about their accounts, wallets, or where their money is stored. Set isGui=true only when you want the app to render an account UI card for the user.',
+        'Get all user accounts with their names, types, and balances. Use this when the user asks about their accounts, wallets, or where their money is stored. Prefer presentation="card" when the user says things like "show my balances", "display my accounts", "list my wallets", or asks for a visual snapshot. Prefer presentation="text" for normal conversational answers.',
       schema: z.object({
+        presentation: createPresentationSchema(
+          'Choose "card" for a visual account snapshot, or "text" for a normal text answer.'
+        ),
         isGui: z
           .boolean()
           .optional()
-          .describe('Set true only when the user explicitly wants a visual account card'),
+          .describe(
+            'Legacy fallback. Set true only when the user explicitly wants a visual account card.'
+          ),
       }),
     }
   );
@@ -148,12 +157,17 @@ export function createGetCategoriesTool() {
     {
       name: 'get_categories',
       description:
-        'Get all income and expense categories. Use this when the user asks about their category setup or what categories they use. Set isGui=true only when you want the app to render a category UI card for the user.',
+        'Get all income and expense categories. Use this when the user asks about their category setup or what categories they use. Prefer presentation="card" when the user asks to show, display, browse, or visually inspect categories. Prefer presentation="text" for normal conversational answers.',
       schema: z.object({
+        presentation: createPresentationSchema(
+          'Choose "card" for a visual category block, or "text" for a normal text answer.'
+        ),
         isGui: z
           .boolean()
           .optional()
-          .describe('Set true only when the user explicitly wants a visual category card'),
+          .describe(
+            'Legacy fallback. Set true only when the user explicitly wants a visual category card.'
+          ),
       }),
     }
   );
@@ -191,7 +205,7 @@ export function createGetTransactionsTool() {
     {
       name: 'get_transactions',
       description:
-        'Get recent transactions. Optionally filter by type (income, expense, transfer) and limit. Use this when the user asks about recent spending, recent income, or specific transactions. Set isGui=true only when the user explicitly wants a visual transaction list.',
+        'Get recent transactions. Optionally filter by type (income, expense, transfer) and limit. Use this when the user asks about recent spending, recent income, or specific transactions. Prefer presentation="card" when the user says "show my last transactions", "list the last 5", "display recent expenses", or clearly wants a visual transaction list. Prefer presentation="text" for normal conversational answers.',
       schema: z.object({
         type: z
           .enum(['income', 'expense', 'transfer'])
@@ -201,10 +215,15 @@ export function createGetTransactionsTool() {
           .number()
           .optional()
           .describe('Maximum number of transactions to return (default 20)'),
+        presentation: createPresentationSchema(
+          'Choose "card" for a visual transaction list, or "text" for a normal text answer.'
+        ),
         isGui: z
           .boolean()
           .optional()
-          .describe('Set true only when the user explicitly wants a visual transaction list'),
+          .describe(
+            'Legacy fallback. Set true only when the user explicitly wants a visual transaction list.'
+          ),
       }),
     }
   );
@@ -325,12 +344,17 @@ export function createGetAnalysisTool() {
     {
       name: 'get_analysis',
       description:
-        'Get comprehensive financial analysis including total income, total expenses, net balance, top spending categories, and account activity. Use this when the user asks for a summary, overview, or analysis of their finances. Set isGui=true only when the user explicitly wants a visual summary card.',
+        'Get comprehensive financial analysis including total income, total expenses, net balance, top spending categories, and account activity. Use this when the user asks for a summary, overview, or analysis of their finances. Prefer presentation="card" when the user asks to show, display, visualize, or break down their finances. Prefer presentation="text" for normal conversational answers.',
       schema: z.object({
+        presentation: createPresentationSchema(
+          'Choose "card" for a visual finance summary, or "text" for a normal text answer.'
+        ),
         isGui: z
           .boolean()
           .optional()
-          .describe('Set true only when the user explicitly wants a visual analysis card'),
+          .describe(
+            'Legacy fallback. Set true only when the user explicitly wants a visual analysis card.'
+          ),
       }),
     }
   );

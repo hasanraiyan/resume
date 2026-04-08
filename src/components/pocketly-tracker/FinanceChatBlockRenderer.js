@@ -212,6 +212,7 @@ function AccountsSnapshotBlock({ block, onInteract }) {
         <div className="inline-flex h-full gap-2 pr-1 snap-x snap-mandatory">
           {items.map((item, index) => {
             const colorSet = accountIconColors[index % accountIconColors.length];
+            const isPositiveBalance = (item.balance || 0) >= 0;
 
             return (
               <div
@@ -225,9 +226,7 @@ function AccountsSnapshotBlock({ block, onInteract }) {
                     <IconRenderer name={item.icon} className={getAccountIconClass(item.icon)} />
                   </div>
                   <p
-                    className={`text-[14px] font-bold ${
-                      (item.balance || 0) >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'
-                    }`}
+                    className={`text-[15px] font-bold ${isPositiveBalance ? 'text-[#1f644e]' : 'text-[#c94c4c]'}`}
                   >
                     {formatCurrency(item.balance)}
                   </p>
@@ -235,24 +234,7 @@ function AccountsSnapshotBlock({ block, onInteract }) {
 
                 <div className="mt-3">
                   <p className="line-clamp-2 text-[13px] font-bold text-[#1e3a34]">{item.name}</p>
-                  <div className="mt-2 space-y-1.5">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-[11px] text-[#7c8e88]">Initial</span>
-                      <span className="text-xs font-bold text-[#1e3a34]">
-                        {formatCurrency(item.initialBalance)}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-[11px] text-[#7c8e88]">Current</span>
-                      <span
-                        className={`text-xs font-bold ${
-                          (item.balance || 0) >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'
-                        }`}
-                      >
-                        {formatCurrency(item.balance)}
-                      </span>
-                    </div>
-                  </div>
+                  <p className="mt-1 text-[11px] font-medium text-[#7c8e88]">Available now</p>
                 </div>
               </div>
             );
