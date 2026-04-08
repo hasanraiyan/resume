@@ -89,6 +89,8 @@ export default function AddTransactionModal() {
       await addTransaction(payload);
       resetForm();
       setOpen(false);
+    } catch (error) {
+      console.error('Failed to submit transaction:', error);
     } finally {
       setIsSubmitting(false);
     }

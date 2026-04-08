@@ -184,11 +184,28 @@ export function MoneyProvider({ children }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(transaction),
       }).then(readJson);
+
+      // Navigate to current period if the new transaction is added today (which it always is by default in AddTransactionModal)
+      // This ensures the Records tab is showing the period that includes the new transaction.
+      const now = new Date();
+      const currentPeriodStart = getWeekStart(now);
+      const currentPeriodEnd = getWeekEnd(now);
+
+      if (state.periodStart !== currentPeriodStart || state.periodEnd !== currentPeriodEnd) {
+        setPeriod(currentPeriodStart, currentPeriodEnd);
+        // fetchTransactionsForPeriod will be called automatically by the useEffect watching state.periodStart
+      } else {
+        await fetchTransactionsForPeriod(state.periodStart, state.periodEnd);
+      }
+
       await Promise.all([
-        fetchTransactionsForPeriod(state.periodStart, state.periodEnd),
         fetchAccountsSummary(),
         state.analysis ? fetchAnalysis(state.periodStart, state.periodEnd) : Promise.resolve(),
       ]);
+
+      // Auto-switch to records tab to see the latest transaction
+      setActiveTab('records');
+
       return data.transaction;
     } catch (error) {
       console.error('Failed to add transaction:', error);
