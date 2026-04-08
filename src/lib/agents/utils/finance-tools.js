@@ -6,6 +6,7 @@ import Category from '@/models/Category';
 import Transaction from '@/models/Transaction';
 import { serializeAccount, serializeCategory, serializeTransaction } from '@/lib/money-serializers';
 import { computeAccountSummaries } from '@/lib/money-account-summary';
+import mongoose from 'mongoose';
 
 async function ensureDb() {
   await dbConnect();
@@ -17,6 +18,84 @@ async function getAccountsWithComputedBalances() {
     Transaction.find({ deletedAt: null }).select('type amount account toAccount').lean(),
   ]);
   return computeAccountSummaries(accounts, transactions).accounts;
+}
+
+function isValidObjectId(value) {
+  return typeof value === 'string' && mongoose.Types.ObjectId.isValid(value);
+}
+
+function validateDraftTransactionParams(params) {
+  const errors = [];
+  const sanitized = {
+    type: params.type,
+    amount: params.amount,
+    description: params.description || '',
+    accountId: params.accountId,
+    accountName: params.accountName,
+    categoryId: params.categoryId ?? null,
+    categoryName: params.categoryName ?? null,
+    toAccountId: params.toAccountId ?? null,
+    toAccountName: params.toAccountName ?? null,
+    date: params.date || new Date().toISOString().split('T')[0],
+  };
+
+  if (!['income', 'expense', 'transfer'].includes(sanitized.type)) {
+    errors.push('type must be income, expense, or transfer');
+  }
+
+  if (
+    typeof sanitized.amount !== 'number' ||
+    !Number.isFinite(sanitized.amount) ||
+    sanitized.amount <= 0
+  ) {
+    errors.push('amount must be a positive number');
+  }
+
+  if (!isValidObjectId(sanitized.accountId)) {
+    errors.push('accountId must be a valid ObjectId resolved via get_accounts');
+  }
+
+  if (!params.accountResolvedViaTool) {
+    errors.push('accountId must be resolved via get_accounts before drafting');
+  }
+
+  if (sanitized.type === 'transfer') {
+    if (!isValidObjectId(sanitized.toAccountId)) {
+      errors.push('toAccountId must be a valid ObjectId for transfers');
+    }
+
+    if (!params.toAccountResolvedViaTool) {
+      errors.push('toAccountId must be resolved via get_accounts before drafting transfers');
+    }
+
+    if (sanitized.accountId === sanitized.toAccountId) {
+      errors.push('source and destination accounts must be different for transfers');
+    }
+
+    sanitized.categoryId = null;
+    sanitized.categoryName = null;
+  } else {
+    if (!isValidObjectId(sanitized.categoryId)) {
+      errors.push('categoryId must be a valid ObjectId for income and expense');
+    }
+
+    if (!params.categoryResolvedViaTool) {
+      errors.push('categoryId must be resolved via get_categories before drafting');
+    }
+
+    sanitized.toAccountId = null;
+    sanitized.toAccountName = null;
+  }
+
+  if (sanitized.date && Number.isNaN(new Date(sanitized.date).getTime())) {
+    errors.push('date must be a valid date string');
+  }
+
+  return {
+    ok: errors.length === 0,
+    errors,
+    sanitized,
+  };
 }
 
 export function createGetAccountsTool() {
@@ -241,13 +320,23 @@ export function createGetAnalysisTool() {
 export function createDraftTransactionTool() {
   return tool(
     async (params) => {
-      // Return the draft payload to render the UI confirmation card
-      return JSON.stringify(params);
+      const validation = validateDraftTransactionParams(params);
+
+      if (!validation.ok) {
+        throw new Error(
+          `Cannot draft transaction until all required details are collected and resolved. ${validation.errors.join(
+            '; '
+          )}`
+        );
+      }
+
+      // Return only the confirmed transaction payload for the UI confirmation card.
+      return JSON.stringify(validation.sanitized);
     },
     {
       name: 'draft_transaction',
       description:
-        'Draft a new transaction (income, expense, or transfer). YOU MUST FIRST USE get_accounts and get_categories tools to find the exact accountId and categoryId. This will show a confirmation UI to the user, where the user can save it directly.',
+        'Draft a new transaction (income, expense, or transfer). Only use this after you have collected all required fields from the user. You must resolve accountId and toAccountId with get_accounts, and resolve categoryId with get_categories for income/expense. Never invent IDs, never guess ambiguous matches, and never pass placeholder or user-typed IDs directly. This will show a confirmation UI only for a complete draft.',
       schema: z.object({
         type: z.enum(['income', 'expense', 'transfer']).describe('The type of transaction'),
         amount: z
@@ -285,6 +374,19 @@ export function createDraftTransactionTool() {
           .string()
           .nullish()
           .describe('The date of the transaction in YYYY-MM-DD format. Default is today.'),
+        accountResolvedViaTool: z
+          .boolean()
+          .describe('Must be true only when accountId was resolved using get_accounts'),
+        categoryResolvedViaTool: z
+          .boolean()
+          .nullish()
+          .describe(
+            'Must be true when categoryId was resolved using get_categories for income or expense'
+          ),
+        toAccountResolvedViaTool: z
+          .boolean()
+          .nullish()
+          .describe('Must be true when toAccountId was resolved using get_accounts for transfers'),
       }),
     }
   );

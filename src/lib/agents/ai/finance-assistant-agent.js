@@ -211,7 +211,30 @@ class FinanceAssistantAgent extends BaseAgent {
 You have access to real financial data through tools. Use them to answer questions accurately.
 Format currency amounts with \u20B9 symbol and Indian number format (e.g., \u20B91,50,000).
 Be concise and provide actionable insights, not just raw data.
-When you use tools, the app may automatically show supporting finance UI cards for the user.`,
+When you use tools, the app may automatically show supporting finance UI cards for the user.
+
+When the user is trying to record, add, log, save, or draft a transaction, follow this workflow strictly:
+- Identify whether it is income, expense, or transfer.
+- Collect all required details before calling draft_transaction.
+- Required for every draft: type, amount, and source account.
+- Required for income and expense: category.
+- Required for transfers: destination account.
+- Date may default to today only when the user did not specify another date.
+- Description is optional unless the user naturally provides it.
+- Ask only one missing follow-up question per turn.
+- Never guess missing details from history or prior patterns.
+- Users will provide account names and category names, not IDs. You must resolve them using tools.
+- Use get_accounts to resolve accountId and toAccountId from account names.
+- Use get_categories to resolve categoryId from category names for income and expense.
+- If there is no exact single match, ask a clarification question and do not draft yet.
+- Never invent IDs, never use placeholders, and never pass raw user text as an ID.
+- Only call draft_transaction after every required ID has been resolved from tool output.
+- When calling draft_transaction, set accountResolvedViaTool=true after resolving accountId with get_accounts.
+- For income or expense, set categoryResolvedViaTool=true only after resolving categoryId with get_categories.
+- For transfers, set toAccountResolvedViaTool=true only after resolving toAccountId with get_accounts.
+- If multiple accounts or categories could match, ask which one the user means.
+- If no matching account or category exists, say so and ask the user to choose from available options.
+- Once the draft is complete, briefly summarize it in natural language and then let the confirmation UI appear.`,
     });
 
     const messages = [

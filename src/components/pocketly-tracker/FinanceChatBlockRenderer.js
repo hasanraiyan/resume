@@ -21,6 +21,24 @@ function formatCurrency(value) {
   return `\u20B9${currencyFormatter.format(value || 0)}`;
 }
 
+function isCompleteDraft(data) {
+  if (
+    !data ||
+    !data.type ||
+    typeof data.amount !== 'number' ||
+    data.amount <= 0 ||
+    !data.accountId
+  ) {
+    return false;
+  }
+
+  if (data.type === 'transfer') {
+    return Boolean(data.toAccountId);
+  }
+
+  return Boolean(data.categoryId);
+}
+
 function getAccountIconClass(icon) {
   if (icon === 'wallet' || icon === 'purse') return 'w-10 h-10 object-contain';
   if (icon === 'ippb' || icon === 'pnb') return 'w-10 h-8 object-contain';
@@ -339,6 +357,8 @@ export default function FinanceChatBlockRenderer({ block, onInteract }) {
 
 function TransactionConfirmationBlock({ block, onInteract }) {
   const data = block.data || {};
+  if (!isCompleteDraft(data)) return null;
+
   const isExpense = data.type === 'expense';
   const isTransfer = data.type === 'transfer';
   const [isConfirmed, setIsConfirmed] = useState(false);
