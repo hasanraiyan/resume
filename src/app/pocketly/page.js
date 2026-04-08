@@ -253,6 +253,15 @@ function FinanceContent() {
                   <span>Syncing...</span>
                 </div>
               )}
+              {/* Mobile Settings shortcut: move settings off bottom nav */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('settings')}
+                className="lg:hidden p-1.5 rounded-full text-[#7c8e88] hover:text-[#1e3a34] hover:bg-neutral-100 transition-colors"
+                aria-label="Open settings"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
             </div>
           </div>
         </header>
@@ -306,23 +315,25 @@ function FinanceContent() {
         <AddTransactionModal />
       ) : null}
 
-      {/* Mobile Bottom Nav */}
+      {/* Mobile Bottom Nav (without Settings tab) */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#fcfbf5] [#121212] border-t border-[#e5e3d8] [#333333] z-30 flex">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex flex-col items-center py-2 ${
-              activeTab === tab.id ? 'text-[#1f644e]' : 'text-[#7c8e88] [#a0a0a0]'
-            }`}
-          >
-            <tab.icon
-              className="w-[22px] h-[22px] mb-0.5"
-              strokeWidth={activeTab === tab.id ? 2 : 1.5}
-            />
-            <span className="text-[10px] font-bold">{tab.label}</span>
-          </button>
-        ))}
+        {tabs
+          .filter((tab) => tab.id !== 'settings')
+          .map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 flex flex-col items-center py-2 ${
+                activeTab === tab.id ? 'text-[#1f644e]' : 'text-[#7c8e88] [#a0a0a0]'
+              }`}
+            >
+              <tab.icon
+                className="w-[22px] h-[22px] mb-0.5"
+                strokeWidth={activeTab === tab.id ? 2 : 1.5}
+              />
+              <span className="text-[10px] font-bold">{tab.label}</span>
+            </button>
+          ))}
       </nav>
     </div>
   );
