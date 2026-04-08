@@ -29,18 +29,20 @@ export async function POST(request) {
   if (rateLimitResponse) return rateLimitResponse;
 
   try {
-    const { userMessage, chatHistory = [] } = await request.json();
+    const { userMessage, chatHistory = [], meta } = await request.json();
 
     if (!userMessage) {
       return NextResponse.json({ error: 'User message is required' }, { status: 400 });
     }
 
+    const requestNow = meta?.now || new Date().toISOString();
     const sessionId = `finance-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
     const inputParams = {
       userMessage,
       chatHistory,
       sessionId,
+      now: requestNow,
     };
 
     const stream = new ReadableStream({

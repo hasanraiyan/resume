@@ -242,7 +242,7 @@ class FinanceAssistantAgent extends BaseAgent {
   }
 
   async *_onStreamExecute(input) {
-    const { userMessage, chatHistory = [] } = input;
+    const { userMessage, chatHistory = [], now } = input;
 
     const llm = await this.createChatModel();
     const persona = this.config.persona || '';
@@ -255,8 +255,12 @@ class FinanceAssistantAgent extends BaseAgent {
       );
     });
 
+    const currentTimeIso = now || new Date().toISOString();
+
     const systemMessage = new SystemMessage({
       content: `${persona}
+
+Current date/time (ISO): ${currentTimeIso}
 
 You have access to real financial data through tools. Use them to answer questions accurately.
 Format currency amounts with \u20B9 symbol and Indian number format (e.g., \u20B91,50,000).

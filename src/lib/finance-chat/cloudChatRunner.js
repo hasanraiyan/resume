@@ -17,7 +17,12 @@ export async function runCloudFinanceChat({
   const response = await fetch('/api/pocketly/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userMessage: userMessage.trim(), chatHistory }),
+    body: JSON.stringify({
+      userMessage: userMessage.trim(),
+      chatHistory,
+      // Pass current time so the server-side agent has an explicit clock
+      meta: { now: new Date().toISOString() },
+    }),
     signal,
   });
 
