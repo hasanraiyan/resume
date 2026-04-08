@@ -159,17 +159,19 @@ export default function RecordsTab() {
           </div>
 
           <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex w-full items-center rounded-xl border border-[#e5e3d8] bg-white overflow-hidden">
               <button
                 onClick={() => navigateWeek(-1)}
-                className="cursor-pointer rounded-lg border border-[#e5e3d8] bg-white p-2 transition hover:bg-[#f8f9f4]"
+                className="cursor-pointer border-r border-[#e5e3d8] px-3 py-2.5 transition hover:bg-[#f8f9f4]"
               >
                 <ChevronLeft className="h-4 w-4 text-[#1e3a34]" />
               </button>
-              <span className="text-sm font-bold text-[#1e3a34]">{periodRangeLabel}</span>
+              <span className="flex-1 text-center text-sm font-bold text-[#1e3a34] py-2.5">
+                {periodRangeLabel}
+              </span>
               <button
                 onClick={() => navigateWeek(1)}
-                className="cursor-pointer rounded-lg border border-[#e5e3d8] bg-white p-2 transition hover:bg-[#f8f9f4]"
+                className="cursor-pointer border-l border-[#e5e3d8] px-3 py-2.5 transition hover:bg-[#f8f9f4]"
               >
                 <ChevronRight className="h-4 w-4 text-[#1e3a34]" />
               </button>
@@ -277,9 +279,7 @@ export default function RecordsTab() {
                             </div>
                             <div className="relative">
                               <button
-                                onClick={() =>
-                                  setOpenMenuId(isMenuOpen ? null : transaction.id)
-                                }
+                                onClick={() => setOpenMenuId(isMenuOpen ? null : transaction.id)}
                                 className="cursor-pointer rounded-lg p-1.5 text-[#7c8e88] transition hover:bg-[#f8f9f4] hover:text-[#1e3a34]"
                               >
                                 <MoreVertical className="h-4 w-4" />

@@ -2,6 +2,7 @@
 
 import { MoneyProvider, useMoney } from '@/context/MoneyContext';
 import { FinanceChatProvider, useFinanceChat } from '@/context/FinanceChatContext';
+import { EditTransactionProvider } from '@/context/EditTransactionContext';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
@@ -32,6 +33,7 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { useCallback, useState } from 'react';
+import { useEditTransaction } from '@/context/EditTransactionContext';
 
 const AccountsTab = dynamic(() => import('@/components/pocketly-tracker/AccountsTab'), {
   loading: () => <AccountsSkeleton />,
@@ -73,6 +75,7 @@ function FinanceContent() {
   const { activeTab, setActiveTab, isSyncing, error, accounts, fetchData, isBootstrapLoading } =
     useMoney();
   const { clearChat } = useFinanceChat();
+  const { preFillData, isOpen: isEditModalOpen, closeEditModal } = useEditTransaction();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [requestAddAccountModal, setRequestAddAccountModal] = useState(false);
   const handleAddModalClose = useCallback(() => setRequestAddAccountModal(false), []);
@@ -257,7 +260,11 @@ function FinanceContent() {
 
       {/* FAB */}
       {accounts.length > 0 && activeTab !== 'settings' && activeTab !== 'chat' && (
-        <AddTransactionModal />
+        <AddTransactionModal
+          preFillData={preFillData}
+          isOpen={isEditModalOpen}
+          onClose={closeEditModal}
+        />
       )}
 
       {/* Mobile Bottom Nav */}
@@ -287,7 +294,9 @@ export default function FinancePage() {
     <SessionProvider>
       <MoneyProvider>
         <FinanceChatProvider>
-          <FinanceContent />
+          <EditTransactionProvider>
+            <FinanceContent />
+          </EditTransactionProvider>
         </FinanceChatProvider>
       </MoneyProvider>
     </SessionProvider>

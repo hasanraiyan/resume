@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useFinanceChat } from '@/context/FinanceChatContext';
+import { useEditTransaction } from '@/context/EditTransactionContext';
 import { useMoney } from '@/context/MoneyContext';
 import MessageList from '@/components/chatbot/MessageList';
 import ChatInput from '@/components/chatbot/ChatInput';
 
 export default function ChatTab() {
   const { messages, sendMessage, isStreaming } = useFinanceChat();
+  const { openEditModal } = useEditTransaction();
   const { setActiveTab, addTransaction } = useMoney();
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef(null);
@@ -78,7 +80,7 @@ export default function ChatTab() {
           payload.category = data.categoryId;
         }
 
-        await addTransaction(payload);
+        await addTransaction(payload, { switchTab: false });
 
         if (setLocalState) {
           setLocalState('success');
@@ -92,7 +94,16 @@ export default function ChatTab() {
     }
 
     if (action.type === 'cancel_transaction') {
-      sendMessage('I want to cancel or edit this transaction manually.');
+      const { data } = action;
+      const preFillData = {
+        type: data.type,
+        amount: data.amount,
+        description: data.description,
+        accountId: data.accountId,
+        categoryId: data.categoryId,
+        toAccountId: data.toAccountId,
+      };
+      openEditModal(preFillData);
     }
   };
 

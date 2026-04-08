@@ -177,7 +177,9 @@ export function MoneyProvider({ children }) {
     });
   }, [fetchTransactionsForPeriod, state.periodEnd, state.periodStart]);
 
-  const addTransaction = async (transaction) => {
+  const addTransaction = async (transaction, options = {}) => {
+    const { switchTab = true } = options;
+
     try {
       const data = await fetch('/api/money/transactions', {
         method: 'POST',
@@ -203,8 +205,10 @@ export function MoneyProvider({ children }) {
         state.analysis ? fetchAnalysis(state.periodStart, state.periodEnd) : Promise.resolve(),
       ]);
 
-      // Auto-switch to records tab to see the latest transaction
-      setActiveTab('records');
+      // Auto-switch to records tab to see the latest transaction (only if switchTab is true)
+      if (switchTab) {
+        setActiveTab('records');
+      }
 
       return data.transaction;
     } catch (error) {

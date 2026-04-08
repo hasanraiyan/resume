@@ -15,7 +15,7 @@ const getCategoryColorPresentation = (color) => {
   return { className: color, style: undefined };
 };
 
-export default function AddTransactionModal() {
+export default function AddTransactionModal({ preFillData, isOpen: controlledOpen, onClose }) {
   const { accounts, accountsWithBalance, categories, addTransaction } = useMoney();
   const [open, setOpen] = useState(false);
   const [type, setType] = useState('expense');
@@ -28,7 +28,24 @@ export default function AddTransactionModal() {
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Only treat as controlled when isOpen is explicitly true (from chat edit)
+  // Otherwise use internal state for the plus button
+  const isControlled = controlledOpen === true;
+  const modalOpen = isControlled ? controlledOpen : open;
+
   const filteredCategories = categories.filter((c) => c.type === type);
+
+  // Pre-fill form when modal opens with data
+  useEffect(() => {
+    if (modalOpen && preFillData) {
+      setType(preFillData.type || 'expense');
+      setCurrentInput(String(preFillData.amount || '0'));
+      setDescription(preFillData.description || '');
+      setCategoryId(preFillData.categoryId || '');
+      setAccountId(preFillData.accountId || '');
+      setToAccountId(preFillData.toAccountId || '');
+    }
+  }, [modalOpen, preFillData]);
 
   useEffect(() => {
     if (accounts.length > 0 && !accountId) {
@@ -42,6 +59,18 @@ export default function AddTransactionModal() {
     setCategoryId('');
     setToAccountId('');
     setType('expense');
+    if (accounts.length > 0) {
+      setAccountId(accounts[0].id);
+    }
+  };
+
+  const handleClose = () => {
+    resetForm();
+    if (isControlled && onClose) {
+      onClose();
+    } else {
+      setOpen(false);
+    }
   };
 
   const handleKeypad = (val) => {
@@ -88,7 +117,7 @@ export default function AddTransactionModal() {
     try {
       await addTransaction(payload);
       resetForm();
-      setOpen(false);
+      handleClose();
     } catch (error) {
       console.error('Failed to submit transaction:', error);
     } finally {
@@ -120,11 +149,11 @@ export default function AddTransactionModal() {
     </button>
   );
 
-  if (!open) {
+  if (!modalOpen) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-20 left-4 lg:bottom-8 lg:left-[17.5rem] w-12 h-12 bg-[#1f644e] rounded-full shadow-lg flex items-center justify-center text-white hover:bg-[#17503e] hover:shadow-xl transition-all active:scale-95 z-30"
+        className="fixed bottom-20 right-4 lg:bottom-8 lg:right-8 w-12 h-12 bg-[#1f644e] rounded-full shadow-lg flex items-center justify-center text-white hover:bg-[#17503e] hover:shadow-xl transition-all active:scale-95 z-30"
       >
         <Plus className="w-6 h-6" strokeWidth={2.5} />
       </button>
@@ -137,10 +166,7 @@ export default function AddTransactionModal() {
         {/* Top Bar */}
         <div className="flex justify-between items-center px-4 py-3 bg-white border-b border-[#e5e3d8]">
           <button
-            onClick={() => {
-              resetForm();
-              setOpen(false);
-            }}
+            onClick={handleClose}
             className="flex items-center gap-1.5 text-sm font-bold text-[#7c8e88] hover:text-[#1e3a34] transition cursor-pointer"
           >
             <X className="w-4 h-4" /> Cancel
