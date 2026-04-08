@@ -216,7 +216,7 @@ export default function RecordsTab() {
                       {items.length} transaction{items.length !== 1 ? 's' : ''}
                     </span>
                   </div>
-                  <div className="overflow-hidden rounded-xl border border-[#e5e3d8] bg-white divide-y divide-[#e5e3d8]">
+                  <div className="rounded-xl border border-[#e5e3d8] bg-white divide-y divide-[#e5e3d8]">
                     {items.map((transaction) => {
                       const isExpense = transaction.type === 'expense';
                       const isTransfer = transaction.type === 'transfer';
@@ -227,7 +227,7 @@ export default function RecordsTab() {
                       return (
                         <div
                           key={transaction.id}
-                          className="relative flex items-center justify-between p-4 transition hover:bg-[#f8f9f4]"
+                          className={`relative flex items-center justify-between p-4 transition hover:bg-[#f8f9f4] first:rounded-t-xl last:rounded-b-xl ${isMenuOpen ? 'z-10' : ''}`}
                         >
                           <div className="flex flex-1 items-center gap-3">
                             <div
