@@ -118,8 +118,13 @@ export function createGetAccountsTool() {
     {
       name: 'get_accounts',
       description:
-        'Get all user accounts with their names, types, and balances. Use this when the user asks about their accounts, wallets, or where their money is stored.',
-      schema: z.object({}),
+        'Get all user accounts with their names, types, and balances. Use this when the user asks about their accounts, wallets, or where their money is stored. Set isGui=true only when you want the app to render an account UI card for the user.',
+      schema: z.object({
+        isGui: z
+          .boolean()
+          .optional()
+          .describe('Set true only when the user explicitly wants a visual account card'),
+      }),
     }
   );
 }
@@ -143,8 +148,13 @@ export function createGetCategoriesTool() {
     {
       name: 'get_categories',
       description:
-        'Get all income and expense categories. Use this when the user asks about their category setup or what categories they use.',
-      schema: z.object({}),
+        'Get all income and expense categories. Use this when the user asks about their category setup or what categories they use. Set isGui=true only when you want the app to render a category UI card for the user.',
+      schema: z.object({
+        isGui: z
+          .boolean()
+          .optional()
+          .describe('Set true only when the user explicitly wants a visual category card'),
+      }),
     }
   );
 }
@@ -181,7 +191,7 @@ export function createGetTransactionsTool() {
     {
       name: 'get_transactions',
       description:
-        'Get recent transactions. Optionally filter by type (income, expense, transfer) and limit. Use this when the user asks about recent spending, recent income, or specific transactions.',
+        'Get recent transactions. Optionally filter by type (income, expense, transfer) and limit. Use this when the user asks about recent spending, recent income, or specific transactions. Set isGui=true only when the user explicitly wants a visual transaction list.',
       schema: z.object({
         type: z
           .enum(['income', 'expense', 'transfer'])
@@ -191,6 +201,10 @@ export function createGetTransactionsTool() {
           .number()
           .optional()
           .describe('Maximum number of transactions to return (default 20)'),
+        isGui: z
+          .boolean()
+          .optional()
+          .describe('Set true only when the user explicitly wants a visual transaction list'),
       }),
     }
   );
@@ -311,8 +325,13 @@ export function createGetAnalysisTool() {
     {
       name: 'get_analysis',
       description:
-        'Get comprehensive financial analysis including total income, total expenses, net balance, top spending categories, and account activity. Use this when the user asks for a summary, overview, or analysis of their finances.',
-      schema: z.object({}),
+        'Get comprehensive financial analysis including total income, total expenses, net balance, top spending categories, and account activity. Use this when the user asks for a summary, overview, or analysis of their finances. Set isGui=true only when the user explicitly wants a visual summary card.',
+      schema: z.object({
+        isGui: z
+          .boolean()
+          .optional()
+          .describe('Set true only when the user explicitly wants a visual analysis card'),
+      }),
     }
   );
 }

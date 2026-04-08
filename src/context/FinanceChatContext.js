@@ -22,7 +22,7 @@ const TOOL_ICONS = {
   get_categories: Tags,
 };
 
-function createToolStep(toolName, label, toolCallId) {
+function createToolStep(toolName, label, toolCallId, guiRequested = false) {
   return {
     id: toolCallId || `${toolName}-${Date.now()}`,
     type: 'tool',
@@ -30,6 +30,8 @@ function createToolStep(toolName, label, toolCallId) {
     label,
     Icon: TOOL_ICONS[toolName] || Landmark,
     done: false,
+    guiRequested,
+    guiRendered: false,
   };
 }
 
@@ -57,6 +59,8 @@ export function FinanceChatProvider({ children }) {
         content: '',
         steps: [],
         uiBlocks: [],
+        guiRequested: false,
+        guiRendered: false,
         timestamp: new Date(),
       };
 
@@ -103,8 +107,14 @@ export function FinanceChatProvider({ children }) {
                       ...m,
                       steps: [
                         ...(m.steps || []),
-                        createToolStep(event.toolName, event.label, event.toolCallId),
+                        createToolStep(
+                          event.toolName,
+                          event.label,
+                          event.toolCallId,
+                          event.guiRequested
+                        ),
                       ],
+                      guiRequested: m.guiRequested || event.guiRequested || false,
                     }
                   : m
               )
@@ -129,6 +139,23 @@ export function FinanceChatProvider({ children }) {
                   return matchesById || matchesFallback ? { ...step, done: true } : step;
                 });
 
+                const finalizedSteps = nextSteps.map((step) => {
+                  const matchesById = event.toolCallId && step.id === event.toolCallId;
+                  const matchesFallback =
+                    !event.toolCallId &&
+                    step.toolName === event.toolName &&
+                    step.type === 'tool' &&
+                    step.done;
+
+                  return matchesById || matchesFallback
+                    ? {
+                        ...step,
+                        guiRequested: event.guiRequested ?? step.guiRequested ?? false,
+                        guiRendered: event.guiRendered ?? step.guiRendered ?? false,
+                      }
+                    : step;
+                });
+
                 const nextBlocks = [...(m.uiBlocks || [])];
                 for (const block of event.uiBlocks || []) {
                   const exists = nextBlocks.some(
@@ -144,8 +171,11 @@ export function FinanceChatProvider({ children }) {
 
                 return {
                   ...m,
-                  steps: nextSteps,
+                  steps: finalizedSteps,
                   uiBlocks: nextBlocks,
+                  guiRequested: m.guiRequested || event.guiRequested || false,
+                  guiRendered:
+                    m.guiRendered || event.guiRendered || (event.uiBlocks || []).length > 0,
                 };
               })
             );

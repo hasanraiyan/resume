@@ -18,6 +18,28 @@ function tryParseJson(value) {
   }
 }
 
+function normalizeToolInput(rawInput) {
+  if (!rawInput) return {};
+
+  if (typeof rawInput === 'string') {
+    return tryParseJson(rawInput) || {};
+  }
+
+  if (typeof rawInput !== 'object') {
+    return {};
+  }
+
+  if (typeof rawInput.input === 'string') {
+    return tryParseJson(rawInput.input) || {};
+  }
+
+  if (rawInput.input && typeof rawInput.input === 'object') {
+    return rawInput.input;
+  }
+
+  return rawInput;
+}
+
 function parseToolOutput(output) {
   if (!output) return null;
 
@@ -83,7 +105,16 @@ function getToolLabel(toolName) {
   return labels[toolName] || `Using ${toolName}`;
 }
 
-function buildUiBlocks(toolName, output) {
+function shouldRenderGui(toolName, toolArgs = {}) {
+  if (toolName === 'draft_transaction') return true;
+  return toolArgs?.isGui === true;
+}
+
+function buildUiBlocks(toolName, output, toolArgs = {}) {
+  if (!shouldRenderGui(toolName, toolArgs)) {
+    return [];
+  }
+
   const parsed = parseToolOutput(output);
   if (!parsed) return [];
 
@@ -176,6 +207,24 @@ function buildUiBlocks(toolName, output) {
   return [];
 }
 
+function pushToolInput(queueMap, toolName, input) {
+  const existing = queueMap.get(toolName) || [];
+  existing.push(input);
+  queueMap.set(toolName, existing);
+}
+
+function shiftToolInput(queueMap, toolName) {
+  const existing = queueMap.get(toolName) || [];
+  if (existing.length === 0) return {};
+  const next = existing.shift() || {};
+  if (existing.length === 0) {
+    queueMap.delete(toolName);
+  } else {
+    queueMap.set(toolName, existing);
+  }
+  return next;
+}
+
 class FinanceAssistantAgent extends BaseAgent {
   constructor(agentId = AGENT_IDS.FINANCE_ASSISTANT, config = {}) {
     super(agentId, config);
@@ -212,6 +261,10 @@ You have access to real financial data through tools. Use them to answer questio
 Format currency amounts with \u20B9 symbol and Indian number format (e.g., \u20B91,50,000).
 Be concise and provide actionable insights, not just raw data.
 When you use tools, the app may automatically show supporting finance UI cards for the user.
+Only enable GUI cards when they clearly add value and the user explicitly wants something shown or listed visually.
+For read-only tools (get_accounts, get_categories, get_transactions, get_analysis), set isGui=true only when you want the app to render a card.
+If the user just wants a normal answer, leave isGui unset or false and answer in text only.
+draft_transaction does not need isGui and should still produce its confirmation UI automatically.
 
 When the user is trying to record, add, log, save, or draft a transaction, follow this workflow strictly:
 - Identify whether it is income, expense, or transfer.
@@ -259,6 +312,7 @@ When the user is trying to record, add, log, save, or draft a transaction, follo
 
     const eventStream = await agent.streamEvents({ messages }, { version: 'v2' });
     const activeToolCalls = new Map();
+    const activeToolInputsByName = new Map();
     let fallbackToolCounter = 0;
 
     for await (const event of eventStream) {
@@ -272,13 +326,19 @@ When the user is trying to record, add, log, save, or draft a transaction, follo
       } else if (event.event === 'on_tool_start') {
         const toolCallId =
           event.run_id || event.data?.run_id || `${event.name}-${++fallbackToolCounter}`;
-        activeToolCalls.set(toolCallId, event.name);
+        const normalizedInput = normalizeToolInput(event.data?.input || event.data?.inputs || {});
+        activeToolCalls.set(toolCallId, {
+          name: event.name,
+          input: normalizedInput,
+        });
+        pushToolInput(activeToolInputsByName, event.name, normalizedInput);
 
         yield {
           type: 'tool_start',
           toolName: event.name,
           toolCallId,
           label: getToolLabel(event.name),
+          guiRequested: shouldRenderGui(event.name, normalizedInput),
         };
       } else if (event.event === 'on_tool_end') {
         this.logger.info(
@@ -286,8 +346,10 @@ When the user is trying to record, add, log, save, or draft a transaction, follo
         );
 
         const toolCallId = event.run_id || event.data?.run_id || null;
-        const toolName = activeToolCalls.get(toolCallId) || event.name;
-        const uiBlocks = buildUiBlocks(toolName, event.data.output);
+        const toolCallMeta = activeToolCalls.get(toolCallId);
+        const toolName = toolCallMeta?.name || event.name;
+        const toolInput = toolCallMeta?.input || shiftToolInput(activeToolInputsByName, toolName);
+        const uiBlocks = buildUiBlocks(toolName, event.data.output, toolInput);
 
         this.logger.info(
           `[UI_BLOCKS] tool="${toolName}", count=${uiBlocks.length}, parsed=${Boolean(parseToolOutput(event.data.output))}`
@@ -305,6 +367,8 @@ When the user is trying to record, add, log, save, or draft a transaction, follo
           toolName,
           toolCallId,
           uiBlocks,
+          guiRequested: shouldRenderGui(toolName, toolInput),
+          guiRendered: uiBlocks.length > 0,
         };
 
         if (toolCallId) {
