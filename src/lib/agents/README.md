@@ -80,7 +80,6 @@ export const AGENT_IDS = {
   // Media & Image Agents
   IMAGE_ANALYZER: 'image_analyzer',
   IMAGE_GENERATOR: 'image_generator',
-  IMAGE_EDITOR: 'image_editor',
   EMBEDDING_GENERATOR: 'embedding_generator',
   VISUAL_SEARCH: 'visual_search',
 

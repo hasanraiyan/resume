@@ -11,7 +11,6 @@ import Testimonials from '@/components/Testimonials';
 import Contact from '@/components/Contact';
 import Footer from '@/components/Footer';
 import AICreatorTeaser from '@/components/AICreatorTeaser';
-import PPTCreatorTeaser from '@/components/PPTCreatorTeaser';
 import HomepageLoaderManager from '@/components/HomepageLoaderManager';
 import dbConnect from '@/lib/dbConnect';
 import Project from '@/models/Project';
@@ -105,7 +104,6 @@ export default async function Home() {
       <div style={{ overflow: 'hidden', width: '100%' }}>
         <Stats statsData={statsData} />
       </div>
-      <PPTCreatorTeaser section={toolTeaserSection || {}} />
 
       <Testimonials
         testimonials={testimonialsData?.testimonials || []}

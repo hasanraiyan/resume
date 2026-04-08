@@ -30,11 +30,9 @@ export { default as AgentManager } from './AgentManager';
 // Agent Implementations
 import AIImageAgent from './ai/ai-image-agent';
 import ImageGeneratorAgent from './ai/image-generator-agent';
-import ImageEditorAgent from './ai/image-editor-agent';
 import ImageEmbedderAgent from './ai/image-embedder-agent';
 import VisualSearchAgent from './ai/visual-search-agent';
 import BlogWriterAgent from './ai/blog-writer-agent';
-import PresentationAgent from './ai/presentation-agent';
 import ChatAgent from './ai/chat-assistant-agent';
 import TelegramAgent from './ai/telegram-agent';
 import WhatsAppAgent from './ai/whatsapp-agent';
@@ -50,11 +48,9 @@ agentRegistry.register(AGENT_IDS.CHAT_FAST, ChatAgent);
 agentRegistry.register(AGENT_IDS.CHAT_PRO, ChatAgent);
 agentRegistry.register(AGENT_IDS.CHAT_THINKING, ChatAgent);
 agentRegistry.register(AGENT_IDS.IMAGE_GENERATOR, ImageGeneratorAgent);
-agentRegistry.register(AGENT_IDS.IMAGE_EDITOR, ImageEditorAgent);
 agentRegistry.register(AGENT_IDS.IMAGE_EMBEDDER, ImageEmbedderAgent);
 agentRegistry.register(AGENT_IDS.VISUAL_SEARCH, VisualSearchAgent);
 agentRegistry.register(AGENT_IDS.BLOG_WRITER, BlogWriterAgent);
-agentRegistry.register(AGENT_IDS.PRESENTATION_SYNTHESIZER, PresentationAgent);
 agentRegistry.register(AGENT_IDS.TELEGRAM_ASSISTANT, TelegramAgent);
 agentRegistry.register(AGENT_IDS.WHATSAPP_ASSISTANT, WhatsAppAgent);
 agentRegistry.register(AGENT_IDS.APP_BUILDER, AppBuilderAgent);
@@ -66,11 +62,9 @@ export {
   AIImageAgent,
   ChatAgent,
   ImageGeneratorAgent,
-  ImageEditorAgent,
   ImageEmbedderAgent,
   VisualSearchAgent,
   BlogWriterAgent,
-  PresentationAgent,
   TelegramAgent,
   WhatsAppAgent,
   AppBuilderAgent,

@@ -11,16 +11,6 @@ const ToolTeaserSectionSchema = new mongoose.Schema(
     imageAiPlaceholder: { type: String, default: 'A futuristic city in a glass bottle...' },
     imageAiButtonText: { type: String, default: 'Enter full AI Creative Studio' },
     imageAiButtonLink: { type: String, default: '/tools/image-ai' },
-
-    presentationTitle: { type: String, default: 'Create Slides with AI' },
-    presentationDescription: {
-      type: String,
-      default:
-        'Just describe your topic. The AI agent researches, outlines, and generates complete visual presentation slides in seconds.',
-    },
-    presentationPlaceholder: { type: String, default: 'The Future of Quantum Computing...' },
-    presentationButtonText: { type: String, default: 'Open Presentation Studio' },
-    presentationButtonLink: { type: String, default: '/tools/presentation' },
   },
   { timestamps: true }
 );

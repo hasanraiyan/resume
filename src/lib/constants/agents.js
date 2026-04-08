@@ -13,7 +13,6 @@ export const AGENT_IDS = {
   // Media & Image Agents
   IMAGE_ANALYZER: 'image_analyzer',
   IMAGE_GENERATOR: 'image_generator',
-  IMAGE_EDITOR: 'image_editor',
   IMAGE_EMBEDDER: 'image_embedder',
   VISUAL_SEARCH: 'visual_search',
 
@@ -113,17 +112,6 @@ export const DEFAULT_AGENT_CONFIGS = {
     persona: 'You are a Creative AI. Focus on high-fidelity image generation.',
     isActive: true,
   },
-  [AGENT_IDS.IMAGE_EDITOR]: {
-    name: 'Image Editor',
-    description: 'Edits existing images based on text instructions',
-    type: AGENT_TYPES.MEDIA,
-    category: AGENT_CATEGORIES.IMAGE_PROCESSING,
-    icon: 'ImageEdit',
-    defaultModel: 'gemini-1.5-flash',
-    defaultProvider: 'google',
-    persona: 'You are an AI Image Editor. Make precise edits while preserving image quality.',
-    isActive: true,
-  },
   [AGENT_IDS.IMAGE_EMBEDDER]: {
     name: 'Image Embedder',
     description: 'Generates vector embeddings for text and images',
@@ -142,18 +130,6 @@ export const DEFAULT_AGENT_CONFIGS = {
     icon: 'Search',
     defaultModel: 'text-embedding-3-small',
     defaultProvider: 'openai',
-    isActive: true,
-  },
-  [AGENT_IDS.PRESENTATION_SYNTHESIZER]: {
-    name: 'Presentation Synthesizer',
-    description: 'Synthesizes professional presentations with visually rich slides',
-    type: AGENT_TYPES.CONTENT,
-    category: AGENT_CATEGORIES.PROJECT_MANAGEMENT,
-    icon: 'Presentation',
-    defaultModel: 'gemini-1.5-pro',
-    defaultProvider: 'google',
-    persona:
-      'You are an elite Presentation Synthesizer agent. Your job is to research topics thoroughly, design logically structured presentation outlines, and ultimately translate dense text into visually stunning, complete slide images.',
     isActive: true,
   },
   [AGENT_IDS.CHAT_FAST]: {
@@ -327,7 +303,6 @@ YOU ARE NOT a generic assistant. You are a specialized assistant for THIS user's
 export const AGENT_TOOLS = {
   [AGENT_IDS.IMAGE_ANALYZER]: ['vision', 'tagging', 'description'],
   [AGENT_IDS.IMAGE_GENERATOR]: ['image_generation', 'variation'],
-  [AGENT_IDS.IMAGE_EDITOR]: ['image_editing', 'inpainting', 'outpainting'],
   [AGENT_IDS.IMAGE_EMBEDDER]: ['text_embedding', 'image_embedding'],
   [AGENT_IDS.VISUAL_SEARCH]: ['vector_search', 'similarity_match'],
   [AGENT_IDS.CHAT_FAST]: ['conversation', 'tool_use', 'generative_ui'],
@@ -339,7 +314,6 @@ export const AGENT_TOOLS = {
   [AGENT_IDS.BLOG_WRITER]: ['writing', 'editing', 'seo_optimization'],
   [AGENT_IDS.CODE_REPORTER]: ['code_analysis', 'documentation', 'reporting'],
   [AGENT_IDS.ISSUE_MANAGER]: ['issue_tracking', 'template_generation', 'assignment'],
-  [AGENT_IDS.PRESENTATION_SYNTHESIZER]: ['research', 'outline_generation', 'slide_synthesis'],
   [AGENT_IDS.ANALYTICS_TRACKER]: ['event_tracking', 'session_management'],
   [AGENT_IDS.ENGAGEMENT_ANALYZER]: ['pattern_recognition', 'insights_generation'],
   [AGENT_IDS.APP_BUILDER]: ['planning', 'html_generation', 'code_review'],
@@ -354,7 +328,6 @@ export const AGENT_TOOLS = {
 export const RATE_LIMIT_DEFAULTS = {
   [AGENT_IDS.IMAGE_ANALYZER]: { requests: 10, window: 60 },
   [AGENT_IDS.IMAGE_GENERATOR]: { requests: 5, window: 60 },
-  [AGENT_IDS.IMAGE_EDITOR]: { requests: 5, window: 60 },
   [AGENT_IDS.IMAGE_EMBEDDER]: { requests: 20, window: 60 },
   [AGENT_IDS.VISUAL_SEARCH]: { requests: 30, window: 60 },
   [AGENT_IDS.CHAT_FAST]: { requests: 20, window: 60 },
@@ -366,7 +339,6 @@ export const RATE_LIMIT_DEFAULTS = {
   [AGENT_IDS.BLOG_WRITER]: { requests: 10, window: 60 },
   [AGENT_IDS.CODE_REPORTER]: { requests: 10, window: 60 },
   [AGENT_IDS.ISSUE_MANAGER]: { requests: 15, window: 60 },
-  [AGENT_IDS.PRESENTATION_SYNTHESIZER]: { requests: 5, window: 60 },
   [AGENT_IDS.ANALYTICS_TRACKER]: { requests: 100, window: 60 },
   [AGENT_IDS.ENGAGEMENT_ANALYZER]: { requests: 30, window: 60 },
   [AGENT_IDS.APP_BUILDER]: { requests: 10, window: 60 },
