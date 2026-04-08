@@ -31,6 +31,7 @@ export default function ChatInput({
 }) {
   const isGreenTheme = theme === 'green';
   const showModeToggle = typeof setChatMode === 'function';
+  const showDeviceOption = Boolean(deviceAvailability?.supported);
 
   return (
     <div className="p-3 border-t border-neutral-200/50 bg-white shrink-0">
@@ -90,25 +91,23 @@ export default function ChatInput({
                 >
                   Cloud
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setChatMode('device')}
-                  disabled={isLoading || !deviceAvailability?.supported}
-                  title={
-                    deviceAvailability?.supported
-                      ? 'Run locally in this browser'
-                      : deviceAvailability?.reason
-                  }
-                  className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
-                    chatMode === 'device'
-                      ? isGreenTheme
-                        ? 'bg-[#1f644e] text-white'
-                        : 'bg-black text-white'
-                      : 'text-neutral-600 hover:bg-white'
-                  } ${!deviceAvailability?.supported ? 'cursor-not-allowed opacity-45' : ''}`}
-                >
-                  On-device
-                </button>
+                {showDeviceOption && (
+                  <button
+                    type="button"
+                    onClick={() => setChatMode('device')}
+                    disabled={isLoading}
+                    title="Run locally in this browser"
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+                      chatMode === 'device'
+                        ? isGreenTheme
+                          ? 'bg-[#1f644e] text-white'
+                          : 'bg-black text-white'
+                        : 'text-neutral-600 hover:bg-white'
+                    }`}
+                  >
+                    On-device
+                  </button>
+                )}
               </div>
             )}
           </div>
