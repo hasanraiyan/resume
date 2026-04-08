@@ -2,7 +2,15 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useMoney } from '@/context/MoneyContext';
-import { ChevronDown, TrendingDown, TrendingUp, BarChart3, PieChart } from 'lucide-react';
+import {
+  ChevronDown,
+  TrendingDown,
+  TrendingUp,
+  BarChart3,
+  PieChart,
+  RefreshCw,
+  AlertTriangle,
+} from 'lucide-react';
 import { PurseSVG } from '@/components/pocketly-tracker/IconRenderer';
 import { Shimmer } from './FinanceSkeletons';
 import dynamic from 'next/dynamic';
@@ -23,14 +31,33 @@ const currencyFormatter = new Intl.NumberFormat('en-IN', {
 });
 
 export default function AnalysisTab() {
-  const { analysis, fetchAnalysis, periodStart, periodEnd, setPeriod } = useMoney();
+  const {
+    analysis,
+    fetchAnalysis,
+    periodStart,
+    periodEnd,
+    setPeriod,
+    isAnalysisLoading,
+    analysisError,
+  } = useMoney();
   const [viewMode, setViewMode] = useState('expense');
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('Weekly');
+  const [showInitialSkeleton, setShowInitialSkeleton] = useState(false);
 
   useEffect(() => {
-    fetchAnalysis(periodStart, periodEnd);
+    fetchAnalysis(periodStart, periodEnd).catch(() => {});
   }, [fetchAnalysis, periodEnd, periodStart]);
+
+  useEffect(() => {
+    if (!(!analysis && isAnalysisLoading)) {
+      setShowInitialSkeleton(false);
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => setShowInitialSkeleton(true), 200);
+    return () => window.clearTimeout(timer);
+  }, [analysis, isAnalysisLoading]);
 
   const handlePeriodChange = (period) => {
     const now = new Date();
@@ -127,6 +154,8 @@ export default function AnalysisTab() {
     '#9333ea',
     '#f59e0b',
   ];
+
+  const isRefreshingAnalysis = Boolean(analysis) && isAnalysisLoading;
 
   const EmptyState = ({ title, description }) => (
     <div className="flex flex-col items-center justify-center px-6 py-16">
@@ -403,8 +432,10 @@ export default function AnalysisTab() {
                 <p className="mt-0.5 text-xl font-bold text-[#c94c4c]">
                   {analysis ? (
                     `₹${currencyFormatter.format(analysis.totalExpense)}`
-                  ) : (
+                  ) : showInitialSkeleton ? (
                     <Shimmer className="h-5 w-20" />
+                  ) : (
+                    <span className="text-[#7c8e88]">--</span>
                   )}
                 </p>
               </div>
@@ -420,8 +451,10 @@ export default function AnalysisTab() {
                 <p className="mt-0.5 text-xl font-bold text-[#1f644e]">
                   {analysis ? (
                     `₹${currencyFormatter.format(analysis.totalIncome)}`
-                  ) : (
+                  ) : showInitialSkeleton ? (
                     <Shimmer className="h-5 w-20" />
+                  ) : (
+                    <span className="text-[#7c8e88]">--</span>
                   )}
                 </p>
               </div>
@@ -446,55 +479,86 @@ export default function AnalysisTab() {
               ))}
             </div>
 
-            <div className="relative">
-              <button
-                onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
-                className="flex cursor-pointer items-center gap-2 rounded-xl border border-[#e5e3d8] bg-white px-3 py-2 text-xs font-bold text-[#1e3a34] transition hover:bg-[#f8f9f4]"
-              >
-                {selectedPeriod}
-                <ChevronDown className="h-3.5 w-3.5 text-[#7c8e88]" />
-              </button>
-              {showPeriodDropdown && (
-                <div className="absolute right-0 top-full z-20 mt-1 min-w-[140px] rounded-xl border border-[#e5e3d8] bg-white py-1 shadow-lg">
-                  {periodOptions.map((period) => (
-                    <button
-                      key={period}
-                      onClick={() => handlePeriodChange(period)}
-                      className={`w-full cursor-pointer px-3 py-2 text-left text-xs font-bold transition ${
-                        selectedPeriod === period
-                          ? 'bg-[#1f644e] text-white'
-                          : 'text-[#7c8e88] hover:bg-[#f0f5f2]'
-                      }`}
-                    >
-                      {period}
-                    </button>
-                  ))}
+            <div className="flex flex-wrap items-center gap-3">
+              {isRefreshingAnalysis && (
+                <div className="inline-flex items-center gap-2 rounded-full border border-[#d9e6df] bg-[#f0f5f2] px-3 py-1 text-xs font-semibold text-[#1f644e]">
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  Refreshing insights
                 </div>
               )}
+
+              <div className="relative">
+                <button
+                  onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
+                  disabled={isAnalysisLoading}
+                  className="flex cursor-pointer items-center gap-2 rounded-xl border border-[#e5e3d8] bg-white px-3 py-2 text-xs font-bold text-[#1e3a34] transition hover:bg-[#f8f9f4] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-white"
+                >
+                  {selectedPeriod}
+                  <ChevronDown className="h-3.5 w-3.5 text-[#7c8e88]" />
+                </button>
+                {showPeriodDropdown && (
+                  <div className="absolute right-0 top-full z-20 mt-1 min-w-[140px] rounded-xl border border-[#e5e3d8] bg-white py-1 shadow-lg">
+                    {periodOptions.map((period) => (
+                      <button
+                        key={period}
+                        onClick={() => handlePeriodChange(period)}
+                        className={`w-full cursor-pointer px-3 py-2 text-left text-xs font-bold transition ${
+                          selectedPeriod === period
+                            ? 'bg-[#1f644e] text-white'
+                            : 'text-[#7c8e88] hover:bg-[#f0f5f2]'
+                        }`}
+                      >
+                        {period}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {!analysis ? (
-            <div className="mt-4 space-y-3 px-4">
-              <div className="mb-6 flex items-center justify-center gap-4">
-                <Shimmer className="h-[140px] w-[140px] rounded-full" />
-                <div className="space-y-2.5">
-                  {[1, 2, 3, 4, 5].map((item) => (
-                    <div key={item} className="flex items-center gap-2">
-                      <Shimmer className="h-2.5 w-2.5 rounded-full" />
-                      <Shimmer className="h-3 w-16" />
-                      <Shimmer className="h-3 w-10" />
-                    </div>
-                  ))}
+          {analysisError && !analysis ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-[#f0d2d2] bg-white px-6 py-16 text-center">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#fef2f2]">
+                <AlertTriangle className="h-8 w-8 text-[#c94c4c]" />
+              </div>
+              <p className="mb-1 text-sm font-bold text-[#1e3a34]">Couldn&apos;t load analysis</p>
+              <p className="mb-4 text-xs text-[#7c8e88]">{analysisError}</p>
+              <button
+                onClick={() => fetchAnalysis(periodStart, periodEnd).catch(() => {})}
+                className="inline-flex items-center gap-2 rounded-lg bg-[#1f644e] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#17503e]"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Retry
+              </button>
+            </div>
+          ) : !analysis ? (
+            showInitialSkeleton ? (
+              <div className="mt-4 space-y-3 px-4">
+                <div className="mb-6 flex items-center justify-center gap-4">
+                  <Shimmer className="h-[140px] w-[140px] rounded-full" />
+                  <div className="space-y-2.5">
+                    {[1, 2, 3, 4, 5].map((item) => (
+                      <div key={item} className="flex items-center gap-2">
+                        <Shimmer className="h-2.5 w-2.5 rounded-full" />
+                        <Shimmer className="h-3 w-16" />
+                        <Shimmer className="h-3 w-10" />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="min-h-[18rem]" />
+            )
           ) : (
-            <>
+            <div
+              className={`transition-opacity ${isRefreshingAnalysis ? 'opacity-80' : 'opacity-100'}`}
+            >
               {(viewMode === 'expense' || viewMode === 'income') && renderCategoryOverview()}
               {viewMode === 'flow' && renderExpenseFlow()}
               {viewMode === 'accounts' && renderAccountAnalysis()}
-            </>
+            </div>
           )}
         </div>
       </div>

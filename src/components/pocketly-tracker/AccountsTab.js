@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useMoney } from '@/context/MoneyContext';
-import { MoreVertical, Plus, TrendingDown, TrendingUp } from 'lucide-react';
+import { MoreVertical, Plus, TrendingDown, TrendingUp, Loader2, AlertTriangle } from 'lucide-react';
 import { PurseSVG } from '@/components/pocketly-tracker/IconRenderer';
 import dynamic from 'next/dynamic';
 
@@ -65,9 +65,18 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
   const [menuOpen, setMenuOpen] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [deletingAccountId, setDeletingAccountId] = useState(null);
-  const [error, setError] = useState('');
+  const [formError, setFormError] = useState('');
+  const [surfaceError, setSurfaceError] = useState('');
   const [form, setForm] = useState({ name: '', icon: 'wallet', initialBalance: 0 });
   const menuRef = useRef(null);
+  const isMutatingAccounts = submitting || Boolean(deletingAccountId);
+  const mutationLabel = submitting
+    ? editingAccount
+      ? 'Updating account'
+      : 'Creating account'
+    : deletingAccountId
+      ? 'Updating accounts'
+      : '';
 
   useEffect(() => {
     if (openAddModal) {
@@ -104,7 +113,8 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setFormError('');
+    setSurfaceError('');
     setSubmitting(true);
     try {
       if (editingAccount) {
@@ -114,7 +124,9 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
       }
       resetForm();
     } catch (err) {
-      setError(err.message || 'Failed to save account');
+      const message = err.message || 'Failed to save account';
+      setFormError(message);
+      setSurfaceError(message);
     } finally {
       setSubmitting(false);
     }
@@ -124,9 +136,12 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
     setForm({ name: '', icon: 'wallet', initialBalance: 0 });
     setEditingAccount(null);
     setShowForm(false);
+    setFormError('');
   };
 
   const startEdit = (account) => {
+    setFormError('');
+    setSurfaceError('');
     setForm({ name: account.name, icon: account.icon, initialBalance: account.initialBalance });
     setEditingAccount(account);
     setShowForm(true);
@@ -140,11 +155,12 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
     }
 
     setDeletingAccountId(id);
+    setSurfaceError('');
     try {
       await deleteAccount(id);
       setMenuOpen(null);
     } catch (err) {
-      setError(err.message || 'Failed to delete account');
+      setSurfaceError(err.message || 'Failed to delete account');
     } finally {
       setDeletingAccountId(null);
     }
@@ -196,13 +212,35 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
           {/* Accounts Grid */}
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold text-[#1f644e]">Your Accounts</h2>
-            <button
-              onClick={() => setShowForm(true)}
-              className="flex items-center gap-1.5 border border-[#1f644e] text-[#1f644e] px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#1f644e] hover:text-white transition cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" /> Add Account
-            </button>
+            <div className="flex flex-wrap items-center justify-end gap-3">
+              {isMutatingAccounts && (
+                <div className="inline-flex items-center gap-2 rounded-full border border-[#d9e6df] bg-[#f0f5f2] px-3 py-1 text-xs font-semibold text-[#1f644e]">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  {mutationLabel}
+                </div>
+              )}
+              <button
+                onClick={() => {
+                  setSurfaceError('');
+                  setShowForm(true);
+                }}
+                disabled={isMutatingAccounts}
+                className="flex items-center gap-1.5 border border-[#1f644e] text-[#1f644e] px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#1f644e] hover:text-white transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent disabled:hover:text-[#1f644e]"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Account
+              </button>
+            </div>
           </div>
+
+          {surfaceError && (
+            <div className="mb-4 flex items-start gap-3 rounded-xl border border-[#f0d2d2] bg-[#fef2f2] px-4 py-3 text-sm text-[#9f3b3b]">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div>
+                <p className="font-bold">Something went wrong</p>
+                <p className="text-xs text-[#b05858]">{surfaceError}</p>
+              </div>
+            </div>
+          )}
 
           {displayAccounts.length === 0 ? (
             <div className="bg-white border border-[#e5e3d8] rounded-xl p-12 text-center">
@@ -214,14 +252,22 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
                 Create your first account to start tracking money
               </p>
               <button
-                onClick={() => setShowForm(true)}
-                className="bg-[#1f644e] text-white px-5 py-2 rounded-lg text-sm font-bold hover:bg-[#17503e] transition cursor-pointer"
+                onClick={() => {
+                  setSurfaceError('');
+                  setShowForm(true);
+                }}
+                disabled={isMutatingAccounts}
+                className="bg-[#1f644e] text-white px-5 py-2 rounded-lg text-sm font-bold hover:bg-[#17503e] transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-[#1f644e]"
               >
                 Create Account
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div
+              className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 transition-opacity ${
+                isMutatingAccounts ? 'opacity-80' : 'opacity-100'
+              }`}
+            >
               {displayAccounts.map((account, index) => {
                 const colorSet = iconColors[index % iconColors.length];
                 return (
@@ -296,9 +342,9 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
             <h3 className="text-center font-bold text-[#1f644e] mb-4 text-sm">
               {editingAccount ? 'Edit account' : 'Add account'}
             </h3>
-            {error && (
+            {formError && (
               <div className="mb-4 bg-[#fef2f2] border border-[#f0d2d2] rounded-lg p-3 text-xs font-bold text-[#c94c4c] text-center">
-                {error}
+                {formError}
               </div>
             )}
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -377,10 +423,10 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
                           className="opacity-75"
                         />
                       </svg>
-                      Saving...
+                      {editingAccount ? 'Updating...' : 'Saving...'}
                     </>
                   ) : editingAccount ? (
-                    'SAVE'
+                    'UPDATE'
                   ) : (
                     'ADD'
                   )}

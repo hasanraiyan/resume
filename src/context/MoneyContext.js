@@ -15,6 +15,8 @@ const initialState = {
     categoryCount: 0,
   },
   analysis: null,
+  isAnalysisLoading: false,
+  analysisError: null,
   isLoading: false,
   isBootstrapLoading: true,
   isTabLoading: false,
@@ -64,6 +66,10 @@ function moneyReducer(state, action) {
       return { ...state, stats: { ...state.stats, ...action.payload } };
     case 'SET_ANALYSIS':
       return { ...state, analysis: action.payload };
+    case 'SET_ANALYSIS_LOADING':
+      return { ...state, isAnalysisLoading: action.payload };
+    case 'SET_ANALYSIS_ERROR':
+      return { ...state, analysisError: action.payload };
     case 'SET_PERIOD':
       return { ...state, periodStart: action.payload.start, periodEnd: action.payload.end };
     case 'SET_BOOTSTRAP_LOADING':
@@ -156,7 +162,8 @@ export function MoneyProvider({ children }) {
 
   const fetchAnalysis = useCallback(async (startDate, endDate) => {
     try {
-      dispatch({ type: 'SET_TAB_LOADING', payload: true });
+      dispatch({ type: 'SET_ANALYSIS_LOADING', payload: true });
+      dispatch({ type: 'SET_ANALYSIS_ERROR', payload: null });
       const params = new URLSearchParams();
       if (startDate) params.set('startDate', startDate);
       if (endDate) params.set('endDate', endDate);
@@ -164,8 +171,13 @@ export function MoneyProvider({ children }) {
       dispatch({ type: 'SET_ANALYSIS', payload: data.analysis });
     } catch (error) {
       console.error('Failed to fetch analysis:', error);
+      dispatch({
+        type: 'SET_ANALYSIS_ERROR',
+        payload: 'Failed to load analysis. Please try again.',
+      });
+      throw error;
     } finally {
-      dispatch({ type: 'SET_TAB_LOADING', payload: false });
+      dispatch({ type: 'SET_ANALYSIS_LOADING', payload: false });
     }
   }, []);
 

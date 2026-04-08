@@ -32,6 +32,8 @@ export default function RecordsTab() {
     setPeriod,
     deleteTransaction,
     openEditTransaction,
+    isTabLoading,
+    isBootstrapLoading,
   } = useMoney();
   const [searchQuery, setSearchQuery] = useState('');
   const [openMenuId, setOpenMenuId] = useState(null);
@@ -112,6 +114,10 @@ export default function RecordsTab() {
     }
   };
 
+  const hasTransactions = transactions.length > 0;
+  const isRefreshingRecords = isTabLoading && hasTransactions;
+  const showEmptyState = !isBootstrapLoading && groupedEntries.length === 0;
+
   return (
     <div className="mb-6 pb-4 pt-6">
       <div className="w-full px-4 lg:px-6">
@@ -160,11 +166,12 @@ export default function RecordsTab() {
             </div>
           </div>
 
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigateWeek(-1)}
-                className="cursor-pointer rounded-lg border border-[#e5e3d8] bg-white p-2 transition hover:bg-[#f8f9f4]"
+                disabled={isTabLoading}
+                className="cursor-pointer rounded-lg border border-[#e5e3d8] bg-white p-2 transition hover:bg-[#f8f9f4] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-white"
                 aria-label="Previous week"
               >
                 <ChevronLeft className="h-4 w-4 text-[#1e3a34]" />
@@ -172,12 +179,20 @@ export default function RecordsTab() {
               <span className="text-sm font-bold text-[#1e3a34]">{periodRangeLabel}</span>
               <button
                 onClick={() => navigateWeek(1)}
-                className="cursor-pointer rounded-lg border border-[#e5e3d8] bg-white p-2 transition hover:bg-[#f8f9f4]"
+                disabled={isTabLoading}
+                className="cursor-pointer rounded-lg border border-[#e5e3d8] bg-white p-2 transition hover:bg-[#f8f9f4] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-white"
                 aria-label="Next week"
               >
                 <ChevronRight className="h-4 w-4 text-[#1e3a34]" />
               </button>
             </div>
+
+            {isRefreshingRecords && (
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#d9e6df] bg-[#f0f5f2] px-3 py-1 text-xs font-semibold text-[#1f644e]">
+                <div className="h-2 w-2 rounded-full bg-[#1f644e] animate-pulse" />
+                Refreshing records
+              </div>
+            )}
           </div>
 
           <div className="mb-4">
@@ -193,7 +208,7 @@ export default function RecordsTab() {
             </div>
           </div>
 
-          {groupedEntries.length === 0 ? (
+          {showEmptyState ? (
             <div className="rounded-xl border border-[#e5e3d8] bg-white p-12 text-center">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#f0f5f2]">
                 <ArrowLeftRight className="h-8 w-8 text-[#7c8e88]" />
@@ -208,7 +223,9 @@ export default function RecordsTab() {
               </p>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div
+              className={`space-y-6 transition-opacity ${isRefreshingRecords ? 'opacity-75' : 'opacity-100'}`}
+            >
               {groupedEntries.map(([dateLabel, items]) => (
                 <div key={dateLabel}>
                   <div className="mb-3 flex items-center gap-3">

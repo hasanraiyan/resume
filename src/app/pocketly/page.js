@@ -76,6 +76,8 @@ function FinanceContent() {
     isSyncing,
     error,
     accounts,
+    categories,
+    transactions,
     fetchData,
     isBootstrapLoading,
     editTransactionData,
@@ -83,7 +85,29 @@ function FinanceContent() {
   const { clearChat } = useFinanceChat();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [requestAddAccountModal, setRequestAddAccountModal] = useState(false);
+  const [showDelayedBootstrapSkeleton, setShowDelayedBootstrapSkeleton] = useState(false);
   const handleAddModalClose = useCallback(() => setRequestAddAccountModal(false), []);
+
+  const bootstrapSkeletonByTab = {
+    records: <RecordsSkeleton />,
+    accounts: <AccountsSkeleton />,
+    categories: <CategoriesSkeleton />,
+    analysis: <AnalysisSkeleton />,
+  };
+  const activeBootstrapSkeleton = bootstrapSkeletonByTab[activeTab] || null;
+
+  useEffect(() => {
+    if (!(activeBootstrapSkeleton && isBootstrapLoading)) {
+      setShowDelayedBootstrapSkeleton(false);
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      setShowDelayedBootstrapSkeleton(true);
+    }, 200);
+
+    return () => window.clearTimeout(timer);
+  }, [activeBootstrapSkeleton, isBootstrapLoading]);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -113,6 +137,19 @@ function FinanceContent() {
     chat: 'Chat',
     settings: 'Settings',
   };
+
+  const hasBootstrappedData =
+    transactions.length > 0 || accounts.length > 0 || categories.length > 0;
+  const shouldShowBootstrapSkeleton =
+    Boolean(activeBootstrapSkeleton) &&
+    isBootstrapLoading &&
+    !hasBootstrappedData &&
+    showDelayedBootstrapSkeleton;
+  const shouldHoldBootstrapFrame =
+    Boolean(activeBootstrapSkeleton) &&
+    isBootstrapLoading &&
+    !hasBootstrappedData &&
+    !showDelayedBootstrapSkeleton;
 
   const renderTab = () => {
     if (error) {
@@ -222,7 +259,13 @@ function FinanceContent() {
 
         {/* Content */}
         <main className="min-w-0 flex-1 w-full overflow-x-hidden">
-          {isBootstrapLoading && activeTab === 'records' ? <RecordsSkeleton /> : renderTab()}
+          {shouldShowBootstrapSkeleton ? (
+            activeBootstrapSkeleton
+          ) : shouldHoldBootstrapFrame ? (
+            <div className="min-h-[60vh]" />
+          ) : (
+            renderTab()
+          )}
         </main>
       </div>
 
