@@ -165,6 +165,7 @@ export default function RecordsTab() {
               <button
                 onClick={() => navigateWeek(-1)}
                 className="cursor-pointer rounded-lg border border-[#e5e3d8] bg-white p-2 transition hover:bg-[#f8f9f4]"
+                aria-label="Previous week"
               >
                 <ChevronLeft className="h-4 w-4 text-[#1e3a34]" />
               </button>
@@ -172,6 +173,7 @@ export default function RecordsTab() {
               <button
                 onClick={() => navigateWeek(1)}
                 className="cursor-pointer rounded-lg border border-[#e5e3d8] bg-white p-2 transition hover:bg-[#f8f9f4]"
+                aria-label="Next week"
               >
                 <ChevronRight className="h-4 w-4 text-[#1e3a34]" />
               </button>
@@ -281,6 +283,7 @@ export default function RecordsTab() {
                               <button
                                 onClick={() => setOpenMenuId(isMenuOpen ? null : transaction.id)}
                                 className="cursor-pointer rounded-lg p-1.5 text-[#7c8e88] transition hover:bg-[#f8f9f4] hover:text-[#1e3a34]"
+                                aria-label="Transaction options"
                               >
                                 <MoreVertical className="h-4 w-4" />
                               </button>
@@ -296,6 +299,7 @@ export default function RecordsTab() {
                                       setOpenMenuId(null);
                                     }}
                                     className="cursor-pointer flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#1e3a34] transition hover:bg-[#f0f5f2]"
+                                    aria-label={`Edit transaction: ${transaction.description || 'Transaction'}`}
                                   >
                                     <Pencil className="h-4 w-4" />
                                     Edit
@@ -304,6 +308,7 @@ export default function RecordsTab() {
                                   <button
                                     onClick={() => handleDelete(transaction.id)}
                                     className="cursor-pointer flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#c94c4c] transition hover:bg-[#fdf2f2]"
+                                    aria-label={`Delete transaction: ${transaction.description || 'Transaction'}`}
                                   >
                                     <Trash2 className="h-4 w-4" />
                                     Delete

@@ -70,8 +70,16 @@ const tabs = [
 function FinanceContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const { activeTab, setActiveTab, isSyncing, error, accounts, fetchData, isBootstrapLoading, editTransactionData } =
-    useMoney();
+  const {
+    activeTab,
+    setActiveTab,
+    isSyncing,
+    error,
+    accounts,
+    fetchData,
+    isBootstrapLoading,
+    editTransactionData,
+  } = useMoney();
   const { clearChat } = useFinanceChat();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [requestAddAccountModal, setRequestAddAccountModal] = useState(false);
@@ -113,7 +121,7 @@ function FinanceContent() {
           <div className="w-16 h-16 rounded-full bg-[#fef2f2] flex items-center justify-center mb-4">
             <AlertTriangle className="w-8 h-8 text-[#c94c4c]" />
           </div>
-          <p className="text-sm text-[#7c8e88] [#a0a0a0] mb-4 text-center">{error}</p>
+          <p className="text-sm text-[#7c8e88] text-[#a0a0a0] mb-4 text-center">{error}</p>
           <button
             onClick={fetchData}
             className="px-6 py-2.5 bg-[#1f644e] text-white text-sm font-bold rounded-lg hover:bg-[#17503e] transition-colors flex items-center gap-2"
@@ -250,7 +258,8 @@ function FinanceContent() {
       )}
 
       {/* FAB / Edit Modal */}
-      {(accounts.length > 0 && activeTab !== 'settings' && activeTab !== 'chat') || editTransactionData ? (
+      {(accounts.length > 0 && activeTab !== 'settings' && activeTab !== 'chat') ||
+      editTransactionData ? (
         <AddTransactionModal />
       ) : null}
 

@@ -2,7 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useMoney } from '@/context/MoneyContext';
-import { Plus, X, Check, ArrowLeftRight, ArrowUpRight, ArrowDownLeft, Trash2 } from 'lucide-react';
+import {
+  Plus,
+  X,
+  Check,
+  ArrowLeftRight,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Trash2,
+  AlertTriangle,
+} from 'lucide-react';
 import { PurseSVG } from '@/components/pocketly-tracker/IconRenderer';
 import dynamic from 'next/dynamic';
 import { evaluateMath } from '@/utils/math';
@@ -37,11 +46,13 @@ export default function AddTransactionModal() {
   const [showAccountSelector, setShowAccountSelector] = useState(null);
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationError, setValidationError] = useState('');
 
   const isEditMode = !!editTransactionData;
   const modalOpen = open || isEditMode;
-  const editingDbTransaction = isEditMode && editTransactionData?.id
-    ? transactions.find(t => t.id === editTransactionData.id)
+  const editingTransactionId = isEditMode ? (editTransactionData?.id ?? null) : null;
+  const editingDbTransaction = editingTransactionId
+    ? transactions.find((t) => t.id === editingTransactionId) || editTransactionData
     : null;
 
   const filteredCategories = categories.filter((c) => c.type === type);
@@ -70,6 +81,7 @@ export default function AddTransactionModal() {
     setCategoryId('');
     setToAccountId('');
     setType('expense');
+    setValidationError('');
     if (accounts.length > 0) {
       setAccountId(accounts[0].id);
     }
@@ -103,9 +115,28 @@ export default function AddTransactionModal() {
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
+
+    // Clear previous validation error
+    setValidationError('');
+
+    // Validate amount
     const amount = parseFloat(currentInput);
-    if (!amount || amount <= 0) return;
-    if (!accountId) return;
+    if (!amount || amount <= 0) {
+      setValidationError('Please enter a valid amount greater than 0');
+      return;
+    }
+
+    // Validate account
+    if (!accountId) {
+      setValidationError('Please select an account');
+      return;
+    }
+
+    // Validate transfer-specific fields
+    if (type === 'transfer' && !toAccountId) {
+      setValidationError('Please select a destination account for transfer');
+      return;
+    }
 
     const payload = {
       type,
@@ -118,9 +149,13 @@ export default function AddTransactionModal() {
       if (!toAccountId) return;
       payload.account = accountId;
       payload.toAccount = toAccountId;
+      // Explicitly unset category when switching to transfer
+      payload.category = null;
     } else {
       payload.category = categoryId || null;
       payload.account = accountId;
+      // Explicitly unset toAccount when switching to expense/income
+      payload.toAccount = null;
     }
 
     setIsSubmitting(true);
@@ -128,9 +163,10 @@ export default function AddTransactionModal() {
       if (editingDbTransaction) {
         await updateTransaction(editingDbTransaction.id, payload);
       } else {
-        await addTransaction(payload);
+        // Preserve current tab when editing draft transactions from chat
+        const options = isEditMode && !editTransactionData?.id ? { switchTab: false } : undefined;
+        await addTransaction(payload, options);
       }
-      resetForm();
       handleClose();
     } catch (error) {
       console.error('Failed to submit transaction:', error);
@@ -156,7 +192,7 @@ export default function AddTransactionModal() {
   const selectedCategoryColor = getCategoryColorPresentation(selectedCategory?.color);
 
   const displayAmount = currentInput === '0' ? '0' : currentInput;
-  const displayCurrency = type === 'expense' ? '₹' : type === 'income' ? '₹' : '₹';
+  const displayCurrency = '₹';
 
   const KeyBtn = ({ value, label, operator, primary }) => (
     <button
@@ -206,14 +242,27 @@ export default function AddTransactionModal() {
             )}
           </div>
           <span className="text-sm font-bold text-[#1e3a34]">
-            {editingDbTransaction ? 'Edit Transaction' : type === 'expense' ? 'Expense' : type === 'income' ? 'Income' : 'Transfer'}
+            {editingDbTransaction
+              ? 'Edit Transaction'
+              : type === 'expense'
+                ? 'Expense'
+                : type === 'income'
+                  ? 'Income'
+                  : 'Transfer'}
           </span>
           <button
             onClick={handleSubmit}
             disabled={parseFloat(currentInput) <= 0 || isSubmitting}
             className="flex items-center gap-1.5 text-sm font-bold text-[#1f644e] hover:text-[#17503e] transition disabled:opacity-30 cursor-pointer"
           >
-            <Check className="w-4 h-4" /> {isSubmitting ? (editingDbTransaction ? 'Updating...' : 'Saving...') : (editingDbTransaction ? 'Update' : 'Save')}
+            <Check className="w-4 h-4" />{' '}
+            {isSubmitting
+              ? editingDbTransaction
+                ? 'Updating...'
+                : 'Saving...'
+              : editingDbTransaction
+                ? 'Update'
+                : 'Save'}
           </button>
         </div>
 
@@ -244,6 +293,16 @@ export default function AddTransactionModal() {
             ))}
           </div>
         </div>
+
+        {/* Validation Error */}
+        {validationError && (
+          <div className="px-4 py-2 bg-[#fef2f2] border-b border-[#fecaca]">
+            <div className="flex items-center gap-2 text-sm text-[#c94c4c]">
+              <AlertTriangle className="w-4 h-4" />
+              <span>{validationError}</span>
+            </div>
+          </div>
+        )}
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -394,14 +453,20 @@ export default function AddTransactionModal() {
           {/* Date/Time Bar */}
           <div className="flex justify-between items-center text-xs font-bold text-[#7c8e88] px-4 py-3 border-t border-[#e5e3d8] bg-white">
             <div>
-              {(editTransactionData?.date ? new Date(editTransactionData.date) : new Date()).toLocaleDateString('en-US', {
+              {(editTransactionData?.date
+                ? new Date(editTransactionData.date)
+                : new Date()
+              ).toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric',
                 year: 'numeric',
               })}
             </div>
             <div>
-              {(editTransactionData?.date ? new Date(editTransactionData.date) : new Date()).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              {(editTransactionData?.date
+                ? new Date(editTransactionData.date)
+                : new Date()
+              ).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
             </div>
           </div>
         </div>
