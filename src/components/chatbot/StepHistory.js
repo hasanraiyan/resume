@@ -10,12 +10,12 @@ export default function StepHistory({ steps, onInteract }) {
   const completedTools = tools.filter((t) => t.done).length;
 
   return (
-    <div className="flex flex-col w-full mb-4 group/history">
+    <div className="flex flex-col w-full mb-4 group/history ">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 hover:bg-neutral-200 transition-colors w-fit"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 hover:bg-neutral-200 transition-colors w-fit cursor-pointer"
       >
-        <span className="text-sm font-medium text-neutral-700">
+        <span className="text-sm font-medium text-neutral-700 ">
           Performed {tools.length} action{tools.length > 1 ? 's' : ''}
         </span>
         <ChevronDown
