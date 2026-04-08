@@ -378,19 +378,19 @@ function TransactionConfirmationBlock({ block, onInteract }) {
               <p className="text-[10px] uppercase text-neutral-400 font-semibold mb-0.5">
                 Category
               </p>
-              <p className="font-medium text-neutral-800">{data.categoryHint || 'Uncategorized'}</p>
+              <p className="font-medium text-neutral-800">{data.categoryName || 'Uncategorized'}</p>
             </div>
           )}
           <div>
             <p className="text-[10px] uppercase text-neutral-400 font-semibold mb-0.5">Account</p>
-            <p className="font-medium text-neutral-800">{data.accountHint || 'Select later'}</p>
+            <p className="font-medium text-neutral-800">{data.accountName || 'Select later'}</p>
           </div>
           {isTransfer && (
             <div>
               <p className="text-[10px] uppercase text-neutral-400 font-semibold mb-0.5">
                 To Account
               </p>
-              <p className="font-medium text-neutral-800">{data.toAccountHint || 'Select later'}</p>
+              <p className="font-medium text-neutral-800">{data.toAccountName || 'Select later'}</p>
             </div>
           )}
         </div>

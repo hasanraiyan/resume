@@ -238,39 +238,55 @@ export function createGetAnalysisTool() {
   );
 }
 
-export function createDraftTransactionTool() {
+export function createAddTransactionTool() {
   return tool(
     async (params) => {
-      // Just echo back the parameters so the UI can render a confirmation card
-      return JSON.stringify(params);
+      if (!params.isConfirmed) {
+        // Return the draft payload to render the UI confirmation card
+        return JSON.stringify(params);
+      }
+
+      // If confirmed, actually save to the DB
+      await ensureDb();
+
+      const transactionData = {
+        type: params.type,
+        amount: params.amount,
+        description: params.description,
+        account: params.accountId,
+        date: params.date ? new Date(params.date) : new Date(),
+      };
+
+      if (params.type === 'transfer') {
+        transactionData.toAccount = params.toAccountId;
+      } else {
+        transactionData.category = params.categoryId;
+      }
+
+      const newTransaction = await Transaction.create(transactionData);
+
+      return JSON.stringify({
+        success: true,
+        message: 'Transaction saved successfully',
+        transactionId: newTransaction._id.toString()
+      });
     },
     {
-      name: 'draft_transaction',
+      name: 'add_transaction',
       description:
-        "Draft a new transaction based on the user's natural language input. Use this when the user says they spent money, earned money, or transferred money. This will show a confirmation UI to the user before saving.",
+        'Add a new transaction (income, expense, or transfer). YOU MUST FIRST USE get_accounts and get_categories tools to find the exact accountId and categoryId. If the user has not explicitly confirmed yet, call this with isConfirmed=false to show a draft UI. Once the user says "I confirm the transaction", call this tool again with the exact same data but isConfirmed=true to save it to the database.',
       schema: z.object({
+        isConfirmed: z.boolean().describe('Set to false to draft the transaction for user approval. Set to true ONLY when the user explicitly confirms the draft.'),
         type: z.enum(['income', 'expense', 'transfer']).describe('The type of transaction'),
-        amount: z
-          .number()
-          .positive()
-          .describe('The absolute amount of the transaction (must be positive)'),
+        amount: z.number().positive().describe('The absolute amount of the transaction (must be positive)'),
         description: z.string().describe('A short description of the transaction'),
-        categoryHint: z
-          .string()
-          .optional()
-          .describe('A hint for the category (e.g. "Food", "Salary") if applicable'),
-        accountHint: z
-          .string()
-          .optional()
-          .describe('A hint for the account to use (e.g. "Cash", "Credit Card")'),
-        toAccountHint: z
-          .string()
-          .optional()
-          .describe('A hint for the destination account (only for transfers)'),
-        date: z
-          .string()
-          .optional()
-          .describe('The date of the transaction in YYYY-MM-DD format. Default is today.'),
+        accountId: z.string().describe('The exact MongoDB ID of the source account'),
+        accountName: z.string().describe('The display name of the source account (for UI purposes)'),
+        categoryId: z.string().optional().describe('The exact MongoDB ID of the category (Required for income/expense)'),
+        categoryName: z.string().optional().describe('The display name of the category (for UI purposes)'),
+        toAccountId: z.string().optional().describe('The exact MongoDB ID of the destination account (Required ONLY for transfers)'),
+        toAccountName: z.string().optional().describe('The display name of the destination account (for UI purposes)'),
+        date: z.string().optional().describe('The date of the transaction in YYYY-MM-DD format. Default is today.'),
       }),
     }
   );
@@ -282,6 +298,6 @@ export function createFinanceTools() {
     createGetCategoriesTool(),
     createGetTransactionsTool(),
     createGetAnalysisTool(),
-    createDraftTransactionTool(),
+    createAddTransactionTool(),
   ];
 }

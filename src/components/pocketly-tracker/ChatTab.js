@@ -62,7 +62,7 @@ export default function ChatTab() {
     if (action.type === 'confirm_transaction' || action.type === 'cancel_transaction') {
       sendMessage(
         action.type === 'confirm_transaction'
-          ? `I confirm the transaction: ${JSON.stringify(action.data)}`
+          ? `I confirm the transaction: ${JSON.stringify(action.data)}. Please use the add_transaction tool again with the EXACT same data but set isConfirmed=true to save it to the database.`
           : 'I want to cancel or edit this transaction manually.'
       );
     }
