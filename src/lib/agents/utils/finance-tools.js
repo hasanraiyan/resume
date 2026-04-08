@@ -238,11 +238,35 @@ export function createGetAnalysisTool() {
   );
 }
 
+export function createDraftTransactionTool() {
+  return tool(
+    async (params) => {
+      // Just echo back the parameters so the UI can render a confirmation card
+      return JSON.stringify(params);
+    },
+    {
+      name: 'draft_transaction',
+      description:
+        'Draft a new transaction based on the user\'s natural language input. Use this when the user says they spent money, earned money, or transferred money. This will show a confirmation UI to the user before saving.',
+      schema: z.object({
+        type: z.enum(['income', 'expense', 'transfer']).describe('The type of transaction'),
+        amount: z.number().describe('The amount of the transaction'),
+        description: z.string().describe('A short description of the transaction'),
+        categoryHint: z.string().optional().describe('A hint for the category (e.g. "Food", "Salary") if applicable'),
+        accountHint: z.string().optional().describe('A hint for the account to use (e.g. "Cash", "Credit Card")'),
+        toAccountHint: z.string().optional().describe('A hint for the destination account (only for transfers)'),
+        date: z.string().optional().describe('The date of the transaction in YYYY-MM-DD format. Default is today.'),
+      }),
+    }
+  );
+}
+
 export function createFinanceTools() {
   return [
     createGetAccountsTool(),
     createGetCategoriesTool(),
     createGetTransactionsTool(),
     createGetAnalysisTool(),
+    createDraftTransactionTool(),
   ];
 }
