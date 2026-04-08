@@ -280,7 +280,7 @@ export default function RecordsTab() {
                                 onClick={() =>
                                   setOpenMenuId(isMenuOpen ? null : transaction.id)
                                 }
-                                className="rounded-lg p-1.5 text-[#7c8e88] transition hover:bg-[#f8f9f4] hover:text-[#1e3a34]"
+                                className="cursor-pointer rounded-lg p-1.5 text-[#7c8e88] transition hover:bg-[#f8f9f4] hover:text-[#1e3a34]"
                               >
                                 <MoreVertical className="h-4 w-4" />
                               </button>
@@ -292,7 +292,7 @@ export default function RecordsTab() {
                                 >
                                   <button
                                     onClick={() => handleDelete(transaction.id)}
-                                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#c94c4c] transition hover:bg-[#fdf2f2]"
+                                    className="cursor-pointer flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#c94c4c] transition hover:bg-[#fdf2f2]"
                                   >
                                     <Trash2 className="h-4 w-4" />
                                     Delete
