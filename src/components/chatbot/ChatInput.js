@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Send } from 'lucide-react';
+import { Send, ChevronDown } from 'lucide-react';
 import ToolSelector from './ToolSelector';
 import ModelSelector from './ModelSelector';
 import VoiceInputControl from './VoiceInputControl';
@@ -30,10 +30,15 @@ export default function ChatInput({
   chatMode,
   setChatMode,
   deviceAvailability,
+  // feature flags so parents can control which controls appear
+  showModeToggle,
+  showToolsMenu = true,
 }) {
   const [showImageWarning, setShowImageWarning] = useState(false);
   const isGreenTheme = theme === 'green';
-  const showModeToggle = typeof setChatMode === 'function';
+  // default to showing the mode toggle whenever chat mode handlers exist,
+  // but let parents explicitly disable it via the prop
+  const shouldShowModeToggle = showModeToggle ?? typeof setChatMode === 'function';
   const showDeviceOption = Boolean(deviceAvailability?.supported);
   const modeOptions = showDeviceOption
     ? [
@@ -41,10 +46,8 @@ export default function ChatInput({
         { id: 'device', label: 'On-device' },
       ]
     : [{ id: 'cloud', label: 'Cloud' }];
-  const activeModeIndex = Math.max(
-    0,
-    modeOptions.findIndex((option) => option.id === chatMode)
-  );
+  const [isModeMenuOpen, setIsModeMenuOpen] = useState(false);
+  const currentMode = modeOptions.find((option) => option.id === chatMode) || modeOptions[0];
 
   const containerBg = isGreenTheme ? 'bg-[#fcfbf5]' : 'bg-white';
   const borderColor = isGreenTheme ? 'border-[#e5e3d8]' : 'border-neutral-200/80';
@@ -106,60 +109,89 @@ export default function ChatInput({
         )}
 
         <div
-          className={`flex ${!availableMCPs || availableMCPs.length === 0 ? 'justify-end' : 'justify-between'} items-center gap-1.5 px-2 pb-2 mt-auto`}
+          className={`flex ${
+            !showToolsMenu || !availableMCPs || availableMCPs.length === 0
+              ? 'justify-end'
+              : 'justify-between'
+          } items-center gap-1.5 px-2 pb-2 mt-auto`}
         >
           {/* Left: Settings Menu & Active Tools */}
           <div className="flex items-center gap-2">
-            <ToolSelector
-              activeMCPs={activeMCPs}
-              setActiveMCPs={setActiveMCPs}
-              availableMCPs={availableMCPs}
-              isToolsMenuOpen={isToolsMenuOpen}
-              setIsToolsMenuOpen={setIsToolsMenuOpen}
-              setIsModelSelectorOpen={setIsModelSelectorOpen}
-              isLoading={isLoading}
-              inputRef={inputRef}
-            />
+            {showToolsMenu && (
+              <ToolSelector
+                activeMCPs={activeMCPs}
+                setActiveMCPs={setActiveMCPs}
+                availableMCPs={availableMCPs}
+                isToolsMenuOpen={isToolsMenuOpen}
+                setIsToolsMenuOpen={setIsToolsMenuOpen}
+                setIsModelSelectorOpen={setIsModelSelectorOpen}
+                isLoading={isLoading}
+                inputRef={inputRef}
+              />
+            )}
 
-            {showModeToggle && (
-              <div className="relative flex items-center rounded-full border border-neutral-200 bg-neutral-50 p-1">
-                <div
-                  className={`absolute top-1 bottom-1 rounded-full shadow-sm transition-all duration-300 ease-out ${
-                    isGreenTheme ? 'bg-[#1f644e]' : 'bg-black'
-                  } ${modeOptions.length === 2 ? 'w-[calc(50%-2px)]' : 'left-1 right-1'}`}
-                  style={
-                    modeOptions.length === 2
-                      ? {
-                          left: activeModeIndex === 0 ? '4px' : 'calc(50% + 2px)',
-                        }
-                      : undefined
-                  }
-                />
+            {shouldShowModeToggle && (
+              <div className="relative mode-selector-container">
+                {modeOptions.length > 1 ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isLoading) return;
+                        setIsModeMenuOpen((open) => !open);
+                      }}
+                      className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-medium shadow-sm transition-colors ${
+                        isGreenTheme
+                          ? 'border-[#e5e3d8] bg-[#f5f3e6] text-[#1e3a34] hover:bg-[#ebe7d4]'
+                          : 'border-neutral-200 bg-neutral-50 text-neutral-800 hover:bg-neutral-100'
+                      } ${isLoading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
+                    >
+                      <span>{currentMode.label}</span>
+                      <ChevronDown
+                        className={`w-3 h-3 transition-transform ${
+                          isModeMenuOpen ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </button>
 
-                {modeOptions.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    onClick={() => setChatMode(option.id)}
-                    disabled={isLoading}
-                    title={
-                      option.id === 'device'
-                        ? 'Run locally in this browser'
-                        : 'Use the server-powered finance assistant'
-                    }
-                    className={`relative z-10 cursor-pointer rounded-full px-3 py-1 text-[11px] font-semibold transition-colors duration-300 ${
-                      option.id === chatMode
-                        ? isGreenTheme
-                          ? 'text-white'
-                          : 'bg-black text-white'
-                        : 'text-neutral-600 hover:text-neutral-900'
-                    } ${modeOptions.length === 2 ? 'min-w-28' : 'min-w-[88px]'} ${
-                      isLoading ? 'cursor-not-allowed opacity-70' : ''
+                    {isModeMenuOpen && (
+                      <div className="absolute bottom-full left-0 mb-2 w-32 rounded-xl border border-neutral-200 bg-white shadow-lg overflow-hidden z-40">
+                        {modeOptions.map((option) => {
+                          const isActive = option.id === currentMode.id;
+                          return (
+                            <button
+                              key={option.id}
+                              type="button"
+                              onClick={() => {
+                                setIsModeMenuOpen(false);
+                                if (!isLoading && setChatMode) {
+                                  setChatMode(option.id);
+                                }
+                              }}
+                              className={`w-full text-left px-3 py-2 text-[11px] transition-colors ${
+                                isActive
+                                  ? 'bg-neutral-100 text-neutral-900 font-semibold'
+                                  : 'bg-white text-neutral-700 hover:bg-neutral-50'
+                              }`}
+                            >
+                              {option.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div
+                    className={`rounded-full border px-3 py-1.5 text-[11px] font-medium ${
+                      isGreenTheme
+                        ? 'border-[#e5e3d8] bg-[#f5f3e6] text-[#1e3a34]'
+                        : 'border-neutral-200 bg-neutral-50 text-neutral-800'
                     }`}
                   >
-                    {option.label}
-                  </button>
-                ))}
+                    {currentMode.label}
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -335,6 +335,8 @@ export default function ChatbotWidget() {
             chatbotSettings={chatbotSettings}
             selectedAgentId={selectedAgentId}
             setSelectedAgentId={setSelectedAgentId}
+            showModelSelector
+            showToolsMenu
           />
         </div>
       </div>

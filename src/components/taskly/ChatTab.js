@@ -95,6 +95,8 @@ export default function ChatTab() {
         selectedAgentId={selectedAgentId}
         setSelectedAgentId={setSelectedAgentId}
         showModelSelector={false}
+        showToolsMenu={false}
+        showModeToggle={false}
         theme="green"
       />
     </div>
