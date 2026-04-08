@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useMoney } from '@/context/MoneyContext';
 import {
   ChevronLeft,
@@ -9,6 +9,7 @@ import {
   TrendingUp,
   ArrowLeftRight,
   Search,
+  MoreVertical,
   Trash2,
 } from 'lucide-react';
 import { PurseSVG } from '@/components/pocketly-tracker/IconRenderer';
@@ -31,7 +32,18 @@ export default function RecordsTab() {
     deleteTransaction,
   } = useMoney();
   const [searchQuery, setSearchQuery] = useState('');
-  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setOpenMenuId(null);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const navigateWeek = (direction) => {
     const start = new Date(periodStart);
@@ -89,10 +101,10 @@ export default function RecordsTab() {
 
   const netFlow = totalIncome - totalExpense;
 
-  const handleDeleteConfirm = async (id) => {
+  const handleDelete = async (id) => {
     try {
       await deleteTransaction(id);
-      setDeleteConfirmId(null);
+      setOpenMenuId(null);
     } catch (error) {
       console.error('Failed to delete transaction:', error);
     }
@@ -210,12 +222,12 @@ export default function RecordsTab() {
                       const isTransfer = transaction.type === 'transfer';
                       const catIcon = transaction.category?.icon || 'tag';
                       const catName = transaction.category?.name || 'Uncategorized';
-                      const isDeleteConfirm = deleteConfirmId === transaction.id;
+                      const isMenuOpen = openMenuId === transaction.id;
 
                       return (
                         <div
                           key={transaction.id}
-                          className="flex items-center justify-between p-4 transition hover:bg-[#f8f9f4]"
+                          className="relative flex items-center justify-between p-4 transition hover:bg-[#f8f9f4]"
                         >
                           <div className="flex flex-1 items-center gap-3">
                             <div
@@ -258,36 +270,36 @@ export default function RecordsTab() {
                           </div>
 
                           <div className="flex items-center gap-2">
-                            {isDeleteConfirm ? (
-                              <>
-                                <button
-                                  onClick={() => handleDeleteConfirm(transaction.id)}
-                                  className="rounded-lg bg-[#c94c4c] px-2 py-1 text-xs text-white transition hover:bg-[#b03c3c]"
-                                >
-                                  Confirm
-                                </button>
-                                <button
-                                  onClick={() => setDeleteConfirmId(null)}
-                                  className="rounded-lg bg-[#7c8e88] px-2 py-1 text-xs text-white transition hover:bg-[#6a7c76]"
-                                >
-                                  Cancel
-                                </button>
-                              </>
-                            ) : (
-                              <>
+                            <div
+                              className={`text-sm font-bold tabular-nums ${getAmountClass(transaction.type)}`}
+                            >
+                              {formatAmount(transaction.amount, transaction.type)}
+                            </div>
+                            <div className="relative">
+                              <button
+                                onClick={() =>
+                                  setOpenMenuId(isMenuOpen ? null : transaction.id)
+                                }
+                                className="rounded-lg p-1.5 text-[#7c8e88] transition hover:bg-[#f8f9f4] hover:text-[#1e3a34]"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </button>
+
+                              {isMenuOpen && (
                                 <div
-                                  className={`text-sm font-bold tabular-nums ${getAmountClass(transaction.type)}`}
+                                  ref={menuRef}
+                                  className="absolute right-0 top-full z-10 mt-1 w-32 rounded-xl border border-[#e5e3d8] bg-white py-1 shadow-lg"
                                 >
-                                  {formatAmount(transaction.amount, transaction.type)}
+                                  <button
+                                    onClick={() => handleDelete(transaction.id)}
+                                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#c94c4c] transition hover:bg-[#fdf2f2]"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    Delete
+                                  </button>
                                 </div>
-                                <button
-                                  onClick={() => setDeleteConfirmId(transaction.id)}
-                                  className="rounded-lg p-1.5 text-[#7c8e88] transition hover:bg-[#fdf2f2] hover:text-[#c94c4c]"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              </>
-                            )}
+                              )}
+                            </div>
                           </div>
                         </div>
                       );
