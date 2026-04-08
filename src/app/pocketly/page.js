@@ -2,7 +2,6 @@
 
 import { MoneyProvider, useMoney } from '@/context/MoneyContext';
 import { FinanceChatProvider, useFinanceChat } from '@/context/FinanceChatContext';
-import { EditTransactionProvider } from '@/context/EditTransactionContext';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
@@ -33,7 +32,6 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { useCallback, useState } from 'react';
-import { useEditTransaction } from '@/context/EditTransactionContext';
 
 const AccountsTab = dynamic(() => import('@/components/pocketly-tracker/AccountsTab'), {
   loading: () => <AccountsSkeleton />,
@@ -75,7 +73,6 @@ function FinanceContent() {
   const { activeTab, setActiveTab, isSyncing, error, accounts, fetchData, isBootstrapLoading } =
     useMoney();
   const { clearChat } = useFinanceChat();
-  const { preFillData, isOpen: isEditModalOpen, closeEditModal } = useEditTransaction();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [requestAddAccountModal, setRequestAddAccountModal] = useState(false);
   const handleAddModalClose = useCallback(() => setRequestAddAccountModal(false), []);
@@ -116,7 +113,7 @@ function FinanceContent() {
           <div className="w-16 h-16 rounded-full bg-[#fef2f2] flex items-center justify-center mb-4">
             <AlertTriangle className="w-8 h-8 text-[#c94c4c]" />
           </div>
-          <p className="text-sm text-[#7c8e88] dark:text-[#a0a0a0] mb-4 text-center">{error}</p>
+          <p className="text-sm text-[#7c8e88] [#a0a0a0] mb-4 text-center">{error}</p>
           <button
             onClick={fetchData}
             className="px-6 py-2.5 bg-[#1f644e] text-white text-sm font-bold rounded-lg hover:bg-[#17503e] transition-colors flex items-center gap-2"
@@ -152,13 +149,11 @@ function FinanceContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fcfbf5] dark:bg-[#121212] font-[family-name:var(--font-sans)] text-[#1e3a34] dark:text-[#e0e0e0] flex">
+    <div className="min-h-screen bg-[#fcfbf5] [#121212] font-[family-name:var(--font-sans)] text-[#1e3a34] [#e0e0e0] flex">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex flex-col w-64 bg-white dark:bg-[#1e1e1e] border-r border-[#e5e3d8] dark:border-[#333333] fixed inset-y-0 left-0 z-30">
-        <div className="p-6 border-b border-[#e5e3d8] dark:border-[#333333]">
-          <h1 className="font-[family-name:var(--font-logo)] text-2xl text-black dark:text-white">
-            Pocketly
-          </h1>
+      <aside className="hidden lg:flex flex-col w-64 bg-white [#1e1e1e] border-r border-[#e5e3d8] [#333333] fixed inset-y-0 left-0 z-30">
+        <div className="p-6 border-b border-[#e5e3d8] [#333333]">
+          <h1 className="font-[family-name:var(--font-logo)] text-2xl text-black ">Pocketly</h1>
         </div>
         <nav className="flex-1 py-4 px-3 space-y-1">
           {tabs.map((tab) => (
@@ -168,7 +163,7 @@ function FinanceContent() {
               className={`w-full cursor-pointer flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
                 activeTab === tab.id
                   ? 'bg-[#1f644e] text-white'
-                  : 'text-[#7c8e88] dark:text-[#a0a0a0] hover:bg-[#f0f5f2] dark:hover:bg-[#2c3e3a] dark:bg-[#2c3e3a] hover:text-[#1e3a34] dark:text-[#e0e0e0]'
+                  : 'text-[#7c8e88] [#a0a0a0] hover:bg-[#f0f5f2] :bg-[#2c3e3a] [#2c3e3a] hover:text-[#1e3a34] [#e0e0e0]'
               }`}
             >
               <tab.icon className="w-5 h-5" strokeWidth={activeTab === tab.id ? 2 : 1.5} />
@@ -176,26 +171,24 @@ function FinanceContent() {
             </button>
           ))}
         </nav>
-        <div className="p-4 border-t border-[#e5e3d8] dark:border-[#333333]">
-          <p className="text-[10px] text-[#7c8e88] dark:text-[#a0a0a0] text-center">
-            Powered by Pocketly
-          </p>
+        <div className="p-4 border-t border-[#e5e3d8] [#333333]">
+          <p className="text-[10px] text-[#7c8e88] [#a0a0a0] text-center">Powered by Pocketly</p>
         </div>
       </aside>
 
       {/* Main Content Area */}
       <div className="flex min-w-0 flex-1 flex-col lg:ml-64 min-h-screen overflow-x-hidden">
         {/* Header */}
-        <header className="bg-[#fcfbf5] dark:bg-[#121212] sticky top-0 z-20 border-b border-[#e5e3d8] dark:border-[#333333]/50">
+        <header className="bg-[#fcfbf5] [#121212] sticky top-0 z-20 border-b border-[#e5e3d8] [#333333]/50">
           <div className="w-full px-4 lg:px-6 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button className="lg:hidden p-1" onClick={() => setSidebarOpen(true)}>
-                <Menu className="w-5 h-5 text-[#1e3a34] dark:text-[#e0e0e0]" />
+                <Menu className="w-5 h-5 text-[#1e3a34] [#e0e0e0]" />
               </button>
-              <h1 className="font-[family-name:var(--font-logo)] text-xl lg:text-2xl text-black dark:text-white lg:hidden">
+              <h1 className="font-[family-name:var(--font-logo)] text-xl lg:text-2xl text-black lg:hidden">
                 Pocketly
               </h1>
-              <h1 className="hidden lg:block text-lg font-bold text-[#1e3a34] dark:text-[#e0e0e0]">
+              <h1 className="hidden lg:block text-lg font-bold text-[#1e3a34] [#e0e0e0]">
                 {tabTitles[activeTab]}
               </h1>
             </div>
@@ -210,7 +203,7 @@ function FinanceContent() {
                 </button>
               )}
               {isSyncing && (
-                <div className="flex items-center gap-1.5 text-xs text-[#7c8e88] dark:text-[#a0a0a0]">
+                <div className="flex items-center gap-1.5 text-xs text-[#7c8e88] [#a0a0a0]">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   <span>Syncing...</span>
                 </div>
@@ -229,11 +222,9 @@ function FinanceContent() {
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 w-64 bg-white dark:bg-[#1e1e1e] shadow-xl animate-in slide-in-from-left duration-300">
-            <div className="p-6 border-b border-[#e5e3d8] dark:border-[#333333]">
-              <h1 className="font-[family-name:var(--font-logo)] text-2xl text-black dark:text-white">
-                Pocketly
-              </h1>
+          <aside className="absolute inset-y-0 left-0 w-64 bg-white [#1e1e1e] shadow-xl animate-in slide-in-from-left duration-300">
+            <div className="p-6 border-b border-[#e5e3d8] [#333333]">
+              <h1 className="font-[family-name:var(--font-logo)] text-2xl text-black ">Pocketly</h1>
             </div>
             <nav className="py-4 px-3 space-y-1">
               {tabs.map((tab) => (
@@ -246,7 +237,7 @@ function FinanceContent() {
                   className={`w-full cursor-pointer flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
                     activeTab === tab.id
                       ? 'bg-[#1f644e] text-white'
-                      : 'text-[#7c8e88] dark:text-[#a0a0a0] hover:bg-[#f0f5f2] dark:hover:bg-[#2c3e3a] dark:bg-[#2c3e3a]'
+                      : 'text-[#7c8e88] [#a0a0a0] hover:bg-[#f0f5f2] :bg-[#2c3e3a] [#2c3e3a]'
                   }`}
                 >
                   <tab.icon className="w-5 h-5" />
@@ -260,21 +251,17 @@ function FinanceContent() {
 
       {/* FAB */}
       {accounts.length > 0 && activeTab !== 'settings' && activeTab !== 'chat' && (
-        <AddTransactionModal
-          preFillData={preFillData}
-          isOpen={isEditModalOpen}
-          onClose={closeEditModal}
-        />
+        <AddTransactionModal />
       )}
 
       {/* Mobile Bottom Nav */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#fcfbf5] dark:bg-[#121212] border-t border-[#e5e3d8] dark:border-[#333333] z-30 flex">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#fcfbf5] [#121212] border-t border-[#e5e3d8] [#333333] z-30 flex">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`flex-1 flex flex-col items-center py-2 ${
-              activeTab === tab.id ? 'text-[#1f644e]' : 'text-[#7c8e88] dark:text-[#a0a0a0]'
+              activeTab === tab.id ? 'text-[#1f644e]' : 'text-[#7c8e88] [#a0a0a0]'
             }`}
           >
             <tab.icon
@@ -294,9 +281,7 @@ export default function FinancePage() {
     <SessionProvider>
       <MoneyProvider>
         <FinanceChatProvider>
-          <EditTransactionProvider>
-            <FinanceContent />
-          </EditTransactionProvider>
+          <FinanceContent />
         </FinanceChatProvider>
       </MoneyProvider>
     </SessionProvider>
