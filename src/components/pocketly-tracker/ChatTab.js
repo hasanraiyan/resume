@@ -2,15 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useFinanceChat } from '@/context/FinanceChatContext';
-import { useEditTransaction } from '@/context/EditTransactionContext';
 import { useMoney } from '@/context/MoneyContext';
 import MessageList from '@/components/chatbot/MessageList';
 import ChatInput from '@/components/chatbot/ChatInput';
 
 export default function ChatTab() {
   const { messages, sendMessage, isStreaming } = useFinanceChat();
-  const { openEditModal } = useEditTransaction();
-  const { setActiveTab, addTransaction } = useMoney();
+  const { setActiveTab, addTransaction, openEditTransaction } = useMoney();
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -103,7 +101,7 @@ export default function ChatTab() {
         categoryId: data.categoryId,
         toAccountId: data.toAccountId,
       };
-      openEditModal(preFillData);
+      openEditTransaction(preFillData);
     }
   };
 

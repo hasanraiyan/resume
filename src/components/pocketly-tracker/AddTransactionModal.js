@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useMoney } from '@/context/MoneyContext';
-import { Plus, X, Check, ArrowLeftRight, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { Plus, X, Check, ArrowLeftRight, ArrowUpRight, ArrowDownLeft, Trash2 } from 'lucide-react';
 import { PurseSVG } from '@/components/pocketly-tracker/IconRenderer';
 import dynamic from 'next/dynamic';
 import { evaluateMath } from '@/utils/math';
@@ -15,8 +15,18 @@ const getCategoryColorPresentation = (color) => {
   return { className: color, style: undefined };
 };
 
-export default function AddTransactionModal({ preFillData, isOpen: controlledOpen, onClose }) {
-  const { accounts, accountsWithBalance, categories, addTransaction } = useMoney();
+export default function AddTransactionModal() {
+  const {
+    accounts,
+    accountsWithBalance,
+    categories,
+    addTransaction,
+    editTransactionData,
+    cancelEditTransaction,
+    updateTransaction,
+    deleteTransaction,
+    transactions,
+  } = useMoney();
   const [open, setOpen] = useState(false);
   const [type, setType] = useState('expense');
   const [currentInput, setCurrentInput] = useState('0');
@@ -28,24 +38,25 @@ export default function AddTransactionModal({ preFillData, isOpen: controlledOpe
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Only treat as controlled when isOpen is explicitly true (from chat edit)
-  // Otherwise use internal state for the plus button
-  const isControlled = controlledOpen === true;
-  const modalOpen = isControlled ? controlledOpen : open;
+  const isEditMode = !!editTransactionData;
+  const modalOpen = open || isEditMode;
+  const editingDbTransaction = isEditMode && editTransactionData?.id
+    ? transactions.find(t => t.id === editTransactionData.id)
+    : null;
 
   const filteredCategories = categories.filter((c) => c.type === type);
 
   // Pre-fill form when modal opens with data
   useEffect(() => {
-    if (modalOpen && preFillData) {
-      setType(preFillData.type || 'expense');
-      setCurrentInput(String(preFillData.amount || '0'));
-      setDescription(preFillData.description || '');
-      setCategoryId(preFillData.categoryId || '');
-      setAccountId(preFillData.accountId || '');
-      setToAccountId(preFillData.toAccountId || '');
+    if (isEditMode && editTransactionData) {
+      setType(editTransactionData.type || 'expense');
+      setCurrentInput(String(editTransactionData.amount || '0'));
+      setDescription(editTransactionData.description || '');
+      setCategoryId(editTransactionData.categoryId || editTransactionData.category?.id || '');
+      setAccountId(editTransactionData.accountId || editTransactionData.account?.id || '');
+      setToAccountId(editTransactionData.toAccountId || editTransactionData.toAccount?.id || '');
     }
-  }, [modalOpen, preFillData]);
+  }, [isEditMode, editTransactionData]);
 
   useEffect(() => {
     if (accounts.length > 0 && !accountId) {
@@ -66,11 +77,10 @@ export default function AddTransactionModal({ preFillData, isOpen: controlledOpe
 
   const handleClose = () => {
     resetForm();
-    if (isControlled && onClose) {
-      onClose();
-    } else {
-      setOpen(false);
+    if (isEditMode) {
+      cancelEditTransaction();
     }
+    setOpen(false);
   };
 
   const handleKeypad = (val) => {
@@ -101,7 +111,7 @@ export default function AddTransactionModal({ preFillData, isOpen: controlledOpe
       type,
       amount,
       description: description || (type === 'transfer' ? 'Transfer' : 'Transaction'),
-      date: new Date().toISOString(),
+      date: editTransactionData?.date || new Date().toISOString(),
     };
 
     if (type === 'transfer') {
@@ -115,7 +125,11 @@ export default function AddTransactionModal({ preFillData, isOpen: controlledOpe
 
     setIsSubmitting(true);
     try {
-      await addTransaction(payload);
+      if (editingDbTransaction) {
+        await updateTransaction(editingDbTransaction.id, payload);
+      } else {
+        await addTransaction(payload);
+      }
       resetForm();
       handleClose();
     } catch (error) {
@@ -128,6 +142,16 @@ export default function AddTransactionModal({ preFillData, isOpen: controlledOpe
   const selectedCategory = categories.find((c) => c.id === categoryId);
   const selectableAccounts = accountsWithBalance?.length ? accountsWithBalance : accounts;
   const selectedAccount = selectableAccounts.find((a) => a.id === accountId);
+  const handleDelete = async () => {
+    if (!editingDbTransaction) return;
+    try {
+      await deleteTransaction(editingDbTransaction.id);
+      handleClose();
+    } catch (error) {
+      console.error('Failed to delete transaction:', error);
+    }
+  };
+
   const selectedToAccount = selectableAccounts.find((a) => a.id === toAccountId);
   const selectedCategoryColor = getCategoryColorPresentation(selectedCategory?.color);
 
@@ -165,21 +189,31 @@ export default function AddTransactionModal({ preFillData, isOpen: controlledOpe
       <div className="fixed inset-0 bg-[#fcfbf5] z-50 flex flex-col">
         {/* Top Bar */}
         <div className="flex justify-between items-center px-4 py-3 bg-white border-b border-[#e5e3d8]">
-          <button
-            onClick={handleClose}
-            className="flex items-center gap-1.5 text-sm font-bold text-[#7c8e88] hover:text-[#1e3a34] transition cursor-pointer"
-          >
-            <X className="w-4 h-4" /> Cancel
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleClose}
+              className="flex items-center gap-1.5 text-sm font-bold text-[#7c8e88] hover:text-[#1e3a34] transition cursor-pointer"
+            >
+              <X className="w-4 h-4" /> Cancel
+            </button>
+            {editingDbTransaction && (
+              <button
+                onClick={handleDelete}
+                className="flex items-center gap-1.5 text-sm font-bold text-[#c94c4c] hover:text-[#a33a3a] transition cursor-pointer ml-2"
+              >
+                <Trash2 className="w-4 h-4" /> Delete
+              </button>
+            )}
+          </div>
           <span className="text-sm font-bold text-[#1e3a34]">
-            {type === 'expense' ? 'Expense' : type === 'income' ? 'Income' : 'Transfer'}
+            {editingDbTransaction ? 'Edit Transaction' : type === 'expense' ? 'Expense' : type === 'income' ? 'Income' : 'Transfer'}
           </span>
           <button
             onClick={handleSubmit}
             disabled={parseFloat(currentInput) <= 0 || isSubmitting}
             className="flex items-center gap-1.5 text-sm font-bold text-[#1f644e] hover:text-[#17503e] transition disabled:opacity-30 cursor-pointer"
           >
-            <Check className="w-4 h-4" /> {isSubmitting ? 'Saving...' : 'Save'}
+            <Check className="w-4 h-4" /> {isSubmitting ? (editingDbTransaction ? 'Updating...' : 'Saving...') : (editingDbTransaction ? 'Update' : 'Save')}
           </button>
         </div>
 
@@ -360,14 +394,14 @@ export default function AddTransactionModal({ preFillData, isOpen: controlledOpe
           {/* Date/Time Bar */}
           <div className="flex justify-between items-center text-xs font-bold text-[#7c8e88] px-4 py-3 border-t border-[#e5e3d8] bg-white">
             <div>
-              {new Date().toLocaleDateString('en-US', {
+              {(editTransactionData?.date ? new Date(editTransactionData.date) : new Date()).toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric',
                 year: 'numeric',
               })}
             </div>
             <div>
-              {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              {(editTransactionData?.date ? new Date(editTransactionData.date) : new Date()).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
             </div>
           </div>
         </div>

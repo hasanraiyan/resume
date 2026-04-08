@@ -11,6 +11,7 @@ import {
   Search,
   MoreVertical,
   Trash2,
+  Pencil,
 } from 'lucide-react';
 import { PurseSVG } from '@/components/pocketly-tracker/IconRenderer';
 
@@ -30,6 +31,7 @@ export default function RecordsTab() {
     periodEnd,
     setPeriod,
     deleteTransaction,
+    openEditTransaction,
   } = useMoney();
   const [searchQuery, setSearchQuery] = useState('');
   const [openMenuId, setOpenMenuId] = useState(null);
@@ -288,6 +290,17 @@ export default function RecordsTab() {
                                   ref={menuRef}
                                   className="absolute right-0 top-full z-10 mt-1 w-32 rounded-xl border border-[#e5e3d8] bg-white py-1 shadow-lg"
                                 >
+                                  <button
+                                    onClick={() => {
+                                      openEditTransaction(transaction);
+                                      setOpenMenuId(null);
+                                    }}
+                                    className="cursor-pointer flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#1e3a34] transition hover:bg-[#f0f5f2]"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                    Edit
+                                  </button>
+                                  <div className="my-1 border-t border-[#e5e3d8]" />
                                   <button
                                     onClick={() => handleDelete(transaction.id)}
                                     className="cursor-pointer flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#c94c4c] transition hover:bg-[#fdf2f2]"

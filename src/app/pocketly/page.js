@@ -70,7 +70,7 @@ const tabs = [
 function FinanceContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const { activeTab, setActiveTab, isSyncing, error, accounts, fetchData, isBootstrapLoading } =
+  const { activeTab, setActiveTab, isSyncing, error, accounts, fetchData, isBootstrapLoading, editTransactionData } =
     useMoney();
   const { clearChat } = useFinanceChat();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -249,10 +249,10 @@ function FinanceContent() {
         </div>
       )}
 
-      {/* FAB */}
-      {accounts.length > 0 && activeTab !== 'settings' && activeTab !== 'chat' && (
+      {/* FAB / Edit Modal */}
+      {(accounts.length > 0 && activeTab !== 'settings' && activeTab !== 'chat') || editTransactionData ? (
         <AddTransactionModal />
-      )}
+      ) : null}
 
       {/* Mobile Bottom Nav */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#fcfbf5] [#121212] border-t border-[#e5e3d8] [#333333] z-30 flex">

@@ -23,6 +23,7 @@ const initialState = {
   activeTab: 'records',
   periodStart: getWeekStart(),
   periodEnd: getWeekEnd(),
+  editTransactionData: null,
 };
 
 function getWeekStart(date = new Date()) {
@@ -69,6 +70,8 @@ function moneyReducer(state, action) {
       return { ...state, isBootstrapLoading: action.payload };
     case 'SET_TAB_LOADING':
       return { ...state, isTabLoading: action.payload };
+    case 'SET_EDIT_TRANSACTION_DATA':
+      return { ...state, editTransactionData: action.payload };
     default:
       return state;
   }
@@ -363,6 +366,14 @@ export function MoneyProvider({ children }) {
     dispatch({ type: 'SET_ACTIVE_TAB', payload: tab });
   };
 
+  const openEditTransaction = (data) => {
+    dispatch({ type: 'SET_EDIT_TRANSACTION_DATA', payload: data });
+  };
+
+  const cancelEditTransaction = () => {
+    dispatch({ type: 'SET_EDIT_TRANSACTION_DATA', payload: null });
+  };
+
   const totalExpense = state.transactions
     .filter((transaction) => transaction.type === 'expense')
     .reduce((sum, transaction) => sum + transaction.amount, 0);
@@ -397,6 +408,8 @@ export function MoneyProvider({ children }) {
     clearFinanceData,
     setPeriod,
     setActiveTab,
+    openEditTransaction,
+    cancelEditTransaction,
   };
 
   return <MoneyContext.Provider value={value}>{children}</MoneyContext.Provider>;
