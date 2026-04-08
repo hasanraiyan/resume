@@ -238,11 +238,64 @@ export function createGetAnalysisTool() {
   );
 }
 
+export function createDraftTransactionTool() {
+  return tool(
+    async (params) => {
+      // Return the draft payload to render the UI confirmation card
+      return JSON.stringify(params);
+    },
+    {
+      name: 'draft_transaction',
+      description:
+        'Draft a new transaction (income, expense, or transfer). YOU MUST FIRST USE get_accounts and get_categories tools to find the exact accountId and categoryId. This will show a confirmation UI to the user, where the user can save it directly.',
+      schema: z.object({
+        type: z.enum(['income', 'expense', 'transfer']).describe('The type of transaction'),
+        amount: z
+          .number()
+          .positive()
+          .describe('The absolute amount of the transaction (must be positive)'),
+        description: z.string().describe('A short description of the transaction'),
+        accountId: z.string().describe('The exact MongoDB ID of the source account'),
+        accountName: z
+          .string()
+          .describe('The display name of the source account (for UI purposes)'),
+        categoryId: z
+          .string()
+          .nullish()
+          .describe(
+            'The exact MongoDB ID of the category (Required for income/expense, null for transfers)'
+          ),
+        categoryName: z
+          .string()
+          .nullish()
+          .describe('The display name of the category (for UI purposes, null for transfers)'),
+        toAccountId: z
+          .string()
+          .nullish()
+          .describe(
+            'The exact MongoDB ID of the destination account (Required ONLY for transfers, null for income/expense)'
+          ),
+        toAccountName: z
+          .string()
+          .nullish()
+          .describe(
+            'The display name of the destination account (for UI purposes, null for income/expense)'
+          ),
+        date: z
+          .string()
+          .nullish()
+          .describe('The date of the transaction in YYYY-MM-DD format. Default is today.'),
+      }),
+    }
+  );
+}
+
 export function createFinanceTools() {
   return [
     createGetAccountsTool(),
     createGetCategoriesTool(),
     createGetTransactionsTool(),
     createGetAnalysisTool(),
+    createDraftTransactionTool(),
   ];
 }

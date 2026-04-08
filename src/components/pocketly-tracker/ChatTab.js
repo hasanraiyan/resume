@@ -8,7 +8,7 @@ import ChatInput from '@/components/chatbot/ChatInput';
 
 export default function ChatTab() {
   const { messages, sendMessage, isStreaming } = useFinanceChat();
-  const { setActiveTab } = useMoney();
+  const { setActiveTab, addTransaction } = useMoney();
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -52,11 +52,47 @@ export default function ChatTab() {
     }
   };
 
-  const handleUIInteract = (action) => {
+  const handleUIInteract = async (action) => {
     if (!action) return;
 
     if (action.type === 'switch_tab' && action.tab) {
       setActiveTab(action.tab);
+    }
+
+    if (action.type === 'confirm_transaction') {
+      const { data, setLocalState } = action;
+      if (setLocalState) setLocalState('saving');
+
+      try {
+        const payload = {
+          type: data.type,
+          amount: data.amount,
+          description: data.description,
+          account: data.accountId,
+          date: data.date ? new Date(data.date).toISOString() : new Date().toISOString(),
+        };
+
+        if (data.type === 'transfer') {
+          payload.toAccount = data.toAccountId;
+        } else {
+          payload.category = data.categoryId;
+        }
+
+        await addTransaction(payload);
+
+        if (setLocalState) {
+          setLocalState('success');
+        } else {
+          sendMessage('Transaction confirmed and saved successfully!');
+        }
+      } catch (err) {
+        if (setLocalState) setLocalState('error');
+        sendMessage('Sorry, there was an error saving the transaction.');
+      }
+    }
+
+    if (action.type === 'cancel_transaction') {
+      sendMessage('I want to cancel or edit this transaction manually.');
     }
   };
 

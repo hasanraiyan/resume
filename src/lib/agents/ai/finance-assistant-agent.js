@@ -77,6 +77,7 @@ function getToolLabel(toolName) {
     get_transactions: 'Reviewing transactions',
     get_accounts: 'Checking accounts',
     get_categories: 'Reviewing categories',
+    draft_transaction: 'Drafting transaction',
   };
 
   return labels[toolName] || `Using ${toolName}`;
@@ -157,6 +158,17 @@ function buildUiBlocks(toolName, output) {
           income,
           expense,
         },
+      },
+    ];
+  }
+
+  if (toolName === 'draft_transaction') {
+    return [
+      {
+        kind: 'transaction_confirmation',
+        title: 'Confirm Transaction',
+        action: null,
+        data: parsed,
       },
     ];
   }
