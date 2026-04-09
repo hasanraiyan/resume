@@ -114,6 +114,12 @@ export default function RecordsTab() {
     return `${sign}${formatted}`;
   };
 
+  const formatExactAmount = (amount, type) => {
+    const sign = type === 'transfer' ? '' : type === 'expense' ? '-' : '+';
+    const formatted = currencyFormatter.format(Math.abs(amount));
+    return `${sign}₹${formatted}`;
+  };
+
   const getAmountClass = (type) => {
     if (type === 'expense') return 'text-[#c94c4c]';
     if (type === 'income') return 'text-[#1f644e]';
@@ -427,17 +433,66 @@ export default function RecordsTab() {
           >
             {mobileActionTransaction && (
               <>
+                <div className="mb-3 flex items-start gap-3">
+                  <div
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl text-white ${
+                      mobileActionTransaction.type === 'transfer'
+                        ? 'bg-[#4a86e8]'
+                        : mobileActionTransaction.type === 'expense'
+                          ? 'bg-[#c94c4c]'
+                          : 'bg-[#1f644e]'
+                    }`}
+                  >
+                    <IconRenderer
+                      name={
+                        mobileActionTransaction.type === 'transfer'
+                          ? 'arrow-left-right'
+                          : mobileActionTransaction.category?.icon || 'tag'
+                      }
+                      className="h-5 w-5"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#7c8e88]">
+                      {mobileActionTransaction.type === 'transfer'
+                        ? 'Transfer'
+                        : mobileActionTransaction.category?.name || 'Uncategorized'}
+                    </p>
+                    <p className="text-sm font-bold text-[#1e3a34] line-clamp-2">
+                      {mobileActionTransaction.description &&
+                      mobileActionTransaction.description !== 'Transaction' &&
+                      mobileActionTransaction.description !== 'Transfer'
+                        ? mobileActionTransaction.description
+                        : mobileActionTransaction.account?.name || 'Account'}
+                    </p>
+                    <p className="mt-1 text-[11px] text-[#7c8e88]">
+                      {mobileActionTransaction.type === 'transfer' ? (
+                        <>
+                          {mobileActionTransaction.account?.name || 'Account'}
+                          <span className="mx-1">→</span>
+                          {mobileActionTransaction.toAccount?.name || 'Account'}
+                        </>
+                      ) : (
+                        mobileActionTransaction.account?.name || 'Account'
+                      )}
+                    </p>
+                  </div>
+                  <div className="ml-2 text-right text-sm font-bold tabular-nums">
+                    {formatExactAmount(
+                      mobileActionTransaction.amount,
+                      mobileActionTransaction.type
+                    )}
+                  </div>
+                </div>
+
+                <div className="mb-3 h-px w-full bg-[#e5e3d8]" />
+
                 <div className="mb-2 flex items-center justify-between">
                   <p className="text-xs font-semibold uppercase tracking-wide text-[#7c8e88]">
                     Transaction options
                   </p>
                   <div className="w-8" />
                 </div>
-                <p className="mb-3 text-sm font-bold text-[#1e3a34] line-clamp-1">
-                  {mobileActionTransaction.description ||
-                    mobileActionTransaction.category?.name ||
-                    'Transaction'}
-                </p>
 
                 <button
                   type="button"
