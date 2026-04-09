@@ -343,7 +343,10 @@ function TransactionConfirmationBlock({ block, onInteract }) {
 
   const isExpense = data.type === 'expense';
   const isTransfer = data.type === 'transfer';
-  const [isConfirmed, setIsConfirmed] = useState(false);
+  // Local state managed from the chat handler so we can
+  // show a proper saving/success/error flow instead of
+  // instantly saying "Transaction recorded".
+  const [localState, setLocalState] = useState('idle'); // idle | saving | success | error
 
   const amountColor = isExpense
     ? 'text-[#c94c4c]'
@@ -353,16 +356,19 @@ function TransactionConfirmationBlock({ block, onInteract }) {
   const amountPrefix = isExpense ? '-' : isTransfer ? '' : '+';
 
   const handleConfirm = () => {
-    setIsConfirmed(true);
-    onInteract?.({ type: 'confirm_transaction', data });
+    if (localState === 'saving') return;
+
+    // Optimistically move to saving while the chat handler
+    // actually writes the transaction and updates localState.
+    setLocalState('saving');
+    onInteract?.({ type: 'confirm_transaction', data, setLocalState });
   };
 
   const handleEdit = () => {
-    setIsConfirmed(true);
     onInteract?.({ type: 'cancel_transaction', data });
   };
 
-  if (isConfirmed) {
+  if (localState === 'success') {
     return (
       <div className="rounded-2xl border border-neutral-200/70 bg-[#f8f8f4] p-3 shadow-sm">
         <p className="text-xs font-semibold text-neutral-800 mb-3">
@@ -489,9 +495,14 @@ function TransactionConfirmationBlock({ block, onInteract }) {
         <button
           type="button"
           onClick={handleConfirm}
-          className="flex-1 cursor-pointer rounded-full bg-[#1e3a34] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#152924]"
+          disabled={localState === 'saving'}
+          className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold text-white transition ${
+            localState === 'saving'
+              ? 'bg-[#1e3a34]/70 cursor-not-allowed'
+              : 'bg-[#1e3a34] cursor-pointer hover:bg-[#152924]'
+          }`}
         >
-          Confirm
+          {localState === 'saving' ? 'Saving…' : 'Confirm'}
         </button>
         <button
           type="button"
@@ -501,6 +512,12 @@ function TransactionConfirmationBlock({ block, onInteract }) {
           Edit Manually
         </button>
       </div>
+
+      {localState === 'error' && (
+        <p className="mt-2 text-center text-[11px] text-[#c94c4c]">
+          Something went wrong while saving. Please try again.
+        </p>
+      )}
     </div>
   );
 }
