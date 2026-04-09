@@ -10,8 +10,8 @@ import {
   PieChart,
   RefreshCw,
   AlertTriangle,
+  Wallet,
 } from 'lucide-react';
-import { PurseSVG } from '@/components/pocketly-tracker/IconRenderer';
 import { Shimmer } from './FinanceSkeletons';
 import dynamic from 'next/dynamic';
 
@@ -21,13 +21,19 @@ const viewOptions = [
   { id: 'expense', label: 'Expense', icon: TrendingDown },
   { id: 'income', label: 'Income', icon: TrendingUp },
   { id: 'flow', label: 'Flow', icon: BarChart3 },
-  { id: 'accounts', label: 'Accounts', icon: PurseSVG },
+  { id: 'accounts', label: 'Accounts', icon: Wallet },
 ];
 
 const periodOptions = ['Daily', 'Weekly', 'Monthly', '3 Months', '6 Months', 'Yearly'];
 const currencyFormatter = new Intl.NumberFormat('en-IN', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
+});
+
+// Compact formatter for large amounts, e.g. 45K, 1.2L
+const compactNumberFormatter = new Intl.NumberFormat('en-IN', {
+  notation: 'compact',
+  maximumFractionDigits: 1,
 });
 
 export default function AnalysisTab() {
@@ -157,6 +163,20 @@ export default function AnalysisTab() {
 
   const isRefreshingAnalysis = Boolean(analysis) && isAnalysisLoading;
 
+  const activeViewIndex = Math.max(
+    0,
+    viewOptions.findIndex((option) => option.id === viewMode)
+  );
+
+  const formatCurrencyWithCompact = (amount) => {
+    const abs = Math.abs(amount || 0);
+    const useCompact = abs >= 100000; // Use compact notation from 1L upwards
+    const formatted = useCompact
+      ? compactNumberFormatter.format(abs)
+      : currencyFormatter.format(abs);
+    return `₹${formatted}`;
+  };
+
   const EmptyState = ({ title, description }) => (
     <div className="flex flex-col items-center justify-center px-6 py-16">
       <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#f0f5f2]">
@@ -176,6 +196,12 @@ export default function AnalysisTab() {
         />
       );
     }
+
+    const topCategory = currentCategories.reduce(
+      (max, category) => (category.total > max.total ? category : max),
+      currentCategories[0]
+    );
+    const topPercentage = total ? (topCategory.total / total) * 100 : 0;
 
     return (
       <div className="space-y-6">
@@ -210,12 +236,12 @@ export default function AnalysisTab() {
                   });
                 })()}
               </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
-                  Total
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-[11px] font-bold text-[#1e3a34]">
+                  {topPercentage.toFixed(0)}%
                 </span>
-                <span className="text-lg font-bold text-[#1e3a34]">
-                  ₹{total.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                <span className="mt-0.5 max-w-[6rem] truncate text-[10px] font-semibold text-[#7c8e88]">
+                  {topCategory.name}
                 </span>
               </div>
             </div>
@@ -252,10 +278,12 @@ export default function AnalysisTab() {
                       >
                         <IconRenderer name={category.icon} className="h-4 w-4" />
                       </div>
-                      <span className="text-sm font-bold text-[#1e3a34]">{category.name}</span>
+                      <span className="max-w-[8rem] truncate text-sm font-bold text-[#1e3a34]">
+                        {category.name}
+                      </span>
                     </div>
                     <span className="text-sm font-bold text-[#1e3a34]">
-                      ₹{currencyFormatter.format(category.total)}
+                      {formatCurrencyWithCompact(category.total)}
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
@@ -302,7 +330,7 @@ export default function AnalysisTab() {
                 className="group relative flex h-full flex-1 flex-col items-center justify-end"
               >
                 <div className="absolute -top-8 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded bg-[#1e3a34] px-2 py-1 text-[10px] font-bold text-white opacity-0 transition group-hover:opacity-100">
-                  ₹{data.expense.toFixed(0)}
+                  {formatCurrencyWithCompact(data.expense)}
                 </div>
                 <div className="flex h-full w-full items-end gap-0.5">
                   <div
@@ -389,23 +417,25 @@ export default function AnalysisTab() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f0f5f2]">
                   <IconRenderer name={account.icon} className="h-5 w-5 text-[#7c8e88]" />
                 </div>
-                <span className="text-sm font-bold text-[#1e3a34]">{account.name}</span>
+                <span className="max-w-[10rem] truncate text-sm font-bold text-[#1e3a34]">
+                  {account.name}
+                </span>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
                     Expense
                   </p>
-                  <p className="mt-0.5 text-sm font-bold text-[#c94c4c]">
-                    ₹{currencyFormatter.format(account.expense)}
+                  <p className="mt-0.5 text-xs sm:text-sm font-bold text-[#c94c4c]">
+                    {formatCurrencyWithCompact(account.expense)}
                   </p>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
                     Income
                   </p>
-                  <p className="mt-0.5 text-sm font-bold text-[#1f644e]">
-                    ₹{currencyFormatter.format(account.income)}
+                  <p className="mt-0.5 text-xs sm:text-sm font-bold text-[#1f644e]">
+                    {formatCurrencyWithCompact(account.income)}
                   </p>
                 </div>
               </div>
@@ -420,57 +450,101 @@ export default function AnalysisTab() {
     <div className="mb-6 pb-4 pt-6">
       <div className="w-full px-4 lg:px-6">
         <div className="w-full max-w-6xl mx-auto">
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="flex items-center gap-4 rounded-xl border border-[#e5e3d8] bg-white p-5">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#c94c4c]/10">
-                <TrendingDown className="h-6 w-6 text-[#c94c4c]" />
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
-                  Total Expense
-                </p>
-                <p className="mt-0.5 text-xl font-bold text-[#c94c4c]">
-                  {analysis ? (
-                    `₹${currencyFormatter.format(analysis.totalExpense)}`
-                  ) : showInitialSkeleton ? (
-                    <Shimmer className="h-5 w-20" />
-                  ) : (
-                    <span className="text-[#7c8e88]">--</span>
-                  )}
-                </p>
+          {/* Summary */}
+          <div className="mb-6">
+            {/* Mobile: simple 2-column cards, no icons (match RecordsTab style) */}
+            <div className="sm:hidden">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl border border-[#e5e3d8] bg-white px-3 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#7c8e88]">
+                    Total Expense
+                  </p>
+                  <p className="mt-0.5 text-sm font-bold text-[#c94c4c]">
+                    {analysis ? (
+                      formatCurrencyWithCompact(analysis.totalExpense)
+                    ) : showInitialSkeleton ? (
+                      <Shimmer className="h-4 w-20" />
+                    ) : (
+                      <span className="text-[#7c8e88]">--</span>
+                    )}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-[#e5e3d8] bg-white px-3 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#7c8e88]">
+                    Total Income
+                  </p>
+                  <p className="mt-0.5 text-sm font-bold text-[#1f644e]">
+                    {analysis ? (
+                      formatCurrencyWithCompact(analysis.totalIncome)
+                    ) : showInitialSkeleton ? (
+                      <Shimmer className="h-4 w-20" />
+                    ) : (
+                      <span className="text-[#7c8e88]">--</span>
+                    )}
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-4 rounded-xl border border-[#e5e3d8] bg-white p-5">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#1f644e]/10">
-                <TrendingUp className="h-6 w-6 text-[#1f644e]" />
+
+            {/* Tablet & desktop: icon cards */}
+            <div className="hidden sm:grid sm:grid-cols-2 sm:gap-4">
+              <div className="flex items-center gap-4 rounded-xl border border-[#e5e3d8] bg-white p-5">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#c94c4c]/10">
+                  <TrendingDown className="h-6 w-6 text-[#c94c4c]" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
+                    Total Expense
+                  </p>
+                  <p className="mt-0.5 text-xl font-bold text-[#c94c4c]">
+                    {analysis ? (
+                      formatCurrencyWithCompact(analysis.totalExpense)
+                    ) : showInitialSkeleton ? (
+                      <Shimmer className="h-5 w-20" />
+                    ) : (
+                      <span className="text-[#7c8e88]">--</span>
+                    )}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
-                  Total Income
-                </p>
-                <p className="mt-0.5 text-xl font-bold text-[#1f644e]">
-                  {analysis ? (
-                    `₹${currencyFormatter.format(analysis.totalIncome)}`
-                  ) : showInitialSkeleton ? (
-                    <Shimmer className="h-5 w-20" />
-                  ) : (
-                    <span className="text-[#7c8e88]">--</span>
-                  )}
-                </p>
+              <div className="flex items-center gap-4 rounded-xl border border-[#e5e3d8] bg-white p-5">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#1f644e]/10">
+                  <TrendingUp className="h-6 w-6 text-[#1f644e]" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
+                    Total Income
+                  </p>
+                  <p className="mt-0.5 text-xl font-bold text-[#1f644e]">
+                    {analysis ? (
+                      formatCurrencyWithCompact(analysis.totalIncome)
+                    ) : showInitialSkeleton ? (
+                      <Shimmer className="h-5 w-20" />
+                    ) : (
+                      <span className="text-[#7c8e88]">--</span>
+                    )}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="mb-6 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
-            <div className="flex gap-0.5 rounded-xl border border-[#e5e3d8] bg-white p-1">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div className="relative flex gap-0.5 rounded-xl border border-[#e5e3d8] bg-white p-1 overflow-hidden">
+              {/* Sliding background pill for active view */}
+              <div
+                className="absolute inset-y-1 left-1 w-1/4 rounded-lg bg-[#1f644e] shadow-sm transition-transform duration-150"
+                style={{ transform: `translateX(${activeViewIndex * 100}%)` }}
+                aria-hidden="true"
+              />
+
               {viewOptions.map((option) => (
                 <button
                   key={option.id}
                   onClick={() => setViewMode(option.id)}
-                  className={`flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-all ${
-                    viewMode === option.id
-                      ? 'bg-[#1f644e] text-white shadow-sm'
-                      : 'text-[#7c8e88] hover:text-[#1e3a34]'
+                  className={`relative z-10 flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-all ${
+                    viewMode === option.id ? 'text-white' : 'text-[#7c8e88] hover:text-[#1e3a34]'
                   }`}
                 >
                   <option.icon className="h-3.5 w-3.5" />
@@ -480,13 +554,6 @@ export default function AnalysisTab() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              {isRefreshingAnalysis && (
-                <div className="inline-flex items-center gap-2 rounded-full border border-[#d9e6df] bg-[#f0f5f2] px-3 py-1 text-xs font-semibold text-[#1f644e]">
-                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                  Refreshing insights
-                </div>
-              )}
-
               <div className="relative">
                 <button
                   onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}

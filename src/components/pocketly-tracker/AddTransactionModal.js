@@ -263,7 +263,7 @@ export default function AddTransactionModal() {
           <div className="relative flex bg-[#f0f5f2] rounded-xl p-1 gap-1 overflow-hidden">
             {/* Sliding background pill */}
             <div
-              className="absolute inset-y-1 left-1 w-1/3 rounded-lg bg-white shadow-sm transition-transform duration-200"
+              className="absolute inset-y-1 left-1 w-1/3 rounded-lg bg-white shadow-sm transition-transform duration-150"
               style={{ transform: `translateX(${activeTypeIndex * 100}%)` }}
               aria-hidden="true"
             />
