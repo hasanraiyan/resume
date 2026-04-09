@@ -23,7 +23,6 @@ import {
   Tag,
   Wallet,
   Menu,
-  Search,
   Plus,
   RefreshCw,
   AlertTriangle,
@@ -66,6 +65,93 @@ const tabs = [
   { id: 'chat', label: 'Chat', icon: MessageCircle },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
+
+function PocketlyNavigation({ tabs, activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) {
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-[#e5e3d8] fixed inset-y-0 left-0 z-30">
+        <div className="p-6 border-b border-[#e5e3d8]">
+          <h1 className="font-[family-name:var(--font-logo)] text-2xl text-black ">Pocketly</h1>
+        </div>
+        <nav className="flex-1 py-4 px-3 space-y-1">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`w-full cursor-pointer flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
+                activeTab === tab.id
+                  ? 'bg-[#1f644e] text-white'
+                  : 'text-[#7c8e88] hover:bg-[#f0f5f2] hover:text-[#1e3a34]'
+              }`}
+            >
+              <tab.icon className="w-5 h-5" strokeWidth={activeTab === tab.id ? 2 : 1.5} />
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+        <div className="p-4 border-t border-[#e5e3d8]">
+          <p className="text-[10px] text-[#7c8e88] text-center">Powered by Pocketly</p>
+        </div>
+      </aside>
+
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
+          <aside className="absolute inset-y-0 left-0 w-64 bg-white shadow-xl animate-in slide-in-from-left duration-300">
+            <div className="p-6 border-b border-[#e5e3d8]">
+              <h1 className="font-[family-name:var(--font-logo)] text-2xl text-black ">Pocketly</h1>
+            </div>
+            <nav className="py-4 px-3 space-y-1">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full cursor-pointer flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
+                    activeTab === tab.id
+                      ? 'bg-[#1f644e] text-white'
+                      : 'text-[#7c8e88] hover:bg-[#f0f5f2]'
+                  }`}
+                >
+                  <tab.icon className="w-5 h-5" />
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+          </aside>
+        </div>
+      )}
+
+      {/* Mobile Bottom Nav (without Settings tab) */}
+      <nav
+        className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#fcfbf5] border-t border-[#e5e3d8] z-30 flex"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        {tabs
+          .filter((tab) => tab.id !== 'settings')
+          .map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 flex flex-col items-center py-2 ${
+                activeTab === tab.id ? 'text-[#1f644e]' : 'text-[#7c8e88]'
+              }`}
+            >
+              <tab.icon
+                className="w-[22px] h-[22px] mb-0.5"
+                strokeWidth={activeTab === tab.id ? 2 : 1.5}
+              />
+              <span className="text-[10px] font-bold">{tab.label}</span>
+            </button>
+          ))}
+      </nav>
+    </>
+  );
+}
 
 function FinanceContent() {
   const { data: session, status } = useSession();
@@ -195,31 +281,13 @@ function FinanceContent() {
 
   return (
     <div className="min-h-screen bg-[#fcfbf5] font-[family-name:var(--font-sans)] text-[#1e3a34] flex">
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-[#e5e3d8] fixed inset-y-0 left-0 z-30">
-        <div className="p-6 border-b border-[#e5e3d8]">
-          <h1 className="font-[family-name:var(--font-logo)] text-2xl text-black ">Pocketly</h1>
-        </div>
-        <nav className="flex-1 py-4 px-3 space-y-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`w-full cursor-pointer flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
-                activeTab === tab.id
-                  ? 'bg-[#1f644e] text-white'
-                  : 'text-[#7c8e88] hover:bg-[#f0f5f2] hover:text-[#1e3a34]'
-              }`}
-            >
-              <tab.icon className="w-5 h-5" strokeWidth={activeTab === tab.id ? 2 : 1.5} />
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-        <div className="p-4 border-t border-[#e5e3d8]">
-          <p className="text-[10px] text-[#7c8e88] text-center">Powered by Pocketly</p>
-        </div>
-      </aside>
+      <PocketlyNavigation
+        tabs={tabs}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+      />
 
       {/* Main Content Area */}
       <div className="flex min-w-0 flex-1 flex-col lg:ml-64 min-h-screen overflow-x-hidden pb-20 lg:pb-0 pt-14 lg:pt-0">
@@ -278,66 +346,11 @@ function FinanceContent() {
         </main>
       </div>
 
-      {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 w-64 bg-white shadow-xl animate-in slide-in-from-left duration-300">
-            <div className="p-6 border-b border-[#e5e3d8]">
-              <h1 className="font-[family-name:var(--font-logo)] text-2xl text-black ">Pocketly</h1>
-            </div>
-            <nav className="py-4 px-3 space-y-1">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    setActiveTab(tab.id);
-                    setSidebarOpen(false);
-                  }}
-                  className={`w-full cursor-pointer flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
-                    activeTab === tab.id
-                      ? 'bg-[#1f644e] text-white'
-                      : 'text-[#7c8e88] hover:bg-[#f0f5f2]'
-                  }`}
-                >
-                  <tab.icon className="w-5 h-5" />
-                  {tab.label}
-                </button>
-              ))}
-            </nav>
-          </aside>
-        </div>
-      )}
-
       {/* FAB / Edit Modal */}
       {(accounts.length > 0 && activeTab !== 'settings' && activeTab !== 'chat') ||
       editTransactionData ? (
         <AddTransactionModal />
       ) : null}
-
-      {/* Mobile Bottom Nav (without Settings tab) */}
-      <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#fcfbf5] border-t border-[#e5e3d8] z-30 flex"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      >
-        {tabs
-          .filter((tab) => tab.id !== 'settings')
-          .map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex flex-col items-center py-2 ${
-                activeTab === tab.id ? 'text-[#1f644e]' : 'text-[#7c8e88]'
-              }`}
-            >
-              <tab.icon
-                className="w-[22px] h-[22px] mb-0.5"
-                strokeWidth={activeTab === tab.id ? 2 : 1.5}
-              />
-              <span className="text-[10px] font-bold">{tab.label}</span>
-            </button>
-          ))}
-      </nav>
     </div>
   );
 }
