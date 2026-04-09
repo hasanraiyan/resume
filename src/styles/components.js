@@ -26,6 +26,15 @@ export const componentStyles = {
       magnetic-btn
     `,
 
+    // Brand button (green background)
+    brand: `
+      bg-[#1f644e] text-white
+      hover:bg-[#164a39]
+      px-6 sm:px-7 py-3 sm:py-3.5
+      text-sm sm:text-base
+      magnetic-btn
+    `,
+
     // Secondary button (outlined)
     secondary: `
       border-2 border-black text-black

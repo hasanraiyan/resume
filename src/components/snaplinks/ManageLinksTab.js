@@ -225,7 +225,7 @@ export default function ManageLinksTab() {
           <Button
             variant="ghost"
             onClick={handleBackToLinks}
-            className="mb-4 text-[#7c8e88] hover:text-[#1e3a34] dark:hover:text-white"
+            className="mb-4 text-[#7c8e88] hover:text-[#1e3a34] "
           >
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to all links
           </Button>
@@ -299,7 +299,7 @@ export default function ManageLinksTab() {
       const percentage = total > 0 ? (count / total) * 100 : 0;
       return (
         <div
-          className="absolute top-0 left-0 h-full bg-[#1f644e]/10 dark:bg-[#2ecc71]/10 rounded-md -z-10 transition-all duration-500"
+          className="absolute top-0 left-0 h-full bg-[#1f644e]/10  rounded-md -z-10 transition-all duration-500"
           style={{ width: `${percentage}%` }}
         />
       );
@@ -314,29 +314,27 @@ export default function ManageLinksTab() {
         <Button
           variant="ghost"
           onClick={handleBackToLinks}
-          className="mb-2 text-[#7c8e88] hover:text-[#1e3a34] dark:hover:text-white"
+          className="mb-2 text-[#7c8e88] hover:text-[#1e3a34] "
         >
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to all links
         </Button>
 
         <Card
           variant="flat"
-          className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-[#1e1e1e] p-6 border-neutral-200 shadow-sm"
+          className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white  p-6 border-neutral-200 shadow-sm"
         >
           <div>
-            <h2 className="text-2xl font-bold font-['Playfair_Display'] text-[#1e3a34] dark:text-white">
+            <h2 className="text-2xl font-bold font-['Playfair_Display'] text-[#1e3a34] ">
               {link.title || link.slug}
             </h2>
-            <div className="flex items-center gap-2 mt-2 text-sm text-[#7c8e88] dark:text-[#a0a0a0]">
-              <span className="bg-[#fcfbf5] dark:bg-[#2c3e3a] px-2 py-1 rounded font-mono">
-                /r/{link.slug}
-              </span>
+            <div className="flex items-center gap-2 mt-2 text-sm text-[#7c8e88] ">
+              <span className="bg-[#fcfbf5]  px-2 py-1 rounded font-mono">/r/{link.slug}</span>
               <ArrowLeft className="w-3 h-3" />
               <a
                 href={link.destination}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-1 hover:text-[#1e3a34] dark:hover:text-white hover:underline truncate max-w-[200px] md:max-w-md"
+                className="flex items-center gap-1 hover:text-[#1e3a34]  hover:underline truncate max-w-[200px] md:max-w-md"
               >
                 {link.destination} <ExternalLink className="w-3 h-3" />
               </a>
@@ -344,22 +342,18 @@ export default function ManageLinksTab() {
           </div>
           <div className="flex gap-6">
             <div className="text-center">
-              <p className="text-sm text-[#7c8e88] dark:text-[#a0a0a0] mb-1">Total Clicks</p>
-              <p className="text-4xl font-bold text-[#1f644e] dark:text-[#2ecc71]">
-                {summary.totalClicks}
-              </p>
+              <p className="text-sm text-[#7c8e88]  mb-1">Total Clicks</p>
+              <p className="text-4xl font-bold text-[#1f644e] ">{summary.totalClicks}</p>
             </div>
             <div className="text-center">
-              <p className="text-sm text-[#7c8e88] dark:text-[#a0a0a0] mb-1">Unique (Est.)</p>
-              <p className="text-4xl font-bold text-[#1e3a34] dark:text-white">
-                {summary.uniqueVisitors}
-              </p>
+              <p className="text-sm text-[#7c8e88]  mb-1">Unique (Est.)</p>
+              <p className="text-4xl font-bold text-[#1e3a34] ">{summary.uniqueVisitors}</p>
             </div>
           </div>
         </Card>
 
-        <Card variant="flat" className="p-6 bg-white dark:bg-[#1e1e1e] border-neutral-200">
-          <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-[#1e3a34] dark:text-white">
+        <Card variant="flat" className="p-6 bg-white  border-neutral-200">
+          <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-[#1e3a34] ">
             <CalendarDays className="w-5 h-5 text-[#7c8e88]" />
             Click History (Last 30 Days)
           </h3>
@@ -377,8 +371,8 @@ export default function ManageLinksTab() {
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card variant="flat" className="p-6 bg-white dark:bg-[#1e1e1e] border-neutral-200">
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-[#1e3a34] dark:text-white">
+          <Card variant="flat" className="p-6 bg-white  border-neutral-200">
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-[#1e3a34] ">
               <Globe className="w-5 h-5 text-[#7c8e88]" /> Top Referrers
             </h3>
             <div className="space-y-2">
@@ -389,12 +383,10 @@ export default function ManageLinksTab() {
                     className="relative z-10 flex justify-between items-center text-sm p-2 rounded-md"
                   >
                     {renderProgressBar(ref.count, totalReferrerClicks)}
-                    <span className="truncate max-w-[150px] font-medium text-[#1e3a34] dark:text-white">
+                    <span className="truncate max-w-[150px] font-medium text-[#1e3a34] ">
                       {ref.referrer || 'Direct / Unknown'}
                     </span>
-                    <span className="font-bold text-[#1f644e] dark:text-[#2ecc71]">
-                      {ref.count}
-                    </span>
+                    <span className="font-bold text-[#1f644e] ">{ref.count}</span>
                   </div>
                 ))
               ) : (
@@ -403,8 +395,8 @@ export default function ManageLinksTab() {
             </div>
           </Card>
 
-          <Card variant="flat" className="p-6 bg-white dark:bg-[#1e1e1e] border-neutral-200">
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-[#1e3a34] dark:text-white">
+          <Card variant="flat" className="p-6 bg-white  border-neutral-200">
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-[#1e3a34] ">
               <Smartphone className="w-5 h-5 text-[#7c8e88]" /> Devices
             </h3>
             <div className="space-y-2">
@@ -415,12 +407,8 @@ export default function ManageLinksTab() {
                     className="relative z-10 flex justify-between items-center text-sm p-2 rounded-md"
                   >
                     {renderProgressBar(dev.count, totalDeviceClicks)}
-                    <span className="font-medium text-[#1e3a34] dark:text-white">
-                      {dev.device || 'Unknown'}
-                    </span>
-                    <span className="font-bold text-[#1f644e] dark:text-[#2ecc71]">
-                      {dev.count}
-                    </span>
+                    <span className="font-medium text-[#1e3a34] ">{dev.device || 'Unknown'}</span>
+                    <span className="font-bold text-[#1f644e] ">{dev.count}</span>
                   </div>
                 ))
               ) : (
@@ -429,8 +417,8 @@ export default function ManageLinksTab() {
             </div>
           </Card>
 
-          <Card variant="flat" className="p-6 bg-white dark:bg-[#1e1e1e] border-neutral-200">
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-[#1e3a34] dark:text-white">
+          <Card variant="flat" className="p-6 bg-white  border-neutral-200">
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-[#1e3a34] ">
               <Globe className="w-5 h-5 text-[#7c8e88]" /> Countries
             </h3>
             <div className="space-y-2">
@@ -441,12 +429,10 @@ export default function ManageLinksTab() {
                     className="relative z-10 flex justify-between items-center text-sm p-2 rounded-md"
                   >
                     {renderProgressBar(country.count, totalCountryClicks)}
-                    <span className="font-medium text-[#1e3a34] dark:text-white">
+                    <span className="font-medium text-[#1e3a34] ">
                       {country.country || 'Unknown'}
                     </span>
-                    <span className="font-bold text-[#1f644e] dark:text-[#2ecc71]">
-                      {country.count}
-                    </span>
+                    <span className="font-bold text-[#1f644e] ">{country.count}</span>
                   </div>
                 ))
               ) : (
@@ -466,11 +452,7 @@ export default function ManageLinksTab() {
         <div>
           <p className="text-neutral-500">Manage, edit, and create new short URLs.</p>
         </div>
-        <Button
-          onClick={openCreateModal}
-          className="flex items-center gap-2 bg-[#1f644e] hover:bg-[#164a39] text-white !border-[#1f644e]"
-          variant="default"
-        >
+        <Button onClick={openCreateModal} variant="brand">
           <i className="fas fa-plus"></i> Create Link
         </Button>
       </div>
