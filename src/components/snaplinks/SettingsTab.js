@@ -4,8 +4,8 @@ import { Card } from '@/components/ui';
 
 export default function SettingsTab() {
   return (
-    <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-      <div>
+    <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 flex flex-col items-center">
+      <div className="w-full max-w-2xl text-center mb-4">
         <h2 className="text-2xl font-bold text-[#1e3a34] dark:text-[#e0e0e0] mb-2 font-[family-name:var(--font-sans)]">
           Settings
         </h2>
@@ -14,7 +14,7 @@ export default function SettingsTab() {
 
       <Card
         variant="flat"
-        className="p-6 bg-white dark:bg-[#1e1e1e] border border-[#e5e3d8] dark:border-[#333333]"
+        className="w-full max-w-2xl p-6 bg-white dark:bg-[#1e1e1e] border border-[#e5e3d8] dark:border-[#333333]"
       >
         <h3 className="text-lg font-bold text-[#1e3a34] dark:text-white mb-4">
           Domain Configuration
