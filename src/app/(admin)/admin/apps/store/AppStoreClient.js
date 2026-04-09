@@ -47,10 +47,12 @@ export default function AppStoreClient() {
             <div>
               <div className="flex items-start justify-between mb-3 gap-3">
                 <div className="flex items-center gap-3">
-                  <div
-                    className={`h-9 w-9 rounded-xl flex items-center justify-center text-xs font-bold text-white ${app.iconColor} bg-gradient-to-br from-white/10 to-black/10`}
-                  >
-                    {app.iconInitials}
+                  <div className="h-9 w-9 rounded-xl overflow-hidden bg-emerald-50 flex items-center justify-center border border-emerald-100">
+                    <img
+                      src={app.iconSrc}
+                      alt={`${app.name} icon`}
+                      className="h-full w-full object-contain"
+                    />
                   </div>
                   <div>
                     <h2 className="text-sm font-semibold text-gray-900 leading-tight">

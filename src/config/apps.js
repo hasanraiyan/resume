@@ -7,6 +7,7 @@ export const MINI_APPS = [
     tagline: 'Manage and track your short links.',
     href: '/snaplinks',
     category: 'Links',
+    iconSrc: '/images/apps/Snaplinks.png',
   },
   {
     id: 'pocketly',
@@ -14,6 +15,7 @@ export const MINI_APPS = [
     tagline: 'Personal finance and expense tracker.',
     href: '/pocketly',
     category: 'Finance',
+    iconSrc: '/images/apps/pocketly.png',
   },
   {
     id: 'taskly',
@@ -21,5 +23,6 @@ export const MINI_APPS = [
     tagline: 'Personal project and task workspace.',
     href: '/taskly',
     category: 'Productivity',
+    iconSrc: '/images/apps/taskly.png',
   },
 ];

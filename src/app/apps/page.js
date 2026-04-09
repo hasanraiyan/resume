@@ -38,8 +38,22 @@ export default function AppsIndexPage() {
                 key={app.id}
                 className="h-full p-6 md:p-7 flex flex-col border-2 border-neutral-200 bg-white hover:border-neutral-900 transition-all duration-300 group hover:shadow-[8px_8px_0px_0px_rgba(23,23,23,1)]"
               >
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-serif font-bold text-neutral-900">{app.name}</h2>
+                <div className="flex items-start justify-between mb-4 gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-2xl overflow-hidden bg-emerald-50 flex items-center justify-center border border-emerald-100">
+                      <img
+                        src={app.iconSrc}
+                        alt={`${app.name} icon`}
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-serif font-bold text-neutral-900 leading-tight">
+                        {app.name}
+                      </h2>
+                      <p className="text-[11px] text-neutral-500">Mini app</p>
+                    </div>
+                  </div>
                   <Badge variant="soft" className="text-[10px] uppercase tracking-widest">
                     {app.category}
                   </Badge>

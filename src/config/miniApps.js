@@ -7,8 +7,7 @@ export const MINI_APPS = [
     tagline: 'Manage and track short links with analytics.',
     href: '/snaplinks',
     category: 'Links',
-    iconColor: 'bg-emerald-500',
-    iconInitials: 'SL',
+    iconSrc: '/images/apps/Snaplinks.png',
   },
   {
     id: 'pocketly',
@@ -16,8 +15,7 @@ export const MINI_APPS = [
     tagline: 'Personal finance and expense tracker workspace.',
     href: '/pocketly',
     category: 'Finance',
-    iconColor: 'bg-sky-500',
-    iconInitials: 'P',
+    iconSrc: '/images/apps/pocketly.png',
   },
   {
     id: 'taskly',
@@ -25,7 +23,6 @@ export const MINI_APPS = [
     tagline: 'Tasks, projects, and insights in one place.',
     href: '/taskly',
     category: 'Productivity',
-    iconColor: 'bg-indigo-500',
-    iconInitials: 'T',
+    iconSrc: '/images/apps/taskly.png',
   },
 ];
