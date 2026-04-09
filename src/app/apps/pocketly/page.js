@@ -84,7 +84,7 @@ function PocketlyNavigation({ tabs, activeTab, setActiveTab }) {
             <h1 className="font-[family-name:var(--font-logo)] text-2xl text-black ">Pocketly</h1>
           </div>
         </div>
-        <nav className="flex-1 py-4 px-3 space-y-1">
+        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -183,7 +183,7 @@ function FinanceContent() {
       <div className="min-h-screen flex items-center justify-center bg-[#fcfbf5]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#1f644e] border-t-transparent mx-auto"></div>
-          <p className="mt-4 text-[#7c8e88] font-medium">Loading finance...</p>
+          <p className="mt-4 text-[#7c8e88] font-medium">Loading Pocketly...</p>
         </div>
       </div>
     );
