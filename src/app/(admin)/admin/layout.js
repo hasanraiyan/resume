@@ -9,9 +9,7 @@ import { Button } from '@/components/ui';
 import {
   Gauge,
   BarChart2,
-  Brain,
   MessageSquare,
-  Link as LinkIcon,
   Image,
   Newspaper,
   Folder,
@@ -21,8 +19,6 @@ import {
   Mail,
   Cloud,
   TerminalSquare,
-  CreditCard,
-  CheckSquare2,
 } from 'lucide-react';
 
 function AdminLayoutContent({ children }) {
@@ -62,7 +58,24 @@ function AdminLayoutContent({ children }) {
     {
       title: 'Apps',
       items: [
-        { name: 'SnapLinks', href: '/snaplinks', icon: LinkIcon },
+        {
+          name: 'App Store',
+          href: '/admin/apps/store',
+          icon: ({ className }) => (
+            <span className={`relative inline-flex items-center justify-center ${className}`}>
+              {/* Outer rounded square like a store tile */}
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-gradient-to-br from-cyan-500 to-indigo-500">
+                {/* 2x2 grid of dots suggesting apps */}
+                <span className="grid grid-cols-2 gap-[1px]">
+                  <span className="h-[3px] w-[3px] rounded-full bg-white/90" />
+                  <span className="h-[3px] w-[3px] rounded-full bg-white/80" />
+                  <span className="h-[3px] w-[3px] rounded-full bg-white/80" />
+                  <span className="h-[3px] w-[3px] rounded-full bg-white/70" />
+                </span>
+              </span>
+            </span>
+          ),
+        },
         {
           name: 'SmallClaw',
           href: '/admin/agents',
@@ -70,8 +83,6 @@ function AdminLayoutContent({ children }) {
             <span className={`flex items-center justify-center ${className}`}>🦞</span>
           ),
         },
-        { name: 'Pocketly', href: '/pocketly', icon: CreditCard },
-        { name: 'Taskly', href: '/taskly', icon: CheckSquare2 },
         { name: 'Prisma', href: '/admin/media', icon: Image },
         { name: 'App Builder', href: '/admin/apps', icon: TerminalSquare },
       ],

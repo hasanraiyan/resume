@@ -29,7 +29,6 @@ export const AGENT_IDS = {
   BLOG_WRITER: 'blog_writer',
   CODE_REPORTER: 'code_reporter',
   ISSUE_MANAGER: 'issue_manager',
-  PRESENTATION_SYNTHESIZER: 'presentation_synthesizer',
 
   // Analytics Agents
   ANALYTICS_TRACKER: 'analytics_tracker',
@@ -142,18 +141,6 @@ export const DEFAULT_AGENT_CONFIGS = {
     icon: 'Search',
     defaultModel: 'text-embedding-3-small',
     defaultProvider: 'openai',
-    isActive: true,
-  },
-  [AGENT_IDS.PRESENTATION_SYNTHESIZER]: {
-    name: 'Presentation Synthesizer',
-    description: 'Synthesizes professional presentations with visually rich slides',
-    type: AGENT_TYPES.CONTENT,
-    category: AGENT_CATEGORIES.PROJECT_MANAGEMENT,
-    icon: 'Presentation',
-    defaultModel: 'gemini-1.5-pro',
-    defaultProvider: 'google',
-    persona:
-      'You are an elite Presentation Synthesizer agent. Your job is to research topics thoroughly, design logically structured presentation outlines, and ultimately translate dense text into visually stunning, complete slide images.',
     isActive: true,
   },
   [AGENT_IDS.CHAT_FAST]: {
@@ -339,7 +326,6 @@ export const AGENT_TOOLS = {
   [AGENT_IDS.BLOG_WRITER]: ['writing', 'editing', 'seo_optimization'],
   [AGENT_IDS.CODE_REPORTER]: ['code_analysis', 'documentation', 'reporting'],
   [AGENT_IDS.ISSUE_MANAGER]: ['issue_tracking', 'template_generation', 'assignment'],
-  [AGENT_IDS.PRESENTATION_SYNTHESIZER]: ['research', 'outline_generation', 'slide_synthesis'],
   [AGENT_IDS.ANALYTICS_TRACKER]: ['event_tracking', 'session_management'],
   [AGENT_IDS.ENGAGEMENT_ANALYZER]: ['pattern_recognition', 'insights_generation'],
   [AGENT_IDS.APP_BUILDER]: ['planning', 'html_generation', 'code_review'],
@@ -366,7 +352,6 @@ export const RATE_LIMIT_DEFAULTS = {
   [AGENT_IDS.BLOG_WRITER]: { requests: 10, window: 60 },
   [AGENT_IDS.CODE_REPORTER]: { requests: 10, window: 60 },
   [AGENT_IDS.ISSUE_MANAGER]: { requests: 15, window: 60 },
-  [AGENT_IDS.PRESENTATION_SYNTHESIZER]: { requests: 5, window: 60 },
   [AGENT_IDS.ANALYTICS_TRACKER]: { requests: 100, window: 60 },
   [AGENT_IDS.ENGAGEMENT_ANALYZER]: { requests: 30, window: 60 },
   [AGENT_IDS.APP_BUILDER]: { requests: 10, window: 60 },

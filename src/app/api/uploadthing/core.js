@@ -11,11 +11,11 @@ const uploadBuilder = createUploadthing();
  * @type {import('uploadthing/types').FileRouter}
  */
 export const uploadRouter = {
-  publicPresentationUploader: uploadBuilder({
+  publicImageUploader: uploadBuilder({
     image: { maxFileSize: '8MB', maxFileCount: 20 },
   })
     .middleware(async () => {
-      // Allow guests/public users for the presentation tools
+      // Allow guests/public users for image uploads
       return { uploaderId: 'guest' };
     })
     .onUploadComplete(async ({ file, metadata }) => {
