@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useMoney } from '@/context/MoneyContext';
 import { MoreVertical, Plus, TrendingDown, TrendingUp } from 'lucide-react';
-import dynamic from 'next/dynamic';
 
 import IconRenderer from './IconRenderer';
 
@@ -55,6 +54,8 @@ const categoryColors = [
   'bg-[#8b5cf6]',
 ];
 
+const TYPE_OPTIONS = ['expense', 'income'];
+
 const getCategoryColorPresentation = (color) => {
   if (!color) return { className: 'bg-[#1f644e]', style: undefined };
   if (color.startsWith('#')) return { className: '', style: { backgroundColor: color } };
@@ -77,6 +78,8 @@ export default function CategoriesTab() {
 
   const incomeCategories = categories.filter((c) => c.type === 'income');
   const expenseCategories = categories.filter((c) => c.type === 'expense');
+
+  const activeTypeIndex = Math.max(0, TYPE_OPTIONS.indexOf(form.type));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -191,30 +194,58 @@ export default function CategoriesTab() {
     <div className="mb-6 pb-4 pt-6">
       <div className="w-full px-4 lg:px-6">
         <div className="w-full max-w-6xl mx-auto">
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-            <div className="bg-white border border-[#e5e3d8] rounded-xl p-5 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-[#1f644e]/10 flex items-center justify-center shrink-0">
-                <TrendingUp className="w-6 h-6 text-[#1f644e]" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider">
-                  Income Categories
-                </p>
-                <p className="text-xl font-bold text-[#1e3a34] mt-0.5">{incomeCategories.length}</p>
+          {/* Summary */}
+          <div className="mb-6">
+            {/* Mobile: compact 2-column summary, no icons */}
+            <div className="sm:hidden">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl border border-[#e5e3d8] bg-white px-2.5 py-2 text-center">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#7c8e88]">
+                    Income Categories
+                  </p>
+                  <p className="mt-0.5 text-sm font-bold text-[#1f644e]">
+                    {incomeCategories.length}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-[#e5e3d8] bg-white px-2.5 py-2 text-center">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#7c8e88]">
+                    Expense Categories
+                  </p>
+                  <p className="mt-0.5 text-sm font-bold text-[#c94c4c]">
+                    {expenseCategories.length}
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="bg-white border border-[#e5e3d8] rounded-xl p-5 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-[#c94c4c]/10 flex items-center justify-center shrink-0">
-                <TrendingDown className="w-6 h-6 text-[#c94c4c]" />
+
+            {/* Tablet & desktop: icon summary cards */}
+            <div className="hidden sm:grid sm:grid-cols-2 sm:gap-4">
+              <div className="bg-white border border-[#e5e3d8] rounded-xl p-5 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-[#1f644e]/10 flex items-center justify-center shrink-0">
+                  <TrendingUp className="w-6 h-6 text-[#1f644e]" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider">
+                    Income Categories
+                  </p>
+                  <p className="mt-0.5 text-xl font-bold text-[#1e3a34]">
+                    {incomeCategories.length}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider">
-                  Expense Categories
-                </p>
-                <p className="text-xl font-bold text-[#1e3a34] mt-0.5">
-                  {expenseCategories.length}
-                </p>
+              <div className="bg-white border border-[#e5e3d8] rounded-xl p-5 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-[#c94c4c]/10 flex items-center justify-center shrink-0">
+                  <TrendingDown className="w-6 h-6 text-[#c94c4c]" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider">
+                    Expense Categories
+                  </p>
+                  <p className="mt-0.5 text-xl font-bold text-[#1e3a34]">
+                    {expenseCategories.length}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -275,14 +306,21 @@ export default function CategoriesTab() {
               </div>
               <div>
                 <div className="text-[10px] text-[#7c8e88] font-bold mb-2">Type</div>
-                <div className="flex bg-[#f0f5f2] rounded-lg p-1">
-                  {['expense', 'income'].map((t) => (
+                <div className="relative flex bg-[#f0f5f2] rounded-lg p-1 overflow-hidden">
+                  {/* Sliding background pill */}
+                  <div
+                    className="absolute inset-y-1 left-1 w-1/2 rounded-md bg-white shadow-sm transition-transform duration-150"
+                    style={{ transform: `translateX(${activeTypeIndex * 100}%)` }}
+                    aria-hidden="true"
+                  />
+
+                  {TYPE_OPTIONS.map((t) => (
                     <button
                       key={t}
                       type="button"
                       onClick={() => setForm({ ...form, type: t })}
-                      className={`flex-1 py-2 text-xs font-bold uppercase rounded transition cursor-pointer ${
-                        form.type === t ? 'bg-[#1f644e] text-white' : 'text-[#7c8e88]'
+                      className={`relative z-10 flex-1 py-2 text-xs font-bold uppercase rounded-md transition-colors cursor-pointer ${
+                        form.type === t ? 'text-[#1f644e]' : 'text-[#7c8e88] hover:text-[#1e3a34]'
                       }`}
                     >
                       {t}

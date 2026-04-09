@@ -2,8 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useMoney } from '@/context/MoneyContext';
-import { MoreVertical, Plus, TrendingDown, TrendingUp, Loader2, AlertTriangle } from 'lucide-react';
-import { PurseSVG } from '@/components/pocketly-tracker/IconRenderer';
+import {
+  MoreVertical,
+  Plus,
+  TrendingDown,
+  TrendingUp,
+  Loader2,
+  AlertTriangle,
+  Wallet,
+} from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 const IconRenderer = dynamic(() => import('./IconRenderer'), { ssr: false });
@@ -31,6 +38,17 @@ const iconColors = [
   { bg: 'bg-purple-100', text: 'text-purple-600', border: 'border-purple-200' },
   { bg: 'bg-red-100', text: 'text-red-500', border: 'border-red-200' },
 ];
+
+const currencyFormatter = new Intl.NumberFormat('en-IN', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+// Compact formatter for large amounts, e.g. 45K, 1.2L
+const compactNumberFormatter = new Intl.NumberFormat('en-IN', {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+});
 
 const getAccountIconClass = (icon, context = 'card') => {
   if (context === 'picker') {
@@ -166,45 +184,93 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
     }
   };
 
+  const formatCurrencyWithCompact = (amount) => {
+    const abs = Math.abs(amount || 0);
+    const useCompact = abs >= 100000; // Use compact notation from 1L upwards
+    const formatted = useCompact
+      ? compactNumberFormatter.format(abs)
+      : currencyFormatter.format(abs);
+    return `₹${formatted}`;
+  };
+
   return (
     <div className="mb-6 pb-4 pt-6">
       <div className="w-full px-4 lg:px-6">
         <div className="w-full max-w-6xl mx-auto">
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-            <div className="bg-white border border-[#e5e3d8] rounded-xl p-5 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-[#1f644e]/10 flex items-center justify-center shrink-0">
-                <PurseSVG className="w-6 h-6 text-[#1f644e]" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider">
-                  Total Balance
-                </p>
-                <p className="text-xl font-bold text-[#1e3a34] mt-0.5">
-                  ₹{totalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                </p>
+          {/* Summary */}
+          <div className="mb-6">
+            {/* Mobile: 3-column minimal summary, no icons */}
+            <div className="sm:hidden">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-xl border border-[#e5e3d8] bg-white px-2.5 py-2 text-center">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#7c8e88]">
+                    Balance
+                  </p>
+                  <p className="mt-0.5 text-sm font-bold text-[#1e3a34]">
+                    {formatCurrencyWithCompact(totalBalance)}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-[#e5e3d8] bg-white px-2.5 py-2 text-center">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#7c8e88]">
+                    Expense
+                  </p>
+                  <p className="mt-0.5 text-sm font-bold text-[#c94c4c]">
+                    {formatCurrencyWithCompact(totalExpense)}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-[#e5e3d8] bg-white px-2.5 py-2 text-center">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#7c8e88]">
+                    Income
+                  </p>
+                  <p className="mt-0.5 text-sm font-bold text-[#1f644e]">
+                    {formatCurrencyWithCompact(totalIncome)}
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="bg-white border border-[#e5e3d8] rounded-xl p-5 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-[#c94c4c]/10 flex items-center justify-center shrink-0">
-                <TrendingDown className="w-6 h-6 text-[#c94c4c]" />
+
+            {/* Tablet & desktop: icon summary cards */}
+            <div className="hidden sm:grid sm:grid-cols-3 sm:gap-4">
+              <div className="bg-white border border-[#e5e3d8] rounded-xl p-5 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-[#1f644e]/10 flex items-center justify-center shrink-0">
+                  <Wallet className="w-6 h-6 text-[#1f644e]" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider">
+                    Total Balance
+                  </p>
+                  <p className="mt-0.5 text-xl font-bold text-[#1e3a34]">
+                    {formatCurrencyWithCompact(totalBalance)}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider">Expense</p>
-                <p className="text-xl font-bold text-[#c94c4c] mt-0.5">
-                  ₹{totalExpense.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                </p>
+              <div className="bg-white border border-[#e5e3d8] rounded-xl p-5 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-[#c94c4c]/10 flex items-center justify-center shrink-0">
+                  <TrendingDown className="w-6 h-6 text-[#c94c4c]" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider">
+                    Expense
+                  </p>
+                  <p className="mt-0.5 text-xl font-bold text-[#c94c4c]">
+                    {formatCurrencyWithCompact(totalExpense)}
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="bg-white border border-[#e5e3d8] rounded-xl p-5 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-[#1f644e]/10 flex items-center justify-center shrink-0">
-                <TrendingUp className="w-6 h-6 text-[#1f644e]" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider">Income</p>
-                <p className="text-xl font-bold text-[#1e3a34] mt-0.5">
-                  ₹{totalIncome.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                </p>
+              <div className="bg-white border border-[#e5e3d8] rounded-xl p-5 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-[#1f644e]/10 flex items-center justify-center shrink-0">
+                  <TrendingUp className="w-6 h-6 text-[#1f644e]" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider">
+                    Income
+                  </p>
+                  <p className="mt-0.5 text-xl font-bold text-[#1f644e]">
+                    {formatCurrencyWithCompact(totalIncome)}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -245,7 +311,7 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
           {displayAccounts.length === 0 ? (
             <div className="bg-white border border-[#e5e3d8] rounded-xl p-12 text-center">
               <div className="w-16 h-16 rounded-2xl bg-[#f0f5f2] flex items-center justify-center mx-auto mb-4">
-                <PurseSVG className="w-8 h-8 text-[#7c8e88]" />
+                <Wallet className="w-8 h-8 text-[#7c8e88]" />
               </div>
               <p className="text-sm font-bold text-[#1e3a34] mb-1">No accounts yet</p>
               <p className="text-xs text-[#7c8e88] mb-4">
@@ -270,6 +336,7 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
             >
               {displayAccounts.map((account, index) => {
                 const colorSet = iconColors[index % iconColors.length];
+                const balance = account.currentBalance ?? account.initialBalance ?? 0;
                 return (
                   <div
                     key={account.id}
@@ -314,16 +381,14 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
                       </div>
                     </div>
                     <div className="mt-4">
-                      <p className="font-bold text-sm text-[#1e3a34]">{account.name}</p>
+                      <p className="font-bold text-sm text-[#1e3a34] line-clamp-1">
+                        {account.name}
+                      </p>
                       <div className="mt-1">
                         <p
-                          className={`text-xl font-bold ${(account.currentBalance ?? account.initialBalance) >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'}`}
+                          className={`text-lg sm:text-xl font-bold ${balance >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'}`}
                         >
-                          ₹
-                          {(account.currentBalance ?? account.initialBalance).toLocaleString(
-                            'en-IN',
-                            { minimumFractionDigits: 2 }
-                          )}
+                          {formatCurrencyWithCompact(balance)}
                         </p>
                       </div>
                     </div>
