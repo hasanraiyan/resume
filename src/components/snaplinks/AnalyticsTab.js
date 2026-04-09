@@ -100,7 +100,10 @@ export default function AnalyticsTab() {
           </p>
         </div>
 
-        <Card className="p-0 overflow-hidden bg-white shadow-sm border border-neutral-200">
+        <Card
+          variant="flat"
+          className="p-0 overflow-hidden bg-white shadow-sm border border-neutral-200"
+        >
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -224,7 +227,10 @@ export default function AnalyticsTab() {
         <ArrowLeft className="w-4 h-4 mr-2" /> Back to all links
       </Button>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-[#1e1e1e] p-6 rounded-xl border border-neutral-200 shadow-sm">
+      <Card
+        variant="flat"
+        className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-[#1e1e1e] p-6 border-neutral-200 shadow-sm"
+      >
         <div>
           <h2 className="text-2xl font-bold font-['Playfair_Display']">
             {link.title || link.slug}
@@ -252,9 +258,9 @@ export default function AnalyticsTab() {
             <p className="text-3xl font-bold text-neutral-700">{summary.uniqueVisitors}</p>
           </div>
         </div>
-      </div>
+      </Card>
 
-      <Card className="p-6 bg-white dark:bg-[#1e1e1e] border-neutral-200">
+      <Card variant="flat" className="p-6 bg-white dark:bg-[#1e1e1e] border-neutral-200">
         <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
           <CalendarDays className="w-5 h-5 text-neutral-400" />
           Click History (Last 30 Days)
@@ -271,7 +277,7 @@ export default function AnalyticsTab() {
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="p-6 bg-white dark:bg-[#1e1e1e] border-neutral-200">
+        <Card variant="flat" className="p-6 bg-white dark:bg-[#1e1e1e] border-neutral-200">
           <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
             <Globe className="w-5 h-5 text-neutral-400" /> Top Referrers
           </h3>
@@ -291,7 +297,7 @@ export default function AnalyticsTab() {
           </div>
         </Card>
 
-        <Card className="p-6 bg-white dark:bg-[#1e1e1e] border-neutral-200">
+        <Card variant="flat" className="p-6 bg-white dark:bg-[#1e1e1e] border-neutral-200">
           <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
             <Smartphone className="w-5 h-5 text-neutral-400" /> Devices
           </h3>
@@ -309,7 +315,7 @@ export default function AnalyticsTab() {
           </div>
         </Card>
 
-        <Card className="p-6 bg-white dark:bg-[#1e1e1e] border-neutral-200">
+        <Card variant="flat" className="p-6 bg-white dark:bg-[#1e1e1e] border-neutral-200">
           <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
             <Globe className="w-5 h-5 text-neutral-400" /> Countries
           </h3>

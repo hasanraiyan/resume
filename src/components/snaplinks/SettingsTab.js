@@ -12,7 +12,10 @@ export default function SettingsTab() {
         <p className="text-[#7c8e88] dark:text-[#a0a0a0]">Configure your SnapLinks preferences.</p>
       </div>
 
-      <Card className="p-6 bg-white dark:bg-[#1e1e1e] border border-[#e5e3d8] dark:border-[#333333]">
+      <Card
+        variant="flat"
+        className="p-6 bg-white dark:bg-[#1e1e1e] border border-[#e5e3d8] dark:border-[#333333]"
+      >
         <h3 className="text-lg font-bold text-[#1e3a34] dark:text-white mb-4">
           Domain Configuration
         </h3>

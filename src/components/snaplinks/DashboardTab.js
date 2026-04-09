@@ -51,8 +51,9 @@ export default function DashboardTab({ navigateTo }) {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
         <Card
+          variant="flat"
           className="p-6 bg-white dark:bg-[#1e1e1e] border border-[#e5e3d8] dark:border-[#333333] flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer"
           onClick={() => navigateTo('manage')}
         >
@@ -68,6 +69,7 @@ export default function DashboardTab({ navigateTo }) {
         </Card>
 
         <Card
+          variant="flat"
           className="p-6 bg-white dark:bg-[#1e1e1e] border border-[#e5e3d8] dark:border-[#333333] flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer"
           onClick={() => navigateTo('analytics')}
         >
@@ -83,6 +85,7 @@ export default function DashboardTab({ navigateTo }) {
         </Card>
 
         <Card
+          variant="flat"
           className="p-6 bg-white dark:bg-[#1e1e1e] border border-[#e5e3d8] dark:border-[#333333] flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer"
           onClick={() => navigateTo('manage')}
         >
@@ -99,7 +102,10 @@ export default function DashboardTab({ navigateTo }) {
       </div>
 
       {stats?.topLink && (
-        <Card className="p-6 bg-white dark:bg-[#1e1e1e] border border-[#e5e3d8] dark:border-[#333333]">
+        <Card
+          variant="flat"
+          className="p-6 bg-white dark:bg-[#1e1e1e] border border-[#e5e3d8] dark:border-[#333333]"
+        >
           <h3 className="text-lg font-bold text-[#1e3a34] dark:text-white mb-4">
             Top Performing Link
           </h3>

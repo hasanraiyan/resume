@@ -166,7 +166,10 @@ export default function ManageLinksTab() {
         </div>
       )}
 
-      <Card className="p-0 overflow-hidden bg-white shadow-sm border border-neutral-200">
+      <Card
+        variant="flat"
+        className="p-0 overflow-hidden bg-white shadow-sm border border-neutral-200"
+      >
         {loading ? (
           <div className="p-6 space-y-4">
             <Skeleton className="h-10 w-full" />
@@ -262,7 +265,8 @@ export default function ManageLinksTab() {
             {/* Mobile Cards */}
             <div className="md:hidden space-y-4 p-4">
               {links.map((link) => (
-                <div
+                <Card
+                  variant="flat"
                   key={link._id}
                   className="border border-neutral-100 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow"
                 >
@@ -333,7 +337,7 @@ export default function ManageLinksTab() {
                       </Button>
                     </div>
                   </div>
-                </div>
+                </Card>
               ))}
             </div>
           </div>
@@ -343,8 +347,11 @@ export default function ManageLinksTab() {
       {/* Modal / Form overlay */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="p-8 w-full max-w-2xl bg-white max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold mb-6 font-['Playfair_Display']">
+          <Card
+            variant="flat"
+            className="p-6 md:p-8 w-full max-w-2xl bg-white max-h-[90vh] overflow-y-auto"
+          >
+            <h2 className="text-2xl font-bold mb-6 font-[family-name:var(--font-sans)]">
               {isEditing ? 'Edit SnapLink' : 'Create SnapLink'}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
