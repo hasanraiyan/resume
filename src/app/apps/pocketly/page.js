@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { MoneyProvider, useMoney } from '@/context/MoneyContext';
 import { FinanceChatProvider, useFinanceChat } from '@/context/FinanceChatContext';
 import { useSession } from 'next-auth/react';
@@ -22,7 +23,6 @@ import {
   BarChart3,
   Tag,
   Wallet,
-  Menu,
   Plus,
   RefreshCw,
   AlertTriangle,
@@ -66,13 +66,23 @@ const tabs = [
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
-function PocketlyNavigation({ tabs, activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) {
+function PocketlyNavigation({ tabs, activeTab, setActiveTab }) {
   return (
     <>
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-[#e5e3d8] fixed inset-y-0 left-0 z-30">
         <div className="p-6 border-b border-[#e5e3d8]">
-          <h1 className="font-[family-name:var(--font-logo)] text-2xl text-black ">Pocketly</h1>
+          <div className="flex items-center gap-2">
+            <Image
+              src="/images/apps/pocketly.png"
+              alt="Pocketly app logo"
+              width={28}
+              height={28}
+              className="rounded-xl shadow-sm"
+              priority
+            />
+            <h1 className="font-[family-name:var(--font-logo)] text-2xl text-black ">Pocketly</h1>
+          </div>
         </div>
         <nav className="flex-1 py-4 px-3 space-y-1">
           {tabs.map((tab) => (
@@ -94,37 +104,6 @@ function PocketlyNavigation({ tabs, activeTab, setActiveTab, sidebarOpen, setSid
           <p className="text-[10px] text-[#7c8e88] text-center">Powered by Pocketly</p>
         </div>
       </aside>
-
-      {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 w-64 bg-white shadow-xl animate-in slide-in-from-left duration-300">
-            <div className="p-6 border-b border-[#e5e3d8]">
-              <h1 className="font-[family-name:var(--font-logo)] text-2xl text-black ">Pocketly</h1>
-            </div>
-            <nav className="py-4 px-3 space-y-1">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    setActiveTab(tab.id);
-                    setSidebarOpen(false);
-                  }}
-                  className={`w-full cursor-pointer flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
-                    activeTab === tab.id
-                      ? 'bg-[#1f644e] text-white'
-                      : 'text-[#7c8e88] hover:bg-[#f0f5f2]'
-                  }`}
-                >
-                  <tab.icon className="w-5 h-5" />
-                  {tab.label}
-                </button>
-              ))}
-            </nav>
-          </aside>
-        </div>
-      )}
 
       {/* Mobile Bottom Nav (without Settings tab) */}
       <nav
@@ -169,7 +148,6 @@ function FinanceContent() {
     editTransactionData,
   } = useMoney();
   const { clearChat } = useFinanceChat();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [requestAddAccountModal, setRequestAddAccountModal] = useState(false);
   const [showDelayedBootstrapSkeleton, setShowDelayedBootstrapSkeleton] = useState(false);
   const handleAddModalClose = useCallback(() => setRequestAddAccountModal(false), []);
@@ -281,13 +259,7 @@ function FinanceContent() {
 
   return (
     <div className="min-h-screen bg-[#fcfbf5] font-[family-name:var(--font-sans)] text-[#1e3a34] flex">
-      <PocketlyNavigation
-        tabs={tabs}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-      />
+      <PocketlyNavigation tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {/* Main Content Area */}
       <div className="flex min-w-0 flex-1 flex-col lg:ml-64 min-h-screen overflow-x-hidden pb-20 lg:pb-0 pt-14 lg:pt-0">
@@ -295,12 +267,19 @@ function FinanceContent() {
         <header className="lg:sticky lg:top-0 fixed top-0 left-0 right-0 z-50 bg-[#fcfbf5] border-b border-[#e5e3d8]">
           <div className="w-full px-4 lg:px-6 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <button className="lg:hidden p-1" onClick={() => setSidebarOpen(true)}>
-                <Menu className="w-5 h-5 text-[#1e3a34]" />
-              </button>
-              <h1 className="font-[family-name:var(--font-logo)] text-xl lg:text-2xl text-black lg:hidden">
-                Pocketly
-              </h1>
+              <div className="flex items-center gap-2 lg:hidden">
+                <Image
+                  src="/images/apps/pocketly.png"
+                  alt="Pocketly app logo"
+                  width={24}
+                  height={24}
+                  className="rounded-lg shadow-sm"
+                  priority
+                />
+                <h1 className="font-[family-name:var(--font-logo)] text-xl lg:text-2xl text-black">
+                  Pocketly
+                </h1>
+              </div>
               <h1 className="hidden lg:block text-lg font-bold text-[#1e3a34]">
                 {tabTitles[activeTab]}
               </h1>
