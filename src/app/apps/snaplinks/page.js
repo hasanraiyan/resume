@@ -115,7 +115,7 @@ function SnapLinksContent() {
         </header>
 
         {/* Content */}
-        <main className="min-w-0 flex-1 w-full overflow-x-hidden pt-12 lg:pt-0 pb-20 lg:pb-0">
+        <main className="min-w-0 flex-1 w-full overflow-x-hidden pt-12 pb-20 lg:pb-0">
           {renderTab()}
         </main>
       </div>
