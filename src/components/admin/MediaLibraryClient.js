@@ -37,10 +37,8 @@ export default function MediaLibraryClient({ initialAssets, title, description }
   const [uploadError, setUploadError] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [aiMode, setAiMode] = useState('generate'); // 'generate' or 'edit'
   const [generateError, setGenerateError] = useState('');
   const [prompt, setPrompt] = useState('');
-  const [selectedAssetsForEdit, setSelectedAssetsForEdit] = useState([]); // Support multiple images
   const [previewData, setPreviewData] = useState(null); // { before, after, mode }
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [providers, setProviders] = useState([]);
@@ -570,47 +568,6 @@ export default function MediaLibraryClient({ initialAssets, title, description }
     } catch {}
   };
 
-  // Update aiMode based on selectedAssetsForEdit
-  useEffect(() => {
-    if (selectedAssetsForEdit.length > 0) {
-      setAiMode('edit');
-
-      // Auto-select best matching aspect ratio based on the first selected image
-      const firstAsset = selectedAssetsForEdit[0];
-      if (firstAsset.width && firstAsset.height) {
-        const ratio = firstAsset.width / firstAsset.height;
-        let bestMatch = '1:1';
-        let minDiff = Math.abs(ratio - 1);
-
-        const ratios = [
-          { val: '1:1', n: 1 },
-          { val: '16:9', n: 16 / 9 },
-          { val: '9:16', n: 9 / 16 },
-          { val: '4:3', n: 4 / 3 },
-          { val: '3:4', n: 3 / 4 },
-          { val: '3:2', n: 3 / 2 },
-          { val: '2:3', n: 2 / 3 },
-          { val: '5:4', n: 5 / 4 },
-          { val: '4:5', n: 4 / 5 },
-          { val: '4:1', n: 4 / 1 },
-          { val: '1:4', n: 1 / 4 },
-          { val: '8:1', n: 8 / 1 },
-          { val: '1:8', n: 1 / 8 },
-        ];
-
-        ratios.forEach((r) => {
-          const diff = Math.abs(ratio - r.n);
-          if (diff < minDiff) {
-            minDiff = diff;
-            bestMatch = r.val;
-          }
-        });
-        setAspectRatio(bestMatch);
-      }
-    } else {
-      setAiMode('generate');
-    }
-  }, [selectedAssetsForEdit]);
   // Fetch available providers on mount
   useEffect(() => {
     const fetchProviders = async () => {
@@ -769,31 +726,17 @@ export default function MediaLibraryClient({ initialAssets, title, description }
       return;
     }
 
-    if (aiMode === 'edit' && selectedAssetsForEdit.length === 0) {
-      setGenerateError('Please select at least one image to edit from the gallery below');
-      return;
-    }
-
     setIsGenerating(true);
     setGenerateError('');
 
     try {
-      const endpoint = aiMode === 'generate' ? '/api/media/generate' : '/api/media/edit';
-      const body =
-        aiMode === 'generate'
-          ? {
-              prompt: prompt.trim(),
-              aspectRatio,
-              providerId: selectedProvider,
-              model: selectedModel,
-            }
-          : {
-              assetIds: selectedAssetsForEdit.map((a) => a._id),
-              editPrompt: prompt.trim(),
-              aspectRatio,
-              providerId: selectedProvider,
-              model: selectedModel,
-            };
+      const endpoint = '/api/media/generate';
+      const body = {
+        prompt: prompt.trim(),
+        aspectRatio,
+        providerId: selectedProvider,
+        model: selectedModel,
+      };
 
       console.log('Sending AI action request:', { endpoint, body });
 
@@ -813,21 +756,13 @@ export default function MediaLibraryClient({ initialAssets, title, description }
 
         // Prepare preview data
         setPreviewData({
-          befores: aiMode === 'edit' ? selectedAssetsForEdit.map((a) => a.secure_url) : [],
           after: result.asset.secure_url,
-          mode: aiMode,
+          mode: 'generate',
           aspectRatio: aspectRatio,
         });
         setIsPreviewOpen(true);
-
-        if (aiMode === 'edit') {
-          setSelectedAssetsForEdit([]);
-          setAiMode('generate');
-        }
       } else {
-        setGenerateError(
-          result.error || `${aiMode === 'generate' ? 'Generation' : 'Editing'} failed`
-        );
+        setGenerateError(result.error || `Generation failed`);
       }
     } catch (error) {
       setGenerateError('Network error. Please check your connection and try again.');
@@ -972,7 +907,7 @@ export default function MediaLibraryClient({ initialAssets, title, description }
           </div>
         )}
 
-        {/* AI Image Panel (Generate & Edit) */}
+        {/* AI Image Panel (Generate) */}
         <div className="bg-white rounded-2xl border border-neutral-200/60 shadow-sm overflow-hidden">
           <div className="p-6 sm:p-8 space-y-6">
             <div className="pb-5 border-b border-neutral-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -981,87 +916,10 @@ export default function MediaLibraryClient({ initialAssets, title, description }
                   AI Media Studio
                 </h3>
                 <p className="text-sm text-neutral-500">
-                  {aiMode === 'generate'
-                    ? 'Generate new images from scratch.'
-                    : 'Edit existing images with AI instructions.'}
+                  Generate new images from scratch.
                 </p>
               </div>
-
-              <div className="flex bg-neutral-100 p-1 rounded-xl w-fit self-start pointer-events-none opacity-60">
-                <div
-                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    aiMode === 'generate' ? 'bg-white text-black shadow-sm' : 'text-neutral-500'
-                  }`}
-                >
-                  Generate
-                </div>
-                <div
-                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    aiMode === 'edit' ? 'bg-white text-black shadow-sm' : 'text-neutral-500'
-                  }`}
-                >
-                  Edit
-                </div>
-              </div>
             </div>
-
-            {/* Selected Assets for Editing Preview */}
-            {aiMode === 'edit' && (
-              <div
-                className={`p-4 rounded-xl border transition-all ${
-                  selectedAssetsForEdit.length > 0
-                    ? 'bg-blue-50 border-blue-100'
-                    : 'bg-orange-50 border-orange-100'
-                }`}
-              >
-                {selectedAssetsForEdit.length > 0 ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-blue-900">
-                        {selectedAssetsForEdit.length} Image
-                        {selectedAssetsForEdit.length > 1 ? 's' : ''} Selected
-                      </p>
-                      <button
-                        onClick={() => setSelectedAssetsForEdit([])}
-                        className="text-xs text-blue-600 hover:text-blue-800 underline"
-                      >
-                        Clear All
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap gap-3">
-                      {selectedAssetsForEdit.map((asset) => (
-                        <div key={asset._id} className="relative group">
-                          <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-blue-200 shadow-sm">
-                            <img
-                              src={asset.secure_url}
-                              alt="Selected"
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <button
-                            onClick={() =>
-                              setSelectedAssetsForEdit((prev) =>
-                                prev.filter((a) => a._id !== asset._id)
-                              )
-                            }
-                            className="absolute -top-1.5 -right-1.5 bg-white text-red-500 rounded-full w-5 h-5 flex items-center justify-center shadow-md border border-neutral-100 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <i className="fas fa-times text-[10px]"></i>
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3 text-orange-700">
-                    <i className="fas fa-info-circle"></i>
-                    <p className="text-sm font-medium">
-                      Please select one or more images from the gallery below to start editing.
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* Error Message */}
             {generateError && (
@@ -1073,9 +931,8 @@ export default function MediaLibraryClient({ initialAssets, title, description }
               </div>
             )}
 
-            {/* Prompt Templates (Only for Generate) */}
-            {aiMode === 'generate' && (
-              <div className="space-y-3">
+            {/* Prompt Templates */}
+            <div className="space-y-3">
                 <label className="block text-sm font-medium text-neutral-800">
                   Quick Start Templates
                 </label>
@@ -1099,27 +956,20 @@ export default function MediaLibraryClient({ initialAssets, title, description }
                   ))}
                 </div>
               </div>
-            )}
 
             {/* Main Prompt Input */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-neutral-800">
-                {aiMode === 'generate' ? 'Describe Your Image' : 'Describe Changes'}
+                Describe Your Image
               </label>
               <div className="relative">
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-none bg-neutral-50 text-sm"
-                  placeholder={
-                    aiMode === 'generate'
-                      ? 'A majestic lion standing on a mountain peak at sunset...'
-                      : 'Combine these images into a collage, or change the background of all images...'
-                  }
+                  placeholder={'A majestic lion standing on a mountain peak at sunset...'}
                   rows={3}
-                  disabled={
-                    isGenerating || (aiMode === 'edit' && selectedAssetsForEdit.length === 0)
-                  }
+                  disabled={isGenerating}
                 />
                 {prompt && (
                   <div className="absolute bottom-2 right-3 text-[10px] text-neutral-400">
@@ -1194,32 +1044,22 @@ export default function MediaLibraryClient({ initialAssets, title, description }
             {/* Action Button */}
             <button
               onClick={handleAiAction}
-              disabled={
-                isGenerating ||
-                !prompt.trim() ||
-                (aiMode === 'edit' && selectedAssetsForEdit.length === 0)
-              }
+              disabled={isGenerating || !prompt.trim()}
               className={`w-full py-3 px-6 rounded-xl transition-all text-sm font-medium flex items-center justify-center gap-2.5 ${
-                isGenerating ||
-                !prompt.trim() ||
-                (aiMode === 'edit' && selectedAssetsForEdit.length === 0)
+                isGenerating || !prompt.trim()
                   ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed border border-neutral-200'
-                  : aiMode === 'generate'
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/10'
-                    : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/10'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/10'
               }`}
             >
               {isGenerating ? (
                 <>
                   <div className="w-4 h-4 border-2 border-neutral-300 border-t-neutral-500 rounded-full animate-spin"></div>
-                  {aiMode === 'generate' ? 'Generating...' : 'Editing...'}
+                  Generating...
                 </>
               ) : (
                 <>
-                  <i
-                    className={`fas ${aiMode === 'generate' ? 'fa-sparkles' : 'fa-magic'} text-xs`}
-                  ></i>
-                  {aiMode === 'generate' ? 'Generate Image' : 'Apply AI Edits'}
+                  <i className="fas fa-sparkles text-xs"></i>
+                  Generate Image
                 </>
               )}
             </button>
@@ -1641,20 +1481,6 @@ export default function MediaLibraryClient({ initialAssets, title, description }
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedAssetsForEdit((prev) => {
-                              if (prev.some((a) => a._id === asset._id)) return prev;
-                              return [...prev, asset];
-                            });
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                          }}
-                          className="bg-black hover:bg-gray-900 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium transition-colors shadow-lg border border-white/20"
-                          title="Add to AI Edit"
-                        >
-                          <i className="fas fa-magic"></i>
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
                             handleDelete(asset._id);
                           }}
                           className="bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium transition-colors shadow-lg"
@@ -1706,57 +1532,11 @@ export default function MediaLibraryClient({ initialAssets, title, description }
           <DialogContent className="sm:max-w-2xl bg-neutral-900 border-neutral-800 text-white">
             <DialogHeader>
               <DialogTitle className="text-xl font-['Playfair_Display'] text-white">
-                {previewData?.mode === 'edit' ? 'AI Edit Result' : 'AI Generation Result'}
+                AI Generation Result
               </DialogTitle>
             </DialogHeader>
 
             <div className="mt-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar text-white">
-              {previewData?.mode === 'edit' && previewData?.befores?.length > 0 ? (
-                <div className="space-y-6">
-                  <div className="space-y-4 text-white">
-                    <p className="text-sm text-neutral-400">
-                      {previewData.befores.length > 1
-                        ? 'You used multiple images as input. Here is the comparison with the primary image.'
-                        : 'Slide to compare the original and the AI-edited version.'}
-                    </p>
-                    <BeforeAfterSlider
-                      before={previewData.befores[0]}
-                      after={previewData.after}
-                      aspectRatio={previewData.aspectRatio}
-                    />
-                  </div>
-
-                  {previewData.befores.length > 1 && (
-                    <div className="space-y-4 pt-4 border-t border-neutral-800">
-                      <p className="text-sm font-medium text-neutral-200">All Input Images</p>
-                      <MultiImagePreview
-                        images={previewData.befores}
-                        aspectRatio={previewData.aspectRatio}
-                      />
-                    </div>
-                  )}
-
-                  <div className="space-y-4 pt-4 border-t border-neutral-800 text-white">
-                    <p className="text-sm font-medium text-neutral-200">Final Result</p>
-                    <div
-                      className={`relative w-full overflow-hidden rounded-xl border border-neutral-800 ${
-                        previewData?.aspectRatio === '16:9'
-                          ? 'aspect-video'
-                          : previewData?.aspectRatio === '9:16'
-                            ? 'aspect-[9/16]'
-                            : 'aspect-square'
-                      }`}
-                    >
-                      <Image
-                        src={previewData?.after}
-                        alt="Generated Result"
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ) : (
                 <div className="space-y-4 text-white">
                   <p className="text-sm text-neutral-400">Your new AI-generated image is ready.</p>
                   <div
@@ -1776,7 +1556,6 @@ export default function MediaLibraryClient({ initialAssets, title, description }
                     />
                   </div>
                 </div>
-              )}
             </div>
 
             <DialogFooter className="mt-6 flex justify-end gap-2">

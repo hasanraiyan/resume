@@ -12,9 +12,9 @@ export const metadata = {
 const aiTools = [
   {
     id: 'image-ai',
-    title: 'Image Generator & Editor',
+    title: 'Image Generator',
     description:
-      'Unleash your creativity with our Gemini-powered AI Image Playground. Generate stunning art from text or transform existing photos instantly.',
+      'Unleash your creativity with our Gemini-powered AI Image Playground. Generate stunning art from text instantly.',
     href: '/tools/image-ai',
     icon: (
       <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">

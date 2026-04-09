@@ -28,7 +28,6 @@ export const AGENT_IDS = {
   BLOG_WRITER: 'blog_writer',
   CODE_REPORTER: 'code_reporter',
   ISSUE_MANAGER: 'issue_manager',
-  PRESENTATION_SYNTHESIZER: 'presentation_synthesizer',
 
   // Analytics Agents
   ANALYTICS_TRACKER: 'analytics_tracker',

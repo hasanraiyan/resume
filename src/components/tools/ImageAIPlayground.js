@@ -13,7 +13,6 @@ import {
 
 export default function ImageAIPlayground() {
   const [prompt, setPrompt] = useState('');
-  const [sourceImage, setSourceImage] = useState(null); // base64
   const [resultImage, setResultImage] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [aspectRatio, setAspectRatio] = useState('1:1');
@@ -59,18 +58,6 @@ export default function ImageAIPlayground() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSourceImage(reader.result);
-        setError('');
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const handleGenerate = async () => {
     const trimmedPrompt = prompt.trim();
     if (!trimmedPrompt) {
@@ -80,12 +67,10 @@ export default function ImageAIPlayground() {
 
     setIsGenerating(true);
     setError('');
-    const generationMode = sourceImage ? 'edit' : 'generate';
+    const generationMode = 'generate';
 
-    const endpoint = sourceImage ? '/api/media/public-edit' : '/api/media/public-generate';
-    const body = sourceImage
-      ? { image: sourceImage, prompt: trimmedPrompt, aspectRatio }
-      : { prompt: trimmedPrompt, aspectRatio };
+    const endpoint = '/api/media/public-generate';
+    const body = { prompt: trimmedPrompt, aspectRatio };
 
     try {
       const response = await fetch(endpoint, {
@@ -101,7 +86,7 @@ export default function ImageAIPlayground() {
           imageDataUrl: data.image,
           prompt: trimmedPrompt,
           mode: generationMode,
-          aspectRatio: generationMode === 'edit' ? 'n/a' : aspectRatio,
+          aspectRatio: aspectRatio,
           source: 'playground',
           createdAt: Date.now(),
         });
@@ -201,59 +186,13 @@ export default function ImageAIPlayground() {
                 onKeyDown={(e) =>
                   e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleGenerate())
                 }
-                placeholder={
-                  sourceImage
-                    ? 'Describe how to transform this image...'
-                    : 'Manifest your imagination...'
-                }
+                placeholder={'Manifest your imagination...'}
                 className="w-full bg-transparent border-none focus:ring-0 outline-none px-6 pt-6 pb-2 text-neutral-900 placeholder-neutral-400 min-h-[140px] resize-none text-xl leading-relaxed font-['Playfair_Display']"
               />
 
-              <div className="flex items-center justify-between px-3 pb-3">
-                {/* Left Actions: Reference */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => !sourceImage && fileInputRef.current?.click()}
-                    className={cn(
-                      'flex items-center gap-2 px-4 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border shadow-sm',
-                      sourceImage
-                        ? 'bg-blue-50 border-blue-100 text-blue-600'
-                        : 'bg-neutral-50 border-neutral-100 text-neutral-500 hover:bg-neutral-100 hover:border-neutral-200'
-                    )}
-                  >
-                    {sourceImage ? (
-                      <>
-                        <div className="w-4 h-4 rounded-sm overflow-hidden border border-blue-200">
-                          <img src={sourceImage} className="w-full h-full object-cover" />
-                        </div>
-                        <span>Image Added</span>
-                        <X
-                          className="w-3 h-3 hover:text-red-500 ml-1 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSourceImage(null);
-                          }}
-                        />
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-4 h-4" />
-                        <span>Add Reference</span>
-                      </>
-                    )}
-                  </button>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleImageUpload}
-                    className="hidden"
-                    accept="image/*"
-                  />
-                </div>
-
+              <div className="flex items-center justify-end px-3 pb-3">
                 {/* Right Actions: Ratio & Send */}
                 <div className="flex items-center gap-3">
-                  {!sourceImage && (
                     <div className="hidden sm:flex bg-neutral-50 p-1 rounded-full border border-neutral-100 shadow-inner">
                       {['1:1', '16:9', '9:16'].map((ratio) => (
                         <button
@@ -270,7 +209,6 @@ export default function ImageAIPlayground() {
                         </button>
                       ))}
                     </div>
-                  )}
 
                   <button
                     onClick={handleGenerate}
@@ -389,7 +327,7 @@ export default function ImageAIPlayground() {
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center space-y-3">
                     <p className="text-sm font-medium text-gray-700/80 tracking-wide">
-                      {sourceImage ? 'Transforming image' : 'Creating image'}
+                      Creating image
                     </p>
                     <div className="flex gap-1 justify-center">
                       <span
