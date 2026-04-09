@@ -23,15 +23,14 @@ export default function AppStoreClient() {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">App Store</h1>
           <p className="mt-1 text-sm text-gray-600 max-w-xl">
-            Central place to launch the mini apps in this portfolio suite. Open them just like
-            installing from a store.
+            Launch the mini apps in this portfolio suite from a single place.
           </p>
         </div>
         <div className="w-full md:w-72">
           <SearchBar
             initialQuery={query}
             onSearch={(value) => setQuery(value)}
-            placeholder="Search apps by name or type..."
+            placeholder="Search apps..."
           />
         </div>
       </header>
@@ -58,7 +57,6 @@ export default function AppStoreClient() {
                     <h2 className="text-sm font-semibold text-gray-900 leading-tight">
                       {app.name}
                     </h2>
-                    <p className="text-[11px] text-gray-500">Mini app</p>
                   </div>
                 </div>
                 <Badge variant="soft" className="text-[10px] uppercase tracking-wide">
