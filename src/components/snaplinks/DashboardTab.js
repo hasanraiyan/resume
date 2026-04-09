@@ -2,12 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import { Card, Skeleton } from '@/components/ui';
-import { Link2, Eye, Activity } from 'lucide-react';
+import { Link2, Eye, Activity, ChevronRight, Copy, Check } from 'lucide-react';
 
 export default function DashboardTab({ navigateTo }) {
   const [stats, setStats] = useState(null);
   const [recentLinks, setRecentLinks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [copiedSlug, setCopiedSlug] = useState(null);
+
+  const handleCopyLink = (e, slug) => {
+    e.stopPropagation();
+    const fullUrl = `${window.location.origin}/r/${slug}`;
+    navigator.clipboard.writeText(fullUrl).then(() => {
+      setCopiedSlug(slug);
+      setTimeout(() => setCopiedSlug(null), 2000);
+    });
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -162,19 +172,42 @@ export default function DashboardTab({ navigateTo }) {
             {recentLinks.map((link) => (
               <div
                 key={link._id}
-                className="flex justify-between items-center p-3 hover:bg-[#fcfbf5] dark:hover:bg-[#2c3e3a] rounded-lg transition-colors border border-transparent hover:border-[#e5e3d8] dark:hover:border-[#333333]"
+                onClick={() => navigateTo('manage')}
+                className="flex items-center p-3 hover:bg-[#fcfbf5] dark:hover:bg-[#2c3e3a] rounded-lg transition-colors border border-transparent hover:border-[#e5e3d8] dark:hover:border-[#333333] cursor-pointer group"
               >
-                <div>
-                  <p className="font-semibold text-[#1e3a34] dark:text-white">
+                <div className="flex-1 min-w-0 pr-4">
+                  <p className="font-semibold text-[#1e3a34] dark:text-white truncate">
                     {link.title || link.slug}
                   </p>
-                  <p className="text-xs text-[#7c8e88] dark:text-[#a0a0a0] mt-1">/r/{link.slug}</p>
+                  <div className="flex items-center mt-1">
+                    <p className="text-xs text-[#7c8e88] dark:text-[#a0a0a0] truncate max-w-[150px]">/r/{link.slug}</p>
+                    <button
+                      onClick={(e) => handleCopyLink(e, link.slug)}
+                      className="ml-2 text-[#7c8e88] hover:text-[#1f644e] dark:hover:text-[#2ecc71] transition-colors p-1 rounded-md flex items-center justify-center relative"
+                      title="Copy Link"
+                      aria-label="Copy link"
+                    >
+                      {copiedSlug === link.slug ? (
+                        <Check className="w-3.5 h-3.5 text-[#1f644e] dark:text-[#2ecc71]" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                      {copiedSlug === link.slug && (
+                        <span className="absolute -top-7 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-0.5 rounded shadow-sm whitespace-nowrap z-10">
+                          Copied!
+                        </span>
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <div className="text-right">
+                <div className="text-right shrink-0">
                   <p className="font-bold text-[#1e3a34] dark:text-white">{link.totalClicks}</p>
                   <p className="text-[10px] uppercase tracking-wider text-[#7c8e88] dark:text-[#a0a0a0]">
                     Clicks
                   </p>
+                </div>
+                <div className="ml-3 shrink-0 text-[#7c8e88] dark:text-[#a0a0a0] group-hover:text-[#1f644e] dark:group-hover:text-[#2ecc71] transition-colors">
+                  <ChevronRight className="w-5 h-5" />
                 </div>
               </div>
             ))}

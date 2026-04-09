@@ -468,7 +468,8 @@ export default function ManageLinksTab() {
         </div>
         <Button
           onClick={openCreateModal}
-          className="flex items-center gap-2 bg-[#1f644e] hover:bg-[#164a39] text-white"
+          className="flex items-center gap-2 bg-[#1f644e] hover:bg-[#164a39] text-white !border-[#1f644e]"
+          variant="default"
         >
           <i className="fas fa-plus"></i> Create Link
         </Button>
@@ -567,29 +568,29 @@ export default function ManageLinksTab() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="px-2 py-1 h-8 text-[#7c8e88] hover:text-[#1f644e] hover:border-[#1f644e] hover:bg-[#1f644e]/5 border-transparent shadow-none"
+                            className="px-2 py-1 h-8 text-[#1e3a34] hover:text-[#1f644e] hover:border-[#1f644e] hover:bg-[#1f644e]/5 border-transparent shadow-none"
                             onClick={() => handleSelectLink(link.slug)}
                             title="View Analytics"
                           >
-                            <BarChart3 className="w-4 h-4" />
+                            <BarChart3 className="w-4 h-4" strokeWidth={2.5} />
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="px-2 py-1 h-8 text-[#7c8e88] hover:text-[#1e3a34] border-transparent shadow-none"
+                            className="px-2 py-1 h-8 text-[#1e3a34] hover:text-[#1e3a34] border-transparent hover:bg-neutral-100 shadow-none"
                             onClick={() => openEditModal(link)}
                             title="Edit Link"
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="w-4 h-4" strokeWidth={2.5} />
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="px-2 py-1 h-8 text-[#7c8e88] hover:text-red-600 hover:border-red-200 hover:bg-red-50 border-transparent shadow-none"
+                            className="px-2 py-1 h-8 text-[#1e3a34] hover:text-red-600 hover:border-red-200 hover:bg-red-50 border-transparent shadow-none"
                             onClick={() => handleDelete(link._id)}
                             title="Delete Link"
                           >
-                            <Trash className="w-4 h-4" />
+                            <Trash className="w-4 h-4" strokeWidth={2.5} />
                           </Button>
                         </div>
                       </td>
@@ -668,27 +669,27 @@ export default function ManageLinksTab() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="px-2 py-1 h-8 text-[#7c8e88] hover:text-[#1f644e] hover:border-[#1f644e] hover:bg-[#1f644e]/5 border-transparent shadow-none"
+                        className="px-2 py-1 h-8 text-[#1e3a34] hover:text-[#1f644e] hover:border-[#1f644e] hover:bg-[#1f644e]/5 border-transparent shadow-none"
                         onClick={() => handleSelectLink(link.slug)}
                         title="View Analytics"
                       >
-                        <BarChart3 className="w-4 h-4" />
+                        <BarChart3 className="w-4 h-4" strokeWidth={2.5} />
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="px-2 py-1 h-8 text-[#7c8e88] hover:text-[#1e3a34] border-transparent shadow-none"
+                        className="px-2 py-1 h-8 text-[#1e3a34] hover:text-[#1e3a34] border-transparent hover:bg-neutral-100 shadow-none"
                         onClick={() => openEditModal(link)}
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-4 h-4" strokeWidth={2.5} />
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="px-2 py-1 h-8 text-[#7c8e88] hover:text-red-600 hover:border-red-200 hover:bg-red-50 border-transparent shadow-none"
+                        className="px-2 py-1 h-8 text-[#1e3a34] hover:text-red-600 hover:border-red-200 hover:bg-red-50 border-transparent shadow-none"
                         onClick={() => handleDelete(link._id)}
                       >
-                        <Trash className="w-4 h-4" />
+                        <Trash className="w-4 h-4" strokeWidth={2.5} />
                       </Button>
                     </div>
                   </div>
