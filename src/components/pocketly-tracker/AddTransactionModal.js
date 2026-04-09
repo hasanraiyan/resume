@@ -193,6 +193,17 @@ export default function AddTransactionModal() {
 
   const displayAmount = currentInput === '0' ? '0' : currentInput;
   const displayCurrency = '₹';
+  const effectiveDate = editTransactionData?.date ? new Date(editTransactionData.date) : new Date();
+
+  const typeOptions = [
+    { id: 'expense', label: 'Expense', icon: ArrowDownLeft },
+    { id: 'income', label: 'Income', icon: ArrowUpRight },
+    { id: 'transfer', label: 'Transfer', icon: ArrowLeftRight },
+  ];
+  const activeTypeIndex = Math.max(
+    0,
+    typeOptions.findIndex((t) => t.id === type)
+  );
 
   const KeyBtn = ({ value, label, operator, primary }) => (
     <button
@@ -233,14 +244,6 @@ export default function AddTransactionModal() {
             >
               <X className="w-4 h-4" /> Cancel
             </button>
-            {editingDbTransaction && (
-              <button
-                onClick={handleDelete}
-                className="flex items-center gap-1.5 text-sm font-bold text-[#c94c4c] hover:text-[#a33a3a] transition cursor-pointer ml-2"
-              >
-                <Trash2 className="w-4 h-4" /> Delete
-              </button>
-            )}
           </div>
           <span className="text-sm font-bold text-[#1e3a34]">
             {editingDbTransaction
@@ -251,30 +254,20 @@ export default function AddTransactionModal() {
                   ? 'Income'
                   : 'Transfer'}
           </span>
-          <button
-            onClick={handleSubmit}
-            disabled={parseFloat(currentInput) <= 0 || isSubmitting}
-            className="flex items-center gap-1.5 text-sm font-bold text-[#1f644e] hover:text-[#17503e] transition disabled:opacity-30 cursor-pointer"
-          >
-            <Check className="w-4 h-4" />{' '}
-            {isSubmitting
-              ? editingDbTransaction
-                ? 'Updating...'
-                : 'Saving...'
-              : editingDbTransaction
-                ? 'Update'
-                : 'Save'}
-          </button>
+          <div className="w-10" />
         </div>
 
         {/* Type Selector */}
         <div className="bg-white border-b border-[#e5e3d8] px-4 py-3">
-          <div className="flex bg-[#f0f5f2] rounded-xl p-1 gap-1">
-            {[
-              { id: 'expense', label: 'Expense', icon: ArrowDownLeft },
-              { id: 'income', label: 'Income', icon: ArrowUpRight },
-              { id: 'transfer', label: 'Transfer', icon: ArrowLeftRight },
-            ].map((t) => (
+          <div className="relative flex bg-[#f0f5f2] rounded-xl p-1 gap-1 overflow-hidden">
+            {/* Sliding background pill */}
+            <div
+              className="absolute inset-y-1 left-1 w-1/3 rounded-lg bg-white shadow-sm transition-transform duration-200"
+              style={{ transform: `translateX(${activeTypeIndex * 100}%)` }}
+              aria-hidden="true"
+            />
+
+            {typeOptions.map((t) => (
               <button
                 key={t.id}
                 onClick={() => {
@@ -282,10 +275,8 @@ export default function AddTransactionModal() {
                   setCategoryId('');
                   setToAccountId('');
                 }}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                  type === t.id
-                    ? 'bg-white text-[#1f644e] shadow-sm'
-                    : 'text-[#7c8e88] hover:text-[#1e3a34]'
+                className={`relative z-10 flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                  type === t.id ? 'text-[#1f644e]' : 'text-[#7c8e88] hover:text-[#1e3a34]'
                 }`}
               >
                 <t.icon className="w-3.5 h-3.5" />
@@ -319,7 +310,14 @@ export default function AddTransactionModal() {
                     onClick={() => setShowAccountSelector('from')}
                     className="w-full border border-[#e5e3d8] bg-white py-2.5 px-3 rounded-xl text-sm font-bold text-[#1e3a34] flex items-center gap-2 hover:bg-[#f8f9f4] transition cursor-pointer"
                   >
-                    <PurseSVG className="w-4 h-4 text-[#7c8e88]" />
+                    {selectedAccount?.icon ? (
+                      <IconRenderer
+                        name={selectedAccount.icon}
+                        className="w-4 h-4 text-[#7c8e88]"
+                      />
+                    ) : (
+                      <PurseSVG className="w-4 h-4 text-[#7c8e88]" />
+                    )}
                     {selectedAccount?.name || 'Select account'}
                   </button>
                 </div>
@@ -331,7 +329,14 @@ export default function AddTransactionModal() {
                     onClick={() => setShowAccountSelector('to')}
                     className="w-full border border-[#e5e3d8] bg-white py-2.5 px-3 rounded-xl text-sm font-bold text-[#1e3a34] flex items-center gap-2 hover:bg-[#f8f9f4] transition cursor-pointer"
                   >
-                    <PurseSVG className="w-4 h-4 text-[#7c8e88]" />
+                    {selectedToAccount?.icon ? (
+                      <IconRenderer
+                        name={selectedToAccount.icon}
+                        className="w-4 h-4 text-[#7c8e88]"
+                      />
+                    ) : (
+                      <PurseSVG className="w-4 h-4 text-[#7c8e88]" />
+                    )}
                     {selectedToAccount?.name || 'Select account'}
                   </button>
                 </div>
@@ -346,7 +351,14 @@ export default function AddTransactionModal() {
                     onClick={() => setShowAccountSelector('main')}
                     className="w-full border border-[#e5e3d8] bg-white py-2.5 px-3 rounded-xl text-sm font-bold text-[#1e3a34] flex items-center gap-2 hover:bg-[#f8f9f4] transition cursor-pointer"
                   >
-                    <PurseSVG className="w-4 h-4 text-[#7c8e88]" />
+                    {selectedAccount?.icon ? (
+                      <IconRenderer
+                        name={selectedAccount.icon}
+                        className="w-4 h-4 text-[#7c8e88]"
+                      />
+                    ) : (
+                      <PurseSVG className="w-4 h-4 text-[#7c8e88]" />
+                    )}
                     {selectedAccount?.name || 'Select'}
                   </button>
                 </div>
@@ -373,7 +385,9 @@ export default function AddTransactionModal() {
                       </>
                     ) : (
                       <>
-                        <div className="w-5 h-5 rounded-full bg-[#f0f5f2]" />
+                        <div className="w-5 h-5 rounded-full bg-[#f0f5f2] flex items-center justify-center">
+                          <IconRenderer name="tag" className="w-3 h-3 text-[#7c8e88]" />
+                        </div>
                         Select category
                       </>
                     )}
@@ -427,7 +441,7 @@ export default function AddTransactionModal() {
           </div>
 
           {/* Calculator Keypad */}
-          <div className="px-4 pb-4 flex-1">
+          <div className="px-4 pb-4 mt-auto">
             <div className="grid grid-cols-4 gap-2">
               <KeyBtn value="7" />
               <KeyBtn value="8" />
@@ -451,33 +465,46 @@ export default function AddTransactionModal() {
             </div>
           </div>
 
-          {/* Date/Time Bar */}
-          <div className="flex justify-between items-center text-xs font-bold text-[#7c8e88] px-4 py-3 border-t border-[#e5e3d8] bg-white">
-            <div>
-              {(editTransactionData?.date
-                ? new Date(editTransactionData.date)
-                : new Date()
-              ).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })}
+          {/* Date/Time + Bottom Save */}
+          <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-[#e5e3d8] bg-white">
+            <div className="text-xs font-bold text-[#7c8e88]">
+              <div>
+                {effectiveDate.toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </div>
+              <div className="mt-0.5">
+                {effectiveDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              </div>
             </div>
-            <div>
-              {(editTransactionData?.date
-                ? new Date(editTransactionData.date)
-                : new Date()
-              ).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-            </div>
+            <button
+              onClick={handleSubmit}
+              disabled={parseFloat(currentInput) <= 0 || isSubmitting}
+              className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-[#1f644e] px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#17503e] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Check className="w-4 h-4" />
+              {isSubmitting
+                ? editingDbTransaction
+                  ? 'Updating...'
+                  : 'Saving...'
+                : editingDbTransaction
+                  ? 'Update'
+                  : 'Save'}
+            </button>
           </div>
         </div>
 
         {/* Account Selector Bottom Sheet */}
         {showAccountSelector && (
-          <div className="absolute inset-0 bg-black/50 flex flex-col justify-end z-50">
+          <div className="absolute inset-0 bg-black/30 flex flex-col justify-end z-50">
             <div className="flex-1" onClick={() => setShowAccountSelector(null)} />
-            <div className="bg-white rounded-t-2xl p-5 pb-8 animate-in slide-in-from-bottom duration-300">
-              <h3 className="text-center font-bold text-[#1e3a34] mb-4">Select an account</h3>
+            <div className="bg-white rounded-t-2xl px-4 pt-4 pb-6 shadow-xl animate-in slide-in-from-bottom duration-300">
+              <div className="mb-3 h-1 w-10 mx-auto rounded-full bg-[#e5e3d8]" />
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#7c8e88]">
+                Select account
+              </p>
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {selectableAccounts.map((acc) => (
                   <button
@@ -511,10 +538,13 @@ export default function AddTransactionModal() {
 
         {/* Category Selector Bottom Sheet */}
         {showCategorySelector && (
-          <div className="absolute inset-0 bg-black/50 flex flex-col justify-end z-50">
+          <div className="absolute inset-0 bg-black/30 flex flex-col justify-end z-50">
             <div className="flex-1" onClick={() => setShowCategorySelector(false)} />
-            <div className="bg-white rounded-t-2xl p-5 pb-8 animate-in slide-in-from-bottom duration-300">
-              <h3 className="text-center font-bold text-[#1e3a34] mb-4">Select a category</h3>
+            <div className="bg-white rounded-t-2xl px-4 pt-4 pb-6 shadow-xl animate-in slide-in-from-bottom duration-300">
+              <div className="mb-3 h-1 w-10 mx-auto rounded-full bg-[#e5e3d8]" />
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#7c8e88]">
+                Select category
+              </p>
               <div className="grid grid-cols-4 gap-4 max-h-60 overflow-y-auto">
                 {filteredCategories.map((cat) => {
                   const colorPresentation = getCategoryColorPresentation(cat.color);

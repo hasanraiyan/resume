@@ -47,6 +47,7 @@
     "date-fns": "^4.1.0",
     "easymde": "^2.20.0",
     "enquirer": "^2.4.1",
+    "framer-motion": "^12.38.0",
     "fuse.js": "^7.1.0",
     "gsap": "^3.13.0",
     "jspdf": "^4.2.0",

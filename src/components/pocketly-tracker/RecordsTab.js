@@ -16,6 +16,7 @@ import {
 import { PurseSVG } from '@/components/pocketly-tracker/IconRenderer';
 
 import IconRenderer from './IconRenderer';
+import BottomSheet from './BottomSheet';
 
 const currencyFormatter = new Intl.NumberFormat('en-IN', {
   minimumFractionDigits: 2,
@@ -37,6 +38,7 @@ export default function RecordsTab() {
   } = useMoney();
   const [searchQuery, setSearchQuery] = useState('');
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [mobileActionTransaction, setMobileActionTransaction] = useState(null);
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -119,55 +121,97 @@ export default function RecordsTab() {
   const showEmptyState = !isBootstrapLoading && groupedEntries.length === 0;
 
   return (
-    <div className="mb-6 pb-4 pt-6">
+    <div className="mb-6 bg-[#fcfbf5] pt-4 pb-24 sm:pt-6 sm:pb-8">
       <div className="w-full px-4 lg:px-6">
         <div className="w-full max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-3">
-            <div className="flex items-center gap-4 rounded-xl border border-[#e5e3d8] bg-white p-5">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#c94c4c]/10">
-                <TrendingDown className="h-6 w-6 text-[#c94c4c]" />
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">Expense</p>
-                <p className="mt-0.5 text-xl font-bold text-[#c94c4c]">
-                  ₹{currencyFormatter.format(totalExpense)}
-                </p>
+          {/* Summary */}
+          <div className="mb-4">
+            {/* Mobile: 3-column minimal summary, no icons */}
+            <div className="sm:hidden">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-xl border border-[#e5e3d8] bg-white px-2.5 py-2 text-center">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#7c8e88]">
+                    Expense
+                  </p>
+                  <p className="mt-0.5 text-sm font-bold text-[#c94c4c]">
+                    ₹{currencyFormatter.format(totalExpense)}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-[#e5e3d8] bg-white px-2.5 py-2 text-center">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#7c8e88]">
+                    Income
+                  </p>
+                  <p className="mt-0.5 text-sm font-bold text-[#1f644e]">
+                    ₹{currencyFormatter.format(totalIncome)}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-[#e5e3d8] bg-white px-2.5 py-2 text-center">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#7c8e88]">
+                    Net Flow
+                  </p>
+                  <p
+                    className={`mt-0.5 text-sm font-bold ${netFlow >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'}`}
+                  >
+                    {netFlow < 0 ? '-' : ''}₹{currencyFormatter.format(Math.abs(netFlow))}
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-4 rounded-xl border border-[#e5e3d8] bg-white p-5">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#1f644e]/10">
-                <TrendingUp className="h-6 w-6 text-[#1f644e]" />
+
+            {/* Tablet & desktop: existing grid */}
+            <div className="hidden sm:grid sm:grid-cols-3 sm:gap-4">
+              <div className="flex items-center gap-4 rounded-xl border border-[#e5e3d8] bg-white p-5">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#c94c4c]/10">
+                  <TrendingDown className="h-6 w-6 text-[#c94c4c]" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
+                    Expense
+                  </p>
+                  <p className="mt-0.5 text-xl font-bold text-[#c94c4c]">
+                    ₹{currencyFormatter.format(totalExpense)}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">Income</p>
-                <p className="mt-0.5 text-xl font-bold text-[#1f644e]">
-                  ₹{currencyFormatter.format(totalIncome)}
-                </p>
+              <div className="flex items-center gap-4 rounded-xl border border-[#e5e3d8] bg-white p-5">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#1f644e]/10">
+                  <TrendingUp className="h-6 w-6 text-[#1f644e]" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
+                    Income
+                  </p>
+                  <p className="mt-0.5 text-xl font-bold text-[#1f644e]">
+                    ₹{currencyFormatter.format(totalIncome)}
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-4 rounded-xl border border-[#e5e3d8] bg-white p-5">
-              <div
-                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${netFlow >= 0 ? 'bg-[#1f644e]/10' : 'bg-[#c94c4c]/10'}`}
-              >
-                <PurseSVG
-                  className={`h-6 w-6 ${netFlow >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'}`}
-                />
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
-                  Net Flow
-                </p>
-                <p
-                  className={`mt-0.5 text-xl font-bold ${netFlow >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'}`}
+              <div className="flex items-center gap-4 rounded-xl border border-[#e5e3d8] bg-white p-5">
+                <div
+                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${netFlow >= 0 ? 'bg-[#1f644e]/10' : 'bg-[#c94c4c]/10'}`}
                 >
-                  {netFlow < 0 ? '-' : ''}₹{currencyFormatter.format(Math.abs(netFlow))}
-                </p>
+                  <PurseSVG
+                    className={`h-6 w-6 ${netFlow >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'}`}
+                  />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
+                    Net Flow
+                  </p>
+                  <p
+                    className={`mt-0.5 text-xl font-bold ${netFlow >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'}`}
+                  >
+                    {netFlow < 0 ? '-' : ''}₹{currencyFormatter.format(Math.abs(netFlow))}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex w-full items-center gap-3">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex w-full items-center gap-2">
               <button
                 onClick={() => navigateWeek(-1)}
                 disabled={isTabLoading}
@@ -251,7 +295,7 @@ export default function RecordsTab() {
                       return (
                         <div
                           key={transaction.id}
-                          className={`relative flex items-center justify-between p-4 transition hover:bg-[#f8f9f4] first:rounded-t-xl last:rounded-b-xl ${isMenuOpen ? 'z-10' : ''}`}
+                          className={`relative flex items-center justify-between p-3 sm:p-4 transition hover:bg-[#f8f9f4] first:rounded-t-xl last:rounded-b-xl ${isMenuOpen ? 'z-10' : ''}`}
                         >
                           <div className="flex flex-1 items-center gap-3">
                             <div
@@ -269,7 +313,7 @@ export default function RecordsTab() {
                               />
                             </div>
                             <div className="flex-1">
-                              <div className="text-sm font-bold text-[#1e3a34]">
+                              <div className="text-[13px] sm:text-sm font-bold text-[#1e3a34]">
                                 {isTransfer ? 'Transfer' : catName}
                               </div>
                               <div className="mt-0.5 flex items-center gap-1 text-[11px] text-[#7c8e88]">
@@ -286,7 +330,7 @@ export default function RecordsTab() {
                               {transaction.description &&
                                 transaction.description !== 'Transaction' &&
                                 transaction.description !== 'Transfer' && (
-                                  <div className="mt-0.5 text-xs text-[#7c8e88]">
+                                  <div className="mt-0.5 hidden text-xs text-[#7c8e88] sm:block">
                                     {transaction.description}
                                   </div>
                                 )}
@@ -301,7 +345,14 @@ export default function RecordsTab() {
                             </div>
                             <div className="relative">
                               <button
-                                onClick={() => setOpenMenuId(isMenuOpen ? null : transaction.id)}
+                                onClick={() => {
+                                  // On mobile, open a bottom sheet; on larger screens, use popover menu.
+                                  if (window.innerWidth < 640) {
+                                    setMobileActionTransaction(transaction);
+                                  } else {
+                                    setOpenMenuId(isMenuOpen ? null : transaction.id);
+                                  }
+                                }}
                                 className="cursor-pointer rounded-lg p-1.5 text-[#7c8e88] transition hover:bg-[#f8f9f4] hover:text-[#1e3a34]"
                                 aria-label="Transaction options"
                               >
@@ -311,7 +362,7 @@ export default function RecordsTab() {
                               {isMenuOpen && (
                                 <div
                                   ref={menuRef}
-                                  className="absolute right-0 top-full z-10 mt-1 w-32 rounded-xl border border-[#e5e3d8] bg-white py-1 shadow-lg"
+                                  className="absolute right-0 top-full z-10 mt-1 hidden w-32 rounded-xl border border-[#e5e3d8] bg-white py-1 shadow-lg sm:block"
                                 >
                                   <button
                                     onClick={() => {
@@ -345,6 +396,53 @@ export default function RecordsTab() {
               ))}
             </div>
           )}
+
+          {/* Mobile bottom sheet for transaction actions */}
+          <BottomSheet
+            open={Boolean(mobileActionTransaction)}
+            onClose={() => setMobileActionTransaction(null)}
+            className="max-h-[70vh] overflow-y-auto"
+          >
+            {mobileActionTransaction && (
+              <>
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#7c8e88]">
+                    Transaction options
+                  </p>
+                  <div className="w-8" />
+                </div>
+                <p className="mb-3 text-sm font-bold text-[#1e3a34] line-clamp-1">
+                  {mobileActionTransaction.description ||
+                    mobileActionTransaction.category?.name ||
+                    'Transaction'}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    openEditTransaction(mobileActionTransaction);
+                    setMobileActionTransaction(null);
+                  }}
+                  className="mb-2 flex w-full items-center justify-between rounded-xl border border-[#d9e6df] bg-[#f7faf9] px-3 py-3 text-sm font-semibold text-[#1f644e]"
+                >
+                  <span>Edit transaction</span>
+                  <Pencil className="h-4 w-4" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleDelete(mobileActionTransaction.id);
+                    setMobileActionTransaction(null);
+                  }}
+                  className="mb-2 flex w-full items-center justify-between rounded-xl border border-[#f5c6c6] bg-[#fdf5f5] px-3 py-3 text-sm font-semibold text-[#c94c4c]"
+                >
+                  <span>Delete transaction</span>
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </>
+            )}
+          </BottomSheet>
         </div>
       </div>
     </div>
