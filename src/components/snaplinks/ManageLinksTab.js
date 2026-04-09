@@ -448,12 +448,10 @@ export default function ManageLinksTab() {
   // --- Main List View ---
   return (
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <p className="text-neutral-500">Manage, edit, and create new short URLs.</p>
-        </div>
-        <Button onClick={openCreateModal} variant="brand">
-          <i className="fas fa-plus"></i> Create Link
+      <div className="mb-8">
+        <p className="text-neutral-500 mb-4">Manage, edit, and create new short URLs.</p>
+        <Button onClick={openCreateModal} variant="brand" className="w-full">
+          <i className="fas fa-plus mr-2"></i> Create Link
         </Button>
       </div>
 
@@ -582,13 +580,12 @@ export default function ManageLinksTab() {
               </table>
             </div>
 
-            {/* Mobile Cards */}
-            <div className="md:hidden space-y-4 p-4">
+            {/* Mobile List */}
+            <div className="md:hidden p-4">
               {links.map((link) => (
-                <Card
-                  variant="flat"
+                <div
                   key={link._id}
-                  className="border border-neutral-100 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow"
+                  className="border-b border-neutral-100 last:border-b-0 p-4 hover:bg-[#fcfbf5] transition-colors"
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div className="max-w-[70%]">
@@ -602,7 +599,7 @@ export default function ManageLinksTab() {
                         /r/{link.slug}
                         <button
                           onClick={() => handleCopyLink(link.slug)}
-                          className="ml-2 text-neutral-400 hover:text-[#1f644e] transition-colors p-1.5 rounded-md hover:bg-[#1f644e]/10 flex items-center justify-center"
+                          className="ml-2 text-neutral-400 hover:text-[#1f644e] transition-colors p-2 rounded-md hover:bg-[#1f644e]/10 flex items-center justify-center"
                           title="Copy Link"
                         >
                           {copiedSlug === link.slug ? (
@@ -647,7 +644,7 @@ export default function ManageLinksTab() {
                       <span className="font-medium">{link.totalClicks}</span>{' '}
                       <span className="text-neutral-500">clicks</span>
                     </div>
-                    <div className="flex gap-1.5">
+                    <div className="flex gap-2">
                       <Button
                         variant="outline"
                         size="sm"
@@ -675,7 +672,7 @@ export default function ManageLinksTab() {
                       </Button>
                     </div>
                   </div>
-                </Card>
+                </div>
               ))}
             </div>
           </div>
