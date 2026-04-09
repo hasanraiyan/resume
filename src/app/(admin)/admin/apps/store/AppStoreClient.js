@@ -73,11 +73,15 @@ export default function AppStoreClient() {
                 variant="primary"
                 className="text-xs tracking-wide rounded-full px-5"
               >
-                <Link href={app.href}>Open</Link>
+                <Link href={app.href} target="_blank" rel="noreferrer">
+                  Open
+                </Link>
               </Button>
 
               <Button asChild size="small" variant="outline">
-                <Link href={app.href}>Launch App</Link>
+                <Link href={app.href} target="_blank" rel="noreferrer">
+                  Launch App
+                </Link>
               </Button>
             </div>
           </Card>
