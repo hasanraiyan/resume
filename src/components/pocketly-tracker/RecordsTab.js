@@ -23,6 +23,12 @@ const currencyFormatter = new Intl.NumberFormat('en-IN', {
   maximumFractionDigits: 2,
 });
 
+// Compact formatter for large amounts, e.g. 45K, 1.2Cr
+const compactNumberFormatter = new Intl.NumberFormat('en-IN', {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+});
+
 export default function RecordsTab() {
   const {
     transactions,
@@ -93,10 +99,19 @@ export default function RecordsTab() {
     return Object.entries(groups);
   }, [filteredTransactions]);
 
+  const formatCurrencyWithCompact = (amount) => {
+    const abs = Math.abs(amount);
+    const useCompact = abs >= 100000; // Use compact notation from 1L upwards
+    const formatted = useCompact
+      ? compactNumberFormatter.format(abs)
+      : currencyFormatter.format(abs);
+    return `₹${formatted}`;
+  };
+
   const formatAmount = (amount, type) => {
-    const formatted = currencyFormatter.format(Math.abs(amount));
-    if (type === 'transfer') return `₹${formatted}`;
-    return `${type === 'expense' ? '-' : '+'}₹${formatted}`;
+    const sign = type === 'transfer' ? '' : type === 'expense' ? '-' : '+';
+    const formatted = formatCurrencyWithCompact(amount);
+    return `${sign}${formatted}`;
   };
 
   const getAmountClass = (type) => {
@@ -106,6 +121,13 @@ export default function RecordsTab() {
   };
 
   const netFlow = totalIncome - totalExpense;
+
+  const formatNetFlow = (value) => {
+    const sign = value < 0 ? '-' : '+';
+    // Reuse compact formatting for consistency across UI
+    const formatted = formatCurrencyWithCompact(value);
+    return `${sign}${formatted}`;
+  };
 
   const handleDelete = async (id) => {
     try {
@@ -134,7 +156,7 @@ export default function RecordsTab() {
                     Expense
                   </p>
                   <p className="mt-0.5 text-sm font-bold text-[#c94c4c]">
-                    ₹{currencyFormatter.format(totalExpense)}
+                    {formatCurrencyWithCompact(totalExpense)}
                   </p>
                 </div>
 
@@ -143,7 +165,7 @@ export default function RecordsTab() {
                     Income
                   </p>
                   <p className="mt-0.5 text-sm font-bold text-[#1f644e]">
-                    ₹{currencyFormatter.format(totalIncome)}
+                    {formatCurrencyWithCompact(totalIncome)}
                   </p>
                 </div>
 
@@ -154,7 +176,7 @@ export default function RecordsTab() {
                   <p
                     className={`mt-0.5 text-sm font-bold ${netFlow >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'}`}
                   >
-                    {netFlow < 0 ? '-' : ''}₹{currencyFormatter.format(Math.abs(netFlow))}
+                    {formatNetFlow(netFlow)}
                   </p>
                 </div>
               </div>
@@ -171,7 +193,7 @@ export default function RecordsTab() {
                     Expense
                   </p>
                   <p className="mt-0.5 text-xl font-bold text-[#c94c4c]">
-                    ₹{currencyFormatter.format(totalExpense)}
+                    {formatCurrencyWithCompact(totalExpense)}
                   </p>
                 </div>
               </div>
@@ -184,7 +206,7 @@ export default function RecordsTab() {
                     Income
                   </p>
                   <p className="mt-0.5 text-xl font-bold text-[#1f644e]">
-                    ₹{currencyFormatter.format(totalIncome)}
+                    {formatCurrencyWithCompact(totalIncome)}
                   </p>
                 </div>
               </div>
@@ -203,7 +225,7 @@ export default function RecordsTab() {
                   <p
                     className={`mt-0.5 text-xl font-bold ${netFlow >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'}`}
                   >
-                    {netFlow < 0 ? '-' : ''}₹{currencyFormatter.format(Math.abs(netFlow))}
+                    {formatNetFlow(netFlow)}
                   </p>
                 </div>
               </div>
@@ -339,7 +361,7 @@ export default function RecordsTab() {
 
                           <div className="flex items-center gap-2">
                             <div
-                              className={`text-sm font-bold tabular-nums ${getAmountClass(transaction.type)}`}
+                              className={`max-w-[40vw] truncate text-right text-xs sm:text-sm font-bold tabular-nums ${getAmountClass(transaction.type)}`}
                             >
                               {formatAmount(transaction.amount, transaction.type)}
                             </div>
