@@ -12,9 +12,6 @@ const DashboardTab = dynamic(() => import('@/components/snaplinks/DashboardTab')
 const ManageLinksTab = dynamic(() => import('@/components/snaplinks/ManageLinksTab'), {
   loading: () => <div className="p-6">Loading Links...</div>,
 });
-const AnalyticsTab = dynamic(() => import('@/components/snaplinks/AnalyticsTab'), {
-  loading: () => <div className="p-6">Loading Analytics...</div>,
-});
 const SettingsTab = dynamic(() => import('@/components/snaplinks/SettingsTab'), {
   loading: () => <div className="p-6">Loading Settings...</div>,
 });
@@ -22,7 +19,6 @@ const SettingsTab = dynamic(() => import('@/components/snaplinks/SettingsTab'), 
 const tabs = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'manage', label: 'Manage Links', icon: Link2 },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
@@ -57,7 +53,6 @@ function SnapLinksContent() {
   const tabTitles = {
     dashboard: 'Dashboard',
     manage: 'Manage Links',
-    analytics: 'Analytics',
     settings: 'Settings',
   };
 
@@ -67,8 +62,6 @@ function SnapLinksContent() {
         return <DashboardTab navigateTo={setActiveTab} />;
       case 'manage':
         return <ManageLinksTab />;
-      case 'analytics':
-        return <AnalyticsTab />;
       case 'settings':
         return <SettingsTab />;
       default:

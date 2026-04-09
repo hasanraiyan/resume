@@ -3,6 +3,41 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button, Card, Badge, Skeleton } from '@/components/ui';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip as ChartTooltip,
+  Legend,
+  Filler,
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
+import {
+  ArrowLeft,
+  ExternalLink,
+  CalendarDays,
+  Globe,
+  Smartphone,
+  BarChart3,
+  Edit,
+  Trash,
+  Copy,
+  Check,
+} from 'lucide-react';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  ChartTooltip,
+  Legend,
+  Filler
+);
 
 export default function ManageLinksTab() {
   const [links, setLinks] = useState([]);
@@ -23,6 +58,12 @@ export default function ManageLinksTab() {
     expiresAt: '',
     isActive: true,
   });
+
+  // Analytics State
+  const [selectedSlug, setSelectedSlug] = useState(null);
+  const [analytics, setAnalytics] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [copiedSlug, setCopiedSlug] = useState(null);
 
   useEffect(() => {
     fetchLinks();
@@ -145,17 +186,290 @@ export default function ManageLinksTab() {
   const handleCopyLink = (slug) => {
     const fullUrl = `${window.location.origin}/r/${slug}`;
     navigator.clipboard.writeText(fullUrl).then(() => {
-      alert('Link copied to clipboard!');
+      setCopiedSlug(slug);
+      setTimeout(() => setCopiedSlug(null), 2000);
     });
   };
 
+  const fetchAnalytics = async (slug) => {
+    setAnalyticsLoading(true);
+    try {
+      const response = await fetch(
+        `/api/admin/short-links/analytics?slug=${encodeURIComponent(slug)}&days=30`
+      );
+      if (!response.ok) throw new Error('Failed to fetch analytics');
+      const result = await response.json();
+      if (result.success) setAnalytics(result.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  const handleSelectLink = (slug) => {
+    setSelectedSlug(slug);
+    fetchAnalytics(slug);
+  };
+
+  const handleBackToLinks = () => {
+    setSelectedSlug(null);
+    setAnalytics(null);
+  };
+
+  // --- Detailed Analytics View ---
+  if (selectedSlug) {
+    if (analyticsLoading || !analytics) {
+      return (
+        <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+          <Button
+            variant="ghost"
+            onClick={handleBackToLinks}
+            className="mb-4 text-[#7c8e88] hover:text-[#1e3a34] dark:hover:text-white"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" /> Back to all links
+          </Button>
+          <Skeleton className="h-64 w-full" />
+        </div>
+      );
+    }
+
+    const {
+      linkDetails: link,
+      summary,
+      clicksOverTime,
+      devices,
+      countries,
+      topReferrers: referrers,
+    } = analytics;
+
+    // Transform clicksOverTime into chart.js format
+    const chartData = {
+      labels: clicksOverTime
+        ? clicksOverTime.map((c) => {
+            const date = new Date(c.date);
+            return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+          })
+        : [],
+      data: clicksOverTime ? clicksOverTime.map((c) => c.clicks) : [],
+    };
+
+    const chartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          titleColor: '#000',
+          bodyColor: '#666',
+          borderColor: '#e5e5e5',
+          borderWidth: 1,
+          padding: 10,
+          displayColors: false,
+        },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { maxTicksLimit: 7, font: { size: 11 } } },
+        y: { beginAtZero: true, grid: { borderDash: [2, 4] }, ticks: { stepSize: 1 } },
+      },
+      interaction: { mode: 'nearest', axis: 'x', intersect: false },
+    };
+
+    const lineChartData = {
+      labels: chartData?.labels || [],
+      datasets: [
+        {
+          fill: true,
+          label: 'Clicks',
+          data: chartData?.data || [],
+          borderColor: '#1f644e',
+          backgroundColor: 'rgba(31, 100, 78, 0.1)',
+          tension: 0.4,
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+        },
+      ],
+    };
+
+    const renderProgressBar = (count, total) => {
+      const percentage = total > 0 ? (count / total) * 100 : 0;
+      return (
+        <div
+          className="absolute top-0 left-0 h-full bg-[#1f644e]/10 dark:bg-[#2ecc71]/10 rounded-md -z-10 transition-all duration-500"
+          style={{ width: `${percentage}%` }}
+        />
+      );
+    };
+
+    const totalDeviceClicks = devices?.reduce((acc, curr) => acc + curr.count, 0) || 0;
+    const totalCountryClicks = countries?.reduce((acc, curr) => acc + curr.count, 0) || 0;
+    const totalReferrerClicks = referrers?.reduce((acc, curr) => acc + curr.count, 0) || 0;
+
+    return (
+      <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+        <Button
+          variant="ghost"
+          onClick={handleBackToLinks}
+          className="mb-2 text-[#7c8e88] hover:text-[#1e3a34] dark:hover:text-white"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" /> Back to all links
+        </Button>
+
+        <Card
+          variant="flat"
+          className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-[#1e1e1e] p-6 border-neutral-200 shadow-sm"
+        >
+          <div>
+            <h2 className="text-2xl font-bold font-['Playfair_Display'] text-[#1e3a34] dark:text-white">
+              {link.title || link.slug}
+            </h2>
+            <div className="flex items-center gap-2 mt-2 text-sm text-[#7c8e88] dark:text-[#a0a0a0]">
+              <span className="bg-[#fcfbf5] dark:bg-[#2c3e3a] px-2 py-1 rounded font-mono">
+                /r/{link.slug}
+              </span>
+              <ArrowLeft className="w-3 h-3" />
+              <a
+                href={link.destination}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1 hover:text-[#1e3a34] dark:hover:text-white hover:underline truncate max-w-[200px] md:max-w-md"
+              >
+                {link.destination} <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+          </div>
+          <div className="flex gap-6">
+            <div className="text-center">
+              <p className="text-sm text-[#7c8e88] dark:text-[#a0a0a0] mb-1">Total Clicks</p>
+              <p className="text-4xl font-bold text-[#1f644e] dark:text-[#2ecc71]">
+                {summary.totalClicks}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-[#7c8e88] dark:text-[#a0a0a0] mb-1">Unique (Est.)</p>
+              <p className="text-4xl font-bold text-[#1e3a34] dark:text-white">
+                {summary.uniqueVisitors}
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        <Card variant="flat" className="p-6 bg-white dark:bg-[#1e1e1e] border-neutral-200">
+          <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-[#1e3a34] dark:text-white">
+            <CalendarDays className="w-5 h-5 text-[#7c8e88]" />
+            Click History (Last 30 Days)
+          </h3>
+          <div className="h-[300px] w-full">
+            {chartData?.data?.some((d) => d > 0) ? (
+              <Line options={chartOptions} data={lineChartData} />
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-[#7c8e88] space-y-3">
+                <BarChart3 className="w-12 h-12 opacity-20" />
+                <p>No clicks recorded in this period.</p>
+                <p className="text-sm">Share your link to get started!</p>
+              </div>
+            )}
+          </div>
+        </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card variant="flat" className="p-6 bg-white dark:bg-[#1e1e1e] border-neutral-200">
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-[#1e3a34] dark:text-white">
+              <Globe className="w-5 h-5 text-[#7c8e88]" /> Top Referrers
+            </h3>
+            <div className="space-y-2">
+              {referrers?.length > 0 ? (
+                referrers.slice(0, 5).map((ref, i) => (
+                  <div
+                    key={i}
+                    className="relative z-10 flex justify-between items-center text-sm p-2 rounded-md"
+                  >
+                    {renderProgressBar(ref.count, totalReferrerClicks)}
+                    <span className="truncate max-w-[150px] font-medium text-[#1e3a34] dark:text-white">
+                      {ref.referrer || 'Direct / Unknown'}
+                    </span>
+                    <span className="font-bold text-[#1f644e] dark:text-[#2ecc71]">
+                      {ref.count}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-[#7c8e88]">No referrer data.</p>
+              )}
+            </div>
+          </Card>
+
+          <Card variant="flat" className="p-6 bg-white dark:bg-[#1e1e1e] border-neutral-200">
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-[#1e3a34] dark:text-white">
+              <Smartphone className="w-5 h-5 text-[#7c8e88]" /> Devices
+            </h3>
+            <div className="space-y-2">
+              {devices?.length > 0 ? (
+                devices.map((dev, i) => (
+                  <div
+                    key={i}
+                    className="relative z-10 flex justify-between items-center text-sm p-2 rounded-md"
+                  >
+                    {renderProgressBar(dev.count, totalDeviceClicks)}
+                    <span className="font-medium text-[#1e3a34] dark:text-white">
+                      {dev.device || 'Unknown'}
+                    </span>
+                    <span className="font-bold text-[#1f644e] dark:text-[#2ecc71]">
+                      {dev.count}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-[#7c8e88]">No device data.</p>
+              )}
+            </div>
+          </Card>
+
+          <Card variant="flat" className="p-6 bg-white dark:bg-[#1e1e1e] border-neutral-200">
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-[#1e3a34] dark:text-white">
+              <Globe className="w-5 h-5 text-[#7c8e88]" /> Countries
+            </h3>
+            <div className="space-y-2">
+              {countries?.length > 0 ? (
+                countries.slice(0, 5).map((country, i) => (
+                  <div
+                    key={i}
+                    className="relative z-10 flex justify-between items-center text-sm p-2 rounded-md"
+                  >
+                    {renderProgressBar(country.count, totalCountryClicks)}
+                    <span className="font-medium text-[#1e3a34] dark:text-white">
+                      {country.country || 'Unknown'}
+                    </span>
+                    <span className="font-bold text-[#1f644e] dark:text-[#2ecc71]">
+                      {country.count}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-[#7c8e88]">No location data.</p>
+              )}
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Main List View ---
   return (
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       <div className="flex justify-between items-center mb-8">
         <div>
           <p className="text-neutral-500">Manage, edit, and create new short URLs.</p>
         </div>
-        <Button variant="primary" onClick={openCreateModal} className="flex items-center gap-2">
+        <Button
+          onClick={openCreateModal}
+          className="flex items-center gap-2 bg-[#1f644e] hover:bg-[#164a39] text-white"
+        >
           <i className="fas fa-plus"></i> Create Link
         </Button>
       </div>
@@ -166,7 +480,10 @@ export default function ManageLinksTab() {
         </div>
       )}
 
-      <Card className="p-0 overflow-hidden bg-white shadow-sm border border-neutral-200">
+      <Card
+        variant="flat"
+        className="p-0 overflow-hidden bg-white shadow-sm border border-neutral-200"
+      >
         {loading ? (
           <div className="p-6 space-y-4">
             <Skeleton className="h-10 w-full" />
@@ -196,14 +513,24 @@ export default function ManageLinksTab() {
                     <tr key={link._id} className="hover:bg-neutral-50/50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="font-medium text-black">{link.title || link.slug}</div>
-                        <div className="text-sm text-neutral-500 flex items-center mt-1">
+                        <div className="text-sm text-neutral-500 flex items-center mt-1 group">
                           /r/{link.slug}
                           <button
                             onClick={() => handleCopyLink(link.slug)}
-                            className="ml-2 text-neutral-400 hover:text-black transition"
+                            className="ml-2 text-neutral-400 hover:text-[#1f644e] transition-colors p-1.5 rounded-md hover:bg-[#1f644e]/10 flex items-center justify-center relative"
                             title="Copy Link"
+                            aria-label="Copy link"
                           >
-                            <i className="fas fa-copy"></i>
+                            {copiedSlug === link.slug ? (
+                              <Check className="w-4 h-4 text-[#1f644e]" />
+                            ) : (
+                              <Copy className="w-4 h-4" />
+                            )}
+                            {copiedSlug === link.slug && (
+                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded shadow-sm whitespace-nowrap">
+                                Copied!
+                              </span>
+                            )}
                           </button>
                         </div>
                       </td>
@@ -235,23 +562,36 @@ export default function ManageLinksTab() {
                           {link.isActive ? 'Active' : 'Inactive'}
                         </Badge>
                       </td>
-                      <td className="px-6 py-4 text-right space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="px-2 py-1 h-8"
-                          onClick={() => openEditModal(link)}
-                        >
-                          <i className="fas fa-edit"></i>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="px-2 py-1 h-8 text-red-600 border-red-200 hover:bg-red-50"
-                          onClick={() => handleDelete(link._id)}
-                        >
-                          <i className="fas fa-trash"></i>
-                        </Button>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="px-2 py-1 h-8 text-[#7c8e88] hover:text-[#1f644e] hover:border-[#1f644e] hover:bg-[#1f644e]/5 border-transparent shadow-none"
+                            onClick={() => handleSelectLink(link.slug)}
+                            title="View Analytics"
+                          >
+                            <BarChart3 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="px-2 py-1 h-8 text-[#7c8e88] hover:text-[#1e3a34] border-transparent shadow-none"
+                            onClick={() => openEditModal(link)}
+                            title="Edit Link"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="px-2 py-1 h-8 text-[#7c8e88] hover:text-red-600 hover:border-red-200 hover:bg-red-50 border-transparent shadow-none"
+                            onClick={() => handleDelete(link._id)}
+                            title="Delete Link"
+                          >
+                            <Trash className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -262,7 +602,8 @@ export default function ManageLinksTab() {
             {/* Mobile Cards */}
             <div className="md:hidden space-y-4 p-4">
               {links.map((link) => (
-                <div
+                <Card
+                  variant="flat"
                   key={link._id}
                   className="border border-neutral-100 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow"
                 >
@@ -274,14 +615,23 @@ export default function ManageLinksTab() {
                       >
                         {link.title || link.slug}
                       </div>
-                      <div className="text-xs text-neutral-500 flex items-center mt-1 break-all">
+                      <div className="text-xs text-neutral-500 flex items-center mt-1 break-all relative">
                         /r/{link.slug}
                         <button
                           onClick={() => handleCopyLink(link.slug)}
-                          className="ml-2 text-neutral-400 hover:text-black transition"
+                          className="ml-2 text-neutral-400 hover:text-[#1f644e] transition-colors p-1.5 rounded-md hover:bg-[#1f644e]/10 flex items-center justify-center"
                           title="Copy Link"
                         >
-                          <i className="fas fa-copy"></i>
+                          {copiedSlug === link.slug ? (
+                            <Check className="w-4 h-4 text-[#1f644e]" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
+                          {copiedSlug === link.slug && (
+                            <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded shadow-sm whitespace-nowrap z-10">
+                              Copied!
+                            </span>
+                          )}
                         </button>
                       </div>
                     </div>
@@ -314,26 +664,35 @@ export default function ManageLinksTab() {
                       <span className="font-medium">{link.totalClicks}</span>{' '}
                       <span className="text-neutral-500">clicks</span>
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex gap-1.5">
                       <Button
                         variant="outline"
                         size="sm"
-                        className="px-2 py-1 h-8"
-                        onClick={() => openEditModal(link)}
+                        className="px-2 py-1 h-8 text-[#7c8e88] hover:text-[#1f644e] hover:border-[#1f644e] hover:bg-[#1f644e]/5 border-transparent shadow-none"
+                        onClick={() => handleSelectLink(link.slug)}
+                        title="View Analytics"
                       >
-                        <i className="fas fa-edit"></i>
+                        <BarChart3 className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="px-2 py-1 h-8 text-red-600 border-red-200 hover:bg-red-50"
+                        className="px-2 py-1 h-8 text-[#7c8e88] hover:text-[#1e3a34] border-transparent shadow-none"
+                        onClick={() => openEditModal(link)}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="px-2 py-1 h-8 text-[#7c8e88] hover:text-red-600 hover:border-red-200 hover:bg-red-50 border-transparent shadow-none"
                         onClick={() => handleDelete(link._id)}
                       >
-                        <i className="fas fa-trash"></i>
+                        <Trash className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
-                </div>
+                </Card>
               ))}
             </div>
           </div>
@@ -343,8 +702,11 @@ export default function ManageLinksTab() {
       {/* Modal / Form overlay */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="p-8 w-full max-w-2xl bg-white max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold mb-6 font-['Playfair_Display']">
+          <Card
+            variant="flat"
+            className="p-6 md:p-8 w-full max-w-2xl bg-white max-h-[90vh] overflow-y-auto"
+          >
+            <h2 className="text-2xl font-bold mb-6 font-[family-name:var(--font-sans)]">
               {isEditing ? 'Edit SnapLink' : 'Create SnapLink'}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -362,7 +724,7 @@ export default function ManageLinksTab() {
                       onChange={(e) =>
                         setFormData({ ...formData, slug: e.target.value.toLowerCase() })
                       }
-                      className="w-full border-2 border-neutral-300 rounded-r-xl px-4 py-2 focus:border-black focus:ring-0 text-sm"
+                      className="w-full border-2 border-neutral-300 rounded-r-xl px-4 py-2 focus:border-[#1f644e] focus:ring-0 text-sm outline-none transition-colors"
                       placeholder="e.g., github"
                       pattern="^[a-z0-9-]+$"
                       maxLength={50}
@@ -376,7 +738,7 @@ export default function ManageLinksTab() {
                     type="text"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full border-2 border-neutral-300 rounded-xl px-4 py-2 focus:border-black focus:ring-0 text-sm"
+                    className="w-full border-2 border-neutral-300 rounded-xl px-4 py-2 focus:border-[#1f644e] focus:ring-0 text-sm outline-none transition-colors"
                     placeholder="My GitHub Profile"
                   />
                 </div>
@@ -389,7 +751,7 @@ export default function ManageLinksTab() {
                   required
                   value={formData.destination}
                   onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
-                  className="w-full border-2 border-neutral-300 rounded-xl px-4 py-2 focus:border-black focus:ring-0 text-sm"
+                  className="w-full border-2 border-neutral-300 rounded-xl px-4 py-2 focus:border-[#1f644e] focus:ring-0 text-sm outline-none transition-colors"
                   placeholder="https://github.com/hasanraiyan"
                 />
               </div>
@@ -399,7 +761,7 @@ export default function ManageLinksTab() {
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full border-2 border-neutral-300 rounded-xl px-4 py-2 focus:border-black focus:ring-0 text-sm min-h-[80px]"
+                  className="w-full border-2 border-neutral-300 rounded-xl px-4 py-2 focus:border-[#1f644e] focus:ring-0 text-sm min-h-[80px] outline-none transition-colors"
                   placeholder="Notes about where this link is used..."
                 />
               </div>
@@ -407,13 +769,26 @@ export default function ManageLinksTab() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Tags (Comma separated)</label>
-                  <input
-                    type="text"
-                    value={formData.tags}
-                    onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                    className="w-full border-2 border-neutral-300 rounded-xl px-4 py-2 focus:border-black focus:ring-0 text-sm"
-                    placeholder="social, resume, ai-project"
-                  />
+                  <div className="w-full border-2 border-neutral-300 rounded-xl px-3 py-2 focus-within:border-[#1f644e] transition-colors flex flex-wrap gap-2 items-center min-h-[44px]">
+                    {formData.tags
+                      .split(',')
+                      .filter((t) => t.trim())
+                      .map((tag, idx) => (
+                        <span
+                          key={idx}
+                          className="bg-[#1f644e]/10 text-[#1f644e] px-2 py-1 rounded text-xs font-semibold flex items-center"
+                        >
+                          {tag.trim()}
+                        </span>
+                      ))}
+                    <input
+                      type="text"
+                      value={formData.tags}
+                      onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                      className="flex-1 outline-none text-sm min-w-[120px] bg-transparent"
+                      placeholder={formData.tags ? '' : 'social, resume, ai-project'}
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Expires At (Optional)</label>
@@ -421,7 +796,7 @@ export default function ManageLinksTab() {
                     type="date"
                     value={formData.expiresAt}
                     onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
-                    className="w-full border-2 border-neutral-300 rounded-xl px-4 py-2 focus:border-black focus:ring-0 text-sm"
+                    className="w-full border-2 border-neutral-300 rounded-xl px-4 py-2 focus:border-[#1f644e] focus:ring-0 text-sm outline-none transition-colors"
                   />
                 </div>
               </div>
@@ -443,7 +818,11 @@ export default function ManageLinksTab() {
                 <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" variant="primary" isLoading={submitting}>
+                <Button
+                  type="submit"
+                  isLoading={submitting}
+                  className="bg-[#1f644e] hover:bg-[#164a39] text-white"
+                >
                   {isEditing ? 'Update Link' : 'Create Link'}
                 </Button>
               </div>
