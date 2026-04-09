@@ -15,6 +15,7 @@ import {
 import { PurseSVG } from '@/components/pocketly-tracker/IconRenderer';
 import dynamic from 'next/dynamic';
 import { evaluateMath } from '@/utils/math';
+import BottomSheet from './BottomSheet';
 
 const IconRenderer = dynamic(() => import('./IconRenderer'), { ssr: false });
 
@@ -497,82 +498,80 @@ export default function AddTransactionModal() {
         </div>
 
         {/* Account Selector Bottom Sheet */}
-        {showAccountSelector && (
-          <div className="absolute inset-0 bg-black/30 flex flex-col justify-end z-50">
-            <div className="flex-1" onClick={() => setShowAccountSelector(null)} />
-            <div className="bg-white rounded-t-2xl px-4 pt-4 pb-6 shadow-xl animate-in slide-in-from-bottom duration-300">
-              <div className="mb-3 h-1 w-10 mx-auto rounded-full bg-[#e5e3d8]" />
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#7c8e88]">
-                Select account
-              </p>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {selectableAccounts.map((acc) => (
-                  <button
-                    key={acc.id}
-                    onClick={() => {
-                      if (showAccountSelector === 'from') setAccountId(acc.id);
-                      else if (showAccountSelector === 'to') setToAccountId(acc.id);
-                      else setAccountId(acc.id);
-                      setShowAccountSelector(null);
-                    }}
-                    className="w-full flex items-center justify-between py-3 px-3 rounded-xl hover:bg-[#f0f5f2] transition cursor-pointer"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-[#f0f5f2] flex items-center justify-center">
-                        <IconRenderer name={acc.icon} className="w-5 h-5 text-[#7c8e88]" />
-                      </div>
-                      <span className="font-bold text-sm text-[#1e3a34]">{acc.name}</span>
-                    </div>
-                    <span className="text-xs font-bold text-[#7c8e88]">
-                      ₹
-                      {(acc.currentBalance ?? acc.initialBalance ?? 0).toLocaleString('en-IN', {
-                        minimumFractionDigits: 2,
-                      })}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
+        <BottomSheet
+          open={Boolean(showAccountSelector)}
+          onClose={() => setShowAccountSelector(null)}
+          className="max-h-80 overflow-y-auto"
+          mobileOnly={false}
+        >
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#7c8e88]">
+            Select account
+          </p>
+          <div className="space-y-2">
+            {selectableAccounts.map((acc) => (
+              <button
+                key={acc.id}
+                onClick={() => {
+                  if (showAccountSelector === 'from') setAccountId(acc.id);
+                  else if (showAccountSelector === 'to') setToAccountId(acc.id);
+                  else setAccountId(acc.id);
+                  setShowAccountSelector(null);
+                }}
+                className="w-full flex items-center justify-between py-3 px-3 rounded-xl hover:bg-[#f0f5f2] transition cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#f0f5f2] flex items-center justify-center">
+                    <IconRenderer name={acc.icon} className="w-5 h-5 text-[#7c8e88]" />
+                  </div>
+                  <span className="font-bold text-sm text-[#1e3a34]">{acc.name}</span>
+                </div>
+                <span className="text-xs font-bold text-[#7c8e88]">
+                  ₹
+                  {(acc.currentBalance ?? acc.initialBalance ?? 0).toLocaleString('en-IN', {
+                    minimumFractionDigits: 2,
+                  })}
+                </span>
+              </button>
+            ))}
           </div>
-        )}
+        </BottomSheet>
 
         {/* Category Selector Bottom Sheet */}
-        {showCategorySelector && (
-          <div className="absolute inset-0 bg-black/30 flex flex-col justify-end z-50">
-            <div className="flex-1" onClick={() => setShowCategorySelector(false)} />
-            <div className="bg-white rounded-t-2xl px-4 pt-4 pb-6 shadow-xl animate-in slide-in-from-bottom duration-300">
-              <div className="mb-3 h-1 w-10 mx-auto rounded-full bg-[#e5e3d8]" />
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#7c8e88]">
-                Select category
-              </p>
-              <div className="grid grid-cols-4 gap-4 max-h-60 overflow-y-auto">
-                {filteredCategories.map((cat) => {
-                  const colorPresentation = getCategoryColorPresentation(cat.color);
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => {
-                        setCategoryId(cat.id);
-                        setShowCategorySelector(false);
-                      }}
-                      className="flex flex-col items-center gap-1.5 cursor-pointer"
-                    >
-                      <div
-                        className={`w-14 h-14 rounded-2xl ${colorPresentation.className} text-white flex items-center justify-center shadow-md active:scale-95 transition`}
-                        style={colorPresentation.style}
-                      >
-                        <IconRenderer name={cat.icon} className="w-6 h-6" />
-                      </div>
-                      <span className="text-[10px] font-bold text-[#7c8e88] text-center leading-tight">
-                        {cat.name}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+        <BottomSheet
+          open={showCategorySelector}
+          onClose={() => setShowCategorySelector(false)}
+          className="max-h-80 overflow-y-auto"
+          mobileOnly={false}
+        >
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#7c8e88]">
+            Select category
+          </p>
+          <div className="grid grid-cols-4 gap-4">
+            {filteredCategories.map((cat) => {
+              const colorPresentation = getCategoryColorPresentation(cat.color);
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => {
+                    setCategoryId(cat.id);
+                    setShowCategorySelector(false);
+                  }}
+                  className="flex flex-col items-center gap-1.5 cursor-pointer"
+                >
+                  <div
+                    className={`w-14 h-14 rounded-2xl ${colorPresentation.className} text-white flex items-center justify-center shadow-md active:scale-95 transition`}
+                    style={colorPresentation.style}
+                  >
+                    <IconRenderer name={cat.icon} className="w-6 h-6" />
+                  </div>
+                  <span className="text-[10px] font-bold text-[#7c8e88] text-center leading-tight">
+                    {cat.name}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-        )}
+        </BottomSheet>
       </div>
     </>
   );

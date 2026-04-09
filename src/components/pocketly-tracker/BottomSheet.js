@@ -2,12 +2,20 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 
-export default function BottomSheet({ open, onClose, children, className = '' }) {
+export default function BottomSheet({
+  open,
+  onClose,
+  children,
+  className = '',
+  mobileOnly = true,
+}) {
   return (
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-40 flex items-end justify-center bg-black/30 sm:hidden"
+          className={`fixed inset-0 z-40 flex items-end justify-center bg-black/30 ${
+            mobileOnly ? 'sm:hidden' : ''
+          }`}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
