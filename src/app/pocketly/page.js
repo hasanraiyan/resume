@@ -310,7 +310,7 @@ function FinanceContent() {
       )}
 
       {/* FAB / Edit Modal */}
-      {(accounts.length > 0 && activeTab !== 'settings' && activeTab !== 'chat') ||
+      {(accounts.length > 0 && activeTab !== 'settings' && activeTab !== 'chat' && activeTab !== 'accounts') ||
       editTransactionData ? (
         <AddTransactionModal />
       ) : null}

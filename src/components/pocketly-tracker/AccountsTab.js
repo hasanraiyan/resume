@@ -171,7 +171,8 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
       <div className="w-full px-4 lg:px-6">
         <div className="w-full max-w-6xl mx-auto">
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          {/* Desktop Summary Cards */}
+          <div className="hidden sm:grid grid-cols-3 gap-4 mb-8">
             <div className="bg-white border border-[#e5e3d8] rounded-xl p-5 flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-[#1f644e]/10 flex items-center justify-center shrink-0">
                 <PurseSVG className="w-6 h-6 text-[#1f644e]" />
@@ -209,6 +210,34 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
             </div>
           </div>
 
+          {/* Mobile Summary Horizontal View */}
+          <div className="sm:hidden flex items-center justify-between mb-8 px-4 bg-[#fcfbf5]">
+            <div className="text-center">
+              <p className="text-[10px] font-bold text-[#1f644e] uppercase tracking-wider mb-1">
+                Expense
+              </p>
+              <p className="text-sm font-bold text-[#c94c4c]">
+                ₹{totalExpense.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-[10px] font-bold text-[#1f644e] uppercase tracking-wider mb-1">
+                Income
+              </p>
+              <p className="text-sm font-bold text-[#1f644e]">
+                ₹{totalIncome.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-[10px] font-bold text-[#1f644e] uppercase tracking-wider mb-1">
+                Total
+              </p>
+              <p className="text-sm font-bold text-[#1f644e]">
+                ₹{totalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+          </div>
+
           {/* Accounts Grid */}
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold text-[#1f644e]">Your Accounts</h2>
@@ -225,7 +254,7 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
                   setShowForm(true);
                 }}
                 disabled={isMutatingAccounts}
-                className="flex items-center gap-1.5 border border-[#1f644e] text-[#1f644e] px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#1f644e] hover:text-white transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent disabled:hover:text-[#1f644e]"
+                className="hidden sm:flex items-center gap-1.5 border border-[#1f644e] text-[#1f644e] px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#1f644e] hover:text-white transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent disabled:hover:text-[#1f644e]"
               >
                 <Plus className="w-3.5 h-3.5" /> Add Account
               </button>
@@ -334,6 +363,20 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
           )}
         </div>
       </div>
+
+      {/* Mobile FAB for Adding Account */}
+      {!showForm && (
+        <button
+          onClick={() => {
+            setSurfaceError('');
+            setShowForm(true);
+          }}
+          className="sm:hidden fixed bottom-20 right-4 w-12 h-12 bg-[#1f644e] rounded-full shadow-lg flex items-center justify-center text-white hover:bg-[#17503e] hover:shadow-xl transition-all active:scale-95 z-30"
+          style={{ right: 'calc(1rem + env(safe-area-inset-right))' }}
+        >
+          <Plus className="w-6 h-6" strokeWidth={2.5} />
+        </button>
+      )}
 
       {/* Add/Edit Form Modal */}
       {showForm && (
