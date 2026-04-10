@@ -109,7 +109,20 @@ export function restoreMessagesFromStorage(rawMessages) {
 
 export function applyCloudStreamEventToMessages(messages, assistantMsgId, event) {
   if (event.type === 'content') {
-    const nextContent = messages.find((message) => message.id === assistantMsgId)?.content || '';
+    const target = messages.find((message) => message.id === assistantMsgId);
+    if (!target) return messages;
+
+    const hasBlockingUi = (target.uiBlocks || []).some(
+      (block) => block.kind === 'mcq_question' || block.kind === 'mcq_question_group'
+    );
+
+    // If we already showed an MCQ clarification UI for this assistant turn,
+    // ignore any further text tokens so the user only sees the question card.
+    if (hasBlockingUi) {
+      return messages;
+    }
+
+    const nextContent = target.content || '';
     const fullContent = nextContent + event.message;
     return messages.map((message) =>
       message.id === assistantMsgId ? { ...message, content: fullContent } : message
@@ -176,8 +189,15 @@ export function applyCloudStreamEventToMessages(messages, assistantMsgId, event)
         }
       }
 
+      const hasBlockingUi = (event.uiBlocks || []).some(
+        (block) => block.kind === 'mcq_question' || block.kind === 'mcq_question_group'
+      );
+
       return {
         ...message,
+        // If this tool_end introduced an MCQ clarification UI, clear any
+        // accumulated assistant text so the user just sees the question card.
+        content: hasBlockingUi ? '' : message.content,
         steps: finalizedSteps,
         uiBlocks: nextBlocks,
         guiRequested: message.guiRequested || event.guiRequested || false,

@@ -13,6 +13,107 @@ export default function MessageList({
 }) {
   const isGreenTheme = theme === 'green';
 
+  const formatMcqUserMessage = (content) => {
+    if (!content || typeof content !== 'string') return content;
+
+    // Single-question MCQ answer: [MCQ answer <id>] Selected options: opt_a, opt_b | Other: ...
+    if (content.startsWith('[MCQ answer ')) {
+      const afterTag = content.replace(/^\[MCQ answer [^\]]+\]\s*/u, '');
+
+      const selectedMatch = afterTag.match(/Selected options:\s*([^|]+)/i);
+      const otherMatch = afterTag.match(/\bOther:\s*(.+)$/i);
+
+      const selectedRaw = (selectedMatch?.[1] || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const prettifyId = (id) => {
+        if (!id) return id;
+        const cleaned = id.replace(/^mcq[-_]/i, '').replace(/[_-]+/g, ' ');
+        return cleaned
+          .split(' ')
+          .filter(Boolean)
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+      };
+
+      const prettyOptions = selectedRaw.map(prettifyId);
+      const otherText = otherMatch?.[1]?.trim();
+
+      if (prettyOptions.length === 0 && !otherText) {
+        return content;
+      }
+
+      if (prettyOptions.length > 0 && otherText) {
+        return `You chose: ${prettyOptions.join(', ')}\nOther: ${otherText}`;
+      }
+
+      if (prettyOptions.length > 0) {
+        return `You chose: ${prettyOptions.join(', ')}`;
+      }
+
+      return `You answered: ${otherText}`;
+    }
+
+    // Group MCQ answers: [MCQ group <id>] Q q1: selected: ... || Q q2: selected: ...
+    if (content.startsWith('[MCQ group ')) {
+      const afterTag = content.replace(/^\[MCQ group [^\]]+\]\s*/u, '');
+
+      const parts = afterTag
+        .split('||')
+        .map((part) => part.trim())
+        .filter(Boolean);
+      if (parts.length === 0) return content;
+
+      const lines = parts.map((part) => {
+        // Expect something like: Q qid: selected: a, b | other: text
+        const withoutQ = part.replace(/^Q\s+/i, '').trim();
+        const [qidPart, rest = ''] = withoutQ.split(':').map((x) => x.trim());
+
+        const selectedMatch = rest.match(/selected:\s*([^|]+)/i);
+        const otherMatch = rest.match(/other:\s*(.+)$/i);
+
+        const selectedRaw = (selectedMatch?.[1] || '')
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        const prettifyId = (id) => {
+          if (!id) return id;
+          const cleaned = id.replace(/^mcq[-_]/i, '').replace(/[_-]+/g, ' ');
+          return cleaned
+            .split(' ')
+            .filter(Boolean)
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+        };
+
+        const prettyOptions = selectedRaw.map(prettifyId);
+        const otherText = otherMatch?.[1]?.trim();
+
+        const label = prettifyId(qidPart || 'Question');
+        const pieces = [];
+        if (prettyOptions.length) {
+          pieces.push(prettyOptions.join(', '));
+        }
+        if (otherText) {
+          pieces.push(`Other: ${otherText}`);
+        }
+
+        if (pieces.length === 0) return null;
+        return `- ${label}: ${pieces.join(' | ')}`;
+      });
+
+      const filteredLines = lines.filter(Boolean);
+      if (!filteredLines.length) return content;
+
+      return `You answered:\n${filteredLines.join('\n')}`;
+    }
+
+    return content;
+  };
+
   return (
     <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5 space-y-3 bg-gradient-to-b from-white/50 to-neutral-50/50 custom-chat-scrollbar">
       {messages.map((message, index) => {
@@ -85,7 +186,7 @@ export default function MessageList({
                   {message.role === 'assistant' ? (
                     <MdContent content={message.content} onLinkClick={handleLinkClick} />
                   ) : (
-                    <MdContent content={message.content} isUser={true} />
+                    <MdContent content={formatMcqUserMessage(message.content)} isUser={true} />
                   )}
                   <p className={`text-[10px] mt-1.5 text-neutral-400`}>
                     {message.timestamp.toLocaleTimeString([], {

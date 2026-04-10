@@ -435,6 +435,156 @@ export function createDraftTransactionTool() {
   );
 }
 
+export function createAskClarificationQuestionTool() {
+  const mcqOptionSchema = z.object({
+    id: z.string().describe('Stable machine-readable option id (e.g. "yes", "no", "weekly").'),
+    label: z.string().describe('Human-readable label for the option.'),
+    description: z.string().optional().describe('Optional short helper text for the option.'),
+  });
+
+  const singleQuestionSchema = z.object({
+    question: z
+      .string()
+      .describe('The question to show the user, phrased in simple, direct language.'),
+    options: z
+      .array(mcqOptionSchema)
+      .min(2)
+      .max(8)
+      .describe('2-8 clear options that cover the most likely answers.'),
+    selectionMode: z
+      .enum(['single', 'multiple'])
+      .optional()
+      .describe(
+        'Use "single" for one choice, "multiple" when several choices make sense. Defaults to "single".'
+      ),
+    questionId: z
+      .string()
+      .optional()
+      .describe('Stable identifier for this question so you can recognize the answer later.'),
+    allowFreeText: z
+      .boolean()
+      .optional()
+      .describe(
+        'Whether the "Other" option should allow a free-text explanation. Defaults to true.'
+      ),
+  });
+
+  const groupQuestionSchema = z.object({
+    id: z
+      .string()
+      .describe(
+        'Stable identifier for this question within the group. Used in the answer payload.'
+      ),
+    question: z
+      .string()
+      .describe('The question to show the user, phrased in simple, direct language.'),
+    options: z
+      .array(mcqOptionSchema)
+      .min(2)
+      .max(8)
+      .describe('2-8 clear options that cover the most likely answers.'),
+    selectionMode: z
+      .enum(['single', 'multiple'])
+      .optional()
+      .describe(
+        'Use "single" for one choice, "multiple" when several choices make sense. Defaults to "single".'
+      ),
+    allowFreeText: z
+      .boolean()
+      .optional()
+      .describe(
+        'Whether the "Other" option should allow a free-text explanation. Defaults to true.'
+      ),
+  });
+
+  const groupSchema = z.object({
+    groupId: z
+      .string()
+      .optional()
+      .describe(
+        'Stable identifier for this group of questions so you can recognize the grouped answer later.'
+      ),
+    questions: z
+      .array(groupQuestionSchema)
+      .min(1)
+      .max(6)
+      .describe('An ordered list of 1-6 short questions to ask as a mini-flow.'),
+  });
+
+  function normalizeOptions(rawOptions, allowFreeText) {
+    const options = (rawOptions || []).map((opt) => ({
+      id: String(opt.id),
+      label: String(opt.label),
+      description: opt.description ?? undefined,
+    }));
+
+    const hasOther = options.some((opt) => {
+      if (opt.id === 'other') return true;
+      const label = (opt.label || '').trim().toLowerCase();
+      return label === 'other';
+    });
+
+    if (!hasOther) {
+      options.push({
+        id: 'other',
+        label: 'Other',
+        description:
+          allowFreeText === false ? undefined : 'Share your own preference in a short sentence.',
+      });
+    }
+
+    return options;
+  }
+
+  function normalizeSelectionMode(mode) {
+    return mode === 'multiple' ? 'multiple' : 'single';
+  }
+
+  return tool(
+    async (input) => {
+      // The schema ensures we either have a single-question payload
+      // or a group payload with a questions array.
+
+      if (Array.isArray(input.questions) && input.questions.length > 0) {
+        const allowGroupFreeTextDefault = true;
+
+        const groupId = input.groupId || `mcq-group-${Date.now()}`;
+        const questions = input.questions.map((q) => {
+          const allowFreeText = q.allowFreeText !== false && allowGroupFreeTextDefault;
+          return {
+            id: q.id,
+            question: q.question,
+            selectionMode: normalizeSelectionMode(q.selectionMode),
+            allowFreeText,
+            options: normalizeOptions(q.options, allowFreeText),
+          };
+        });
+
+        return {
+          id: groupId,
+          questions,
+        };
+      }
+
+      const allowFreeText = input.allowFreeText !== false;
+
+      return {
+        id: input.questionId || `mcq-${Date.now()}`,
+        question: input.question,
+        selectionMode: normalizeSelectionMode(input.selectionMode),
+        allowFreeText,
+        options: normalizeOptions(input.options, allowFreeText),
+      };
+    },
+    {
+      name: 'ask_clarification_question',
+      description:
+        'Ask the user a focused clarification question as a multiple-choice prompt (or a very short group of prompts). Use this when the answer is best captured as a small set of options (with an automatic "Other" choice), like preferences, disambiguation, or next-step choices. For a single clarification, pass question + options. For a short flow, pass questions[]. The UI will handle navigation, Previous/Next, and Submit.',
+      schema: z.union([singleQuestionSchema, groupSchema]),
+    }
+  );
+}
+
 export function createFinanceTools() {
   return [
     createGetAccountsTool(),
@@ -442,5 +592,6 @@ export function createFinanceTools() {
     createGetTransactionsTool(),
     createGetAnalysisTool(),
     createDraftTransactionTool(),
+    createAskClarificationQuestionTool(),
   ];
 }

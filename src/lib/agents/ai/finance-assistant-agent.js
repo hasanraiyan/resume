@@ -90,6 +90,16 @@ function parseToolOutput(output) {
     return output;
   }
 
+  // ask_user_mcq payloads (single question or group) are plain objects
+  // with question/options or questions[]. Pass them through so the UI
+  // builder can construct the right blocks.
+  if (
+    (typeof output.question === 'string' && Array.isArray(output.options)) ||
+    Array.isArray(output.questions)
+  ) {
+    return output;
+  }
+
   return null;
 }
 
@@ -100,6 +110,7 @@ function getToolLabel(toolName) {
     get_accounts: 'Checking accounts',
     get_categories: 'Reviewing categories',
     draft_transaction: 'Drafting transaction',
+    ask_clarification_question: 'Asking you a question',
   };
 
   return labels[toolName] || `Using ${toolName}`;
@@ -107,6 +118,7 @@ function getToolLabel(toolName) {
 
 function shouldRenderGui(toolName, toolArgs = {}) {
   if (toolName === 'draft_transaction') return true;
+  if (toolName === 'ask_clarification_question') return true;
   if (toolArgs?.presentation === 'card') return true;
   return toolArgs?.isGui === true;
 }
@@ -205,6 +217,69 @@ function buildUiBlocks(toolName, output, toolArgs = {}) {
     ];
   }
 
+  if (toolName === 'ask_clarification_question') {
+    // Group of questions flow
+    if (Array.isArray(parsed.questions) && parsed.questions.length > 0) {
+      const groupId = parsed.id || parsed.groupId || `mcq-group-${Date.now()}`;
+
+      const questions = parsed.questions.map((q) => {
+        const allowFreeText = q.allowFreeText !== false;
+        const options = (q.options || []).map((opt) => ({
+          id: String(opt.id),
+          label: String(opt.label),
+          description: opt.description ?? undefined,
+        }));
+
+        return {
+          id: String(q.id),
+          question: q.question,
+          selectionMode: q.selectionMode === 'multiple' ? 'multiple' : 'single',
+          allowFreeText,
+          options,
+        };
+      });
+
+      return [
+        {
+          kind: 'mcq_question_group',
+          title: 'A few quick questions',
+          action: null,
+          data: {
+            id: groupId,
+            questions,
+          },
+        },
+      ];
+    }
+
+    // Single question
+    if (parsed.question && Array.isArray(parsed.options)) {
+      const allowFreeText = parsed.allowFreeText !== false;
+      const options = (parsed.options || []).map((opt) => ({
+        id: String(opt.id),
+        label: String(opt.label),
+        description: opt.description ?? undefined,
+      }));
+
+      return [
+        {
+          kind: 'mcq_question',
+          title: 'Quick question',
+          action: null,
+          data: {
+            id: parsed.id || parsed.questionId || `mcq-${Date.now()}`,
+            question: parsed.question,
+            selectionMode: parsed.selectionMode === 'multiple' ? 'multiple' : 'single',
+            allowFreeText,
+            options,
+          },
+        },
+      ];
+    }
+
+    return [];
+  }
+
   return [];
 }
 
@@ -298,7 +373,21 @@ When the user is trying to record, add, log, save, or draft a transaction, follo
 - For transfers, set toAccountResolvedViaTool=true only after resolving toAccountId with get_accounts.
 - If multiple accounts or categories could match, ask which one the user means.
 - If no matching account or category exists, say so and ask the user to choose from available options.
-- Once the draft is complete, briefly summarize it in natural language and then let the confirmation UI appear.`,
+- Once the draft is complete, briefly summarize it in natural language and then let the confirmation UI appear.
+
+You also have a clarification tool called ask_clarification_question:
+- Use it when you need the user to choose from a small, clear set of options (2-8) instead of typing a free-text answer.
+- Good use cases: disambiguating which account or category they mean, choosing between 2-4 interpretations of their request, asking for simple preferences (timeframes, goals, budget style), or confirming next steps.
+- Always include an "Other" option so the user can override the list.
+- Use single-select by default; use multi-select only if it is natural for the question (for example, "Which goals do you want to focus on?" where multiple goals are fine).
+- Keep flows short: either a single question or a mini-sequence of 2-4 questions.
+
+How clarification answers appear in chat:
+- The app will convert MCQ answers into normal-looking user messages such as:
+  - [MCQ answer spending-timeframe] Selected options: last_30_days
+  - [MCQ answer transfer-target] Selected options: emergency_fund | Other: Move to gold ETF instead
+  - [MCQ group onboarding-goals] Q saving-style: selected: aggressive || Q tracking-preference: selected: weekly, alerts
+- Treat these as reliable structured answers you requested. Do not ask the same clarification again unless the user explicitly says they want to change it.`,
     });
 
     const messages = [
@@ -384,6 +473,14 @@ When the user is trying to record, add, log, save, or draft a transaction, follo
 
         if (toolCallId) {
           activeToolCalls.delete(toolCallId);
+        }
+
+        // When we ask a clarification question via the MCQ UI, treat that as the
+        // end of this assistant turn. The user must now answer the card before
+        // we continue, so we stop the LangGraph stream here to avoid generating
+        // extra explanatory text that we will ignore on the client anyway.
+        if (toolName === 'ask_clarification_question') {
+          return;
         }
       }
     }
