@@ -4,41 +4,43 @@ import Account from '@/models/Account';
 import Category from '@/models/Category';
 import Transaction from '@/models/Transaction';
 import { serializeAccount, serializeCategory } from '@/lib/money-serializers';
-import { requireAdminAuth } from '@/lib/money-auth';
+import { requireUserAuth } from '@/lib/money-auth';
 
 export async function POST() {
-  const session = await requireAdminAuth();
+  const session = await requireUserAuth();
   if (typeof session !== 'object') return session;
 
   try {
     await dbConnect();
     const resetAt = new Date();
+    const userId = session.user.id;
 
     await Promise.all([
       Account.updateMany(
-        { deletedAt: null },
+        { deletedAt: null, userId },
         { $set: { deletedAt: resetAt }, $inc: { syncVersion: 1 } }
       ),
       Category.updateMany(
-        { deletedAt: null },
+        { deletedAt: null, userId },
         { $set: { deletedAt: resetAt }, $inc: { syncVersion: 1 } }
       ),
       Transaction.updateMany(
-        { deletedAt: null },
+        { deletedAt: null, userId },
         { $set: { deletedAt: resetAt }, $inc: { syncVersion: 1 } }
       ),
     ]);
 
     // Seed fresh default accounts
     const accounts = await Account.insertMany([
-      { name: 'CARD', icon: 'credit-card', initialBalance: 0 },
-      { name: 'CASH', icon: 'wallet', initialBalance: 0 },
-      { name: 'SAVING', icon: 'piggy-bank', initialBalance: 0 },
+      { userId, name: 'CARD', icon: 'credit-card', initialBalance: 0 },
+      { userId, name: 'CASH', icon: 'wallet', initialBalance: 0 },
+      { userId, name: 'SAVING', icon: 'piggy-bank', initialBalance: 0 },
     ]);
 
     // Seed default categories
     const expenseCategories = await Category.insertMany([
       {
+        userId,
         name: 'Food & Dining',
         type: 'expense',
         icon: 'utensils',
@@ -46,6 +48,7 @@ export async function POST() {
         bgColor: '#E6F4EA',
       },
       {
+        userId,
         name: 'Transportation',
         type: 'expense',
         icon: 'car',
@@ -53,6 +56,7 @@ export async function POST() {
         bgColor: '#E6F4EA',
       },
       {
+        userId,
         name: 'Shopping',
         type: 'expense',
         icon: 'shopping-bag',
@@ -60,6 +64,7 @@ export async function POST() {
         bgColor: '#E6F4EA',
       },
       {
+        userId,
         name: 'Bills & Utilities',
         type: 'expense',
         icon: 'receipt',
@@ -67,6 +72,7 @@ export async function POST() {
         bgColor: '#E6F4EA',
       },
       {
+        userId,
         name: 'Entertainment',
         type: 'expense',
         icon: 'film',
@@ -74,14 +80,23 @@ export async function POST() {
         bgColor: '#E6F4EA',
       },
       {
+        userId,
         name: 'Health',
         type: 'expense',
         icon: 'heart-pulse',
         color: '#10B981',
         bgColor: '#E6F4EA',
       },
-      { name: 'Social', type: 'expense', icon: 'users', color: '#6366F1', bgColor: '#E6F4EA' },
       {
+        userId,
+        name: 'Social',
+        type: 'expense',
+        icon: 'users',
+        color: '#6366F1',
+        bgColor: '#E6F4EA',
+      },
+      {
+        userId,
         name: 'Education',
         type: 'expense',
         icon: 'book-open',
@@ -91,11 +106,33 @@ export async function POST() {
     ]);
 
     const incomeCategories = await Category.insertMany([
-      { name: 'Salary', type: 'income', icon: 'briefcase', color: '#22C55E', bgColor: '#E6F4EA' },
-      { name: 'Freelance', type: 'income', icon: 'laptop', color: '#06B6D4', bgColor: '#E6F4EA' },
-      { name: 'Awards', type: 'income', icon: 'trophy', color: '#F59E0B', bgColor: '#E6F4EA' },
-      { name: 'Sale', type: 'income', icon: 'tag', color: '#A855F7', bgColor: '#E6F4EA' },
       {
+        userId,
+        name: 'Salary',
+        type: 'income',
+        icon: 'briefcase',
+        color: '#22C55E',
+        bgColor: '#E6F4EA',
+      },
+      {
+        userId,
+        name: 'Freelance',
+        type: 'income',
+        icon: 'laptop',
+        color: '#06B6D4',
+        bgColor: '#E6F4EA',
+      },
+      {
+        userId,
+        name: 'Awards',
+        type: 'income',
+        icon: 'trophy',
+        color: '#F59E0B',
+        bgColor: '#E6F4EA',
+      },
+      { userId, name: 'Sale', type: 'income', icon: 'tag', color: '#A855F7', bgColor: '#E6F4EA' },
+      {
+        userId,
         name: 'Interest',
         type: 'income',
         icon: 'trending-up',

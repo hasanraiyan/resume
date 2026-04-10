@@ -3,12 +3,12 @@ import dbConnect from '@/lib/dbConnect';
 import Account from '@/models/Account';
 import Category from '@/models/Category';
 import Transaction from '@/models/Transaction';
-import { requireAdminAuth } from '@/lib/money-auth';
+import { requireUserAuth } from '@/lib/money-auth';
 import { serializeAccount, serializeCategory, serializeTransaction } from '@/lib/money-serializers';
 import { computeAccountSummaries } from '@/lib/money-account-summary';
 
 export async function GET(request) {
-  const session = await requireAdminAuth();
+  const session = await requireUserAuth();
   if (typeof session !== 'object') return session;
 
   try {
@@ -17,8 +17,9 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    const userId = session.user.id;
 
-    const periodQuery = { deletedAt: null };
+    const periodQuery = { deletedAt: null, userId };
     if (startDate || endDate) {
       periodQuery.date = {};
       if (startDate) periodQuery.date.$gte = new Date(startDate);
@@ -27,16 +28,18 @@ export async function GET(request) {
 
     const [accounts, categories, transactions, ledgerTransactions, totalTransactionCount] =
       await Promise.all([
-        Account.find({ deletedAt: null }).sort({ createdAt: 1 }).lean(),
-        Category.find({ deletedAt: null }).sort({ type: 1, name: 1 }).lean(),
+        Account.find({ deletedAt: null, userId }).sort({ createdAt: 1 }).lean(),
+        Category.find({ deletedAt: null, userId }).sort({ type: 1, name: 1 }).lean(),
         Transaction.find(periodQuery)
           .populate('category', 'name icon type color')
           .populate('account', 'name icon')
           .populate('toAccount', 'name icon')
           .sort({ date: -1, createdAt: -1 })
           .lean(),
-        Transaction.find({ deletedAt: null }).select('type amount account toAccount').lean(),
-        Transaction.countDocuments({ deletedAt: null }),
+        Transaction.find({ deletedAt: null, userId })
+          .select('type amount account toAccount')
+          .lean(),
+        Transaction.countDocuments({ deletedAt: null, userId }),
       ]);
 
     const accountSummary = computeAccountSummaries(accounts, ledgerTransactions);

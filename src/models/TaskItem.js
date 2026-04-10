@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const TaskItemSchema = new mongoose.Schema(
   {
+    userId: { type: String, required: true }, // Added for multi-tenancy
     title: { type: String, required: true, trim: true },
     description: { type: String, default: '', trim: true },
     project: {
@@ -40,7 +41,7 @@ const TaskItemSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-TaskItemSchema.index({ createdAt: -1 });
-TaskItemSchema.index({ status: 1, priority: 1 });
+TaskItemSchema.index({ userId: 1, status: 1 });
+TaskItemSchema.index({ userId: 1, projectId: 1 });
 
 export default mongoose.models.TaskItem || mongoose.model('TaskItem', TaskItemSchema);

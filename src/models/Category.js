@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const CategorySchema = new mongoose.Schema(
   {
+    userId: { type: String, required: true }, // Added for multi-tenancy
     name: { type: String, required: true },
     type: { type: String, enum: ['income', 'expense'], required: true },
     icon: { type: String, default: 'dollar-sign' },
@@ -12,5 +13,7 @@ const CategorySchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+CategorySchema.index({ userId: 1 });
 
 export default mongoose.models.Category || mongoose.model('Category', CategorySchema);

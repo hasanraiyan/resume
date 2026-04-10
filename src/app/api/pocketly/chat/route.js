@@ -21,8 +21,8 @@ function isClosedStreamError(error) {
 
 export async function POST(request) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user?.role !== 'admin') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  if (!session || !session.user || !session.user.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const rateLimitResponse = rateLimit(request, 10, 60000);
@@ -43,6 +43,7 @@ export async function POST(request) {
       chatHistory,
       sessionId,
       now: requestNow,
+      userId: session.user.id,
     };
 
     const stream = new ReadableStream({

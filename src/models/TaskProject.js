@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const TaskProjectSchema = new mongoose.Schema(
   {
+    userId: { type: String, required: true }, // Added for multi-tenancy
     name: { type: String, required: true, trim: true },
     description: { type: String, default: '', trim: true },
     color: { type: String, default: '#1f644e', trim: true },

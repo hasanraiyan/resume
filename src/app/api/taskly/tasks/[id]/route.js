@@ -1,17 +1,18 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
-import { requireAdminAuth } from '@/lib/money-auth';
+import { requireUserAuth } from '@/lib/money-auth';
 import TaskItem from '@/models/TaskItem';
 import { normalizeTaskPayload, serializeTaskItem } from '@/lib/taskly';
 
 export async function PUT(request, { params }) {
-  const session = await requireAdminAuth();
+  const session = await requireUserAuth();
   if (typeof session !== 'object') return session;
 
   try {
     await dbConnect();
     const body = await request.json();
     const payload = normalizeTaskPayload(body);
+    delete payload.userId;
 
     if (!payload.title) {
       return NextResponse.json(
@@ -20,7 +21,7 @@ export async function PUT(request, { params }) {
       );
     }
 
-    const updated = await TaskItem.findOneAndUpdate({ _id: params.id, deletedAt: null }, payload, {
+    const updated = await TaskItem.findOneAndUpdate({ _id: params.id, deletedAt: null, userId: session.user.id }, payload, {
       new: true,
     })
       .populate('project', 'name color status deadline')
@@ -38,13 +39,13 @@ export async function PUT(request, { params }) {
 }
 
 export async function DELETE(_request, { params }) {
-  const session = await requireAdminAuth();
+  const session = await requireUserAuth();
   if (typeof session !== 'object') return session;
 
   try {
     await dbConnect();
     const task = await TaskItem.findOneAndUpdate(
-      { _id: params.id, deletedAt: null },
+      { _id: params.id, deletedAt: null, userId: session.user.id },
       { deletedAt: new Date() },
       { new: true }
     );

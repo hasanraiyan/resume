@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
-import { requireAdminAuth } from '@/lib/money-auth';
+import { requireUserAuth } from '@/lib/money-auth';
 import TaskItem from '@/models/TaskItem';
 import { normalizeTaskPayload, serializeTaskItem } from '@/lib/taskly';
 
 export async function GET(request) {
-  const session = await requireAdminAuth();
+  const session = await requireUserAuth();
   if (typeof session !== 'object') return session;
 
   try {
@@ -15,7 +15,7 @@ export async function GET(request) {
     const priority = searchParams.get('priority');
     const project = searchParams.get('project');
 
-    const query = { deletedAt: null };
+    const query = { deletedAt: null, userId: session.user.id };
     if (status) query.status = status;
     if (priority) query.priority = priority;
     if (project === 'none') query.project = null;
@@ -34,7 +34,7 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const session = await requireAdminAuth();
+  const session = await requireUserAuth();
   if (typeof session !== 'object') return session;
 
   try {
@@ -49,7 +49,7 @@ export async function POST(request) {
       );
     }
 
-    const task = await TaskItem.create(payload);
+    const task = await TaskItem.create({ ...payload, userId: session.user.id });
     const populated = await TaskItem.findById(task._id)
       .populate('project', 'name color status deadline')
       .lean();

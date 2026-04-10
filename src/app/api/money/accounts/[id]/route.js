@@ -2,18 +2,19 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Account from '@/models/Account';
 import { serializeAccount } from '@/lib/money-serializers';
-import { requireAdminAuth } from '@/lib/money-auth';
+import { requireUserAuth } from '@/lib/money-auth';
 
 export async function PUT(request, { params }) {
-  const session = await requireAdminAuth();
+  const session = await requireUserAuth();
   if (typeof session !== 'object') return session;
 
   try {
     await dbConnect();
     const { id } = await params;
     const body = await request.json();
+    delete body.userId;
     const account = await Account.findOneAndUpdate(
-      { _id: id, deletedAt: null },
+      { _id: id, deletedAt: null, userId: session.user.id },
       { $set: body, $inc: { syncVersion: 1 } },
       { new: true }
     ).lean();
@@ -32,7 +33,7 @@ export async function PUT(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-  const session = await requireAdminAuth();
+  const session = await requireUserAuth();
   if (typeof session !== 'object') return session;
 
   try {
@@ -41,10 +42,18 @@ export async function DELETE(request, { params }) {
     if (!id) {
       return NextResponse.json({ success: false, message: 'Missing id' }, { status: 400 });
     }
-    await Account.findByIdAndUpdate(id, {
-      $set: { deletedAt: new Date() },
-      $inc: { syncVersion: 1 },
-    });
+    const account = await Account.findOneAndUpdate(
+      { _id: id, userId: session.user.id },
+      {
+        $set: { deletedAt: new Date() },
+        $inc: { syncVersion: 1 },
+      }
+    );
+    if (!account)
+      return NextResponse.json(
+        { success: false, message: 'Not found or unauthorized' },
+        { status: 404 }
+      );
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(

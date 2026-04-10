@@ -1,16 +1,18 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
-import { requireAdminAuth } from '@/lib/money-auth';
+import { requireUserAuth } from '@/lib/money-auth';
 import TaskProject from '@/models/TaskProject';
 import { serializeTaskProject } from '@/lib/taskly';
 
 export async function GET() {
-  const session = await requireAdminAuth();
+  const session = await requireUserAuth();
   if (typeof session !== 'object') return session;
 
   try {
     await dbConnect();
-    const projects = await TaskProject.find({ deletedAt: null }).sort({ createdAt: -1 }).lean();
+    const projects = await TaskProject.find({ deletedAt: null, userId: session.user.id })
+      .sort({ createdAt: -1 })
+      .lean();
     return NextResponse.json({ success: true, projects: projects.map(serializeTaskProject) });
   } catch (error) {
     console.error('Failed to fetch Taskly projects:', error);
@@ -22,7 +24,7 @@ export async function GET() {
 }
 
 export async function POST(request) {
-  const session = await requireAdminAuth();
+  const session = await requireUserAuth();
   if (typeof session !== 'object') return session;
 
   try {
@@ -34,6 +36,7 @@ export async function POST(request) {
       color: body.color || '#1f644e',
       status: body.status || 'active',
       deadline: body.deadline || null,
+      userId: session.user.id,
     };
 
     if (!payload.name) {

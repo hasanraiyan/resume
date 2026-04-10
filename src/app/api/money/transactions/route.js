@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Transaction from '@/models/Transaction';
 import { serializeTransaction } from '@/lib/money-serializers';
-import { requireAdminAuth } from '@/lib/money-auth';
+import { requireUserAuth } from '@/lib/money-auth';
 
 export async function GET(request) {
-  const session = await requireAdminAuth();
+  const session = await requireUserAuth();
   if (typeof session !== 'object') return session;
 
   try {
@@ -17,7 +17,7 @@ export async function GET(request) {
     const category = searchParams.get('category');
     const type = searchParams.get('type');
 
-    const query = { deletedAt: null };
+    const query = { deletedAt: null, userId: session.user.id };
     if (startDate || endDate) {
       query.date = {};
       if (startDate) query.date.$gte = new Date(startDate);
@@ -46,13 +46,16 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const session = await requireAdminAuth();
+  const session = await requireUserAuth();
   if (typeof session !== 'object') return session;
 
   try {
     await dbConnect();
     const body = await request.json();
-    const transaction = new Transaction(body);
+    const transaction = new Transaction({
+      ...body,
+      userId: session.user.id,
+    });
     await transaction.save();
     const populated = await Transaction.findById(transaction._id)
       .populate('category', 'name icon type')

@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const TransactionSchema = new mongoose.Schema(
   {
+    userId: { type: String, required: true }, // Added for multi-tenancy
     type: { type: String, enum: ['income', 'expense', 'transfer'], required: true },
     amount: { type: Number, required: true },
     description: { type: String, default: '' },
@@ -28,9 +29,9 @@ const TransactionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-TransactionSchema.index({ date: -1 });
-TransactionSchema.index({ account: 1 });
-TransactionSchema.index({ category: 1 });
-TransactionSchema.index({ type: 1 });
+TransactionSchema.index({ userId: 1, date: -1 });
+TransactionSchema.index({ userId: 1, account: 1 });
+TransactionSchema.index({ userId: 1, category: 1 });
+TransactionSchema.index({ userId: 1, type: 1 });
 
 export default mongoose.models.Transaction || mongoose.model('Transaction', TransactionSchema);

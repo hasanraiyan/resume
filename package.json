@@ -19,6 +19,7 @@
     "migrate-analytics": "node scripts/migrate-analytics-roles.js"
   },
   "dependencies": {
+    "@auth/mongodb-adapter": "^3.11.1",
     "@babel/runtime": "^7.28.6",
     "@fortawesome/fontawesome-svg-core": "^7.1.0",
     "@fortawesome/free-brands-svg-icons": "^7.1.0",
@@ -41,6 +42,7 @@
     "@uploadthing/react": "^7.3.3",
     "@vercel/analytics": "^1.6.1",
     "bad-words": "^4.0.0",
+    "bcryptjs": "^3.0.3",
     "browser-image-compression": "^2.0.2",
     "chart.js": "^4.5.0",
     "cloudinary": "^2.7.0",

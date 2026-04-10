@@ -2,15 +2,15 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Category from '@/models/Category';
 import { serializeCategory } from '@/lib/money-serializers';
-import { requireAdminAuth } from '@/lib/money-auth';
+import { requireUserAuth } from '@/lib/money-auth';
 
 export async function GET() {
-  const session = await requireAdminAuth();
+  const session = await requireUserAuth();
   if (typeof session !== 'object') return session;
 
   try {
     await dbConnect();
-    const categories = await Category.find({ deletedAt: null }).sort({ type: 1, name: 1 }).lean();
+    const categories = await Category.find({ deletedAt: null, userId: session.user.id }).lean();
     const serialized = categories.map(serializeCategory);
     return NextResponse.json({ success: true, categories: serialized });
   } catch (error) {
@@ -22,13 +22,16 @@ export async function GET() {
 }
 
 export async function POST(request) {
-  const session = await requireAdminAuth();
+  const session = await requireUserAuth();
   if (typeof session !== 'object') return session;
 
   try {
     await dbConnect();
     const body = await request.json();
-    const category = new Category(body);
+    const category = new Category({
+      ...body,
+      userId: session.user.id,
+    });
     await category.save();
     const obj = category.toObject();
     return NextResponse.json({

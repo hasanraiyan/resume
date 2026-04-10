@@ -3,18 +3,20 @@ import dbConnect from '@/lib/dbConnect';
 import Account from '@/models/Account';
 import Transaction from '@/models/Transaction';
 import { serializeAccount } from '@/lib/money-serializers';
-import { requireAdminAuth } from '@/lib/money-auth';
+import { requireUserAuth } from '@/lib/money-auth';
 import { computeAccountSummaries } from '@/lib/money-account-summary';
 
 export async function GET() {
-  const session = await requireAdminAuth();
+  const session = await requireUserAuth();
   if (typeof session !== 'object') return session;
 
   try {
     await dbConnect();
     const [accounts, transactions] = await Promise.all([
-      Account.find({ deletedAt: null }).sort({ createdAt: 1 }).lean(),
-      Transaction.find({ deletedAt: null }).select('type amount account toAccount').lean(),
+      Account.find({ deletedAt: null, userId: session.user.id }).sort({ createdAt: 1 }).lean(),
+      Transaction.find({ deletedAt: null, userId: session.user.id })
+        .select('type amount account toAccount')
+        .lean(),
     ]);
 
     const accountSummary = computeAccountSummaries(accounts, transactions);
@@ -32,13 +34,16 @@ export async function GET() {
 }
 
 export async function POST(request) {
-  const session = await requireAdminAuth();
+  const session = await requireUserAuth();
   if (typeof session !== 'object') return session;
 
   try {
     await dbConnect();
     const body = await request.json();
-    const account = new Account(body);
+    const account = new Account({
+      ...body,
+      userId: session.user.id,
+    });
     await account.save();
     const obj = account.toObject();
     return NextResponse.json({

@@ -22,40 +22,58 @@
 
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-// No adapter needed for simple credential login without a database session
+import dbConnect from '@/lib/dbConnect';
+import User from '@/models/User';
+import bcrypt from 'bcryptjs';
 
 export const authOptions = {
   providers: [
     CredentialsProvider({
+      id: 'admin-login',
       name: 'Credentials',
+      name: 'Admin Login',
       credentials: {
         username: { label: 'Username', type: 'text' },
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        try {
-          const adminUsername = process.env.ADMIN_USERNAME;
-          const adminPassword = process.env.ADMIN_PASSWORD;
+        const adminUsername = process.env.ADMIN_USERNAME;
+        const adminPassword = process.env.ADMIN_PASSWORD;
 
-          if (
-            credentials?.username &&
-            credentials?.password &&
-            credentials.username === adminUsername &&
-            credentials.password === adminPassword
-          ) {
-            return {
-              id: '1',
-              name: 'Admin',
-              email: 'admin@example.com',
-              role: 'admin',
-            };
-          }
-
-          return null;
-        } catch (error) {
-          console.error('Authorization error:', error);
-          return null;
+        if (credentials?.username === adminUsername && credentials?.password === adminPassword) {
+          return {
+            id: 'admin-1',
+            name: 'Admin',
+            email: 'admin@example.com',
+            role: 'admin',
+          };
         }
+        return null;
+      },
+    }),
+    CredentialsProvider({
+      id: 'user-login',
+      name: 'User Login',
+      credentials: {
+        email: { label: 'Email', type: 'text' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) return null;
+
+        await dbConnect();
+        const user = await User.findOne({ email: credentials.email }).lean();
+        if (!user || !user.password) return null;
+
+        const isValid = await bcrypt.compare(credentials.password, user.password);
+        if (!isValid) return null;
+
+        return {
+          id: user._id.toString(),
+          name: user.name,
+          email: user.email,
+          role: user.role || 'user',
+        };
       },
     }),
   ],
@@ -63,12 +81,13 @@ export const authOptions = {
     strategy: 'jwt',
   },
   pages: {
-    signIn: '/login',
+    signIn: '/login', // Will be the unified or user login page
   },
   callbacks: {
     async jwt({ token, user }) {
       try {
         if (user) {
+          token.id = user.id;
           token.role = user.role;
           token.isAdmin = user.role === 'admin';
         }
@@ -80,6 +99,7 @@ export const authOptions = {
     },
     async session({ session, token }) {
       try {
+        session.user.id = token.id;
         session.user.role = token.role;
         session.user.isAdmin = token.isAdmin;
         return session;
