@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeftRight, Landmark, TrendingDown, TrendingUp } from 'lucide-react';
 import IconRenderer from './IconRenderer';
 import { McqQuestionBlock } from './McqQuestionBlocks';
@@ -312,7 +312,12 @@ function CategoryBreakdownBlock({ block, onInteract }) {
   );
 }
 
-export default function FinanceChatBlockRenderer({ block, onInteract }) {
+export default function FinanceChatBlockRenderer({
+  block,
+  onInteract,
+  answeredBlockIds = new Set(),
+  markBlockAsAnswered,
+}) {
   if (!block?.kind) return null;
 
   if (block.kind === 'summary_cards') {
@@ -336,7 +341,19 @@ export default function FinanceChatBlockRenderer({ block, onInteract }) {
   }
 
   if (block.kind === 'mcq_question' || block.kind === 'mcq_question_group') {
-    return <McqQuestionBlock block={block} onInteract={onInteract} />;
+    // Skip rendering if this MCQ has already been answered
+    const blockId = block.data?.id || block.data?.groupId || block.data?.questionId;
+    if (blockId && answeredBlockIds.has(blockId)) {
+      return null;
+    }
+    return (
+      <McqQuestionBlock
+        block={block}
+        onInteract={onInteract}
+        answeredBlockIds={answeredBlockIds}
+        markBlockAsAnswered={markBlockAsAnswered}
+      />
+    );
   }
 
   return null;
@@ -348,11 +365,61 @@ function TransactionConfirmationBlock({ block, onInteract }) {
 
   const isExpense = data.type === 'expense';
   const isTransfer = data.type === 'transfer';
-  // Local state managed from the chat handler so we can
-  // show a proper saving/success/error flow instead of
-  // instantly saying "Transaction recorded".
-  const [localState, setLocalState] = useState('idle'); // idle | saving | success | error
+  const [localState, setLocalState] = useState('idle');
+  const [externallySaved, setExternallySaved] = useState(false);
 
+  // Detect if this draft was saved externally (e.g. via the AddTransactionModal
+  // after clicking "Edit Manually"). We watch for a matching transaction appearing
+  // in the list with the same amount, type, and account.
+  useEffect(() => {
+    if (localState !== 'idle' || externallySaved) return;
+
+    const handleStorageEvent = (e) => {
+      if (e.key === 'pocketly-chat-draft-saved') {
+        try {
+          const saved = JSON.parse(e.newValue);
+          if (
+            saved &&
+            String(saved.amount) === String(data.amount) &&
+            saved.type === data.type &&
+            saved.accountId === data.accountId
+          ) {
+            setExternallySaved(true);
+          }
+        } catch {
+          // ignore
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageEvent);
+    return () => window.removeEventListener('storage', handleStorageEvent);
+  }, [localState, externallySaved, data.amount, data.type, data.accountId]);
+
+  // Also check on mount in case the transaction was saved just before
+  // this component rendered (e.g. user came back from Records tab).
+  useEffect(() => {
+    if (localState !== 'idle' || externallySaved) return;
+
+    try {
+      const lastSaved = window.localStorage.getItem('pocketly-last-saved-tx');
+      if (lastSaved) {
+        const saved = JSON.parse(lastSaved);
+        if (
+          saved &&
+          String(saved.amount) === String(data.amount) &&
+          saved.type === data.type &&
+          saved.accountId === data.accountId
+        ) {
+          setExternallySaved(true);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [localState, externallySaved, data.amount, data.type, data.accountId]);
+
+  // If externally saved, treat as success
   const amountColor = isExpense
     ? 'text-[#c94c4c]'
     : isTransfer
@@ -362,9 +429,6 @@ function TransactionConfirmationBlock({ block, onInteract }) {
 
   const handleConfirm = () => {
     if (localState === 'saving') return;
-
-    // Optimistically move to saving while the chat handler
-    // actually writes the transaction and updates localState.
     setLocalState('saving');
     onInteract?.({ type: 'confirm_transaction', data, setLocalState });
   };
@@ -373,7 +437,7 @@ function TransactionConfirmationBlock({ block, onInteract }) {
     onInteract?.({ type: 'cancel_transaction', data });
   };
 
-  if (localState === 'success') {
+  if (externallySaved || localState === 'success') {
     return (
       <div className="rounded-2xl border border-neutral-200/70 bg-[#f8f8f4] p-3 shadow-sm">
         <p className="text-xs font-semibold text-neutral-800 mb-3">

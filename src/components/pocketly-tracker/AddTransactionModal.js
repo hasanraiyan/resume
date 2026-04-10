@@ -167,6 +167,23 @@ export default function AddTransactionModal() {
         // Preserve current tab when editing draft transactions from chat
         const options = isEditMode && !editTransactionData?.id ? { switchTab: false } : undefined;
         await addTransaction(payload, options);
+
+        // Broadcast to chat confirmation cards that this draft was saved externally
+        if (isEditMode && !editTransactionData?.id) {
+          try {
+            window.localStorage.setItem(
+              'pocketly-last-saved-tx',
+              JSON.stringify({
+                amount,
+                type,
+                accountId,
+                savedAt: Date.now(),
+              })
+            );
+          } catch {
+            // ignore
+          }
+        }
       }
       handleClose();
     } catch (error) {

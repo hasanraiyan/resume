@@ -5,7 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight, MessageSquare, Send } from 'lucide-react';
 import BottomSheet from './BottomSheet';
 
-export function McqQuestionBlock({ block, onInteract }) {
+export function McqQuestionBlock({
+  block,
+  onInteract,
+  answeredBlockIds = new Set(),
+  markBlockAsAnswered,
+}) {
   const data = block.data || {};
   const isGroup = Array.isArray(data.questions) && data.questions.length > 0;
   const questions = isGroup ? data.questions : [];
@@ -14,6 +19,11 @@ export function McqQuestionBlock({ block, onInteract }) {
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [sheetOpen] = useState(true);
+
+  // If already answered externally (e.g. from context after tab switch),
+  // don't render the card again.
+  const blockId = data.id || data.groupId || data.questionId;
+  if (blockId && answeredBlockIds.has(blockId)) return null;
 
   if (submitted) return null;
 
@@ -102,6 +112,11 @@ export function McqQuestionBlock({ block, onInteract }) {
     const otherText = (answer.otherText || '').trim();
     if (selectedOptionIds.length === 0 && !otherText) return;
 
+    // Mark as answered so it won't reappear on remount
+    if (blockId && markBlockAsAnswered) {
+      markBlockAsAnswered(blockId);
+    }
+
     onInteract?.({
       type: 'mcq_response',
       questionId: data.id,
@@ -132,6 +147,11 @@ export function McqQuestionBlock({ block, onInteract }) {
     }
 
     if (Object.keys(normalized).length === 0) return;
+
+    // Mark as answered so it won't reappear on remount
+    if (blockId && markBlockAsAnswered) {
+      markBlockAsAnswered(blockId);
+    }
 
     onInteract?.({
       type: 'mcq_group_response',

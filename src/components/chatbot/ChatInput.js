@@ -229,6 +229,8 @@ export default function ChatInput({
                 isListening={isListening}
                 toggleListening={toggleListening}
                 isLoading={isLoading}
+                onTranscript={setInputMessage}
+                continuous={false}
               />
             )}
           </div>

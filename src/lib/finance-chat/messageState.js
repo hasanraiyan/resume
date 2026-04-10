@@ -93,6 +93,12 @@ export function serializeMessagesForStorage(messages) {
       message.timestamp instanceof Date
         ? message.timestamp.toISOString()
         : String(message.timestamp),
+    // Strip non-serializable fields (React components) from steps.
+    // Icons will be restored from toolName on deserialization.
+    steps: (message.steps || []).map((step) => {
+      const { Icon, ...rest } = step;
+      return rest;
+    }),
   }));
 }
 
@@ -104,6 +110,11 @@ export function restoreMessagesFromStorage(rawMessages) {
   return rawMessages.map((message) => ({
     ...message,
     timestamp: message.timestamp ? new Date(message.timestamp) : new Date(),
+    // Restore Icon components from toolName lookup.
+    steps: (message.steps || []).map((step) => ({
+      ...step,
+      Icon: TOOL_ICONS[step.toolName] || Landmark,
+    })),
   }));
 }
 

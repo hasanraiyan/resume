@@ -22,9 +22,11 @@ import {
 } from '@/lib/finance-chat/messageState';
 import {
   clearDeviceChatState,
+  clearCloudChatState,
   loadFinanceChatState,
   persistChatMode,
   persistDeviceChatState,
+  persistCloudChatState,
 } from '@/lib/finance-chat/persistence';
 
 const FinanceChatContext = createContext(null);
@@ -40,6 +42,7 @@ export function FinanceChatProvider({ children }) {
   });
   const abortRef = useRef(null);
   const pendingDraftRef = useRef(null);
+  const [answeredBlockIds, setAnsweredBlockIds] = useState(new Set());
 
   useEffect(() => {
     const availability = getDeviceAiAvailability();
@@ -54,6 +57,8 @@ export function FinanceChatProvider({ children }) {
   useEffect(() => {
     if (chatMode === 'device') {
       persistDeviceChatState(messages, pendingDraftRef.current);
+    } else {
+      persistCloudChatState(messages);
     }
   }, [chatMode, messages]);
 
@@ -81,6 +86,15 @@ export function FinanceChatProvider({ children }) {
   const appendAssistantMessage = useCallback((content) => {
     if (!content?.trim()) return;
     setMessages((prev) => [...prev, createAssistantMessage(content)]);
+  }, []);
+
+  const markBlockAsAnswered = useCallback((blockId) => {
+    if (!blockId) return;
+    setAnsweredBlockIds((prev) => {
+      const next = new Set(prev);
+      next.add(blockId);
+      return next;
+    });
   }, []);
 
   const sendMessage = useCallback(
@@ -161,9 +175,14 @@ export function FinanceChatProvider({ children }) {
 
     pendingDraftRef.current = null;
     setIsStreaming(false);
+    setAnsweredBlockIds(new Set());
     setMessages([WELCOME_MESSAGE]);
-    clearDeviceChatState();
-  }, []);
+    if (chatMode === 'device') {
+      clearDeviceChatState();
+    } else {
+      clearCloudChatState();
+    }
+  }, [chatMode]);
 
   const value = useMemo(
     () => ({
@@ -175,13 +194,17 @@ export function FinanceChatProvider({ children }) {
       setChatMode,
       deviceAvailability,
       appendAssistantMessage,
+      answeredBlockIds,
+      markBlockAsAnswered,
     }),
     [
+      answeredBlockIds,
       appendAssistantMessage,
       chatMode,
       clearChat,
       deviceAvailability,
       isStreaming,
+      markBlockAsAnswered,
       messages,
       sendMessage,
       setChatMode,

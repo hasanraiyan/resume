@@ -10,6 +10,8 @@ export default function MessageList({
   handleUIInteract,
   handleLinkClick,
   theme = 'default',
+  answeredBlockIds = new Set(),
+  markBlockAsAnswered,
 }) {
   const isGreenTheme = theme === 'green';
 
@@ -171,6 +173,8 @@ export default function MessageList({
                         key={`${message.id}-block-${block.kind}-${blockIndex}`}
                         block={block}
                         onInteract={handleUIInteract}
+                        answeredBlockIds={answeredBlockIds}
+                        markBlockAsAnswered={markBlockAsAnswered}
                       />
                     );
                   })}

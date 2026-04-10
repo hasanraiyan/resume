@@ -15,6 +15,8 @@ export default function ChatTab() {
     setChatMode,
     deviceAvailability,
     appendAssistantMessage,
+    answeredBlockIds,
+    markBlockAsAnswered,
   } = useFinanceChat();
   const { setActiveTab, addTransaction, openEditTransaction } = useMoney();
   const [inputMessage, setInputMessage] = useState('');
@@ -87,6 +89,21 @@ export default function ChatTab() {
         }
 
         await addTransaction(payload, { switchTab: false });
+
+        // Broadcast to other components that this draft was saved
+        try {
+          window.localStorage.setItem(
+            'pocketly-last-saved-tx',
+            JSON.stringify({
+              amount: data.amount,
+              type: data.type,
+              accountId: data.accountId,
+              savedAt: Date.now(),
+            })
+          );
+        } catch {
+          // ignore
+        }
 
         if (setLocalState) {
           setLocalState('success');
@@ -167,6 +184,8 @@ export default function ChatTab() {
           handleUIInteract={handleUIInteract}
           handleLinkClick={() => {}}
           theme="green"
+          answeredBlockIds={answeredBlockIds}
+          markBlockAsAnswered={markBlockAsAnswered}
         />
       </div>
 
