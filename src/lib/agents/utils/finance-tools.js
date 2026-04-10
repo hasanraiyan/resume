@@ -580,7 +580,7 @@ export function createAskClarificationQuestionTool() {
     {
       name: 'ask_clarification_question',
       description:
-        'Ask the user a focused clarification question as a multiple-choice prompt (or a very short group of prompts). Use this when the answer is best captured as a small set of options (with an automatic "Other" choice), like preferences, disambiguation, or next-step choices. For a single clarification, pass question + options. For a short flow, pass questions[]. The UI will handle navigation, Previous/Next, and Submit.',
+        'MANDATORY for disambiguation: when you have a list of accounts or categories and need the user to pick one, you MUST call this tool instead of listing them in text. This renders a proper clickable MCQ card in the chat UI. Pass a question string and an options array (2-8 items). Each option needs id, label, and optionally description. An "Other" option is added automatically. NEVER list options in plain text when the user needs to choose — always use this tool. For account disambiguation: after get_accounts, pass matching accounts as options. For category disambiguation: after get_categories, pass matching categories as options. One question at a time for account+category flows.',
       schema: z.union([singleQuestionSchema, groupSchema]),
     }
   );
