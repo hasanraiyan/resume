@@ -12,6 +12,7 @@ export default function ChatInput({
   setInputMessage,
   isLoading,
   handleSubmit,
+  onStop,
   activeQuote,
   isListening,
   toggleListening,
@@ -211,18 +212,24 @@ export default function ChatInput({
               />
             )}
 
-            {!isListening && (inputMessage.trim() || activeQuote) ? (
+            {!isListening && isLoading ? (
+              <button
+                type="button"
+                onClick={onStop}
+                className="w-8 h-8 rounded-full flex items-center justify-center bg-[#c94c4c] text-white hover:bg-[#b03a3a] active:scale-95 transition-all cursor-pointer"
+              >
+                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                  <rect x="6" y="6" width="12" height="12" rx="2" />
+                </svg>
+              </button>
+            ) : !isListening && (inputMessage.trim() || activeQuote) ? (
               <button
                 type="button"
                 onClick={handleSubmit}
                 disabled={isLoading}
                 className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isGreenTheme ? 'bg-[#1f644e] text-white hover:bg-[#1a5542]' : 'bg-black text-white hover:opacity-90'} active:scale-95`}
               >
-                {isLoading ? (
-                  <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
+                <Send className="w-4 h-4" />
               </button>
             ) : (
               <VoiceInputControl

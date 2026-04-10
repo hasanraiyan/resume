@@ -17,6 +17,7 @@ export default function ChatTab() {
     appendAssistantMessage,
     answeredBlockIds,
     markBlockAsAnswered,
+    stopGenerating,
   } = useFinanceChat();
   const { setActiveTab, addTransaction, openEditTransaction } = useMoney();
   const [inputMessage, setInputMessage] = useState('');
@@ -196,6 +197,7 @@ export default function ChatTab() {
         setInputMessage={setInputMessage}
         isLoading={isStreaming}
         handleSubmit={handleSubmit}
+        onStop={stopGenerating}
         activeQuote={activeQuote}
         isListening={isListening}
         toggleListening={toggleListening}

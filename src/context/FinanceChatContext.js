@@ -88,6 +88,14 @@ export function FinanceChatProvider({ children }) {
     setMessages((prev) => [...prev, createAssistantMessage(content)]);
   }, []);
 
+  const stopGenerating = useCallback(() => {
+    if (!abortRef.current) return;
+
+    abortRef.current.abort();
+    abortRef.current = null;
+    setIsStreaming(false);
+  }, []);
+
   const markBlockAsAnswered = useCallback((blockId) => {
     if (!blockId) return;
     setAnsweredBlockIds((prev) => {
@@ -196,6 +204,7 @@ export function FinanceChatProvider({ children }) {
       appendAssistantMessage,
       answeredBlockIds,
       markBlockAsAnswered,
+      stopGenerating,
     }),
     [
       answeredBlockIds,
@@ -208,6 +217,7 @@ export function FinanceChatProvider({ children }) {
       messages,
       sendMessage,
       setChatMode,
+      stopGenerating,
     ]
   );
 
