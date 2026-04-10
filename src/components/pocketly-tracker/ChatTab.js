@@ -111,6 +111,15 @@ export default function ChatTab() {
       };
       openEditTransaction(preFillData);
     }
+
+    if (action.type === 'mcq_response') {
+      const payloadString = JSON.stringify({
+        type: 'mcq_response',
+        id: action.id,
+        value: action.value
+      });
+      sendMessage(payloadString);
+    }
   };
 
   return (

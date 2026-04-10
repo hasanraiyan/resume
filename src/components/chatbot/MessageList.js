@@ -3,6 +3,7 @@ import StepHistory from './StepHistory';
 import MdContent from './MdContent';
 import FinanceChatBlockRenderer from '@/components/pocketly-tracker/FinanceChatBlockRenderer';
 import TasklyChatBlockRenderer from '@/components/taskly/TasklyChatBlockRenderer';
+import MCQ from './MCQ';
 
 export default function MessageList({
   messages,
@@ -94,6 +95,17 @@ export default function MessageList({
                     })}
                   </p>
                 </div>
+              )}
+
+              {isAssistant && message.mcq && (
+                <MCQ
+                  id={message.id}
+                  prompt={message.mcq.prompt}
+                  options={message.mcq.options}
+                  validation={message.mcq.validation}
+                  mode={message.mcq.mode || 'single'}
+                  onSubmit={(value) => handleUIInteract?.({ type: 'mcq_response', ...value })}
+                />
               )}
             </div>
           </div>
