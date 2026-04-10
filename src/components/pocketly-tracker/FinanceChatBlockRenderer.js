@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ArrowLeftRight, Landmark, TrendingDown, TrendingUp } from 'lucide-react';
 import IconRenderer from './IconRenderer';
+import { McqQuestionBlock } from './McqQuestionBlocks';
 
 const currencyFormatter = new Intl.NumberFormat('en-IN', {
   minimumFractionDigits: 0,
@@ -332,6 +333,10 @@ export default function FinanceChatBlockRenderer({ block, onInteract }) {
 
   if (block.kind === 'transaction_confirmation') {
     return <TransactionConfirmationBlock block={block} onInteract={onInteract} />;
+  }
+
+  if (block.kind === 'mcq_question' || block.kind === 'mcq_question_group') {
+    return <McqQuestionBlock block={block} onInteract={onInteract} />;
   }
 
   return null;

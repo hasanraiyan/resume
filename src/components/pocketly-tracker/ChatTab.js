@@ -111,6 +111,50 @@ export default function ChatTab() {
       };
       openEditTransaction(preFillData);
     }
+
+    if (action.type === 'mcq_response') {
+      const { questionId, selectionMode, selectedOptionIds = [], otherText } = action;
+
+      const parts = [];
+      if (selectedOptionIds.length > 0) {
+        parts.push(`Selected options: ${selectedOptionIds.join(', ')}`);
+      }
+      if (otherText) {
+        parts.push(`Other: ${otherText}`);
+      }
+
+      if (parts.length === 0) return;
+
+      const prefix = questionId ? `[MCQ answer ${questionId}] ` : '';
+      const summary = `${prefix}${parts.join(' | ')}`;
+
+      sendMessage(summary);
+    }
+
+    if (action.type === 'mcq_group_response') {
+      const { groupId, answers = {} } = action;
+
+      const lines = Object.entries(answers)
+        .map(([qid, answer]) => {
+          const parts = [];
+          if (answer.selectedOptionIds?.length) {
+            parts.push(`selected: ${answer.selectedOptionIds.join(', ')}`);
+          }
+          if (answer.otherText) {
+            parts.push(`other: ${answer.otherText}`);
+          }
+          if (parts.length === 0) return null;
+          return `Q ${qid}: ${parts.join(' | ')}`;
+        })
+        .filter(Boolean);
+
+      if (!lines.length) return;
+
+      const prefix = groupId ? `[MCQ group ${groupId}] ` : '';
+      const summary = `${prefix}${lines.join(' || ')}`;
+
+      sendMessage(summary);
+    }
   };
 
   return (
