@@ -334,6 +334,13 @@ export default function FinanceChatBlockRenderer({ block, onInteract }) {
     return <TransactionConfirmationBlock block={block} onInteract={onInteract} />;
   }
 
+  if (block.kind === 'mcq') {
+    // Return null here because MCQ is handled natively by MessageList in the UI now,
+    // or alternatively, we can render the MCQ directly here if we import it.
+    // The previous implementation added it into MessageList natively. We will keep it there.
+    return null;
+  }
+
   return null;
 }
 

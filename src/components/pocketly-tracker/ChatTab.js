@@ -116,7 +116,7 @@ export default function ChatTab() {
       const payloadString = JSON.stringify({
         type: 'mcq_response',
         id: action.id,
-        value: action.value
+        value: action.value,
       });
       sendMessage(payloadString);
     }

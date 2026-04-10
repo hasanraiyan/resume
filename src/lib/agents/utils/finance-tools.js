@@ -435,6 +435,48 @@ export function createDraftTransactionTool() {
   );
 }
 
+export function createAskClarificationTool() {
+  return tool(
+    async (params) => {
+      // The tool just returns the prompt and options as a structured object
+      // so the agent can emit an MCQ block. We rely on the frontend message
+      // parser to extract this. But wait, `buildUiBlocks` constructs UI blocks
+      // based on tool outputs. Let's return the structured MCQ from here.
+      return JSON.stringify({
+        kind: 'mcq',
+        prompt: params.prompt,
+        options: params.options || [],
+        mode: params.mode || 'single',
+        validation: params.validation,
+      });
+    },
+    {
+      name: 'ask_clarification',
+      description:
+        'Ask the user a multiple choice question to clarify an ambiguity (e.g. which account or category they meant). Use this when multiple options match a query. It will render an interactive MCQ in the chat UI.',
+      schema: z.object({
+        prompt: z.string().describe('The question to ask the user'),
+        options: z
+          .array(
+            z.object({
+              label: z.string().describe('The display label for the option'),
+              value: z.string().describe('The underlying value or ID to return when selected'),
+            })
+          )
+          .describe('The list of choices to present'),
+        mode: z
+          .enum(['single'])
+          .optional()
+          .describe('The selection mode (currently only single is supported)'),
+        validation: z
+          .string()
+          .optional()
+          .describe('Optional validation type for the manual entry (e.g. "numeric")'),
+      }),
+    }
+  );
+}
+
 export function createFinanceTools() {
   return [
     createGetAccountsTool(),
@@ -442,5 +484,6 @@ export function createFinanceTools() {
     createGetTransactionsTool(),
     createGetAnalysisTool(),
     createDraftTransactionTool(),
+    createAskClarificationTool(),
   ];
 }

@@ -64,6 +64,22 @@ export default function MessageList({
               {isAssistant && message.uiBlocks?.length > 0 && (
                 <div className="mt-3 flex min-w-0 w-full max-w-full self-stretch flex-col gap-3 overflow-x-hidden">
                   {message.uiBlocks.map((block, blockIndex) => {
+                    if (block.kind === 'mcq') {
+                      const data = block.data || {};
+                      return (
+                        <MCQ
+                          key={`${message.id}-block-${block.kind}-${blockIndex}`}
+                          id={message.id}
+                          prompt={data.prompt}
+                          options={data.options}
+                          validation={data.validation}
+                          mode={data.mode || 'single'}
+                          onSubmit={(value) =>
+                            handleUIInteract?.({ type: 'mcq_response', ...value })
+                          }
+                        />
+                      );
+                    }
                     const Renderer =
                       theme === 'taskly' ? TasklyChatBlockRenderer : FinanceChatBlockRenderer;
                     return (
@@ -95,17 +111,6 @@ export default function MessageList({
                     })}
                   </p>
                 </div>
-              )}
-
-              {isAssistant && message.mcq && (
-                <MCQ
-                  id={message.id}
-                  prompt={message.mcq.prompt}
-                  options={message.mcq.options}
-                  validation={message.mcq.validation}
-                  mode={message.mcq.mode || 'single'}
-                  onSubmit={(value) => handleUIInteract?.({ type: 'mcq_response', ...value })}
-                />
               )}
             </div>
           </div>

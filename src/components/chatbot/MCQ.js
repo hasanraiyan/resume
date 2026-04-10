@@ -1,13 +1,6 @@
 import { useState } from 'react';
 
-export default function MCQ({
-  id,
-  prompt,
-  options = [],
-  onSubmit,
-  validation,
-  mode = 'single',
-}) {
+export default function MCQ({ id, prompt, options = [], onSubmit, validation, mode = 'single' }) {
   const [selectedOption, setSelectedOption] = useState(null);
   const [manualEntry, setManualEntry] = useState('');
   const [error, setError] = useState(null);

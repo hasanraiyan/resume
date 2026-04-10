@@ -205,6 +205,15 @@ function buildUiBlocks(toolName, output, toolArgs = {}) {
     ];
   }
 
+  if (toolName === 'ask_clarification') {
+    return [
+      {
+        kind: 'mcq',
+        data: parsed,
+      },
+    ];
+  }
+
   return [];
 }
 
