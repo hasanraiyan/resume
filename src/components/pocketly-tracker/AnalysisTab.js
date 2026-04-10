@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   Wallet,
 } from 'lucide-react';
+import TopTabs from '@/components/ui/TopTabs';
 import { Shimmer } from './FinanceSkeletons';
 import dynamic from 'next/dynamic';
 
@@ -162,11 +163,6 @@ export default function AnalysisTab() {
   ];
 
   const isRefreshingAnalysis = Boolean(analysis) && isAnalysisLoading;
-
-  const activeViewIndex = Math.max(
-    0,
-    viewOptions.findIndex((option) => option.id === viewMode)
-  );
 
   const formatCurrencyWithCompact = (amount) => {
     const abs = Math.abs(amount || 0);
@@ -531,27 +527,13 @@ export default function AnalysisTab() {
           </div>
 
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-            <div className="relative flex gap-0.5 rounded-xl border border-[#e5e3d8] bg-white p-1 overflow-hidden">
-              {/* Sliding background pill for active view */}
-              <div
-                className="absolute inset-y-1 left-1 w-1/4 rounded-lg bg-[#1f644e] shadow-sm transition-transform duration-150"
-                style={{ transform: `translateX(${activeViewIndex * 100}%)` }}
-                aria-hidden="true"
-              />
-
-              {viewOptions.map((option) => (
-                <button
-                  key={option.id}
-                  onClick={() => setViewMode(option.id)}
-                  className={`relative z-10 flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-all ${
-                    viewMode === option.id ? 'text-white' : 'text-[#7c8e88] hover:text-[#1e3a34]'
-                  }`}
-                >
-                  <option.icon className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{option.label}</span>
-                </button>
-              ))}
-            </div>
+            {/* Integrated TopTabs Component */}
+            <TopTabs
+              options={viewOptions}
+              activeId={viewMode}
+              onChange={(id) => setViewMode(id)}
+              theme="green"
+            />
 
             <div className="flex flex-wrap items-center gap-3">
               <div className="relative">
