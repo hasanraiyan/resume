@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Check, ChevronLeft, ChevronRight, MessageSquare, Send } from 'lucide-react';
 import BottomSheet from './BottomSheet';
 
 export function McqQuestionBlock({ block, onInteract }) {
@@ -89,6 +91,9 @@ export function McqQuestionBlock({ block, onInteract }) {
     setActiveIndex((idx) => Math.min(questions.length - 1, idx + 1));
   };
 
+  const hasSelection =
+    currentAnswer.selected.length > 0 || currentAnswer.otherText.trim().length > 0;
+
   const handleSubmitSingle = () => {
     const answer = answers['_single'];
     if (!answer) return;
@@ -140,72 +145,165 @@ export function McqQuestionBlock({ block, onInteract }) {
   const isLast = activeIndex === questions.length - 1;
   const questionText = isGroup ? currentQuestion.question : data.question;
 
+  // Progress calculation for groups
+  const answeredCount = isGroup
+    ? questions.filter((q) => {
+        const a = answers[q.id];
+        return a && (a.selected.length > 0 || (a.otherText || '').trim().length > 0);
+      }).length
+    : hasSelection
+      ? 1
+      : 0;
+
   const renderCard = () => (
-    <div className="rounded-2xl border border-neutral-200/70 bg-[#f8f8f4] p-3">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-xs font-semibold text-neutral-800 flex-1 mr-2">{questionText}</p>
-        {isGroup && (
-          <p className="text-[10px] font-medium text-neutral-500 shrink-0">
-            {activeIndex + 1} / {questions.length}
-          </p>
-        )}
-      </div>
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className="rounded-2xl border border-[#e0ddd4]/80 bg-gradient-to-br from-[#fafaf5] to-[#f5f5ee] p-4 shadow-[0_2px_12px_rgba(30,58,52,0.04)]"
+    >
+      {/* Header */}
+      <div className="flex items-start gap-3 mb-3">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#1e3a34]/10">
+          <MessageSquare className="h-3.5 w-3.5 text-[#1e3a34]" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-semibold text-neutral-800 leading-snug">{questionText}</p>
+          {isGroup && (
+            <div className="flex items-center gap-2 mt-2">
+              {/* Progress dots */}
+              <div className="flex gap-1">
+                {questions.map((q, i) => {
+                  const isAnswered =
+                    answers[q.id] &&
+                    (answers[q.id].selected.length > 0 ||
+                      (answers[q.id].otherText || '').trim().length > 0);
+                  const isActive = i === activeIndex;
 
-      <div className="space-y-2">
-        {currentOptions.map((opt) => {
-          const isOther = opt.id === 'other';
-          const checked = currentAnswer.selected.includes(opt.id);
-
-          return (
-            <div
-              key={opt.id}
-              className="rounded-xl border border-neutral-200 bg-white px-3 py-2 flex items-start gap-2"
-            >
-              <input
-                type={isMultiple ? 'checkbox' : 'radio'}
-                className="mt-1 h-3.5 w-3.5 cursor-pointer"
-                checked={checked}
-                onChange={() => toggleOption(opt.id)}
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-neutral-900 truncate">{opt.label}</p>
-                {opt.description && (
-                  <p className="mt-0.5 text-[11px] text-neutral-500 line-clamp-2">
-                    {opt.description}
-                  </p>
-                )}
-                {isOther && currentAllowFreeText && (
-                  <textarea
-                    rows={2}
-                    className="mt-1 w-full resize-none rounded-lg border border-neutral-200 px-2 py-1 text-[11px] text-neutral-800 focus:outline-none focus:ring-1 focus:ring-[#1f644e]"
-                    placeholder="Add a short note..."
-                    value={currentAnswer.otherText}
-                    onChange={handleOtherTextChange}
-                  />
-                )}
+                  return (
+                    <div
+                      key={q.id}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        isActive
+                          ? 'w-5 bg-[#1e3a34]'
+                          : isAnswered
+                            ? 'w-1.5 bg-[#1f644e]'
+                            : 'w-1.5 bg-neutral-300'
+                      }`}
+                    />
+                  );
+                })}
               </div>
+              <span className="text-[10px] font-medium text-neutral-500">
+                {answeredCount}/{questions.length}
+              </span>
             </div>
-          );
-        })}
+          )}
+        </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-between">
+      {/* Options */}
+      <div className="space-y-2">
+        <AnimatePresence mode="popLayout">
+          {currentOptions.map((opt, idx) => {
+            const isOther = opt.id === 'other';
+            const checked = currentAnswer.selected.includes(opt.id);
+
+            return (
+              <motion.div
+                key={opt.id}
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.25, delay: idx * 0.04, ease: 'easeOut' }}
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleOption(opt.id)}
+                  className={`w-full rounded-xl border-2 px-3.5 py-3 flex items-start gap-3 transition-all duration-200 text-left cursor-pointer ${
+                    checked
+                      ? 'border-[#1f644e] bg-[#1f644e]/[0.06] shadow-[0_2px_8px_rgba(31,100,78,0.1)]'
+                      : 'border-neutral-200/70 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+                  }`}
+                >
+                  {/* Radio/Checkbox indicator */}
+                  <div
+                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200 ${
+                      checked ? 'border-[#1f644e] bg-[#1f644e]' : 'border-neutral-300 bg-white'
+                    }`}
+                  >
+                    {checked && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className={`text-[13px] font-semibold transition-colors duration-200 ${
+                        checked ? 'text-[#1e3a34]' : 'text-neutral-800'
+                      }`}
+                    >
+                      {opt.label}
+                    </p>
+                    {opt.description && (
+                      <p className="mt-0.5 text-[11px] text-neutral-500 line-clamp-2">
+                        {opt.description}
+                      </p>
+                    )}
+                    {isOther && currentAllowFreeText && (
+                      <div className="mt-2 relative">
+                        <textarea
+                          rows={2}
+                          className="w-full resize-none rounded-lg border border-neutral-200 bg-white/80 px-3 py-2 text-[12px] text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#1f644e]/30 focus:border-[#1f644e] transition-all"
+                          placeholder="Share your own preference..."
+                          value={currentAnswer.otherText}
+                          onChange={handleOtherTextChange}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </button>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </div>
+
+      {/* Footer actions */}
+      <div className="mt-4 flex items-center gap-2">
         {isGroup ? (
           <>
             <button
               type="button"
               onClick={handlePrevious}
               disabled={activeIndex === 0}
-              className="rounded-full border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer hover:bg-neutral-50"
+              className="flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer hover:bg-neutral-50 transition-colors"
             >
-              Previous
+              <ChevronLeft className="h-3.5 w-3.5" />
+              Back
             </button>
+
+            <div className="flex-1" />
+
             <button
               type="button"
               onClick={isLast ? handleSubmitGroup : handleNext}
-              className="rounded-full bg-[#1e3a34] px-3 py-2 text-xs font-semibold text-white cursor-pointer hover:bg-[#152924]"
+              disabled={!hasSelection}
+              className={`flex items-center gap-1.5 rounded-full px-4 py-2.5 text-xs font-semibold text-white transition-all duration-200 cursor-pointer ${
+                hasSelection
+                  ? 'bg-[#1e3a34] hover:bg-[#152924] shadow-[0_2px_8px_rgba(30,58,52,0.2)]'
+                  : 'bg-neutral-300 cursor-not-allowed'
+              }`}
             >
-              {isLast ? 'Submit answers' : 'Next'}
+              {isLast ? (
+                <>
+                  <Send className="h-3.5 w-3.5" />
+                  Submit all
+                </>
+              ) : (
+                <>
+                  Next
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </>
+              )}
             </button>
           </>
         ) : (
@@ -213,14 +311,20 @@ export function McqQuestionBlock({ block, onInteract }) {
             <button
               type="button"
               onClick={handleSubmitSingle}
-              className="rounded-full bg-[#1e3a34] px-3 py-2 text-xs font-semibold text-white cursor-pointer hover:bg-[#152924]"
+              disabled={!hasSelection}
+              className={`flex items-center gap-1.5 rounded-full px-4 py-2.5 text-xs font-semibold text-white transition-all duration-200 cursor-pointer ${
+                hasSelection
+                  ? 'bg-[#1e3a34] hover:bg-[#152924] shadow-[0_2px_8px_rgba(30,58,52,0.2)]'
+                  : 'bg-neutral-300 cursor-not-allowed'
+              }`}
             >
+              <Send className="h-3.5 w-3.5" />
               Submit
             </button>
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 
   return (

@@ -384,8 +384,9 @@ export function createDraftTransactionTool() {
         type: z.enum(['income', 'expense', 'transfer']).describe('The type of transaction'),
         amount: z
           .number()
-          .positive()
-          .describe('The absolute amount of the transaction (must be positive)'),
+          .describe(
+            'The absolute amount of the transaction (must be a positive number greater than 0)'
+          ),
         description: z.string().describe('A short description of the transaction'),
         accountId: z.string().describe('The exact MongoDB ID of the source account'),
         accountName: z

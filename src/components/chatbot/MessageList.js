@@ -46,14 +46,14 @@ export default function MessageList({
       }
 
       if (prettyOptions.length > 0 && otherText) {
-        return `You chose: ${prettyOptions.join(', ')}\nOther: ${otherText}`;
+        return `I chose: ${prettyOptions.join(', ')}\nOther: ${otherText}`;
       }
 
       if (prettyOptions.length > 0) {
-        return `You chose: ${prettyOptions.join(', ')}`;
+        return `I chose: ${prettyOptions.join(', ')}`;
       }
 
-      return `You answered: ${otherText}`;
+      return `I answered: ${otherText}`;
     }
 
     // Group MCQ answers: [MCQ group <id>] Q q1: selected: ... || Q q2: selected: ...

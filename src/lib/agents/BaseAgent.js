@@ -517,6 +517,7 @@ class BaseAgent {
         model: normalizedModelName,
         maxOutputTokens: maxTokens,
         temperature,
+        thinking: { type: 'disabled' },
       });
     }
 
