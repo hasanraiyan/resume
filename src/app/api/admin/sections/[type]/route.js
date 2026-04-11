@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import dbConnect from '@/lib/dbConnect';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
@@ -70,6 +71,8 @@ export async function PUT(request, { params }) {
     } else {
       data = await Model.create(body);
     }
+
+    revalidatePath('/');
 
     return NextResponse.json({
       success: true,

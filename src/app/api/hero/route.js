@@ -5,6 +5,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import dbConnect from '@/lib/dbConnect';
 import HeroSection from '@/models/HeroSection';
 import { getServerSession } from 'next-auth';
@@ -207,6 +208,8 @@ export async function PUT(request) {
       });
       await heroData.save();
     }
+
+    revalidatePath('/');
 
     return NextResponse.json({
       success: true,
