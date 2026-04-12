@@ -768,7 +768,7 @@ function VaultlyContentMain() {
                         <div className="text-[10px] text-[#1f644e] font-bold">Provider</div>
                         <div className="w-full bg-transparent outline-none font-bold text-sm flex items-center justify-between mt-0.5">
                           <span className="text-[#1e3a34]">
-                            {newDriveProvider === 'uploadthing' ? 'UploadThing' : 'AWS S3'}
+                            {newDriveProvider === 'uploadthing' ? 'UploadThing' : newDriveProvider === 'cloudinary' ? 'Cloudinary' : 'AWS S3'}
                           </span>
                           <ChevronDown
                             size={16}
@@ -809,6 +809,19 @@ function VaultlyContentMain() {
                               </button>
                               <button
                                 type="button"
+                                onClick={() => {
+                                  setNewDriveProvider('cloudinary');
+                                  setIsProviderDropdownOpen(false);
+                                }}
+                                className="w-full text-left px-4 py-3 text-sm font-bold text-[#1e3a34] hover:bg-[#f0f5f2] transition-colors flex items-center justify-between cursor-pointer"
+                              >
+                                Cloudinary
+                                {newDriveProvider === 'cloudinary' && (
+                                  <Check size={16} className="text-[#1f644e]" />
+                                )}
+                              </button>
+                              <button
+                                type="button"
                                 disabled
                                 className="w-full text-left px-4 py-3 text-sm font-bold text-[#7c8e88] flex items-center justify-between opacity-60 cursor-not-allowed bg-[#fcfbf5]"
                               >
@@ -824,13 +837,15 @@ function VaultlyContentMain() {
                     </div>
 
                     <div className="border border-[#1f644e] rounded-lg px-3 py-2 bg-[#f0f5f2]">
-                      <div className="text-[10px] text-[#1f644e] font-bold">API Token</div>
+                      <div className="text-[10px] text-[#1f644e] font-bold">
+                        {newDriveProvider === 'cloudinary' ? 'Connection String (CLOUDINARY_URL)' : 'API Token'}
+                      </div>
                       <input
                         required
                         type="password"
                         value={newDriveToken}
                         onChange={(e) => setNewDriveToken(e.target.value)}
-                        placeholder="sk_live_..."
+                        placeholder={newDriveProvider === 'cloudinary' ? 'cloudinary://...' : 'sk_live_...'}
                         className="w-full bg-transparent outline-none font-bold text-sm"
                       />
                     </div>
