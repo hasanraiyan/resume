@@ -25,4 +25,12 @@ export const MINI_APPS = [
     category: 'Productivity',
     iconSrc: '/images/apps/taskly.png',
   },
+  {
+    id: 'vaultly',
+    name: 'Vaultly',
+    tagline: 'Multi-provider storage drive.',
+    href: '/apps/vaultly',
+    category: 'Storage',
+    iconSrc: '/images/apps/taskly.png', // Fallback icon
+  },
 ];
