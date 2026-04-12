@@ -3,10 +3,27 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Folder, File, Plus, Settings, ChevronRight, HardDrive, Trash2, LayoutDashboard, Database, ArrowLeft } from 'lucide-react';
+import {
+  Folder,
+  File,
+  Plus,
+  Settings,
+  ChevronRight,
+  Trash2,
+  Database,
+  Loader2,
+  Upload,
+  PlusCircle,
+  Search,
+  MoreVertical,
+  ExternalLink,
+  Menu,
+} from 'lucide-react';
 import Link from 'next/link';
+import VaultlyNavigation from './VaultlyNavigation';
+import SessionProvider from '@/components/SessionProvider';
 
-export default function VaultlyContent() {
+function VaultlyContentMain() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
@@ -18,6 +35,7 @@ export default function VaultlyContent() {
   const [folders, setFolders] = useState([]);
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // New Drive Modal state
   const [showAddDrive, setShowAddDrive] = useState(false);
@@ -41,7 +59,7 @@ export default function VaultlyContent() {
 
   useEffect(() => {
     if (session?.user?.role === 'admin') {
-        fetchDrives();
+      fetchDrives();
     }
   }, [session]);
 
@@ -153,20 +171,70 @@ export default function VaultlyContent() {
   };
 
   const handleDeleteDrive = async (id, e) => {
-      e.stopPropagation();
-      if (!confirm('Delete this drive connection? Files on provider will NOT be deleted automatically.')) return;
-      await fetch(`/api/admin/drive/credentials/${id}`, { method: 'DELETE' });
-      if (activeDrive === id) {
-          setActiveDrive(null);
-          setFolders([]);
-          setFiles([]);
+    e.stopPropagation();
+    if (
+      !confirm('Delete this drive connection? Files on provider will NOT be deleted automatically.')
+    )
+      return;
+    await fetch(`/api/admin/drive/credentials/${id}`, { method: 'DELETE' });
+    if (activeDrive === id) {
+      setActiveDrive(null);
+      setFolders([]);
+      setFiles([]);
+    }
+    fetchDrives();
+  };
+
+  const handleFileUpload = async (e) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('credentialId', activeDrive);
+
+    setLoading(true);
+    try {
+      const res = await fetch('/api/drive/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      if (res.ok) {
+        const uploadData = await res.json();
+        await fetch('/api/drive/files', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileName: file.name,
+            fileKey: uploadData.fileKey,
+            url: uploadData.url,
+            mimeType: file.type || 'application/octet-stream',
+            size: file.size,
+            folderId: currentFolder,
+            credentialId: activeDrive,
+          }),
+        });
+        fetchContents();
+      } else {
+        const errorData = await res.json();
+        alert(`Upload failed: ${errorData.error}`);
+        setLoading(false);
       }
-      fetchDrives();
-  }
+    } catch (error) {
+      console.error(error);
+      alert(`Upload error: ${error.message}`);
+      setLoading(false);
+    }
+    e.target.value = null;
+  };
+
+  const filteredItems = {
+    folders: folders.filter((f) => f.name.toLowerCase().includes(searchQuery.toLowerCase())),
+    files: files.filter((f) => f.fileName.toLowerCase().includes(searchQuery.toLowerCase())),
+  };
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#fcfbf5] dark:bg-[#1e1e1e]">
+      <div className="min-h-screen flex items-center justify-center bg-[#fcfbf5]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#1f644e] border-t-transparent mx-auto"></div>
           <p className="mt-4 text-[#7c8e88] font-medium">Loading Vaultly...</p>
@@ -179,285 +247,377 @@ export default function VaultlyContent() {
     return null;
   }
 
+  const activeDriveName = drives.find((d) => d._id === activeDrive)?.name || 'Select Drive';
+
   return (
-    <div className="flex h-screen overflow-hidden text-[#2d3748] dark:text-[#e2e8f0] bg-[#fcfbf5] dark:bg-[#1e1e1e]">
-      {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-[#2d3748] shadow-xl md:shadow-none border-r border-[#e2e8f0] dark:border-[#4a5568] flex flex-col transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out`}>
-        <div className="p-4 border-b border-[#e2e8f0] dark:border-[#4a5568] flex justify-between items-center bg-[#1f644e]">
-          <h2 className="font-bold text-xl flex items-center gap-2 text-white font-logo">
-            <Database size={24} /> Vaultly
-          </h2>
-          <button onClick={() => setShowAddDrive(true)} className="p-1.5 hover:bg-white/20 rounded-full text-white transition-colors" title="Add Drive">
-            <Plus size={18} />
-          </button>
-        </div>
+    <div className="min-h-screen bg-[#fcfbf5] font-[family-name:var(--font-sans)] text-[#1e3a34] flex">
+      <VaultlyNavigation
+        drives={drives}
+        activeDrive={activeDrive}
+        setActiveDrive={setActiveDrive}
+        setShowAddDrive={setShowAddDrive}
+        handleDeleteDrive={handleDeleteDrive}
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+      />
 
-        <div className="p-3">
-             <Link href="/admin" className="flex items-center gap-2 px-3 py-2 text-sm text-[#718096] hover:text-[#2d3748] dark:text-[#a0aec0] dark:hover:text-white rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                <ArrowLeft size={16} /> Back to Admin
-             </Link>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-3 space-y-1">
-          <div className="text-xs font-semibold text-[#a0aec0] uppercase tracking-wider mb-2 px-3">Your Drives</div>
-          {drives.length === 0 ? (
-             <div className="px-3 py-4 text-sm text-[#718096] text-center">No drives configured.</div>
-          ) : drives.map(drive => (
-            <div
-              key={drive._id}
-              onClick={() => {
-                setActiveDrive(drive._id);
-                setCurrentFolder(null);
-                setBreadcrumbs([{ id: null, name: 'Root' }]);
-                setIsSidebarOpen(false); // Close sidebar on mobile after selection
-              }}
-              className={`w-full group flex justify-between items-center px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${activeDrive === drive._id ? 'bg-[#e6f0ed] text-[#1f644e] dark:bg-[#1f644e] dark:text-white font-medium' : 'text-[#4a5568] dark:text-[#cbd5e0] hover:bg-[#f7fafc] dark:hover:bg-[#4a5568]'}`}
-            >
-              <div className="flex items-center gap-3 truncate">
-                <HardDrive size={18} className={activeDrive === drive._id ? 'text-[#1f644e] dark:text-white' : 'text-[#a0aec0]'} />
-                <span className="truncate text-sm">{drive.name}</span>
-              </div>
-              <button
-                onClick={(e) => handleDeleteDrive(drive._id, e)}
-                className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-all"
-                title="Remove Drive"
-              >
-                  <Trash2 size={14} />
-              </button>
-            </div>
-          ))}
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 md:ml-64 relative">
+      {/* Main Content Area */}
+      <div className="flex min-w-0 flex-1 flex-col lg:ml-64 min-h-screen overflow-x-hidden">
         {/* Mobile Header */}
-        <div className="md:hidden flex items-center justify-between p-4 bg-white dark:bg-[#2d3748] border-b border-[#e2e8f0] dark:border-[#4a5568]">
-            <div className="flex items-center gap-2">
-                <Database size={20} className="text-[#1f644e]" />
-                <span className="font-bold font-logo text-[#1f644e] dark:text-white">Vaultly</span>
-            </div>
-            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-md">
-                <Settings size={20} />
+        <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-[#fcfbf5] border-b border-[#e5e3d8] px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-1 rounded-lg text-[#7c8e88]"
+            >
+              <Menu size={24} />
             </button>
-        </div>
-
-        {/* Top Bar */}
-        <header className="bg-white dark:bg-[#2d3748] border-b border-[#e2e8f0] dark:border-[#4a5568] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky top-0 z-10 shadow-sm">
-          <div className="flex items-center flex-wrap gap-2 text-sm">
-            {breadcrumbs.map((crumb, idx) => (
-              <React.Fragment key={idx}>
-                <button
-                  onClick={() => handleBreadcrumbClick(idx)}
-                  className={`hover:underline transition-colors ${idx === breadcrumbs.length - 1 ? 'font-semibold text-[#2d3748] dark:text-white' : 'text-[#718096] hover:text-[#4a5568] dark:text-[#a0aec0] dark:hover:text-[#cbd5e0]'}`}
-                >
-                  {crumb.name}
-                </button>
-                {idx < breadcrumbs.length - 1 && <ChevronRight size={14} className="text-[#cbd5e0] dark:text-[#718096]" />}
-              </React.Fragment>
-            ))}
+            <h1 className="font-[family-name:var(--font-logo)] text-xl text-black">Vaultly</h1>
           </div>
-
-          {activeDrive && (
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowAddFolder(true)}
-                className="flex items-center gap-2 bg-white dark:bg-[#4a5568] border border-[#e2e8f0] dark:border-[#718096] text-[#4a5568] dark:text-[#e2e8f0] px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#f7fafc] dark:hover:bg-[#718096] transition-colors shadow-sm"
-              >
-                <Folder size={16} /> <span className="hidden sm:inline">New Folder</span>
-              </button>
-
-              <div className="relative">
-                <label className="cursor-pointer flex items-center gap-2 bg-[#1f644e] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#164a3a] transition-colors shadow-sm">
-                  <Plus size={16} /> <span className="hidden sm:inline">Upload File</span>
-                  <input
-                    type="file"
-                    className="hidden"
-                    onChange={async (e) => {
-                      if (!e.target.files || e.target.files.length === 0) return;
-                      const file = e.target.files[0];
-                      const formData = new FormData();
-                      formData.append('file', file);
-                      formData.append('credentialId', activeDrive);
-
-                      setLoading(true);
-                      try {
-                        const res = await fetch('/api/drive/upload', {
-                          method: 'POST',
-                          body: formData,
-                        });
-                        if (res.ok) {
-                          const uploadData = await res.json();
-                          await fetch('/api/drive/files', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              fileName: file.name,
-                              fileKey: uploadData.fileKey,
-                              url: uploadData.url,
-                              mimeType: file.type || 'application/octet-stream',
-                              size: file.size,
-                              folderId: currentFolder,
-                              credentialId: activeDrive
-                            })
-                          });
-                          fetchContents();
-                        } else {
-                          const errorData = await res.json();
-                          alert(`Upload failed: ${errorData.error}`);
-                          setLoading(false);
-                        }
-                      } catch (error) {
-                         console.error(error);
-                         alert(`Upload error: ${error.message}`);
-                         setLoading(false);
-                      }
-                      e.target.value = null;
-                    }}
-                  />
-                </label>
-              </div>
-            </div>
-          )}
+          <div className="text-xs font-bold text-[#1f644e] bg-[#f0f5f2] px-2 py-1 rounded-md">
+            {activeDriveName}
+          </div>
         </header>
 
-        {/* Explorer Workspace */}
-        <div className="flex-1 p-6 overflow-y-auto">
-          {!activeDrive ? (
-            <div className="flex flex-col items-center justify-center h-full text-[#718096] dark:text-[#a0aec0]">
-                <HardDrive size={64} className="mb-4 text-[#cbd5e0] dark:text-[#4a5568]" />
-                <h3 className="text-xl font-semibold text-[#4a5568] dark:text-[#e2e8f0] mb-2">No Drive Selected</h3>
-                <p>Select a drive from the sidebar or add a new one to begin.</p>
+        {/* Desktop Header */}
+        <header className="hidden lg:sticky lg:top-0 z-40 bg-[#fcfbf5]/80 backdrop-blur-md border-b border-[#e5e3d8] px-6 py-3 lg:flex items-center justify-between gap-6">
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <div className="flex flex-col">
+              <h1 className="text-sm font-black text-[#1e3a34] uppercase tracking-wider mb-0.5">
+                {activeDriveName}
+              </h1>
+              <div className="flex items-center gap-1.5 text-[10px]">
+                {breadcrumbs.map((crumb, idx) => (
+                  <React.Fragment key={idx}>
+                    <button
+                      onClick={() => handleBreadcrumbClick(idx)}
+                      className={`font-bold transition-colors ${idx === breadcrumbs.length - 1 ? 'text-[#1e3a34]' : 'text-[#7c8e88] hover:text-[#1f644e]'}`}
+                    >
+                      {crumb.name}
+                    </button>
+                    {idx < breadcrumbs.length - 1 && (
+                      <ChevronRight size={10} className="text-[#e5e3d8]" />
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
             </div>
-          ) : loading ? (
-            <div className="flex flex-col items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#1f644e] border-t-transparent mb-4"></div>
-                <p className="text-[#718096] dark:text-[#a0aec0]">Loading contents...</p>
-            </div>
-          ) : folders.length === 0 && files.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-[#718096] dark:text-[#a0aec0]">
-                <Folder size={64} className="mb-4 text-[#cbd5e0] dark:text-[#4a5568]" />
-                <p className="text-lg">This folder is empty.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-4 sm:gap-6 pb-20">
-              {folders.map(folder => (
-                <div
-                  key={folder._id}
-                  className="bg-white dark:bg-[#2d3748] p-5 rounded-xl shadow-sm hover:shadow-md border border-[#e2e8f0] dark:border-[#4a5568] flex flex-col items-center gap-3 cursor-pointer transition-all relative group hover:-translate-y-1"
-                  onClick={() => handleFolderClick(folder)}
-                >
-                  <div className="bg-[#e6f0ed] dark:bg-[#4a5568] p-3 rounded-full">
-                    <Folder size={32} className="text-[#1f644e] dark:text-[#a0aec0] fill-current opacity-80" />
-                  </div>
-                  <span className="text-sm font-semibold text-center truncate w-full text-[#2d3748] dark:text-[#e2e8f0]">{folder.name}</span>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder._id); }}
-                    className="absolute top-2 right-2 text-red-500 opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-all"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              ))}
 
-              {files.map(file => (
-                <div
-                  key={file._id}
-                  className="bg-white dark:bg-[#2d3748] p-5 rounded-xl shadow-sm hover:shadow-md border border-[#e2e8f0] dark:border-[#4a5568] flex flex-col items-center gap-3 relative group transition-all hover:-translate-y-1"
+            <div className="h-8 w-px bg-[#e5e3d8] mx-2" />
+
+            {/* Desktop Search */}
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#7c8e88]" />
+              <input
+                type="text"
+                placeholder="Search files..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-1.5 rounded-lg border border-[#e5e3d8] bg-white/50 text-xs font-bold outline-none focus:border-[#1f644e] focus:bg-white transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {loading && (
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#7c8e88] mr-2">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>SYNCING</span>
+              </div>
+            )}
+
+            <button
+              onClick={() => setShowAddFolder(true)}
+              disabled={!activeDrive}
+              className="cursor-pointer flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[#7c8e88] hover:text-[#1e3a34] hover:bg-[#f0f5f2] border border-[#e5e3d8] transition-all disabled:opacity-50"
+            >
+              <PlusCircle size={14} strokeWidth={2.5} />
+              New Folder
+            </button>
+
+            {activeDrive && (
+              <label className="cursor-pointer flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-[#1f644e] text-white text-xs font-bold shadow-md shadow-[#1f644e]/10 hover:bg-[#164a3a] transition-all">
+                <Upload size={14} strokeWidth={2.5} />
+                Upload
+                <input type="file" className="hidden" onChange={handleFileUpload} />
+              </label>
+            )}
+          </div>
+        </header>
+
+        {/* Content */}
+        <main className="flex-1 w-full pt-16 lg:pt-0 pb-20 p-4 lg:p-8">
+          <div className="max-w-7xl mx-auto space-y-8">
+            {/* Mobile Search & Actions Bar */}
+            <div className="lg:hidden flex flex-col gap-3 mb-6">
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7c8e88]" />
+                <input
+                  type="text"
+                  placeholder="Search files and folders..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-[#e5e3d8] bg-white text-sm font-medium outline-none focus:border-[#1f644e] transition-all"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowAddFolder(true)}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-[#e5e3d8] bg-white text-sm font-bold text-[#1e3a34]"
                 >
-                  <div className="bg-[#f7fafc] dark:bg-[#1a202c] p-3 rounded-lg w-full flex justify-center border border-[#e2e8f0] dark:border-transparent">
-                     {file.mimeType?.startsWith('image/') ? (
-                         // eslint-disable-next-line @next/next/no-img-element
-                         <img src={file.url} alt={file.fileName} className="w-12 h-12 object-cover rounded shadow-sm" />
-                     ) : (
-                         <File size={32} className="text-[#a0aec0] my-2" />
-                     )}
+                  <PlusCircle size={16} /> Folder
+                </button>
+                {activeDrive && (
+                  <label className="flex-1 cursor-pointer flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#1f644e] text-white text-sm font-bold">
+                    <Upload size={16} strokeWidth={2.5} /> Upload
+                    <input type="file" className="hidden" onChange={handleFileUpload} />
+                  </label>
+                )}
+              </div>
+            </div>
+
+            {/* Explorer */}
+            {!activeDrive ? (
+              <div className="py-20 flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-3xl bg-[#f0f5f2] flex items-center justify-center mb-4 text-[#1f644e]">
+                  <Database size={32} />
+                </div>
+                <h2 className="text-lg font-bold text-[#1e3a34]">No Drive Connected</h2>
+                <p className="text-sm text-[#7c8e88] max-w-xs mx-auto mt-1">
+                  Select an existing drive from the sidebar or add a new storage provider to get
+                  started.
+                </p>
+              </div>
+            ) : loading && folders.length === 0 && files.length === 0 ? (
+              <div className="py-20 flex justify-center">
+                <Loader2 size={32} className="text-[#1f644e] animate-spin" />
+              </div>
+            ) : filteredItems.folders.length === 0 && filteredItems.files.length === 0 ? (
+              <div className="py-20 flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-3xl bg-[#f0f5f2] flex items-center justify-center mb-4 text-[#7c8e88]">
+                  <Folder size={32} />
+                </div>
+                <h2 className="text-lg font-bold text-[#1e3a34]">Folder is Empty</h2>
+                <p className="text-sm text-[#7c8e88] mt-1">
+                  {searchQuery
+                    ? 'No files match your search.'
+                    : 'Upload your first file or create a folder.'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {/* Folders */}
+                {filteredItems.folders.map((folder) => (
+                  <div
+                    key={folder._id}
+                    onClick={() => handleFolderClick(folder)}
+                    className="group relative bg-white border border-[#e5e3d8] rounded-2xl p-4 flex flex-col items-center gap-3 cursor-pointer hover:border-[#1f644e] hover:shadow-xl hover:shadow-[#1f644e]/5 transition-all"
+                  >
+                    <div className="h-12 w-12 rounded-xl bg-[#f0f5f2] flex items-center justify-center text-[#1f644e] group-hover:scale-110 transition-transform">
+                      <Folder size={24} strokeWidth={2.5} />
+                    </div>
+                    <span className="text-xs font-bold text-[#1e3a34] text-center truncate w-full px-1">
+                      {folder.name}
+                    </span>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteFolder(folder._id);
+                      }}
+                      className="absolute top-2 right-2 p-1.5 opacity-0 group-hover:opacity-100 text-[#c94c4c] hover:bg-red-50 rounded-lg transition-all"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
-                  <span className="text-sm font-medium text-center truncate w-full text-[#4a5568] dark:text-[#cbd5e0]" title={file.fileName}>{file.fileName}</span>
-                  <div className="flex gap-2 w-full justify-center">
-                    <a
+                ))}
+
+                {/* Files */}
+                {filteredItems.files.map((file) => (
+                  <div
+                    key={file._id}
+                    className="group relative bg-white border border-[#e5e3d8] rounded-2xl p-4 flex flex-col items-center gap-3 hover:border-[#1f644e] hover:shadow-xl hover:shadow-[#1f644e]/5 transition-all"
+                  >
+                    <div className="h-12 w-12 rounded-xl bg-[#f8f9f4] flex items-center justify-center text-[#7c8e88] group-hover:scale-110 transition-transform overflow-hidden">
+                      {file.mimeType?.startsWith('image/') ? (
+                        <img
+                          src={file.url}
+                          alt={file.fileName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <File size={24} />
+                      )}
+                    </div>
+                    <span
+                      className="text-xs font-bold text-[#1e3a34] text-center truncate w-full px-1"
+                      title={file.fileName}
+                    >
+                      {file.fileName}
+                    </span>
+
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <a
                         href={file.url}
                         target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs bg-[#e6f0ed] text-[#1f644e] dark:bg-[#4a5568] dark:text-white px-3 py-1 rounded-full font-medium hover:bg-[#cce0d8] dark:hover:bg-[#718096] transition-colors"
-                    >
-                        View
-                    </a>
+                        rel="noreferrer"
+                        className="p-1.5 rounded-lg text-[#1f644e] hover:bg-[#f0f5f2] transition-colors"
+                      >
+                        <ExternalLink size={14} />
+                      </a>
+                      <button
+                        onClick={() => handleDeleteFile(file._id)}
+                        className="p-1.5 rounded-lg text-[#c94c4c] hover:bg-red-50 transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => handleDeleteFile(file._id)}
-                    className="absolute top-2 right-2 text-red-500 opacity-0 group-hover:opacity-100 p-1.5 bg-white dark:bg-[#2d3748] hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-all shadow-sm"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </main>
+                ))}
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
 
-      {/* Overlay for mobile sidebar */}
-      {isSidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black/50 z-30 md:hidden"
-            onClick={() => setIsSidebarOpen(false)}
-          ></div>
-      )}
-
-      {/* Add Drive Modal */}
+      {/* Modals */}
       {showAddDrive && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <form onSubmit={handleAddDrive} className="bg-white dark:bg-[#2d3748] p-8 rounded-2xl w-full max-w-md shadow-2xl">
-            <h3 className="text-2xl font-bold mb-6 text-[#2d3748] dark:text-white flex items-center gap-2">
-                <HardDrive size={24} className="text-[#1f644e]" />
-                Add Storage Drive
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm"
+            onClick={() => setShowAddDrive(false)}
+          />
+          <form
+            onSubmit={handleAddDrive}
+            className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 border border-[#e5e3d8]"
+          >
+            <h3 className="text-xl font-bold text-[#1e3a34] mb-6 flex items-center gap-2">
+              <div className="h-8 w-8 rounded-xl bg-[#f0f5f2] flex items-center justify-center text-[#1f644e]">
+                <HardDrive size={20} />
+              </div>
+              Add Storage Drive
             </h3>
-            <div className="space-y-5">
+
+            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold mb-2 text-[#4a5568] dark:text-[#cbd5e0]">Drive Name</label>
-                <input required value={newDriveName} onChange={e => setNewDriveName(e.target.value)} placeholder="e.g. My Images" className="w-full border border-[#e2e8f0] dark:border-[#4a5568] p-3 rounded-lg dark:bg-[#1a202c] dark:text-white focus:ring-2 focus:ring-[#1f644e] focus:border-transparent outline-none transition-all" />
+                <label className="block text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider mb-1.5 ml-1">
+                  Drive Name
+                </label>
+                <input
+                  required
+                  value={newDriveName}
+                  onChange={(e) => setNewDriveName(e.target.value)}
+                  placeholder="e.g. My Assets"
+                  className="w-full px-4 py-3 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-sm font-medium outline-none focus:border-[#1f644e] transition-all"
+                />
               </div>
               <div>
-                <label className="block text-sm font-semibold mb-2 text-[#4a5568] dark:text-[#cbd5e0]">Provider</label>
-                <select value={newDriveProvider} onChange={e => setNewDriveProvider(e.target.value)} className="w-full border border-[#e2e8f0] dark:border-[#4a5568] p-3 rounded-lg dark:bg-[#1a202c] dark:text-white focus:ring-2 focus:ring-[#1f644e] focus:border-transparent outline-none transition-all appearance-none bg-white">
+                <label className="block text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider mb-1.5 ml-1">
+                  Provider
+                </label>
+                <select
+                  value={newDriveProvider}
+                  onChange={(e) => setNewDriveProvider(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-sm font-bold outline-none focus:border-[#1f644e] transition-all appearance-none"
+                >
                   <option value="uploadthing">UploadThing</option>
-                  <option value="s3" disabled>AWS S3 (Coming Soon)</option>
-                  <option value="cloudinary" disabled>Cloudinary (Coming Soon)</option>
+                  <option value="s3" disabled>
+                    AWS S3 (Coming Soon)
+                  </option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-semibold mb-2 text-[#4a5568] dark:text-[#cbd5e0]">Token / API Key</label>
-                <input required value={newDriveToken} onChange={e => setNewDriveToken(e.target.value)} type="password" placeholder="sk_live_..." className="w-full border border-[#e2e8f0] dark:border-[#4a5568] p-3 rounded-lg dark:bg-[#1a202c] dark:text-white focus:ring-2 focus:ring-[#1f644e] focus:border-transparent outline-none transition-all" />
+                <label className="block text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider mb-1.5 ml-1">
+                  API Token
+                </label>
+                <input
+                  required
+                  type="password"
+                  value={newDriveToken}
+                  onChange={(e) => setNewDriveToken(e.target.value)}
+                  placeholder="sk_live_..."
+                  className="w-full px-4 py-3 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-sm font-medium outline-none focus:border-[#1f644e] transition-all"
+                />
               </div>
             </div>
-            <div className="mt-8 flex justify-end gap-3">
-              <button type="button" onClick={() => setShowAddDrive(false)} className="px-5 py-2.5 text-sm font-medium text-[#718096] hover:text-[#4a5568] dark:hover:text-[#cbd5e0] transition-colors">Cancel</button>
-              <button type="submit" className="px-5 py-2.5 text-sm font-medium bg-[#1f644e] hover:bg-[#164a3a] text-white rounded-lg shadow-md transition-all transform hover:-translate-y-0.5">Save Drive</button>
+
+            <div className="mt-8 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowAddDrive(false)}
+                className="px-6 py-2.5 text-xs font-bold text-[#7c8e88] hover:text-[#1e3a34] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-8 py-2.5 bg-[#1f644e] text-white text-xs font-bold rounded-xl shadow-lg shadow-[#1f644e]/20 hover:bg-[#164a3a] transition-all"
+              >
+                Save Drive
+              </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Add Folder Modal */}
       {showAddFolder && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <form onSubmit={handleAddFolder} className="bg-white dark:bg-[#2d3748] p-8 rounded-2xl w-full max-w-sm shadow-2xl">
-            <h3 className="text-2xl font-bold mb-6 text-[#2d3748] dark:text-white flex items-center gap-2">
-                <Folder size={24} className="text-[#1f644e]" />
-                New Folder
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm"
+            onClick={() => setShowAddFolder(false)}
+          />
+          <form
+            onSubmit={handleAddFolder}
+            className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl p-8 border border-[#e5e3d8]"
+          >
+            <h3 className="text-xl font-bold text-[#1e3a34] mb-6 flex items-center gap-2">
+              <div className="h-8 w-8 rounded-xl bg-[#f0f5f2] flex items-center justify-center text-[#1f644e]">
+                <Folder size={20} />
+              </div>
+              New Folder
             </h3>
+
             <div>
-              <label className="block text-sm font-semibold mb-2 text-[#4a5568] dark:text-[#cbd5e0]">Folder Name</label>
-              <input required value={newFolderName} onChange={e => setNewFolderName(e.target.value)} autoFocus placeholder="e.g. Documents" className="w-full border border-[#e2e8f0] dark:border-[#4a5568] p-3 rounded-lg dark:bg-[#1a202c] dark:text-white focus:ring-2 focus:ring-[#1f644e] focus:border-transparent outline-none transition-all" />
+              <label className="block text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider mb-1.5 ml-1">
+                Folder Name
+              </label>
+              <input
+                required
+                autoFocus
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                placeholder="e.g. Invoices"
+                className="w-full px-4 py-3 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-sm font-medium outline-none focus:border-[#1f644e] transition-all"
+              />
             </div>
-            <div className="mt-8 flex justify-end gap-3">
-              <button type="button" onClick={() => setShowAddFolder(false)} className="px-5 py-2.5 text-sm font-medium text-[#718096] hover:text-[#4a5568] dark:hover:text-[#cbd5e0] transition-colors">Cancel</button>
-              <button type="submit" className="px-5 py-2.5 text-sm font-medium bg-[#1f644e] hover:bg-[#164a3a] text-white rounded-lg shadow-md transition-all transform hover:-translate-y-0.5">Create</button>
+
+            <div className="mt-8 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowAddFolder(false)}
+                className="px-6 py-2.5 text-xs font-bold text-[#7c8e88] hover:text-[#1e3a34] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-8 py-2.5 bg-[#1f644e] text-white text-xs font-bold rounded-xl shadow-lg shadow-[#1f644e]/20 hover:bg-[#164a3a] transition-all"
+              >
+                Create
+              </button>
             </div>
           </form>
         </div>
       )}
     </div>
+  );
+}
+
+export default function VaultlyContent() {
+  return (
+    <SessionProvider>
+      <VaultlyContentMain />
+    </SessionProvider>
   );
 }
