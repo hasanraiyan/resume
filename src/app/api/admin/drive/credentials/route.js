@@ -9,7 +9,7 @@ export async function GET(request) {
 
   await dbConnect();
   try {
-    const credentials = await StorageCredential.find({}).sort({ createdAt: -1 });
+    const credentials = await StorageCredential.find({}, { credentials: 0 }).sort({ createdAt: -1 });
     return NextResponse.json({ credentials });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -31,7 +31,11 @@ export async function POST(request) {
       credentials, // Will be automatically encrypted by the mongoose setter
     });
 
-    return NextResponse.json({ credential: cred }, { status: 201 });
+    // Return without decrypted credentials
+    const credObj = cred.toObject();
+    delete credObj.credentials;
+
+    return NextResponse.json({ credential: credObj }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

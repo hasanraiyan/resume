@@ -205,40 +205,54 @@ export default function VaultlyApp() {
                 <Folder size={16} /> New Folder
               </button>
 
-              {/* Direct Upload using standard UploadThing component for hybrid flow */}
-              <div className="overflow-hidden relative flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700">
-                <UploadButton
-                  endpoint="mediaUploader"
-                  onClientUploadComplete={async (res) => {
-                    if (res && res.length > 0) {
-                      const file = res[0];
-                      // Save metadata after hybrid direct upload
-                      await fetch('/api/drive/files', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          fileName: file.name,
-                          fileKey: file.key || file.serverData?.fileKey,
-                          url: file.url,
-                          mimeType: file.type || 'application/octet-stream',
-                          size: file.size,
-                          folderId: currentFolder,
-                          credentialId: activeDrive
-                        })
-                      });
-                      fetchContents();
-                    }
-                  }}
-                  onUploadError={(error) => {
-                    alert(`ERROR! ${error.message}`);
-                  }}
-                  className="ut-button:bg-transparent ut-button:w-full ut-button:h-full ut-button:absolute ut-button:inset-0 ut-allowed-content:hidden"
-                  content={{
-                    button({ ready }) {
-                      return ready ? <div className="flex items-center gap-1"><Plus size={16} /> Upload File</div> : 'Loading...';
-                    }
-                  }}
-                />
+              {/* Custom hybrid file upload using our new endpoint to respect activeDrive */}
+              <div className="relative">
+                <label className="cursor-pointer flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700">
+                  <Plus size={16} /> Upload File
+                  <input
+                    type="file"
+                    className="hidden"
+                    onChange={async (e) => {
+                      if (!e.target.files || e.target.files.length === 0) return;
+                      const file = e.target.files[0];
+                      const formData = new FormData();
+                      formData.append('file', file);
+                      formData.append('credentialId', activeDrive);
+
+                      try {
+                        const res = await fetch('/api/drive/upload', {
+                          method: 'POST',
+                          body: formData,
+                        });
+                        if (res.ok) {
+                          const uploadData = await res.json();
+                          // Save metadata
+                          await fetch('/api/drive/files', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              fileName: file.name,
+                              fileKey: uploadData.fileKey,
+                              url: uploadData.url,
+                              mimeType: file.type || 'application/octet-stream',
+                              size: file.size,
+                              folderId: currentFolder,
+                              credentialId: activeDrive
+                            })
+                          });
+                          fetchContents();
+                        } else {
+                          const errorData = await res.json();
+                          alert(`Upload failed: ${errorData.error}`);
+                        }
+                      } catch (error) {
+                         console.error(error);
+                         alert(`Upload error: ${error.message}`);
+                      }
+                      e.target.value = null; // reset input
+                    }}
+                  />
+                </label>
               </div>
             </div>
           )}
