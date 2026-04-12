@@ -102,7 +102,6 @@ function AdminLayoutContent({ children }) {
         { name: 'Contributors', href: '/admin/contributors', icon: Users },
         { name: 'Messages', href: '/admin/contacts', icon: Mail },
         { name: 'Subscribers', href: '/admin/subscribers', icon: Users },
-        { name: 'Storage', href: '/admin/storage', icon: Cloud },
       ],
     },
   ];
