@@ -3,6 +3,7 @@ import { requireAdminSession } from '@/lib/auth/admin';
 import dbConnect from '@/lib/dbConnect';
 import DriveFolder from '@/models/DriveFolder';
 import DriveFile from '@/models/DriveFile';
+import StorageCredential from '@/models/StorageCredential';
 
 export async function GET(request) {
   const authResult = await requireAdminSession();
@@ -14,14 +15,34 @@ export async function GET(request) {
   const credentialId = searchParams.get('credentialId');
 
   try {
+    if (credentialId) {
+      const isDeleted = await StorageCredential.findOne({ _id: credentialId, deleted: true });
+      if (isDeleted) {
+        return NextResponse.json({ folders: [], files: [] });
+      }
+    }
+
+    const deletedCreds = await StorageCredential.find({ deleted: true }).select('_id');
+    const deletedCredIds = deletedCreds.map((c) => c._id);
+
     const query = {};
     if (parentId && parentId !== 'null') query.parentId = parentId;
     else query.parentId = null;
 
-    if (credentialId) query.credentialId = credentialId;
+    if (credentialId) {
+      query.credentialId = credentialId;
+    } else if (deletedCredIds.length > 0) {
+      query.credentialId = { $nin: deletedCredIds };
+    }
 
     const folders = await DriveFolder.find(query).sort({ name: 1 });
-    const files = await DriveFile.find({ folderId: query.parentId, credentialId }).sort({ fileName: 1 });
+    const fileQuery = { folderId: query.parentId };
+    if (credentialId) {
+      fileQuery.credentialId = credentialId;
+    } else if (deletedCredIds.length > 0) {
+      fileQuery.credentialId = { $nin: deletedCredIds };
+    }
+    const files = await DriveFile.find(fileQuery).sort({ fileName: 1 });
 
     return NextResponse.json({ folders, files });
   } catch (error) {

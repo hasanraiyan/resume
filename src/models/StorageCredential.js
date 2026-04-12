@@ -13,6 +13,14 @@ const StorageCredentialSchema = new mongoose.Schema(
       required: true,
       enum: ['uploadthing', 's3', 'cloudinary'],
     },
+    deleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
     // Store credentials as an encrypted string.
     // The getter/setter encrypts the JSON object.
     credentials: {

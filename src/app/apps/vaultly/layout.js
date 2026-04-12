@@ -21,7 +21,9 @@ export const metadata = {
 
 export default function VaultlyLayout({ children }) {
   return (
-    <div className={`min-h-screen bg-[#fcfbf5] dark:bg-[#1e1e1e] ${pacifico.variable} ${nunito.variable} font-sans`}>
+    <div
+      className={`min-h-screen bg-[#fcfbf5] dark:bg-[#1e1e1e] ${pacifico.variable} ${nunito.variable} font-sans`}
+    >
       {children}
     </div>
   );

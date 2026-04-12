@@ -18,7 +18,7 @@ export async function DELETE(request, { params }) {
     }
 
     const cred = await StorageCredential.findById(file.credentialId);
-    if (cred) {
+    if (cred && !cred.deleted) {
       const provider = StorageFactory.getProvider(cred.provider, cred.credentials);
       try {
         await provider.delete(file.fileKey);

@@ -50,4 +50,13 @@ export default class IStorageProvider {
   async getUploadIntent(fileName, fileSize, fileType) {
     throw new Error('Method not implemented.');
   }
+
+  /**
+   * Get file metadata from the provider
+   * @param {string} fileKey - The key of the file to retrieve
+   * @returns {Promise<{ exists: boolean, data?: any }>}
+   */
+  async getFile(fileKey) {
+    throw new Error('Method not implemented.');
+  }
 }

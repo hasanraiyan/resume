@@ -17,7 +17,7 @@ export default class UploadThingProvider extends IStorageProvider {
     }
     return {
       url: response.data.url,
-      fileKey: response.data.key
+      fileKey: response.data.key,
     };
   }
 
@@ -30,18 +30,30 @@ export default class UploadThingProvider extends IStorageProvider {
     return `https://utfs.io/f/${fileKey}`;
   }
 
+  async getFile(fileKey) {
+    try {
+      const response = await this.utapi.getFile(fileKey);
+      if (response.error) {
+        return { exists: false, data: null };
+      }
+      return { exists: true, data: response.data };
+    } catch (error) {
+      return { exists: false, data: null };
+    }
+  }
+
   getCapabilities() {
     return {
       supportsFolders: false,
       supportsSignedUrls: false,
-      requiresDirectUpload: true
+      requiresDirectUpload: true,
     };
   }
 
   async getUploadIntent(fileName, fileSize, fileType) {
     return {
       provider: 'uploadthing',
-      config: {}
+      config: {},
     };
   }
 }

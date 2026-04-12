@@ -39,5 +39,7 @@ const DriveFileSchema = new mongoose.Schema(
 
 // Compound index for uniqueness of file names within a folder in a specific drive
 DriveFileSchema.index({ fileName: 1, folderId: 1, credentialId: 1 }, { unique: true });
+// Index for querying by credentialId
+DriveFileSchema.index({ credentialId: 1 });
 
 export default mongoose.models.DriveFile || mongoose.model('DriveFile', DriveFileSchema);

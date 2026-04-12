@@ -9,7 +9,10 @@ export async function GET(request) {
 
   await dbConnect();
   try {
-    const credentials = await StorageCredential.find({}, { credentials: 0 }).sort({ createdAt: -1 });
+    const credentials = await StorageCredential.find(
+      { deleted: { $ne: true } },
+      { credentials: 0 }
+    ).sort({ createdAt: -1 });
     return NextResponse.json({ credentials });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

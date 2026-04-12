@@ -23,5 +23,9 @@ const DriveFolderSchema = new mongoose.Schema(
 
 // Compound index for uniqueness of folder names within a parent in a specific drive
 DriveFolderSchema.index({ name: 1, parentId: 1, credentialId: 1 }, { unique: true });
+// Index for querying by credentialId
+DriveFolderSchema.index({ credentialId: 1 });
+// Index for querying children by parentId
+DriveFolderSchema.index({ parentId: 1 });
 
 export default mongoose.models.DriveFolder || mongoose.model('DriveFolder', DriveFolderSchema);

@@ -18,6 +18,8 @@ import {
   ChevronRight,
   Home,
   Plus,
+  ChevronDown,
+  Check,
 } from 'lucide-react';
 import SessionProvider from '@/components/SessionProvider';
 
@@ -40,7 +42,6 @@ const SkeletonCard = () => (
       transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
     />
 
-    {/* Placeholder Shapes */}
     <div className="w-12 h-12 rounded-xl bg-[#f0f5f2] shrink-0" />
     <div className="flex-1 space-y-2.5">
       <div className="h-3.5 bg-[#f0f5f2] rounded-md w-3/4" />
@@ -73,6 +74,7 @@ function VaultlyContentMain() {
   const [newDriveName, setNewDriveName] = useState('');
   const [newDriveProvider, setNewDriveProvider] = useState('uploadthing');
   const [newDriveToken, setNewDriveToken] = useState('');
+  const [isProviderDropdownOpen, setIsProviderDropdownOpen] = useState(false);
 
   const [showAddFolder, setShowAddFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
@@ -215,17 +217,14 @@ function VaultlyContentMain() {
   };
 
   const handleDeleteFolder = async (id) => {
-    if (!confirm('Delete folder? Ensure it is empty.')) return;
+    if (!confirm('Delete folder and all its contents?')) return;
     await fetch(`/api/drive/folders/${id}`, { method: 'DELETE' });
     fetchContents();
   };
 
   const handleDeleteDrive = async (id, e) => {
     e.stopPropagation();
-    if (
-      !confirm('Delete this drive connection? Files on provider will NOT be deleted automatically.')
-    )
-      return;
+    if (!confirm('Delete this drive? All files and folders will be permanently removed.')) return;
     await fetch(`/api/admin/drive/credentials/${id}`, { method: 'DELETE' });
     fetchDrives();
   };
@@ -731,7 +730,12 @@ function VaultlyContentMain() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="absolute inset-0 bg-black/40"
+              onClick={() => {
+                setShowAddDrive(false);
+                setShowAddFolder(false);
+              }}
             />
+
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -754,19 +758,71 @@ function VaultlyContentMain() {
                         className="w-full bg-transparent outline-none font-bold text-sm"
                       />
                     </div>
-                    <div className="border border-[#1f644e] rounded-lg px-3 py-2 bg-[#f0f5f2]">
-                      <div className="text-[10px] text-[#1f644e] font-bold">Provider</div>
-                      <select
-                        value={newDriveProvider}
-                        onChange={(e) => setNewDriveProvider(e.target.value)}
-                        className="w-full bg-transparent outline-none font-bold text-sm appearance-none"
+
+                    {/* CUSTOM DROPDOWN FOR PROVIDER */}
+                    <div className="relative z-50">
+                      <div
+                        onClick={() => setIsProviderDropdownOpen(!isProviderDropdownOpen)}
+                        className="border border-[#1f644e] rounded-lg px-3 py-2 bg-[#f0f5f2] cursor-pointer"
                       >
-                        <option value="uploadthing">UploadThing</option>
-                        <option value="s3" disabled>
-                          AWS S3 (Soon)
-                        </option>
-                      </select>
+                        <div className="text-[10px] text-[#1f644e] font-bold">Provider</div>
+                        <div className="w-full bg-transparent outline-none font-bold text-sm flex items-center justify-between mt-0.5">
+                          <span className="text-[#1e3a34]">
+                            {newDriveProvider === 'uploadthing' ? 'UploadThing' : 'AWS S3'}
+                          </span>
+                          <ChevronDown
+                            size={16}
+                            className={`text-[#1f644e] transition-transform duration-200 ${isProviderDropdownOpen ? 'rotate-180' : ''}`}
+                          />
+                        </div>
+                      </div>
+
+                      <AnimatePresence>
+                        {isProviderDropdownOpen && (
+                          <>
+                            <div
+                              className="fixed inset-0 z-40"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setIsProviderDropdownOpen(false);
+                              }}
+                            />
+                            <motion.div
+                              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute z-50 top-full left-0 right-0 mt-2 bg-white border border-[#e5e3d8] rounded-xl shadow-xl py-1 overflow-hidden"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setNewDriveProvider('uploadthing');
+                                  setIsProviderDropdownOpen(false);
+                                }}
+                                className="w-full text-left px-4 py-3 text-sm font-bold text-[#1e3a34] hover:bg-[#f0f5f2] transition-colors flex items-center justify-between cursor-pointer"
+                              >
+                                UploadThing
+                                {newDriveProvider === 'uploadthing' && (
+                                  <Check size={16} className="text-[#1f644e]" />
+                                )}
+                              </button>
+                              <button
+                                type="button"
+                                disabled
+                                className="w-full text-left px-4 py-3 text-sm font-bold text-[#7c8e88] flex items-center justify-between opacity-60 cursor-not-allowed bg-[#fcfbf5]"
+                              >
+                                AWS S3
+                                <span className="text-[9px] uppercase tracking-wider bg-[#e5e3d8] text-[#1e3a34] px-2 py-0.5 rounded-full">
+                                  Soon
+                                </span>
+                              </button>
+                            </motion.div>
+                          </>
+                        )}
+                      </AnimatePresence>
                     </div>
+
                     <div className="border border-[#1f644e] rounded-lg px-3 py-2 bg-[#f0f5f2]">
                       <div className="text-[10px] text-[#1f644e] font-bold">API Token</div>
                       <input
@@ -778,6 +834,7 @@ function VaultlyContentMain() {
                         className="w-full bg-transparent outline-none font-bold text-sm"
                       />
                     </div>
+
                     <div className="flex justify-center gap-4 pt-2">
                       <button
                         type="button"
