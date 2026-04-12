@@ -55,20 +55,32 @@ export default class CloudinaryProvider extends IStorageProvider {
   }
 
   async delete(fileKey) {
-    return new Promise((resolve, reject) => {
-      cloudinary.uploader.destroy(
-        fileKey,
-        this.config,
-        (error, result) => {
-          if (error) {
-            console.error('Cloudinary delete error:', error);
-            // Return false instead of rejecting to keep it consistent with the interface
-            return resolve(false);
+    // We don't know the resource_type of the file we're deleting, and destroy defaults to 'image'.
+    // If it's a 'raw' or 'video' file, deleting it as an 'image' will fail (not found).
+    // The safest approach is to attempt to get its metadata first to find its true type,
+    // or try multiple destroy calls. Getting the file is safer and we already have getFile.
+    try {
+      const fileInfo = await this.getFile(fileKey);
+      const resourceType = fileInfo.exists ? fileInfo.data.resource_type : 'image';
+
+      return new Promise((resolve) => {
+        cloudinary.uploader.destroy(
+          fileKey,
+          { ...this.config, invalidate: true, resource_type: resourceType },
+          (error, result) => {
+            if (error) {
+              console.error('Cloudinary delete error:', error);
+              // Return false instead of rejecting to keep it consistent with the interface
+              return resolve(false);
+            }
+            resolve(result.result === 'ok');
           }
-          resolve(result.result === 'ok');
-        }
-      );
-    });
+        );
+      });
+    } catch (error) {
+      console.error('Cloudinary delete prep error:', error);
+      return false;
+    }
   }
 
   async getUrl(fileKey) {
@@ -76,19 +88,33 @@ export default class CloudinaryProvider extends IStorageProvider {
   }
 
   async getFile(fileKey) {
-    return new Promise((resolve) => {
-      cloudinary.api.resource(
-        fileKey,
-        this.config,
-        (error, result) => {
-          if (error) {
-            resolve({ exists: false, data: null });
-          } else {
-            resolve({ exists: true, data: result });
-          }
-        }
-      );
-    });
+    // Cloudinary's api.resource does not support resource_type: 'auto'.
+    // We must try 'image', then 'video', then 'raw'.
+    const types = ['image', 'video', 'raw'];
+
+    for (const type of types) {
+      try {
+        const result = await new Promise((resolve, reject) => {
+          cloudinary.api.resource(
+            fileKey,
+            { ...this.config, resource_type: type },
+            (error, res) => {
+              if (error) {
+                reject(error);
+              } else {
+                resolve(res);
+              }
+            }
+          );
+        });
+        return { exists: true, data: result };
+      } catch (error) {
+        // If it's a 404 (not found), we continue to the next type.
+        // If it's another error (like auth failure), it will still fail, but we'll return exists: false below.
+      }
+    }
+
+    return { exists: false, data: null };
   }
 
   getCapabilities() {
