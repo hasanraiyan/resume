@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/auth/admin';
-import connectDB from '@/lib/db';
+import dbConnect from '@/lib/dbConnect';
 import DriveFolder from '@/models/DriveFolder';
 import DriveFile from '@/models/DriveFile';
 
@@ -8,7 +8,7 @@ export async function GET(request) {
   const authResult = await requireAdminSession();
   if (authResult instanceof NextResponse) return authResult;
 
-  await connectDB();
+  await dbConnect();
   const { searchParams } = new URL(request.url);
   const parentId = searchParams.get('parentId');
   const credentialId = searchParams.get('credentialId');
@@ -33,7 +33,7 @@ export async function POST(request) {
   const authResult = await requireAdminSession();
   if (authResult instanceof NextResponse) return authResult;
 
-  await connectDB();
+  await dbConnect();
   try {
     const { name, parentId, credentialId } = await request.json();
     const folder = await DriveFolder.create({

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/auth/admin';
-import connectDB from '@/lib/db';
+import dbConnect from '@/lib/dbConnect';
 import DriveFile from '@/models/DriveFile';
 import StorageCredential from '@/models/StorageCredential';
 import StorageFactory from '@/lib/storage/StorageFactory';
@@ -9,7 +9,7 @@ export async function DELETE(request, { params }) {
   const authResult = await requireAdminSession();
   if (authResult instanceof NextResponse) return authResult;
 
-  await connectDB();
+  await dbConnect();
   try {
     const { id } = params;
     const file = await DriveFile.findById(id);

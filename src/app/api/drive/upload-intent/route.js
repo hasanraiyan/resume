@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/auth/admin';
-import connectDB from '@/lib/db';
+import dbConnect from '@/lib/dbConnect';
 import StorageCredential from '@/models/StorageCredential';
 import StorageFactory from '@/lib/storage/StorageFactory';
 
@@ -8,7 +8,7 @@ export async function POST(request) {
   const authResult = await requireAdminSession();
   if (authResult instanceof NextResponse) return authResult;
 
-  await connectDB();
+  await dbConnect();
   try {
     const { credentialId, fileName, fileSize, fileType } = await request.json();
 
