@@ -43,7 +43,8 @@ A protected, role-based backend to manage every aspect of the site.
 - **Article Publishing**: Draft, write, and publish blog articles with full markdown (`react-simplemde-editor`, `react-markdown`) support.
 - **Contact & Subscribers List**: View incoming messages and manage newsletter subscribers.
 - **SnapLinks (URL Shortener)**: Create, manage, and track custom redirect links (`/r/slug`) with individual click analytics.
-- **Media / Storage Manager**: Control and review Cloudinary / UploadThing uploads out of the box.
+- **Media Library**: Control and review your media assets with Prisma.
+- **Vaultly**: Multi-provider storage drive and file manager.
 - **Agent Configuration**: Fine-tune Chatbot persona, base knowledge, and active AI tools dynamically from the UI.
 
 ## 📊 Privacy-Focused Custom Analytics
