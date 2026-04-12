@@ -1,427 +1,147 @@
-# Portfolio Resume Website
+# Portfolio & Multi-App Platform
 
-A modern, full-stack portfolio website built with Next.js 15, featuring an AI-powered chatbot, comprehensive analytics, content management system, and dynamic project showcase.
+A modern, full-stack portfolio website built with **Next.js 15**, featuring an advanced multi-agent AI system, built-in productivity apps (Pocketly and Taskly), comprehensive analytics, and a powerful Admin CMS.
 
-> [!NOTE]
-> **PROJECT STATUS**: This project is now in a stable release state. Contributions and feedback are welcome!
+## 🚀 Key Features
 
-## 🚀 Features
+### 🏢 Core Portfolio
+- **Dynamic Content:** Fully dynamic hero, about, services, skills, testimonials, and contact sections.
+- **Projects & Articles Showcase:** A CMS-backed display of projects (with image galleries and tags) and markdown-supported blog articles.
+- **Advanced Global Search:** Real-time fuzzy search across projects and articles powered by `Fuse.js`.
 
-### Core Features
+### 🤖 Multi-Agent AI System
+The platform integrates LangChain and various LLM providers (OpenAI, Google Gemini) to power an ecosystem of specialized agents:
+- **Chat Assistants:** Configurable chatbots for fast, pro, or deep-thinking conversational interactions.
+- **Media & Visual Agents:**
+  - *Image Analyzer & Embedder:* Analyzes image contents and creates vector embeddings for visual semantic search (via Qdrant).
+  - *Image Generator & Editor:* Generates images from text or edits existing ones using AI.
+- **Content & Coding Agents:**
+  - *Blog Writer Agent:* Helps draft, outline, and synthesize markdown articles.
+  - *Code Reporter Agent:* Analyzes codebase snippets.
+- **Integration Agents:** Dedicated AI handlers for external platforms like Telegram and WhatsApp.
+- **App Builder Agent:** Dynamically creates or updates UI components using natural language.
 
-- **Dynamic Portfolio Management**: Full CRUD operations for projects and articles with image galleries
-- **AI-Powered Chatbot**: Intelligent assistant using OpenAI with function calling and dynamic context
-- **Advanced Search**: Fuzzy search across projects and articles using Fuse.js
-- **Analytics System**: Privacy-focused analytics with session tracking and bot detection
-- **Admin Dashboard**: Comprehensive admin interface for content and settings management
-- **Responsive Design**: Mobile-first design with smooth animations using GSAP
+### 💼 Integrated Apps
+- **Pocketly Tracker:** A comprehensive finance tracking application integrated right into the platform, featuring accounts, transactions, categorization, and AI-driven finance chat insights.
+- **Taskly:** A robust task management and project board application, helping you stay on top of issues and kanban boards seamlessly.
 
-### Technical Highlights
+### 🛡️ Admin CMS & Security
+- **Role-based Dashboard:** A highly secured Admin panel (protected by NextAuth.js middleware) to manage content, configurations, and analytics.
+- **Content Management:** Create and edit Projects, Blog Posts, Heroes, Contributors, and more.
+- **SnapLinks:** Built-in URL shortener to track custom redirect links (`/r/slug`).
+- **Media Library:** Manage uploads via Cloudinary or UploadThing.
+- **Privacy-focused Analytics:** Local session tracking, bot filtering, and real-time Chart.js visual insights without relying on third-party cookies.
+- **Robust Security:** AES encryption for secret keys and API credentials, combined with rigorous rate limiting.
 
-- **Next.js 15** with App Router and React Server Components
-- **MongoDB** with Mongoose for data persistence
-- **NextAuth.js** for authentication and authorization
-- **OpenAI Integration** for AI chatbot with streaming responses
-- **Real-time Updates** with custom hooks and event-driven architecture
-- **SEO Optimized** with dynamic sitemap generation
+---
 
-## 📋 Prerequisites
+## 🛠️ Tech Stack
+- **Framework:** Next.js 15 (App Router), React 19
+- **Styling & Animation:** Tailwind CSS 4, GSAP, Framer Motion
+- **Database:** MongoDB with Mongoose, Qdrant (Vector DB for AI)
+- **AI Integration:** LangChain, @google/genai, @langchain/openai, Model Context Protocol (MCP)
+- **Authentication:** NextAuth.js
+- **Media:** UploadThing, Cloudinary
+- **State/Search:** React Context, Fuse.js
 
-Before you begin, ensure you have the following installed:
-
-- **Node.js** (v18 or higher)
-- **pnpm**, **npm**, **yarn**, or **bun**
-- **MongoDB** (local instance or MongoDB Atlas account)
-- **OpenAI API Key** (for chatbot functionality)
-
-## 🛠️ Installation & Setup
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/hasanraiyan/resume.git
-cd resume
-```
-
-### 2. Install Dependencies
-
-```bash
-npm install
-# or
-yarn install
-# or
-pnpm install
-```
-
-### 3. Quick Setup
-
-The easiest way to configure the project is to use the interactive setup script:
-
-```bash
-pnpm run project-setup
-```
-
-This script will:
-
-- Guide you through the configuration of Database, Admin, and API keys.
-- **Automatically generate** secure random secrets for `NEXTAUTH_SECRET` and `ENCRYPTION_SECRET`.
-- Create and populate your `.env` file based on your inputs.
-
-#### Manual Configuration (Alternative)
-
-If you prefer to configure manually, copy `.env.example` to `.env` and fill in the required variables.
-
-### 4. Database Setup
-
-The application will automatically create necessary indexes on first run. To seed initial data (optional):
-
-```bash
-# Start MongoDB (if running locally)
-mongod
-
-# Run the development server (will auto-initialize DB)
-npm run dev
-```
-
-### 5. Start Development Server
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) to view the application.
+---
 
 ## 📁 Project Structure
 
 ```
 resume/
+├── scripts/                  # Setup, seed, and migration scripts
 ├── src/
-│   ├── app/                    # Next.js App Router pages and API routes
-│   │   ├── api/               # API endpoints (fully documented)
-│   │   │   ├── chat/          # AI chatbot API with streaming
-│   │   │   ├── search/        # Unified search API
-│   │   │   ├── analytics/     # Analytics tracking & admin dashboard
-│   │   │   ├── projects/      # Projects CRUD with slug validation
-│   │   │   ├── auth/          # NextAuth.js authentication
-│   │   │   ├── admin/         # Admin-only APIs (analytics, chatbot, telegram)
-│   │   │   ├── subscribe/     # Newsletter subscription API
-│   │   │   ├── stats/         # Statistics section API
-│   │   │   ├── hero/          # Hero section management
-│   │   │   ├── about/         # About section management
-│   │   │   └── contacts/      # Contact form submissions
-│   │   ├── admin/             # Admin dashboard pages
-│   │   ├── projects/          # Project showcase pages
-│   │   ├── blog/              # Blog/article pages
-│   │   └── page.js            # Homepage
-│   ├── components/            # React components
-│   │   ├── ui/                # Reusable UI components
-│   │   ├── projects/          # Project-specific components
-│   │   ├── search/            # Search components
-│   │   └── admin/             # Admin panel components
-│   ├── lib/                   # Utility libraries
-│   │   ├── ai/                # AI context builder & tools
-│   │   ├── search/            # Search functionality (Fuse.js)
-│   │   ├── analytics.js       # Analytics tracker
-│   │   ├── dbConnect.js       # MongoDB connection
-│   │   ├── serialize.js       # Data serialization
-│   │   ├── crypto.js          # Encryption utilities
-│   │   └── rateLimit.js       # Rate limiting for APIs
-│   ├── models/                # MongoDB Mongoose models
-│   │   ├── Project.js         # Project schema with galleries
-│   │   ├── Article.js         # Article/blog schema
-│   │   ├── Analytics.js       # Analytics events schema
-│   │   ├── User.js            # User schema
-│   │   ├── HeroSection.js     # Homepage hero schema
-│   │   ├── AboutSection.js    # About section schema
-│   │   ├── StatsSection.js    # Statistics section schema
-│   │   ├── ChatbotSettings.js # AI chatbot configuration
-│   │   ├── ChatLog.js         # Chat conversation logs
-│   │   ├── Contact.js         # Contact form submissions
-│   │   ├── Subscriber.js      # Newsletter subscribers
-│   │   └── TelegramSettings.js # Telegram bot integration
-│   ├── hooks/                 # Custom React hooks
-│   │   ├── useAnalytics.js    # Analytics hooks
-│   │   └── useHeroData.js     # Hero data management
-│   ├── context/               # React Context providers
-│   │   ├── LoadingContext.js  # Loading state management
-│   │   └── SiteContext.js     # Site-wide data
-│   ├── styles/                # Global styles and design tokens
-│   └── utils/                 # Utility functions
-├── middleware.js              # Next.js middleware for auth
-└── package.json               # Dependencies and scripts
+│   ├── app/                  # Next.js App Router (Pages & API Handlers)
+│   │   ├── (admin)/          # Protected Admin CMS routes
+│   │   ├── api/              # API endpoints (Auth, AI, Search, CMS CRUD)
+│   │   ├── apps/             # Integrated Apps (e.g. AppEditor)
+│   │   ├── pocketly/         # Pocketly Tracker frontend
+│   │   ├── r/                # SnapLinks short URL handler
+│   │   ├── taskly/           # Taskly task management frontend
+│   │   └── page.js           # Main Portfolio Homepage
+│   ├── components/           # Reusable React UI Components
+│   │   ├── admin/            # Admin Panel components
+│   │   ├── pocketly-tracker/ # Pocketly components (Charts, Modals, Chat)
+│   │   ├── search/           # Global Search Overlay
+│   │   ├── taskly/           # Taskly Kanban boards and settings
+│   │   └── ui/               # Base UI elements (Buttons, Dialogs, etc.)
+│   ├── lib/                  # Utilities, integrations, and Agents
+│   │   └── agents/           # Core Multi-Agent Architecture definitions
+│   ├── models/               # Mongoose DB Schemas
+│   └── context/              # Global React Contexts
+├── package.json              # Dependencies and scripts
+└── middleware.js             # Next.js middleware (Auth protection)
 ```
 
-## 🏗️ Architecture Overview
+---
 
-### Backend Architecture
+## ⚙️ Installation & Setup
 
-#### Database Models
+### Prerequisites
+- **Node.js** (v18 or higher)
+- **pnpm**, **npm**, **yarn**, or **bun**
+- **MongoDB** Instance (Local or Atlas)
+- **API Keys** (OpenAI, Google Gemini, Cloudinary, etc., depending on features used)
 
-- **Project**: Portfolio projects with galleries, tags, and metadata
-- **Article**: Blog posts with draft/published workflow
-- **Analytics**: Event tracking with automatic expiration (1 year)
-- **User**: Admin user accounts
-- **HeroSection**, **AboutSection**: Editable homepage content
-- **ChatbotSettings**: AI assistant configuration
+### 1. Clone the repository
+```bash
+git clone https://github.com/hasanraiyan/resume.git
+cd resume
+```
 
-#### API Routes
+### 2. Install dependencies
+Using `pnpm` is recommended for this workspace:
+```bash
+pnpm install
+```
 
-- `/api/chat` - AI chatbot with streaming responses
-- `/api/search` - Unified search across content
-- `/api/analytics` - Event tracking endpoint
-- `/api/projects` - CRUD operations for projects
-- `/api/admin/*` - Admin-only endpoints
+### 3. Setup Environment Variables
+The repository includes a helpful setup script to configure your database and securely generate encryption/authentication secrets automatically.
 
-### Frontend Architecture
+**Run the interactive setup:**
+```bash
+pnpm run project-setup
+```
+This script will guide you through creating your `.env` file.
 
-#### Key Components
+*Alternatively, you can manually copy `.env.example` to `.env` and fill in your keys.*
 
-- **Hero**: Animated homepage hero section
-- **Work**: Project showcase with filtering
-- **ProjectGallery**: Image carousel with thumbnails
-- **SearchOverlay**: Full-screen search interface
-- **Chatbot**: AI assistant interface
+### 4. Database Setup (Optional Seeding)
+The platform will auto-initialize DB schemas when connecting. To add sample data:
+```bash
+node scripts/seed-cms.js
+```
 
-#### Custom Hooks
-
-- `useAnalytics`: Comprehensive analytics tracking
-- `useHeroData`: Real-time hero data management
-- `useLoadingStatus`: Coordinated loading states
-- `useSiteContext`: Global site data access
-
-#### State Management
-
-- React Context for global state
-- Server Components for data fetching
-- Client Components for interactivity
-
-## 🔧 Development
-
-### Available Scripts
-
-# Development server with Turbopack
-
+### 5. Start Development Server
+```bash
 pnpm run dev
-
-# Production build
-
-pnpm run build
-
-# Start production server
-
-pnpm start
-
-# Lint code
-
-pnpm run lint
-
-# Format code with Prettier
-
-pnpm run format
-
-# Check formatting
-
-pnpm run check-format
-
-### Code Style
-
-This project uses:
-
-- **ESLint** for code linting
-- **Prettier** for code formatting
-- **Husky** for pre-commit hooks
-- **lint-staged** for staged file linting
-
-Code is automatically formatted on commit.
-
-### Code Documentation
-
-This project maintains comprehensive documentation following JSDoc standards:
-
-- ✅ **API Routes**: All API endpoints are fully documented with request/response schemas
-- ✅ **Database Models**: All Mongoose models include detailed schema documentation and usage examples
-- ✅ **Action Functions**: Server actions have complete parameter and return type documentation
-- ✅ **Core Components**: Main UI components (Hero, About, Contact, etc.) are documented
-- 🚧 **Component Library**: Additional components are being documented systematically
-- ✅ **Utility Functions**: Helper functions include detailed docstrings
-
-All public functions, classes, and components must include JSDoc comments:
-
-```javascript
-/**
- * Brief description of the function.
- *
- * @param {Type} paramName - Parameter description
- * @returns {ReturnType} Return value description
- */
-function example(paramName) {
-  // Implementation
-}
 ```
+Open [http://localhost:3000](http://localhost:3000) to view the application. Access the admin dashboard at `/admin`.
 
-**Documentation Status**: Core documentation is complete. Additional component-level docs are added continuously.
+---
 
-## 🎨 Key Technologies
+## 👨‍💻 Development Scripts
 
-### Core Stack
+- `pnpm run dev`: Starts the Next.js development server with Turbopack.
+- `pnpm run build`: Builds the application for production.
+- `pnpm start`: Starts the production server.
+- `pnpm run lint`: Runs ESLint.
+- `pnpm run format`: Formats code using Prettier.
+- `pnpm run check-format`: Checks code formatting.
+- `pnpm run project-setup`: Interactive environment setup wizard.
 
-- **Next.js 15.5** - React framework with App Router
-- **React 19** - UI library
-- **MongoDB** - NoSQL database
-- **Mongoose** - MongoDB ODM
-- **Tailwind CSS 4** - Utility-first CSS
-
-### Features & Libraries
-
-- **NextAuth.js** - Authentication
-- **OpenAI SDK** - AI integration
-- **Fuse.js** - Fuzzy search
-- **GSAP** - Animations
-- **Chart.js** - Analytics visualizations
-- **React Markdown** - Markdown rendering
-- **Lucide React** - Icons
-
-## 🔒 Security
-
-### Authentication
-
-- NextAuth.js with MongoDB adapter
-- Role-based access control (Admin roles)
-- Protected admin routes via middleware
-
-### Data Protection
-
-- Environment variables for sensitive data
-- Password hashing (handled by NextAuth)
-- Input validation and sanitization
-- Bot detection in analytics
-
-### Best Practices
-
-- HTTPS required in production
-- Secure session management
-- MongoDB connection pooling
-- Content Security Policy headers
-
-## 📊 Analytics
-
-The built-in analytics system tracks:
-
-- **Page Views**: With session tracking
-- **Custom Events**: Click tracking, form submissions
-- **Chatbot Interactions**: AI usage statistics
-- **User Sessions**: Duration and page count
-- **Bot Filtering**: Automatic bot detection
-
-Analytics data automatically expires after 1 year.
-
-## 🤖 AI Chatbot
-
-The AI chatbot features:
-
-- **Function Calling**: Access to projects and articles
-- **Streaming Responses**: Real-time message generation
-- **Context Awareness**: Dynamic context from database
-- **Tool Usage**: Search, list, and detail retrieval
-- **Configurable Persona**: Customizable via admin panel
-
-### Available Tools
-
-1. `listAllProjects` - Get all projects
-2. `getProjectDetails` - Get specific project
-3. `listAllArticles` - Get all articles
-4. `getArticleDetails` - Get specific article
-5. `searchPortfolio` - Search content
-
-## 🚀 Deployment
-
-### Vercel (Recommended)
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fhasanraiyan%2Fresume&env=MONGODB_URI,NEXTAUTH_SECRET,ENCRYPTION_SECRET,ADMIN_USERNAME,ADMIN_PASSWORD&project-name=resume&repository-name=resume)
-
-1. Push code to GitHub/GitLab/Bitbucket
-2. Import project in Vercel
-3. Add environment variables
-4. Deploy
-
-### Other Platforms
-
-The application can be deployed to any Node.js hosting platform:
-
-- Railway
-- Render
-- DigitalOcean App Platform
-- AWS/GCP/Azure
-
-**Requirements**:
-
-- Node.js 18+ runtime
-- MongoDB database access
-- Environment variables configured
-
-## 📝 Configuration
-
-### Chatbot Settings
-
-Configure the AI assistant via the admin panel at `/admin/chatbot`:
-
-- AI Name and Persona
-- Base Knowledge
-- Services Offered
-- Call-to-Action message
-- Behavioral Rules
-- Model Selection
-
-### Content Management
-
-Manage content via the admin dashboard:
-
-- Projects: `/admin/projects`
-- Articles: `/admin/blog`
-- Hero Section: `/admin/hero`
-- About Section: `/admin/about`
-- Analytics: `/admin/analytics`
-
-## 🐛 Troubleshooting
-
-### Database Connection Issues
-
-- Verify MongoDB is running
-- Check `MONGODB_URI` in `.env.local`
-- Ensure network access (for Atlas)
-
-### OpenAI API Errors
-
-- Verify API key is correct
-- Check API quota and billing
-- Ensure model name is valid
-
-### Build Errors
-
-- Clear `.next` folder: `rm -rf .next`
-- Delete `node_modules` and reinstall
-- Check Node.js version compatibility
+---
 
 ## 🤝 Contributing
+Contributions are welcome! If you'd like to improve the code, add new features, or fix bugs:
+1. Fork the repository.
+2. Create a new branch (`git checkout -b feature/your-feature`).
+3. Commit your changes (`git commit -m 'Add your feature'`).
+4. Push to the branch (`git push origin feature/your-feature`).
+5. Open a Pull Request.
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add/update tests and documentation
-5. Submit a pull request
+---
 
 ## 📄 License
-
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 👨‍💻 Author
-
-Built with ❤️ by Raiyan Hasan.
-
-## 🆘 Support & Issues
-
-If you encounter any issues:
-
-1. Check the [Documentation](#-features) above.
-2. Search through [Existing Issues](https://github.com/hasanraiyan/resume/issues).
-3. If your issue is new, please [Create a New Issue](https://github.com/hasanraiyan/resume/issues/new/choose) using the provided templates.
