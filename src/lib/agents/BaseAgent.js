@@ -494,7 +494,7 @@ class BaseAgent {
         `API Key is MISSING for provider: ${provider.name} (${provider.providerId}) used in ${purpose}`
       );
       const err = new Error(
-        `Missing API key for AI provider: ${provider.name}. Please check Admin > AI Command Hub.`
+        `Missing API key for AI provider: ${provider.name}. Please check Admin > Small Claw.`
       );
       err.lc_error_code = 'MISSING_API_KEY';
       throw err;
@@ -635,7 +635,7 @@ class BaseAgent {
 
     if (!provider.apiKey) {
       throw new Error(
-        `AI Provider API key is missing for agent ${this.agentId}. Please check Admin > AI Command Hub.`
+        `AI Provider API key is missing for agent ${this.agentId}. Please check Admin > Small Claw.`
       );
     }
 

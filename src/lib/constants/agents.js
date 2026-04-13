@@ -43,6 +43,10 @@ export const AGENT_IDS = {
   // Tools / Apps
   APP_BUILDER: 'app_builder',
 
+  // Memo Scribe App
+  MEMOSCRIBE_AGENT: 'memoscribe_agent',
+  MEMO_EMBEDDER: 'memo_embedder',
+
   // Integrations
 };
 
@@ -305,6 +309,29 @@ KEY BEHAVIORS:
 YOU ARE NOT a generic assistant. You are a specialized assistant for THIS user's tasks and projects.`,
     isActive: true,
   },
+  [AGENT_IDS.MEMOSCRIBE_AGENT]: {
+    name: 'Memo Scribe Assistant',
+    description: 'An AI assistant that can search your saved notes using RAG and answer questions.',
+    type: AGENT_TYPES.CHAT,
+    category: AGENT_CATEGORIES.CONVERSATIONAL,
+    icon: 'Brain',
+    defaultModel: 'gpt-4o',
+    defaultProvider: 'openai',
+    persona: `You are the Memo Scribe Assistant, an intelligent helper that can search through a user's saved notes (clips/texts).
+Use the 'search_memos' tool to find relevant information from the user's notes whenever they ask a question that might require recalling past information.
+If you find relevant notes, use them to construct a helpful, accurate, and concise response. If you cannot find relevant information, let the user know.`,
+    isActive: true,
+  },
+  [AGENT_IDS.MEMO_EMBEDDER]: {
+    name: 'Memo Embedder',
+    description: 'Specialized agent for generating vector embeddings for notes and queries.',
+    type: AGENT_TYPES.UTILITY,
+    category: AGENT_CATEGORIES.VECTOR_EMBEDDING,
+    icon: 'Network',
+    defaultModel: 'text-embedding-004',
+    defaultProvider: 'google',
+    isActive: true,
+  },
 };
 
 /**
@@ -331,6 +358,8 @@ export const AGENT_TOOLS = {
   [AGENT_IDS.APP_BUILDER]: ['planning', 'html_generation', 'code_review'],
   [AGENT_IDS.FINANCE_ASSISTANT]: ['conversation'],
   [AGENT_IDS.TASKLY_ASSISTANT]: ['conversation'],
+  [AGENT_IDS.MEMOSCRIBE_AGENT]: ['conversation', 'search_memos'],
+  [AGENT_IDS.MEMO_EMBEDDER]: ['text_embedding'],
 };
 
 /**
@@ -357,6 +386,8 @@ export const RATE_LIMIT_DEFAULTS = {
   [AGENT_IDS.APP_BUILDER]: { requests: 10, window: 60 },
   [AGENT_IDS.FINANCE_ASSISTANT]: { requests: 10, window: 60 },
   [AGENT_IDS.TASKLY_ASSISTANT]: { requests: 10, window: 60 },
+  [AGENT_IDS.MEMOSCRIBE_AGENT]: { requests: 10, window: 60 },
+  [AGENT_IDS.MEMO_EMBEDDER]: { requests: 40, window: 60 },
 };
 
 /**
