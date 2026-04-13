@@ -2,7 +2,8 @@ import { QdrantClient } from '@qdrant/js-client-rest';
 import MemoscribeSettings from '@/models/MemoscribeSettings';
 import dbConnect from '@/lib/dbConnect';
 import { decrypt } from '@/lib/crypto';
-import { OpenAIEmbeddings } from '@langchain/openai';
+import agentRegistry from '@/lib/agents';
+import { AGENT_IDS } from '@/lib/constants/agents';
 
 /**
  * Returns a configured Qdrant client for a specific user.
@@ -56,12 +57,17 @@ export async function ensureUserCollection(client) {
 }
 
 /**
- * Creates an embedding for a given text using OpenAI.
+ * Creates an embedding for a given text using the specialized MEMO_EMBEDDER agent.
  */
 export async function generateEmbedding(text) {
-  const embeddings = new OpenAIEmbeddings({
-    modelName: 'text-embedding-3-small',
-  });
-  const vector = await embeddings.embedQuery(text);
-  return vector;
+  const agent = agentRegistry.getAgent(AGENT_IDS.MEMO_EMBEDDER);
+  if (!agent) {
+    throw new Error('MEMO_EMBEDDER agent not found in registry');
+  }
+
+  if (!agent.isInitialized) {
+    await agent.initialize();
+  }
+
+  return await agent.embedQuery(text);
 }
