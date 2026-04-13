@@ -1,6 +1,7 @@
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
-import { BaseAgent } from '../BaseAgent';
+import { AGENT_IDS } from '@/lib/constants/agents';
+import BaseAgent from '../BaseAgent';
 import {
   getUserQdrantClient,
   ensureUserCollection,
@@ -8,16 +9,8 @@ import {
 } from '@/lib/memoscribe-qdrant';
 
 export class MemoscribeAgent extends BaseAgent {
-  constructor() {
-    super({
-      id: 'memoscribe_agent',
-      name: 'Memo Scribe Assistant',
-      description:
-        'An AI assistant that can search your saved notes using RAG and answer questions.',
-      systemPrompt: `You are the Memo Scribe Assistant, an intelligent helper that can search through a user's saved notes (clips/texts).
-Use the 'search_memos' tool to find relevant information from the user's notes whenever they ask a question that might require recalling past information.
-If you find relevant notes, use them to construct a helpful, accurate, and concise response. If you cannot find relevant information, let the user know.`,
-    });
+  constructor(agentId = AGENT_IDS.MEMOSCRIBE_AGENT, config = {}) {
+    super(agentId, config);
   }
 
   getTools(params = {}) {
