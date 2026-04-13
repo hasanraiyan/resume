@@ -8,6 +8,8 @@ export function MemoscribeProvider({ children }) {
   const [activeTab, setActiveTab] = useState('notes');
   const [notes, setNotes] = useState([]);
   const [settings, setSettings] = useState({ qdrantUrl: '', hasApiKey: false });
+  const [aiConfigs, setAiConfigs] = useState({ chat: {}, embedder: {} });
+  const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Chat state
@@ -17,6 +19,8 @@ export function MemoscribeProvider({ children }) {
   useEffect(() => {
     fetchNotes();
     fetchSettings();
+    fetchAiConfigs();
+    fetchProviders();
   }, []);
 
   const fetchNotes = async () => {
@@ -43,6 +47,47 @@ export function MemoscribeProvider({ children }) {
     } catch (error) {
       console.error('Failed to fetch settings:', error);
     }
+  };
+
+  const fetchAiConfigs = async () => {
+    try {
+      const res = await fetch('/api/memoscribe/ai-config');
+      if (res.ok) {
+        const data = await res.json();
+        setAiConfigs(data.configs);
+      }
+    } catch (error) {
+      console.error('Failed to fetch AI configs:', error);
+    }
+  };
+
+  const fetchProviders = async () => {
+    try {
+      const res = await fetch('/api/memoscribe/providers');
+      if (res.ok) {
+        const data = await res.json();
+        setProviders(data.providers);
+      }
+    } catch (error) {
+      console.error('Failed to fetch providers:', error);
+    }
+  };
+
+  const saveAiConfig = async (chat, embedder) => {
+    try {
+      const res = await fetch('/api/memoscribe/ai-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat, embedder }),
+      });
+      if (res.ok) {
+        setAiConfigs({ chat, embedder });
+        return true;
+      }
+    } catch (error) {
+      console.error('Failed to save AI config:', error);
+    }
+    return false;
   };
 
   const addNote = async (title, description, text) => {
@@ -101,10 +146,13 @@ export function MemoscribeProvider({ children }) {
         setActiveTab,
         notes,
         settings,
+        aiConfigs,
+        providers,
         loading,
         addNote,
         deleteNote,
         saveSettings,
+        saveAiConfig,
         chatMessages,
         setChatMessages,
         chatInput,

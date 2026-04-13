@@ -26,6 +26,16 @@ export class MemoscribeAgent extends BaseAgent {
     super(agentId, config);
   }
 
+  async _onInitialize() {
+    this.logger.info('Memo Scribe Agent initialized');
+  }
+
+  async _validateInput(input) {
+    if (!input || !input.userMessage) {
+      throw new Error('userMessage is required for Memo Scribe Agent');
+    }
+  }
+
   getTools(params = {}) {
     return [
       tool(

@@ -96,6 +96,32 @@ export default function ChatTab() {
         }
       }
 
+      // Handle remaining buffer
+      if (buffer.trim()) {
+        try {
+          const event = JSON.parse(buffer);
+          if (event.type === 'message' || event.type === 'chunk' || event.type === 'content') {
+            const content = event.content || event.message || '';
+            fullContent += content;
+            setChatMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === placeholderAiMsgId ? { ...msg, content: fullContent } : msg
+              )
+            );
+          } else if (event.type === 'ui_block') {
+            setChatMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === placeholderAiMsgId
+                  ? { ...msg, uiBlocks: [...(msg.uiBlocks || []), event.block] }
+                  : msg
+              )
+            );
+          }
+        } catch (e) {
+          // Ignore trailing partial payload
+        }
+      }
+
       // finalize message
       setChatMessages((prev) =>
         prev.map((msg) => (msg.id === placeholderAiMsgId ? { ...msg, isStreaming: false } : msg))
