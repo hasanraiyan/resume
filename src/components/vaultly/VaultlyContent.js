@@ -768,7 +768,11 @@ function VaultlyContentMain() {
                         <div className="text-[10px] text-[#1f644e] font-bold">Provider</div>
                         <div className="w-full bg-transparent outline-none font-bold text-sm flex items-center justify-between mt-0.5">
                           <span className="text-[#1e3a34]">
-                            {newDriveProvider === 'uploadthing' ? 'UploadThing' : newDriveProvider === 'cloudinary' ? 'Cloudinary' : 'AWS S3'}
+                            {newDriveProvider === 'uploadthing'
+                              ? 'UploadThing'
+                              : newDriveProvider === 'cloudinary'
+                                ? 'Cloudinary'
+                                : 'AWS S3'}
                           </span>
                           <ChevronDown
                             size={16}
@@ -838,14 +842,18 @@ function VaultlyContentMain() {
 
                     <div className="border border-[#1f644e] rounded-lg px-3 py-2 bg-[#f0f5f2]">
                       <div className="text-[10px] text-[#1f644e] font-bold">
-                        {newDriveProvider === 'cloudinary' ? 'Connection String (CLOUDINARY_URL)' : 'API Token'}
+                        {newDriveProvider === 'cloudinary'
+                          ? 'Connection String (CLOUDINARY_URL)'
+                          : 'API Token'}
                       </div>
                       <input
                         required
                         type="password"
                         value={newDriveToken}
                         onChange={(e) => setNewDriveToken(e.target.value)}
-                        placeholder={newDriveProvider === 'cloudinary' ? 'cloudinary://...' : 'sk_live_...'}
+                        placeholder={
+                          newDriveProvider === 'cloudinary' ? 'cloudinary://...' : 'sk_live_...'
+                        }
                         className="w-full bg-transparent outline-none font-bold text-sm"
                       />
                     </div>

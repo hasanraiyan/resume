@@ -36,18 +36,15 @@ export default class CloudinaryProvider extends IStorageProvider {
         unique_filename: true,
       };
 
-      const uploadStream = cloudinary.uploader.upload_stream(
-        options,
-        (error, result) => {
-          if (error) {
-            return reject(new Error(`Cloudinary upload error: ${error.message}`));
-          }
-          resolve({
-            url: result.secure_url,
-            fileKey: result.public_id,
-          });
+      const uploadStream = cloudinary.uploader.upload_stream(options, (error, result) => {
+        if (error) {
+          return reject(new Error(`Cloudinary upload error: ${error.message}`));
         }
-      );
+        resolve({
+          url: result.secure_url,
+          fileKey: result.public_id,
+        });
+      });
 
       // Write buffer to stream
       uploadStream.end(buffer);

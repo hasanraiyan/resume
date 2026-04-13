@@ -40,6 +40,7 @@ import WhatsAppAgent from './ai/whatsapp-agent';
 import AppBuilderAgent from './ai/app-builder-agent-v2';
 import FinanceAssistantAgent from './ai/finance-assistant-agent';
 import TasklyAssistantAgent from './ai/taskly-assistant-agent';
+import { memoscribeAgent, MemoscribeAgent } from './ai/memoscribe-agent';
 
 // Register agent classes into the registry
 console.log('[agents/index.js] Registering agents...');
@@ -58,6 +59,9 @@ agentRegistry.register(AGENT_IDS.WHATSAPP_ASSISTANT, WhatsAppAgent);
 agentRegistry.register(AGENT_IDS.APP_BUILDER, AppBuilderAgent);
 agentRegistry.register(AGENT_IDS.FINANCE_ASSISTANT, FinanceAssistantAgent);
 agentRegistry.register(AGENT_IDS.TASKLY_ASSISTANT, TasklyAssistantAgent);
+// Memo Scribe Agent is an instance, but registry usually takes classes.
+// However, looking at the code, it looks like it registers classes. Let me register the class:
+agentRegistry.register(AGENT_IDS.MEMOSCRIBE_AGENT, MemoscribeAgent);
 console.log('[agents/index.js] Agents registered successfully');
 
 export {
@@ -73,5 +77,6 @@ export {
   AppBuilderAgent,
   FinanceAssistantAgent,
   TasklyAssistantAgent,
+  MemoscribeAgent,
 };
 export default agentRegistry;
