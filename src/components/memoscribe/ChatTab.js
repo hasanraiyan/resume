@@ -53,20 +53,25 @@ export default function ChatTab() {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let fullContent = '';
+      let buffer = '';
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n').filter((line) => line.trim() !== '');
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
 
         for (const line of lines) {
+          if (!line.trim()) continue;
           try {
             const event = JSON.parse(line);
 
-            if (event.type === 'message' || event.type === 'chunk') {
-              fullContent += event.content || '';
+            if (event.type === 'message' || event.type === 'chunk' || event.type === 'content') {
+              // agent might send 'message', 'chunk' or 'content' depending on implementation
+              const content = event.content || event.message || '';
+              fullContent += content;
               setChatMessages((prev) =>
                 prev.map((msg) =>
                   msg.id === placeholderAiMsgId ? { ...msg, content: fullContent } : msg
