@@ -132,12 +132,31 @@ export class MemoscribeAgent extends BaseAgent {
       } else if (type === 'on_tool_start' && name !== 'agent') {
         yield { type: 'tool_start', tool: name, input: data.input };
       } else if (type === 'on_tool_end' && name !== 'agent') {
+        const output = typeof data.output === 'string' ? data.output : JSON.stringify(data.output);
         yield {
           type: 'tool_result',
           tool_call_id: event.run_id,
           name: name,
-          content: typeof data.output === 'string' ? data.output : JSON.stringify(data.output),
+          content: output,
         };
+
+        // If this was a search_memos tool, also yield a UI block
+        if (name === 'search_memos') {
+          try {
+            const results = JSON.parse(output);
+            if (results && results.results && results.results.length > 0) {
+              yield {
+                type: 'ui_block',
+                block: {
+                  kind: 'search_results',
+                  data: results.results,
+                },
+              };
+            }
+          } catch (e) {
+            this.logger.error('Failed to parse tool output for UI block:', e);
+          }
+        }
       }
     }
   }

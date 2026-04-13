@@ -3,6 +3,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useMemoscribe } from '@/context/MemoscribeContext';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
+import MemoscribeBlocks from './MemoscribeBlocks';
 
 export default function ChatTab() {
   const { chatMessages, setChatMessages, chatInput, setChatInput, settings } = useMemoscribe();
@@ -33,7 +34,7 @@ export default function ChatTab() {
     const placeholderAiMsgId = Date.now().toString();
     setChatMessages((prev) => [
       ...prev,
-      { id: placeholderAiMsgId, role: 'assistant', content: '', isStreaming: true },
+      { id: placeholderAiMsgId, role: 'assistant', content: '', uiBlocks: [], isStreaming: true },
     ]);
 
     try {
@@ -75,6 +76,14 @@ export default function ChatTab() {
               setChatMessages((prev) =>
                 prev.map((msg) =>
                   msg.id === placeholderAiMsgId ? { ...msg, content: fullContent } : msg
+                )
+              );
+            } else if (event.type === 'ui_block') {
+              setChatMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === placeholderAiMsgId
+                    ? { ...msg, uiBlocks: [...(msg.uiBlocks || []), event.block] }
+                    : msg
                 )
               );
             } else if (event.type === 'tool_start') {
@@ -148,6 +157,16 @@ export default function ChatTab() {
                 }`}
               >
                 <div className="whitespace-pre-wrap">{msg.content}</div>
+
+                {/* Render UI Blocks if they exist */}
+                {msg.role === 'assistant' && msg.uiBlocks && msg.uiBlocks.length > 0 && (
+                  <div className="mt-2">
+                    {msg.uiBlocks.map((block, bIdx) => (
+                      <MemoscribeBlocks key={bIdx} block={block} />
+                    ))}
+                  </div>
+                )}
+
                 {msg.isStreaming && (
                   <span className="inline-block w-2 h-4 ml-1 bg-[#1f644e] animate-pulse align-middle" />
                 )}

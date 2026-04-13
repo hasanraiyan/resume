@@ -33,4 +33,12 @@ export const MINI_APPS = [
     category: 'Storage',
     iconSrc: '/images/apps/taskly.png', // Fallback icon
   },
+  {
+    id: 'memoscribe',
+    name: 'Memo Scribe',
+    tagline: 'AI-powered note-taking and knowledge base.',
+    href: '/apps/memoscribe',
+    category: 'Productivity',
+    iconSrc: '/images/apps/taskly.png', // Fallback icon
+  },
 ];
