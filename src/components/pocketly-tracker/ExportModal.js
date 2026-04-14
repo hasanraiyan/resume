@@ -7,6 +7,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 export default function ExportModal({ isOpen, onClose }) {
+  const { fetchTransactionsForPeriod, categories } = useMoney();
   const [dateRange, setDateRange] = useState('this-month');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
@@ -41,21 +42,13 @@ export default function ExportModal({ isOpen, onClose }) {
       // Include the entire end day for all ranges to ensure no partial days missed
       end.setHours(23, 59, 59, 999);
 
-      // 1. Fetch exact data from backend for this date range
-      const [txRes, catRes] = await Promise.all([
-        fetch(`/api/money/transactions?startDate=${start.toISOString()}&endDate=${end.toISOString()}`),
-        fetch('/api/money/categories')
-      ]);
-
-      if (!txRes.ok || !catRes.ok) {
-        throw new Error('Failed to fetch export data from server');
-      }
-
-      const txData = await txRes.json();
-      const catData = await catRes.json();
-
-      const fetchedTransactions = txData.transactions || [];
-      const fetchedCategories = catData.categories || [];
+      // 1. Fetch exact data from backend for this date range using context
+      // fetchTransactionsForPeriod updates the backend exactly and returns the filtered array.
+      // We use the existing categories array from context as it rarely changes and is loaded on bootstrap.
+      const fetchedTransactions = await fetchTransactionsForPeriod(
+        start.toISOString(),
+        end.toISOString()
+      );
 
       // 2. Calculate Summaries
       let totalIncome = 0;
@@ -93,7 +86,7 @@ export default function ExportModal({ isOpen, onClose }) {
       const tableData = fetchedTransactions.map((t) => {
         const date = new Date(t.date).toLocaleDateString();
         const type = t.type.charAt(0).toUpperCase() + t.type.slice(1);
-        const cat = fetchedCategories.find((c) => c._id === t.categoryId)?.name || 'Uncategorized';
+        const cat = categories.find((c) => c._id === t.categoryId)?.name || 'Uncategorized';
         const amount = `$${t.amount.toFixed(2)}`;
         const notes = t.notes || '';
         return [date, type, cat, amount, notes];
