@@ -106,11 +106,13 @@ export default function FinanceSettingsTab() {
             <div className="flex items-center justify-between bg-[#f7faf7] border border-[#d6dfd9] rounded-xl p-4">
               <div>
                 <p className="text-sm font-bold text-[#1e3a34]">Export as PDF</p>
-                <p className="text-xs text-[#7c8e88] mt-0.5">Generate a report of your transactions</p>
+                <p className="text-xs text-[#7c8e88] mt-0.5">
+                  Generate a report of your transactions
+                </p>
               </div>
               <button
                 onClick={() => setIsExportModalOpen(true)}
-                className="flex items-center gap-2 rounded-lg bg-[#8b5cf6] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#7c3aed] cursor-pointer shrink-0"
+                className="flex items-center gap-2 rounded-lg bg-[#1f644e] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#17503e] cursor-pointer shrink-0"
               >
                 <Download className="h-4 w-4" />
                 Export
