@@ -7,17 +7,18 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 export default function ExportModal({ isOpen, onClose }) {
-  const { transactions, accounts, categories } = useMoney();
   const [dateRange, setDateRange] = useState('this-month');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleGeneratePdf = () => {
-    // 1. Filter Transactions
-    const now = new Date();
-    let start, end;
+  const handleGeneratePdf = async () => {
+    setIsGenerating(true);
+    try {
+      const now = new Date();
+      let start, end;
 
     if (dateRange === 'this-month') {
       start = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -37,25 +38,36 @@ export default function ExportModal({ isOpen, onClose }) {
       end = toDate ? new Date(toDate) : new Date(2100, 0, 1);
     }
 
-    // Include the entire end day for all ranges to ensure no partial days missed
-    end.setHours(23, 59, 59, 999);
+      // Include the entire end day for all ranges to ensure no partial days missed
+      end.setHours(23, 59, 59, 999);
 
-    const filteredTransactions = transactions.filter((t) => {
-      const d = new Date(t.date);
-      return d >= start && d <= end;
-    });
+      // 1. Fetch exact data from backend for this date range
+      const [txRes, catRes] = await Promise.all([
+        fetch(`/api/money/transactions?startDate=${start.toISOString()}&endDate=${end.toISOString()}`),
+        fetch('/api/money/categories')
+      ]);
 
-    // 2. Calculate Summaries
-    let totalIncome = 0;
-    let totalExpense = 0;
-    filteredTransactions.forEach((t) => {
-      if (t.type === 'income') totalIncome += t.amount;
-      else if (t.type === 'expense') totalExpense += t.amount;
-    });
-    const net = totalIncome - totalExpense;
+      if (!txRes.ok || !catRes.ok) {
+        throw new Error('Failed to fetch export data from server');
+      }
 
-    // 3. Generate PDF
-    const doc = new jsPDF();
+      const txData = await txRes.json();
+      const catData = await catRes.json();
+
+      const fetchedTransactions = txData.transactions || [];
+      const fetchedCategories = catData.categories || [];
+
+      // 2. Calculate Summaries
+      let totalIncome = 0;
+      let totalExpense = 0;
+      fetchedTransactions.forEach((t) => {
+        if (t.type === 'income') totalIncome += t.amount;
+        else if (t.type === 'expense') totalExpense += t.amount;
+      });
+      const net = totalIncome - totalExpense;
+
+      // 3. Generate PDF
+      const doc = new jsPDF();
 
     // -- Header
     doc.setFontSize(20);
@@ -77,15 +89,15 @@ export default function ExportModal({ isOpen, onClose }) {
     doc.text(`Total Expense: $${totalExpense.toFixed(2)}`, 80, 42);
     doc.text(`Net Balance: $${net.toFixed(2)}`, 150, 42);
 
-    // -- Table
-    const tableData = filteredTransactions.map((t) => {
-      const date = new Date(t.date).toLocaleDateString();
-      const type = t.type.charAt(0).toUpperCase() + t.type.slice(1);
-      const cat = categories.find((c) => c._id === t.categoryId)?.name || 'Uncategorized';
-      const amount = `$${t.amount.toFixed(2)}`;
-      const notes = t.notes || '';
-      return [date, type, cat, amount, notes];
-    });
+      // -- Table
+      const tableData = fetchedTransactions.map((t) => {
+        const date = new Date(t.date).toLocaleDateString();
+        const type = t.type.charAt(0).toUpperCase() + t.type.slice(1);
+        const cat = fetchedCategories.find((c) => c._id === t.categoryId)?.name || 'Uncategorized';
+        const amount = `$${t.amount.toFixed(2)}`;
+        const notes = t.notes || '';
+        return [date, type, cat, amount, notes];
+      });
 
     autoTable(doc, {
       startY: 50,
@@ -94,21 +106,27 @@ export default function ExportModal({ isOpen, onClose }) {
       headStyles: { fillColor: '#1f644e', textColor: '#ffffff' },
       alternateRowStyles: { fillColor: '#f0f5f2' },
       margin: { top: 50 },
-      didDrawPage: (data) => {
-        // Footer advertisement
-        const pageCount = doc.internal.getNumberOfPages();
-        doc.setFontSize(10);
-        doc.setTextColor('#7c8e88');
-        const footerText = 'Generated securely by Pocketly — Take control of your finances.';
-        const xOffset = doc.internal.pageSize.width / 2;
-        doc.text(footerText, xOffset, doc.internal.pageSize.height - 10, { align: 'center' });
-      },
-    });
+        didDrawPage: (data) => {
+          // Footer advertisement
+          const pageCount = doc.internal.getNumberOfPages();
+          doc.setFontSize(10);
+          doc.setTextColor('#7c8e88');
+          const footerText = 'Generated securely by Pocketly — Take control of your finances.';
+          const xOffset = doc.internal.pageSize.width / 2;
+          doc.text(footerText, xOffset, doc.internal.pageSize.height - 10, { align: 'center' });
+        },
+      });
 
-    // 4. Download
-    const filename = `pocketly-export-${new Date().toISOString().split('T')[0]}.pdf`;
-    doc.save(filename);
-    onClose();
+      // 4. Download
+      const filename = `pocketly-export-${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(filename);
+      onClose();
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -199,15 +217,24 @@ export default function ExportModal({ isOpen, onClose }) {
         <div className="p-4 border-t border-[#e5e3d8] bg-[#fcfbf5] flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 text-sm font-bold text-[#7c8e88] hover:text-[#1e3a34] transition-colors"
+            disabled={isGenerating}
+            className="px-5 py-2.5 text-sm font-bold text-[#7c8e88] hover:text-[#1e3a34] transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={handleGeneratePdf}
-            className="px-5 py-2.5 bg-[#1f644e] text-white text-sm font-bold rounded-xl hover:bg-[#17503e] transition-colors shadow-sm"
+            disabled={isGenerating}
+            className="px-5 py-2.5 bg-[#1f644e] text-white text-sm font-bold rounded-xl hover:bg-[#17503e] transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            Generate PDF
+            {isGenerating ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Generating...
+              </>
+            ) : (
+              'Generate PDF'
+            )}
           </button>
         </div>
       </div>

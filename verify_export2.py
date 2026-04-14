@@ -20,6 +20,18 @@ def run_cuj(page):
         body='{"accounts": [], "categories": [], "transactions": [{"date": "2026-04-14T00:00:00.000Z", "type": "income", "amount": 100, "categoryId": "123"}], "stats": {"totalAccountBalance": 0, "totalTransactionCount": 0, "accountCount": 0, "categoryCount": 0}}'
     ))
 
+    page.route("*/**/api/money/transactions*", lambda route: route.fulfill(
+        status=200,
+        content_type="application/json",
+        body='{"transactions": [{"date": "2026-04-14T00:00:00.000Z", "type": "income", "amount": 100, "categoryId": "123"}]}'
+    ))
+
+    page.route("*/**/api/money/categories*", lambda route: route.fulfill(
+        status=200,
+        content_type="application/json",
+        body='{"categories": [{"_id": "123", "name": "Salary"}]}'
+    ))
+
     page.goto("http://localhost:3000/apps/pocketly")
     page.wait_for_timeout(2000)
 
