@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { X, Calendar as CalendarIcon, FileText } from 'lucide-react';
 import { useMoney } from '@/context/MoneyContext';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function ExportModal({ isOpen, onClose }) {
   const { transactions, accounts, categories } = useMoney();
@@ -87,7 +87,7 @@ export default function ExportModal({ isOpen, onClose }) {
       return [date, type, cat, amount, notes];
     });
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: 50,
       head: [['Date', 'Type', 'Category', 'Amount', 'Notes']],
       body: tableData,
