@@ -31,29 +31,51 @@ export const authOptions = {
       credentials: {
         username: { label: 'Username', type: 'text' },
         password: { label: 'Password', type: 'password' },
+        totp: { label: '2FA Code', type: 'text' },
       },
       async authorize(credentials) {
         try {
           const adminUsername = process.env.ADMIN_USERNAME;
           const adminPassword = process.env.ADMIN_PASSWORD;
+          const totpSecret = process.env.TOTP_SECRET;
 
+          // Validate username and password first
           if (
-            credentials?.username &&
-            credentials?.password &&
-            credentials.username === adminUsername &&
-            credentials.password === adminPassword
+            !credentials?.username ||
+            !credentials?.password ||
+            credentials.username !== adminUsername ||
+            credentials.password !== adminPassword
           ) {
-            return {
-              id: '1',
-              name: 'Admin',
-              email: 'admin@example.com',
-              role: 'admin',
-            };
+            return null;
           }
 
-          return null;
+          // If TOTP is configured, require and validate it
+          if (totpSecret) {
+            if (!credentials.totp) {
+              throw new Error('TOTP_REQUIRED');
+            }
+
+            // Import authenticator dynamically to avoid issues in Edge runtime if applicable,
+            // or just require it at the top. We will use require here inside the function.
+            const { authenticator } = require('@otplib/preset-default');
+            const isValid = authenticator.check(credentials.totp, totpSecret);
+
+            if (!isValid) {
+              throw new Error('INVALID_OTP');
+            }
+          }
+
+          return {
+            id: '1',
+            name: 'Admin',
+            email: 'admin@example.com',
+            role: 'admin',
+          };
         } catch (error) {
           console.error('Authorization error:', error);
+          if (error.message === 'INVALID_OTP' || error.message === 'TOTP_REQUIRED') {
+            throw error; // Re-throw so NextAuth can pass the specific error back to the client
+          }
           return null;
         }
       },

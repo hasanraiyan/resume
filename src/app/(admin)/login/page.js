@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Card, Button, Input } from '@/components/ui';
 
 export default function AdminLogin() {
-  const [credentials, setCredentials] = useState({ username: '', password: '' });
+  const [credentials, setCredentials] = useState({ username: '', password: '', totp: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -38,6 +38,15 @@ export default function AdminLogin() {
           delete errors.password;
         }
         break;
+      case 'totp':
+        if (!value) {
+          errors.totp = '2FA Code is required';
+        } else if (value.length !== 6 || !/^\d+$/.test(value)) {
+          errors.totp = '2FA Code must be exactly 6 digits';
+        } else {
+          delete errors.totp;
+        }
+        break;
     }
 
     setFieldErrors(errors);
@@ -49,6 +58,7 @@ export default function AdminLogin() {
     const isValid =
       credentials.username.length >= 3 &&
       credentials.password.length >= 4 &&
+      credentials.totp.length === 6 &&
       Object.keys(fieldErrors).length === 0;
     setIsFormValid(isValid);
   }, [credentials, fieldErrors]);
@@ -59,8 +69,9 @@ export default function AdminLogin() {
     // Validate all fields
     const isUsernameValid = validateField('username', credentials.username);
     const isPasswordValid = validateField('password', credentials.password);
+    const isTotpValid = validateField('totp', credentials.totp);
 
-    if (!isUsernameValid || !isPasswordValid) {
+    if (!isUsernameValid || !isPasswordValid || !isTotpValid) {
       return;
     }
 
@@ -72,14 +83,22 @@ export default function AdminLogin() {
       const result = await signIn('credentials', {
         username: credentials.username,
         password: credentials.password,
+        totp: credentials.totp,
         callbackUrl: '/admin/dashboard',
-        redirect: true,
+        redirect: false,
       });
 
-      // This code will only run if redirect: false or there's an error
       if (result?.error) {
-        setError('Invalid credentials. Please check your username and password.');
+        if (result.error === 'INVALID_OTP') {
+          setError('Invalid 2FA Code. Please try again.');
+        } else if (result.error === 'TOTP_REQUIRED') {
+          setError('2FA is required for this account.');
+        } else {
+          setError('Invalid credentials. Please check your username and password.');
+        }
         setIsLoading(false);
+      } else if (result?.ok) {
+        router.push('/admin/dashboard');
       }
     } catch (error) {
       setError('An error occurred. Please try again.');
@@ -298,6 +317,53 @@ export default function AdminLogin() {
                 </div>
                 {fieldErrors.password && (
                   <p className="text-red-600 text-sm font-medium">{fieldErrors.password}</p>
+                )}
+              </div>
+
+              {/* TOTP Field */}
+              <div className="space-y-2">
+                <label
+                  htmlFor="totp"
+                  className="block text-sm font-semibold text-black mb-2 uppercase tracking-wider"
+                >
+                  2FA Code
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg
+                      className="w-5 h-5 text-neutral-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      />
+                    </svg>
+                  </div>
+                  <input
+                    id="totp"
+                    name="totp"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    required
+                    maxLength={6}
+                    className={`w-full pl-12 pr-4 py-3 border-2 rounded-lg focus:outline-none transition-all duration-300 tracking-widest font-mono text-center text-lg ${
+                      fieldErrors.totp
+                        ? 'border-red-300 focus:border-red-500'
+                        : 'border-neutral-200 focus:border-black'
+                    }`}
+                    placeholder="123456"
+                    value={credentials.totp}
+                    onChange={handleChange}
+                  />
+                </div>
+                {fieldErrors.totp && (
+                  <p className="text-red-600 text-sm font-medium">{fieldErrors.totp}</p>
                 )}
               </div>
 
