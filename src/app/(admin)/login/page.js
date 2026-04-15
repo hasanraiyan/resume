@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Card, Button, Input } from '@/components/ui';
+import { Card, Button, Input, InputOTP } from '@/components/ui';
 
 export default function AdminLogin() {
-  const [credentials, setCredentials] = useState({ username: '', password: '' });
+  const [credentials, setCredentials] = useState({ username: '', password: '', token: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -38,6 +38,15 @@ export default function AdminLogin() {
           delete errors.password;
         }
         break;
+      case 'token':
+        if (!value.trim()) {
+          errors.token = '2FA code is required';
+        } else if (!/^\d{6}$/.test(value)) {
+          errors.token = '2FA code must be 6 digits';
+        } else {
+          delete errors.token;
+        }
+        break;
     }
 
     setFieldErrors(errors);
@@ -49,6 +58,7 @@ export default function AdminLogin() {
     const isValid =
       credentials.username.length >= 3 &&
       credentials.password.length >= 4 &&
+      credentials.token.length === 6 &&
       Object.keys(fieldErrors).length === 0;
     setIsFormValid(isValid);
   }, [credentials, fieldErrors]);
@@ -72,6 +82,7 @@ export default function AdminLogin() {
       const result = await signIn('credentials', {
         username: credentials.username,
         password: credentials.password,
+        token: credentials.token,
         callbackUrl: '/admin/dashboard',
         redirect: true,
       });
@@ -298,6 +309,28 @@ export default function AdminLogin() {
                 </div>
                 {fieldErrors.password && (
                   <p className="text-red-600 text-sm font-medium">{fieldErrors.password}</p>
+                )}
+              </div>
+
+              {/* 2FA Token Field */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-black mb-2 uppercase tracking-wider">
+                  2FA Code
+                </label>
+                <InputOTP
+                  maxLength={6}
+                  value={credentials.token}
+                  onChange={(val) => {
+                    setCredentials({ ...credentials, token: val });
+                    if (val.length === 6) {
+                      const errors = { ...fieldErrors };
+                      delete errors.token;
+                      setFieldErrors(errors);
+                    }
+                  }}
+                />
+                {fieldErrors.token && (
+                  <p className="text-red-600 text-sm font-medium">{fieldErrors.token}</p>
                 )}
               </div>
 
