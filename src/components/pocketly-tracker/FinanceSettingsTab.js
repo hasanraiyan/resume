@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { RefreshCw, Trash2, Database, Shield, Info } from 'lucide-react';
+import { RefreshCw, Trash2, Database, Shield, Info, Download } from 'lucide-react';
 import { useMoney } from '@/context/MoneyContext';
+import ExportModal from './ExportModal';
 
 export default function FinanceSettingsTab() {
   const { clearFinanceData, fetchData, isSyncing, accounts, categories, stats } = useMoney();
   const [isClearing, setIsClearing] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const handleClearAll = async () => {
     const confirmed = window.confirm('Clear all finance data? This cannot be undone.');
@@ -89,6 +91,35 @@ export default function FinanceSettingsTab() {
             </div>
           </div>
 
+          {/* Export Data */}
+          <div className="bg-white border border-[#e5e3d8] rounded-xl p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-xl bg-[#8b5cf6]/10 flex items-center justify-center">
+                <Download className="w-5 h-5 text-[#8b5cf6]" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#1e3a34]">Export Data</h3>
+                <p className="text-xs text-[#7c8e88]">Download your transaction history</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between bg-[#f7faf7] border border-[#d6dfd9] rounded-xl p-4">
+              <div>
+                <p className="text-sm font-bold text-[#1e3a34]">Export as PDF</p>
+                <p className="text-xs text-[#7c8e88] mt-0.5">
+                  Generate a report of your transactions
+                </p>
+              </div>
+              <button
+                onClick={() => setIsExportModalOpen(true)}
+                className="flex items-center gap-2 rounded-lg bg-[#1f644e] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#17503e] cursor-pointer shrink-0"
+              >
+                <Download className="h-4 w-4" />
+                Export
+              </button>
+            </div>
+          </div>
+
           {/* About */}
           <div className="bg-white border border-[#e5e3d8] rounded-xl p-6">
             <div className="flex items-center gap-3 mb-5">
@@ -148,6 +179,7 @@ export default function FinanceSettingsTab() {
           </div>
         </div>
       </div>
+      <ExportModal isOpen={isExportModalOpen} onClose={() => setIsExportModalOpen(false)} />
     </div>
   );
 }
