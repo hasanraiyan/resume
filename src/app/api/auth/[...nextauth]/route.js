@@ -22,6 +22,7 @@
 
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import { OTP } from 'otplib';
 // No adapter needed for simple credential login without a database session
 
 export const authOptions = {
@@ -31,6 +32,7 @@ export const authOptions = {
       credentials: {
         username: { label: 'Username', type: 'text' },
         password: { label: 'Password', type: 'password' },
+        token: { label: '2FA Code', type: 'text' },
       },
       async authorize(credentials) {
         try {
@@ -43,6 +45,18 @@ export const authOptions = {
             credentials.username === adminUsername &&
             credentials.password === adminPassword
           ) {
+            // TOTP verification
+            if (process.env.TOTP_SECRET) {
+              const otp = new OTP();
+              const isValid = otp.verifySync({
+                token: credentials.token,
+                secret: process.env.TOTP_SECRET,
+              });
+              if (!isValid) {
+                throw new Error('INVALID_OTP');
+              }
+            }
+
             return {
               id: '1',
               name: 'Admin',

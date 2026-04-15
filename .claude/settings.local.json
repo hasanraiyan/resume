@@ -1,0 +1,5 @@
+{
+  "permissions": {
+    "allow": ["Bash(git checkout *)", "Bash(node d:/resume/scripts/setup-totp-2fa.js)"]
+  }
+}
