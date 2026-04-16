@@ -443,32 +443,7 @@ export function createAskClarificationQuestionTool() {
     description: z.string().optional().describe('Optional short helper text for the option.'),
   });
 
-  const singleQuestionSchema = z.object({
-    question: z
-      .string()
-      .describe('The question to show the user, phrased in simple, direct language.'),
-    options: z
-      .array(mcqOptionSchema)
-      .min(2)
-      .max(8)
-      .describe('2-8 clear options that cover the most likely answers.'),
-    selectionMode: z
-      .enum(['single', 'multiple'])
-      .optional()
-      .describe(
-        'Use "single" for one choice, "multiple" when several choices make sense. Defaults to "single".'
-      ),
-    questionId: z
-      .string()
-      .optional()
-      .describe('Stable identifier for this question so you can recognize the answer later.'),
-    allowFreeText: z
-      .boolean()
-      .optional()
-      .describe(
-        'Whether the "Other" option should allow a free-text explanation. Defaults to true.'
-      ),
-  });
+
 
   const groupQuestionSchema = z.object({
     id: z
@@ -498,7 +473,36 @@ export function createAskClarificationQuestionTool() {
       ),
   });
 
-  const groupSchema = z.object({
+
+
+
+  const combinedSchema = z.object({
+    question: z
+      .string()
+      .optional()
+      .describe('The question to show the user. Required if not using a group of questions.'),
+    options: z
+      .array(mcqOptionSchema)
+      .min(2)
+      .max(8)
+      .optional()
+      .describe('2-8 clear options that cover the most likely answers. Required if not using a group of questions.'),
+    selectionMode: z
+      .enum(['single', 'multiple'])
+      .optional()
+      .describe(
+        'Use "single" for one choice, "multiple" when several choices make sense. Defaults to "single".'
+      ),
+    questionId: z
+      .string()
+      .optional()
+      .describe('Stable identifier for this question so you can recognize the answer later.'),
+    allowFreeText: z
+      .boolean()
+      .optional()
+      .describe(
+        'Whether the "Other" option should allow a free-text explanation. Defaults to true.'
+      ),
     groupId: z
       .string()
       .optional()
@@ -509,6 +513,7 @@ export function createAskClarificationQuestionTool() {
       .array(groupQuestionSchema)
       .min(1)
       .max(6)
+      .optional()
       .describe('An ordered list of 1-6 short questions to ask as a mini-flow.'),
   });
 
@@ -581,7 +586,7 @@ export function createAskClarificationQuestionTool() {
       name: 'ask_clarification_question',
       description:
         'MANDATORY for disambiguation: when you have a list of accounts or categories and need the user to pick one, you MUST call this tool instead of listing them in text. This renders a proper clickable MCQ card in the chat UI. Pass a question string and an options array (2-8 items). Each option needs id, label, and optionally description. An "Other" option is added automatically. NEVER list options in plain text when the user needs to choose — always use this tool. For account disambiguation: after get_accounts, pass matching accounts as options. For category disambiguation: after get_categories, pass matching categories as options. One question at a time for account+category flows.',
-      schema: z.union([singleQuestionSchema, groupSchema]),
+      schema: combinedSchema,
     }
   );
 }
