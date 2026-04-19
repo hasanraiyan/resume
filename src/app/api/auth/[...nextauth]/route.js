@@ -52,7 +52,7 @@ export const authOptions = {
                 token: credentials.token,
                 secret: process.env.TOTP_SECRET,
               });
-              if (!isValid) {
+              if (!isValid.valid) {
                 throw new Error('INVALID_OTP');
               }
             }
