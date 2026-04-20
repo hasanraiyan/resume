@@ -443,8 +443,6 @@ export function createAskClarificationQuestionTool() {
     description: z.string().optional().describe('Optional short helper text for the option.'),
   });
 
-
-
   const groupQuestionSchema = z.object({
     id: z
       .string()
@@ -473,9 +471,6 @@ export function createAskClarificationQuestionTool() {
       ),
   });
 
-
-
-
   const combinedSchema = z.object({
     question: z
       .string()
@@ -486,7 +481,9 @@ export function createAskClarificationQuestionTool() {
       .min(2)
       .max(8)
       .optional()
-      .describe('2-8 clear options that cover the most likely answers. Required if not using a group of questions.'),
+      .describe(
+        '2-8 clear options that cover the most likely answers. Required if not using a group of questions.'
+      ),
     selectionMode: z
       .enum(['single', 'multiple'])
       .optional()
