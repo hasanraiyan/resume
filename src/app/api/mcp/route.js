@@ -27,7 +27,7 @@ async function getAuthInfo(request) {
   };
 }
 
-export async function POST(request) {
+async function handleMcpRequest(request) {
   const authInfo = await getAuthInfo(request);
   if (!authInfo) return unauthorizedResponse('Valid Bearer token required');
 
@@ -39,26 +39,6 @@ export async function POST(request) {
   return transport.handleRequest(request, { authInfo });
 }
 
-export async function GET(request) {
-  const authInfo = await getAuthInfo(request);
-  if (!authInfo) return unauthorizedResponse('Valid Bearer token required');
-
-  const server = createMcpServer();
-  const transport = new WebStandardStreamableHTTPServerTransport({
-    sessionIdGenerator: undefined,
-  });
-  await server.connect(transport);
-  return transport.handleRequest(request, { authInfo });
-}
-
-export async function DELETE(request) {
-  const authInfo = await getAuthInfo(request);
-  if (!authInfo) return unauthorizedResponse('Valid Bearer token required');
-
-  const server = createMcpServer();
-  const transport = new WebStandardStreamableHTTPServerTransport({
-    sessionIdGenerator: undefined,
-  });
-  await server.connect(transport);
-  return transport.handleRequest(request, { authInfo });
-}
+export const POST = handleMcpRequest;
+export const GET = handleMcpRequest;
+export const DELETE = handleMcpRequest;

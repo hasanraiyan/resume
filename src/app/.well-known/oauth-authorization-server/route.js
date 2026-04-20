@@ -10,7 +10,7 @@ export async function GET() {
       registration_endpoint: `${base}/api/mcp/oauth/register`,
       scopes_supported: ['pocketly'],
       response_types_supported: ['code'],
-      grant_types_supported: ['authorization_code'],
+      grant_types_supported: ['authorization_code', 'refresh_token'],
       token_endpoint_auth_methods_supported: ['none'],
       code_challenge_methods_supported: ['S256'],
     },

@@ -299,7 +299,41 @@ export function createMcpServer() {
       if (!isValidObjectId(id)) {
         return { content: [{ type: 'text', text: 'Invalid transaction ID' }], isError: true };
       }
+
+      const errors = [];
+      if (categoryId !== undefined && !isValidObjectId(categoryId))
+        errors.push('categoryId is not a valid ObjectId');
+      if (accountId !== undefined && !isValidObjectId(accountId))
+        errors.push('accountId is not a valid ObjectId');
+      if (toAccountId !== undefined && !isValidObjectId(toAccountId))
+        errors.push('toAccountId is not a valid ObjectId');
+      if (errors.length > 0) {
+        return {
+          content: [{ type: 'text', text: `Validation errors: ${errors.join('; ')}` }],
+          isError: true,
+        };
+      }
+
       await dbConnect();
+
+      const existing = await Transaction.findOne({ _id: id, deletedAt: null }).lean();
+      if (!existing) {
+        return { content: [{ type: 'text', text: 'Transaction not found' }], isError: true };
+      }
+
+      if (existing.type === 'transfer' && categoryId) {
+        return {
+          content: [{ type: 'text', text: 'Cannot set categoryId on a transfer' }],
+          isError: true,
+        };
+      }
+      if (existing.type !== 'transfer' && toAccountId) {
+        return {
+          content: [{ type: 'text', text: 'Cannot set toAccountId on a non-transfer' }],
+          isError: true,
+        };
+      }
+
       const patch = {};
       if (amount !== undefined) patch.amount = amount;
       if (description !== undefined) patch.description = description;
@@ -308,8 +342,8 @@ export function createMcpServer() {
       if (toAccountId) patch.toAccount = toAccountId;
       if (date) patch.date = new Date(date);
 
-      const txn = await Transaction.findOneAndUpdate(
-        { _id: id, deletedAt: null },
+      const txn = await Transaction.findByIdAndUpdate(
+        id,
         { $set: patch, $inc: { syncVersion: 1 } },
         { new: true }
       )

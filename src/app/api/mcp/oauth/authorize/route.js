@@ -1,10 +1,20 @@
 import { NextResponse } from 'next/server';
-import crypto from 'crypto';
+import crypto, { timingSafeEqual } from 'crypto';
 import { cookies } from 'next/headers';
 import dbConnect from '@/lib/dbConnect';
 import McpClient from '@/models/McpClient';
 import McpAuthCode from '@/models/McpAuthCode';
 import { getBaseUrl } from '@/lib/mcp/oauth';
+
+function safeEqual(a, b) {
+  const bufA = Buffer.from(String(a));
+  const bufB = Buffer.from(String(b));
+  if (bufA.length !== bufB.length) {
+    timingSafeEqual(bufA, bufA);
+    return false;
+  }
+  return timingSafeEqual(bufA, bufB);
+}
 
 // GET: validate params, store pending auth state in cookie, redirect to login page
 export async function GET(request) {
@@ -69,8 +79,8 @@ export async function POST(request) {
     if (
       !username ||
       !password ||
-      username !== process.env.ADMIN_USERNAME ||
-      password !== process.env.ADMIN_PASSWORD
+      !safeEqual(username, process.env.ADMIN_USERNAME) ||
+      !safeEqual(password, process.env.ADMIN_PASSWORD)
     ) {
       return NextResponse.json({ error: 'access_denied' }, { status: 401 });
     }

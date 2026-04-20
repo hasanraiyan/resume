@@ -32,6 +32,33 @@ export async function createAccessToken({ clientId, scope, resource }) {
   });
 }
 
+export async function createRefreshToken({ clientId, scope, resource }) {
+  const now = Math.floor(Date.now() / 1000);
+  return encode({
+    token: {
+      sub: clientId,
+      clientId,
+      scope,
+      resource: resource || null,
+      role: 'mcp_refresh',
+      iat: now,
+      exp: now + 7 * 24 * 3600,
+    },
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+}
+
+export async function verifyRefreshToken(token) {
+  try {
+    const payload = await decode({ token, secret: process.env.NEXTAUTH_SECRET });
+    if (!payload || payload.role !== 'mcp_refresh') return null;
+    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
 export async function verifyAccessToken(token) {
   try {
     const payload = await decode({ token, secret: process.env.NEXTAUTH_SECRET });
