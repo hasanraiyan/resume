@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import crypto, { timingSafeEqual } from 'crypto';
 import { cookies } from 'next/headers';
+import { OTP } from 'otplib';
 import dbConnect from '@/lib/dbConnect';
 import McpClient from '@/models/McpClient';
 import McpAuthCode from '@/models/McpAuthCode';
@@ -67,14 +68,14 @@ export async function GET(request) {
     path: '/',
   });
 
-  return NextResponse.redirect(`${getBaseUrl()}/mcp-auth`);
+  return NextResponse.redirect(`${getBaseUrl()}/login?flow=mcp`);
 }
 
 // POST: called by the login page after admin credentials verified
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { username, password } = body;
+    const { username, password, token } = body;
 
     if (
       !username ||
@@ -83,6 +84,20 @@ export async function POST(request) {
       !safeEqual(password, process.env.ADMIN_PASSWORD)
     ) {
       return NextResponse.json({ error: 'access_denied' }, { status: 401 });
+    }
+
+    if (process.env.TOTP_SECRET) {
+      const otp = new OTP();
+      const isValid = otp.verifySync({
+        token: token || '',
+        secret: process.env.TOTP_SECRET,
+      });
+      if (!isValid.valid) {
+        return NextResponse.json(
+          { error: 'invalid_otp', error_description: 'Invalid 2FA code' },
+          { status: 401 }
+        );
+      }
     }
 
     const cookieStore = await cookies();

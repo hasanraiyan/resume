@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { signIn, getSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, Button, Input, InputOTP } from '@/components/ui';
 
 export default function AdminLogin() {
@@ -14,6 +14,8 @@ export default function AdminLogin() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [isFormValid, setIsFormValid] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isMcpFlow = searchParams.get('flow') === 'mcp';
 
   // Form validation
   const validateField = (name, value) => {
@@ -78,19 +80,39 @@ export default function AdminLogin() {
     setError('');
 
     try {
-      // Use NextAuth's built-in redirect instead of manual redirect
-      const result = await signIn('credentials', {
-        username: credentials.username,
-        password: credentials.password,
-        token: credentials.token,
-        callbackUrl: '/admin/dashboard',
-        redirect: true,
-      });
+      if (isMcpFlow) {
+        const res = await fetch('/api/mcp/oauth/authorize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: credentials.username,
+            password: credentials.password,
+            token: credentials.token,
+          }),
+        });
 
-      // This code will only run if redirect: false or there's an error
-      if (result?.error) {
-        setError('Invalid credentials. Please check your username and password.');
-        setIsLoading(false);
+        const data = await res.json();
+
+        if (!res.ok) {
+          setError(data.error_description || data.error || 'Authorization failed');
+          setIsLoading(false);
+          return;
+        }
+
+        window.location.href = data.redirectTo;
+      } else {
+        const result = await signIn('credentials', {
+          username: credentials.username,
+          password: credentials.password,
+          token: credentials.token,
+          callbackUrl: '/admin/dashboard',
+          redirect: true,
+        });
+
+        if (result?.error) {
+          setError('Invalid credentials. Please check your username and password.');
+          setIsLoading(false);
+        }
       }
     } catch (error) {
       setError('An error occurred. Please try again.');
@@ -135,10 +157,12 @@ export default function AdminLogin() {
               </svg>
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-black font-['Playfair_Display'] mb-2">
-              Admin Login
+              {isMcpFlow ? 'Authorize MCP Access' : 'Admin Login'}
             </h2>
             <p className="text-neutral-600 text-sm sm:text-base">
-              Sign in to access your admin dashboard
+              {isMcpFlow
+                ? 'Authorize an AI client to manage your finances'
+                : 'Sign in to access your admin dashboard'}
             </p>
           </div>
 
@@ -335,24 +359,26 @@ export default function AdminLogin() {
               </div>
 
               {/* Remember Me */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <input
-                    id="remember-me"
-                    name="remember-me"
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="h-4 w-4 text-black border-neutral-300 rounded focus:ring-black focus:ring-2"
-                  />
-                  <label
-                    htmlFor="remember-me"
-                    className="ml-3 text-sm text-neutral-700 font-medium"
-                  >
-                    Remember me
-                  </label>
+              {!isMcpFlow && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <input
+                      id="remember-me"
+                      name="remember-me"
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="h-4 w-4 text-black border-neutral-300 rounded focus:ring-black focus:ring-2"
+                    />
+                    <label
+                      htmlFor="remember-me"
+                      className="ml-3 text-sm text-neutral-700 font-medium"
+                    >
+                      Remember me
+                    </label>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Submit Button */}
               <Button
@@ -400,7 +426,7 @@ export default function AdminLogin() {
                         d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
                       />
                     </svg>
-                    Sign in to Dashboard
+                    {isMcpFlow ? 'Authorize Access' : 'Sign in to Dashboard'}
                   </>
                 )}
               </Button>
@@ -409,7 +435,11 @@ export default function AdminLogin() {
 
           {/* Footer */}
           <div className="text-center">
-            <p className="text-neutral-500 text-xs">Secure admin access • Protected by NextAuth</p>
+            <p className="text-neutral-500 text-xs">
+              {isMcpFlow
+                ? 'Grants read and write access to your Pocketly transactions'
+                : 'Secure admin access • Protected by NextAuth'}
+            </p>
           </div>
         </div>
       </div>
