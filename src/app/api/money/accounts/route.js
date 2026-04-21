@@ -1,27 +1,24 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/dbConnect';
-import Account from '@/models/Account';
-import Transaction from '@/models/Transaction';
-import { serializeAccount } from '@/lib/money-serializers';
 import { requireAdminAuth } from '@/lib/money-auth';
-import { computeAccountSummaries } from '@/lib/money-account-summary';
+import { getAccounts, createAccount } from '@/lib/apps/pocketly/service/service';
 
 export async function GET() {
   const session = await requireAdminAuth();
   if (typeof session !== 'object') return session;
 
   try {
-    await dbConnect();
-    const [accounts, transactions] = await Promise.all([
-      Account.find({ deletedAt: null }).sort({ createdAt: 1 }).lean(),
-      Transaction.find({ deletedAt: null }).select('type amount account toAccount').lean(),
-    ]);
+    const accounts = await getAccounts({ includeBalances: true });
 
-    const accountSummary = computeAccountSummaries(accounts, transactions);
+    // totalAccountBalance calculation like original code did
+    const totalAccountBalance = accounts.reduce(
+      (sum, acc) => (!acc.ignored ? sum + (acc.balance || 0) : sum),
+      0
+    );
+
     return NextResponse.json({
       success: true,
-      accounts: accountSummary.accounts.map(serializeAccount),
-      totalAccountBalance: accountSummary.totalAccountBalance,
+      accounts: accounts,
+      totalAccountBalance: totalAccountBalance,
     });
   } catch (error) {
     return NextResponse.json(
@@ -36,14 +33,11 @@ export async function POST(request) {
   if (typeof session !== 'object') return session;
 
   try {
-    await dbConnect();
     const body = await request.json();
-    const account = new Account(body);
-    await account.save();
-    const obj = account.toObject();
+    const account = await createAccount(body);
     return NextResponse.json({
       success: true,
-      account: serializeAccount(obj),
+      account: account,
     });
   } catch (error) {
     return NextResponse.json(
