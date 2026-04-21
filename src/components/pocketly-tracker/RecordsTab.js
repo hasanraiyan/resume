@@ -36,7 +36,9 @@ export default function RecordsTab() {
     totalIncome,
     periodStart,
     periodEnd,
+    periodType,
     setPeriod,
+    navigatePeriod,
     deleteTransaction,
     openEditTransaction,
     isTabLoading,
@@ -58,11 +60,7 @@ export default function RecordsTab() {
   }, []);
 
   const navigateWeek = (direction) => {
-    const start = new Date(periodStart);
-    const end = new Date(periodEnd);
-    start.setDate(start.getDate() + direction * 7);
-    end.setDate(end.getDate() + direction * 7);
-    setPeriod(start.toISOString(), end.toISOString());
+    navigatePeriod(direction);
   };
 
   const periodRangeLabel = useMemo(() => {

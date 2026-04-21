@@ -25,6 +25,7 @@ const initialState = {
   activeTab: 'records',
   periodStart: getWeekStart(),
   periodEnd: getWeekEnd(),
+  periodType: 'week', // 'day' | 'week' | 'month' | 'custom'
   editTransactionData: null,
 };
 
@@ -45,6 +46,12 @@ function getWeekEnd(date = new Date()) {
   d.setHours(23, 59, 59, 999);
   return d.toISOString();
 }
+
+function getCacheKey(start, end) {
+  return `${start}|${end}`;
+}
+
+const MAX_CACHE_SIZE = 10;
 
 function moneyReducer(state, action) {
   switch (action.type) {
@@ -72,6 +79,8 @@ function moneyReducer(state, action) {
       return { ...state, analysisError: action.payload };
     case 'SET_PERIOD':
       return { ...state, periodStart: action.payload.start, periodEnd: action.payload.end };
+    case 'SET_PERIOD_TYPE':
+      return { ...state, periodType: action.payload };
     case 'SET_BOOTSTRAP_LOADING':
       return { ...state, isBootstrapLoading: action.payload };
     case 'SET_TAB_LOADING':
@@ -94,6 +103,55 @@ async function readJson(response) {
 export function MoneyProvider({ children }) {
   const [state, dispatch] = useReducer(moneyReducer, initialState);
   const hasBootstrappedRef = useRef(false);
+  const transactionCacheRef = useRef(new Map());
+  const analysisCacheRef = useRef(new Map());
+  const currentPeriodRef = useRef({
+    start: initialState.periodStart,
+    end: initialState.periodEnd,
+  });
+
+  const fetchTransactionsRaw = useCallback(async (startDate, endDate) => {
+    const params = new URLSearchParams();
+    if (startDate) params.set('startDate', startDate);
+    if (endDate) params.set('endDate', endDate);
+    const data = await fetch(`/api/money/transactions?${params}`).then(readJson);
+    return data.transactions || [];
+  }, []);
+
+  const cacheTransactions = useCallback((key, transactions) => {
+    transactionCacheRef.current.set(key, transactions);
+    if (transactionCacheRef.current.size > MAX_CACHE_SIZE) {
+      const firstKey = transactionCacheRef.current.keys().next().value;
+      transactionCacheRef.current.delete(firstKey);
+    }
+  }, []);
+
+  const prefetchAdjacentPeriods = useCallback(
+    (start, end) => {
+      const startMs = new Date(start).getTime();
+      const endMs = new Date(end).getTime();
+      const weekMs = 7 * 24 * 60 * 60 * 1000;
+      const periods = [
+        {
+          start: new Date(startMs - weekMs).toISOString(),
+          end: new Date(endMs - weekMs).toISOString(),
+        },
+        {
+          start: new Date(startMs + weekMs).toISOString(),
+          end: new Date(endMs + weekMs).toISOString(),
+        },
+      ];
+      for (const period of periods) {
+        const key = getCacheKey(period.start, period.end);
+        if (!transactionCacheRef.current.has(key)) {
+          fetchTransactionsRaw(period.start, period.end)
+            .then((txns) => cacheTransactions(key, txns))
+            .catch(() => {});
+        }
+      }
+    },
+    [fetchTransactionsRaw, cacheTransactions]
+  );
 
   const fetchAccountsSummary = useCallback(async () => {
     try {
@@ -112,22 +170,44 @@ export function MoneyProvider({ children }) {
     }
   }, []);
 
-  const fetchTransactionsForPeriod = useCallback(async (startDate, endDate) => {
-    try {
-      dispatch({ type: 'SET_TAB_LOADING', payload: true });
-      const params = new URLSearchParams();
-      if (startDate) params.set('startDate', startDate);
-      if (endDate) params.set('endDate', endDate);
-      const data = await fetch(`/api/money/transactions?${params}`).then(readJson);
-      dispatch({ type: 'SET_TRANSACTIONS', payload: data.transactions || [] });
-      return data.transactions || [];
-    } catch (error) {
-      console.error('Failed to fetch period transactions:', error);
-      throw error;
-    } finally {
-      dispatch({ type: 'SET_TAB_LOADING', payload: false });
-    }
-  }, []);
+  const fetchTransactionsForPeriod = useCallback(
+    async (startDate, endDate) => {
+      const key = getCacheKey(startDate, endDate);
+      const cached = transactionCacheRef.current.get(key);
+
+      if (cached) {
+        dispatch({ type: 'SET_TRANSACTIONS', payload: cached });
+        fetchTransactionsRaw(startDate, endDate)
+          .then((txns) => {
+            cacheTransactions(key, txns);
+            if (
+              currentPeriodRef.current.start === startDate &&
+              currentPeriodRef.current.end === endDate
+            ) {
+              dispatch({ type: 'SET_TRANSACTIONS', payload: txns });
+            }
+          })
+          .catch(() => {});
+        prefetchAdjacentPeriods(startDate, endDate);
+        return cached;
+      }
+
+      try {
+        dispatch({ type: 'SET_TAB_LOADING', payload: true });
+        const transactions = await fetchTransactionsRaw(startDate, endDate);
+        cacheTransactions(key, transactions);
+        dispatch({ type: 'SET_TRANSACTIONS', payload: transactions });
+        prefetchAdjacentPeriods(startDate, endDate);
+        return transactions;
+      } catch (error) {
+        console.error('Failed to fetch period transactions:', error);
+        throw error;
+      } finally {
+        dispatch({ type: 'SET_TAB_LOADING', payload: false });
+      }
+    },
+    [fetchTransactionsRaw, cacheTransactions, prefetchAdjacentPeriods]
+  );
 
   const fetchBootstrap = useCallback(async () => {
     try {
@@ -146,6 +226,10 @@ export function MoneyProvider({ children }) {
       dispatch({ type: 'SET_CATEGORIES', payload: data.categories || [] });
       dispatch({ type: 'SET_TRANSACTIONS', payload: data.transactions || [] });
       dispatch({ type: 'SET_STATS', payload: data.stats || {} });
+
+      const bootstrapKey = getCacheKey(state.periodStart, state.periodEnd);
+      cacheTransactions(bootstrapKey, data.transactions || []);
+      prefetchAdjacentPeriods(state.periodStart, state.periodEnd);
     } catch (error) {
       console.error('Failed to fetch finance bootstrap:', error);
       dispatch({
@@ -158,9 +242,31 @@ export function MoneyProvider({ children }) {
       dispatch({ type: 'SET_LOADING', payload: false });
       dispatch({ type: 'SET_SYNCING', payload: false });
     }
-  }, [state.periodEnd, state.periodStart]);
+  }, [state.periodEnd, state.periodStart, cacheTransactions, prefetchAdjacentPeriods]);
 
   const fetchAnalysis = useCallback(async (startDate, endDate) => {
+    const key = getCacheKey(startDate, endDate);
+    const cached = analysisCacheRef.current.get(key);
+
+    if (cached) {
+      dispatch({ type: 'SET_ANALYSIS', payload: cached });
+      dispatch({ type: 'SET_ANALYSIS_LOADING', payload: true });
+      fetch(`/api/money/analysis?${new URLSearchParams({ startDate, endDate })}`)
+        .then(readJson)
+        .then((data) => {
+          analysisCacheRef.current.set(key, data.analysis);
+          if (
+            currentPeriodRef.current.start === startDate &&
+            currentPeriodRef.current.end === endDate
+          ) {
+            dispatch({ type: 'SET_ANALYSIS', payload: data.analysis });
+          }
+        })
+        .catch(() => {})
+        .finally(() => dispatch({ type: 'SET_ANALYSIS_LOADING', payload: false }));
+      return;
+    }
+
     try {
       dispatch({ type: 'SET_ANALYSIS_LOADING', payload: true });
       dispatch({ type: 'SET_ANALYSIS_ERROR', payload: null });
@@ -168,6 +274,7 @@ export function MoneyProvider({ children }) {
       if (startDate) params.set('startDate', startDate);
       if (endDate) params.set('endDate', endDate);
       const data = await fetch(`/api/money/analysis?${params}`).then(readJson);
+      analysisCacheRef.current.set(key, data.analysis);
       dispatch({ type: 'SET_ANALYSIS', payload: data.analysis });
     } catch (error) {
       console.error('Failed to fetch analysis:', error);
@@ -192,6 +299,32 @@ export function MoneyProvider({ children }) {
     });
   }, [fetchTransactionsForPeriod, state.periodEnd, state.periodStart]);
 
+  const navigatePeriod = (direction) => {
+    const prevStart = new Date(state.periodStart);
+    const prevEnd = new Date(state.periodEnd);
+    const rangeMs = prevEnd - prevStart;
+
+    let newStart, newEnd;
+    if (state.periodType === 'day') {
+      newStart = new Date(prevStart);
+      newEnd = new Date(prevEnd);
+      newStart.setDate(newStart.getDate() + direction);
+      newEnd.setDate(newEnd.getDate() + direction);
+    } else if (state.periodType === 'month') {
+      newStart = new Date(prevStart);
+      newEnd = new Date(prevEnd);
+      newStart.setMonth(newStart.getMonth() + direction);
+      newEnd.setMonth(newEnd.getMonth() + direction);
+    } else {
+      newStart = new Date(prevStart);
+      newEnd = new Date(prevEnd);
+      newStart.setDate(newStart.getDate() + direction * 7);
+      newEnd.setDate(newEnd.getDate() + direction * 7);
+    }
+
+    setPeriod(newStart.toISOString(), newEnd.toISOString());
+  };
+
   const addTransaction = async (transaction, options = {}) => {
     const { switchTab = true } = options;
 
@@ -201,6 +334,9 @@ export function MoneyProvider({ children }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(transaction),
       }).then(readJson);
+
+      transactionCacheRef.current.clear();
+      analysisCacheRef.current.clear();
 
       // Navigate to current period if the new transaction is added today (which it always is by default in AddTransactionModal)
       // This ensures the Records tab is showing the period that includes the new transaction.
@@ -235,6 +371,8 @@ export function MoneyProvider({ children }) {
   const deleteTransaction = async (id) => {
     try {
       await fetch(`/api/money/transactions/${id}`, { method: 'DELETE' }).then(readJson);
+      transactionCacheRef.current.clear();
+      analysisCacheRef.current.clear();
       await Promise.all([
         fetchTransactionsForPeriod(state.periodStart, state.periodEnd),
         fetchAccountsSummary(),
@@ -253,6 +391,8 @@ export function MoneyProvider({ children }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(transaction),
       }).then(readJson);
+      transactionCacheRef.current.clear();
+      analysisCacheRef.current.clear();
       await Promise.all([
         fetchTransactionsForPeriod(state.periodStart, state.periodEnd),
         fetchAccountsSummary(),
@@ -370,8 +510,10 @@ export function MoneyProvider({ children }) {
     }
   };
 
-  const setPeriod = (start, end) => {
+  const setPeriod = (start, end, type = state.periodType) => {
+    currentPeriodRef.current = { start, end };
     dispatch({ type: 'SET_PERIOD', payload: { start, end } });
+    dispatch({ type: 'SET_PERIOD_TYPE', payload: type });
   };
 
   const setActiveTab = (tab) => {
@@ -419,6 +561,8 @@ export function MoneyProvider({ children }) {
     deleteCategory,
     clearFinanceData,
     setPeriod,
+    navigatePeriod,
+    periodType: state.periodType,
     setActiveTab,
     openEditTransaction,
     cancelEditTransaction,

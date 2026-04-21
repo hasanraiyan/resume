@@ -68,33 +68,53 @@ export default function AnalysisTab() {
 
   const handlePeriodChange = (period) => {
     const now = new Date();
-    const start = new Date();
+    let start, end, type;
 
     switch (period) {
       case 'Daily':
+        start = new Date(now);
         start.setHours(0, 0, 0, 0);
+        end = new Date(now);
+        end.setHours(23, 59, 59, 999);
+        type = 'day';
         break;
       case 'Weekly':
+        start = new Date(now);
+        end = new Date(now);
         start.setDate(now.getDate() - 7);
+        end.setHours(23, 59, 59, 999);
+        type = 'week';
         break;
       case 'Monthly':
-        start.setMonth(now.getMonth() - 1);
+        start = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        end = new Date(now);
+        end.setHours(23, 59, 59, 999);
+        type = 'month';
         break;
       case '3 Months':
-        start.setMonth(now.getMonth() - 3);
+        start = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+        end = new Date(now);
+        end.setHours(23, 59, 59, 999);
+        type = 'month';
         break;
       case '6 Months':
-        start.setMonth(now.getMonth() - 6);
+        start = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+        end = new Date(now);
+        end.setHours(23, 59, 59, 999);
+        type = 'month';
         break;
       case 'Yearly':
-        start.setFullYear(now.getFullYear() - 1);
+        start = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        end = new Date(now);
+        end.setHours(23, 59, 59, 999);
+        type = 'month';
         break;
       default:
-        break;
+        return;
     }
 
     setSelectedPeriod(period);
-    setPeriod(start.toISOString(), now.toISOString());
+    setPeriod(start.toISOString(), end.toISOString(), type);
     setShowPeriodDropdown(false);
   };
 
