@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import dbConnect from '@/lib/dbConnect';
 import ShortLink from '@/models/ShortLink';
 import LinkClick from '@/models/LinkClick';
+import { getBaseUrl } from '@/lib/mcp/oauth';
 
 function isValidObjectId(v) {
   return typeof v === 'string' && mongoose.Types.ObjectId.isValid(v);
@@ -17,6 +18,7 @@ function generateSlug() {
 
 export function createSnaplinksMcpServer() {
   const server = new McpServer({ name: 'snaplinks', version: '1.0.0' });
+  const baseUrl = getBaseUrl();
 
   server.registerTool(
     'create_link',
@@ -90,6 +92,7 @@ export function createSnaplinksMcpServer() {
 
         const sl = new ShortLink(payload);
         await sl.save();
+        const shortUrl = `${baseUrl}/r/${sl.slug}`;
 
         return {
           content: [
@@ -98,9 +101,11 @@ export function createSnaplinksMcpServer() {
               text: JSON.stringify(
                 {
                   success: true,
+                  baseUrl,
                   link: {
                     id: sl._id.toString(),
                     slug: sl.slug,
+                    shortUrl,
                     destination: sl.destination,
                     title: sl.title || null,
                     description: sl.description || null,
@@ -139,6 +144,7 @@ export function createSnaplinksMcpServer() {
       await dbConnect();
       const s = await ShortLink.findOne({ slug: slug.trim().toLowerCase() }).lean();
       if (!s) return { content: [{ type: 'text', text: 'Link not found' }], isError: true };
+      const shortUrl = `${baseUrl}/r/${s.slug}`;
       return {
         content: [
           {
@@ -155,6 +161,8 @@ export function createSnaplinksMcpServer() {
                 isActive: s.isActive,
                 totalClicks: s.totalClicks || 0,
                 createdAt: s.createdAt,
+                baseUrl,
+                shortUrl,
               },
               null,
               2
@@ -231,6 +239,7 @@ export function createSnaplinksMcpServer() {
         ShortLink.findByIdAndUpdate(s._id, { $inc: { totalClicks: 1 } }),
       ]);
 
+      const shortUrl = `${baseUrl}/r/${s.slug}`;
       return {
         content: [
           {
@@ -238,8 +247,10 @@ export function createSnaplinksMcpServer() {
             text: JSON.stringify(
               {
                 success: true,
+                baseUrl,
+                shortUrl,
                 destination: s.destination,
-                link: { id: s._id.toString(), slug: s.slug },
+                link: { id: s._id.toString(), slug: s.slug, shortUrl },
                 clickId: click._id.toString(),
               },
               null,
@@ -326,6 +337,7 @@ export function createSnaplinksMcpServer() {
         { $sort: { _id: 1 } },
       ]);
 
+      const shortUrl = `${baseUrl}/r/${s.slug}`;
       return {
         content: [
           {
@@ -334,6 +346,8 @@ export function createSnaplinksMcpServer() {
               {
                 slug: s.slug,
                 linkId: s._id.toString(),
+                baseUrl,
+                shortUrl,
                 totalClicksWindow: totalClicks,
                 uniqueVisitors,
                 topCountries: topCountries.map((r) => ({ country: r._id, count: r.count })),
@@ -373,15 +387,20 @@ export function createSnaplinksMcpServer() {
         .sort({ createdAt: -1 })
         .limit(limit || 50)
         .lean();
-      const data = links.map((l) => ({
-        id: l._id.toString(),
-        slug: l.slug,
-        destination: l.destination,
-        title: l.title || null,
-        isActive: l.isActive,
-        totalClicks: l.totalClicks || 0,
-        createdAt: l.createdAt,
-      }));
+      const data = links.map((l) => {
+        const shortUrl = `${baseUrl}/r/${l.slug}`;
+        return {
+          id: l._id.toString(),
+          slug: l.slug,
+          shortUrl,
+          baseUrl,
+          destination: l.destination,
+          title: l.title || null,
+          isActive: l.isActive,
+          totalClicks: l.totalClicks || 0,
+          createdAt: l.createdAt,
+        };
+      });
 
       return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
     }
@@ -419,10 +438,14 @@ export function createSnaplinksMcpServer() {
       ).lean();
 
       if (!updated) return { content: [{ type: 'text', text: 'Link not found' }], isError: true };
-
+      const shortUrl = `${baseUrl}/r/${updated.slug}`;
+      const linkObj = { ...updated, shortUrl };
       return {
         content: [
-          { type: 'text', text: JSON.stringify({ success: true, link: updated }, null, 2) },
+          {
+            type: 'text',
+            text: JSON.stringify({ success: true, baseUrl, link: linkObj }, null, 2),
+          },
         ],
       };
     }
