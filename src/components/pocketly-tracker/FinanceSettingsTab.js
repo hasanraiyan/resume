@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { RefreshCw, Trash2, Database, Shield, Info, Download } from 'lucide-react';
 import { useMoney } from '@/context/MoneyContext';
 import ExportModal from './ExportModal';
@@ -9,6 +9,17 @@ export default function FinanceSettingsTab() {
   const { clearFinanceData, fetchData, isSyncing, accounts, categories, stats } = useMoney();
   const [isClearing, setIsClearing] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
+  const [baseUrl, setBaseUrl] = useState('');
+  const [mcpUrl, setMcpUrl] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const origin = window.location.origin.replace(/\/$/, '');
+      setBaseUrl(origin);
+      setMcpUrl(`${origin}/api/mcp`);
+    }
+  }, []);
 
   const handleClearAll = async () => {
     const confirmed = window.confirm('Clear all finance data? This cannot be undone.');
@@ -117,6 +128,46 @@ export default function FinanceSettingsTab() {
                 <Download className="h-4 w-4" />
                 Export
               </button>
+            </div>
+          </div>
+
+          {/* MCP Server */}
+          <div className="bg-white border border-[#e5e3d8] rounded-xl p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-xl bg-[#8b5cf6]/10 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-[#8b5cf6]" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#1e3a34]">MCP Server</h3>
+                <p className="text-xs text-[#7c8e88]">
+                  Register the Pocketly MCP server so agents can use it.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-gray-700">MCP Endpoint</label>
+              <div className="flex gap-2">
+                <input
+                  readOnly
+                  value={mcpUrl}
+                  className="w-full mt-1 p-2 border rounded bg-neutral-50"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(mcpUrl);
+                    alert('MCP endpoint copied');
+                  }}
+                  className="px-3 py-2 bg-[#1f644e] text-white rounded"
+                >
+                  Copy
+                </button>
+              </div>
+              <p className="text-xs text-[#7c8e88] mt-2">
+                To register manually, open Admin → MCP Servers and add this URL with type set to
+                'sse' (or skip registration).
+              </p>
             </div>
           </div>
 
