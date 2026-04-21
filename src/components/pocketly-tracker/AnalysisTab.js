@@ -11,6 +11,7 @@ import {
   RefreshCw,
   AlertTriangle,
   Wallet,
+  SlidersHorizontal,
 } from 'lucide-react';
 import TopTabs from '@/components/ui/TopTabs';
 import { Shimmer } from './FinanceSkeletons';
@@ -560,10 +561,12 @@ export default function AnalysisTab() {
                 <button
                   onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
                   disabled={isAnalysisLoading}
-                  className="flex cursor-pointer items-center gap-2 rounded-xl border border-[#e5e3d8] bg-white px-3 py-2 text-xs font-bold text-[#1e3a34] transition hover:bg-[#f8f9f4] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-white"
+                  className="flex cursor-pointer items-center gap-2 rounded-xl border border-[#e5e3d8] bg-white px-3 py-2 text-xs font-bold text-[#1e3a34] transition hover:bg-[#f8f9f4] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-white sm:pr-3"
                 >
-                  {selectedPeriod}
-                  <ChevronDown className="h-3.5 w-3.5 text-[#7c8e88]" />
+                  <span className="hidden sm:inline">{selectedPeriod}</span>
+                  <span className="sm:hidden">
+                    <SlidersHorizontal className="h-4 w-4 text-[#7c8e88]" />
+                  </span>
                 </button>
                 {showPeriodDropdown && (
                   <div className="absolute right-0 top-full z-20 mt-1 min-w-[140px] rounded-xl border border-[#e5e3d8] bg-white py-1 shadow-lg">
