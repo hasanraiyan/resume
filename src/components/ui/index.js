@@ -75,7 +75,7 @@ export { default as Skeleton } from './Skeleton';
  * OTP input component for 6-digit time-based one-time password entry.
  * @see {@link ./InputOTP.js} for detailed documentation.
  */
-export { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPDemo } from './InputOTP';
+export { InputOTP, InputOTPGroup } from './InputOTP';
 
 // ========================================
 // 🎨 DESIGN TOKENS & UTILITIES

@@ -1,11 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { signIn, getSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, Button, Input, InputOTP } from '@/components/ui';
 
-export default function AdminLogin() {
+export default function AdminLoginPage() {
+  return (
+    <Suspense>
+      <AdminLogin />
+    </Suspense>
+  );
+}
+
+function AdminLogin() {
   const [credentials, setCredentials] = useState({ username: '', password: '', token: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
