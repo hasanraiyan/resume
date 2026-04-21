@@ -37,7 +37,9 @@ export default function BottomSheet({
               }
             }}
           >
-            <div className="mb-3 h-1 w-10 mx-auto rounded-full bg-[#e5e3d8]" onClick={onClose} />
+            <div className="mb-3 flex justify-center pt-1 pb-2 cursor-pointer" onClick={onClose}>
+              <div className="h-1 w-10 rounded-full bg-[#e5e3d8]" />
+            </div>
             {children}
           </motion.div>
         </motion.div>

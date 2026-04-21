@@ -262,7 +262,7 @@ function FinanceContent() {
       <PocketlyNavigation tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {/* Main Content Area */}
-      <div className="flex min-w-0 flex-1 flex-col lg:ml-64 min-h-screen overflow-x-hidden pb-20 lg:pb-0 pt-14 lg:pt-0">
+      <div className="flex min-w-0 flex-1 flex-col lg:ml-64 min-h-screen overflow-x-hidden pb-16 lg:pb-0 pt-14 lg:pt-0">
         {/* Header */}
         <header className="lg:sticky lg:top-0 fixed top-0 left-0 right-0 z-50 bg-[#fcfbf5] border-b border-[#e5e3d8]">
           <div className="w-full px-4 lg:px-6 py-3 flex items-center justify-between">

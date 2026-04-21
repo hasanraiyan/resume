@@ -225,7 +225,7 @@ export default function AnalysisTab() {
         <div className="rounded-xl border border-[#e5e3d8] bg-white p-6">
           <div className="flex flex-col items-center gap-6 sm:flex-row">
             <div className="relative shrink-0">
-              <svg width="160" height="160" className="-rotate-90">
+              <svg width="160" height="160" className="-rotate-90 w-36 h-36 sm:w-40 sm:h-40">
                 <circle cx="80" cy="80" r="56" fill="none" stroke="#f0f5f2" strokeWidth="24" />
                 {(() => {
                   let cumulative = 0;
@@ -257,7 +257,7 @@ export default function AnalysisTab() {
                 <span className="text-[11px] font-bold text-[#1e3a34]">
                   {topPercentage.toFixed(0)}%
                 </span>
-                <span className="mt-0.5 max-w-[6rem] truncate text-[10px] font-semibold text-[#7c8e88]">
+                <span className="mt-0.5 w-16 text-center truncate text-[10px] font-semibold text-[#7c8e88]">
                   {topCategory.name}
                 </span>
               </div>
