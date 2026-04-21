@@ -8,6 +8,7 @@ import ChatbotWidget from '@/components/chatbot/ChatbotWidget';
 import PWAManager from '@/components/PWAManager';
 import { getHeroData } from '@/app/actions/heroActions';
 import { getSiteConfig } from '@/app/actions/siteActions';
+import { getBaseUrl } from '@/lib/mcp/oauth';
 import { getInitials } from '@/utils/string';
 import { Analytics } from '@vercel/analytics/next';
 
@@ -43,7 +44,7 @@ export async function generateMetadata() {
   const keywords = siteConfig?.seo?.keywords || [];
 
   return {
-    metadataBase: new URL('https://hasanraiyan.vercel.app'),
+    metadataBase: new URL(getBaseUrl()),
     title: {
       default: `${ownerName} | ${defaultTitle}`,
       template: `%s | ${ownerName}`,
@@ -57,7 +58,7 @@ export async function generateMetadata() {
             'Convert React app to Next.js 14',
             'Freelance headless CMS developer',
           ],
-    authors: [{ name: ownerName, url: 'https://hasanraiyan.vercel.app' }],
+    authors: [{ name: ownerName, url: getBaseUrl() }],
     creator: ownerName,
     alternates: {
       canonical: '/',
@@ -76,7 +77,7 @@ export async function generateMetadata() {
     openGraph: {
       title: `${ownerName} | ${defaultTitle}`,
       description,
-      url: 'https://hasanraiyan.vercel.app',
+      url: getBaseUrl(),
       siteName: `${ownerName} Portfolio`,
       locale: 'en_US',
       type: 'website',

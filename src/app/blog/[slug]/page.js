@@ -13,6 +13,7 @@ import SocialShare from '@/components/SocialShare';
 import LikeButton from '@/components/LikeButton';
 import NewsletterForm from '@/components/NewsletterForm';
 import ReadingProgressBar from '@/components/blog/ReadingProgressBar';
+import { getBaseUrl } from '@/lib/mcp/oauth';
 
 export async function generateStaticParams() {
   // Pass empty options to get default limit, or a high limit if there are many articles
@@ -42,7 +43,7 @@ export async function generateMetadata({ params }) {
       title: article.title,
       description: article.excerpt,
       type: 'article',
-      url: `https://hasanraiyan.vercel.app/blog/${article.slug}`,
+      url: `${getBaseUrl()}/blog/${article.slug}`,
       images: article.coverImage ? [{ url: article.coverImage, alt: article.title }] : [],
     },
     twitter: {
@@ -101,7 +102,7 @@ export default async function ArticlePage({ params }) {
     author: {
       '@type': 'Person',
       name: 'Raiyan Hasan',
-      url: 'https://hasanraiyan.vercel.app',
+      url: getBaseUrl(),
     },
   };
 

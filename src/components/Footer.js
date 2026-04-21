@@ -109,11 +109,7 @@ export default function Footer({ siteConfig }) {
           <div className="text-gray-600 text-xs sm:text-sm text-center md:text-right">
             &copy; {copyright.year} {copyright.name}. {copyright.text}.<br />
             Built by{' '}
-            <a
-              href="https://hasanraiyan.vercel.app/r/hasanraiyan"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a href="/r/hasanraiyan" target="_blank" rel="noopener noreferrer">
               Raiyan Hasan
             </a>
             .

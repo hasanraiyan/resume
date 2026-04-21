@@ -1,11 +1,12 @@
 import { getAllPublishedArticles } from '@/app/actions/articleActions';
 import Project from '@/models/Project';
 import dbConnect from '@/lib/dbConnect';
+import { getBaseUrl } from '@/lib/mcp/oauth';
 
 export async function GET() {
   await dbConnect();
 
-  const baseUrl = 'https://hasanraiyan.vercel.app';
+  const baseUrl = getBaseUrl();
 
   // Static pages
   const staticPages = [

@@ -5,6 +5,7 @@ import ProjectDetailClient from '@/components/projects/ProjectDetailClient';
 import { getProjectBySlug, getAllPublishedProjects } from '@/app/actions/projectActions';
 
 import ReadingProgressBar from '@/components/blog/ReadingProgressBar';
+import { getBaseUrl } from '@/lib/mcp/oauth';
 
 // ========================================
 //  GENERATE STATIC PARAMS (Optional but recommended)
@@ -41,7 +42,7 @@ export async function generateMetadata({ params }) {
       title: `${project.title} - Portfolio`,
       description: project.description,
       type: 'website',
-      url: `https://hasanraiyan.vercel.app/projects/${project.slug}`,
+      url: `${getBaseUrl()}/projects/${project.slug}`,
       images: project.thumbnail
         ? [
             {
