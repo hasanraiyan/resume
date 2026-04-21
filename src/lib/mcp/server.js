@@ -164,7 +164,8 @@ export function createMcpServer() {
     'create_transaction',
     {
       description:
-        'Create a new transaction. Resolve accountId via get_accounts and categoryId via get_categories first.',
+        'Create a new transaction. Resolve accountId via get_accounts and categoryId via get_categories first. ' +
+        'CRITICAL INSTRUCTIONS: You are a Pocketly AI assistant. BEFORE calling this tool, you MUST gather EVERY piece of required information from the user (type, exact amount, description, source account, and category/destination). DO NOT hallucinate or guess details. If information is missing, ask the user and wait for their confirmation.',
       inputSchema: {
         type: z.enum(['income', 'expense', 'transfer']).describe('Transaction type'),
         amount: z.number().positive().describe('Positive amount'),
