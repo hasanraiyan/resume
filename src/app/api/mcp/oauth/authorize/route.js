@@ -17,7 +17,7 @@ export async function GET(request) {
   const codeChallenge = searchParams.get('code_challenge');
   const codeChallengeMethod = searchParams.get('code_challenge_method');
   const state = searchParams.get('state');
-  const scope = searchParams.get('scope') || 'pocketly';
+  const scope = searchParams.get('scope') || '';
   const resource = searchParams.get('resource') || null;
 
   if (responseType !== 'code') {
