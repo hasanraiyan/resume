@@ -45,6 +45,10 @@ export async function POST(request) {
       const messages = error.errors.map((err) => err.message).join(', ');
       return NextResponse.json({ error: `Validation Error: ${messages}` }, { status: 400 });
     }
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message).join(', ');
+      return NextResponse.json({ error: `Validation Error: ${messages}` }, { status: 400 });
+    }
     if (error.message === 'Slug already exists') {
        return NextResponse.json({ error: 'Slug already exists' }, { status: 409 });
     }
@@ -74,6 +78,10 @@ export async function PUT(request) {
     console.error('Error updating short link:', error);
     if (error.name === 'ZodError') {
       const messages = error.errors.map((err) => err.message).join(', ');
+      return NextResponse.json({ error: `Validation Error: ${messages}` }, { status: 400 });
+    }
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message).join(', ');
       return NextResponse.json({ error: `Validation Error: ${messages}` }, { status: 400 });
     }
     if (error.message === 'New slug already exists') {

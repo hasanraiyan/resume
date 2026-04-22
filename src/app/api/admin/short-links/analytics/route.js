@@ -12,9 +12,10 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const slug = searchParams.get('slug'); // Optional: filter by specific link
+    const id = searchParams.get('id'); // Optional: filter by specific link id
     const days = parseInt(searchParams.get('days') || '30', 10);
 
-    const stats = await getAnalyticsOverview({ slug, days });
+    const stats = await getAnalyticsOverview({ slug, id, days });
 
     return NextResponse.json({
       success: true,

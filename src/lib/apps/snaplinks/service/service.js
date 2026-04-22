@@ -70,11 +70,15 @@ export async function createLink(payload) {
 export async function getLink(slugOrId) {
   await ensureDb();
   let link;
-  if (isValidObjectId(slugOrId)) {
+
+  // Prefer slug lookup first to support 24-hex alphanumeric slugs
+  link = await ShortLink.findOne({ slug: slugOrId.trim().toLowerCase() }).lean();
+
+  // Fallback to ObjectId lookup if not found by slug
+  if (!link && isValidObjectId(slugOrId)) {
     link = await ShortLink.findById(slugOrId).lean();
-  } else {
-    link = await ShortLink.findOne({ slug: slugOrId.trim().toLowerCase() }).lean();
   }
+
   return link;
 }
 
@@ -189,7 +193,7 @@ export async function getDashboardStats() {
   };
 }
 
-export async function getAnalyticsOverview({ slug, days = 30 } = {}) {
+export async function getAnalyticsOverview({ slug, id, days = 30 } = {}) {
   await ensureDb();
 
   const endDate = new Date();
@@ -199,8 +203,21 @@ export async function getAnalyticsOverview({ slug, days = 30 } = {}) {
   const matchCriteria = {
     timestamp: { $gte: startDate, $lte: endDate },
   };
-  if (slug) {
-    matchCriteria.slug = slug.toLowerCase();
+
+  let linkDetails = null;
+  const identifier = id || slug;
+  if (identifier) {
+    linkDetails = await getLink(identifier);
+    if (!linkDetails) {
+      throw new Error('Short link not found');
+    }
+    matchCriteria.shortLink = linkDetails._id;
+  } else {
+    linkDetails = {
+      totalLinksCreated: await ShortLink.countDocuments({
+        createdAt: { $gte: startDate, $lte: endDate },
+      }),
+    };
   }
 
   const [
@@ -292,17 +309,6 @@ export async function getAnalyticsOverview({ slug, days = 30 } = {}) {
       { $project: { _id: 0, country: '$_id', count: 1 } },
     ]),
   ]);
-
-  let linkDetails = null;
-  if (slug) {
-    linkDetails = await ShortLink.findOne({ slug: slug.toLowerCase() }).lean();
-  } else {
-    linkDetails = {
-      totalLinksCreated: await ShortLink.countDocuments({
-        createdAt: { $gte: startDate, $lte: endDate },
-      }),
-    };
-  }
 
   return {
     summary: {
