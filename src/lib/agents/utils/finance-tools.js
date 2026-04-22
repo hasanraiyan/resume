@@ -88,17 +88,15 @@ function createPresentationSchema(description) {
 export function createGetAccountsTool() {
   return tool(
     async () => {
-      await ensureDb();
-      const accounts = await getAccountsWithComputedBalances();
-      const serialized = accounts.map(serializeAccount);
+      const accounts = await getAccounts({ includeBalances: true });
       return JSON.stringify(
-        serialized.map((a) => ({
+        accounts.map((a) => ({
           id: a.id,
           name: a.name,
           icon: a.icon,
-          balance: a.currentBalance,
-          initialBalance: a.initialBalance,
-          currency: a.currency,
+          balance: a.currentBalance || 0,
+          initialBalance: a.initialBalance || 0,
+          currency: a.currency || 'INR',
         }))
       );
     },
@@ -346,8 +344,6 @@ export function createGetAnalysisTool() {
 export function createDraftTransactionTool() {
   return tool(
     async (params) => {
-      // Map to new simpler validation or keep using old imported logic.
-      // We already updated validateDraftTransactionParams to use new tools, but let's just make sure it doesn't fail.
       const validation = validateDraftTransactionParams(params);
 
       if (!validation.ok) {
