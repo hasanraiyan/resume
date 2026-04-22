@@ -173,15 +173,16 @@ export function createSnaplinksMcpServer() {
       description:
         'Return analytics for a short link (top countries, referrers, and clicks over time).',
       inputSchema: {
-        slug: z.string().describe('Slug to fetch stats for'),
+        slug: z.string().optional().describe('Slug to fetch stats for (provide slug or id)'),
+        id: z.string().optional().describe('ID to fetch stats for (provide slug or id)'),
         days: z.number().int().min(1).max(365).optional().describe('Days window (default 30)'),
       },
     },
-    async ({ slug, days }) => {
-      if (!slug) return { content: [{ type: 'text', text: 'slug is required' }], isError: true };
+    async ({ slug, id, days }) => {
+      if (!slug && !id) return { content: [{ type: 'text', text: 'slug or id is required' }], isError: true };
 
       try {
-        const stats = await getAnalyticsOverview({ slug, days });
+        const stats = await getAnalyticsOverview({ slug, id, days });
         if (!stats.linkDetails) {
           return { content: [{ type: 'text', text: 'Link not found' }], isError: true };
         }
