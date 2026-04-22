@@ -1,23 +1,14 @@
 import { NextResponse } from 'next/server';
 import crypto, { timingSafeEqual } from 'crypto';
 import { cookies } from 'next/headers';
-import { OTP } from 'otplib';
+import { getServerSession } from 'next-auth/next';
 import dbConnect from '@/lib/dbConnect';
 import McpClient from '@/models/McpClient';
 import McpAuthCode from '@/models/McpAuthCode';
 import { getBaseUrl } from '@/lib/mcp/oauth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
-function safeEqual(a, b) {
-  const bufA = Buffer.from(String(a));
-  const bufB = Buffer.from(String(b));
-  if (bufA.length !== bufB.length) {
-    timingSafeEqual(bufA, bufA);
-    return false;
-  }
-  return timingSafeEqual(bufA, bufB);
-}
-
-// GET: validate params, store pending auth state in cookie, redirect to login page
+// GET: validate params, store pending auth state in cookie, redirect to authorize page if logged in
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const clientId = searchParams.get('client_id');
@@ -68,36 +59,23 @@ export async function GET(request) {
     path: '/',
   });
 
-  return NextResponse.redirect(`${getBaseUrl()}/login?flow=mcp`);
+  // Check if user is already authenticated
+  const session = await getServerSession(authOptions);
+  const isAuthenticated = session?.user?.role === 'admin';
+
+  if (isAuthenticated) {
+    return NextResponse.redirect(`${getBaseUrl()}/mcp-authorize`);
+  }
+
+  return NextResponse.redirect(`${getBaseUrl()}/login?callbackUrl=/mcp-authorize`);
 }
 
-// POST: called by the login page after admin credentials verified
-export async function POST(request) {
+// POST: called by the authorization page after user clicks "Authorize"
+export async function POST() {
   try {
-    const body = await request.json();
-    const { username, password, token } = body;
-
-    if (
-      !username ||
-      !password ||
-      !safeEqual(username, process.env.ADMIN_USERNAME) ||
-      !safeEqual(password, process.env.ADMIN_PASSWORD)
-    ) {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user?.role !== 'admin') {
       return NextResponse.json({ error: 'access_denied' }, { status: 401 });
-    }
-
-    if (process.env.TOTP_SECRET) {
-      const otp = new OTP();
-      const isValid = otp.verifySync({
-        token: token || '',
-        secret: process.env.TOTP_SECRET,
-      });
-      if (!isValid.valid) {
-        return NextResponse.json(
-          { error: 'invalid_otp', error_description: 'Invalid 2FA code' },
-          { status: 401 }
-        );
-      }
     }
 
     const cookieStore = await cookies();
@@ -132,7 +110,8 @@ export async function POST(request) {
     if (pending.state) callbackUrl.searchParams.set('state', pending.state);
 
     return NextResponse.json({ redirectTo: callbackUrl.toString() });
-  } catch {
+  } catch (error) {
+    console.error('MCP Auth POST error:', error);
     return NextResponse.json({ error: 'server_error' }, { status: 500 });
   }
 }

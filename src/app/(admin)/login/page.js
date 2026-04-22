@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { signIn, getSession } from 'next-auth/react';
+import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, Button, Input, InputOTP } from '@/components/ui';
 
@@ -23,7 +23,7 @@ function AdminLogin() {
   const [isFormValid, setIsFormValid] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isMcpFlow = searchParams.get('flow') === 'mcp';
+  const callbackUrl = searchParams.get('callbackUrl') || '/admin/dashboard';
 
   // Form validation
   const validateField = (name, value) => {
@@ -88,39 +88,17 @@ function AdminLogin() {
     setError('');
 
     try {
-      if (isMcpFlow) {
-        const res = await fetch('/api/mcp/oauth/authorize', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: credentials.username,
-            password: credentials.password,
-            token: credentials.token,
-          }),
-        });
+      const result = await signIn('credentials', {
+        username: credentials.username,
+        password: credentials.password,
+        token: credentials.token,
+        callbackUrl,
+        redirect: true,
+      });
 
-        const data = await res.json();
-
-        if (!res.ok) {
-          setError(data.error_description || data.error || 'Authorization failed');
-          setIsLoading(false);
-          return;
-        }
-
-        window.location.href = data.redirectTo;
-      } else {
-        const result = await signIn('credentials', {
-          username: credentials.username,
-          password: credentials.password,
-          token: credentials.token,
-          callbackUrl: '/admin/dashboard',
-          redirect: true,
-        });
-
-        if (result?.error) {
-          setError('Invalid credentials. Please check your username and password.');
-          setIsLoading(false);
-        }
+      if (result?.error) {
+        setError('Invalid credentials. Please check your username and password.');
+        setIsLoading(false);
       }
     } catch (error) {
       setError('An error occurred. Please try again.');
@@ -165,12 +143,10 @@ function AdminLogin() {
               </svg>
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-black font-['Playfair_Display'] mb-2">
-              {isMcpFlow ? 'Authorize MCP Access' : 'Admin Login'}
+              Admin Login
             </h2>
             <p className="text-neutral-600 text-sm sm:text-base">
-              {isMcpFlow
-                ? 'Authorize an AI client to manage your finances'
-                : 'Sign in to access your admin dashboard'}
+              Sign in to access your dashboard and authorize applications
             </p>
           </div>
 
@@ -237,21 +213,6 @@ function AdminLogin() {
                     value={credentials.username}
                     onChange={handleChange}
                   />
-                  {credentials.username && !fieldErrors.username && (
-                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
-                      <svg
-                        className="w-5 h-5 text-green-500"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                  )}
                 </div>
                 {fieldErrors.username && (
                   <p className="text-red-600 text-sm font-medium">{fieldErrors.username}</p>
@@ -367,26 +328,24 @@ function AdminLogin() {
               </div>
 
               {/* Remember Me */}
-              {!isMcpFlow && (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <input
-                      id="remember-me"
-                      name="remember-me"
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      className="h-4 w-4 text-black border-neutral-300 rounded focus:ring-black focus:ring-2"
-                    />
-                    <label
-                      htmlFor="remember-me"
-                      className="ml-3 text-sm text-neutral-700 font-medium"
-                    >
-                      Remember me
-                    </label>
-                  </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <input
+                    id="remember-me"
+                    name="remember-me"
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="h-4 w-4 text-black border-neutral-300 rounded focus:ring-black focus:ring-2"
+                  />
+                  <label
+                    htmlFor="remember-me"
+                    className="ml-3 text-sm text-neutral-700 font-medium"
+                  >
+                    Remember me
+                  </label>
                 </div>
-              )}
+              </div>
 
               {/* Submit Button */}
               <Button
@@ -434,7 +393,7 @@ function AdminLogin() {
                         d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
                       />
                     </svg>
-                    {isMcpFlow ? 'Authorize Access' : 'Sign in to Dashboard'}
+                    Sign in to Dashboard
                   </>
                 )}
               </Button>
@@ -443,11 +402,7 @@ function AdminLogin() {
 
           {/* Footer */}
           <div className="text-center">
-            <p className="text-neutral-500 text-xs">
-              {isMcpFlow
-                ? 'Grants read and write access to your Pocketly transactions'
-                : 'Secure admin access • Protected by NextAuth'}
-            </p>
+            <p className="text-neutral-500 text-xs">Secure admin access • Protected by NextAuth</p>
           </div>
         </div>
       </div>

@@ -35,7 +35,7 @@ This is a **Next.js 15 (App Router)** personal portfolio site that also hosts se
 - **Public routes**: `/` (portfolio homepage), `/blog`, `/projects`, `/resume`, `/tools`, `/r/[slug]` (SnapLinks redirect), `/offline` (PWA fallback).
 - **Admin routes**: `(admin)` route group at `src/app/(admin)/` — `/admin/*` dashboard, `/login`. Admin layout is a client component wrapping `SessionProvider` with sidebar nav.
 - **Mini-app routes**: `/apps/*` — all five mini-apps are admin-only (enforced by middleware).
-- **MCP/OAuth**: `/mcp-auth` (authorization page), `/.well-known/oauth-authorization-server` and `/.well-known/oauth-protected-resource` (OAuth 2.0 discovery for MCP).
+- **MCP/OAuth**: `/mcp-authorize` (Authorize/Decline prompt), `/.well-known/oauth-authorization-server` and `/.well-known/oauth-protected-resource` (OAuth 2.0 discovery for MCP). The OAuth flow is integrated with NextAuth: `GET /api/mcp/oauth/authorize` checks for a session, redirects to `/login` if needed, then to `/mcp-authorize` for user approval.
 
 ### Middleware
 
@@ -92,7 +92,7 @@ LangChain + LangGraph for agent orchestration. `src/lib/agents/` contains `Agent
 
 ### MCP Server
 
-`src/lib/mcp/server.js` implements a Pocketly MCP server using `@modelcontextprotocol/sdk`. `src/lib/mcp/oauth.js` implements OAuth 2.0 with PKCE for MCP authentication. MCP server configs are stored in MongoDB (not config files) — fetched via `src/lib/mcpConfig.js` using the `McpServer` model. Related models: `McpServer.js`, `McpClient.js`, `McpAuthCode.js`.
+`src/lib/mcp/server.js` implements a Pocketly MCP server using `@modelcontextprotocol/sdk`. `src/lib/mcp/oauth.js` implements OAuth 2.0 with PKCE for MCP authentication. The authorization flow uses a conditional UI: authenticated admins are redirected to a dedicated `/mcp-authorize` page for an Authorize/Decline prompt, avoiding double logins. MCP server configs are stored in MongoDB (not config files) — fetched via `src/lib/mcpConfig.js` using the `McpServer` model. Related models: `McpServer.js`, `McpClient.js`, `McpAuthCode.js`.
 
 ### UI Components
 

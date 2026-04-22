@@ -7,7 +7,7 @@ export async function GET() {
       resource: `${base}/api/mcp`,
       authorization_servers: [base],
       bearer_methods_supported: ['header'],
-      scopes_supported: ['pocketly'],
+      scopes_supported: ['pocketly', 'snaplinks'],
     },
     { headers: { 'Access-Control-Allow-Origin': '*' } }
   );
