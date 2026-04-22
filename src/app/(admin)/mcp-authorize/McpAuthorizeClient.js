@@ -7,13 +7,34 @@ export default function McpAuthorizeClient({ pending }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const appName = pending.scope === 'snaplinks' ? 'SnapLinks' : 'Pocketly';
-  const appDescription =
-    pending.scope === 'snaplinks'
-      ? 'Manage your short links and view click analytics.'
-      : 'Track your personal finances, manage accounts, and analyze spending.';
-  const appIcon =
-    pending.scope === 'snaplinks' ? '/images/apps/Snaplinks.png' : '/images/apps/pocketly.png';
+  const scopes = (pending.scope || '').split(' ').filter(Boolean);
+  const isSnaplinks = scopes.includes('snaplinks');
+  const isPocketly = scopes.includes('pocketly') || scopes.length === 0;
+
+  const apps = [];
+  if (isPocketly) {
+    apps.push({
+      name: 'Pocketly',
+      description: 'Track your personal finances, manage accounts, and analyze spending.',
+      icon: '/images/apps/pocketly.png',
+    });
+  }
+  if (isSnaplinks) {
+    apps.push({
+      name: 'SnapLinks',
+      description: 'Manage your short links and view click analytics.',
+      icon: '/images/apps/Snaplinks.png',
+    });
+  }
+
+  // Fallback for UI if somehow empty
+  if (apps.length === 0) {
+    apps.push({
+      name: 'MCP Service',
+      description: 'Access to your application data.',
+      icon: '/images/apps/pocketly.png',
+    });
+  }
 
   const handleAuthorize = async () => {
     setIsLoading(true);
@@ -57,11 +78,18 @@ export default function McpAuthorizeClient({ pending }) {
     <div className="max-w-md w-full space-y-8">
       {/* Header */}
       <div className="text-center">
-        <div className="mx-auto w-20 h-20 bg-white rounded-xl shadow-sm border border-neutral-100 flex items-center justify-center mb-8 overflow-hidden">
-          <img src={appIcon} alt={appName} className="w-full h-full object-cover" />
+        <div className="flex justify-center -space-x-4 mb-8">
+          {apps.map((app) => (
+            <div
+              key={app.name}
+              className="w-20 h-20 bg-white rounded-xl shadow-md border border-neutral-100 flex items-center justify-center overflow-hidden z-10 first:z-20 relative"
+            >
+              <img src={app.icon} alt={app.name} className="w-full h-full object-cover" />
+            </div>
+          ))}
         </div>
-        <h2 className="text-3xl font-bold text-black font-['Playfair_Display'] mb-2">
-          Authorize {appName} Access
+        <h2 className="text-3xl font-bold text-black font-['Playfair_Display'] mb-2 px-4">
+          Authorize {apps.map((a) => a.name).join(' & ')} Access
         </h2>
         <p className="text-neutral-600 text-sm sm:text-base">
           An AI client is requesting access to your data.
@@ -69,9 +97,13 @@ export default function McpAuthorizeClient({ pending }) {
       </div>
 
       <Card className="p-8 space-y-6">
-        <div className="bg-neutral-50 rounded-lg p-4 border border-neutral-100">
-          <h3 className="font-semibold text-black mb-1">{appName}</h3>
-          <p className="text-sm text-neutral-600">{appDescription}</p>
+        <div className="space-y-4">
+          {apps.map((app) => (
+            <div key={app.name} className="bg-neutral-50 rounded-lg p-4 border border-neutral-100">
+              <h3 className="font-semibold text-black mb-1">{app.name}</h3>
+              <p className="text-sm text-neutral-600">{app.description}</p>
+            </div>
+          ))}
         </div>
 
         <div className="space-y-3">
@@ -93,7 +125,7 @@ export default function McpAuthorizeClient({ pending }) {
                   d="M5 13l4 4L19 7"
                 />
               </svg>
-              Read your {appName.toLowerCase()} records
+              Read your {apps.map((a) => a.name.toLowerCase()).join(' and ')} records
             </li>
             <li className="flex items-start">
               <svg
@@ -109,7 +141,7 @@ export default function McpAuthorizeClient({ pending }) {
                   d="M5 13l4 4L19 7"
                 />
               </svg>
-              Create and update {appName.toLowerCase()} data
+              Create and update {apps.map((a) => a.name.toLowerCase()).join(' and ')} data
             </li>
           </ul>
         </div>
@@ -125,7 +157,7 @@ export default function McpAuthorizeClient({ pending }) {
             onClick={handleAuthorize}
             disabled={isLoading}
             variant="primary"
-            className="w-full py-3"
+            className="w-full py-3 font-semibold"
           >
             {isLoading ? 'Authorizing...' : 'Authorize Access'}
           </Button>
@@ -133,14 +165,14 @@ export default function McpAuthorizeClient({ pending }) {
             onClick={handleDecline}
             disabled={isLoading}
             variant="outline"
-            className="w-full py-3"
+            className="w-full py-3 font-semibold"
           >
             Decline
           </Button>
         </div>
       </Card>
 
-      <p className="text-center text-xs text-neutral-400">
+      <p className="text-center text-xs text-neutral-400 px-4 leading-relaxed">
         Only authorize clients you trust. You can revoke access at any time from your admin
         dashboard.
       </p>
