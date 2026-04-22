@@ -89,25 +89,17 @@ function AdminLogin() {
 
     try {
       if (isMcpFlow) {
-        const res = await fetch('/api/mcp/oauth/authorize', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: credentials.username,
-            password: credentials.password,
-            token: credentials.token,
-          }),
+        const result = await signIn('credentials', {
+          username: credentials.username,
+          password: credentials.password,
+          token: credentials.token,
+          callbackUrl: '/mcp-authorize',
+          redirect: true,
         });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          setError(data.error_description || data.error || 'Authorization failed');
+        if (result?.error) {
+          setError('Invalid credentials. Please check your username and password.');
           setIsLoading(false);
-          return;
         }
-
-        window.location.href = data.redirectTo;
       } else {
         const result = await signIn('credentials', {
           username: credentials.username,

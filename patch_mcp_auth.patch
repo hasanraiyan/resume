@@ -1,0 +1,100 @@
+--- src/app/api/mcp/oauth/authorize/route.js
++++ src/app/api/mcp/oauth/authorize/route.js
+@@ -1,18 +1,10 @@
+ import { NextResponse } from 'next/server';
+-import crypto, { timingSafeEqual } from 'crypto';
++import crypto from 'crypto';
+ import { cookies } from 'next/headers';
+-import { OTP } from 'otplib';
+ import dbConnect from '@/lib/dbConnect';
+ import McpClient from '@/models/McpClient';
+ import McpAuthCode from '@/models/McpAuthCode';
+ import { getBaseUrl } from '@/lib/mcp/oauth';
+-
+-function safeEqual(a, b) {
+-  const bufA = Buffer.from(String(a));
+-  const bufB = Buffer.from(String(b));
+-  if (bufA.length !== bufB.length) {
+-    timingSafeEqual(bufA, bufA);
+-    return false;
+-  }
+-  return timingSafeEqual(bufA, bufB);
+-}
++import { getServerSession } from 'next-auth';
++import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+
+ // GET: validate params, store pending auth state in cookie, redirect to login page
+@@ -62,33 +54,14 @@
+     path: '/',
+   });
+
++  const session = await getServerSession(authOptions);
++  if (session?.user?.role === 'admin') {
++    return NextResponse.redirect(`${getBaseUrl()}/mcp-authorize`);
++  }
++
+   return NextResponse.redirect(`${getBaseUrl()}/login?flow=mcp`);
+ }
+
+-// POST: called by the login page after admin credentials verified
++// POST: called by the consent page to authorize or decline
+ export async function POST(request) {
+   try {
++    const session = await getServerSession(authOptions);
++    if (!session || session.user?.role !== 'admin') {
++      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
++    }
++
+     const body = await request.json();
+-    const { username, password, token } = body;
+-
+-    if (
+-      !username ||
+-      !password ||
+-      !safeEqual(username, process.env.ADMIN_USERNAME) ||
+-      !safeEqual(password, process.env.ADMIN_PASSWORD)
+-    ) {
+-      return NextResponse.json({ error: 'access_denied' }, { status: 401 });
+-    }
+-
+-    if (process.env.TOTP_SECRET) {
+-      const otp = new OTP();
+-      const isValid = otp.verifySync({
+-        token: token || '',
+-        secret: process.env.TOTP_SECRET,
+-      });
+-      if (!isValid.valid) {
+-        return NextResponse.json(
+-          { error: 'invalid_otp', error_description: 'Invalid 2FA code' },
+-          { status: 401 }
+-        );
+-      }
+-    }
++    const { action } = body;
+
+     const cookieStore = await cookies();
+     const pendingRaw = cookieStore.get('mcp_pending_auth')?.value;
+@@ -101,6 +74,14 @@
+     }
+
+     const pending = JSON.parse(pendingRaw);
++    cookieStore.delete('mcp_pending_auth');
++
++    if (action === 'decline') {
++      const callbackUrl = new URL(pending.redirectUri);
++      callbackUrl.searchParams.set('error', 'access_denied');
++      if (pending.state) callbackUrl.searchParams.set('state', pending.state);
++      return NextResponse.json({ redirectTo: callbackUrl.toString() });
++    }
+
+     await dbConnect();
+     const code = crypto.randomBytes(32).toString('base64url');
+@@ -115,8 +96,6 @@
+       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+     });
+
+-    cookieStore.delete('mcp_pending_auth');
+-
+     const callbackUrl = new URL(pending.redirectUri);
+     callbackUrl.searchParams.set('code', code);
+     if (pending.state) callbackUrl.searchParams.set('state', pending.state);

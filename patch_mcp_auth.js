@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+const fs = require('fs');
+const content = `import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
 import dbConnect from '@/lib/dbConnect';
@@ -61,10 +62,10 @@ export async function GET(request) {
 
   const session = await getServerSession(authOptions);
   if (session?.user?.role === 'admin') {
-    return NextResponse.redirect(`${getBaseUrl()}/mcp-authorize`);
+    return NextResponse.redirect(\`\${getBaseUrl()}/mcp-authorize\`);
   }
 
-  return NextResponse.redirect(`${getBaseUrl()}/login?flow=mcp`);
+  return NextResponse.redirect(\`\${getBaseUrl()}/login?flow=mcp\`);
 }
 
 // POST: called by the consent page to authorize or decline
@@ -120,3 +121,5 @@ export async function POST(request) {
     return NextResponse.json({ error: 'server_error' }, { status: 500 });
   }
 }
+`;
+fs.writeFileSync('src/app/api/mcp/oauth/authorize/route.js', content);
