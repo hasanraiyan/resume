@@ -32,7 +32,10 @@ export async function DELETE(request, { params }) {
 
   try {
     const { id } = await params;
-    await deleteCategory(id);
+    const deleted = await deleteCategory(id);
+    if (!deleted) {
+      return NextResponse.json({ success: false, message: 'Not found' }, { status: 404 });
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(

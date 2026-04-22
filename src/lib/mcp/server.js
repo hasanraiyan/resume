@@ -199,7 +199,10 @@ export function createMcpServer() {
     },
     async ({ id }) => {
       try {
-        await deleteTransaction(id);
+        const deleted = await deleteTransaction(id);
+        if (!deleted) {
+          return { content: [{ type: 'text', text: 'Transaction not found or already deleted' }], isError: true };
+        }
         return {
           content: [{ type: 'text', text: JSON.stringify({ success: true, deletedId: id }) }],
         };

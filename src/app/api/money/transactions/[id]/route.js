@@ -8,7 +8,10 @@ export async function DELETE(request, { params }) {
 
   try {
     const { id } = await params;
-    await deleteTransaction(id);
+    const deleted = await deleteTransaction(id);
+    if (!deleted) {
+      return NextResponse.json({ success: false, message: 'Not found' }, { status: 404 });
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(

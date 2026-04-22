@@ -35,7 +35,10 @@ export async function DELETE(request, { params }) {
     if (!id) {
       return NextResponse.json({ success: false, message: 'Missing id' }, { status: 400 });
     }
-    await deleteAccount(id);
+    const deleted = await deleteAccount(id);
+    if (!deleted) {
+      return NextResponse.json({ success: false, message: 'Not found' }, { status: 404 });
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(

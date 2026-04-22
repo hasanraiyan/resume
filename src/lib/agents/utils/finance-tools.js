@@ -1,24 +1,7 @@
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
-import dbConnect from '@/lib/dbConnect';
-import Account from '@/models/Account';
-import Category from '@/models/Category';
-import Transaction from '@/models/Transaction';
-import { serializeAccount, serializeCategory, serializeTransaction } from '@/lib/money-serializers';
-import { computeAccountSummaries } from '@/lib/money-account-summary';
 import mongoose from 'mongoose';
-
-async function ensureDb() {
-  await dbConnect();
-}
-
-async function getAccountsWithComputedBalances() {
-  const [accounts, transactions] = await Promise.all([
-    Account.find({ deletedAt: null }).sort({ createdAt: 1 }).lean(),
-    Transaction.find({ deletedAt: null }).select('type amount account toAccount').lean(),
-  ]);
-  return computeAccountSummaries(accounts, transactions).accounts;
-}
+import { getAccounts, getCategories, getTransactions, getFinancialSummary } from '@/lib/apps/pocketly/service/service';
 
 function isValidObjectId(value) {
   return typeof value === 'string' && mongoose.Types.ObjectId.isValid(value);
@@ -363,6 +346,8 @@ export function createGetAnalysisTool() {
 export function createDraftTransactionTool() {
   return tool(
     async (params) => {
+      // Map to new simpler validation or keep using old imported logic.
+      // We already updated validateDraftTransactionParams to use new tools, but let's just make sure it doesn't fail.
       const validation = validateDraftTransactionParams(params);
 
       if (!validation.ok) {

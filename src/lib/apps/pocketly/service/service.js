@@ -42,6 +42,7 @@ export async function getAccounts({ includeBalances = true } = {}) {
         }
       });
       acc.balance = balance;
+      acc.currentBalance = balance;
     });
   }
 
@@ -73,9 +74,7 @@ export async function getTransactions({ type, limit, startDate, endDate, account
     .populate('toAccount', 'name icon currency')
     .sort({ date: -1, createdAt: -1 });
 
-  if (limit) {
-    dbQuery = dbQuery.limit(limit);
-  }
+  dbQuery = dbQuery.limit(limit || 20);
 
   const transactions = await dbQuery.lean();
   return transactions.map(serializeTransaction);
@@ -129,7 +128,11 @@ export async function updateTransaction(id, patch) {
 
   const validated = TransactionUpdateSchema.parse(patch);
 
-  const updated = await Transaction.findByIdAndUpdate(id, validated, { new: true })
+  const updated = await Transaction.findOneAndUpdate(
+    { _id: id, deletedAt: null },
+    { $set: validated, $inc: { syncVersion: 1 } },
+    { new: true }
+  )
     .populate('category', 'name icon type color')
     .populate('account', 'name icon currency')
     .populate('toAccount', 'name icon currency')
@@ -149,7 +152,10 @@ export async function deleteTransaction(id) {
     throw new Error('Invalid transaction ID');
   }
 
-  const deleted = await Transaction.findByIdAndUpdate(id, { deletedAt: new Date() });
+  const deleted = await Transaction.findOneAndUpdate(
+    { _id: id, deletedAt: null },
+    { $set: { deletedAt: new Date() }, $inc: { syncVersion: 1 } }
+  );
 
   return !!deleted;
 }
@@ -185,10 +191,13 @@ export async function updateAccount(id, patch) {
 export async function deleteAccount(id) {
   await ensureDb();
   if (!isValidObjectId(id)) throw new Error('Invalid account ID');
-  const deleted = await Account.findByIdAndUpdate(id, {
-    $set: { deletedAt: new Date() },
-    $inc: { syncVersion: 1 },
-  });
+  const deleted = await Account.findOneAndUpdate(
+    { _id: id, deletedAt: null },
+    {
+      $set: { deletedAt: new Date() },
+      $inc: { syncVersion: 1 },
+    }
+  );
   return !!deleted;
 }
 
@@ -214,9 +223,12 @@ export async function updateCategory(id, patch) {
 export async function deleteCategory(id) {
   await ensureDb();
   if (!isValidObjectId(id)) throw new Error('Invalid category ID');
-  const deleted = await Category.findByIdAndUpdate(id, {
-    $set: { deletedAt: new Date() },
-    $inc: { syncVersion: 1 },
-  });
+  const deleted = await Category.findOneAndUpdate(
+    { _id: id, deletedAt: null },
+    {
+      $set: { deletedAt: new Date() },
+      $inc: { syncVersion: 1 },
+    }
+  );
   return !!deleted;
 }
