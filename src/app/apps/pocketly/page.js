@@ -31,6 +31,7 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { useCallback, useState } from 'react';
+import AppLayout from '@/components/layout/AppLayout';
 
 const AccountsTab = dynamic(() => import('@/components/pocketly-tracker/AccountsTab'), {
   loading: () => <AccountsSkeleton />,
@@ -65,72 +66,6 @@ const tabs = [
   { id: 'chat', label: 'Chat', icon: MessageCircle },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
-
-function PocketlyNavigation({ tabs, activeTab, setActiveTab }) {
-  return (
-    <>
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-[#e5e3d8] fixed inset-y-0 left-0 z-30">
-        <div className="p-6 border-b border-[#e5e3d8]">
-          <div className="flex items-center gap-2">
-            <Image
-              src="/images/apps/pocketly.png"
-              alt="Pocketly app logo"
-              width={28}
-              height={28}
-              className="rounded-xl shadow-sm"
-              priority
-            />
-            <h1 className="font-[family-name:var(--font-logo)] text-2xl text-black ">Pocketly</h1>
-          </div>
-        </div>
-        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`w-full cursor-pointer flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
-                activeTab === tab.id
-                  ? 'bg-[#1f644e] text-white'
-                  : 'text-[#7c8e88] hover:bg-[#f0f5f2] hover:text-[#1e3a34]'
-              }`}
-            >
-              <tab.icon className="w-5 h-5" strokeWidth={activeTab === tab.id ? 2 : 1.5} />
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-        <div className="p-4 border-t border-[#e5e3d8]">
-          <p className="text-[10px] text-[#7c8e88] text-center">Powered by Pocketly</p>
-        </div>
-      </aside>
-
-      {/* Mobile Bottom Nav (without Settings tab) */}
-      <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#fcfbf5] border-t border-[#e5e3d8] z-30 flex"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      >
-        {tabs
-          .filter((tab) => tab.id !== 'settings')
-          .map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex flex-col items-center py-2 ${
-                activeTab === tab.id ? 'text-[#1f644e]' : 'text-[#7c8e88]'
-              }`}
-            >
-              <tab.icon
-                className="w-[22px] h-[22px] mb-0.5"
-                strokeWidth={activeTab === tab.id ? 2 : 1.5}
-              />
-              <span className="text-[10px] font-bold">{tab.label}</span>
-            </button>
-          ))}
-      </nav>
-    </>
-  );
-}
 
 function FinanceContent() {
   const { data: session, status } = useSession();
@@ -258,79 +193,57 @@ function FinanceContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fcfbf5] font-[family-name:var(--font-sans)] text-[#1e3a34] flex">
-      <PocketlyNavigation tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
-
-      {/* Main Content Area */}
-      <div className="flex min-w-0 flex-1 flex-col lg:ml-64 min-h-screen overflow-x-hidden pb-16 lg:pb-0 pt-14 lg:pt-0">
-        {/* Header */}
-        <header className="lg:sticky lg:top-0 fixed top-0 left-0 right-0 z-50 bg-[#fcfbf5] border-b border-[#e5e3d8]">
-          <div className="w-full px-4 lg:px-6 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 lg:hidden">
-                <Image
-                  src="/images/apps/pocketly.png"
-                  alt="Pocketly app logo"
-                  width={24}
-                  height={24}
-                  className="rounded-lg shadow-sm"
-                  priority
-                />
-                <h1 className="font-[family-name:var(--font-logo)] text-xl lg:text-2xl text-black">
-                  Pocketly
-                </h1>
-              </div>
-              <h1 className="hidden lg:block text-lg font-bold text-[#1e3a34]">
-                {tabTitles[activeTab]}
-              </h1>
-            </div>
-            <div className="flex items-center gap-3">
-              {activeTab === 'chat' && (
-                <button
-                  onClick={clearChat}
-                  className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  New Chat
-                </button>
-              )}
-              {isSyncing && (
-                <div className="flex items-center gap-1.5 text-xs text-[#7c8e88]">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Syncing...</span>
-                </div>
-              )}
-              {/* Mobile Settings shortcut: move settings off bottom nav */}
-              <button
-                type="button"
-                onClick={() => setActiveTab('settings')}
-                className="lg:hidden p-1.5 rounded-full text-[#7c8e88] hover:text-[#1e3a34] hover:bg-neutral-100 transition-colors"
-                aria-label="Open settings"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        </header>
-
-        {/* Content */}
-        <main className="min-w-0 flex-1 w-full overflow-x-hidden">
-          {shouldShowBootstrapSkeleton ? (
-            activeBootstrapSkeleton
-          ) : shouldHoldBootstrapFrame ? (
-            <div className="min-h-[60vh]" />
-          ) : (
-            renderTab()
+    <AppLayout
+      appName="Pocketly"
+      appLogo="/images/apps/pocketly.png"
+      tabs={tabs}
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      tabTitles={tabTitles}
+      hideSettingsFromMobileNav={true}
+      headerActions={
+        <>
+          {activeTab === 'chat' && (
+            <button
+              onClick={clearChat}
+              className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              New Chat
+            </button>
           )}
-        </main>
-      </div>
-
-      {/* FAB / Edit Modal */}
-      {(accounts.length > 0 && activeTab !== 'settings' && activeTab !== 'chat') ||
-      editTransactionData ? (
-        <AddTransactionModal />
-      ) : null}
-    </div>
+          {isSyncing && (
+            <div className="flex items-center gap-1.5 text-xs text-[#7c8e88]">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span>Syncing...</span>
+            </div>
+          )}
+          {/* Mobile Settings shortcut: move settings off bottom nav */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('settings')}
+            className="lg:hidden p-1.5 rounded-full text-[#7c8e88] hover:text-[#1e3a34] hover:bg-neutral-100 transition-colors"
+            aria-label="Open settings"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+        </>
+      }
+      fab={
+        (accounts.length > 0 && activeTab !== 'settings' && activeTab !== 'chat') ||
+        editTransactionData ? (
+          <AddTransactionModal />
+        ) : null
+      }
+    >
+      {shouldShowBootstrapSkeleton ? (
+        activeBootstrapSkeleton
+      ) : shouldHoldBootstrapFrame ? (
+        <div className="min-h-[60vh]" />
+      ) : (
+        renderTab()
+      )}
+    </AppLayout>
   );
 }
 

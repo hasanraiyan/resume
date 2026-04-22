@@ -8,6 +8,7 @@ import SessionProvider from '@/components/SessionProvider';
 import { TasklyProvider, useTaskly } from '@/context/TasklyContext';
 import { TasklyChatProvider, useTasklyChat } from '@/context/TasklyChatContext';
 import { TasklyTabSkeleton, ChatSkeleton } from '@/components/taskly/TasklySkeletons';
+import AppLayout from '@/components/layout/AppLayout';
 import {
   CheckSquare,
   FolderKanban,
@@ -130,116 +131,35 @@ function TasklyContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fcfbf5] font-[family-name:var(--font-sans)] text-[#1e3a34] flex">
-      <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-[#e5e3d8] fixed inset-y-0 left-0 z-30">
-        <div className="p-6 border-b border-[#e5e3d8]">
-          <h1 className="font-[family-name:var(--font-logo)] text-2xl text-[#1f644e]">Taskly</h1>
-        </div>
-        <nav className="flex-1 py-4 px-3 space-y-1">
-          {tabs.map((tab) => (
+    <AppLayout
+      appName="Taskly"
+      tabs={tabs}
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      tabTitles={tabTitles}
+      useHamburgerMenu={false} // Uses standard bottom nav
+      headerActions={
+        <>
+          {activeTab === 'chat' && (
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`w-full cursor-pointer flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
-                activeTab === tab.id
-                  ? 'bg-[#1f644e] text-white'
-                  : 'text-[#7c8e88] hover:bg-[#f0f5f2] hover:text-[#1e3a34]'
-              }`}
+              onClick={clearChat}
+              className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
             >
-              <tab.icon className="w-5 h-5" strokeWidth={activeTab === tab.id ? 2 : 1.5} />
-              {tab.label}
+              <Plus className="w-3.5 h-3.5" />
+              New Chat
             </button>
-          ))}
-        </nav>
-      </aside>
-
-      <div className="flex min-w-0 flex-1 flex-col lg:ml-64 min-h-screen overflow-x-hidden">
-        <header className="bg-[#fcfbf5] sticky top-0 z-20 border-b border-[#e5e3d8]">
-          <div className="w-full px-4 lg:px-6 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button className="lg:hidden p-1" onClick={() => setSidebarOpen(true)}>
-                <Menu className="w-5 h-5 text-[#1e3a34]" />
-              </button>
-              <h1 className="font-[family-name:var(--font-logo)] text-xl text-[#1f644e] lg:hidden">
-                Taskly
-              </h1>
-              <h1 className="hidden lg:block text-lg font-bold text-[#1e3a34]">
-                {tabTitles[activeTab]}
-              </h1>
+          )}
+          {isBootstrapLoading && (
+            <div className="flex items-center gap-1.5 text-xs text-[#7c8e88]">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span>Syncing...</span>
             </div>
-            <div className="flex items-center gap-3">
-              {activeTab === 'chat' && (
-                <button
-                  onClick={clearChat}
-                  className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  New Chat
-                </button>
-              )}
-              {isBootstrapLoading && (
-                <div className="flex items-center gap-1.5 text-xs text-[#7c8e88]">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Syncing...</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </header>
-
-        <main className="min-w-0 flex-1 w-full overflow-x-hidden">{renderTab()}</main>
-      </div>
-
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 w-64 bg-white shadow-xl animate-in slide-in-from-left duration-300">
-            <div className="p-6 border-b border-[#e5e3d8]">
-              <h1 className="font-[family-name:var(--font-logo)] text-2xl text-[#1f644e]">
-                Taskly
-              </h1>
-            </div>
-            <nav className="py-4 px-3 space-y-1">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    setActiveTab(tab.id);
-                    setSidebarOpen(false);
-                  }}
-                  className={`w-full cursor-pointer flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
-                    activeTab === tab.id
-                      ? 'bg-[#1f644e] text-white'
-                      : 'text-[#7c8e88] hover:bg-[#f0f5f2]'
-                  }`}
-                >
-                  <tab.icon className="w-5 h-5" />
-                  {tab.label}
-                </button>
-              ))}
-            </nav>
-          </aside>
-        </div>
-      )}
-
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#fcfbf5] border-t border-[#e5e3d8] z-30 flex">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex flex-col items-center py-2 ${
-              activeTab === tab.id ? 'text-[#1f644e]' : 'text-[#7c8e88]'
-            }`}
-          >
-            <tab.icon
-              className="w-[22px] h-[22px] mb-0.5"
-              strokeWidth={activeTab === tab.id ? 2 : 1.5}
-            />
-            <span className="text-[10px] font-bold">{tab.label}</span>
-          </button>
-        ))}
-      </nav>
-    </div>
+          )}
+        </>
+      }
+    >
+      {renderTab()}
+    </AppLayout>
   );
 }
 
