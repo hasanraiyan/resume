@@ -1,24 +1,7 @@
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
-import dbConnect from '@/lib/dbConnect';
-import Account from '@/models/Account';
-import Category from '@/models/Category';
-import Transaction from '@/models/Transaction';
-import { serializeAccount, serializeCategory, serializeTransaction } from '@/lib/money-serializers';
-import { computeAccountSummaries } from '@/lib/money-account-summary';
 import mongoose from 'mongoose';
-
-async function ensureDb() {
-  await dbConnect();
-}
-
-async function getAccountsWithComputedBalances() {
-  const [accounts, transactions] = await Promise.all([
-    Account.find({ deletedAt: null }).sort({ createdAt: 1 }).lean(),
-    Transaction.find({ deletedAt: null }).select('type amount account toAccount').lean(),
-  ]);
-  return computeAccountSummaries(accounts, transactions).accounts;
-}
+import { getAccounts, getCategories, getTransactions, getFinancialSummary } from '@/lib/apps/pocketly/service/service';
 
 function isValidObjectId(value) {
   return typeof value === 'string' && mongoose.Types.ObjectId.isValid(value);
@@ -105,17 +88,15 @@ function createPresentationSchema(description) {
 export function createGetAccountsTool() {
   return tool(
     async () => {
-      await ensureDb();
-      const accounts = await getAccountsWithComputedBalances();
-      const serialized = accounts.map(serializeAccount);
+      const accounts = await getAccounts({ includeBalances: true });
       return JSON.stringify(
-        serialized.map((a) => ({
+        accounts.map((a) => ({
           id: a.id,
           name: a.name,
           icon: a.icon,
-          balance: a.currentBalance,
-          initialBalance: a.initialBalance,
-          currency: a.currency,
+          balance: a.currentBalance || 0,
+          initialBalance: a.initialBalance || 0,
+          currency: a.currency || 'INR',
         }))
       );
     },
