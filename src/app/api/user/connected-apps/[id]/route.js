@@ -6,7 +6,8 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 /**
  * DELETE /api/user/connected-apps/:id
- * Revoke a connected app by its MongoDB _id.
+ * Soft-revokes a connected app by setting isActive: false.
+ * The record is kept so GPT's in-flight tokens are denied on next request.
  */
 export async function DELETE(_request, { params }) {
   try {
@@ -21,16 +22,16 @@ export async function DELETE(_request, { params }) {
     }
 
     await dbConnect();
-    const deleted = await ConnectedApp.findOneAndDelete({
-      _id: id,
-      userId: session.user.id,
-    });
+    const updated = await ConnectedApp.findOneAndUpdate(
+      { _id: id, userId: session.user.id },
+      { $set: { isActive: false } }
+    );
 
-    if (!deleted) {
+    if (!updated) {
       return NextResponse.json({ error: 'Connected app not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, message: 'Access revoked successfully' });
+    return NextResponse.json({ success: true, message: 'Access revoked' });
   } catch (error) {
     console.error('Error revoking connected app:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

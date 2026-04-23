@@ -9,6 +9,7 @@ import McpAuditLog from '@/models/McpAuditLog';
 const rateLimits = new Map();
 const RATE_WINDOW_MS = 60 * 1000;
 const MAX_REQUESTS_PER_WINDOW = 60;
+const RATE_CLEANUP_THRESHOLD = 1000;
 
 function checkRateLimit(clientId) {
   const now = Date.now();
@@ -20,6 +21,15 @@ function checkRateLimit(clientId) {
   entry.count += 1;
   const remaining = Math.max(0, MAX_REQUESTS_PER_WINDOW - entry.count);
   return { allowed: entry.count <= MAX_REQUESTS_PER_WINDOW, remaining };
+}
+
+function cleanupRateLimits() {
+  const now = Date.now();
+  for (const [clientId, entry] of rateLimits.entries()) {
+    if (now - entry.start > RATE_WINDOW_MS) {
+      rateLimits.delete(clientId);
+    }
+  }
 }
 
 function unauthorizedResponse(description) {
@@ -81,6 +91,11 @@ async function handleMcpRequest(request) {
   const rateCheck = checkRateLimit(authInfo.clientId);
   if (!rateCheck.allowed) {
     return rateLimitResponse(Math.ceil(RATE_WINDOW_MS / 1000));
+  }
+
+  // Periodic cleanup of stale rate limit entries
+  if (rateLimits.size > RATE_CLEANUP_THRESHOLD) {
+    cleanupRateLimits();
   }
 
   const startTime = Date.now();

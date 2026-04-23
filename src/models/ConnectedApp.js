@@ -41,6 +41,6 @@ const ConnectedAppSchema = new mongoose.Schema(
 );
 
 ConnectedAppSchema.index({ userId: 1, clientId: 1 }, { unique: true });
-ConnectedAppSchema.index({ createdAt: 1 });
+ConnectedAppSchema.index({ userId: 1, lastUsedAt: -1 });
 
 export default mongoose.models.ConnectedApp || mongoose.model('ConnectedApp', ConnectedAppSchema);
