@@ -266,29 +266,175 @@ import {
 
 ---
 
-## 7. Loading States
+## 7. Loading States & Skeleton Loaders
 
-### FAB Button (Loading)
+### Using react-skeletonify (Recommended)
+
+The app uses `react-skeletonify` for automatic skeleton generation. Instead of manually building skeleton components, wrap your app with `SkeletonProvider` and use `SkeletonWrapper` around content.
+
+#### Setup in App Root (page.js)
 
 ```jsx
-<button className="bg-[#1f644e] text-white px-4 py-2 rounded-lg text-sm font-bold cursor-pointer disabled:opacity-60 flex items-center gap-2">
-  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" />
-    <path
-      d="M4 12a8 8 0 018-8"
-      stroke="currentColor"
-      strokeWidth="3"
-      strokeLinecap="round"
-      className="opacity-75"
-    />
-  </svg>
-  Saving...
-</button>
+import { SkeletonProvider, SkeletonWrapper } from 'react-skeletonify';
+import 'react-skeletonify/dist/index.css';
+
+export default function AppPage() {
+  return (
+    <SessionProvider>
+      <AppContextProvider>
+        <SkeletonProvider
+          config={{
+            animation: 'animation-1', // shimmer effect
+            borderRadius: '8px', // matches design
+            animationSpeed: 2, // 2-second cycle
+            exceptTags: ['img', 'button', 'svg'], // keep interactive elements visible
+            background: '#e5e3d8', // Pocketly skeleton color
+          }}
+        >
+          <AppContent />
+        </SkeletonProvider>
+      </AppContextProvider>
+    </SessionProvider>
+  );
+}
 ```
 
-### Shimmer Effect
+#### Wrapping Content with Skeletons
 
 ```jsx
+function TabContent() {
+  const { data, isLoading } = useAppContext();
+
+  return (
+    <SkeletonWrapper loading={isLoading && !data}>
+      {/* Actual component content - skeleton auto-generates from this */}
+      <div className="space-y-4">
+        <div className="border border-[#e5e3d8] rounded-xl p-5">
+          <h3 className="text-sm font-bold text-[#1e3a34]">Title</h3>
+          <p className="text-xs text-[#7c8e88] mt-2">Description</p>
+        </div>
+      </div>
+    </SkeletonWrapper>
+  );
+}
+```
+
+#### Delayed Skeleton Display (Prevent Flash)
+
+For fast loads, use a 200ms delay before showing skeleton:
+
+```jsx
+const [showDelayedSkeleton, setShowDelayedSkeleton] = useState(false);
+
+useEffect(() => {
+  if (!isLoading) {
+    setShowDelayedSkeleton(false);
+    return;
+  }
+
+  const timer = window.setTimeout(() => {
+    setShowDelayedSkeleton(true);
+  }, 200);
+
+  return () => window.clearTimeout(timer);
+}, [isLoading]);
+
+// Then use in SkeletonWrapper:
+<SkeletonWrapper loading={isLoading && showDelayedSkeleton}>{/* content */}</SkeletonWrapper>;
+```
+
+#### Configuration Options
+
+| Option           | Type                               | Default         | Purpose                                          |
+| ---------------- | ---------------------------------- | --------------- | ------------------------------------------------ |
+| `animation`      | `'animation-1'` \| `'animation-2'` | `'animation-1'` | Shimmer or wave animation                        |
+| `animationSpeed` | number                             | 3               | Animation speed (1-10)                           |
+| `background`     | string                             | `#aeaeae`       | Skeleton placeholder color                       |
+| `borderRadius`   | string \| number                   | `'0'`           | Corner radius (e.g., `'8px'`)                    |
+| `exceptTags`     | string[]                           | `[]`            | HTML tags to exclude (e.g., `['img', 'button']`) |
+| `className`      | string                             | `''`            | Custom CSS class                                 |
+| `style`          | object                             | `{}`            | Inline CSS overrides                             |
+
+#### Why react-skeletonify?
+
+✅ **No duplicate markup** - Skeletons auto-generate from actual components  
+✅ **DRY principle** - Single source of truth  
+✅ **Automatic adaptation** - Skeletons adjust when component layout changes  
+✅ **Less code** - No need to maintain separate skeleton components  
+✅ **Consistent styling** - Global config ensures uniform appearance
+
+#### Example: Full Tab Implementation
+
+```jsx
+function RecordsTab() {
+  const { transactions, isBootstrapLoading } = useAppContext();
+  const [showDelayedSkeleton, setShowDelayedSkeleton] = useState(false);
+
+  useEffect(() => {
+    if (!isBootstrapLoading) {
+      setShowDelayedSkeleton(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowDelayedSkeleton(true), 200);
+    return () => clearTimeout(timer);
+  }, [isBootstrapLoading]);
+
+  return (
+    <SkeletonWrapper loading={isBootstrapLoading && showDelayedSkeleton}>
+      <div className="mb-6 pb-4 pt-6">
+        {/* Summary Cards - skeleton auto-generates these */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="flex items-center gap-4 rounded-xl border border-[#e5e3d8] bg-white p-5">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#c94c4c]/10">
+              <TrendingDown className="w-6 h-6 text-[#c94c4c]" />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase text-[#7c8e88]">Total Expense</p>
+              <p className="mt-0.5 text-xl font-bold text-[#c94c4c]">₹{transactions.length}</p>
+            </div>
+          </div>
+          {/* More summary cards... */}
+        </div>
+
+        {/* Transaction List */}
+        <div className="space-y-4">
+          {transactions.map((tx) => (
+            <div key={tx.id} className="border border-[#e5e3d8] rounded-xl p-4">
+              <p className="text-sm font-bold text-[#1e3a34]">{tx.description}</p>
+              <p className="text-xs text-[#7c8e88] mt-1">{tx.date}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </SkeletonWrapper>
+  );
+}
+```
+
+### Optional: Fallback for Extremely Fast Loads
+
+Hold a placeholder frame to prevent layout shift:
+
+```jsx
+{
+  isBootstrapLoading && !showDelayedSkeleton ? (
+    <div className="min-h-[60vh]" />
+  ) : (
+    <SkeletonWrapper loading={isBootstrapLoading && showDelayedSkeleton}>
+      {/* Content */}
+    </SkeletonWrapper>
+  );
+}
+```
+
+---
+
+### Legacy: Shimmer Component (Deprecated)
+
+Previously, custom shimmer components were used. This approach is deprecated in favor of react-skeletonify.
+
+```jsx
+// OLD - Don't use this anymore
 function Shimmer({ className = '' }) {
   return (
     <div className={`relative overflow-hidden rounded bg-[#e5e3d8] ${className}`}>
@@ -477,6 +623,6 @@ When creating a new app, ensure:
 - [ ] Inactive tab: `text-[#7c8e88]`
 - [ ] Card styles consistent
 - [ ] Empty states for all lists
-- [ ] Loading skeletons matching layouts
+- [ ] **Loading skeletons**: Use `SkeletonProvider` + `SkeletonWrapper` from `react-skeletonify`
 - [ ] Responsive mobile/desktop grids
 - [ ] Currency formatting with compact support
