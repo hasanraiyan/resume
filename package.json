@@ -67,6 +67,7 @@
     "react-dom": "19.1.0",
     "react-markdown": "^10.1.0",
     "react-simplemde-editor": "^5.2.0",
+    "react-skeletonify": "^1.2.0",
     "react-syntax-highlighter": "^15.6.6",
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",

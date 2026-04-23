@@ -14,7 +14,6 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import TopTabs from '@/components/ui/TopTabs';
-import { Shimmer } from './FinanceSkeletons';
 import dynamic from 'next/dynamic';
 
 const IconRenderer = dynamic(() => import('./IconRenderer'), { ssr: false });
@@ -51,21 +50,10 @@ export default function AnalysisTab() {
   const [viewMode, setViewMode] = useState('expense');
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('Weekly');
-  const [showInitialSkeleton, setShowInitialSkeleton] = useState(false);
 
   useEffect(() => {
     fetchAnalysis(periodStart, periodEnd).catch(() => {});
   }, [fetchAnalysis, periodEnd, periodStart]);
-
-  useEffect(() => {
-    if (!(!analysis && isAnalysisLoading)) {
-      setShowInitialSkeleton(false);
-      return undefined;
-    }
-
-    const timer = window.setTimeout(() => setShowInitialSkeleton(true), 200);
-    return () => window.clearTimeout(timer);
-  }, [analysis, isAnalysisLoading]);
 
   const handlePeriodChange = (period) => {
     const now = new Date();
@@ -479,8 +467,6 @@ export default function AnalysisTab() {
                   <p className="mt-0.5 text-sm font-bold text-[#c94c4c]">
                     {analysis ? (
                       formatCurrencyWithCompact(analysis.totalExpense)
-                    ) : showInitialSkeleton ? (
-                      <Shimmer className="h-4 w-20" />
                     ) : (
                       <span className="text-[#7c8e88]">--</span>
                     )}
@@ -494,8 +480,6 @@ export default function AnalysisTab() {
                   <p className="mt-0.5 text-sm font-bold text-[#1f644e]">
                     {analysis ? (
                       formatCurrencyWithCompact(analysis.totalIncome)
-                    ) : showInitialSkeleton ? (
-                      <Shimmer className="h-4 w-20" />
                     ) : (
                       <span className="text-[#7c8e88]">--</span>
                     )}
@@ -517,8 +501,6 @@ export default function AnalysisTab() {
                   <p className="mt-0.5 text-xl font-bold text-[#c94c4c]">
                     {analysis ? (
                       formatCurrencyWithCompact(analysis.totalExpense)
-                    ) : showInitialSkeleton ? (
-                      <Shimmer className="h-5 w-20" />
                     ) : (
                       <span className="text-[#7c8e88]">--</span>
                     )}
@@ -536,8 +518,6 @@ export default function AnalysisTab() {
                   <p className="mt-0.5 text-xl font-bold text-[#1f644e]">
                     {analysis ? (
                       formatCurrencyWithCompact(analysis.totalIncome)
-                    ) : showInitialSkeleton ? (
-                      <Shimmer className="h-5 w-20" />
                     ) : (
                       <span className="text-[#7c8e88]">--</span>
                     )}
@@ -605,24 +585,7 @@ export default function AnalysisTab() {
               </button>
             </div>
           ) : !analysis ? (
-            showInitialSkeleton ? (
-              <div className="mt-4 space-y-3 px-4">
-                <div className="mb-6 flex items-center justify-center gap-4">
-                  <Shimmer className="h-[140px] w-[140px] rounded-full" />
-                  <div className="space-y-2.5">
-                    {[1, 2, 3, 4, 5].map((item) => (
-                      <div key={item} className="flex items-center gap-2">
-                        <Shimmer className="h-2.5 w-2.5 rounded-full" />
-                        <Shimmer className="h-3 w-16" />
-                        <Shimmer className="h-3 w-10" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="min-h-[18rem]" />
-            )
+            <div className="min-h-[18rem]" />
           ) : (
             <div
               className={`transition-opacity ${isRefreshingAnalysis ? 'opacity-80' : 'opacity-100'}`}

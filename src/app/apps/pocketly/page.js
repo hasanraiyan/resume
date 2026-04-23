@@ -10,14 +10,8 @@ import { useEffect } from 'react';
 import SessionProvider from '@/components/SessionProvider';
 import RecordsTab from '@/components/pocketly-tracker/RecordsTab';
 import AddTransactionModal from '@/components/pocketly-tracker/AddTransactionModal';
-import {
-  AccountsSkeleton,
-  AnalysisSkeleton,
-  CategoriesSkeleton,
-  ChatSkeleton,
-  RecordsSkeleton,
-  Shimmer,
-} from '@/components/pocketly-tracker/FinanceSkeletons';
+import { SkeletonProvider, SkeletonWrapper } from 'react-skeletonify';
+import 'react-skeletonify/dist/index.css';
 import {
   Receipt,
   BarChart3,
@@ -33,29 +27,12 @@ import {
 import { useCallback, useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 
-const AccountsTab = dynamic(() => import('@/components/pocketly-tracker/AccountsTab'), {
-  loading: () => <AccountsSkeleton />,
-});
-const CategoriesTab = dynamic(() => import('@/components/pocketly-tracker/CategoriesTab'), {
-  loading: () => <CategoriesSkeleton />,
-});
-const AnalysisTab = dynamic(() => import('@/components/pocketly-tracker/AnalysisTab'), {
-  loading: () => <AnalysisSkeleton />,
-});
-const ChatTab = dynamic(() => import('@/components/pocketly-tracker/ChatTab'), {
-  loading: () => <ChatSkeleton />,
-});
+const AccountsTab = dynamic(() => import('@/components/pocketly-tracker/AccountsTab'));
+const CategoriesTab = dynamic(() => import('@/components/pocketly-tracker/CategoriesTab'));
+const AnalysisTab = dynamic(() => import('@/components/pocketly-tracker/AnalysisTab'));
+const ChatTab = dynamic(() => import('@/components/pocketly-tracker/ChatTab'));
 const FinanceSettingsTab = dynamic(
-  () => import('@/components/pocketly-tracker/FinanceSettingsTab'),
-  {
-    loading: () => (
-      <div className="p-6 space-y-6">
-        <Shimmer className="h-32 w-full rounded-3xl" />
-        <Shimmer className="h-28 w-full rounded-3xl" />
-        <Shimmer className="h-32 w-full rounded-3xl" />
-      </div>
-    ),
-  }
+  () => import('@/components/pocketly-tracker/FinanceSettingsTab')
 );
 
 const tabs = [
@@ -87,16 +64,8 @@ function FinanceContent() {
   const [showDelayedBootstrapSkeleton, setShowDelayedBootstrapSkeleton] = useState(false);
   const handleAddModalClose = useCallback(() => setRequestAddAccountModal(false), []);
 
-  const bootstrapSkeletonByTab = {
-    records: <RecordsSkeleton />,
-    accounts: <AccountsSkeleton />,
-    categories: <CategoriesSkeleton />,
-    analysis: <AnalysisSkeleton />,
-  };
-  const activeBootstrapSkeleton = bootstrapSkeletonByTab[activeTab] || null;
-
   useEffect(() => {
-    if (!(activeBootstrapSkeleton && isBootstrapLoading)) {
+    if (!isBootstrapLoading) {
       setShowDelayedBootstrapSkeleton(false);
       return undefined;
     }
@@ -106,7 +75,7 @@ function FinanceContent() {
     }, 200);
 
     return () => window.clearTimeout(timer);
-  }, [activeBootstrapSkeleton, isBootstrapLoading]);
+  }, [isBootstrapLoading]);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -128,27 +97,8 @@ function FinanceContent() {
     return null;
   }
 
-  const tabTitles = {
-    records: 'Records',
-    analysis: 'Analysis',
-    accounts: 'Accounts',
-    categories: 'Categories',
-    chat: 'Chat',
-    settings: 'Settings',
-  };
-
   const hasBootstrappedData =
     transactions.length > 0 || accounts.length > 0 || categories.length > 0;
-  const shouldShowBootstrapSkeleton =
-    Boolean(activeBootstrapSkeleton) &&
-    isBootstrapLoading &&
-    !hasBootstrappedData &&
-    showDelayedBootstrapSkeleton;
-  const shouldHoldBootstrapFrame =
-    Boolean(activeBootstrapSkeleton) &&
-    isBootstrapLoading &&
-    !hasBootstrappedData &&
-    !showDelayedBootstrapSkeleton;
 
   const renderTab = () => {
     if (error) {
@@ -169,27 +119,44 @@ function FinanceContent() {
       );
     }
 
-    switch (activeTab) {
-      case 'records':
-        return <RecordsTab />;
-      case 'analysis':
-        return <AnalysisTab />;
-      case 'accounts':
-        return (
-          <AccountsTab
-            openAddModal={requestAddAccountModal}
-            onAddModalClose={handleAddModalClose}
-          />
-        );
-      case 'categories':
-        return <CategoriesTab />;
-      case 'chat':
-        return <ChatTab />;
-      case 'settings':
-        return <FinanceSettingsTab />;
-      default:
-        return <RecordsTab />;
-    }
+    const skeletonTabs = ['records', 'analysis', 'accounts', 'categories', 'chat', 'settings'];
+    const shouldShowSkeleton =
+      skeletonTabs.includes(activeTab) && isBootstrapLoading && showDelayedBootstrapSkeleton;
+
+    const tabContent = (() => {
+      switch (activeTab) {
+        case 'records':
+          return <RecordsTab />;
+        case 'analysis':
+          return <AnalysisTab />;
+        case 'accounts':
+          return (
+            <AccountsTab
+              openAddModal={requestAddAccountModal}
+              onAddModalClose={handleAddModalClose}
+            />
+          );
+        case 'categories':
+          return <CategoriesTab />;
+        case 'chat':
+          return <ChatTab />;
+        case 'settings':
+          return <FinanceSettingsTab />;
+        default:
+          return <RecordsTab />;
+      }
+    })();
+
+    return <SkeletonWrapper loading={shouldShowSkeleton}>{tabContent}</SkeletonWrapper>;
+  };
+
+  const tabTitles = {
+    records: 'Records',
+    analysis: 'Analysis',
+    accounts: 'Accounts',
+    categories: 'Categories',
+    chat: 'Chat',
+    settings: 'Settings',
   };
 
   return (
@@ -236,9 +203,7 @@ function FinanceContent() {
         ) : null
       }
     >
-      {shouldShowBootstrapSkeleton ? (
-        activeBootstrapSkeleton
-      ) : shouldHoldBootstrapFrame ? (
+      {!hasBootstrappedData && isBootstrapLoading && !showDelayedBootstrapSkeleton ? (
         <div className="min-h-[60vh]" />
       ) : (
         renderTab()
@@ -252,7 +217,17 @@ export default function FinancePage() {
     <SessionProvider>
       <MoneyProvider>
         <FinanceChatProvider>
-          <FinanceContent />
+          <SkeletonProvider
+            config={{
+              animation: 'animation-1',
+              borderRadius: '8px',
+              animationSpeed: 2,
+              exceptTags: ['img', 'button', 'svg'],
+              background: '#e5e3d8',
+            }}
+          >
+            <FinanceContent />
+          </SkeletonProvider>
         </FinanceChatProvider>
       </MoneyProvider>
     </SessionProvider>
