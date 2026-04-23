@@ -3,6 +3,7 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { getAllPublishedArticles, getArticleBySlug } from '@/app/actions/articleActions';
+import { getSiteConfig } from '@/app/actions/siteActions';
 import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 import { notFound } from 'next/navigation';
 import Navbar from '@/components/Navbar';
@@ -59,7 +60,10 @@ export default async function ArticlePage({ params }) {
   const { slug } = await params;
   const session = await getServerSession(authOptions);
   const isAuthenticated = !!session?.user?.isAdmin;
-  const { success, article } = await getArticleBySlug(slug, isAuthenticated);
+  const [{ success, article }, siteConfig] = await Promise.all([
+    getArticleBySlug(slug, isAuthenticated),
+    getSiteConfig(),
+  ]);
 
   if (!success || !article) {
     notFound();
@@ -112,7 +116,7 @@ export default async function ArticlePage({ params }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <Navbar />
+      <Navbar siteConfig={siteConfig} />
       <ReadingProgressBar />
 
       <main className="min-h-screen bg-white">

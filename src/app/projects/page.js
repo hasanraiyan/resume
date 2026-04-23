@@ -3,6 +3,7 @@ import Footer from '@/components/Footer';
 import { Section } from '@/components/ui';
 import ProjectsPageClient from '@/components/projects/ProjectsPageClient';
 import { getAllPublishedProjects } from '@/app/actions/projectActions';
+import { getSiteConfig } from '@/app/actions/siteActions';
 
 export const metadata = {
   title: 'Portfolio Projects - Custom Web & Mobile Applications',
@@ -14,8 +15,10 @@ export const metadata = {
 };
 
 export default async function ProjectsPage() {
-  // Fetch published projects with public visibility
-  const { projects } = await getAllPublishedProjects(false);
+  const [{ projects }, siteConfig] = await Promise.all([
+    getAllPublishedProjects(false),
+    getSiteConfig(),
+  ]);
 
   const breadcrumbs = [
     { label: 'Home', path: '/', icon: 'Home' },
@@ -24,7 +27,7 @@ export default async function ProjectsPage() {
 
   return (
     <>
-      <Navbar />
+      <Navbar siteConfig={siteConfig} />
 
       <main className=" min-h-screen">
         <Section

@@ -3,6 +3,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ProjectDetailClient from '@/components/projects/ProjectDetailClient';
 import { getProjectBySlug, getAllPublishedProjects } from '@/app/actions/projectActions';
+import { getSiteConfig } from '@/app/actions/siteActions';
 
 import ReadingProgressBar from '@/components/blog/ReadingProgressBar';
 import { getBaseUrl } from '@/lib/mcp/oauth';
@@ -67,7 +68,10 @@ export async function generateMetadata({ params }) {
 export default async function ProjectDetailPage({ params }) {
   // Await params to unwrap the Promise
   const { slug } = await params;
-  const { project } = await getProjectBySlug(slug, false);
+  const [{ project }, siteConfig] = await Promise.all([
+    getProjectBySlug(slug, false),
+    getSiteConfig(),
+  ]);
 
   // If project not found, show 404
   if (!project) {
@@ -106,7 +110,7 @@ export default async function ProjectDetailPage({ params }) {
 
   return (
     <>
-      <Navbar />
+      <Navbar siteConfig={siteConfig} />
       <ReadingProgressBar />
 
       {/* Pass data to Client Component for animations */}

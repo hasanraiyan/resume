@@ -3,6 +3,7 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { getAllPublishedArticles } from '@/app/actions/articleActions';
+import { getSiteConfig } from '@/app/actions/siteActions';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import BlogPageClient from '@/components/blog/BlogPageClient';
@@ -27,13 +28,16 @@ export default async function BlogPage({ searchParams }) {
   const tag = resolvedSearchParams?.tag || 'all';
   const limit = 10;
 
-  const { success, articles, totalArticles, totalPages, currentPage, allTags } =
-    await getAllPublishedArticles(isAuthenticated, { page, limit, search, tag });
+  const [{ success, articles, totalArticles, totalPages, currentPage, allTags }, siteConfig] =
+    await Promise.all([
+      getAllPublishedArticles(isAuthenticated, { page, limit, search, tag }),
+      getSiteConfig(),
+    ]);
 
   if (!success) {
     return (
       <>
-        <Navbar />
+        <Navbar siteConfig={siteConfig} />
         <main className="min-h-screen flex items-center justify-center">
           <div className="text-center">
             <p className="text-neutral-500 text-lg">Failed to load articles. Please try again.</p>
@@ -46,7 +50,7 @@ export default async function BlogPage({ searchParams }) {
 
   return (
     <>
-      <Navbar />
+      <Navbar siteConfig={siteConfig} />
 
       <main className="min-h-screen bg-white">
         <div className="max-w-3xl mx-auto px-5 sm:px-6 py-12 sm:py-16">

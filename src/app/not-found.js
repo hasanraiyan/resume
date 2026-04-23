@@ -2,11 +2,14 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui';
+import { getSiteConfig } from '@/app/actions/siteActions';
 
-export default function NotFound() {
+export default async function NotFound() {
+  const siteConfig = await getSiteConfig();
+
   return (
     <div className="flex flex-col min-h-screen bg-[#FAFAF9]">
-      <Navbar />
+      <Navbar siteConfig={siteConfig} />
 
       <main className="flex-grow flex items-center justify-center relative overflow-hidden pt-32 pb-20">
         {/* Background ambient decorations for a premium look */}

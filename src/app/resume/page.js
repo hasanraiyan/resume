@@ -1,8 +1,11 @@
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Section } from '@/components/ui';
+import { getSiteConfig } from '@/app/actions/siteActions';
 
-export default function ResumePage() {
+export default async function ResumePage() {
+  const siteConfig = await getSiteConfig();
+
   const breadcrumbs = [
     { label: 'Home', path: '/', icon: 'Home' },
     { label: 'Resume', icon: 'FileText' },
@@ -10,7 +13,7 @@ export default function ResumePage() {
 
   return (
     <>
-      <Navbar />
+      <Navbar siteConfig={siteConfig} />
 
       <main className="min-h-screen">
         <Section
