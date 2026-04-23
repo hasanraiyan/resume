@@ -18,13 +18,19 @@ export default function AppsPageClient() {
     : MINI_APPS;
 
   return (
-    <div className="w-full max-w-6xl mx-auto">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
-        <div className="w-full md:w-72">
+    <div className="w-full">
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
+        <div>
+          <h1 className="text-4xl sm:text-5xl font-bold mb-3">Apps</h1>
+          <p className="text-gray-600 text-lg max-w-2xl">
+            Launch and explore the suite of mini applications built into this portfolio
+          </p>
+        </div>
+        <div className="w-full md:w-80 flex-shrink-0">
           <SearchBar
             initialQuery={query}
             onSearch={(value) => setQuery(value)}
-            placeholder="Search apps by name, category..."
+            placeholder="Search apps..."
           />
         </div>
       </div>
