@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { AGENT_IDS } from '@/lib/constants/agents';
 import { rateLimit } from '@/lib/rateLimit';
 import { UTApi, UTFile } from 'uploadthing/server';
+import { requireAdminAuth } from '@/lib/money-auth';
 
 // Ensure agents are registered
 import '@/lib/agents';
@@ -37,6 +38,10 @@ async function uploadGeneratedImage({ buffer, mimeType, prefix }) {
 }
 
 export async function POST(request) {
+  // Admin-only authentication
+  const authResult = await requireAdminAuth(request);
+  if (authResult instanceof NextResponse) return authResult;
+
   // Rate limit: 5 requests per 60 minutes
   const limitResponse = rateLimit(request, 5, 3600000);
   if (limitResponse) return limitResponse;

@@ -10,7 +10,6 @@ import Stats from '@/components/Stats';
 import Testimonials from '@/components/Testimonials';
 import Contact from '@/components/Contact';
 import Footer from '@/components/Footer';
-import AICreatorTeaser from '@/components/AICreatorTeaser';
 import HomepageLoaderManager from '@/components/HomepageLoaderManager';
 import dbConnect from '@/lib/dbConnect';
 import Project from '@/models/Project';
@@ -27,7 +26,6 @@ import { getStatsData } from '@/app/actions/statsActions';
 import { getAchievementsData } from '@/app/actions/achievementActions';
 import { getTestimonialsData } from '@/app/actions/testimonialActions';
 import { getProjectSectionData } from '@/app/actions/projectSectionActions';
-import { getToolTeaserData } from '@/app/actions/toolTeaserActions';
 import { getFeaturedProjects } from '@/app/actions/projectActions';
 import { getServiceSectionData } from '@/app/actions/serviceSectionActions';
 import { getSkillsSectionData } from '@/app/actions/skillsSectionActions';
@@ -66,7 +64,6 @@ export default async function Home() {
     achievementsData,
     testimonialsData,
     projectSection,
-    toolTeaserSection,
     skillsSectionData,
     serviceSectionData,
   ] = await Promise.all([
@@ -77,7 +74,6 @@ export default async function Home() {
     getAchievementsData(),
     getTestimonialsData(),
     getProjectSectionData(),
-    getToolTeaserData(),
     getSkillsSectionData(),
     getServiceSectionData(),
   ]);
@@ -100,7 +96,6 @@ export default async function Home() {
       />
       <Services services={services} section={serviceSectionData || {}} />
       <FeaturedWorks featuredProjects={featuredProjects} section={projectSection || {}} />
-      <AICreatorTeaser section={toolTeaserSection || {}} />
       <div style={{ overflow: 'hidden', width: '100%' }}>
         <Stats statsData={statsData} />
       </div>

@@ -256,7 +256,7 @@ async function seed() {
         { id: 3, label: 'Work', href: '/#work' },
         { id: 4, label: 'Projects', href: '/projects' },
         { id: 5, label: 'Blog', href: '/blog' },
-        { id: 6, label: 'Tools', href: '/tools' },
+        { id: 6, label: 'Apps', href: '/apps' },
       ];
       siteConfig.navbarCta = {
         text: "Let's Talk",
