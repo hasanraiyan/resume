@@ -18,12 +18,7 @@ function MemoscribeContent() {
   const { activeTab, setActiveTab } = useMemoscribe();
 
   return (
-    <AppLayout
-      appName="Memo Scribe"
-      tabs={tabs}
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-    >
+    <AppLayout appName="Memo Scribe" tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab}>
       <div className="p-4 lg:p-6 max-w-6xl mx-auto">
         {activeTab === 'notes' && <NotesTab />}
         {activeTab === 'chat' && <ChatTab />}

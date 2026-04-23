@@ -108,7 +108,10 @@ export async function updateLink(slugOrId, patch) {
 
   if (validated.slug && validated.slug.toLowerCase() !== linkToUpdate.slug) {
     // Re-verify new slug
-    const existing = await ShortLink.findOne({ slug: validated.slug.toLowerCase(), _id: { $ne: linkToUpdate._id } });
+    const existing = await ShortLink.findOne({
+      slug: validated.slug.toLowerCase(),
+      _id: { $ne: linkToUpdate._id },
+    });
     if (existing) {
       throw new Error('New slug already exists');
     }

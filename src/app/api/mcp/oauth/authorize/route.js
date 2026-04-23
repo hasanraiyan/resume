@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import crypto, { timingSafeEqual } from 'crypto';
+import crypto from 'crypto';
 import { cookies } from 'next/headers';
 import { getServerSession } from 'next-auth/next';
 import dbConnect from '@/lib/dbConnect';
 import McpClient from '@/models/McpClient';
 import McpAuthCode from '@/models/McpAuthCode';
+import ConnectedApp from '@/models/ConnectedApp';
 import { getBaseUrl } from '@/lib/mcp/oauth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
@@ -43,6 +44,7 @@ export async function GET(request) {
 
   const pendingState = JSON.stringify({
     clientId,
+    clientName: client.clientName || 'MCP Client',
     redirectUri: redirectUri || client.redirectUris[0],
     codeChallenge,
     state,
@@ -59,9 +61,9 @@ export async function GET(request) {
     path: '/',
   });
 
-  // Check if user is already authenticated
+  // Check if user is already authenticated (any logged-in user, not just admin)
   const session = await getServerSession(authOptions);
-  const isAuthenticated = session?.user?.role === 'admin';
+  const isAuthenticated = !!session?.user;
 
   if (isAuthenticated) {
     return NextResponse.redirect(`${getBaseUrl()}/mcp-authorize`);
@@ -74,7 +76,7 @@ export async function GET(request) {
 export async function POST() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user?.role !== 'admin') {
+    if (!session || !session.user) {
       return NextResponse.json({ error: 'access_denied' }, { status: 401 });
     }
 
@@ -100,8 +102,24 @@ export async function POST() {
       scope: pending.scope,
       state: pending.state || null,
       resource: pending.resource || null,
+      userId: session.user.id,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
     });
+
+    // Upsert ConnectedApp record for this user + client
+    await ConnectedApp.findOneAndUpdate(
+      { userId: session.user.id, clientId: pending.clientId },
+      {
+        $set: {
+          clientName: pending.clientName || 'Unknown App',
+          scope: pending.scope,
+          resource: pending.resource,
+          isActive: true,
+          lastUsedAt: new Date(),
+        },
+      },
+      { upsert: true, new: true }
+    );
 
     cookieStore.delete('mcp_pending_auth');
 

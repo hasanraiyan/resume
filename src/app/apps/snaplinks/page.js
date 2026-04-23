@@ -79,9 +79,7 @@ function SnapLinksContent() {
       setActiveTab={setActiveTab}
       tabTitles={tabTitles}
     >
-      <div className="pt-2 lg:pt-6 pb-20 lg:pb-0">
-        {renderTab()}
-      </div>
+      <div className="pt-2 lg:pt-6 pb-20 lg:pb-0">{renderTab()}</div>
     </AppLayout>
   );
 }

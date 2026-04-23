@@ -54,10 +54,12 @@ export default function AppLayout({
             alt={`${appName} logo`}
             width={isMobileHeader ? 24 : 28}
             height={isMobileHeader ? 24 : 28}
-            className={isMobileHeader ? "rounded-lg shadow-sm" : "rounded-xl shadow-sm h-8 w-auto"}
+            className={isMobileHeader ? 'rounded-lg shadow-sm' : 'rounded-xl shadow-sm h-8 w-auto'}
             priority
           />
-          <h1 className={`font-[family-name:var(--font-logo)] text-${isMobileHeader ? 'xl lg:text-2xl' : '2xl'} ${appName === 'SnapLinks' ? 'text-[#1f644e]' : 'text-black'}`}>
+          <h1
+            className={`font-[family-name:var(--font-logo)] text-${isMobileHeader ? 'xl lg:text-2xl' : '2xl'} ${appName === 'SnapLinks' ? 'text-[#1f644e]' : 'text-black'}`}
+          >
             {appName}
           </h1>
         </div>
@@ -65,7 +67,9 @@ export default function AppLayout({
     }
     // Fallback if no logo provided
     return (
-      <h1 className={`font-[family-name:var(--font-logo)] text-${isMobileHeader ? 'xl lg:text-2xl' : '2xl'} text-[#1f644e] ${isMobileHeader ? 'lg:hidden' : ''}`}>
+      <h1
+        className={`font-[family-name:var(--font-logo)] text-${isMobileHeader ? 'xl lg:text-2xl' : '2xl'} text-[#1f644e] ${isMobileHeader ? 'lg:hidden' : ''}`}
+      >
         {appName}
       </h1>
     );
@@ -76,9 +80,7 @@ export default function AppLayout({
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-[#e5e3d8] fixed inset-y-0 left-0 z-30">
         <div className="p-6 border-b border-[#e5e3d8]">
-          <div className="flex items-center gap-2">
-             {renderLogo()}
-          </div>
+          <div className="flex items-center gap-2">{renderLogo()}</div>
         </div>
         <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
           {tabs.map((tab) => (
@@ -110,20 +112,14 @@ export default function AppLayout({
                 </button>
               )}
               {renderLogo(true)}
-              <h1 className="hidden lg:block text-lg font-bold text-[#1e3a34]">
-                {getTabTitle()}
-              </h1>
+              <h1 className="hidden lg:block text-lg font-bold text-[#1e3a34]">{getTabTitle()}</h1>
             </div>
-            <div className="flex items-center gap-3">
-              {headerActions}
-            </div>
+            <div className="flex items-center gap-3">{headerActions}</div>
           </div>
         </header>
 
         {/* Content */}
-        <main className="min-w-0 flex-1 w-full overflow-x-hidden">
-          {children}
-        </main>
+        <main className="min-w-0 flex-1 w-full overflow-x-hidden">{children}</main>
       </div>
 
       {/* Mobile Hamburger Menu Drawer */}
@@ -131,9 +127,7 @@ export default function AppLayout({
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
           <aside className="absolute inset-y-0 left-0 w-64 bg-white shadow-xl animate-in slide-in-from-left duration-300">
-            <div className="p-6 border-b border-[#e5e3d8]">
-               {renderLogo()}
-            </div>
+            <div className="p-6 border-b border-[#e5e3d8]">{renderLogo()}</div>
             <nav className="py-4 px-3 space-y-1 overflow-y-auto">
               {tabs.map((tab) => (
                 <button
@@ -177,7 +171,9 @@ export default function AppLayout({
                   className="w-[22px] h-[22px] mb-0.5"
                   strokeWidth={activeTab === tab.id ? 2 : 1.5}
                 />
-                <span className={`text-[10px] ${activeTab === tab.id ? 'font-extrabold' : 'font-bold'}`}>
+                <span
+                  className={`text-[10px] ${activeTab === tab.id ? 'font-extrabold' : 'font-bold'}`}
+                >
                   {tab.label}
                 </span>
               </button>

@@ -17,7 +17,7 @@ export async function PUT(request, { params }) {
     });
   } catch (error) {
     if (error.message === 'Not found' || error.message === 'Account not found') {
-       return NextResponse.json({ success: false, message: 'Not found' }, { status: 404 });
+      return NextResponse.json({ success: false, message: 'Not found' }, { status: 404 });
     }
     return NextResponse.json(
       { success: false, message: 'Failed to update account' },

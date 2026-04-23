@@ -2,11 +2,7 @@ import dbConnect from '@/lib/dbConnect';
 import Transaction from '@/models/Transaction';
 import Account from '@/models/Account';
 import Category from '@/models/Category';
-import {
-  serializeTransaction,
-  serializeAccount,
-  serializeCategory,
-} from '@/lib/money-serializers';
+import { serializeTransaction, serializeAccount, serializeCategory } from '@/lib/money-serializers';
 import {
   isValidObjectId,
   DraftTransactionSchema,
@@ -25,9 +21,9 @@ export async function getAccounts({ includeBalances = true } = {}) {
   if (includeBalances) {
     const transactions = await Transaction.find({ deletedAt: null }).lean();
 
-    accounts.forEach(acc => {
+    accounts.forEach((acc) => {
       let balance = acc.initialBalance || 0;
-      transactions.forEach(tx => {
+      transactions.forEach((tx) => {
         if (tx.type === 'income' && tx.account?.toString() === acc._id.toString()) {
           balance += tx.amount;
         } else if (tx.type === 'expense' && tx.account?.toString() === acc._id.toString()) {
@@ -98,7 +94,7 @@ export async function getFinancialSummary({ startDate, endDate } = {}) {
     totalIncome,
     totalExpense,
     netIncome: totalIncome - totalExpense,
-    accounts
+    accounts,
   };
 }
 

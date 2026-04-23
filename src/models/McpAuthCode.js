@@ -3,6 +3,11 @@ import mongoose from 'mongoose';
 const McpAuthCodeSchema = new mongoose.Schema({
   code: { type: String, required: true, unique: true },
   clientId: { type: String, required: true },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    index: true,
+  },
   redirectUri: { type: String, required: true },
   codeChallenge: { type: String, required: true },
   codeChallengeMethod: { type: String, default: 'S256' },

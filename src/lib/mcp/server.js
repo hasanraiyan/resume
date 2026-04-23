@@ -1,7 +1,15 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import mongoose from 'mongoose';
-import { getAccounts, getCategories, getTransactions, getFinancialSummary, createTransaction, updateTransaction, deleteTransaction } from '@/lib/apps/pocketly/service/service';
+import {
+  getAccounts,
+  getCategories,
+  getTransactions,
+  getFinancialSummary,
+  createTransaction,
+  updateTransaction,
+  deleteTransaction,
+} from '@/lib/apps/pocketly/service/service';
 
 export function createMcpServer() {
   const server = new McpServer({
@@ -201,7 +209,10 @@ export function createMcpServer() {
       try {
         const deleted = await deleteTransaction(id);
         if (!deleted) {
-          return { content: [{ type: 'text', text: 'Transaction not found or already deleted' }], isError: true };
+          return {
+            content: [{ type: 'text', text: 'Transaction not found or already deleted' }],
+            isError: true,
+          };
         }
         return {
           content: [{ type: 'text', text: JSON.stringify({ success: true, deletedId: id }) }],

@@ -54,6 +54,7 @@ async function handleAuthorizationCode(params) {
 
   const tokenPayload = {
     clientId: client_id,
+    userId: authCode.userId?.toString?.() || null,
     scope: authCode.scope,
     resource: authCode.resource,
   };

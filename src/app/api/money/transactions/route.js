@@ -19,7 +19,7 @@ export async function GET(request) {
       endDate,
       account,
       category,
-      type
+      type,
     });
 
     return NextResponse.json({ success: true, transactions });

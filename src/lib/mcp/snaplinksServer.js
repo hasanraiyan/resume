@@ -179,7 +179,8 @@ export function createSnaplinksMcpServer() {
       },
     },
     async ({ slug, id, days }) => {
-      if (!slug && !id) return { content: [{ type: 'text', text: 'slug or id is required' }], isError: true };
+      if (!slug && !id)
+        return { content: [{ type: 'text', text: 'slug or id is required' }], isError: true };
 
       try {
         const stats = await getAnalyticsOverview({ slug, id, days });
@@ -200,9 +201,18 @@ export function createSnaplinksMcpServer() {
                   shortUrl,
                   totalClicksWindow: stats.summary.totalClicks,
                   uniqueVisitors: stats.summary.uniqueVisitors,
-                  topCountries: stats.countries.map((r) => ({ country: r.country, count: r.count })),
-                  topReferrers: stats.topReferrers.map((r) => ({ referrer: r.referrer, count: r.count })),
-                  clicksOverTime: stats.clicksOverTime.map((r) => ({ date: r.date, count: r.clicks })),
+                  topCountries: stats.countries.map((r) => ({
+                    country: r.country,
+                    count: r.count,
+                  })),
+                  topReferrers: stats.topReferrers.map((r) => ({
+                    referrer: r.referrer,
+                    count: r.count,
+                  })),
+                  clicksOverTime: stats.clicksOverTime.map((r) => ({
+                    date: r.date,
+                    count: r.clicks,
+                  })),
                   windowDays: days || 30,
                 },
                 null,
@@ -268,7 +278,8 @@ export function createSnaplinksMcpServer() {
       },
     },
     async (payload) => {
-      if (!payload.slug) return { content: [{ type: 'text', text: 'slug is required' }], isError: true };
+      if (!payload.slug)
+        return { content: [{ type: 'text', text: 'slug is required' }], isError: true };
 
       try {
         const updated = await updateLink(payload.slug, payload);

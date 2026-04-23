@@ -1,7 +1,12 @@
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import mongoose from 'mongoose';
-import { getAccounts, getCategories, getTransactions, getFinancialSummary } from '@/lib/apps/pocketly/service/service';
+import {
+  getAccounts,
+  getCategories,
+  getTransactions,
+  getFinancialSummary,
+} from '@/lib/apps/pocketly/service/service';
 
 function isValidObjectId(value) {
   return typeof value === 'string' && mongoose.Types.ObjectId.isValid(value);

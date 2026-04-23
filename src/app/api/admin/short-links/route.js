@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { listLinks, createLink, updateLink, deleteLink } from '@/lib/apps/snaplinks/service/service';
+import {
+  listLinks,
+  createLink,
+  updateLink,
+  deleteLink,
+} from '@/lib/apps/snaplinks/service/service';
 
 // --- GET All Short Links ---
 export async function GET(request) {
@@ -46,13 +51,21 @@ export async function POST(request) {
       return NextResponse.json({ error: `Validation Error: ${messages}` }, { status: 400 });
     }
     if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map(err => err.message).join(', ');
+      const messages = Object.values(error.errors)
+        .map((err) => err.message)
+        .join(', ');
       return NextResponse.json({ error: `Validation Error: ${messages}` }, { status: 400 });
     }
     if (error.message === 'Slug already exists') {
-       return NextResponse.json({ error: 'Slug already exists' }, { status: 409 });
+      return NextResponse.json({ error: 'Slug already exists' }, { status: 409 });
     }
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: error.message?.includes('exceed') || error.message?.includes('Invalid slug') ? 400 : 500 });
+    return NextResponse.json(
+      { error: error.message || 'Internal server error' },
+      {
+        status:
+          error.message?.includes('exceed') || error.message?.includes('Invalid slug') ? 400 : 500,
+      }
+    );
   }
 }
 
@@ -81,14 +94,16 @@ export async function PUT(request) {
       return NextResponse.json({ error: `Validation Error: ${messages}` }, { status: 400 });
     }
     if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map(err => err.message).join(', ');
+      const messages = Object.values(error.errors)
+        .map((err) => err.message)
+        .join(', ');
       return NextResponse.json({ error: `Validation Error: ${messages}` }, { status: 400 });
     }
     if (error.message === 'New slug already exists') {
       return NextResponse.json({ error: 'New slug already exists' }, { status: 409 });
     }
     if (error.message === 'Short link not found') {
-       return NextResponse.json({ error: 'Short link not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Short link not found' }, { status: 404 });
     }
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
