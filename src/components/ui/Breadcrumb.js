@@ -13,6 +13,7 @@ import {
   Smartphone,
   Palette,
   Code,
+  Grid,
 } from 'lucide-react';
 
 const getIconComponent = (iconName) => {
@@ -31,6 +32,8 @@ const getIconComponent = (iconName) => {
       return Palette;
     case 'Code':
       return Code;
+    case 'Grid':
+      return Grid;
     default:
       return null;
   }
@@ -40,7 +43,7 @@ const getIconComponent = (iconName) => {
  * A reusable breadcrumb component for navigation
  *
  * @param {object} props - Component props
- * @param {Array} props.breadcrumbs - Array of breadcrumb items: [{ label, path?, icon?: 'Home' | 'FolderOpen' | 'FileText' | 'Globe' | 'Smartphone' | 'Palette' | 'Code' }]
+ * @param {Array} props.breadcrumbs - Array of breadcrumb items: [{ label, path?, icon?: 'Home' | 'FolderOpen' | 'FileText' | 'Globe' | 'Smartphone' | 'Palette' | 'Code' | 'Grid' }]
  * @returns {JSX.Element} The rendered Breadcrumb component
  */
 const Breadcrumb = ({ breadcrumbs }) => {
