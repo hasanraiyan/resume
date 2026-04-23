@@ -21,6 +21,7 @@ function AdminLogin() {
   const [rememberMe, setRememberMe] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [isFormValid, setIsFormValid] = useState(false);
+  const [stage, setStage] = useState('credentials'); // 'credentials' or '2fa'
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/admin/dashboard';
@@ -63,24 +64,39 @@ function AdminLogin() {
     return Object.keys(errors).length === 0;
   };
 
-  // Check form validity
+  // Check if initial credentials are valid (username + password)
+  const hasValidInitialCreds =
+    credentials.username.length >= 3 &&
+    credentials.password.length >= 4 &&
+    !fieldErrors.username &&
+    !fieldErrors.password;
+
+  // Check form validity (all fields must be valid for 2FA stage)
   useEffect(() => {
-    const isValid =
-      credentials.username.length >= 3 &&
-      credentials.password.length >= 4 &&
-      credentials.token.length === 6 &&
-      Object.keys(fieldErrors).length === 0;
-    setIsFormValid(isValid);
-  }, [credentials, fieldErrors]);
+    if (stage === '2fa') {
+      const isValid = credentials.token.length === 6 && !fieldErrors.token;
+      setIsFormValid(isValid);
+    }
+  }, [credentials.token, fieldErrors.token, stage]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate all fields
-    const isUsernameValid = validateField('username', credentials.username);
-    const isPasswordValid = validateField('password', credentials.password);
+    if (stage === 'credentials') {
+      // Stage 1: Validate username and password, then move to 2FA
+      const isUsernameValid = validateField('username', credentials.username);
+      const isPasswordValid = validateField('password', credentials.password);
 
-    if (!isUsernameValid || !isPasswordValid) {
+      if (isUsernameValid && isPasswordValid) {
+        setStage('2fa');
+        setError('');
+      }
+      return;
+    }
+
+    // Stage 2: Validate 2FA and authenticate
+    const is2FAValid = validateField('token', credentials.token);
+    if (!is2FAValid) {
       return;
     }
 
@@ -123,11 +139,11 @@ function AdminLogin() {
 
   return (
     <>
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
+      <div className="min-h-screen bg-white flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-6">
           {/* Header */}
           <div className="text-center">
-            <div className="mx-auto w-16 h-16 bg-black rounded-lg flex items-center justify-center mb-8">
+            <div className="mx-auto w-16 h-16 bg-black rounded-lg flex items-center justify-center mb-6">
               <svg
                 className="w-8 h-8 text-white"
                 fill="none"
@@ -173,230 +189,259 @@ function AdminLogin() {
             )}
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Username Field */}
-              <div className="space-y-2">
-                <label
-                  htmlFor="username"
-                  className="block text-sm font-semibold text-black mb-2 uppercase tracking-wider"
-                >
-                  Username
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <svg
-                      className="w-5 h-5 text-neutral-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {stage === 'credentials' && (
+                <>
+                  {/* Username Field */}
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="username"
+                      className="block text-sm font-semibold text-black mb-2 uppercase tracking-wider"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      Username
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <svg
+                          className="w-5 h-5 text-neutral-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
+                        </svg>
+                      </div>
+                      <input
+                        id="username"
+                        name="username"
+                        type="text"
+                        autoComplete="username"
+                        required
+                        className={`w-full pl-12 pr-4 py-3 border-2 rounded-lg focus:outline-none transition-all duration-300 ${
+                          fieldErrors.username
+                            ? 'border-red-300 focus:border-red-500'
+                            : 'border-neutral-200 focus:border-black'
+                        }`}
+                        placeholder="Enter your username"
+                        value={credentials.username}
+                        onChange={handleChange}
                       />
-                    </svg>
+                    </div>
+                    {fieldErrors.username && (
+                      <p className="text-red-600 text-sm font-medium">{fieldErrors.username}</p>
+                    )}
                   </div>
-                  <input
-                    id="username"
-                    name="username"
-                    type="text"
-                    autoComplete="username"
-                    required
-                    className={`w-full pl-12 pr-4 py-3 border-2 rounded-lg focus:outline-none transition-all duration-300 ${
-                      fieldErrors.username
-                        ? 'border-red-300 focus:border-red-500'
-                        : 'border-neutral-200 focus:border-black'
-                    }`}
-                    placeholder="Enter your username"
-                    value={credentials.username}
-                    onChange={handleChange}
-                  />
-                </div>
-                {fieldErrors.username && (
-                  <p className="text-red-600 text-sm font-medium">{fieldErrors.username}</p>
-                )}
-              </div>
 
-              {/* Password Field */}
-              <div className="space-y-2">
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-semibold text-black mb-2 uppercase tracking-wider"
-                >
-                  Password
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <svg
-                      className="w-5 h-5 text-neutral-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                  {/* Password Field */}
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="password"
+                      className="block text-sm font-semibold text-black mb-2 uppercase tracking-wider"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      Password
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <svg
+                          className="w-5 h-5 text-neutral-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                          />
+                        </svg>
+                      </div>
+                      <input
+                        id="password"
+                        name="password"
+                        type={showPassword ? 'text' : 'password'}
+                        autoComplete="current-password"
+                        required
+                        className={`w-full pl-12 pr-12 py-3 border-2 rounded-lg focus:outline-none transition-all duration-300 ${
+                          fieldErrors.password
+                            ? 'border-red-300 focus:border-red-500'
+                            : 'border-neutral-200 focus:border-black'
+                        }`}
+                        placeholder="Enter your password"
+                        value={credentials.password}
+                        onChange={handleChange}
                       />
-                    </svg>
+                      <button
+                        type="button"
+                        onClick={togglePasswordVisibility}
+                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-neutral-400 hover:text-neutral-600 transition-colors duration-200"
+                      >
+                        {showPassword ? (
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
+                            />
+                          </svg>
+                        ) : (
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                            <path
+                              strokeLineCap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                    {fieldErrors.password && (
+                      <p className="text-red-600 text-sm font-medium">{fieldErrors.password}</p>
+                    )}
                   </div>
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
-                    required
-                    className={`w-full pl-12 pr-12 py-3 border-2 rounded-lg focus:outline-none transition-all duration-300 ${
-                      fieldErrors.password
-                        ? 'border-red-300 focus:border-red-500'
-                        : 'border-neutral-200 focus:border-black'
-                    }`}
-                    placeholder="Enter your password"
-                    value={credentials.password}
-                    onChange={handleChange}
-                  />
+
+                  {/* Remember Me */}
+                  <div className="flex items-center">
+                    <input
+                      id="remember-me"
+                      name="remember-me"
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="h-4 w-4 text-black border-neutral-300 rounded focus:ring-black focus:ring-2"
+                    />
+                    <label
+                      htmlFor="remember-me"
+                      className="ml-3 text-sm text-neutral-700 font-medium"
+                    >
+                      Remember me
+                    </label>
+                  </div>
+
+                  {/* Next Button */}
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    disabled={!hasValidInitialCreds}
+                    className="w-full py-3 px-4 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </Button>
+                </>
+              )}
+
+              {stage === '2fa' && (
+                <>
+                  {/* 2FA Token Field */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-black mb-2 uppercase tracking-wider">
+                      2FA Code
+                    </label>
+                    <InputOTP
+                      maxLength={6}
+                      value={credentials.token}
+                      onChange={(val) => {
+                        setCredentials({ ...credentials, token: val });
+                        if (val.length === 6) {
+                          const errors = { ...fieldErrors };
+                          delete errors.token;
+                          setFieldErrors(errors);
+                        }
+                      }}
+                    />
+                    {fieldErrors.token && (
+                      <p className="text-red-600 text-sm font-medium">{fieldErrors.token}</p>
+                    )}
+                  </div>
+
+                  {/* Submit Button */}
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    disabled={isLoading || !isFormValid}
+                    className="w-full py-3 px-4 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? (
+                      <>
+                        <svg
+                          className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Signing in...
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="w-5 h-5 mr-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                          />
+                        </svg>
+                        Sign in to Dashboard
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Back Button */}
                   <button
                     type="button"
-                    onClick={togglePasswordVisibility}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-neutral-400 hover:text-neutral-600 transition-colors duration-200"
+                    onClick={() => {
+                      setStage('credentials');
+                      setCredentials({ ...credentials, token: '' });
+                      setFieldErrors({});
+                    }}
+                    className="w-full py-3 px-4 font-semibold text-black border-2 border-neutral-200 rounded-lg hover:border-black transition-colors duration-200"
                   >
-                    {showPassword ? (
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                        />
-                      </svg>
-                    )}
+                    Back
                   </button>
-                </div>
-                {fieldErrors.password && (
-                  <p className="text-red-600 text-sm font-medium">{fieldErrors.password}</p>
-                )}
-              </div>
-
-              {/* 2FA Token Field */}
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-black mb-2 uppercase tracking-wider">
-                  2FA Code
-                </label>
-                <InputOTP
-                  maxLength={6}
-                  value={credentials.token}
-                  onChange={(val) => {
-                    setCredentials({ ...credentials, token: val });
-                    if (val.length === 6) {
-                      const errors = { ...fieldErrors };
-                      delete errors.token;
-                      setFieldErrors(errors);
-                    }
-                  }}
-                />
-                {fieldErrors.token && (
-                  <p className="text-red-600 text-sm font-medium">{fieldErrors.token}</p>
-                )}
-              </div>
-
-              {/* Remember Me */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <input
-                    id="remember-me"
-                    name="remember-me"
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="h-4 w-4 text-black border-neutral-300 rounded focus:ring-black focus:ring-2"
-                  />
-                  <label
-                    htmlFor="remember-me"
-                    className="ml-3 text-sm text-neutral-700 font-medium"
-                  >
-                    Remember me
-                  </label>
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                variant="primary"
-                disabled={isLoading || !isFormValid}
-                className="w-full py-3 px-4 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? (
-                  <>
-                    <svg
-                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Signing in...
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      className="w-5 h-5 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
-                      />
-                    </svg>
-                    Sign in to Dashboard
-                  </>
-                )}
-              </Button>
+                </>
+              )}
             </form>
           </Card>
 
