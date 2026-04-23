@@ -201,15 +201,12 @@ A JSON array of all prompts for the image generation tool.
 
 ---
 
-## Step 7: Automated Image Insertion Workflow
+## Step 7: Image Placeholder Workflow
 
 1.  **Generate Initial Files**: Create `File 1` (Content) and `File 2` (Metadata). Use placeholders like `![...](IMAGE_URL_1)` in the content.
-2.  **Extract Prompts**: Identify all image prompts in `File 2`.
-3.  **Generate Images**: Execute the image generation tool:
-    ```bash
-    node .agent/skills/blog-writing/tool/image-gen-tool.js --inputFile="prompts.json"
-    ```
-4.  **Update Content**: Replace `IMAGE_URL_N` placeholders in `File 1` with the actual URLs.
+2.  **Extract Prompts**: Identify all image prompts in `File 2` and present them to the user.
+3.  **Wait for Images**: Present the image generation prompts to the user and ask them to provide the generated image URLs.
+4.  **Update Content**: Once the user provides the image URLs, replace `IMAGE_URL_N` placeholders in `File 1` with the actual URLs.
 5.  **Final Polish**: Ensure the content looks as intended.
 
 ---

@@ -9,7 +9,7 @@
  *
  * Usage:
  *   node .agent/skills/blog-writing/tool/fetch-all-blogs.js
- *   node .agent/skills/blog-writing/tool/fetch-all-blogs.js --url="https://hasanraiyan.vercel.app"
+ *   node .agent/skills/blog-writing/tool/fetch-all-blogs.js --url="https://hasanraiyan.me"
  *
  * Output: JSON list of { title, slug, tags, publishedAt } for every published article.
  */
@@ -19,7 +19,7 @@ const http = require('http');
 
 const args = process.argv.slice(2);
 const urlArg = args.find((a) => a.startsWith('--url='));
-const baseUrl = urlArg ? urlArg.split('=')[1] : 'https://hasanraiyan.vercel.app';
+const baseUrl = urlArg ? urlArg.split('=')[1] : 'https://hasanraiyan.me';
 
 function fetchJSON(url) {
   const lib = url.startsWith('https') ? https : http;
