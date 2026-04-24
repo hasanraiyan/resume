@@ -127,7 +127,7 @@ export default async function RootLayout({ children }) {
     '@context': 'https://schema.org',
     '@type': 'Person',
     name: ownerName,
-    url: 'https://hasanraiyan.vercel.app',
+    url: 'https://hasanraiyan.me',
     jobTitle: 'Freelance Web Developer',
     sameAs: serializedHeroData.socialLinks?.map((l) => l.url).filter(Boolean) ?? [
       'https://github.com/hasanraiyan',

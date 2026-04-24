@@ -28,9 +28,7 @@ import {
 import { useCallback, useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 
-const AccountsTab = dynamic(() => import('@/components/pocketly-tracker/AccountsTab'));
-const CategoriesTab = dynamic(() => import('@/components/pocketly-tracker/CategoriesTab'));
-const BudgetsTab = dynamic(() => import('@/components/pocketly-tracker/BudgetsTab'));
+const PlanningTab = dynamic(() => import('@/components/pocketly-tracker/PlanningTab'));
 const AnalysisTab = dynamic(() => import('@/components/pocketly-tracker/AnalysisTab'));
 const ChatTab = dynamic(() => import('@/components/pocketly-tracker/ChatTab'));
 const FinanceSettingsTab = dynamic(
@@ -41,8 +39,7 @@ const tabs = [
   { id: 'records', label: 'Records', icon: Receipt },
   { id: 'analysis', label: 'Analysis', icon: BarChart3 },
   { id: 'accounts', label: 'Accounts', icon: Wallet },
-  { id: 'categories', label: 'Categories', icon: Tag },
-  { id: 'budgets', label: 'Budgets', icon: Target },
+  { id: 'planning', label: 'Planning', icon: Target },
   { id: 'chat', label: 'Chat', icon: MessageCircle },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
@@ -122,15 +119,7 @@ function FinanceContent() {
       );
     }
 
-    const skeletonTabs = [
-      'records',
-      'analysis',
-      'accounts',
-      'categories',
-      'budgets',
-      'chat',
-      'settings',
-    ];
+    const skeletonTabs = ['records', 'analysis', 'accounts', 'planning', 'chat', 'settings'];
     const shouldShowSkeleton =
       skeletonTabs.includes(activeTab) && isBootstrapLoading && showDelayedBootstrapSkeleton;
 
@@ -147,10 +136,8 @@ function FinanceContent() {
               onAddModalClose={handleAddModalClose}
             />
           );
-        case 'categories':
-          return <CategoriesTab />;
-        case 'budgets':
-          return <BudgetsTab />;
+        case 'planning':
+          return <PlanningTab />;
         case 'chat':
           return <ChatTab />;
         case 'settings':
@@ -167,8 +154,7 @@ function FinanceContent() {
     records: 'Records',
     analysis: 'Analysis',
     accounts: 'Accounts',
-    categories: 'Categories',
-    budgets: 'Budgets',
+    planning: 'Planning',
     chat: 'Chat',
     settings: 'Settings',
   };
