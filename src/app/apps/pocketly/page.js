@@ -29,6 +29,7 @@ import { useCallback, useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 
 const PlanningTab = dynamic(() => import('@/components/pocketly-tracker/PlanningTab'));
+const AccountsTab = dynamic(() => import('@/components/pocketly-tracker/AccountsTab'));
 const AnalysisTab = dynamic(() => import('@/components/pocketly-tracker/AnalysisTab'));
 const ChatTab = dynamic(() => import('@/components/pocketly-tracker/ChatTab'));
 const FinanceSettingsTab = dynamic(
