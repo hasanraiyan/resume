@@ -15,9 +15,9 @@ export default function PlanningTab() {
   const [activeView, setActiveView] = useState('categories');
 
   return (
-    <div className="w-full pb-24 sm:pb-8">
+    <div className="w-full pb-28 sm:pb-12">
       {/* Top Navigation Tabs */}
-      <div className="w-full bg-[#fcfbf5] sticky top-14 lg:top-[61px] z-10 pt-4 pb-3 px-4 lg:px-6">
+      <div className="w-full bg-[#fcfbf5] sticky top-14 lg:top-[61px] z-10 pb-4 pt-2 px-4 lg:px-6">
         <div className="w-full max-w-6xl mx-auto flex justify-center">
           <TopTabs
             options={viewOptions}
@@ -29,7 +29,7 @@ export default function PlanningTab() {
       </div>
 
       {/* Content Area */}
-      <div className="w-full pt-4">
+      <div className="w-full">
         {activeView === 'categories' ? <CategoriesTab /> : <BudgetsTab />}
       </div>
     </div>

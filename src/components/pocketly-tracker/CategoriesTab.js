@@ -191,7 +191,7 @@ export default function CategoriesTab() {
   );
 
   return (
-    <div className="mb-6">
+    <div className="w-full">
       <div className="w-full px-4 lg:px-6">
         <div className="w-full max-w-6xl mx-auto">
           {/* Summary */}

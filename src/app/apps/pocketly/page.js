@@ -120,14 +120,7 @@ function FinanceContent() {
       );
     }
 
-    const skeletonTabs = [
-      'records',
-      'analysis',
-      'accounts',
-      'planning',
-      'chat',
-      'settings',
-    ];
+    const skeletonTabs = ['records', 'analysis', 'accounts', 'planning', 'chat', 'settings'];
     const shouldShowSkeleton =
       skeletonTabs.includes(activeTab) && isBootstrapLoading && showDelayedBootstrapSkeleton;
 
