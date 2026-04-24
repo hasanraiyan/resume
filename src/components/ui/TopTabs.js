@@ -3,7 +3,7 @@
 import React, { useId } from 'react';
 import { motion } from 'framer-motion';
 
-export default function TopTabs({ options = [], activeId, onChange = () => {}, theme = 'green' }) {
+export default function TopTabs({ options = [], activeId, onChange = () => {}, theme = 'green', showLabelOnMobile = false }) {
   const safeOptions = Array.isArray(options) ? options : [];
 
   // Generates a unique ID so if you have multiple Tab groups on the same page,
@@ -80,7 +80,7 @@ export default function TopTabs({ options = [], activeId, onChange = () => {}, t
             {/* Tab Content (Icon + Label) */}
             <span className="relative z-10 flex items-center gap-2">
               {Icon && <Icon className="h-4 w-4 shrink-0" />}
-              {option.label && <span className="hidden sm:inline truncate">{option.label}</span>}
+              {option.label && <span className={`truncate ${showLabelOnMobile ? "" : "hidden sm:inline"}`}>{option.label}</span>}
             </span>
           </button>
         );

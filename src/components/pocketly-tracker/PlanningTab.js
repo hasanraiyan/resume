@@ -23,6 +23,7 @@ export default function PlanningTab() {
             options={viewOptions}
             activeId={activeView}
             onChange={setActiveView}
+            showLabelOnMobile={true}
           />
         </div>
       </div>
