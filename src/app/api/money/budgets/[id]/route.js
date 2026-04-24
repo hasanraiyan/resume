@@ -8,7 +8,8 @@ export async function PUT(request, { params }) {
 
   try {
     const body = await request.json();
-    const budget = await updateBudget(params.id, body);
+    const { id } = await params;
+    const budget = await updateBudget(id, body);
     return NextResponse.json({ success: true, budget });
   } catch (error) {
     return NextResponse.json(
@@ -23,7 +24,8 @@ export async function DELETE(request, { params }) {
   if (typeof session !== 'object') return session;
 
   try {
-    await deleteBudget(params.id);
+    const { id } = await params;
+    await deleteBudget(id);
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(

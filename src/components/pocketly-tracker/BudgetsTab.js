@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { useMoney } from '@/context/MoneyContext';
 import { Target, Plus, Pencil, Trash2, X, AlertTriangle } from 'lucide-react';
 import IconRenderer from './IconRenderer';
+import BottomSheet from './BottomSheet';
 
 const currencyFormatter = new Intl.NumberFormat('en-IN', {
   style: 'currency',
@@ -12,11 +13,19 @@ const currencyFormatter = new Intl.NumberFormat('en-IN', {
   maximumFractionDigits: 0,
 });
 
+const getCategoryColorPresentation = (color) => {
+  if (color && color.startsWith('bg-')) {
+    return { className: color, style: {} };
+  }
+  return { className: '', style: { backgroundColor: color || '#1f644e' } };
+};
+
 export default function BudgetsTab() {
   const { budgets, categories, transactions, addBudget, updateBudget, deleteBudget } = useMoney();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState(null);
 
+  const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [formData, setFormData] = useState({
     category: '',
     amount: '',
@@ -293,6 +302,44 @@ export default function BudgetsTab() {
           </div>
         </div>
       )}
+
+      {/* Category Selector Bottom Sheet */}
+      <BottomSheet
+        open={showCategorySelector}
+        onClose={() => setShowCategorySelector(false)}
+        className="max-h-80 overflow-y-auto"
+        mobileOnly={false}
+      >
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#7c8e88]">
+          Select category
+        </p>
+        <div className="grid grid-cols-4 gap-4">
+          {expenseCategories.map((cat) => {
+            const colorPresentation = getCategoryColorPresentation(cat.color);
+            return (
+              <button
+                type="button"
+                key={cat.id || cat._id}
+                onClick={() => {
+                  setFormData((p) => ({ ...p, category: cat.id || cat._id }));
+                  setShowCategorySelector(false);
+                }}
+                className="flex flex-col items-center gap-1.5 cursor-pointer"
+              >
+                <div
+                  className={`w-14 h-14 rounded-2xl ${colorPresentation.className} text-white flex items-center justify-center shadow-md active:scale-95 transition`}
+                  style={colorPresentation.style}
+                >
+                  <IconRenderer name={cat.icon} className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-bold text-[#7c8e88] text-center leading-tight">
+                  {cat.name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </BottomSheet>
     </div>
   );
 }
