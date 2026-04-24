@@ -23,12 +23,14 @@ import {
   Settings,
   Loader2,
   MessageCircle,
+  Target,
 } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 
 const AccountsTab = dynamic(() => import('@/components/pocketly-tracker/AccountsTab'));
 const CategoriesTab = dynamic(() => import('@/components/pocketly-tracker/CategoriesTab'));
+const BudgetsTab = dynamic(() => import('@/components/pocketly-tracker/BudgetsTab'));
 const AnalysisTab = dynamic(() => import('@/components/pocketly-tracker/AnalysisTab'));
 const ChatTab = dynamic(() => import('@/components/pocketly-tracker/ChatTab'));
 const FinanceSettingsTab = dynamic(
@@ -40,6 +42,7 @@ const tabs = [
   { id: 'analysis', label: 'Analysis', icon: BarChart3 },
   { id: 'accounts', label: 'Accounts', icon: Wallet },
   { id: 'categories', label: 'Categories', icon: Tag },
+  { id: 'budgets', label: 'Budgets', icon: Target },
   { id: 'chat', label: 'Chat', icon: MessageCircle },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
@@ -119,7 +122,15 @@ function FinanceContent() {
       );
     }
 
-    const skeletonTabs = ['records', 'analysis', 'accounts', 'categories', 'chat', 'settings'];
+    const skeletonTabs = [
+      'records',
+      'analysis',
+      'accounts',
+      'categories',
+      'budgets',
+      'chat',
+      'settings',
+    ];
     const shouldShowSkeleton =
       skeletonTabs.includes(activeTab) && isBootstrapLoading && showDelayedBootstrapSkeleton;
 
@@ -138,6 +149,8 @@ function FinanceContent() {
           );
         case 'categories':
           return <CategoriesTab />;
+        case 'budgets':
+          return <BudgetsTab />;
         case 'chat':
           return <ChatTab />;
         case 'settings':
@@ -155,6 +168,7 @@ function FinanceContent() {
     analysis: 'Analysis',
     accounts: 'Accounts',
     categories: 'Categories',
+    budgets: 'Budgets',
     chat: 'Chat',
     settings: 'Settings',
   };

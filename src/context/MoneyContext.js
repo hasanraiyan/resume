@@ -7,6 +7,7 @@ const MoneyContext = createContext(null);
 const initialState = {
   accounts: [],
   categories: [],
+  budgets: [],
   transactions: [],
   stats: {
     totalAccountBalance: 0,
@@ -67,6 +68,8 @@ function moneyReducer(state, action) {
       return { ...state, accounts: action.payload };
     case 'SET_CATEGORIES':
       return { ...state, categories: action.payload };
+    case 'SET_BUDGETS':
+      return { ...state, budgets: action.payload };
     case 'SET_TRANSACTIONS':
       return { ...state, transactions: action.payload };
     case 'SET_STATS':
@@ -224,6 +227,7 @@ export function MoneyProvider({ children }) {
 
       dispatch({ type: 'SET_ACCOUNTS', payload: data.accounts || [] });
       dispatch({ type: 'SET_CATEGORIES', payload: data.categories || [] });
+      dispatch({ type: 'SET_BUDGETS', payload: data.budgets || [] });
       dispatch({ type: 'SET_TRANSACTIONS', payload: data.transactions || [] });
       dispatch({ type: 'SET_STATS', payload: data.stats || {} });
 
@@ -500,6 +504,49 @@ export function MoneyProvider({ children }) {
     }
   };
 
+  const addBudget = async (budget) => {
+    try {
+      const data = await fetch('/api/money/budgets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(budget),
+      }).then(readJson);
+      const budgetsData = await fetch('/api/money/budgets').then(readJson);
+      dispatch({ type: 'SET_BUDGETS', payload: budgetsData.budgets || [] });
+      return data.budget;
+    } catch (error) {
+      console.error('Failed to add budget:', error);
+      throw error;
+    }
+  };
+
+  const updateBudget = async (id, budget) => {
+    try {
+      const data = await fetch(`/api/money/budgets/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(budget),
+      }).then(readJson);
+      const budgetsData = await fetch('/api/money/budgets').then(readJson);
+      dispatch({ type: 'SET_BUDGETS', payload: budgetsData.budgets || [] });
+      return data.budget;
+    } catch (error) {
+      console.error('Failed to update budget:', error);
+      throw error;
+    }
+  };
+
+  const deleteBudget = async (id) => {
+    try {
+      await fetch(`/api/money/budgets/${id}`, { method: 'DELETE' }).then(readJson);
+      const budgetsData = await fetch('/api/money/budgets').then(readJson);
+      dispatch({ type: 'SET_BUDGETS', payload: budgetsData.budgets || [] });
+    } catch (error) {
+      console.error('Failed to delete budget:', error);
+      throw error;
+    }
+  };
+
   const clearFinanceData = async () => {
     try {
       await fetch('/api/money/reset', { method: 'POST' }).then(readJson);
@@ -559,6 +606,9 @@ export function MoneyProvider({ children }) {
     addCategory,
     updateCategory,
     deleteCategory,
+    addBudget,
+    updateBudget,
+    deleteBudget,
     clearFinanceData,
     setPeriod,
     navigatePeriod,

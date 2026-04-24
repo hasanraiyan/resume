@@ -3,8 +3,14 @@ import dbConnect from '@/lib/dbConnect';
 import Account from '@/models/Account';
 import Category from '@/models/Category';
 import Transaction from '@/models/Transaction';
+import Budget from '@/models/Budget';
 import { requireAdminAuth } from '@/lib/money-auth';
-import { serializeAccount, serializeCategory, serializeTransaction } from '@/lib/money-serializers';
+import {
+  serializeAccount,
+  serializeCategory,
+  serializeTransaction,
+  serializeBudget,
+} from '@/lib/money-serializers';
 import { computeAccountSummaries } from '@/lib/money-account-summary';
 
 export async function GET(request) {
@@ -25,10 +31,11 @@ export async function GET(request) {
       if (endDate) periodQuery.date.$lte = new Date(endDate);
     }
 
-    const [accounts, categories, transactions, ledgerTransactions, totalTransactionCount] =
+    const [accounts, categories, budgets, transactions, ledgerTransactions, totalTransactionCount] =
       await Promise.all([
         Account.find({ deletedAt: null }).sort({ createdAt: 1 }).lean(),
         Category.find({ deletedAt: null }).sort({ type: 1, name: 1 }).lean(),
+        Budget.find({ deletedAt: null }).populate('category', 'name icon type color').lean(),
         Transaction.find(periodQuery)
           .populate('category', 'name icon type color')
           .populate('account', 'name icon')
@@ -45,6 +52,7 @@ export async function GET(request) {
       success: true,
       accounts: accountSummary.accounts.map(serializeAccount),
       categories: categories.map(serializeCategory),
+      budgets: budgets.map(serializeBudget),
       transactions: transactions.map(serializeTransaction),
       stats: {
         totalAccountBalance: accountSummary.totalAccountBalance,

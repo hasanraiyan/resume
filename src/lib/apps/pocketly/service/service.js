@@ -2,12 +2,20 @@ import dbConnect from '@/lib/dbConnect';
 import Transaction from '@/models/Transaction';
 import Account from '@/models/Account';
 import Category from '@/models/Category';
-import { serializeTransaction, serializeAccount, serializeCategory } from '@/lib/money-serializers';
+import Budget from '@/models/Budget';
+import {
+  serializeTransaction,
+  serializeAccount,
+  serializeCategory,
+  serializeBudget,
+} from '@/lib/money-serializers';
 import {
   isValidObjectId,
   DraftTransactionSchema,
   TransactionCreateSchema,
   TransactionUpdateSchema,
+  BudgetCreateSchema,
+  BudgetUpdateSchema,
 } from './validators';
 
 export async function ensureDb() {
@@ -225,6 +233,51 @@ export async function deleteCategory(id) {
       $set: { deletedAt: new Date() },
       $inc: { syncVersion: 1 },
     }
+  );
+  return !!deleted;
+}
+
+export async function getBudgets() {
+  await ensureDb();
+  const budgets = await Budget.find({ deletedAt: null })
+    .populate('category', 'name icon type color')
+    .lean();
+  return budgets.map(serializeBudget);
+}
+
+export async function createBudget(payload) {
+  await ensureDb();
+  const validated = BudgetCreateSchema.parse(payload);
+  const budget = new Budget(validated);
+  await budget.save();
+
+  const populated = await Budget.findById(budget._id)
+    .populate('category', 'name icon type color')
+    .lean();
+  return serializeBudget(populated);
+}
+
+export async function updateBudget(id, patch) {
+  await ensureDb();
+  if (!isValidObjectId(id)) throw new Error('Invalid budget ID');
+  const validated = BudgetUpdateSchema.parse(patch);
+  const budget = await Budget.findOneAndUpdate(
+    { _id: id, deletedAt: null },
+    { $set: validated, $inc: { syncVersion: 1 } },
+    { new: true }
+  )
+    .populate('category', 'name icon type color')
+    .lean();
+  if (!budget) throw new Error('Budget not found');
+  return serializeBudget(budget);
+}
+
+export async function deleteBudget(id) {
+  await ensureDb();
+  if (!isValidObjectId(id)) throw new Error('Invalid budget ID');
+  const deleted = await Budget.findOneAndUpdate(
+    { _id: id, deletedAt: null },
+    { $set: { deletedAt: new Date() }, $inc: { syncVersion: 1 } }
   );
   return !!deleted;
 }
