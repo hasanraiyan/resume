@@ -28,3 +28,11 @@ export const TransactionCreateSchema = z.object({
 });
 
 export const TransactionUpdateSchema = TransactionCreateSchema.partial();
+
+export const BudgetCreateSchema = z.object({
+  category: z.string(),
+  amount: z.number().positive(),
+  period: z.enum(['monthly', 'weekly', 'yearly']).default('monthly'),
+});
+
+export const BudgetUpdateSchema = BudgetCreateSchema.partial();

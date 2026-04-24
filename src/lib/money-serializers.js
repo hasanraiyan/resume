@@ -52,3 +52,21 @@ export function serializeTransaction(transaction) {
     createdAt: transaction.createdAt ? new Date(transaction.createdAt).toISOString() : null,
   };
 }
+
+export function serializeBudget(budget) {
+  return {
+    ...budget,
+    _id: budget._id.toString(),
+    id: budget._id.toString(),
+    category: budget.category
+      ? {
+          ...budget.category,
+          _id: budget.category._id ? budget.category._id.toString() : budget.category,
+          id: budget.category._id ? budget.category._id.toString() : budget.category,
+        }
+      : null,
+    deletedAt: budget.deletedAt ? new Date(budget.deletedAt).toISOString() : null,
+    updatedAt: budget.updatedAt ? new Date(budget.updatedAt).toISOString() : null,
+    createdAt: budget.createdAt ? new Date(budget.createdAt).toISOString() : null,
+  };
+}
