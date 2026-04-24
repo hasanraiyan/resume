@@ -51,9 +51,98 @@ export function createMcpServer() {
     async () => {
       const cats = await getCategories();
       const data = cats.map((s) => {
-        return { id: s.id, name: s.name, type: s.type, icon: s.icon };
+        return { id: s.id, name: s.name, type: s.type, icon: s.icon, color: s.color };
       });
       return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+    }
+  );
+
+  server.registerTool(
+    'create_category',
+    {
+      description: 'Create a new category for income or expenses.',
+      inputSchema: {
+        name: z.string().describe('Display name of the category'),
+        type: z.enum(['income', 'expense']).describe('Category type'),
+        icon: z.string().optional().describe('Icon identifier (e.g. utensils, car, tag)'),
+        color: z
+          .string()
+          .optional()
+          .describe('Hex color or Tailwind background class (e.g. #1f644e or bg-blue-500)'),
+      },
+    },
+    async (payload) => {
+      try {
+        const c = await createCategory(payload);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({ success: true, category: c }, null, 2),
+            },
+          ],
+        };
+      } catch (err) {
+        return {
+          content: [{ type: 'text', text: `Error creating category: ${err.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.registerTool(
+    'update_category',
+    {
+      description: 'Update an existing category.',
+      inputSchema: {
+        id: z.string().describe('MongoDB _id of the category to update'),
+        name: z.string().optional(),
+        type: z.enum(['income', 'expense']).optional(),
+        icon: z.string().optional(),
+        color: z.string().optional(),
+      },
+    },
+    async ({ id, ...patch }) => {
+      try {
+        const c = await updateCategory(id, patch);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({ success: true, category: c }, null, 2),
+            },
+          ],
+        };
+      } catch (err) {
+        return { content: [{ type: 'text', text: err.message }], isError: true };
+      }
+    }
+  );
+
+  server.registerTool(
+    'delete_category',
+    {
+      description: 'Soft-delete a category by its ID.',
+      inputSchema: {
+        id: z.string().describe('MongoDB _id of the category to delete'),
+      },
+    },
+    async ({ id }) => {
+      try {
+        const deleted = await deleteCategory(id);
+        if (!deleted) {
+          return {
+            content: [{ type: 'text', text: 'Category not found or already deleted' }],
+            isError: true,
+          };
+        }
+        return {
+          content: [{ type: 'text', text: JSON.stringify({ success: true, deletedId: id }) }],
+        };
+      } catch (err) {
+        return { content: [{ type: 'text', text: err.message }], isError: true };
+      }
     }
   );
 
