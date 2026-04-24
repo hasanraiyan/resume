@@ -33,7 +33,7 @@ export default function FinanceSettingsTab() {
     if (typeof window !== 'undefined') {
       const origin = window.location.origin.replace(/\/$/, '');
       setBaseUrl(origin);
-      setMcpUrl(`${origin}/api/mcp`);
+      setMcpUrl(`${origin}/api/mcp/pocketly`);
     }
   }, []);
 
