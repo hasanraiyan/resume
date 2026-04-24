@@ -17,7 +17,7 @@ export default function PlanningTab() {
   return (
     <div className="w-full pb-24 sm:pb-8">
       {/* Top Navigation Tabs */}
-      <div className="w-full bg-[#fcfbf5] sticky top-0 z-10 pt-4 pb-3 px-4 lg:px-6">
+      <div className="w-full bg-[#fcfbf5] sticky top-14 lg:top-[61px] z-10 pt-4 pb-3 px-4 lg:px-6">
         <div className="w-full max-w-6xl mx-auto flex justify-center">
           <TopTabs
             options={viewOptions}
