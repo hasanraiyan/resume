@@ -9,6 +9,10 @@ import {
   createTransaction,
   updateTransaction,
   deleteTransaction,
+  getBudgets,
+  createBudget,
+  updateBudget,
+  deleteBudget,
 } from '@/lib/apps/pocketly/service/service';
 
 export function createMcpServer() {
@@ -271,6 +275,148 @@ export function createMcpServer() {
               ),
             },
           ],
+        };
+      } catch (err) {
+        return { content: [{ type: 'text', text: err.message }], isError: true };
+      }
+    }
+  );
+
+  server.registerTool(
+    'get_budgets',
+    {
+      description: 'List all budgets.',
+      inputSchema: {},
+    },
+    async () => {
+      const budgets = await getBudgets();
+      const data = budgets.map((b) => {
+        return {
+          id: b.id,
+          category: b.category?.name ?? null,
+          categoryId: b.category?._id ?? null,
+          amount: b.amount,
+          period: b.period,
+        };
+      });
+      return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+    }
+  );
+
+  server.registerTool(
+    'create_budget',
+    {
+      description: 'Create a new budget. Resolve categoryId via get_categories first.',
+      inputSchema: {
+        categoryId: z.string().describe('MongoDB _id of the category'),
+        amount: z.number().positive().describe('Positive amount for the budget'),
+        period: z
+          .enum(['monthly', 'weekly', 'yearly'])
+          .optional()
+          .describe('Budget period (defaults to monthly)'),
+      },
+    },
+    async ({ categoryId, amount, period }) => {
+      const payload = {
+        category: categoryId,
+        amount,
+        period: period || 'monthly',
+      };
+      try {
+        const b = await createBudget(payload);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(
+                {
+                  success: true,
+                  budget: {
+                    id: b.id,
+                    category: b.category?.name ?? null,
+                    amount: b.amount,
+                    period: b.period,
+                  },
+                },
+                null,
+                2
+              ),
+            },
+          ],
+        };
+      } catch (err) {
+        return {
+          content: [{ type: 'text', text: `Validation errors: ${err.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.registerTool(
+    'update_budget',
+    {
+      description: 'Update fields of an existing budget.',
+      inputSchema: {
+        id: z.string().describe('MongoDB _id of the budget'),
+        categoryId: z.string().optional().describe('New category _id'),
+        amount: z.number().positive().optional(),
+        period: z.enum(['monthly', 'weekly', 'yearly']).optional(),
+      },
+    },
+    async ({ id, categoryId, amount, period }) => {
+      const patch = {};
+      if (categoryId) patch.category = categoryId;
+      if (amount !== undefined) patch.amount = amount;
+      if (period !== undefined) patch.period = period;
+
+      try {
+        const b = await updateBudget(id, patch);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(
+                {
+                  success: true,
+                  budget: {
+                    id: b.id,
+                    category: b.category?.name ?? null,
+                    amount: b.amount,
+                    period: b.period,
+                  },
+                },
+                null,
+                2
+              ),
+            },
+          ],
+        };
+      } catch (err) {
+        return { content: [{ type: 'text', text: err.message }], isError: true };
+      }
+    }
+  );
+
+  server.registerTool(
+    'delete_budget',
+    {
+      description: 'Soft-delete a budget by its ID.',
+      inputSchema: {
+        id: z.string().describe('MongoDB _id of the budget to delete'),
+      },
+    },
+    async ({ id }) => {
+      try {
+        const deleted = await deleteBudget(id);
+        if (!deleted) {
+          return {
+            content: [{ type: 'text', text: 'Budget not found or already deleted' }],
+            isError: true,
+          };
+        }
+        return {
+          content: [{ type: 'text', text: JSON.stringify({ success: true, deletedId: id }) }],
         };
       } catch (err) {
         return { content: [{ type: 'text', text: err.message }], isError: true };
