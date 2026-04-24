@@ -118,7 +118,7 @@ export default function BudgetsTab() {
   };
 
   return (
-    <div className="mb-6 bg-[#fcfbf5] pt-4 pb-24 sm:pt-6 sm:pb-8">
+    <div className="mb-6">
       <div className="w-full px-4 lg:px-6">
         <div className="w-full max-w-6xl mx-auto">
           <div className="mb-6 flex items-center justify-between">
