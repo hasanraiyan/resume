@@ -281,3 +281,44 @@ export async function deleteBudget(id) {
   );
   return !!deleted;
 }
+
+export async function checkBudgetExceeded(transaction) {
+  if (transaction.type !== 'expense' || !transaction.category) {
+    return null;
+  }
+
+  await ensureDb();
+
+  const categoryId = transaction.category._id || transaction.category.id || transaction.category;
+  const budget = await Budget.findOne({ category: categoryId, deletedAt: null })
+    .populate('category', 'name')
+    .lean();
+
+  if (!budget) {
+    return null;
+  }
+
+  const txDate = new Date(transaction.date);
+  const startOfMonth = new Date(txDate.getFullYear(), txDate.getMonth(), 1);
+  const endOfMonth = new Date(txDate.getFullYear(), txDate.getMonth() + 1, 0, 23, 59, 59, 999);
+
+  const transactionsInPeriod = await Transaction.find({
+    category: categoryId,
+    type: 'expense',
+    date: { $gte: startOfMonth, $lte: endOfMonth },
+    deletedAt: null,
+  }).lean();
+
+  const totalSpent = transactionsInPeriod.reduce((sum, t) => sum + t.amount, 0);
+
+  if (totalSpent > budget.amount) {
+    return {
+      isExceeded: true,
+      limit: budget.amount,
+      spent: totalSpent,
+      categoryName: budget.category?.name || 'Category',
+    };
+  }
+
+  return null;
+}

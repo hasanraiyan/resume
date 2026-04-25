@@ -13,6 +13,7 @@ import {
   createBudget,
   updateBudget,
   deleteBudget,
+  checkBudgetExceeded,
 } from '@/lib/apps/pocketly/service/service';
 
 export function createMcpServer() {
@@ -257,6 +258,12 @@ export function createMcpServer() {
 
       try {
         const s = await createTransaction(payload);
+        const budgetCheck = await checkBudgetExceeded(s);
+        let warning;
+        if (budgetCheck && budgetCheck.isExceeded) {
+          warning = `Warning: This transaction causes the ${budgetCheck.categoryName} budget to be exceeded. (Spent: ${budgetCheck.spent} / Limit: ${budgetCheck.limit})`;
+        }
+
         return {
           content: [
             {
@@ -264,6 +271,7 @@ export function createMcpServer() {
               text: JSON.stringify(
                 {
                   success: true,
+                  ...(warning ? { warning } : {}),
                   transaction: {
                     id: s.id,
                     type: s.type,
@@ -341,6 +349,12 @@ export function createMcpServer() {
 
       try {
         const s = await updateTransaction(id, patch);
+        const budgetCheck = await checkBudgetExceeded(s);
+        let warning;
+        if (budgetCheck && budgetCheck.isExceeded) {
+          warning = `Warning: This transaction causes the ${budgetCheck.categoryName} budget to be exceeded. (Spent: ${budgetCheck.spent} / Limit: ${budgetCheck.limit})`;
+        }
+
         return {
           content: [
             {
@@ -348,6 +362,7 @@ export function createMcpServer() {
               text: JSON.stringify(
                 {
                   success: true,
+                  ...(warning ? { warning } : {}),
                   transaction: {
                     id: s.id,
                     type: s.type,

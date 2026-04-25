@@ -46,6 +46,7 @@ export default function AnalysisTab() {
     setPeriod,
     isAnalysisLoading,
     analysisError,
+    budgets,
   } = useMoney();
   const [viewMode, setViewMode] = useState('expense');
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
@@ -273,6 +274,19 @@ export default function AnalysisTab() {
           <div className="space-y-4">
             {currentCategories.map((category, index) => {
               const percentage = (category.total / total) * 100;
+              const budget =
+                viewMode === 'expense'
+                  ? budgets?.find((b) => {
+                      const bCatId = b.category?._id || b.category?.id || b.category;
+                      return bCatId === category.categoryId;
+                    })
+                  : null;
+
+              const isExceeded = budget && category.total > budget.amount;
+              const budgetProgress = budget
+                ? Math.min((category.total / budget.amount) * 100, 100)
+                : null;
+
               return (
                 <div key={category.categoryId || index}>
                   <div className="mb-1.5 flex items-center justify-between">
@@ -287,17 +301,28 @@ export default function AnalysisTab() {
                         {category.name}
                       </span>
                     </div>
-                    <span className="text-sm font-bold text-[#1e3a34]">
-                      {formatCurrencyWithCompact(category.total)}
-                    </span>
+                    <div className="flex flex-col items-end">
+                      <span
+                        className={`text-sm font-bold ${isExceeded ? 'text-[#c94c4c]' : 'text-[#1e3a34]'}`}
+                      >
+                        {formatCurrencyWithCompact(category.total)}
+                      </span>
+                      {budget && (
+                        <span className="text-[10px] font-semibold text-[#7c8e88]">
+                          Limit: {formatCurrencyWithCompact(budget.amount)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#f0f5f2]">
                       <div
-                        className="h-full rounded-full transition-all duration-700"
+                        className={`h-full rounded-full transition-all duration-700 ${isExceeded ? 'bg-[#c94c4c]' : ''}`}
                         style={{
                           width: `${percentage}%`,
-                          backgroundColor: chartColors[index % chartColors.length],
+                          ...(!isExceeded
+                            ? { backgroundColor: chartColors[index % chartColors.length] }
+                            : {}),
                         }}
                       />
                     </div>
@@ -305,6 +330,12 @@ export default function AnalysisTab() {
                       {percentage.toFixed(1)}%
                     </span>
                   </div>
+                  {budget && isExceeded && (
+                    <div className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-[#c94c4c]">
+                      <AlertTriangle className="h-3 w-3" />
+                      <span>Budget exceeded</span>
+                    </div>
+                  )}
                 </div>
               );
             })}
