@@ -196,6 +196,24 @@ export function getPocketlyWidgetHtml(kind) {
       return '<svg viewBox="0 0 24 24"><path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>';
     }
 
+    function ippbIconMarkup() {
+      return '<svg class="icon-img bank-logo" viewBox="0 0 24 24" preserveAspectRatio="none">' +
+        '<rect width="24" height="24" rx="3" fill="#3a0f1a"/>' +
+        '<circle cx="9.5" cy="10.5" r="3.2" fill="#d92b2b"/>' +
+        '<path d="M4 8c2 0 4 2 7 2" stroke="#ffd036" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '<path d="M4 10c2 0 4 2 7 2" stroke="#ffd036" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '<path d="M4 12c2 0 4 2 7 2" stroke="#ffd036" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '</svg>';
+    }
+
+    function rupayIconMarkup() {
+      return '<svg class="icon-img" viewBox="0 0 24 24">' +
+        '<rect width="24" height="24" rx="4" fill="#0052CC"/>' +
+        '<path d="M7 16V8h3a3 3 0 0 1 0 6H7" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '<path d="M12 16h3a3 3 0 0 0 0-6h-3" stroke="#ffb400" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '</svg>';
+    }
+
     function accountIconMarkup(name) {
       const normalized = String(name || '').toLowerCase();
       if (normalized === 'wallet' || normalized === 'purse') {
@@ -204,8 +222,9 @@ export function getPocketlyWidgetHtml(kind) {
       if (normalized === 'pnb') {
         return '<img class="icon-img bank-logo" src="${POCKETLY_WIDGET_DOMAIN}/images/pnb.png" alt="">';
       }
-      if (normalized === 'ippb') return svgIcon('building');
-      if (normalized === 'rupay' || normalized.includes('card')) return svgIcon('credit-card');
+      if (normalized === 'ippb' || normalized === 'ip-pb' || normalized === 'ip_pb') return ippbIconMarkup();
+      if (normalized === 'rupay' || normalized === 'ru-pay' || normalized === 'ru_pay') return rupayIconMarkup();
+      if (normalized.includes('card')) return svgIcon('credit-card');
       if (normalized.includes('bank') || normalized.includes('landmark') || normalized.includes('building')) return svgIcon('building');
       if (normalized.includes('piggy') || normalized.includes('coin')) return svgIcon('coins');
       if (normalized.includes('phone')) return svgIcon('phone');
