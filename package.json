@@ -10,7 +10,8 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "project-setup": "node scripts/setup.js",
-    "build": "rimraf .next/cache && next build --no-lint",
+    "build:mcp-widgets": "node scripts/build-pocketly-widget.mjs",
+    "build": "pnpm build:mcp-widgets && rimraf .next/cache && next build --no-lint",
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write .",
@@ -83,6 +84,7 @@
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.19",
     "dotenv": "^17.2.3",
+    "esbuild": "^0.28.0",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
     "eslint-config-prettier": "^10.1.8",

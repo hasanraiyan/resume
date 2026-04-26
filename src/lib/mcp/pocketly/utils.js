@@ -23,8 +23,9 @@ export function toolMeta(invoking, invoked, extra = {}) {
 
 export function widgetToolMeta(widget, invoking, invoked) {
   return toolMeta(invoking, invoked, {
-    ui: { resourceUri: widget.uri },
+    ui: { resourceUri: widget.uri, visibility: ['model', 'app'] },
     'openai/outputTemplate': widget.uri,
+    'openai/widgetAccessible': true,
   });
 }
 
