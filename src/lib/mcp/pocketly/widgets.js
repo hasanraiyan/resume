@@ -65,23 +65,24 @@ export function getPocketlyWidgetHtml(kind) {
   body {
     margin: 0;
     min-width: 0;
-    height: 100%;
-    overflow: hidden;
+    min-height: 100%;
+    overflow: visible;
     background: var(--bg);
     color: var(--text);
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
-  #pocketly-root { min-width: 0; height: 100vh; background: var(--bg); }
+  #pocketly-root { min-width: 0; min-height: 280px; background: var(--bg); }
   .shell {
     display: flex;
     flex-direction: column;
     gap: 14px;
     width: 100%;
-    height: 100vh;
     min-height: 280px;
-    max-height: 760px;
+    max-height: min(var(--pocketly-host-max-height, 760px), 760px);
     overflow-x: hidden;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
     overscroll-behavior: contain;
     padding: 14px;
     background: var(--bg);
@@ -191,6 +192,13 @@ export function getPocketlyWidgetHtml(kind) {
     .account-balance { font-size: 17px; }
     .amount { max-width: 30vw; font-size: 12px; }
   }
+  @media (max-width: 559px) {
+    .shell {
+      max-height: none;
+      overflow-y: visible;
+      overscroll-behavior: auto;
+    }
+  }
   @media (min-width: 560px) {
     .shell { padding: 16px; }
     .header { top: -16px; margin: -16px -16px 0; padding: 16px 16px 11px; }
@@ -205,13 +213,47 @@ export function getPocketlyWidgetHtml(kind) {
     .grid.accounts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   @media (min-width: 820px) {
-    .shell { max-height: 680px; }
+    .shell { max-height: min(var(--pocketly-host-max-height, 680px), 680px); }
   }
 </style>
 <script>
   (function () {
     const root = document.getElementById('pocketly-root');
     const preferredKind = root.dataset.kind;
+    let heightFrame = null;
+
+    function getHostMaxHeight() {
+      const value = Number(window.openai?.maxHeight);
+      return Number.isFinite(value) && value > 0 ? Math.floor(value) : null;
+    }
+
+    function syncHostMaxHeight() {
+      const maxHeight = getHostMaxHeight();
+      if (maxHeight) {
+        document.documentElement.style.setProperty('--pocketly-host-max-height', maxHeight + 'px');
+      } else {
+        document.documentElement.style.removeProperty('--pocketly-host-max-height');
+      }
+    }
+
+    function notifyIntrinsicHeight() {
+      if (heightFrame) window.cancelAnimationFrame(heightFrame);
+      heightFrame = window.requestAnimationFrame(function () {
+        heightFrame = null;
+        syncHostMaxHeight();
+        const shell = root.querySelector('.shell');
+        const height = Math.ceil(Math.max(
+          root.scrollHeight,
+          shell?.scrollHeight || 0,
+          document.documentElement.scrollHeight,
+          document.body.scrollHeight,
+          280
+        ));
+        if (window.openai?.notifyIntrinsicHeight) {
+          window.openai.notifyIntrinsicHeight(height);
+        }
+      });
+    }
 
     function formatCurrency(value) {
       const amount = Number(value || 0);
@@ -496,6 +538,7 @@ export function getPocketlyWidgetHtml(kind) {
       else if (kind === 'budgets') root.innerHTML = renderBudgets(data);
       else root.innerHTML = renderSummary(data);
       root.dataset.renderedKind = kind;
+      notifyIntrinsicHeight();
 
       document.querySelector('.refresh-view')?.addEventListener('click', function (event) {
         refreshCurrentView(event.currentTarget);
@@ -515,7 +558,10 @@ export function getPocketlyWidgetHtml(kind) {
     }
 
     render(window.openai?.toolOutput);
+    window.addEventListener('resize', notifyIntrinsicHeight, { passive: true });
+    root.addEventListener('load', notifyIntrinsicHeight, true);
     window.addEventListener('openai:set_globals', function (event) {
+      syncHostMaxHeight();
       render(event.detail?.globals?.toolOutput || window.openai?.toolOutput);
     }, { passive: true });
     window.addEventListener('message', function (event) {
