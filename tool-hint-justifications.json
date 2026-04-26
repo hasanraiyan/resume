@@ -2,19 +2,6 @@
   "$schema": "https://developers.openai.com/apps-sdk/schemas/tool-hint-justifications.v1.json",
   "schema_version": 1,
   "tools": {
-    "show_pocketly_dashboard": {
-      "annotations": {
-        "readOnlyHint": true,
-        "openWorldHint": false,
-        "destructiveHint": false,
-        "idempotentHint": true
-      },
-      "justifications": {
-        "read_only_justification": "Only retrieves and computes private Pocketly dashboard data without modifying records.",
-        "open_world_justification": "Does not write to public internet state or external third-party systems.",
-        "destructive_justification": "Does not delete, overwrite, revoke access, or perform irreversible actions."
-      }
-    },
     "get_accounts": {
       "annotations": {
         "readOnlyHint": true,

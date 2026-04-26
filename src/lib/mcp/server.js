@@ -17,9 +17,35 @@ import {
   deleteBudget,
 } from '@/lib/apps/pocketly/service/service';
 
-const POCKETLY_WIDGET_URI = 'ui://widget/pocketly-dashboard-v1.html';
-const POCKETLY_WIDGET_MIME_TYPE = 'text/html;profile=mcp-app';
 const POCKETLY_WIDGET_DOMAIN = 'https://hasanraiyan.me';
+const POCKETLY_WIDGET_MIME_TYPE = 'text/html;profile=mcp-app';
+
+const WIDGETS = {
+  accounts: {
+    name: 'pocketly-accounts',
+    uri: 'ui://widget/pocketly-accounts-v1.html',
+    title: 'Pocketly Accounts',
+    description: 'Account balance cards styled like the Pocketly Accounts tab.',
+  },
+  transactions: {
+    name: 'pocketly-records',
+    uri: 'ui://widget/pocketly-records-v1.html',
+    title: 'Pocketly Records',
+    description: 'Recent transaction rows styled like the Pocketly Records tab.',
+  },
+  budgets: {
+    name: 'pocketly-budgets',
+    uri: 'ui://widget/pocketly-budgets-v1.html',
+    title: 'Pocketly Budgets',
+    description: 'Budget progress cards styled like Pocketly planning.',
+  },
+  summary: {
+    name: 'pocketly-summary',
+    uri: 'ui://widget/pocketly-summary-v1.html',
+    title: 'Pocketly Summary',
+    description: 'Financial summary cards and top categories styled like Pocketly analysis.',
+  },
+};
 
 const READ_ONLY_ANNOTATIONS = {
   readOnlyHint: true,
@@ -63,12 +89,20 @@ function toolMeta(invoking, invoked, extra = {}) {
   };
 }
 
+function widgetToolMeta(widget, invoking, invoked) {
+  return toolMeta(invoking, invoked, {
+    ui: { resourceUri: widget.uri },
+    'openai/outputTemplate': widget.uri,
+  });
+}
+
 function normalizeAccount(account) {
   return {
     id: account.id,
     name: account.name,
     icon: account.icon || 'wallet',
-    balance: account.balance || 0,
+    balance: account.balance ?? account.currentBalance ?? 0,
+    initialBalance: account.initialBalance || 0,
     currency: account.currency || 'INR',
   };
 }
@@ -87,7 +121,7 @@ function normalizeTransaction(transaction) {
   return {
     id: transaction.id,
     type: transaction.type,
-    amount: transaction.amount,
+    amount: Number(transaction.amount) || 0,
     description: transaction.description || '',
     category: transaction.category
       ? {
@@ -121,7 +155,7 @@ function normalizeBudget(budget, transactions = []) {
   const now = new Date();
   const spent = transactions
     .filter((transaction) => {
-      const transactionDate = new Date(transaction.date);
+      const date = new Date(transaction.date);
       const transactionCategoryId =
         transaction.category?.id ||
         transaction.category?._id?.toString?.() ||
@@ -131,8 +165,8 @@ function normalizeBudget(budget, transactions = []) {
       return (
         transaction.type === 'expense' &&
         transactionCategoryId === categoryId &&
-        transactionDate.getMonth() === now.getMonth() &&
-        transactionDate.getFullYear() === now.getFullYear()
+        date.getMonth() === now.getMonth() &&
+        date.getFullYear() === now.getFullYear()
       );
     })
     .reduce((sum, transaction) => sum + (Number(transaction.amount) || 0), 0);
@@ -182,17 +216,29 @@ function makePeriod(startDate, endDate) {
   };
 }
 
-function buildAnalysis(transactions, accounts) {
-  const categoryMap = new Map();
-  const dailyMap = new Map();
-  const accountMap = new Map();
+function getTransactionStats(transactions) {
+  const totalExpense = transactions
+    .filter((transaction) => transaction.type === 'expense')
+    .reduce((sum, transaction) => sum + transaction.amount, 0);
+  const totalIncome = transactions
+    .filter((transaction) => transaction.type === 'income')
+    .reduce((sum, transaction) => sum + transaction.amount, 0);
+
+  return {
+    totalExpense,
+    totalIncome,
+    netFlow: totalIncome - totalExpense,
+  };
+}
+
+function getCategoryBreakdown(transactions) {
+  const map = new Map();
 
   for (const transaction of transactions) {
     if (!['income', 'expense'].includes(transaction.type)) continue;
-
     const categoryId = transaction.category?.id || 'uncategorized';
-    const categoryKey = `${categoryId}:${transaction.type}`;
-    const existingCategory = categoryMap.get(categoryKey) || {
+    const key = `${categoryId}:${transaction.type}`;
+    const row = map.get(key) || {
       categoryId,
       name: transaction.category?.name || 'Uncategorized',
       icon: transaction.category?.icon || 'tag',
@@ -201,116 +247,166 @@ function buildAnalysis(transactions, accounts) {
       total: 0,
       count: 0,
     };
-    existingCategory.total += transaction.amount;
-    existingCategory.count += 1;
-    categoryMap.set(categoryKey, existingCategory);
-
-    const date = new Date(transaction.date).toISOString().slice(0, 10);
-    const dailyKey = `${date}:${transaction.type}`;
-    const existingDaily = dailyMap.get(dailyKey) || { date, type: transaction.type, total: 0 };
-    existingDaily.total += transaction.amount;
-    dailyMap.set(dailyKey, existingDaily);
-
-    const accountId = transaction.account?.id || 'unknown';
-    const accountKey = `${accountId}:${transaction.type}`;
-    const existingAccount = accountMap.get(accountKey) || {
-      accountId,
-      name: transaction.account?.name || 'Unknown',
-      icon: transaction.account?.icon || 'wallet',
-      type: transaction.type,
-      total: 0,
-      currentBalance: accounts.find((account) => account.id === accountId)?.balance || 0,
-    };
-    existingAccount.total += transaction.amount;
-    accountMap.set(accountKey, existingAccount);
+    row.total += transaction.amount;
+    row.count += 1;
+    map.set(key, row);
   }
 
-  return {
-    categoryBreakdown: Array.from(categoryMap.values()).sort((a, b) => b.total - a.total),
-    dailyFlow: Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date)),
-    accountAnalysis: Array.from(accountMap.values()).sort((a, b) => b.total - a.total),
-  };
+  return Array.from(map.values()).sort((a, b) => b.total - a.total);
 }
 
-async function buildDashboardPayload({ startDate, endDate, limit = 20 } = {}) {
-  const period = makePeriod(startDate, endDate);
-  const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
-
-  const [accountsRaw, categoriesRaw, budgetsRaw, transactionsRaw, summaryRaw] = await Promise.all([
+async function buildAccountsPayload() {
+  const [accountsRaw, transactionsRaw] = await Promise.all([
     getAccounts({ includeBalances: true }),
-    getCategories(),
-    getBudgets(),
-    getTransactions({
-      startDate: period.startDate,
-      endDate: period.endDate,
-      limit: 100,
-    }),
-    getFinancialSummary({
-      startDate: period.startDate,
-      endDate: period.endDate,
-    }),
+    getTransactions({ limit: 100 }),
   ]);
-
   const accounts = accountsRaw.map(normalizeAccount);
-  const categories = categoriesRaw.map(normalizeCategory);
-  const allPeriodTransactions = transactionsRaw.map(normalizeTransaction);
-  const transactions = allPeriodTransactions.slice(0, safeLimit);
-  const budgets = budgetsRaw.map((budget) => normalizeBudget(budget, transactionsRaw));
-  const totalExpense = allPeriodTransactions
-    .filter((transaction) => transaction.type === 'expense')
-    .reduce((sum, transaction) => sum + transaction.amount, 0);
-  const totalIncome = allPeriodTransactions
-    .filter((transaction) => transaction.type === 'income')
-    .reduce((sum, transaction) => sum + transaction.amount, 0);
-  const totalAccountBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
-  const analysis = buildAnalysis(allPeriodTransactions, accounts);
+  const transactions = transactionsRaw.map(normalizeTransaction);
+  const stats = getTransactionStats(transactions);
 
   return {
-    app: {
-      name: 'Pocketly',
-      currency: 'INR',
-      generatedAt: new Date().toISOString(),
-    },
-    period,
+    kind: 'accounts',
     stats: {
-      totalAccountBalance,
-      totalExpense,
-      totalIncome,
-      netFlow: totalIncome - totalExpense,
-      totalTransactionCount: summaryRaw.totalTransactionCount || transactions.length,
+      totalAccountBalance: accounts.reduce((sum, account) => sum + account.balance, 0),
+      ...stats,
       accountCount: accounts.length,
-      categoryCount: categories.length,
-      budgetCount: budgets.length,
     },
     accounts,
-    transactions,
-    categories,
-    budgets,
-    analysis: {
-      ...analysis,
-      totalExpense,
-      totalIncome,
-      netFlow: totalIncome - totalExpense,
-      totalAccountBalance,
-    },
   };
 }
 
-function getPocketlyWidgetHtml() {
+async function buildTransactionsPayload({ type, limit = 20, startDate, endDate } = {}) {
+  const period = makePeriod(startDate, endDate);
+  const transactions = (
+    await getTransactions({
+      type,
+      limit: Math.min(Math.max(Number(limit) || 20, 1), 100),
+      startDate: period.startDate,
+      endDate: period.endDate,
+    })
+  ).map(normalizeTransaction);
+
+  return {
+    kind: 'transactions',
+    period,
+    stats: getTransactionStats(transactions),
+    transactions,
+  };
+}
+
+async function buildBudgetsPayload() {
+  const [budgetsRaw, transactionsRaw] = await Promise.all([
+    getBudgets(),
+    getTransactions({ limit: 100 }),
+  ]);
+  const transactions = transactionsRaw.map(normalizeTransaction);
+  const budgets = budgetsRaw.map((budget) => normalizeBudget(budget, transactionsRaw));
+
+  return {
+    kind: 'budgets',
+    stats: {
+      budgetCount: budgets.length,
+      exceededCount: budgets.filter((budget) => budget.isExceeded).length,
+      totalBudget: budgets.reduce((sum, budget) => sum + budget.amount, 0),
+      totalSpent: budgets.reduce((sum, budget) => sum + budget.spent, 0),
+    },
+    budgets,
+    transactions,
+  };
+}
+
+async function buildSummaryPayload({ startDate, endDate } = {}) {
+  const period = makePeriod(startDate, endDate);
+  const [summaryRaw, accountsRaw, transactionsRaw] = await Promise.all([
+    getFinancialSummary({ startDate: period.startDate, endDate: period.endDate }),
+    getAccounts({ includeBalances: true }),
+    getTransactions({ startDate: period.startDate, endDate: period.endDate, limit: 100 }),
+  ]);
+  const accounts = accountsRaw.map(normalizeAccount);
+  const transactions = transactionsRaw.map(normalizeTransaction);
+  const stats = {
+    totalExpense: summaryRaw.totalExpense ?? getTransactionStats(transactions).totalExpense,
+    totalIncome: summaryRaw.totalIncome ?? getTransactionStats(transactions).totalIncome,
+    netFlow: summaryRaw.netIncome ?? getTransactionStats(transactions).netFlow,
+    totalAccountBalance: accounts.reduce((sum, account) => sum + account.balance, 0),
+    accountCount: accounts.length,
+    transactionCount: transactions.length,
+  };
+  const categoryBreakdown = getCategoryBreakdown(transactions);
+
+  return {
+    kind: 'summary',
+    period,
+    stats,
+    accounts,
+    topExpenseCategories: categoryBreakdown
+      .filter((category) => category.type === 'expense')
+      .slice(0, 8),
+    topIncomeCategories: categoryBreakdown
+      .filter((category) => category.type === 'income')
+      .slice(0, 5),
+  };
+}
+
+function getWidgetMetadata(description) {
+  return {
+    ui: {
+      prefersBorder: true,
+      domain: POCKETLY_WIDGET_DOMAIN,
+      csp: {
+        connectDomains: [POCKETLY_WIDGET_DOMAIN],
+        resourceDomains: [POCKETLY_WIDGET_DOMAIN],
+      },
+    },
+    'openai/widgetDescription': description,
+    'openai/widgetPrefersBorder': true,
+    'openai/widgetCSP': {
+      connect_domains: [POCKETLY_WIDGET_DOMAIN],
+      resource_domains: [POCKETLY_WIDGET_DOMAIN],
+    },
+    'openai/widgetDomain': POCKETLY_WIDGET_DOMAIN,
+  };
+}
+
+function registerPocketlyWidget(server, widget, kind) {
+  server.registerResource(
+    widget.name,
+    widget.uri,
+    {
+      title: widget.title,
+      description: widget.description,
+    },
+    async () => ({
+      contents: [
+        {
+          uri: widget.uri,
+          mimeType: POCKETLY_WIDGET_MIME_TYPE,
+          text: getPocketlyWidgetHtml(kind),
+          _meta: getWidgetMetadata(widget.description),
+        },
+      ],
+    })
+  );
+}
+
+function getPocketlyWidgetHtml(kind) {
   return `
-<div id="pocketly-root"></div>
+<div id="pocketly-root" data-kind="${kind}"></div>
 <style>
   :root {
     color-scheme: light;
     --bg: #fcfbf5;
     --card: #ffffff;
     --primary: #1f644e;
-    --primary-weak: #f0f5f2;
+    --primary-soft: #f0f5f2;
+    --primary-hover: #17503e;
     --text: #1e3a34;
     --muted: #7c8e88;
     --border: #e5e3d8;
     --expense: #c94c4c;
+    --danger-soft: #fef2f2;
     --blue: #4a86e8;
+    --purple: #9333ea;
   }
   * { box-sizing: border-box; }
   body {
@@ -319,63 +415,62 @@ function getPocketlyWidgetHtml() {
     color: var(--text);
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
-  button { font: inherit; }
-  .shell { min-height: 100vh; padding: 14px; background: var(--bg); }
-  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
-  .logo { width: 36px; height: 36px; border-radius: 12px; background: var(--primary); color: white; display: grid; place-items: center; font-weight: 900; box-shadow: 0 8px 20px rgba(31, 100, 78, 0.18); }
-  .title { margin: 0; font-size: 18px; line-height: 1.1; font-weight: 900; }
-  .subtitle { margin: 3px 0 0; color: var(--muted); font-size: 12px; font-weight: 700; }
-  .actions { display: flex; gap: 8px; }
-  .icon-btn { border: 1px solid var(--border); background: white; color: var(--text); border-radius: 10px; width: 36px; height: 36px; display: grid; place-items: center; cursor: pointer; }
-  .pill-btn { border: 1px solid #d9e6df; background: var(--primary); color: white; border-radius: 999px; padding: 9px 12px; font-size: 12px; font-weight: 900; cursor: pointer; }
-  .grid { display: grid; gap: 10px; }
-  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
-  .stat-label { margin: 0; color: var(--muted); font-size: 10px; letter-spacing: .04em; text-transform: uppercase; font-weight: 900; }
-  .stat-value { margin: 5px 0 0; font-size: 17px; line-height: 1.15; font-weight: 900; color: var(--text); overflow-wrap: anywhere; }
+  .shell { min-height: 100vh; padding: 16px; background: var(--bg); }
+  .header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  .brand { min-width: 0; }
+  .eyebrow { margin: 0 0 4px; color: var(--muted); font-size: 11px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+  .title { margin: 0; color: var(--primary); font-size: 16px; line-height: 1.2; font-weight: 900; }
+  .note { color: var(--muted); font-size: 11px; font-weight: 800; }
+  .summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .summary.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat { min-width: 0; border: 1px solid var(--border); background: var(--card); border-radius: 12px; padding: 10px; text-align: center; }
+  .stat-label { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.2; letter-spacing: .04em; text-transform: uppercase; font-weight: 900; }
+  .stat-value { margin: 5px 0 0; color: var(--text); font-size: 14px; line-height: 1.15; font-weight: 900; overflow-wrap: anywhere; }
   .positive { color: var(--primary); }
   .negative { color: var(--expense); }
-  .section { margin-top: 14px; }
-  .section-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
-  .section-title { margin: 0; font-size: 13px; font-weight: 900; color: var(--primary); }
-  .section-note { color: var(--muted); font-size: 11px; font-weight: 800; }
+  .section-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 12px 0 8px; }
+  .section-title { margin: 0; color: var(--primary); font-size: 13px; font-weight: 900; }
+  .grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .card { border: 1px solid var(--border); background: var(--card); border-radius: 12px; padding: 12px; }
+  .account-card { display: flex; gap: 12px; align-items: center; }
+  .icon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; flex: none; background: var(--primary-soft); color: var(--primary); border: 1px solid #d9e6df; font-size: 16px; font-weight: 900; }
+  .icon.red { background: var(--danger-soft); color: var(--expense); border-color: #f0d2d2; }
+  .icon.blue { background: #eff6ff; color: var(--blue); border-color: #d6e6ff; }
+  .card-main { min-width: 0; flex: 1; }
+  .card-title { margin: 0; color: var(--text); font-size: 13px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-meta { margin: 3px 0 0; color: var(--muted); font-size: 11px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-value { margin: 0; color: var(--primary); font-size: 15px; font-weight: 900; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .records { overflow: hidden; padding: 0; }
-  .record { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 12px; border-top: 1px solid var(--border); }
+  .record { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px; border-top: 1px solid var(--border); }
   .record:first-child { border-top: 0; }
-  .record-main { min-width: 0; display: flex; gap: 10px; align-items: center; }
-  .bubble { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; background: var(--primary-weak); color: var(--primary); font-size: 14px; font-weight: 900; flex: none; }
-  .bubble.expense { background: #fdf2f2; color: var(--expense); }
-  .record-title { margin: 0; font-size: 13px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .record-meta { margin: 2px 0 0; color: var(--muted); font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .amount { flex: none; font-size: 13px; font-weight: 900; font-variant-numeric: tabular-nums; }
-  .accounts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .account-name { margin: 0; font-size: 12px; color: var(--muted); font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .account-balance { margin: 6px 0 0; font-size: 15px; font-weight: 900; overflow-wrap: anywhere; }
-  .progress-row { display: grid; gap: 9px; }
-  .progress-line { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; font-weight: 900; }
-  .bar { height: 8px; background: var(--primary-weak); border-radius: 999px; overflow: hidden; }
-  .bar-fill { height: 100%; background: var(--primary); border-radius: inherit; }
+  .record-left { display: flex; gap: 10px; align-items: center; min-width: 0; }
+  .amount { flex: none; max-width: 34vw; font-size: 13px; font-weight: 900; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .date-group { margin-top: 12px; }
+  .date-label { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; color: var(--muted); font-size: 11px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
+  .date-label:after { content: ""; height: 1px; flex: 1; background: var(--border); }
+  .progress-wrap { display: grid; gap: 12px; }
+  .progress-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 7px; }
+  .progress-name { margin: 0; color: var(--text); font-size: 13px; font-weight: 900; }
+  .progress-value { color: var(--muted); font-size: 11px; font-weight: 900; }
+  .bar { height: 9px; border-radius: 999px; background: var(--primary-soft); overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: inherit; background: var(--primary); }
   .bar-fill.over { background: var(--expense); }
   .category-list { display: grid; gap: 8px; }
-  .category { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 8px; font-size: 12px; font-weight: 900; }
+  .category-row { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: center; gap: 8px; color: var(--text); font-size: 12px; font-weight: 900; }
   .dot { width: 10px; height: 10px; border-radius: 999px; background: var(--primary); }
-  .daily { display: grid; grid-template-columns: repeat(auto-fit, minmax(18px, 1fr)); gap: 5px; align-items: end; min-height: 80px; padding-top: 8px; }
-  .day { display: grid; gap: 2px; align-items: end; height: 78px; }
-  .day-income, .day-expense { min-height: 2px; border-radius: 999px 999px 0 0; }
-  .day-income { background: var(--primary); }
-  .day-expense { background: var(--expense); opacity: .82; }
-  .empty { text-align: center; color: var(--muted); padding: 28px 14px; font-size: 13px; font-weight: 800; }
+  .empty { border: 1px dashed var(--border); background: rgba(255,255,255,.58); border-radius: 12px; padding: 28px 14px; color: var(--muted); text-align: center; font-size: 13px; font-weight: 800; }
   .followups { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-  @media (min-width: 640px) {
+  .pill { border: 1px solid #d9e6df; background: var(--primary); color: white; border-radius: 999px; padding: 9px 12px; font-size: 12px; font-weight: 900; cursor: pointer; }
+  @media (min-width: 560px) {
     .shell { padding: 18px; }
-    .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .accounts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .summary.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .grid.accounts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 </style>
 <script>
   (function () {
     const root = document.getElementById('pocketly-root');
+    const preferredKind = root.dataset.kind;
 
     function formatCurrency(value) {
       const amount = Number(value || 0);
@@ -389,7 +484,7 @@ function getPocketlyWidgetHtml() {
       return 'INR ' + formatted;
     }
 
-    function signedCurrency(value) {
+    function formatSigned(value) {
       const amount = Number(value || 0);
       return (amount < 0 ? '-' : '+') + formatCurrency(amount);
     }
@@ -400,154 +495,193 @@ function getPocketlyWidgetHtml() {
       });
     }
 
-    function transactionIcon(type) {
-      if (type === 'income') return '+';
-      if (type === 'transfer') return '=';
-      return '-';
-    }
-
-    function renderRecords(transactions) {
-      if (!transactions || transactions.length === 0) {
-        return '<div class="card empty">No transactions in this period yet.</div>';
-      }
-      return '<div class="card records">' + transactions.slice(0, 8).map(function (transaction) {
-        const isExpense = transaction.type === 'expense';
-        const accountName = transaction.type === 'transfer'
-          ? (transaction.account?.name || 'Account') + ' to ' + (transaction.toAccount?.name || 'Account')
-          : transaction.account?.name || 'Account';
-        const label = transaction.description || transaction.category?.name || 'Transaction';
-        const amount = transaction.type === 'transfer'
-          ? formatCurrency(transaction.amount)
-          : (transaction.type === 'expense' ? '-' : '+') + formatCurrency(transaction.amount);
-        return '<div class="record">' +
-          '<div class="record-main">' +
-            '<div class="bubble ' + (isExpense ? 'expense' : '') + '">' + transactionIcon(transaction.type) + '</div>' +
-            '<div style="min-width:0">' +
-              '<p class="record-title">' + escapeHtml(label) + '</p>' +
-              '<p class="record-meta">' + escapeHtml(accountName) + ' - ' + escapeHtml(transaction.category?.name || transaction.type) + '</p>' +
-            '</div>' +
-          '</div>' +
-          '<div class="amount ' + (isExpense ? 'negative' : transaction.type === 'income' ? 'positive' : '') + '">' + amount + '</div>' +
-        '</div>';
-      }).join('') + '</div>';
-    }
-
-    function renderAccounts(accounts) {
-      if (!accounts || accounts.length === 0) return '<div class="card empty">No accounts yet.</div>';
-      return '<div class="grid accounts">' + accounts.slice(0, 6).map(function (account) {
-        return '<div class="card">' +
-          '<p class="account-name">' + escapeHtml(account.name) + '</p>' +
-          '<p class="account-balance">' + formatCurrency(account.balance) + '</p>' +
-        '</div>';
-      }).join('') + '</div>';
-    }
-
-    function renderBudgets(budgets) {
-      if (!budgets || budgets.length === 0) return '<div class="card empty">No budgets set.</div>';
-      return '<div class="card progress-row">' + budgets.slice(0, 5).map(function (budget) {
-        const progress = Math.max(0, Math.min(Number(budget.progress || 0), 100));
-        return '<div>' +
-          '<div class="progress-line">' +
-            '<span>' + escapeHtml(budget.category?.name || 'Budget') + '</span>' +
-            '<span class="' + (budget.isExceeded ? 'negative' : 'positive') + '">' + Math.round(progress) + '%</span>' +
-          '</div>' +
-          '<div class="bar"><div class="bar-fill ' + (budget.isExceeded ? 'over' : '') + '" style="width:' + progress + '%"></div></div>' +
-          '<p class="record-meta">' + formatCurrency(budget.spent) + ' of ' + formatCurrency(budget.amount) + '</p>' +
-        '</div>';
-      }).join('') + '</div>';
-    }
-
-    function renderCategories(analysis) {
-      const categories = (analysis?.categoryBreakdown || []).filter(function (item) {
-        return item.type === 'expense';
-      }).slice(0, 6);
-      if (categories.length === 0) return '<div class="card empty">No category activity yet.</div>';
-      return '<div class="card category-list">' + categories.map(function (item) {
-        return '<div class="category">' +
-          '<span class="dot" style="background:' + escapeHtml(item.color || '#1f644e') + '"></span>' +
-          '<span>' + escapeHtml(item.name) + '</span>' +
-          '<span class="negative">' + formatCurrency(item.total) + '</span>' +
-        '</div>';
-      }).join('') + '</div>';
-    }
-
-    function renderDailyFlow(analysis) {
-      const daily = analysis?.dailyFlow || [];
-      if (daily.length === 0) return '<div class="card empty">No daily flow data yet.</div>';
-      const byDate = {};
-      daily.forEach(function (entry) {
-        byDate[entry.date] = byDate[entry.date] || { income: 0, expense: 0 };
-        byDate[entry.date][entry.type] = Number(entry.total || 0);
-      });
-      const entries = Object.entries(byDate).slice(-14);
-      const max = Math.max.apply(null, entries.flatMap(function (entry) {
-        return [entry[1].income, entry[1].expense];
-      }).concat([1]));
-      return '<div class="card daily">' + entries.map(function (entry) {
-        const incomeHeight = Math.max(2, Math.round((entry[1].income / max) * 72));
-        const expenseHeight = Math.max(2, Math.round((entry[1].expense / max) * 72));
-        return '<div class="day" title="' + escapeHtml(entry[0]) + '">' +
-          '<div class="day-income" style="height:' + incomeHeight + 'px"></div>' +
-          '<div class="day-expense" style="height:' + expenseHeight + 'px"></div>' +
-        '</div>';
-      }).join('') + '</div>';
-    }
-
     function followUp(text) {
       if (window.openai?.sendFollowUpMessage) {
         window.openai.sendFollowUpMessage({ prompt: text });
-      } else {
-        window.parent.postMessage({
-          jsonrpc: '2.0',
-          method: 'ui/message',
-          params: { role: 'user', content: [{ type: 'text', text }] }
-        }, '*');
+        return;
       }
+      window.parent.postMessage({
+        jsonrpc: '2.0',
+        method: 'ui/message',
+        params: { role: 'user', content: [{ type: 'text', text }] }
+      }, '*');
     }
 
-    async function refresh(data) {
-      const input = {
-        startDate: data?.period?.startDate,
-        endDate: data?.period?.endDate,
-        limit: 20
-      };
-      if (window.openai?.callTool) {
-        const next = await window.openai.callTool('show_pocketly_dashboard', input);
-        if (next?.structuredContent) render(next.structuredContent);
+    function iconFor(name, fallback) {
+      const normalized = String(name || fallback || '').toLowerCase();
+      if (normalized.includes('bank') || normalized.includes('landmark')) return 'B';
+      if (normalized.includes('card')) return 'C';
+      if (normalized.includes('piggy') || normalized.includes('coins')) return 'S';
+      if (normalized.includes('phone')) return 'P';
+      if (normalized.includes('car')) return 'C';
+      if (normalized.includes('food') || normalized.includes('utensils')) return 'F';
+      if (normalized.includes('home')) return 'H';
+      return fallback || 'W';
+    }
+
+    function stat(label, value, tone) {
+      return '<div class="stat"><p class="stat-label">' + escapeHtml(label) + '</p><p class="stat-value ' + (tone || '') + '">' + escapeHtml(value) + '</p></div>';
+    }
+
+    function renderAccounts(data) {
+      const accounts = data.accounts || [];
+      const stats = data.stats || {};
+      const cards = accounts.length
+        ? '<div class="grid accounts">' + accounts.map(function (account, index) {
+            const balance = Number(account.balance || 0);
+            return '<div class="card account-card">' +
+              '<div class="icon">' + escapeHtml(iconFor(account.icon, String(index + 1))) + '</div>' +
+              '<div class="card-main"><p class="card-title">' + escapeHtml(account.name) + '</p><p class="card-meta">' + escapeHtml(account.currency || 'INR') + ' account</p></div>' +
+              '<p class="card-value ' + (balance < 0 ? 'negative' : 'positive') + '">' + formatCurrency(balance) + '</p>' +
+            '</div>';
+          }).join('') + '</div>'
+        : '<div class="empty">No accounts yet.</div>';
+
+      return '<main class="shell">' +
+        '<div class="header"><div class="brand"><p class="eyebrow">Pocketly</p><h1 class="title">Accounts</h1></div><span class="note">' + accounts.length + ' accounts</span></div>' +
+        '<div class="summary">' +
+          stat('Balance', formatCurrency(stats.totalAccountBalance), '') +
+          stat('Expense', formatCurrency(stats.totalExpense), 'negative') +
+          stat('Income', formatCurrency(stats.totalIncome), 'positive') +
+        '</div>' +
+        '<div class="section-head"><h2 class="section-title">Your Accounts</h2></div>' +
+        cards +
+        '<div class="followups"><button id="accounts-summary" class="pill">Explain balances</button></div>' +
+      '</main>';
+    }
+
+    function groupTransactions(transactions) {
+      return transactions.reduce(function (groups, transaction) {
+        const label = new Date(transaction.date).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          weekday: 'long'
+        });
+        groups[label] = groups[label] || [];
+        groups[label].push(transaction);
+        return groups;
+      }, {});
+    }
+
+    function transactionTitle(transaction) {
+      if (transaction.type === 'transfer') return 'Transfer';
+      return transaction.category?.name || transaction.description || 'Transaction';
+    }
+
+    function transactionMeta(transaction) {
+      if (transaction.type === 'transfer') {
+        return (transaction.account?.name || 'Account') + ' to ' + (transaction.toAccount?.name || 'Account');
       }
+      return transaction.account?.name || 'Account';
+    }
+
+    function renderTransactions(data) {
+      const transactions = data.transactions || [];
+      const stats = data.stats || {};
+      const groups = groupTransactions(transactions);
+      const rows = transactions.length
+        ? Object.entries(groups).map(function ([dateLabel, items]) {
+            return '<div class="date-group"><p class="date-label">' + escapeHtml(dateLabel) + '</p><div class="card records">' +
+              items.map(function (transaction) {
+                const isExpense = transaction.type === 'expense';
+                const isIncome = transaction.type === 'income';
+                const iconClass = transaction.type === 'transfer' ? 'blue' : isExpense ? 'red' : '';
+                const amount = transaction.type === 'transfer'
+                  ? formatCurrency(transaction.amount)
+                  : (isExpense ? '-' : '+') + formatCurrency(transaction.amount);
+                return '<div class="record">' +
+                  '<div class="record-left"><div class="icon ' + iconClass + '">' + escapeHtml(transaction.type === 'transfer' ? 'T' : iconFor(transaction.category?.icon, isIncome ? '+' : '-')) + '</div>' +
+                  '<div class="card-main"><p class="card-title">' + escapeHtml(transactionTitle(transaction)) + '</p><p class="card-meta">' + escapeHtml(transactionMeta(transaction)) + '</p></div></div>' +
+                  '<div class="amount ' + (isExpense ? 'negative' : isIncome ? 'positive' : '') + '">' + amount + '</div>' +
+                '</div>';
+              }).join('') + '</div></div>';
+          }).join('')
+        : '<div class="empty">No transactions for this period.</div>';
+
+      return '<main class="shell">' +
+        '<div class="header"><div class="brand"><p class="eyebrow">Pocketly Records</p><h1 class="title">' + escapeHtml(data.period?.label || 'Recent Records') + '</h1></div><span class="note">' + transactions.length + ' shown</span></div>' +
+        '<div class="summary">' +
+          stat('Expense', formatCurrency(stats.totalExpense), 'negative') +
+          stat('Income', formatCurrency(stats.totalIncome), 'positive') +
+          stat('Net Flow', formatSigned(stats.netFlow), stats.netFlow >= 0 ? 'positive' : 'negative') +
+        '</div>' +
+        rows +
+        '<div class="followups"><button id="records-summary" class="pill">Summarize records</button></div>' +
+      '</main>';
+    }
+
+    function renderBudgets(data) {
+      const budgets = data.budgets || [];
+      const stats = data.stats || {};
+      const rows = budgets.length
+        ? '<div class="card progress-wrap">' + budgets.map(function (budget) {
+            const progress = Math.max(0, Math.min(Number(budget.progress || 0), 100));
+            return '<div>' +
+              '<div class="progress-top"><p class="progress-name">' + escapeHtml(budget.category?.name || 'Budget') + '</p><span class="progress-value ' + (budget.isExceeded ? 'negative' : 'positive') + '">' + Math.round(progress) + '%</span></div>' +
+              '<div class="bar"><div class="bar-fill ' + (budget.isExceeded ? 'over' : '') + '" style="width:' + progress + '%"></div></div>' +
+              '<p class="card-meta">' + formatCurrency(budget.spent) + ' spent of ' + formatCurrency(budget.amount) + ' - ' + escapeHtml(budget.period) + '</p>' +
+            '</div>';
+          }).join('') + '</div>'
+        : '<div class="empty">No budgets yet.</div>';
+
+      return '<main class="shell">' +
+        '<div class="header"><div class="brand"><p class="eyebrow">Pocketly Planning</p><h1 class="title">Budgets</h1></div><span class="note">' + budgets.length + ' budgets</span></div>' +
+        '<div class="summary">' +
+          stat('Budget', formatCurrency(stats.totalBudget), '') +
+          stat('Spent', formatCurrency(stats.totalSpent), stats.exceededCount ? 'negative' : 'positive') +
+          stat('Exceeded', String(stats.exceededCount || 0), stats.exceededCount ? 'negative' : '') +
+        '</div>' +
+        rows +
+        '<div class="followups"><button id="budget-help" class="pill">Review budgets</button></div>' +
+      '</main>';
+    }
+
+    function renderSummary(data) {
+      const stats = data.stats || {};
+      const expenses = data.topExpenseCategories || [];
+      const expenseRows = expenses.length
+        ? '<div class="card category-list">' + expenses.map(function (category) {
+            return '<div class="category-row"><span class="dot" style="background:' + escapeHtml(category.color || '#1f644e') + '"></span><span class="card-title">' + escapeHtml(category.name) + '</span><span class="negative">' + formatCurrency(category.total) + '</span></div>';
+          }).join('') + '</div>'
+        : '<div class="empty">No category activity in this period.</div>';
+
+      return '<main class="shell">' +
+        '<div class="header"><div class="brand"><p class="eyebrow">Pocketly Analysis</p><h1 class="title">' + escapeHtml(data.period?.label || 'Summary') + '</h1></div></div>' +
+        '<div class="summary four">' +
+          stat('Balance', formatCurrency(stats.totalAccountBalance), '') +
+          stat('Expense', formatCurrency(stats.totalExpense), 'negative') +
+          stat('Income', formatCurrency(stats.totalIncome), 'positive') +
+          stat('Net Flow', formatSigned(stats.netFlow), stats.netFlow >= 0 ? 'positive' : 'negative') +
+        '</div>' +
+        '<div class="section-head"><h2 class="section-title">Top Expense Categories</h2></div>' +
+        expenseRows +
+        '<div class="followups"><button id="summary-help" class="pill">Find savings</button></div>' +
+      '</main>';
     }
 
     function render(data) {
-      if (!data || !data.stats) {
-        root.innerHTML = '<div class="shell"><div class="card empty">Ask ChatGPT to show your Pocketly dashboard.</div></div>';
+      const kind = data?.kind || preferredKind;
+      if (!data) {
+        root.innerHTML = '<main class="shell"><div class="empty">Ask ChatGPT to load this Pocketly view.</div></main>';
         return;
       }
-      const stats = data.stats;
-      root.innerHTML =
-        '<main class="shell">' +
-          '<div class="topbar">' +
-            '<div class="brand"><div class="logo">P</div><div><h1 class="title">Pocketly</h1><p class="subtitle">' + escapeHtml(data.period?.label || 'Finance dashboard') + '</p></div></div>' +
-            '<div class="actions"><button id="refresh" class="icon-btn" title="Refresh">R</button></div>' +
-          '</div>' +
-          '<div class="grid stats">' +
-            '<div class="card"><p class="stat-label">Balance</p><p class="stat-value">' + formatCurrency(stats.totalAccountBalance) + '</p></div>' +
-            '<div class="card"><p class="stat-label">Expense</p><p class="stat-value negative">' + formatCurrency(stats.totalExpense) + '</p></div>' +
-            '<div class="card"><p class="stat-label">Income</p><p class="stat-value positive">' + formatCurrency(stats.totalIncome) + '</p></div>' +
-            '<div class="card"><p class="stat-label">Net Flow</p><p class="stat-value ' + (stats.netFlow >= 0 ? 'positive' : 'negative') + '">' + signedCurrency(stats.netFlow) + '</p></div>' +
-          '</div>' +
-          '<section class="section"><div class="section-head"><h2 class="section-title">Recent Records</h2><span class="section-note">' + Number(data.transactions?.length || 0) + ' shown</span></div>' + renderRecords(data.transactions) + '</section>' +
-          '<section class="section"><div class="section-head"><h2 class="section-title">Accounts</h2><span class="section-note">' + Number(data.accounts?.length || 0) + ' accounts</span></div>' + renderAccounts(data.accounts) + '</section>' +
-          '<section class="section"><div class="section-head"><h2 class="section-title">Planning</h2><span class="section-note">Budgets</span></div>' + renderBudgets(data.budgets) + '</section>' +
-          '<section class="section"><div class="section-head"><h2 class="section-title">Top Expense Categories</h2></div>' + renderCategories(data.analysis) + '</section>' +
-          '<section class="section"><div class="section-head"><h2 class="section-title">Daily Flow</h2></div>' + renderDailyFlow(data.analysis) + '</section>' +
-          '<div class="followups">' +
-            '<button id="summarize" class="pill-btn">Summarize spending</button>' +
-            '<button id="savings" class="pill-btn">Find savings</button>' +
-          '</div>' +
-        '</main>';
-      document.getElementById('refresh')?.addEventListener('click', function () { refresh(data); });
-      document.getElementById('summarize')?.addEventListener('click', function () { followUp('Summarize my Pocketly spending for this period.'); });
-      document.getElementById('savings')?.addEventListener('click', function () { followUp('Find practical savings opportunities from my Pocketly dashboard.'); });
+      if (kind === 'accounts') root.innerHTML = renderAccounts(data);
+      else if (kind === 'transactions') root.innerHTML = renderTransactions(data);
+      else if (kind === 'budgets') root.innerHTML = renderBudgets(data);
+      else root.innerHTML = renderSummary(data);
+
+      document.getElementById('accounts-summary')?.addEventListener('click', function () {
+        followUp('Explain my Pocketly account balances and what stands out.');
+      });
+      document.getElementById('records-summary')?.addEventListener('click', function () {
+        followUp('Summarize these Pocketly records and point out notable spending patterns.');
+      });
+      document.getElementById('budget-help')?.addEventListener('click', function () {
+        followUp('Review my Pocketly budgets and tell me which ones need attention.');
+      });
+      document.getElementById('summary-help')?.addEventListener('click', function () {
+        followUp('Find savings opportunities from this Pocketly summary.');
+      });
     }
 
     render(window.openai?.toolOutput);
@@ -573,70 +707,10 @@ export function createMcpServer() {
     version: '1.0.0',
   });
 
-  server.registerResource(
-    'pocketly-dashboard',
-    POCKETLY_WIDGET_URI,
-    {
-      title: 'Pocketly Dashboard',
-      description: 'Compact read-only Pocketly finance dashboard for ChatGPT.',
-    },
-    async () => ({
-      contents: [
-        {
-          uri: POCKETLY_WIDGET_URI,
-          mimeType: POCKETLY_WIDGET_MIME_TYPE,
-          text: getPocketlyWidgetHtml(),
-          _meta: {
-            ui: {
-              prefersBorder: true,
-              domain: POCKETLY_WIDGET_DOMAIN,
-              csp: {
-                connectDomains: [POCKETLY_WIDGET_DOMAIN],
-                resourceDomains: [POCKETLY_WIDGET_DOMAIN],
-              },
-            },
-            'openai/widgetDescription':
-              'A compact Pocketly dashboard showing balances, recent records, budgets, and spending analysis.',
-            'openai/widgetPrefersBorder': true,
-            'openai/widgetCSP': {
-              connect_domains: [POCKETLY_WIDGET_DOMAIN],
-              resource_domains: [POCKETLY_WIDGET_DOMAIN],
-            },
-            'openai/widgetDomain': POCKETLY_WIDGET_DOMAIN,
-          },
-        },
-      ],
-    })
-  );
-
-  server.registerTool(
-    'show_pocketly_dashboard',
-    {
-      title: 'Show Pocketly Dashboard',
-      description:
-        'Use this when the user wants a visual Pocketly dashboard with balances, records, budgets, accounts, and spending analysis.',
-      annotations: READ_ONLY_ANNOTATIONS,
-      inputSchema: {
-        startDate: z
-          .string()
-          .optional()
-          .describe('Optional period start date as an ISO date string'),
-        endDate: z.string().optional().describe('Optional period end date as an ISO date string'),
-        limit: z.number().int().min(1).max(100).optional().describe('Max recent records to show'),
-      },
-      _meta: toolMeta('Loading Pocketly...', 'Pocketly dashboard ready.', {
-        ui: { resourceUri: POCKETLY_WIDGET_URI },
-        'openai/outputTemplate': POCKETLY_WIDGET_URI,
-      }),
-    },
-    async ({ startDate, endDate, limit }) => {
-      const dashboard = await buildDashboardPayload({ startDate, endDate, limit });
-      return textResult(
-        `Showing Pocketly dashboard for ${dashboard.period.label}: ${dashboard.transactions.length} recent records, ${dashboard.accounts.length} accounts, and ${dashboard.budgets.length} budgets.`,
-        dashboard
-      );
-    }
-  );
+  registerPocketlyWidget(server, WIDGETS.accounts, 'accounts');
+  registerPocketlyWidget(server, WIDGETS.transactions, 'transactions');
+  registerPocketlyWidget(server, WIDGETS.budgets, 'budgets');
+  registerPocketlyWidget(server, WIDGETS.summary, 'summary');
 
   server.registerTool(
     'get_accounts',
@@ -645,11 +719,11 @@ export function createMcpServer() {
       description: 'Use this when the user needs Pocketly account names and current balances.',
       annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {},
-      _meta: toolMeta('Loading accounts...', 'Accounts ready.'),
+      _meta: widgetToolMeta(WIDGETS.accounts, 'Loading accounts...', 'Accounts ready.'),
     },
     async () => {
-      const accounts = (await getAccounts({ includeBalances: true })).map(normalizeAccount);
-      return textResult(`Found ${accounts.length} active Pocketly accounts.`, { accounts });
+      const payload = await buildAccountsPayload();
+      return textResult(`Found ${payload.accounts.length} active Pocketly accounts.`, payload);
     }
   );
 
@@ -664,7 +738,10 @@ export function createMcpServer() {
     },
     async () => {
       const categories = (await getCategories()).map(normalizeCategory);
-      return textResult(`Found ${categories.length} active Pocketly categories.`, { categories });
+      return textResult(`Found ${categories.length} active Pocketly categories.`, {
+        kind: 'categories',
+        categories,
+      });
     }
   );
 
@@ -761,15 +838,11 @@ export function createMcpServer() {
           .describe('Optional period start date as an ISO date string'),
         endDate: z.string().optional().describe('Optional period end date as an ISO date string'),
       },
-      _meta: toolMeta('Loading records...', 'Records ready.'),
+      _meta: widgetToolMeta(WIDGETS.transactions, 'Loading records...', 'Records ready.'),
     },
-    async ({ type, limit, startDate, endDate }) => {
-      const transactions = (await getTransactions({ type, limit, startDate, endDate })).map(
-        normalizeTransaction
-      );
-      return textResult(`Found ${transactions.length} matching Pocketly transactions.`, {
-        transactions,
-      });
+    async (payload) => {
+      const data = await buildTransactionsPayload(payload);
+      return textResult(`Found ${data.transactions.length} matching Pocketly transactions.`, data);
     }
   );
 
@@ -787,28 +860,12 @@ export function createMcpServer() {
           .describe('Optional period start date as an ISO date string'),
         endDate: z.string().optional().describe('Optional period end date as an ISO date string'),
       },
-      _meta: toolMeta('Calculating summary...', 'Summary ready.'),
+      _meta: widgetToolMeta(WIDGETS.summary, 'Calculating summary...', 'Summary ready.'),
     },
-    async ({ startDate, endDate }) => {
-      const period = makePeriod(startDate, endDate);
-      const dashboard = await buildDashboardPayload({
-        startDate: period.startDate,
-        endDate: period.endDate,
-        limit: 100,
-      });
-      const summary = {
-        period: dashboard.period,
-        stats: dashboard.stats,
-        topExpenseCategories: dashboard.analysis.categoryBreakdown
-          .filter((category) => category.type === 'expense')
-          .slice(0, 10),
-        topIncomeCategories: dashboard.analysis.categoryBreakdown
-          .filter((category) => category.type === 'income')
-          .slice(0, 5),
-        accounts: dashboard.accounts,
-      };
+    async (payload) => {
+      const summary = await buildSummaryPayload(payload);
       return textResult(
-        `Pocketly summary for ${dashboard.period.label}: net flow ${summary.stats.netFlow}.`,
+        `Pocketly summary for ${summary.period.label}: net flow ${summary.stats.netFlow}.`,
         summary
       );
     }
@@ -937,15 +994,11 @@ export function createMcpServer() {
       description: 'Use this when the user needs Pocketly budgets and budget progress.',
       annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {},
-      _meta: toolMeta('Loading budgets...', 'Budgets ready.'),
+      _meta: widgetToolMeta(WIDGETS.budgets, 'Loading budgets...', 'Budgets ready.'),
     },
     async () => {
-      const [budgetsRaw, transactionsRaw] = await Promise.all([
-        getBudgets(),
-        getTransactions({ limit: 100 }),
-      ]);
-      const budgets = budgetsRaw.map((budget) => normalizeBudget(budget, transactionsRaw));
-      return textResult(`Found ${budgets.length} active Pocketly budgets.`, { budgets });
+      const payload = await buildBudgetsPayload();
+      return textResult(`Found ${payload.budgets.length} active Pocketly budgets.`, payload);
     }
   );
 
