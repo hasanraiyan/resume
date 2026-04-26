@@ -6,6 +6,9 @@ import {
   getCategories,
   getTransactions,
   getFinancialSummary,
+  createCategory,
+  updateCategory,
+  deleteCategory,
   createTransaction,
   updateTransaction,
   deleteTransaction,
@@ -25,6 +28,11 @@ export function createMcpServer() {
     'get_accounts',
     {
       description: 'List all accounts with current balances.',
+      annotations: {
+        readOnlyHint: true,
+        openWorldHint: false,
+        destructiveHint: false,
+      },
       inputSchema: {},
     },
     async () => {
@@ -46,6 +54,11 @@ export function createMcpServer() {
     'get_categories',
     {
       description: 'List all income and expense categories.',
+      annotations: {
+        readOnlyHint: true,
+        openWorldHint: false,
+        destructiveHint: false,
+      },
       inputSchema: {},
     },
     async () => {
@@ -61,6 +74,11 @@ export function createMcpServer() {
     'create_category',
     {
       description: 'Create a new category for income or expenses.',
+      annotations: {
+        readOnlyHint: false,
+        openWorldHint: false,
+        destructiveHint: false,
+      },
       inputSchema: {
         name: z.string().describe('Display name of the category'),
         type: z.enum(['income', 'expense']).describe('Category type'),
@@ -95,6 +113,11 @@ export function createMcpServer() {
     'update_category',
     {
       description: 'Update an existing category.',
+      annotations: {
+        readOnlyHint: false,
+        openWorldHint: false,
+        destructiveHint: false,
+      },
       inputSchema: {
         id: z.string().describe('MongoDB _id of the category to update'),
         name: z.string().optional(),
@@ -124,6 +147,11 @@ export function createMcpServer() {
     'delete_category',
     {
       description: 'Soft-delete a category by its ID.',
+      annotations: {
+        readOnlyHint: false,
+        openWorldHint: false,
+        destructiveHint: true,
+      },
       inputSchema: {
         id: z.string().describe('MongoDB _id of the category to delete'),
       },
@@ -150,6 +178,11 @@ export function createMcpServer() {
     'get_transactions',
     {
       description: 'List recent transactions. Optionally filter by type and limit the count.',
+      annotations: {
+        readOnlyHint: true,
+        openWorldHint: false,
+        destructiveHint: false,
+      },
       inputSchema: {
         type: z.enum(['income', 'expense', 'transfer']).optional().describe('Filter by type'),
         limit: z.number().int().min(1).max(100).optional().describe('Max results (default 20)'),
@@ -176,6 +209,11 @@ export function createMcpServer() {
     {
       description:
         'Get a financial overview: total income, expenses, net flow, and per-category breakdown.',
+      annotations: {
+        readOnlyHint: true,
+        openWorldHint: false,
+        destructiveHint: false,
+      },
       inputSchema: {},
     },
     async () => {
@@ -224,6 +262,11 @@ export function createMcpServer() {
     {
       description:
         'Create a new transaction. Resolve accountId via get_accounts and categoryId via get_categories first.',
+      annotations: {
+        readOnlyHint: false,
+        openWorldHint: false,
+        destructiveHint: false,
+      },
       inputSchema: {
         type: z.enum(['income', 'expense', 'transfer']).describe('Transaction type'),
         amount: z.number().positive().describe('Positive amount'),
@@ -294,6 +337,11 @@ export function createMcpServer() {
     'delete_transaction',
     {
       description: 'Soft-delete a transaction by its ID.',
+      annotations: {
+        readOnlyHint: false,
+        openWorldHint: false,
+        destructiveHint: true,
+      },
       inputSchema: {
         id: z.string().describe('MongoDB _id of the transaction to delete'),
       },
@@ -320,6 +368,11 @@ export function createMcpServer() {
     'update_transaction',
     {
       description: 'Update fields of an existing transaction.',
+      annotations: {
+        readOnlyHint: false,
+        openWorldHint: false,
+        destructiveHint: false,
+      },
       inputSchema: {
         id: z.string().describe('MongoDB _id of the transaction'),
         amount: z.number().positive().optional(),
@@ -375,6 +428,11 @@ export function createMcpServer() {
     'get_budgets',
     {
       description: 'List all budgets.',
+      annotations: {
+        readOnlyHint: true,
+        openWorldHint: false,
+        destructiveHint: false,
+      },
       inputSchema: {},
     },
     async () => {
@@ -396,6 +454,11 @@ export function createMcpServer() {
     'create_budget',
     {
       description: 'Create a new budget. Resolve categoryId via get_categories first.',
+      annotations: {
+        readOnlyHint: false,
+        openWorldHint: false,
+        destructiveHint: false,
+      },
       inputSchema: {
         categoryId: z.string().describe('MongoDB _id of the category'),
         amount: z.number().positive().describe('Positive amount for the budget'),
@@ -446,6 +509,11 @@ export function createMcpServer() {
     'update_budget',
     {
       description: 'Update fields of an existing budget.',
+      annotations: {
+        readOnlyHint: false,
+        openWorldHint: false,
+        destructiveHint: false,
+      },
       inputSchema: {
         id: z.string().describe('MongoDB _id of the budget'),
         categoryId: z.string().optional().describe('New category _id'),
@@ -491,6 +559,11 @@ export function createMcpServer() {
     'delete_budget',
     {
       description: 'Soft-delete a budget by its ID.',
+      annotations: {
+        readOnlyHint: false,
+        openWorldHint: false,
+        destructiveHint: true,
+      },
       inputSchema: {
         id: z.string().describe('MongoDB _id of the budget to delete'),
       },

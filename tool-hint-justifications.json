@@ -1,0 +1,174 @@
+{
+  "$schema": "https://developers.openai.com/apps-sdk/schemas/tool-hint-justifications.v1.json",
+  "schema_version": 1,
+  "tools": {
+    "get_accounts": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves active account records and computes balances from existing transactions without modifying data.",
+        "open_world_justification": "Does not write to public internet state or external third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, or perform irreversible actions."
+      }
+    },
+    "get_categories": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves active income and expense categories without modifying records.",
+        "open_world_justification": "Does not write to public internet state or external third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, or perform irreversible actions."
+      }
+    },
+    "create_category": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Creates a new private category record in Pocketly, so it changes stored data.",
+        "open_world_justification": "Only writes to the private Pocketly database and does not publish or send data externally.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, or perform irreversible actions."
+      }
+    },
+    "update_category": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Updates fields on an existing private category record, so it changes stored data.",
+        "open_world_justification": "Only writes to the private Pocketly database and does not publish or send data externally.",
+        "destructive_justification": "Does not delete records or perform irreversible destructive actions."
+      }
+    },
+    "delete_category": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Soft-deletes an existing private category record, so it changes stored data.",
+        "open_world_justification": "Only writes to the private Pocketly database and does not publish or send data externally.",
+        "destructive_justification": "Marks the selected category as deleted, removing it from active use."
+      }
+    },
+    "get_transactions": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves matching active transactions and related account or category data without modifying records.",
+        "open_world_justification": "Does not write to public internet state or external third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, or perform irreversible actions."
+      }
+    },
+    "get_financial_summary": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only computes financial totals and category breakdowns from existing private records without modifying data.",
+        "open_world_justification": "Does not write to public internet state or external third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, or perform irreversible actions."
+      }
+    },
+    "create_transaction": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Creates a new private transaction record in Pocketly, so it changes stored data.",
+        "open_world_justification": "Only writes to the private Pocketly database and does not publish or send data externally.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, or perform irreversible actions."
+      }
+    },
+    "delete_transaction": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Soft-deletes an existing private transaction record, so it changes stored data.",
+        "open_world_justification": "Only writes to the private Pocketly database and does not publish or send data externally.",
+        "destructive_justification": "Marks the selected transaction as deleted, removing it from active balances and reports."
+      }
+    },
+    "update_transaction": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Updates fields on an existing private transaction record, so it changes stored data.",
+        "open_world_justification": "Only writes to the private Pocketly database and does not publish or send data externally.",
+        "destructive_justification": "Does not delete records or perform irreversible destructive actions."
+      }
+    },
+    "get_budgets": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves active budget records and related category data without modifying records.",
+        "open_world_justification": "Does not write to public internet state or external third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, or perform irreversible actions."
+      }
+    },
+    "create_budget": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Creates a new private budget record in Pocketly, so it changes stored data.",
+        "open_world_justification": "Only writes to the private Pocketly database and does not publish or send data externally.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, or perform irreversible actions."
+      }
+    },
+    "update_budget": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Updates fields on an existing private budget record, so it changes stored data.",
+        "open_world_justification": "Only writes to the private Pocketly database and does not publish or send data externally.",
+        "destructive_justification": "Does not delete records or perform irreversible destructive actions."
+      }
+    },
+    "delete_budget": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Soft-deletes an existing private budget record, so it changes stored data.",
+        "open_world_justification": "Only writes to the private Pocketly database and does not publish or send data externally.",
+        "destructive_justification": "Marks the selected budget as deleted, removing it from active use."
+      }
+    }
+  }
+}
