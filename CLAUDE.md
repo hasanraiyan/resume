@@ -92,7 +92,7 @@ LangChain + LangGraph for agent orchestration. `src/lib/agents/` contains `Agent
 
 ### MCP Server
 
-`src/lib/mcp/server.js` implements a Pocketly MCP server using `@modelcontextprotocol/sdk`. `src/lib/mcp/oauth.js` implements OAuth 2.0 with PKCE for MCP authentication. The authorization flow uses a conditional UI: authenticated admins are redirected to a dedicated `/mcp-authorize` page for an Authorize/Decline prompt, avoiding double logins. MCP server configs are stored in MongoDB (not config files) — fetched via `src/lib/mcpConfig.js` using the `McpServer` model. Related models: `McpServer.js`, `McpClient.js`, `McpAuthCode.js`.
+`src/lib/mcp/pocketly/` implements a Pocketly MCP server using `@modelcontextprotocol/sdk`. `src/lib/mcp/oauth.js` implements OAuth 2.0 with PKCE for MCP authentication. The authorization flow uses a conditional UI: authenticated admins are redirected to a dedicated `/mcp-authorize` page for an Authorize/Decline prompt, avoiding double logins. MCP server configs are stored in MongoDB (not config files) — fetched via `src/lib/mcpConfig.js` using the `McpServer` model. Related models: `McpServer.js`, `McpClient.js`, `McpAuthCode.js`.
 
 ### UI Components
 

@@ -1,6 +1,6 @@
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { verifyAccessToken, getBaseUrl } from '@/lib/mcp/oauth';
-import { createMcpServer } from '@/lib/mcp/server';
+import { createMcpServer } from '@/lib/mcp/pocketly';
 import dbConnect from '@/lib/dbConnect';
 import ConnectedApp from '@/models/ConnectedApp';
 import McpAuditLog from '@/models/McpAuditLog';
