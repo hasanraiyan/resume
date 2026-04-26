@@ -61,34 +61,85 @@ export function getPocketlyWidgetHtml(kind) {
     --purple: #9333ea;
   }
   * { box-sizing: border-box; }
+  html { min-width: 0; height: 100%; background: var(--bg); }
   body {
     margin: 0;
+    min-width: 0;
+    height: 100%;
+    overflow: hidden;
     background: var(--bg);
     color: var(--text);
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
-  .shell { min-height: 100vh; padding: 16px; background: var(--bg); }
-  .header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  #pocketly-root { min-width: 0; height: 100vh; background: var(--bg); }
+  .shell {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+    height: 100vh;
+    min-height: 280px;
+    max-height: 760px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 14px;
+    background: var(--bg);
+    scrollbar-color: #cfd8d3 transparent;
+    scrollbar-width: thin;
+  }
+  .shell::-webkit-scrollbar { width: 9px; }
+  .shell::-webkit-scrollbar-track { background: transparent; }
+  .shell::-webkit-scrollbar-thumb { background: #cfd8d3; border: 3px solid var(--bg); border-radius: 999px; }
+  .header {
+    position: sticky;
+    top: -14px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: -14px -14px 0;
+    padding: 14px 14px 10px;
+    background: color-mix(in srgb, var(--bg) 94%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(229, 227, 216, .72);
+  }
   .brand { min-width: 0; }
   .eyebrow { margin: 0 0 4px; color: var(--muted); font-size: 11px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
   .title { margin: 0; color: var(--primary); font-size: 16px; line-height: 1.2; font-weight: 900; }
-  .note { color: var(--muted); font-size: 11px; font-weight: 800; }
-  .summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .header-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+  .note { color: var(--muted); font-size: 11px; font-weight: 800; white-space: nowrap; }
+  .icon-button {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--primary);
+    cursor: pointer;
+    box-shadow: 0 1px 0 rgba(30,58,52,.03);
+  }
+  .icon-button svg { width: 17px; height: 17px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .icon-button[disabled] { cursor: wait; opacity: .55; }
+  .content { display: grid; gap: 14px; min-width: 0; }
+  .summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .summary.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stat { min-width: 0; border: 1px solid var(--border); background: var(--card); border-radius: 12px; padding: 10px; text-align: center; }
-  .account-summary { margin-bottom: 22px; }
   .account-summary .stat-icon { display: none; }
   .account-summary .stat-value { margin-top: 4px; }
   .stat-label { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.2; letter-spacing: .04em; text-transform: uppercase; font-weight: 900; }
   .stat-value { margin: 5px 0 0; color: var(--text); font-size: 14px; line-height: 1.15; font-weight: 900; overflow-wrap: anywhere; }
   .positive { color: var(--primary); }
   .negative { color: var(--expense); }
-  .section-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 12px 0 8px; }
+  .section-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .section-title { margin: 0; color: var(--primary); font-size: 13px; font-weight: 900; }
   .grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
   .grid.accounts { gap: 14px; }
   .card { border: 1px solid var(--border); background: var(--card); border-radius: 12px; padding: 12px; }
-  .account-card { min-height: 142px; padding: 20px; transition: box-shadow .18s ease, transform .18s ease; }
+  .account-card { min-height: 132px; padding: 18px; transition: box-shadow .18s ease, transform .18s ease; }
   .account-card:hover { box-shadow: 0 8px 24px rgba(30, 58, 52, .08); transform: translateY(-1px); }
   .account-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
   .account-balance { margin: 7px 0 0; font-size: 20px; line-height: 1.18; font-weight: 900; overflow-wrap: anywhere; }
@@ -113,7 +164,7 @@ export function getPocketlyWidgetHtml(kind) {
   .record:first-child { border-top: 0; }
   .record-left { display: flex; gap: 10px; align-items: center; min-width: 0; }
   .amount { flex: none; max-width: 34vw; font-size: 13px; font-weight: 900; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .date-group { margin-top: 12px; }
+  .date-group { display: grid; gap: 8px; }
   .date-label { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; color: var(--muted); font-size: 11px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
   .date-label:after { content: ""; height: 1px; flex: 1; background: var(--border); }
   .progress-wrap { display: grid; gap: 12px; }
@@ -127,10 +178,22 @@ export function getPocketlyWidgetHtml(kind) {
   .category-row { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: center; gap: 8px; color: var(--text); font-size: 12px; font-weight: 900; }
   .dot { width: 10px; height: 10px; border-radius: 999px; background: var(--primary); }
   .empty { border: 1px dashed var(--border); background: rgba(255,255,255,.58); border-radius: 12px; padding: 28px 14px; color: var(--muted); text-align: center; font-size: 13px; font-weight: 800; }
-  .followups { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .followups { display: flex; flex-wrap: wrap; gap: 8px; }
   .pill { border: 1px solid #d9e6df; background: var(--primary); color: white; border-radius: 999px; padding: 9px 12px; font-size: 12px; font-weight: 900; cursor: pointer; }
+  @media (max-width: 380px) {
+    .shell { padding: 12px; gap: 12px; }
+    .header { top: -12px; margin: -12px -12px 0; padding: 12px 12px 9px; }
+    .summary { gap: 7px; }
+    .stat { padding: 8px 6px; }
+    .stat-label { font-size: 9px; }
+    .stat-value { font-size: 12px; }
+    .account-card { min-height: 118px; padding: 14px; }
+    .account-balance { font-size: 17px; }
+    .amount { max-width: 30vw; font-size: 12px; }
+  }
   @media (min-width: 560px) {
-    .shell { padding: 18px; }
+    .shell { padding: 16px; }
+    .header { top: -16px; margin: -16px -16px 0; padding: 16px 16px 11px; }
     .summary.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .account-summary { gap: 14px; }
     .account-summary .stat { display: flex; align-items: center; gap: 14px; padding: 18px; text-align: left; }
@@ -142,7 +205,7 @@ export function getPocketlyWidgetHtml(kind) {
     .grid.accounts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   @media (min-width: 820px) {
-    .grid.accounts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .shell { max-height: 680px; }
   }
 </style>
 <script>
@@ -193,6 +256,7 @@ export function getPocketlyWidgetHtml(kind) {
       if (name === 'building') return '<svg viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/><path d="M6 12H4a2 2 0 0 0-2 2v8"/><path d="M18 9h2a2 2 0 0 1 2 2v11"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>';
       if (name === 'coins') return '<svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/></svg>';
       if (name === 'phone') return '<svg viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/></svg>';
+      if (name === 'refresh') return '<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>';
       return '<svg viewBox="0 0 24 24"><path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>';
     }
 
@@ -241,6 +305,11 @@ export function getPocketlyWidgetHtml(kind) {
         '<div><p class="stat-label">' + escapeHtml(label) + '</p><p class="stat-value ' + (tone || '') + '">' + escapeHtml(value) + '</p></div></div>';
     }
 
+    function headerMarkup(eyebrow, title, note) {
+      return '<div class="header"><div class="brand"><p class="eyebrow">' + escapeHtml(eyebrow) + '</p><h1 class="title">' + escapeHtml(title) + '</h1></div>' +
+        '<div class="header-actions"><span class="note">' + escapeHtml(note || '') + '</span><button type="button" class="icon-button refresh-view" aria-label="Refresh Pocketly view" title="Refresh">' + svgIcon('refresh') + '</button></div></div>';
+    }
+
     function renderAccounts(data) {
       const accounts = data.accounts || [];
       const stats = data.stats || {};
@@ -260,7 +329,8 @@ export function getPocketlyWidgetHtml(kind) {
         : '<div class="empty">No accounts yet.</div>';
 
       return '<main class="shell">' +
-        '<div class="header"><div class="brand"><p class="eyebrow">Pocketly</p><h1 class="title">Accounts</h1></div><span class="note">' + accounts.length + ' accounts</span></div>' +
+        headerMarkup('Pocketly', 'Accounts', accounts.length + ' accounts') +
+        '<div class="content">' +
         '<div class="summary account-summary">' +
           stat('Balance', formatCurrency(stats.totalAccountBalance), '', 'wallet') +
           stat('Expense', formatCurrency(stats.totalExpense), 'negative', 'trending-down', 'red') +
@@ -269,6 +339,7 @@ export function getPocketlyWidgetHtml(kind) {
         '<div class="section-head"><h2 class="section-title">Your Accounts</h2></div>' +
         cards +
         '<div class="followups"><button id="accounts-summary" class="pill">Explain balances</button></div>' +
+        '</div>' +
       '</main>';
     }
 
@@ -321,7 +392,8 @@ export function getPocketlyWidgetHtml(kind) {
         : '<div class="empty">No transactions for this period.</div>';
 
       return '<main class="shell">' +
-        '<div class="header"><div class="brand"><p class="eyebrow">Pocketly Records</p><h1 class="title">' + escapeHtml(data.period?.label || 'Recent Records') + '</h1></div><span class="note">' + transactions.length + ' shown</span></div>' +
+        headerMarkup('Pocketly Records', data.period?.label || 'Recent Records', transactions.length + ' shown') +
+        '<div class="content">' +
         '<div class="summary">' +
           stat('Expense', formatCurrency(stats.totalExpense), 'negative') +
           stat('Income', formatCurrency(stats.totalIncome), 'positive') +
@@ -329,6 +401,7 @@ export function getPocketlyWidgetHtml(kind) {
         '</div>' +
         rows +
         '<div class="followups"><button id="records-summary" class="pill">Summarize records</button></div>' +
+        '</div>' +
       '</main>';
     }
 
@@ -347,7 +420,8 @@ export function getPocketlyWidgetHtml(kind) {
         : '<div class="empty">No budgets yet.</div>';
 
       return '<main class="shell">' +
-        '<div class="header"><div class="brand"><p class="eyebrow">Pocketly Planning</p><h1 class="title">Budgets</h1></div><span class="note">' + budgets.length + ' budgets</span></div>' +
+        headerMarkup('Pocketly Planning', 'Budgets', budgets.length + ' budgets') +
+        '<div class="content">' +
         '<div class="summary">' +
           stat('Budget', formatCurrency(stats.totalBudget), '') +
           stat('Spent', formatCurrency(stats.totalSpent), stats.exceededCount ? 'negative' : 'positive') +
@@ -355,6 +429,7 @@ export function getPocketlyWidgetHtml(kind) {
         '</div>' +
         rows +
         '<div class="followups"><button id="budget-help" class="pill">Review budgets</button></div>' +
+        '</div>' +
       '</main>';
     }
 
@@ -368,7 +443,8 @@ export function getPocketlyWidgetHtml(kind) {
         : '<div class="empty">No category activity in this period.</div>';
 
       return '<main class="shell">' +
-        '<div class="header"><div class="brand"><p class="eyebrow">Pocketly Analysis</p><h1 class="title">' + escapeHtml(data.period?.label || 'Summary') + '</h1></div></div>' +
+        headerMarkup('Pocketly Analysis', data.period?.label || 'Summary', '') +
+        '<div class="content">' +
         '<div class="summary four">' +
           stat('Balance', formatCurrency(stats.totalAccountBalance), '') +
           stat('Expense', formatCurrency(stats.totalExpense), 'negative') +
@@ -378,7 +454,35 @@ export function getPocketlyWidgetHtml(kind) {
         '<div class="section-head"><h2 class="section-title">Top Expense Categories</h2></div>' +
         expenseRows +
         '<div class="followups"><button id="summary-help" class="pill">Find savings</button></div>' +
+        '</div>' +
       '</main>';
+    }
+
+    async function refreshCurrentView(button) {
+      const kind = root.dataset.renderedKind || preferredKind;
+      const toolByKind = {
+        accounts: 'get_accounts',
+        transactions: 'get_transactions',
+        budgets: 'get_budgets',
+        summary: 'get_financial_summary'
+      };
+      const toolName = toolByKind[kind] || toolByKind.summary;
+      button?.setAttribute('disabled', '');
+      try {
+        if (window.openai?.callTool) {
+          const result = await window.openai.callTool(toolName, {});
+          render(result?.structuredContent || result);
+          return;
+        }
+        window.parent.postMessage({
+          jsonrpc: '2.0',
+          id: Date.now(),
+          method: 'tools/call',
+          params: { name: toolName, arguments: {} }
+        }, '*');
+      } finally {
+        button?.removeAttribute('disabled');
+      }
     }
 
     function render(data) {
@@ -391,7 +495,11 @@ export function getPocketlyWidgetHtml(kind) {
       else if (kind === 'transactions') root.innerHTML = renderTransactions(data);
       else if (kind === 'budgets') root.innerHTML = renderBudgets(data);
       else root.innerHTML = renderSummary(data);
+      root.dataset.renderedKind = kind;
 
+      document.querySelector('.refresh-view')?.addEventListener('click', function (event) {
+        refreshCurrentView(event.currentTarget);
+      });
       document.getElementById('accounts-summary')?.addEventListener('click', function () {
         followUp('Explain my Pocketly account balances and what stands out.');
       });
