@@ -76,6 +76,9 @@ export function getPocketlyWidgetHtml(kind) {
   .summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
   .summary.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stat { min-width: 0; border: 1px solid var(--border); background: var(--card); border-radius: 12px; padding: 10px; text-align: center; }
+  .account-summary { margin-bottom: 22px; }
+  .account-summary .stat-icon { display: none; }
+  .account-summary .stat-value { margin-top: 4px; }
   .stat-label { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.2; letter-spacing: .04em; text-transform: uppercase; font-weight: 900; }
   .stat-value { margin: 5px 0 0; color: var(--text); font-size: 14px; line-height: 1.15; font-weight: 900; overflow-wrap: anywhere; }
   .positive { color: var(--primary); }
@@ -83,9 +86,22 @@ export function getPocketlyWidgetHtml(kind) {
   .section-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 12px 0 8px; }
   .section-title { margin: 0; color: var(--primary); font-size: 13px; font-weight: 900; }
   .grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .grid.accounts { gap: 14px; }
   .card { border: 1px solid var(--border); background: var(--card); border-radius: 12px; padding: 12px; }
-  .account-card { display: flex; gap: 12px; align-items: center; }
-  .icon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; flex: none; background: var(--primary-soft); color: var(--primary); border: 1px solid #d9e6df; font-size: 16px; font-weight: 900; }
+  .account-card { min-height: 142px; padding: 20px; transition: box-shadow .18s ease, transform .18s ease; }
+  .account-card:hover { box-shadow: 0 8px 24px rgba(30, 58, 52, .08); transform: translateY(-1px); }
+  .account-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .account-balance { margin: 7px 0 0; font-size: 20px; line-height: 1.18; font-weight: 900; overflow-wrap: anywhere; }
+  .icon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; flex: none; background: var(--primary-soft); color: var(--primary); border: 1px solid #d9e6df; font-size: 16px; font-weight: 900; overflow: hidden; }
+  .account-icon { width: 48px; height: 48px; }
+  .icon-img { width: 40px; height: 40px; object-fit: contain; }
+  .icon-img.bank-logo { width: 40px; height: 32px; }
+  .icon svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .icon.orange { background: #ffedd5; color: #f97316; border-color: #fed7aa; }
+  .icon.green { background: #dcfce7; color: #16a34a; border-color: #bbf7d0; }
+  .icon.blue-soft { background: #dbeafe; color: #2563eb; border-color: #bfdbfe; }
+  .icon.purple { background: #f3e8ff; color: #9333ea; border-color: #e9d5ff; }
+  .icon.red-soft { background: #fee2e2; color: #ef4444; border-color: #fecaca; }
   .icon.red { background: var(--danger-soft); color: var(--expense); border-color: #f0d2d2; }
   .icon.blue { background: #eff6ff; color: var(--blue); border-color: #d6e6ff; }
   .card-main { min-width: 0; flex: 1; }
@@ -116,7 +132,17 @@ export function getPocketlyWidgetHtml(kind) {
   @media (min-width: 560px) {
     .shell { padding: 18px; }
     .summary.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .account-summary { gap: 14px; }
+    .account-summary .stat { display: flex; align-items: center; gap: 14px; padding: 18px; text-align: left; }
+    .account-summary .stat-icon { display: grid; width: 46px; height: 46px; border-radius: 12px; place-items: center; flex: none; background: var(--primary-soft); color: var(--primary); }
+    .account-summary .stat-icon.red { background: var(--danger-soft); color: var(--expense); }
+    .account-summary .stat-icon svg { width: 23px; height: 23px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .account-summary .stat-label { font-size: 11px; }
+    .account-summary .stat-value { font-size: 19px; }
     .grid.accounts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (min-width: 820px) {
+    .grid.accounts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   }
 </style>
 <script>
@@ -159,20 +185,41 @@ export function getPocketlyWidgetHtml(kind) {
       }, '*');
     }
 
-    function iconFor(name, fallback) {
-      const normalized = String(name || fallback || '').toLowerCase();
-      if (normalized.includes('bank') || normalized.includes('landmark')) return 'B';
-      if (normalized.includes('card')) return 'C';
-      if (normalized.includes('piggy') || normalized.includes('coins')) return 'S';
-      if (normalized.includes('phone')) return 'P';
-      if (normalized.includes('car')) return 'C';
-      if (normalized.includes('food') || normalized.includes('utensils')) return 'F';
-      if (normalized.includes('home')) return 'H';
-      return fallback || 'W';
+    function svgIcon(name) {
+      if (name === 'wallet') return '<svg viewBox="0 0 24 24"><path d="M19 7V6a2 2 0 0 0-2-2H5a3 3 0 0 0 0 6h14a1 1 0 0 1 1 1v7a2 2 0 0 1-2 2H5a3 3 0 0 1-3-3V7"/><path d="M16 14h.01"/></svg>';
+      if (name === 'trending-down') return '<svg viewBox="0 0 24 24"><path d="m22 17-8.5-8.5-5 5L2 7"/><path d="M16 17h6v-6"/></svg>';
+      if (name === 'trending-up') return '<svg viewBox="0 0 24 24"><path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg>';
+      if (name === 'credit-card') return '<svg viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>';
+      if (name === 'building') return '<svg viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/><path d="M6 12H4a2 2 0 0 0-2 2v8"/><path d="M18 9h2a2 2 0 0 1 2 2v11"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>';
+      if (name === 'coins') return '<svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/></svg>';
+      if (name === 'phone') return '<svg viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/></svg>';
+      return '<svg viewBox="0 0 24 24"><path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>';
     }
 
-    function stat(label, value, tone) {
-      return '<div class="stat"><p class="stat-label">' + escapeHtml(label) + '</p><p class="stat-value ' + (tone || '') + '">' + escapeHtml(value) + '</p></div>';
+    function accountIconMarkup(name) {
+      const normalized = String(name || '').toLowerCase();
+      if (normalized === 'wallet' || normalized === 'purse') {
+        return '<img class="icon-img" src="${POCKETLY_WIDGET_DOMAIN}/images/purse.svg" alt="">';
+      }
+      if (normalized === 'pnb') {
+        return '<img class="icon-img bank-logo" src="${POCKETLY_WIDGET_DOMAIN}/images/pnb.png" alt="">';
+      }
+      if (normalized === 'ippb') return svgIcon('building');
+      if (normalized === 'rupay' || normalized.includes('card')) return svgIcon('credit-card');
+      if (normalized.includes('bank') || normalized.includes('landmark') || normalized.includes('building')) return svgIcon('building');
+      if (normalized.includes('piggy') || normalized.includes('coin')) return svgIcon('coins');
+      if (normalized.includes('phone')) return svgIcon('phone');
+      return svgIcon('wallet');
+    }
+
+    function accountIconClass(index) {
+      return ['orange', 'blue-soft', 'green', 'purple', 'red-soft'][index % 5];
+    }
+
+    function stat(label, value, tone, iconName, iconTone) {
+      return '<div class="stat">' +
+        (iconName ? '<div class="stat-icon ' + (iconTone || '') + '">' + svgIcon(iconName) + '</div>' : '') +
+        '<div><p class="stat-label">' + escapeHtml(label) + '</p><p class="stat-value ' + (tone || '') + '">' + escapeHtml(value) + '</p></div></div>';
     }
 
     function renderAccounts(data) {
@@ -182,19 +229,23 @@ export function getPocketlyWidgetHtml(kind) {
         ? '<div class="grid accounts">' + accounts.map(function (account, index) {
             const balance = Number(account.balance || 0);
             return '<div class="card account-card">' +
-              '<div class="icon">' + escapeHtml(iconFor(account.icon, String(index + 1))) + '</div>' +
-              '<div class="card-main"><p class="card-title">' + escapeHtml(account.name) + '</p><p class="card-meta">' + escapeHtml(account.currency || 'INR') + ' account</p></div>' +
-              '<p class="card-value ' + (balance < 0 ? 'negative' : 'positive') + '">' + formatCurrency(balance) + '</p>' +
+              '<div class="account-card-top">' +
+                '<div class="icon account-icon ' + accountIconClass(index) + '">' + accountIconMarkup(account.icon) + '</div>' +
+              '</div>' +
+              '<div style="margin-top:16px">' +
+                '<p class="card-title">' + escapeHtml(account.name) + '</p>' +
+                '<p class="account-balance ' + (balance < 0 ? 'negative' : 'positive') + '">' + formatCurrency(balance) + '</p>' +
+              '</div>' +
             '</div>';
           }).join('') + '</div>'
         : '<div class="empty">No accounts yet.</div>';
 
       return '<main class="shell">' +
         '<div class="header"><div class="brand"><p class="eyebrow">Pocketly</p><h1 class="title">Accounts</h1></div><span class="note">' + accounts.length + ' accounts</span></div>' +
-        '<div class="summary">' +
-          stat('Balance', formatCurrency(stats.totalAccountBalance), '') +
-          stat('Expense', formatCurrency(stats.totalExpense), 'negative') +
-          stat('Income', formatCurrency(stats.totalIncome), 'positive') +
+        '<div class="summary account-summary">' +
+          stat('Balance', formatCurrency(stats.totalAccountBalance), '', 'wallet') +
+          stat('Expense', formatCurrency(stats.totalExpense), 'negative', 'trending-down', 'red') +
+          stat('Income', formatCurrency(stats.totalIncome), 'positive', 'trending-up') +
         '</div>' +
         '<div class="section-head"><h2 class="section-title">Your Accounts</h2></div>' +
         cards +
@@ -242,7 +293,7 @@ export function getPocketlyWidgetHtml(kind) {
                   ? formatCurrency(transaction.amount)
                   : (isExpense ? '-' : '+') + formatCurrency(transaction.amount);
                 return '<div class="record">' +
-                  '<div class="record-left"><div class="icon ' + iconClass + '">' + escapeHtml(transaction.type === 'transfer' ? 'T' : iconFor(transaction.category?.icon, isIncome ? '+' : '-')) + '</div>' +
+                  '<div class="record-left"><div class="icon ' + iconClass + '">' + svgIcon(transaction.type === 'transfer' ? 'credit-card' : 'wallet') + '</div>' +
                   '<div class="card-main"><p class="card-title">' + escapeHtml(transactionTitle(transaction)) + '</p><p class="card-meta">' + escapeHtml(transactionMeta(transaction)) + '</p></div></div>' +
                   '<div class="amount ' + (isExpense ? 'negative' : isIncome ? 'positive' : '') + '">' + amount + '</div>' +
                 '</div>';
@@ -304,7 +355,7 @@ export function getPocketlyWidgetHtml(kind) {
           stat('Expense', formatCurrency(stats.totalExpense), 'negative') +
           stat('Income', formatCurrency(stats.totalIncome), 'positive') +
           stat('Net Flow', formatSigned(stats.netFlow), stats.netFlow >= 0 ? 'positive' : 'negative') +
-        }</div>' +
+        '</div>' +
         '<div class="section-head"><h2 class="section-title">Top Expense Categories</h2></div>' +
         expenseRows +
         '<div class="followups"><button id="summary-help" class="pill">Find savings</button></div>' +
