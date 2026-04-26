@@ -179,8 +179,6 @@ export function getPocketlyWidgetHtml(kind) {
   .category-row { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: center; gap: 8px; color: var(--text); font-size: 12px; font-weight: 900; }
   .dot { width: 10px; height: 10px; border-radius: 999px; background: var(--primary); }
   .empty { border: 1px dashed var(--border); background: rgba(255,255,255,.58); border-radius: 12px; padding: 28px 14px; color: var(--muted); text-align: center; font-size: 13px; font-weight: 800; }
-  .followups { display: flex; flex-wrap: wrap; gap: 8px; }
-  .pill { border: 1px solid #d9e6df; background: var(--primary); color: white; border-radius: 999px; padding: 9px 12px; font-size: 12px; font-weight: 900; cursor: pointer; }
   @media (max-width: 380px) {
     .shell { padding: 12px; gap: 12px; }
     .header { top: -12px; margin: -12px -12px 0; padding: 12px 12px 9px; }
@@ -278,18 +276,6 @@ export function getPocketlyWidgetHtml(kind) {
       });
     }
 
-    function followUp(text) {
-      if (window.openai?.sendFollowUpMessage) {
-        window.openai.sendFollowUpMessage({ prompt: text });
-        return;
-      }
-      window.parent.postMessage({
-        jsonrpc: '2.0',
-        method: 'ui/message',
-        params: { role: 'user', content: [{ type: 'text', text }] }
-      }, '*');
-    }
-
     function svgIcon(name) {
       if (name === 'wallet') return '<svg viewBox="0 0 24 24"><path d="M19 7V6a2 2 0 0 0-2-2H5a3 3 0 0 0 0 6h14a1 1 0 0 1 1 1v7a2 2 0 0 1-2 2H5a3 3 0 0 1-3-3V7"/><path d="M16 14h.01"/></svg>';
       if (name === 'trending-down') return '<svg viewBox="0 0 24 24"><path d="m22 17-8.5-8.5-5 5L2 7"/><path d="M16 17h6v-6"/></svg>';
@@ -374,13 +360,12 @@ export function getPocketlyWidgetHtml(kind) {
         headerMarkup('Pocketly', 'Accounts', accounts.length + ' accounts') +
         '<div class="content">' +
         '<div class="summary account-summary">' +
-          stat('Balance', formatCurrency(stats.totalAccountBalance), '', 'wallet') +
-          stat('Expense', formatCurrency(stats.totalExpense), 'negative', 'trending-down', 'red') +
-          stat('Income', formatCurrency(stats.totalIncome), 'positive', 'trending-up') +
+        stat('Balance', formatCurrency(stats.totalAccountBalance), '', 'wallet') +
+        stat('Expense', formatCurrency(stats.totalExpense), 'negative', 'trending-down', 'red') +
+        stat('Income', formatCurrency(stats.totalIncome), 'positive', 'trending-up') +
         '</div>' +
         '<div class="section-head"><h2 class="section-title">Your Accounts</h2></div>' +
         cards +
-        '<div class="followups"><button id="accounts-summary" class="pill">Explain balances</button></div>' +
         '</div>' +
       '</main>';
     }
@@ -437,12 +422,11 @@ export function getPocketlyWidgetHtml(kind) {
         headerMarkup('Pocketly Records', data.period?.label || 'Recent Records', transactions.length + ' shown') +
         '<div class="content">' +
         '<div class="summary">' +
-          stat('Expense', formatCurrency(stats.totalExpense), 'negative') +
-          stat('Income', formatCurrency(stats.totalIncome), 'positive') +
-          stat('Net Flow', formatSigned(stats.netFlow), stats.netFlow >= 0 ? 'positive' : 'negative') +
+        stat('Expense', formatCurrency(stats.totalExpense), 'negative') +
+        stat('Income', formatCurrency(stats.totalIncome), 'positive') +
+        stat('Net Flow', formatSigned(stats.netFlow), stats.netFlow >= 0 ? 'positive' : 'negative') +
         '</div>' +
         rows +
-        '<div class="followups"><button id="records-summary" class="pill">Summarize records</button></div>' +
         '</div>' +
       '</main>';
     }
@@ -465,12 +449,11 @@ export function getPocketlyWidgetHtml(kind) {
         headerMarkup('Pocketly Planning', 'Budgets', budgets.length + ' budgets') +
         '<div class="content">' +
         '<div class="summary">' +
-          stat('Budget', formatCurrency(stats.totalBudget), '') +
-          stat('Spent', formatCurrency(stats.totalSpent), stats.exceededCount ? 'negative' : 'positive') +
-          stat('Exceeded', String(stats.exceededCount || 0), stats.exceededCount ? 'negative' : '') +
+        stat('Budget', formatCurrency(stats.totalBudget), '') +
+        stat('Spent', formatCurrency(stats.totalSpent), stats.exceededCount ? 'negative' : 'positive') +
+        stat('Exceeded', String(stats.exceededCount || 0), stats.exceededCount ? 'negative' : '') +
         '</div>' +
         rows +
-        '<div class="followups"><button id="budget-help" class="pill">Review budgets</button></div>' +
         '</div>' +
       '</main>';
     }
@@ -495,7 +478,6 @@ export function getPocketlyWidgetHtml(kind) {
         '</div>' +
         '<div class="section-head"><h2 class="section-title">Top Expense Categories</h2></div>' +
         expenseRows +
-        '<div class="followups"><button id="summary-help" class="pill">Find savings</button></div>' +
         '</div>' +
       '</main>';
     }
@@ -542,18 +524,6 @@ export function getPocketlyWidgetHtml(kind) {
 
       document.querySelector('.refresh-view')?.addEventListener('click', function (event) {
         refreshCurrentView(event.currentTarget);
-      });
-      document.getElementById('accounts-summary')?.addEventListener('click', function () {
-        followUp('Explain my Pocketly account balances and what stands out.');
-      });
-      document.getElementById('records-summary')?.addEventListener('click', function () {
-        followUp('Summarize these Pocketly records and point out notable spending patterns.');
-      });
-      document.getElementById('budget-help')?.addEventListener('click', function () {
-        followUp('Review my Pocketly budgets and tell me which ones need attention.');
-      });
-      document.getElementById('summary-help')?.addEventListener('click', function () {
-        followUp('Find savings opportunities from this Pocketly summary.');
       });
     }
 
