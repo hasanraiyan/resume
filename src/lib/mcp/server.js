@@ -19,6 +19,7 @@ import {
 
 const POCKETLY_WIDGET_URI = 'ui://widget/pocketly-dashboard-v1.html';
 const POCKETLY_WIDGET_MIME_TYPE = 'text/html;profile=mcp-app';
+const POCKETLY_WIDGET_DOMAIN = 'https://hasanraiyan.me';
 
 const READ_ONLY_ANNOTATIONS = {
   readOnlyHint: true,
@@ -588,18 +589,20 @@ export function createMcpServer() {
           _meta: {
             ui: {
               prefersBorder: true,
+              domain: POCKETLY_WIDGET_DOMAIN,
               csp: {
-                connectDomains: [],
-                resourceDomains: [],
+                connectDomains: [POCKETLY_WIDGET_DOMAIN],
+                resourceDomains: [POCKETLY_WIDGET_DOMAIN],
               },
             },
             'openai/widgetDescription':
               'A compact Pocketly dashboard showing balances, recent records, budgets, and spending analysis.',
             'openai/widgetPrefersBorder': true,
             'openai/widgetCSP': {
-              connect_domains: [],
-              resource_domains: [],
+              connect_domains: [POCKETLY_WIDGET_DOMAIN],
+              resource_domains: [POCKETLY_WIDGET_DOMAIN],
             },
+            'openai/widgetDomain': POCKETLY_WIDGET_DOMAIN,
           },
         },
       ],
