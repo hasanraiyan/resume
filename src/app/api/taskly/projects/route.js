@@ -4,8 +4,8 @@ import { requireAdminAuth } from '@/lib/money-auth';
 import TaskProject from '@/models/TaskProject';
 import { serializeTaskProject } from '@/lib/taskly';
 
-export async function GET() {
-  const session = await requireAdminAuth();
+export async function GET(request) {
+  const session = await requireAdminAuth(request);
   if (typeof session !== 'object') return session;
 
   try {
@@ -22,7 +22,7 @@ export async function GET() {
 }
 
 export async function POST(request) {
-  const session = await requireAdminAuth();
+  const session = await requireAdminAuth(request);
   if (typeof session !== 'object') return session;
 
   try {

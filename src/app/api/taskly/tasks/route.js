@@ -5,7 +5,7 @@ import TaskItem from '@/models/TaskItem';
 import { normalizeTaskPayload, serializeTaskItem } from '@/lib/taskly';
 
 export async function GET(request) {
-  const session = await requireAdminAuth();
+  const session = await requireAdminAuth(request);
   if (typeof session !== 'object') return session;
 
   try {
@@ -34,7 +34,7 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const session = await requireAdminAuth();
+  const session = await requireAdminAuth(request);
   if (typeof session !== 'object') return session;
 
   try {

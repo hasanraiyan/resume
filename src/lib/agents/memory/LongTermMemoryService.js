@@ -411,11 +411,11 @@ function mergeProfiles(existingProfile = {}, nextProfile = {}) {
 function hasProfileContent(profile = {}) {
   return Boolean(
     profile.summary ||
-    profile.facts?.length ||
-    profile.preferences?.length ||
-    profile.goals?.length ||
-    profile.constraints?.length ||
-    profile.topics?.length
+      profile.facts?.length ||
+      profile.preferences?.length ||
+      profile.goals?.length ||
+      profile.constraints?.length ||
+      profile.topics?.length
   );
 }
 

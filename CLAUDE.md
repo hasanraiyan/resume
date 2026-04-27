@@ -63,7 +63,7 @@ Each app follows the same pattern: a layout wrapping a context provider, a main 
 
 Single admin user only. NextAuth `CredentialsProvider` validates against `ADMIN_USERNAME` / `ADMIN_PASSWORD` env vars. Optional TOTP via `TOTP_SECRET`. Session strategy is JWT (no DB adapter). The `role: 'admin'` claim lives in the JWT.
 
-Every protected API route calls `requireAdminAuth()` from `src/lib/money-auth.js` at the top. This returns a 403 `NextResponse` if the session is missing or not admin — callers must check `if (result instanceof NextResponse) return result` before proceeding.
+Every protected API route calls `requireAdminAuth(request)` from `src/lib/money-auth.js` at the top. This returns a 403 `NextResponse` if the session is missing or not admin — callers must check `if (result instanceof NextResponse) return result` before proceeding.
 
 ### Database
 

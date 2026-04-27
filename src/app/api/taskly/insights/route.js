@@ -5,8 +5,8 @@ import TaskProject from '@/models/TaskProject';
 import TaskItem from '@/models/TaskItem';
 import { buildTaskInsights } from '@/lib/taskly';
 
-export async function GET() {
-  const session = await requireAdminAuth();
+export async function GET(request) {
+  const session = await requireAdminAuth(request);
   if (typeof session !== 'object') return session;
 
   try {

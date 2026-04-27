@@ -12,7 +12,10 @@ import {
   Unlink,
   Loader2,
   ExternalLink,
+  Smartphone,
+  QrCode,
 } from 'lucide-react';
+import QRCode from 'react-qr-code';
 import { useMoney } from '@/context/MoneyContext';
 import ExportModal from './ExportModal';
 
@@ -23,6 +26,11 @@ export default function FinanceSettingsTab() {
 
   const [baseUrl, setBaseUrl] = useState('');
   const [mcpUrl, setMcpUrl] = useState('');
+
+  // Mobile QR state
+  const [mobileQr, setMobileQr] = useState(null);
+  const [mobileQrLoading, setMobileQrLoading] = useState(false);
+  const [mobileQrExpiry, setMobileQrExpiry] = useState(null);
 
   // Connected apps state
   const [connectedApps, setConnectedApps] = useState([]);
@@ -72,6 +80,23 @@ export default function FinanceSettingsTab() {
       alert('Failed to revoke access');
     } finally {
       setRevokingId(null);
+    }
+  };
+
+  const handleGenerateMobileQr = async () => {
+    setMobileQrLoading(true);
+    setMobileQr(null);
+    try {
+      const res = await fetch('/api/mobile/token');
+      const data = await res.json();
+      if (data.success) {
+        setMobileQr(JSON.stringify({ baseUrl: data.baseUrl, token: data.token }));
+        setMobileQrExpiry(data.expiresAt);
+      }
+    } catch (e) {
+      console.error('Failed to generate mobile QR:', e);
+    } finally {
+      setMobileQrLoading(false);
     }
   };
 
@@ -340,6 +365,60 @@ export default function FinanceSettingsTab() {
                 <span className="text-sm text-[#7c8e88]">MCP Version</span>
                 <span className="text-sm font-bold text-[#1f644e]">2.0.0</span>
               </div>
+            </div>
+          </div>
+
+          {/* Mobile App */}
+          <div className="bg-white border border-[#e5e3d8] rounded-xl p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-xl bg-[#1f644e]/10 flex items-center justify-center">
+                <Smartphone className="w-5 h-5 text-[#1f644e]" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#1e3a34]">Mobile App</h3>
+                <p className="text-xs text-[#7c8e88]">
+                  Connect the Pocketly Android app to this server
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between bg-[#f7faf7] border border-[#d6dfd9] rounded-xl p-4">
+                <div>
+                  <p className="text-sm font-bold text-[#1e3a34]">Generate QR Code</p>
+                  <p className="text-xs text-[#7c8e88] mt-0.5">
+                    Scan with the Pocketly app to pair it with your server
+                  </p>
+                </div>
+                <button
+                  onClick={handleGenerateMobileQr}
+                  disabled={mobileQrLoading}
+                  className="flex items-center gap-2 rounded-lg bg-[#1f644e] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#17503e] disabled:opacity-60 cursor-pointer shrink-0"
+                >
+                  {mobileQrLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <QrCode className="h-4 w-4" />
+                  )}
+                  {mobileQrLoading ? 'Generating...' : mobileQr ? 'Regenerate' : 'Generate QR'}
+                </button>
+              </div>
+
+              {mobileQr && (
+                <div className="flex flex-col items-center gap-3 p-6 bg-white border-2 border-[#e5e3d8] rounded-xl">
+                  <div className="p-4 bg-white rounded-xl border border-[#e5e3d8]">
+                    <QRCode value={mobileQr} size={200} />
+                  </div>
+                  <p className="text-xs text-[#7c8e88] text-center">
+                    Open the Pocketly Android app and tap <strong>Scan QR</strong> to connect.
+                    {mobileQrExpiry && (
+                      <span className="block mt-1">
+                        Valid until {new Date(mobileQrExpiry).toLocaleDateString()}.
+                      </span>
+                    )}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { requireAdminAuth } from '@/lib/money-auth';
 import { getBudgets, createBudget } from '@/lib/apps/pocketly/service/service';
 
-export async function GET() {
-  const session = await requireAdminAuth();
+export async function GET(request) {
+  const session = await requireAdminAuth(request);
   if (typeof session !== 'object') return session;
 
   try {
@@ -18,7 +18,7 @@ export async function GET() {
 }
 
 export async function POST(request) {
-  const session = await requireAdminAuth();
+  const session = await requireAdminAuth(request);
   if (typeof session !== 'object') return session;
 
   try {

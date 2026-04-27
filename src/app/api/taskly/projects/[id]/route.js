@@ -6,7 +6,7 @@ import TaskItem from '@/models/TaskItem';
 import { serializeTaskProject } from '@/lib/taskly';
 
 export async function PUT(request, { params }) {
-  const session = await requireAdminAuth();
+  const session = await requireAdminAuth(request);
   if (typeof session !== 'object') return session;
 
   try {
@@ -47,8 +47,8 @@ export async function PUT(request, { params }) {
   }
 }
 
-export async function DELETE(_request, { params }) {
-  const session = await requireAdminAuth();
+export async function DELETE(request, { params }) {
+  const session = await requireAdminAuth(request);
   if (typeof session !== 'object') return session;
 
   try {

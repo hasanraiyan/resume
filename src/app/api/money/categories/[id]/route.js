@@ -3,7 +3,7 @@ import { requireAdminAuth } from '@/lib/money-auth';
 import { updateCategory, deleteCategory } from '@/lib/apps/pocketly/service/service';
 
 export async function PUT(request, { params }) {
-  const session = await requireAdminAuth();
+  const session = await requireAdminAuth(request);
   if (typeof session !== 'object') return session;
 
   try {
@@ -27,7 +27,7 @@ export async function PUT(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-  const session = await requireAdminAuth();
+  const session = await requireAdminAuth(request);
   if (typeof session !== 'object') return session;
 
   try {

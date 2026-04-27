@@ -14,7 +14,7 @@ import {
 import { computeAccountSummaries } from '@/lib/money-account-summary';
 
 export async function GET(request) {
-  const session = await requireAdminAuth();
+  const session = await requireAdminAuth(request);
   if (typeof session !== 'object') return session;
 
   try {

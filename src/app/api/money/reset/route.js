@@ -6,8 +6,8 @@ import Transaction from '@/models/Transaction';
 import { serializeAccount, serializeCategory } from '@/lib/money-serializers';
 import { requireAdminAuth } from '@/lib/money-auth';
 
-export async function POST() {
-  const session = await requireAdminAuth();
+export async function POST(request) {
+  const session = await requireAdminAuth(request);
   if (typeof session !== 'object') return session;
 
   try {
