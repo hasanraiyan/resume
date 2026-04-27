@@ -6,6 +6,7 @@ import {
   createConnectionKey,
   createMobileSessionToken,
   getSessionOwnerId,
+  revokeAppConnectionsByFilter,
 } from '@/lib/app-connections';
 
 export async function GET(request) {
@@ -17,6 +18,13 @@ export async function GET(request) {
   const ownerId = getSessionOwnerId(session);
   const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || new URL(request.url).origin;
+  await revokeAppConnectionsByFilter({
+    ownerId,
+    filter: {
+      appKey: 'pocketly',
+      channel: 'android',
+    },
+  });
   const connection = await createAppConnection({
     ownerId,
     appKey: 'pocketly',

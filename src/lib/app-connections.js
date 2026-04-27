@@ -70,6 +70,25 @@ export async function revokeAppConnection({ ownerId, connectionId }) {
   );
 }
 
+export async function revokeAppConnectionsByFilter({ ownerId, filter = {} }) {
+  await dbConnect();
+
+  const match = {
+    ownerId,
+    status: 'active',
+    ...filter,
+  };
+
+  const result = await AppConnection.updateMany(match, {
+    $set: {
+      status: 'revoked',
+      revokedAt: new Date(),
+    },
+  });
+
+  return result.modifiedCount || 0;
+}
+
 export async function listAppConnections(ownerId) {
   await dbConnect();
   return AppConnection.find({ ownerId, status: 'active' })
