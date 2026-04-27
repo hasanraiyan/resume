@@ -38,7 +38,8 @@ export function registerPocketlyTools(server) {
     'get_accounts',
     {
       title: 'Get Accounts',
-      description: 'Use this when the user needs Pocketly account names and current balances.',
+      description:
+        "Retrieve a list of all Pocketly financial accounts along with their current balances. Essential for getting an overview of the user's available funds.",
       annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {},
       _meta: widgetToolMeta(WIDGETS.accounts, 'Loading accounts...', 'Accounts ready.'),
@@ -53,7 +54,8 @@ export function registerPocketlyTools(server) {
     'get_categories',
     {
       title: 'Get Categories',
-      description: 'Use this when the user needs Pocketly income or expense categories.',
+      description:
+        'Fetch all available income and expense categories from Pocketly. Use this to understand how transactions are classified before creating or updating them.',
       annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {},
       _meta: toolMeta('Loading categories...', 'Categories ready.'),
@@ -71,7 +73,8 @@ export function registerPocketlyTools(server) {
     'create_category',
     {
       title: 'Create Category',
-      description: 'Use this when the user wants to add a new Pocketly income or expense category.',
+      description:
+        'Add a new income or expense category to Pocketly. Useful for organizing transactions into custom groups with specific icons and colors.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         name: z.string().describe('Display name of the category'),
@@ -98,7 +101,8 @@ export function registerPocketlyTools(server) {
     'update_category',
     {
       title: 'Update Category',
-      description: 'Use this when the user wants to update an existing Pocketly category.',
+      description:
+        'Update the details (name, type, icon, or color) of an existing Pocketly category.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         id: z.string().describe('MongoDB _id of the category to update'),
@@ -123,7 +127,8 @@ export function registerPocketlyTools(server) {
     'delete_category',
     {
       title: 'Delete Category',
-      description: 'Use this when the user wants to remove an existing Pocketly category.',
+      description:
+        'Permanently remove a category from Pocketly. Note that this may affect how existing transactions are classified.',
       annotations: DESTRUCTIVE_ANNOTATIONS,
       inputSchema: {
         id: z.string().describe('MongoDB _id of the category to delete'),
@@ -149,7 +154,7 @@ export function registerPocketlyTools(server) {
     {
       title: 'Get Transactions',
       description:
-        'Use this when the user needs recent Pocketly transactions, optionally filtered by transaction type.',
+        'Retrieve a list of recent financial transactions (income, expense, or transfer), with support for filtering by type and date range. Best for reviewing recent activity.',
       annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {
         type: z.enum(['income', 'expense', 'transfer']).optional().describe('Filter by type'),
@@ -173,7 +178,7 @@ export function registerPocketlyTools(server) {
     {
       title: 'Get Financial Summary',
       description:
-        'Use this when the user asks for totals, net flow, balances, or top Pocketly categories.',
+        'Generate a high-level financial overview for a specific period, including total income, total expenses, net cash flow, and top spending categories.',
       annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {
         startDate: z
@@ -198,7 +203,7 @@ export function registerPocketlyTools(server) {
     {
       title: 'Create Transaction',
       description:
-        'Use this when the user wants to save a Pocketly transaction after resolving account and category IDs with the read tools.',
+        'Record a new financial transaction. Ensure you have the correct account and category IDs (use `get_accounts` and `get_categories` first) before calling this.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         type: z.enum(['income', 'expense', 'transfer']).describe('Transaction type'),
@@ -248,8 +253,7 @@ export function registerPocketlyTools(server) {
     'delete_transaction',
     {
       title: 'Delete Transaction',
-      description:
-        'Use this when the user wants to remove a Pocketly transaction from active records.',
+      description: "Permanently delete a specific transaction record from Pocketly's history.",
       annotations: DESTRUCTIVE_ANNOTATIONS,
       inputSchema: {
         id: z.string().describe('MongoDB _id of the transaction to delete'),
@@ -275,7 +279,7 @@ export function registerPocketlyTools(server) {
     {
       title: 'Update Transaction',
       description:
-        'Use this when the user wants to update fields of an existing Pocketly transaction.',
+        'Modify the details of an existing transaction, such as the amount, description, category, or date.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         id: z.string().describe('MongoDB _id of the transaction'),
@@ -313,7 +317,8 @@ export function registerPocketlyTools(server) {
     'get_budgets',
     {
       title: 'Get Budgets',
-      description: 'Use this when the user needs Pocketly budgets and budget progress.',
+      description:
+        'Retrieve current budget definitions and track progress against spending limits for different categories.',
       annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {},
       _meta: widgetToolMeta(WIDGETS.budgets, 'Loading budgets...', 'Budgets ready.'),
@@ -329,7 +334,7 @@ export function registerPocketlyTools(server) {
     {
       title: 'Create Budget',
       description:
-        'Use this when the user wants to create a Pocketly budget after resolving categoryId with get_categories.',
+        'Set up a new spending limit (budget) for a specific category over a defined period (weekly, monthly, or yearly).',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         categoryId: z.string().describe('MongoDB _id of the category'),
@@ -361,7 +366,7 @@ export function registerPocketlyTools(server) {
     'update_budget',
     {
       title: 'Update Budget',
-      description: 'Use this when the user wants to update fields of an existing Pocketly budget.',
+      description: 'Adjust the amount or period of an existing budget.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         id: z.string().describe('MongoDB _id of the budget'),
@@ -393,7 +398,7 @@ export function registerPocketlyTools(server) {
     'delete_budget',
     {
       title: 'Delete Budget',
-      description: 'Use this when the user wants to remove a Pocketly budget from active records.',
+      description: 'Remove a budget definition from Pocketly.',
       annotations: DESTRUCTIVE_ANNOTATIONS,
       inputSchema: {
         id: z.string().describe('MongoDB _id of the budget to delete'),

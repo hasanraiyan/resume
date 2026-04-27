@@ -12,7 +12,8 @@ export function registerSnaplinksTools(server) {
     'create_link',
     {
       title: 'Create Link',
-      description: 'Create a short link. If `slug` is omitted a unique slug will be generated.',
+      description:
+        'Create a new short link with an optional custom slug. If `slug` is omitted, a random unique slug will be generated. Use this to shorten long URLs for easier sharing.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         slug: z.string().optional().describe('Lowercase slug (a-z0-9-)'),
@@ -43,7 +44,8 @@ export function registerSnaplinksTools(server) {
     'get_link',
     {
       title: 'Get Link',
-      description: 'Fetch short link details by slug.',
+      description:
+        'Retrieve detailed information about a specific short link using its unique slug, including its destination URL, title, tags, and status.',
       annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {
         slug: z.string().describe('Slug of the short link'),
@@ -67,7 +69,8 @@ export function registerSnaplinksTools(server) {
     'record_click',
     {
       title: 'Record Click',
-      description: 'Record a click for a short link and return the destination.',
+      description:
+        'Log a new click event for a short link and retrieve the destination URL for redirection. This tool tracks metadata like referrer and device info for analytics.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         slug: z.string().describe('Slug being clicked'),
@@ -107,7 +110,7 @@ export function registerSnaplinksTools(server) {
     {
       title: 'Get Link Analytics',
       description:
-        'Return analytics for a short link (top countries, referrers, and clicks over time).',
+        'Fetch comprehensive analytics for a short link, including total clicks, unique visitors, top referrers, and traffic trends over a specific time window (default 30 days).',
       annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {
         slug: z.string().optional().describe('Slug to fetch stats for'),
@@ -134,7 +137,8 @@ export function registerSnaplinksTools(server) {
     'list_links',
     {
       title: 'List Links',
-      description: 'List short links with optional filters (tag, active).',
+      description:
+        'Retrieve a list of existing short links, with support for filtering by tags, active status, or search terms. Ideal for managing and browsing created links.',
       annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {
         limit: z.number().int().min(1).max(200).optional(),
@@ -158,7 +162,8 @@ export function registerSnaplinksTools(server) {
     'update_link',
     {
       title: 'Update Link',
-      description: 'Update a short link by slug (destination, title, tags, expiresAt, isActive).',
+      description:
+        'Modify the properties of an existing short link (destination, title, description, tags, expiration, or active status) using its slug.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         slug: z.string().describe('Slug of the link to update'),
