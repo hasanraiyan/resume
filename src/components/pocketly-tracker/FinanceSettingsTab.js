@@ -37,6 +37,12 @@ export default function FinanceSettingsTab() {
   const [loadingApps, setLoadingApps] = useState(false);
   const [revokingId, setRevokingId] = useState(null);
 
+  const getConnectionLabel = (app) => {
+    if (app.channel === 'android') return 'Android';
+    if (app.channel === 'mcp') return 'MCP';
+    return app.channel || app.appKey || 'connection';
+  };
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const origin = window.location.origin.replace(/\/$/, '');
@@ -92,6 +98,11 @@ export default function FinanceSettingsTab() {
       if (data.success) {
         setMobileQr(JSON.stringify({ baseUrl: data.baseUrl, token: data.token }));
         setMobileQrExpiry(data.expiresAt);
+        const appsRes = await fetch('/api/user/connected-apps');
+        if (appsRes.ok) {
+          const appsData = await appsRes.json();
+          setConnectedApps(appsData);
+        }
       }
     } catch (e) {
       console.error('Failed to generate mobile QR:', e);
@@ -314,13 +325,19 @@ export default function FinanceSettingsTab() {
                       <p className="text-sm font-bold text-[#1e3a34] truncate">{app.clientName}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-[#1f644e]/10 text-[#1f644e]">
-                          {app.scope || 'pocketly'}
+                          {getConnectionLabel(app)}
                         </span>
+                        {app.scope ? (
+                          <span className="text-[10px] text-[#7c8e88]">{app.scope}</span>
+                        ) : null}
                         <span className="text-[10px] text-[#7c8e88]">
                           Last used{' '}
                           {app.lastUsedAt ? new Date(app.lastUsedAt).toLocaleDateString() : 'never'}
                         </span>
                       </div>
+                      <p className="text-[11px] text-[#7c8e88] mt-1">
+                        Added {new Date(app.createdAt).toLocaleDateString()}
+                      </p>
                     </div>
                     <button
                       onClick={() => handleRevoke(app.id)}
@@ -387,7 +404,7 @@ export default function FinanceSettingsTab() {
                 <div>
                   <p className="text-sm font-bold text-[#1e3a34]">Generate QR Code</p>
                   <p className="text-xs text-[#7c8e88] mt-0.5">
-                    Scan with the Pocketly app to pair it with your server
+                    Scan with the Pocketly app to create a revocable Android session
                   </p>
                 </div>
                 <button
@@ -413,9 +430,12 @@ export default function FinanceSettingsTab() {
                     Open the Pocketly Android app and tap <strong>Scan QR</strong> to connect.
                     {mobileQrExpiry && (
                       <span className="block mt-1">
-                        Valid until {new Date(mobileQrExpiry).toLocaleDateString()}.
+                        Session token valid until {new Date(mobileQrExpiry).toLocaleDateString()}.
                       </span>
                     )}
+                    <span className="block mt-1">
+                      Revoke it anytime from the Connected Apps section above.
+                    </span>
                   </p>
                 </div>
               )}

@@ -3,11 +3,8 @@ import mongoose from 'mongoose';
 const McpAuditLogSchema = new mongoose.Schema(
   {
     clientId: { type: String, required: true, index: true },
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      index: true,
-    },
+    ownerId: { type: String, index: true },
+    connectionId: { type: String, index: true },
     tool: { type: String, required: true },
     params: { type: mongoose.Schema.Types.Mixed, default: {} },
     success: { type: Boolean, default: true },

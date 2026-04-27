@@ -16,13 +16,14 @@ export function verifyPKCE(codeVerifier, codeChallenge) {
   return computed === codeChallenge;
 }
 
-export async function createAccessToken({ clientId, userId, scope, resource }) {
+export async function createAccessToken({ clientId, ownerId, connectionId, scope, resource }) {
   const now = Math.floor(Date.now() / 1000);
   return encode({
     token: {
       sub: clientId,
       clientId,
-      userId: userId || null,
+      ownerId: ownerId || null,
+      connectionId: connectionId || null,
       scope,
       resource: resource || null,
       role: 'mcp',
@@ -33,13 +34,14 @@ export async function createAccessToken({ clientId, userId, scope, resource }) {
   });
 }
 
-export async function createRefreshToken({ clientId, userId, scope, resource }) {
+export async function createRefreshToken({ clientId, ownerId, connectionId, scope, resource }) {
   const now = Math.floor(Date.now() / 1000);
   return encode({
     token: {
       sub: clientId,
       clientId,
-      userId: userId || null,
+      ownerId: ownerId || null,
+      connectionId: connectionId || null,
       scope,
       resource: resource || null,
       role: 'mcp_refresh',

@@ -2,7 +2,7 @@ import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/
 import { verifyAccessToken, getBaseUrl } from '@/lib/mcp/oauth';
 import { createMcpServer } from '@/lib/mcp/pocketly';
 import dbConnect from '@/lib/dbConnect';
-import ConnectedApp from '@/models/ConnectedApp';
+import AppConnection from '@/models/AppConnection';
 import McpAuditLog from '@/models/McpAuditLog';
 
 // ─── Rate Limiting ──────────────────────────────────────────────────
@@ -63,13 +63,12 @@ async function getAuthInfo(request) {
   const payload = await verifyAccessToken(token);
   if (!payload) return null;
 
-  // Check if the connected app is still active
-  if (payload.userId) {
+  if (payload.connectionId) {
     await dbConnect();
-    const app = await ConnectedApp.findOne({
-      userId: payload.userId,
-      clientId: payload.clientId,
-      isActive: true,
+    const app = await AppConnection.findOne({
+      _id: payload.connectionId,
+      ownerId: payload.ownerId,
+      status: 'active',
     }).lean();
     if (!app) return null;
   }
@@ -77,7 +76,8 @@ async function getAuthInfo(request) {
   return {
     token,
     clientId: payload.clientId,
-    userId: payload.userId || null,
+    ownerId: payload.ownerId || null,
+    connectionId: payload.connectionId || null,
     scopes: (payload.scope || '').split(' ').filter(Boolean),
     expiresAt: payload.exp ? new Date(payload.exp * 1000) : undefined,
   };
@@ -126,10 +126,10 @@ async function handleMcpRequest(request) {
     const response = await transport.handleRequest(request, { authInfo });
 
     // Update lastUsedAt for connected app
-    if (authInfo.userId) {
+    if (authInfo.connectionId) {
       await dbConnect();
-      await ConnectedApp.findOneAndUpdate(
-        { userId: authInfo.userId, clientId: authInfo.clientId },
+      await AppConnection.findOneAndUpdate(
+        { _id: authInfo.connectionId, ownerId: authInfo.ownerId },
         { $set: { lastUsedAt: new Date() } }
       );
     }
@@ -153,7 +153,8 @@ async function handleMcpRequest(request) {
       .then(() =>
         McpAuditLog.create({
           clientId: authInfo.clientId,
-          userId: authInfo.userId,
+          ownerId: authInfo.ownerId,
+          connectionId: authInfo.connectionId,
           tool: toolName,
           params: {},
           success,

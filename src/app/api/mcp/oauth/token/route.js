@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import McpAuthCode from '@/models/McpAuthCode';
+import AppConnection from '@/models/AppConnection';
 import {
   verifyPKCE,
   createAccessToken,
@@ -52,9 +53,22 @@ async function handleAuthorizationCode(params) {
 
   await McpAuthCode.deleteOne({ _id: authCode._id });
 
+  const connection = await AppConnection.findOne({
+    _id: authCode.connectionId,
+    ownerId: authCode.ownerId,
+    status: 'active',
+  }).lean();
+  if (!connection) {
+    return NextResponse.json(
+      { error: 'invalid_grant', error_description: 'Connection revoked' },
+      { status: 400 }
+    );
+  }
+
   const tokenPayload = {
     clientId: client_id,
-    userId: authCode.userId?.toString?.() || null,
+    ownerId: authCode.ownerId,
+    connectionId: authCode.connectionId,
     scope: authCode.scope,
     resource: authCode.resource,
   };
@@ -101,8 +115,23 @@ async function handleRefreshToken(params) {
     );
   }
 
+  await dbConnect();
+  const connection = await AppConnection.findOne({
+    _id: payload.connectionId,
+    ownerId: payload.ownerId,
+    status: 'active',
+  }).lean();
+  if (!connection) {
+    return NextResponse.json(
+      { error: 'invalid_grant', error_description: 'Connection revoked' },
+      { status: 400 }
+    );
+  }
+
   const tokenPayload = {
     clientId: payload.clientId,
+    ownerId: payload.ownerId || null,
+    connectionId: payload.connectionId || null,
     scope: payload.scope,
     resource: payload.resource,
   };

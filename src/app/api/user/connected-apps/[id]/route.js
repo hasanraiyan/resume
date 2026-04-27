@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import dbConnect from '@/lib/dbConnect';
-import ConnectedApp from '@/models/ConnectedApp';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { getSessionOwnerId, revokeAppConnection } from '@/lib/app-connections';
 
 /**
  * DELETE /api/user/connected-apps/:id
- * Soft-revokes a connected app by setting isActive: false.
- * The record is kept so GPT's in-flight tokens are denied on next request.
+ * Revokes a tracked app connection or mobile session.
  */
 export async function DELETE(_request, { params }) {
   try {
@@ -21,14 +19,13 @@ export async function DELETE(_request, { params }) {
       return NextResponse.json({ error: 'Missing id' }, { status: 400 });
     }
 
-    await dbConnect();
-    const updated = await ConnectedApp.findOneAndUpdate(
-      { _id: id, userId: session.user.id },
-      { $set: { isActive: false } }
-    );
+    const updated = await revokeAppConnection({
+      ownerId: getSessionOwnerId(session),
+      connectionId: id,
+    });
 
     if (!updated) {
-      return NextResponse.json({ error: 'Connected app not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Connection not found' }, { status: 404 });
     }
 
     return NextResponse.json({ success: true, message: 'Access revoked' });

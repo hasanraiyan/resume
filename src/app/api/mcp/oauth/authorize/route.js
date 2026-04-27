@@ -5,9 +5,9 @@ import { getServerSession } from 'next-auth/next';
 import dbConnect from '@/lib/dbConnect';
 import McpClient from '@/models/McpClient';
 import McpAuthCode from '@/models/McpAuthCode';
-import ConnectedApp from '@/models/ConnectedApp';
 import { getBaseUrl } from '@/lib/mcp/oauth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { createAppConnection, getSessionOwnerId } from '@/lib/app-connections';
 
 // GET: validate params, store pending auth state in cookie, redirect to authorize page if logged in
 export async function GET(request) {
@@ -92,34 +92,36 @@ export async function POST() {
     const pending = JSON.parse(pendingRaw);
 
     await dbConnect();
+    const ownerId = getSessionOwnerId(session);
+    const connection = await createAppConnection({
+      ownerId,
+      appKey: 'pocketly',
+      channel: 'mcp',
+      connectionType: 'oauth_client',
+      connectionKey: `mcp:${pending.clientId}`,
+      clientId: pending.clientId,
+      clientName: pending.clientName || 'Unknown App',
+      scope: pending.scope,
+      resource: pending.resource || null,
+      metadata: {
+        grantType: 'authorization_code',
+      },
+    });
+
     const code = crypto.randomBytes(32).toString('base64url');
     await McpAuthCode.create({
       code,
       clientId: pending.clientId,
+      ownerId,
+      connectionId: connection._id.toString(),
       redirectUri: pending.redirectUri,
       codeChallenge: pending.codeChallenge,
       codeChallengeMethod: 'S256',
       scope: pending.scope,
       state: pending.state || null,
       resource: pending.resource || null,
-      userId: session.user.id,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
     });
-
-    // Upsert ConnectedApp record for this user + client
-    await ConnectedApp.findOneAndUpdate(
-      { userId: session.user.id, clientId: pending.clientId },
-      {
-        $set: {
-          clientName: pending.clientName || 'Unknown App',
-          scope: pending.scope,
-          resource: pending.resource,
-          isActive: true,
-          lastUsedAt: new Date(),
-        },
-      },
-      { upsert: true, new: true }
-    );
 
     cookieStore.delete('mcp_pending_auth');
 

@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { SignJWT } from 'jose';
+import {
+  createAppConnection,
+  createConnectionKey,
+  createMobileSessionToken,
+  getSessionOwnerId,
+} from '@/lib/app-connections';
 
 export async function GET(request) {
   const session = await getServerSession(authOptions);
@@ -9,20 +14,29 @@ export async function GET(request) {
     return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 403 });
   }
 
-  const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
+  const ownerId = getSessionOwnerId(session);
   const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
-
-  const token = await new SignJWT({ role: 'admin', type: 'mobile-pocketly' })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime('1y')
-    .sign(secret);
-
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || new URL(request.url).origin;
+  const connection = await createAppConnection({
+    ownerId,
+    appKey: 'pocketly',
+    channel: 'android',
+    connectionType: 'session',
+    connectionKey: createConnectionKey('android'),
+    clientName: 'Pocketly Android App',
+    scope: 'pocketly',
+    metadata: {
+      issuedFrom: 'settings_qr',
+      issuedAt: new Date().toISOString(),
+      baseUrl,
+    },
+  });
+  const token = await createMobileSessionToken(connection);
 
   return NextResponse.json({
     success: true,
     token,
+    connectionId: connection._id.toString(),
     baseUrl,
     expiresAt: expiresAt.toISOString(),
   });

@@ -58,7 +58,7 @@ export const authOptions = {
             }
 
             return {
-              id: '1',
+              id: 'admin',
               name: 'Admin',
               email: 'admin@example.com',
               role: 'admin',
@@ -85,6 +85,7 @@ export const authOptions = {
         if (user) {
           token.role = user.role;
           token.isAdmin = user.role === 'admin';
+          token.userId = user.id;
         }
         return token;
       } catch (error) {
@@ -94,6 +95,7 @@ export const authOptions = {
     },
     async session({ session, token }) {
       try {
+        session.user.id = token.userId || token.sub || 'admin';
         session.user.role = token.role;
         session.user.isAdmin = token.isAdmin;
         return session;
