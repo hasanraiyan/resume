@@ -91,8 +91,6 @@ export function getSnaplinksWidgetHtml(kind) {
   .card-title { margin: 0; color: var(--text); font-size: 13px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .card-meta { margin: 3px 0 0; color: var(--muted); font-size: 11px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .empty { border: 1px dashed var(--border); background: rgba(255,255,255,.58); border-radius: 12px; padding: 28px 14px; color: var(--muted); text-align: center; font-size: 13px; font-weight: 800; }
-  .followups { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-  .pill { border: 1px solid #d9e6df; background: var(--primary); color: white; border-radius: 999px; padding: 9px 12px; font-size: 12px; font-weight: 900; cursor: pointer; }
 </style>
 <script>
   (function () {
@@ -103,18 +101,6 @@ export function getSnaplinksWidgetHtml(kind) {
       return String(value ?? '').replace(/[&<>"']/g, function (char) {
         return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char];
       });
-    }
-
-    function followUp(text) {
-      if (window.openai?.sendFollowUpMessage) {
-        window.openai.sendFollowUpMessage({ prompt: text });
-        return;
-      }
-      window.parent.postMessage({
-        jsonrpc: '2.0',
-        method: 'ui/message',
-        params: { role: 'user', content: [{ type: 'text', text }] }
-      }, '*');
     }
 
     function svgIcon(name) {
@@ -148,7 +134,6 @@ export function getSnaplinksWidgetHtml(kind) {
           stat('Total Clicks', String(stats.totalClicks || 0)) +
         '</div>' +
         rows +
-        '<div class="followups"><button id="analyze-links" class="pill">Analyze top links</button></div>' +
       '</main>';
     }
 
@@ -184,10 +169,6 @@ export function getSnaplinksWidgetHtml(kind) {
       }
       if (kind === 'links') root.innerHTML = renderLinks(data);
       else if (kind === 'analytics') root.innerHTML = renderAnalytics(data);
-
-      document.getElementById('analyze-links')?.addEventListener('click', function () {
-        followUp('Analyze the traffic for my most clicked Snaplinks.');
-      });
     }
 
     render(window.openai?.toolOutput);
