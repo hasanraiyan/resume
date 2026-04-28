@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { rateLimit } from '@/lib/rateLimit';
 import { getServerSession } from 'next-auth';
+import { verifyAccessToken } from '@/lib/mcp/oauth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import agentRegistry from '@/lib/agents';
 import { AGENT_IDS } from '@/lib/constants/agents';
@@ -21,7 +22,15 @@ function isClosedStreamError(error) {
 
 export async function POST(request) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user?.role !== 'admin') {
+  const authHeader = request.headers.get('authorization') || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const tokenPayload = token ? await verifyAccessToken(token) : null;
+
+  if (!session && !tokenPayload) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (session && session.user?.role !== 'admin') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
