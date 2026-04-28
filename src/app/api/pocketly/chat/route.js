@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { rateLimit } from '@/lib/rateLimit';
-import { getServerSession } from 'next-auth';
-import { verifyAccessToken } from '@/lib/mcp/oauth';
+import { requireAdminAuth } from '@/lib/money-auth';
+
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import agentRegistry from '@/lib/agents';
 import { AGENT_IDS } from '@/lib/constants/agents';
