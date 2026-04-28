@@ -28,6 +28,7 @@ export const AGENT_IDS = {
   // Content Agents
   BLOG_WRITER: 'blog_writer',
   CODE_REPORTER: 'code_reporter',
+  CODE_REVIEW_AGENT: 'code_review_agent',
   ISSUE_MANAGER: 'issue_manager',
 
   // Analytics Agents

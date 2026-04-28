@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { rateLimit } from '@/lib/rateLimit';
 import { requireAdminAuth } from '@/lib/money-auth';
-
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import agentRegistry from '@/lib/agents';
 import { AGENT_IDS } from '@/lib/constants/agents';
@@ -21,18 +20,8 @@ function isClosedStreamError(error) {
 }
 
 export async function POST(request) {
-  const session = await getServerSession(authOptions);
-  const authHeader = request.headers.get('authorization') || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-  const tokenPayload = token ? await verifyAccessToken(token) : null;
-
-  if (!session && !tokenPayload) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  if (session && session.user?.role !== 'admin') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-  }
+  const session = await requireAdminAuth(request);
+  if (typeof session !== 'object') return session;
 
   const rateLimitResponse = rateLimit(request, 10, 60000);
   if (rateLimitResponse) return rateLimitResponse;
