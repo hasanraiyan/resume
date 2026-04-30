@@ -48,3 +48,5 @@ digest.md
 # GitHub App credentials
 gha-creds-*.json
 .env
+
+.kilo
