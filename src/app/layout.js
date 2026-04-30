@@ -4,6 +4,7 @@ import '@/lib/fontawesome'; // registers all FA icons — replaces the CDN <link
 import SessionProvider from '@/components/SessionProvider';
 import AnalyticsProvider from '@/components/AnalyticsProvider';
 import { SiteProvider } from '@/context/SiteContext';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import ChatbotWidget from '@/components/chatbot/ChatbotWidget';
 import PWAManager from '@/components/PWAManager';
 import { getHeroData } from '@/app/actions/heroActions';
@@ -156,16 +157,18 @@ export default async function RootLayout({ children }) {
         />
       </head>
       <body className="bg-gray-50">
-        <SessionProvider>
-          <AnalyticsProvider>
-            <SiteProvider value={{ heroData: serializedHeroData, initials }}>
-              {children}
-              <ChatbotWidget />
-              <PWAManager />
-              <Analytics />
-            </SiteProvider>
-          </AnalyticsProvider>
-        </SessionProvider>
+        <TooltipProvider>
+          <SessionProvider>
+            <AnalyticsProvider>
+              <SiteProvider value={{ heroData: serializedHeroData, initials }}>
+                {children}
+                <ChatbotWidget />
+                <PWAManager />
+                <Analytics />
+              </SiteProvider>
+            </AnalyticsProvider>
+          </SessionProvider>
+        </TooltipProvider>
       </body>
     </html>
   );
