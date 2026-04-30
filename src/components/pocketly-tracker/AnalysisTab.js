@@ -13,7 +13,7 @@ import {
   Wallet,
   SlidersHorizontal,
 } from 'lucide-react';
-import TopTabs from '@/components/ui/TopTabs';
+import TopTabs from '@/components/custom-ui/TopTabs';
 import dynamic from 'next/dynamic';
 
 const IconRenderer = dynamic(() => import('./IconRenderer'), { ssr: false });

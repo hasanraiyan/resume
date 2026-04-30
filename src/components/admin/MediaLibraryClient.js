@@ -5,17 +5,17 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { deleteAsset, resetMediaAI } from '@/app/actions/mediaActions';
 import Image from 'next/image';
 import imageCompression from 'browser-image-compression';
-import ImageLightbox from '@/components/ui/ImageLightbox';
-import BeforeAfterSlider from '@/components/ui/BeforeAfterSlider';
-import MultiImagePreview from '@/components/ui/MultiImagePreview';
+import ImageLightbox from '@/components/custom-ui/ImageLightbox';
+import BeforeAfterSlider from '@/components/custom-ui/BeforeAfterSlider';
+import MultiImagePreview from '@/components/custom-ui/MultiImagePreview';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/Dialog';
-import Button from '@/components/ui/Button';
+} from '@/components/custom-ui/Dialog';
+import Button from '@/components/custom-ui/Button';
 import { useRouter } from 'next/navigation';
 import AdminPageWrapper from './AdminPageWrapper';
 import { Settings, Zap, Play, Loader2, Bot, Plus, Upload, Search, X } from 'lucide-react';

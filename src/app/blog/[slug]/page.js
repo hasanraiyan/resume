@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { getAllPublishedArticles, getArticleBySlug } from '@/app/actions/articleActions';
 import { getSiteConfig } from '@/app/actions/siteActions';
-import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
+import MarkdownRenderer from '@/components/custom-ui/MarkdownRenderer';
 import { notFound } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';

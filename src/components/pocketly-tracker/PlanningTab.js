@@ -17,7 +17,7 @@ import {
 
 import IconRenderer from './IconRenderer';
 import BottomSheet from './BottomSheet';
-import TopTabs from '@/components/ui/TopTabs';
+import TopTabs from '@/components/custom-ui/TopTabs';
 
 const categoryIcons = [
   'utensils',

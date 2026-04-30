@@ -7,8 +7,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/Dialog';
-import Button from '@/components/ui/Button';
+} from '@/components/custom-ui/Dialog';
+import Button from '@/components/custom-ui/Button';
 import CustomDropdown from '@/components/CustomDropdown';
 import {
   Save,

@@ -17,7 +17,7 @@ import { Bar, Line } from 'react-chartjs-2';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 import { Button, Card, Badge } from '@/components/ui';
-import TabNavigation from '@/components/ui/TabNavigation';
+import TabNavigation from '@/components/custom-ui/TabNavigation';
 import AnalyticsSkeleton from '@/components/admin/AnalyticsSkeleton';
 
 // Register Chart.js components

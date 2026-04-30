@@ -6,7 +6,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Section, Button, Badge, ForSaleBadge } from '@/components/ui';
 import ProjectGallery from './ProjectGallery';
 import RelatedProjects from './RelatedProjects';
-import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
+import MarkdownRenderer from '@/components/custom-ui/MarkdownRenderer';
 import LikeButton from '@/components/LikeButton';
 import SocialShare from '@/components/SocialShare';
 
