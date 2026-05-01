@@ -164,6 +164,7 @@ export function registerPocketlyTools(server) {
           .optional()
           .describe('Optional period start date as an ISO date string'),
         endDate: z.string().optional().describe('Optional period end date as an ISO date string'),
+        categoryId: z.string().optional().describe('MongoDB _id of the category to filter by'),
       },
       _meta: widgetToolMeta(WIDGETS.transactions, 'Loading records...', 'Records ready.'),
     },

@@ -33,7 +33,13 @@ export async function buildAccountsPayload() {
   };
 }
 
-export async function buildTransactionsPayload({ type, limit = 20, startDate, endDate } = {}) {
+export async function buildTransactionsPayload({
+  type,
+  limit = 20,
+  startDate,
+  endDate,
+  categoryId,
+} = {}) {
   const period = makePeriod(startDate, endDate);
   const transactions = (
     await getTransactions({
@@ -41,6 +47,7 @@ export async function buildTransactionsPayload({ type, limit = 20, startDate, en
       limit: Math.min(Math.max(Number(limit) || 20, 1), 100),
       startDate: period.startDate,
       endDate: period.endDate,
+      category: categoryId,
     })
   ).map(normalizeTransaction);
 
