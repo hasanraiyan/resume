@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Card, Section } from '@/components/ui';
+import { Button, Card, Section } from '@/components/custom-ui';
 
 export default function AboutPreview({ aboutData, isPreview = false }) {
   if (!aboutData) {

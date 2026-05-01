@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Button } from '@/components/ui';
+import { Card, Button } from '@/components/custom-ui';
 import { deleteContributor } from '@/app/actions/contributorActions';
 
 export default function ContributorsClient({ initialContributors }) {

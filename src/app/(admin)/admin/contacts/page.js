@@ -1,5 +1,5 @@
 import { getAllContacts } from '@/app/actions/contactActions';
-import { Card, Badge } from '@/components/ui';
+import { Card, Badge } from '@/components/custom-ui';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 import ContactActions from '@/components/admin/ContactActions';
 

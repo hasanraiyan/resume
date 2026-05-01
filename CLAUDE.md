@@ -96,7 +96,7 @@ LangChain + LangGraph for agent orchestration. `src/lib/agents/` contains `Agent
 
 ### UI Components
 
-`src/components/ui/` has ~18 components with a barrel export at `index.js`. Import pattern: `import { Button, Card } from '@/components/ui'`. Design tokens live in `src/styles/tokens.js` and `src/styles/components.js` (imported as `@/styles/tokens`, `@/styles/components`).
+`src/components/ui/` has ~18 components with a barrel export at `index.js`. Import pattern: `import { Button, Card } from '@/components/custom-ui'`. Design tokens live in `src/styles/tokens.js` and `src/styles/components.js` (imported as `@/styles/tokens`, `@/styles/components`).
 
 ### Context Providers
 

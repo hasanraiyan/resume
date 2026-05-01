@@ -16,7 +16,7 @@ import {
 import { Bar, Line } from 'react-chartjs-2';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
-import { Button, Card, Badge } from '@/components/ui';
+import { Button, Card, Badge } from '@/components/custom-ui';
 import TabNavigation from '@/components/custom-ui/TabNavigation';
 import AnalyticsSkeleton from '@/components/admin/AnalyticsSkeleton';
 

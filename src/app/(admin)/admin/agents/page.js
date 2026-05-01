@@ -29,7 +29,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import AgentConfigurationModal from '@/components/admin/AgentConfigurationModal';
-import { Card, Skeleton } from '@/components/ui';
+import { Card, Skeleton } from '@/components/custom-ui';
 import { formatDistanceToNow } from 'date-fns';
 import Switch from '@/components/admin/Switch';
 

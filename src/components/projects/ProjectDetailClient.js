@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Section, Button, Badge, ForSaleBadge } from '@/components/ui';
+import { Section, Button, Badge, ForSaleBadge } from '@/components/custom-ui';
 import ProjectGallery from './ProjectGallery';
 import RelatedProjects from './RelatedProjects';
 import MarkdownRenderer from '@/components/custom-ui/MarkdownRenderer';

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Skeleton } from '@/components/ui';
+import { Skeleton } from '@/components/custom-ui';
 import { TerminalSquare, ArrowLeft, Maximize, Minimize } from 'lucide-react';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 

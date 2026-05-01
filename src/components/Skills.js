@@ -5,7 +5,7 @@
 import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Card, Section } from '@/components/ui';
+import { Card, Section } from '@/components/custom-ui';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faReact,

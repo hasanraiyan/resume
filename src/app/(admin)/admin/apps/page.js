@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
-import { Button, Card, Skeleton } from '@/components/ui';
+import { Button, Card, Skeleton } from '@/components/custom-ui';
 import { TerminalSquare, Plus, Play, Edit2, Trash2, Cpu, PenTool, Search, X } from 'lucide-react';
 
 export default function AppBuilderDashboard() {

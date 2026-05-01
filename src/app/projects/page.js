@@ -1,6 +1,6 @@
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { Section } from '@/components/ui';
+import { Section } from '@/components/custom-ui';
 import ProjectsPageClient from '@/components/projects/ProjectsPageClient';
 import { getAllPublishedProjects } from '@/app/actions/projectActions';
 import { getSiteConfig } from '@/app/actions/siteActions';

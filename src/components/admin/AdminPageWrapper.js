@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Input } from '@/components/ui';
+import { Button, Input } from '@/components/custom-ui';
 import { useState, useEffect, useRef } from 'react';
 
 /**

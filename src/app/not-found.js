@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { Button } from '@/components/ui';
+import { Button } from '@/components/custom-ui';
 import { getSiteConfig } from '@/app/actions/siteActions';
 
 export default async function NotFound() {

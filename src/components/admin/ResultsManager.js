@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@/components/ui';
+import { Button } from '@/components/custom-ui';
 
 export default function ResultsManager({ results, setResults }) {
   const addResult = () => {

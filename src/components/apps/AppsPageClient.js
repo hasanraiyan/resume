@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Card, Badge, Button } from '@/components/ui';
+import { Card, Badge, Button } from '@/components/custom-ui';
 import SearchBar from '@/components/admin/chatbot/SearchBar';
 import { MINI_APPS } from '@/config/miniApps';
 

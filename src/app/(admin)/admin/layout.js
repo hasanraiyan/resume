@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import SessionProvider from '@/components/SessionProvider';
-import { Button } from '@/components/ui';
+import { Button } from '@/components/custom-ui';
 import {
   Gauge,
   BarChart2,

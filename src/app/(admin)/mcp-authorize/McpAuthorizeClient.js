@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Button } from '@/components/ui';
+import { Card, Button } from '@/components/custom-ui';
 
 export default function McpAuthorizeClient({ pending }) {
   const [isLoading, setIsLoading] = useState(false);

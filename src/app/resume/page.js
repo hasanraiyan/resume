@@ -1,6 +1,6 @@
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { Section } from '@/components/ui';
+import { Section } from '@/components/custom-ui';
 import { getSiteConfig } from '@/app/actions/siteActions';
 
 export default async function ResumePage() {

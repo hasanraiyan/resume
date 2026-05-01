@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card } from '@/components/ui';
+import { Card } from '@/components/custom-ui';
 import ActionButton from './ActionButton';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 import IconPicker from './IconPicker';

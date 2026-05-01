@@ -14,7 +14,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Button, Badge } from '@/components/ui';
+import { Button, Badge } from '@/components/custom-ui';
 import { useSiteContext } from '@/context/SiteContext';
 /**
  * Default hero data structure used as fallback when API data is unavailable.

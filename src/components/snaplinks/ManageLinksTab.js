@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Button, Card, Badge, Skeleton } from '@/components/ui';
+import { Button, Card, Badge, Skeleton } from '@/components/custom-ui';
 import {
   Chart as ChartJS,
   CategoryScale,

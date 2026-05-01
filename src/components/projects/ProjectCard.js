@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Badge, ForSaleBadge } from '@/components/ui';
+import { Badge, ForSaleBadge } from '@/components/custom-ui';
 
 /**
  * Project Card Component - CLEAN & MINIMAL

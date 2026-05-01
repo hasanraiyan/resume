@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { InlineWidget } from 'react-calendly';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Section, Input } from '@/components/ui';
+import { Section, Input } from '@/components/custom-ui';
 import CustomDropdownMinimal from './CustomDropdown';
 import ActionButton from '@/components/admin/ActionButton';
 import { createContactSubmission } from '@/app/actions/contactActions';

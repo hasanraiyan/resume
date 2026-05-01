@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card } from '@/components/ui';
+import { Card } from '@/components/custom-ui';
 
 export default function SettingsTab() {
   const [baseUrl, setBaseUrl] = useState('');

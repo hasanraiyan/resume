@@ -1,6 +1,6 @@
 import { getAllServices } from '@/app/actions/serviceActions';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
-import { Button, Card, Badge } from '@/components/ui';
+import { Button, Card, Badge } from '@/components/custom-ui';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';

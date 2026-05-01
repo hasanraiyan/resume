@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, Button } from '@/components/ui';
+import { Card, Button } from '@/components/custom-ui';
 import CustomDropdownMinimal from '@/components/CustomDropdown';
 
 export default function ContributorManager({ contributors, setContributors, allContributors }) {

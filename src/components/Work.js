@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Section, Button, Badge, ForSaleBadge } from '@/components/ui';
+import { Section, Button, Badge, ForSaleBadge } from '@/components/custom-ui';
 // ========================================
 // 📦 DYNAMIC DATA (Backend-Ready)
 // ========================================

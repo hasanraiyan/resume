@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArticleForm } from '@/components/admin/ArticleForm';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
-import { Card } from '@/components/ui';
+import { Card } from '@/components/custom-ui';
 import { AGENT_IDS } from '@/lib/constants/agents';
 
 const AI_STEPS = [

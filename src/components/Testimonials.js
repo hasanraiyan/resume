@@ -11,7 +11,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Autoplay } from 'swiper/modules';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Section } from '@/components/ui';
+import { Section } from '@/components/custom-ui';
 import { useLoadingStatus } from '@/context/LoadingContext';
 import TestimonialCard from '@/components/testimonials/TestimonialCard';
 

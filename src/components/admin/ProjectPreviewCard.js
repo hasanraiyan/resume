@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Badge, ForSaleBadge } from '@/components/ui';
+import { Badge, ForSaleBadge } from '@/components/custom-ui';
 
 export default function ProjectPreviewCard({ project }) {
   const { title, category, description, tags, thumbnail } = project;

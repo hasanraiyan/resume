@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { Section, Card } from '@/components/ui';
+import { Section, Card } from '@/components/custom-ui';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useLoadingStatus } from '@/context/LoadingContext';

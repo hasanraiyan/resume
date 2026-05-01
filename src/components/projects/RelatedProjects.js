@@ -1,7 +1,7 @@
 'use client';
 
 import ProjectCard from './ProjectCard';
-import { Section } from '@/components/ui';
+import { Section } from '@/components/custom-ui';
 
 /**
  * Related Projects Component

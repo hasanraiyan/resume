@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui';
+import { Button } from '@/components/custom-ui';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 import ContributorsClient from '@/components/admin/ContributorsClient';
 import { getAllContributors } from '@/app/actions/contributorActions';

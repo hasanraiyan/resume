@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Card } from '@/components/ui';
+import { Card } from '@/components/custom-ui';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 
 function SectionCard({ href, icon, title, description, comingSoon }) {

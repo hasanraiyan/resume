@@ -2,7 +2,7 @@
 
 import { createCertification } from '@/app/actions/certificationActions';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
-import { Button, Card, Input } from '@/components/ui';
+import { Button, Card, Input } from '@/components/custom-ui';
 import IconPicker from '@/components/admin/IconPicker';
 import Link from 'next/link';
 import { useState } from 'react';

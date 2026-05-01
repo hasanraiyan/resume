@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Badge } from '@/components/ui';
+import { Button, Badge } from '@/components/custom-ui';
 
 export default function HeroPreview({ heroData, isPreview = false }) {
   if (!heroData) {

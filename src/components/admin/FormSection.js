@@ -1,6 +1,6 @@
 'use client';
 
-import { Card } from '@/components/ui';
+import { Card } from '@/components/custom-ui';
 
 export default function FormSection({ title, description, children, noBorder = false }) {
   return (

@@ -12,7 +12,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Autoplay } from 'swiper/modules';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Section, Button } from '@/components/ui';
+import { Section, Button } from '@/components/custom-ui';
 import { useLoadingStatus } from '@/context/LoadingContext';
 import Link from 'next/link';
 

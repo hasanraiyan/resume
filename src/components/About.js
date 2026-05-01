@@ -9,7 +9,7 @@
 import { useEffect, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Section, Card, Button } from '@/components/ui';
+import { Section, Card, Button } from '@/components/custom-ui';
 import { useLoadingStatus } from '@/context/LoadingContext';
 import { SkeletonLoader, SkeletonItem } from './Skeleton';
 

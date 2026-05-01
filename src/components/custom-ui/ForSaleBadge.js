@@ -1,6 +1,6 @@
 'use client';
 
-import { Badge } from '@/components/ui';
+import { Badge } from '@/components/custom-ui';
 
 /**
  * Reusable For Sale Badge Component

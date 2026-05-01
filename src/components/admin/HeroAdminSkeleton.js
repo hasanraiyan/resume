@@ -1,6 +1,6 @@
 'use client';
 
-import { Card } from '@/components/ui';
+import { Card } from '@/components/custom-ui';
 
 function SkeletonBlock({ className = '' }) {
   return (

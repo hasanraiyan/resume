@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, Skeleton } from '@/components/ui';
+import { Card, Skeleton } from '@/components/custom-ui';
 import { Link2, Eye, Activity, ChevronRight, Copy, Check } from 'lucide-react';
 
 export default function DashboardTab({ navigateTo }) {

@@ -1,4 +1,4 @@
-import { Card } from '@/components/ui';
+import { Card } from '@/components/custom-ui';
 
 export default function TopPathsTable({ journeys }) {
   if (!journeys || journeys.length === 0) return null;

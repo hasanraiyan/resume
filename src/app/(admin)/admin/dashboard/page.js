@@ -4,7 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { redirect } from 'next/navigation';
 import { getAllProjects } from '@/app/actions/projectActions';
 import { getAllContacts } from '@/app/actions/contactActions';
-import { Button, Card } from '@/components/ui';
+import { Button, Card } from '@/components/custom-ui';
 
 function getStatIcon(statName) {
   switch (statName) {

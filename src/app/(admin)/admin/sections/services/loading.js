@@ -1,5 +1,5 @@
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
-import { Skeleton, Card } from '@/components/ui';
+import { Skeleton, Card } from '@/components/custom-ui';
 
 export default function ServicesLoading() {
   return (

@@ -3,9 +3,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { getAllProjects } from '@/app/actions/projectActions';
-import { Button, Card, Badge } from '@/components/ui';
+import { Button, Card, Badge } from '@/components/custom-ui';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
-import { Badge as UIBadge } from '@/components/ui';
+import { Badge as UIBadge } from '@/components/custom-ui';
 import { useState, useEffect } from 'react';
 
 export default function ProjectsListPage() {

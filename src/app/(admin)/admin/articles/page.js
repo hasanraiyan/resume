@@ -2,7 +2,7 @@
 
 import { getAllArticles } from '@/app/actions/articleActions';
 import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
-import { Button, Card, Badge } from '@/components/ui';
+import { Button, Card, Badge } from '@/components/custom-ui';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';

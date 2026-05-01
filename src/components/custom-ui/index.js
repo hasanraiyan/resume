@@ -8,13 +8,13 @@
  * @example
  * ```jsx
  * // Import individual components
- * import { Button, Card, Input } from '@/components/ui';
+ * import { Button, Card, Input } from '@/components/custom-ui';
  *
  * // Import design tokens
- * import { designTokens } from '@/components/ui';
+ * import { designTokens } from '@/components/custom-ui';
  *
  * // Import utility functions
- * import { cn } from '@/components/ui';
+ * import { cn } from '@/components/custom-ui';
  * ```
  */
 
@@ -87,7 +87,7 @@ export { InputOTP, InputOTPGroup } from './InputOTP';
  *
  * @example
  * ```jsx
- * import { designTokens } from '@/components/ui';
+ * import { designTokens } from '@/components/custom-ui';
  *
  * const styles = {
  *   color: designTokens.colors.primary,
@@ -104,7 +104,7 @@ export { designTokens } from '@/styles/tokens';
  *
  * @example
  * ```jsx
- * import { componentStyles } from '@/components/ui';
+ * import { componentStyles } from '@/components/custom-ui';
  *
  * const buttonClasses = `${componentStyles.buttons.base} ${componentStyles.buttons.primary}`;
  * ```
@@ -117,7 +117,7 @@ export { componentStyles } from '@/styles/components';
  *
  * @example
  * ```jsx
- * import { cn, responsive } from '@/components/ui';
+ * import { cn, responsive } from '@/components/custom-ui';
  *
  * // Merge classes conditionally
  * const classes = cn('base-class', condition && 'conditional-class');

@@ -1,7 +1,7 @@
 // src/components/admin/AnalyticsSkeleton.js
 'use client';
 
-import { Card } from '@/components/ui';
+import { Card } from '@/components/custom-ui';
 
 export default function AnalyticsSkeleton() {
   return (

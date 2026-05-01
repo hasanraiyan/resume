@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui';
+import { Button } from '@/components/custom-ui';
 import CustomDropdownMinimal from '../CustomDropdown';
 import MediaLibraryModal from './MediaLibraryModal';
 
