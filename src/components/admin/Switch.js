@@ -1,7 +1,7 @@
 'use client';
 
 import * as SwitchPrimitives from '@radix-ui/react-switch';
-import { cn } from '../ui';
+import { cn } from '../custom-ui';
 
 const Switch = ({ checked, onCheckedChange, label, description, id }) => {
   const switchId = id || 'chatbot-status-' + Math.random().toString(36).substr(2, 9);
