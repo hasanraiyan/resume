@@ -190,28 +190,46 @@ export default function ProjectDetailClient({ project, relatedProjects, breadcru
             </div>
           )}
 
-          {/* Alternative: If using tags array instead of technologies */}
-          {(!project.technologies || project.technologies.length === 0) &&
-            project.tags &&
-            project.tags.length > 0 && (
-              <div className="mb-12 sm:mb-16">
-                <h3 className="text-2xl sm:text-3xl font-bold mb-8 text-center">
-                  Technology Stack
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {project.tags.map((tag, index) => (
-                    <div key={index} className="text-center group">
-                      <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow duration-300 hover:border-gray-300">
-                        <h4 className="font-semibold text-gray-900 mb-1">{tag.name}</h4>
-                        <p className="text-sm text-gray-500 capitalize">
-                          {tag.category || 'Technology'}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+          {/* Technology Stack */}
+          {project.tags && project.tags.length > 0 && (
+            <div className="mb-12 sm:mb-16">
+              <div className="flex items-center gap-4 mb-10">
+                <div className="h-px flex-1 bg-black"></div>
+                <h3 className="text-2xl sm:text-3xl font-bold shrink-0">Technology Stack</h3>
+                <div className="h-px flex-1 bg-black"></div>
               </div>
-            )}
+
+              <div className="divide-y divide-neutral-200 border-t border-neutral-200">
+                {Object.entries(
+                  project.tags.reduce((acc, tag) => {
+                    const cat = tag.category || 'Other';
+                    if (!acc[cat]) acc[cat] = [];
+                    acc[cat].push(tag.name);
+                    return acc;
+                  }, {})
+                ).map(([category, names]) => (
+                  <div
+                    key={category}
+                    className="flex flex-col sm:flex-row sm:items-center gap-3 py-4"
+                  >
+                    <span className="text-xs font-bold tracking-[0.2em] uppercase text-neutral-400 sm:w-28 shrink-0">
+                      {category}
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {names.map((name, i) => (
+                        <span
+                          key={i}
+                          className="px-3 py-1 bg-black text-white text-xs font-semibold tracking-wide"
+                        >
+                          {name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Contributors Section */}
           {(currentTeam.length > 0 || pastContributors.length > 0) && (
