@@ -31,11 +31,11 @@ This report documents the architecture and data flow for project contributors wi
 
 ### API Endpoints
 - **GET** `/api/projects/[slug]`: Retrieves project details and populates `contributors.contributor`. Handles both slugs and ObjectIDs.
-- **PUT/DELETE** `/api/projects/[slug]`: Admin operations for projects.
-- **GET** `/api/admin/contributors`: Lists all contributors with search and pagination support.
-- **POST** `/api/admin/contributors`: Creates a new contributor profile.
+- **PUT/DELETE** `/api/projects/[slug]`: **Warning:** These routes currently perform project mutations/deletions **without** session or role-based authentication checks in the handler. Additionally, the root `middleware.js` matcher does not cover these paths, making them publicly accessible for mutation.
+- **GET** `/api/admin/contributors`: Lists all contributors with search and pagination support. Protected by admin session check.
+- **POST** `/api/admin/contributors`: Creates a new contributor profile. Protected by admin session check.
 - **GET/PUT/DELETE** `/api/admin/contributors/[id]`: Manages individual contributor profiles.
-  - **Deletion Logic:** The `DELETE` handler in `src/app/api/admin/contributors/[id]/route.js` explicitly checks if a contributor is assigned to any projects using `Project.countDocuments({ 'contributors.contributor': params.id })` and prevents deletion if the count is greater than zero.
+  - **Deletion Logic (API):** The `DELETE` handler in `src/app/api/admin/contributors/[id]/route.js` includes a check: `Project.countDocuments({ 'contributors.contributor': params.id })`. It prevents deletion if the contributor is assigned to any projects.
 
 ### Server Actions
 - **`src/app/actions/projectActions.js`**:
@@ -45,7 +45,7 @@ This report documents the architecture and data flow for project contributors wi
   - `getAllContributors()`: Fetches all contributor profiles.
   - `getContributorById(id)`: Fetches a single profile.
   - `createContributor(formData)` / `updateContributor(id, formData)`: Manages contributor profile data.
-  - `deleteContributor(id)`: Deletes a contributor profile.
+  - **`deleteContributor(id)` (Vulnerability):** Unlike the REST API counterpart, this server action uses `Contributor.findByIdAndDelete(id)` directly **without** checking if the contributor is linked to any projects. This allows linked contributors to be hard-deleted, potentially leaving dangling references in Project documents.
 
 ---
 
@@ -63,7 +63,7 @@ This report documents the architecture and data flow for project contributors wi
 
 - **Contributor Profile Management:**
   - **Page:** `src/app/(admin)/admin/contributors/page.js`.
-  - **Client Component:** `src/components/admin/ContributorsClient.js` handles listing, searching, and calling the delete action.
+  - **Client Component:** `src/components/admin/ContributorsClient.js` handles listing and searching. **Note:** It invokes the `deleteContributor` server action directly upon user confirmation, bypassing the project-reference check present in the REST API.
   - **Form:** `src/components/admin/ContributorForm.js` handles creation and editing of the reusable contributor profiles.
 
 ---
@@ -79,8 +79,9 @@ This report documents the architecture and data flow for project contributors wi
 
 ---
 
-## 5. Summary of Data Flow
+## 5. Summary of Data Flow & Security Gaps
 1.  **Creation:** Contributor profiles are created independently in the Admin Contributor section.
 2.  **Association:** While editing a project, contributors are selected and assigned roles. This stores the `Contributor` ObjectID and role/order metadata in the `Project` document's `contributors` array.
 3.  **Retrieval:** The public project page fetches the project data and uses Mongoose's `.populate()` to join the contributor profile details.
-4.  **Deletion Protection:** Contributor profiles cannot be deleted via the API if they are currently linked to one or more projects.
+4.  **Security Gap (Auth):** Project mutation/deletion via `/api/projects/[slug]` is currently unprotected by authentication middleware or inline checks.
+5.  **Security Gap (Integrity):** While the REST API for contributors protects against deleting linked records, the Admin UI uses a Server Action that bypasses this check, allowing for referential integrity breakage.
