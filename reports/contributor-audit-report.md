@@ -54,8 +54,9 @@ This report documents the architecture and data flow for project contributors wi
 ### Components & Management
 - **Project Management:**
   - **Page:** `src/app/(admin)/admin/projects/[id]/edit/page.js` and `src/app/(admin)/admin/projects/new/page.js`.
-  - **Form:** `src/components/admin/ProjectForm.js` manages the overall project state and handles submission.
-  - **Contributor Manager:** `src/components/admin/ContributorManager.js` is used within `ProjectForm` to:
+  - **Form:** `src/components/admin/ProjectForm.js` manages the overall project state, handles submission, and owns the contributor lookup state for the project editor.
+  - **Contributor Fetching in Form:** On mount, `ProjectForm` fetches `/api/admin/contributors`, stores the response in `allContributors`, and passes that list down to `ContributorManager`.
+  - **Contributor Manager:** `src/components/admin/ContributorManager.js` receives the contributor lookup data from `ProjectForm` and is used within the form to:
     - Assign contributors from the existing list.
     - Define roles for each contributor on the specific project.
     - Store/preserve contributor order metadata in the project payload, without a dedicated UI to edit or reorder it.
