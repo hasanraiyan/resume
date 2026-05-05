@@ -1,14 +1,34 @@
 'use client';
 
-import { useEffect } from 'react';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Section, Button, Badge, ForSaleBadge } from '@/components/custom-ui';
+import Breadcrumb from '@/components/custom-ui/Breadcrumb';
+import { ForSaleBadge } from '@/components/custom-ui';
 import ProjectGallery from './ProjectGallery';
 import RelatedProjects from './RelatedProjects';
 import MarkdownRenderer from '@/components/custom-ui/MarkdownRenderer';
 import LikeButton from '@/components/LikeButton';
 import SocialShare from '@/components/SocialShare';
+
+const SectionLabel = ({ children }) => (
+  <div className="flex items-center gap-3 mb-8">
+    <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-neutral-400 shrink-0">
+      {children}
+    </span>
+    <div className="h-px flex-1 bg-neutral-200" />
+  </div>
+);
+
+const SocialLink = ({ href, icon, title }) =>
+  href ? (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-neutral-400 hover:text-black transition-colors text-xs"
+      title={title}
+    >
+      <i className={icon}></i>
+    </a>
+  ) : null;
 
 export default function ProjectDetailClient({ project, relatedProjects, breadcrumbs }) {
   const allContributors =
@@ -25,385 +45,417 @@ export default function ProjectDetailClient({ project, relatedProjects, breadcru
   const currentTeam = allContributors.filter((c) => c.isActive);
   const pastContributors = allContributors.filter((c) => !c.isActive);
 
+  const tagsByCategory = project.tags?.reduce((acc, tag) => {
+    const cat = tag.category || 'Other';
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(tag.name);
+    return acc;
+  }, {});
+
   return (
-    <main className="">
-      <Section className="py-8 sm:py-14 md:py-12 bg-white" breadcrumbs={breadcrumbs}>
-        <div className="max-w-4xl mx-auto project-detail-content">
-          <div className="text-center">
-            <div className="text-xs font-semibold tracking-widest mb-3 sm:mb-4 text-gray-600">
-              {project.projectNumber} — {project.category}
+    <main>
+      {/* ── HERO ──────────────────────────────────────────────────── */}
+      <div className="bg-white border-b border-neutral-200">
+        {/* Breadcrumb + eyebrow strip */}
+        <div className="border-b border-neutral-100">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+            {breadcrumbs && <Breadcrumb breadcrumbs={breadcrumbs} />}
+            <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-neutral-400 shrink-0">
+              {project.projectNumber}
+            </span>
+          </div>
+        </div>
+
+        {/* Title + meta */}
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-0 sm:pt-20">
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
+            <div className="max-w-2xl">
+              <p className="text-xs font-bold tracking-[0.25em] uppercase text-neutral-400 mb-4">
+                {project.category}
+              </p>
+              <div className="relative inline-block">
+                <h1 className="font-['Playfair_Display'] text-4xl sm:text-5xl lg:text-[3.75rem] font-bold leading-[1.05] tracking-tight text-black">
+                  {project.title}
+                </h1>
+                {project.isForSale && (
+                  <span className="absolute -top-2 -right-4">
+                    <ForSaleBadge size="sm" />
+                  </span>
+                )}
+              </div>
+              <p className="text-lg sm:text-xl text-neutral-500 mt-4 leading-relaxed">
+                {project.tagline}
+              </p>
             </div>
-            <div className="mb-4 sm:mb-6 relative inline-block">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold">
-                {project.title}
-              </h1>
-              {project.isForSale && (
-                <span className="absolute -top-2 right-0">
-                  <ForSaleBadge size="md" />
-                </span>
+
+            {/* Action buttons */}
+            <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end lg:shrink-0">
+              {project.isForSale && project.links?.sales && (
+                <a
+                  href={project.links.sales}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-5 py-2.5 bg-green-600 text-white text-xs font-bold tracking-wide hover:bg-green-700 transition-colors"
+                >
+                  <i className="fas fa-shopping-cart mr-2"></i> Purchase
+                </a>
+              )}
+              {project.links?.live && (
+                <a
+                  href={project.links.live}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-5 py-2.5 bg-black text-white text-xs font-bold tracking-wide hover:bg-neutral-800 transition-colors"
+                >
+                  <i className="fas fa-external-link-alt mr-2"></i> Live Site
+                </a>
+              )}
+              {project.links?.github && (
+                <a
+                  href={project.links.github}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-5 py-2.5 border-2 border-black text-black text-xs font-bold tracking-wide hover:bg-black hover:text-white transition-colors"
+                >
+                  <i className="fab fa-github mr-2"></i> Source Code
+                </a>
+              )}
+              {project.links?.figma && (
+                <a
+                  href={project.links.figma}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-5 py-2.5 border border-neutral-300 text-neutral-600 text-xs font-bold tracking-wide hover:border-black hover:text-black transition-colors"
+                >
+                  <i className="fab fa-figma mr-2"></i> Figma
+                </a>
               )}
             </div>
+          </div>
 
-            <p className="text-lg sm:text-xl text-gray-600 mb-6 sm:mb-8">{project.tagline}</p>
-            {/* FIX: Limit the number of tags displayed in the header */}
-            <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6 sm:mb-8">
-              {project.tags?.slice(0, 4).map((tag, index) => (
-                <Badge key={index} variant="tag">
-                  {tag.name}
-                </Badge>
-              ))}
+          {/* Metadata + engagement row */}
+          <div className="mt-10 pt-5 border-t border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6">
+            <div className="flex flex-wrap gap-x-8 gap-y-3">
+              {project.details?.year && (
+                <div>
+                  <span className="block text-[9px] font-bold uppercase tracking-[0.2em] text-neutral-400">
+                    Year
+                  </span>
+                  <span className="text-sm font-semibold text-black">{project.details.year}</span>
+                </div>
+              )}
+              {project.details?.duration && (
+                <div>
+                  <span className="block text-[9px] font-bold uppercase tracking-[0.2em] text-neutral-400">
+                    Duration
+                  </span>
+                  <span className="text-sm font-semibold text-black">
+                    {project.details.duration}
+                  </span>
+                </div>
+              )}
+              {project.details?.role && (
+                <div>
+                  <span className="block text-[9px] font-bold uppercase tracking-[0.2em] text-neutral-400">
+                    Role
+                  </span>
+                  <span className="text-sm font-semibold text-black">{project.details.role}</span>
+                </div>
+              )}
+              {project.details?.client && (
+                <div>
+                  <span className="block text-[9px] font-bold uppercase tracking-[0.2em] text-neutral-400">
+                    Client
+                  </span>
+                  <span className="text-sm font-semibold text-black">{project.details.client}</span>
+                </div>
+              )}
             </div>
-
-            {/* Project Engagement and Social Sharing */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-center gap-4 mb-6 sm:mb-8">
+            <div className="flex items-center gap-3 shrink-0">
               <SocialShare
                 title={project.title}
                 slug={project.slug}
                 excerpt={project.tagline}
                 type="project"
               />
-              <div className="flex items-center gap-3">
-                <LikeButton
-                  type="project"
-                  slug={project.slug}
-                  engagementType="like"
-                  initialCount={project.likes || 0}
-                />
-                <LikeButton
-                  type="project"
-                  slug={project.slug}
-                  engagementType="clap"
-                  initialCount={project.claps || 0}
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-wrap justify-center gap-4">
-              {project.isForSale && project.links?.sales && (
-                <Button
-                  href={project.links.sales}
-                  external={true}
-                  variant="primary"
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <i className="fas fa-shopping-cart mr-2"></i> Purchase Project
-                </Button>
-              )}
-              {project.links?.live && (
-                <Button href={project.links.live} external={true} variant="primary">
-                  <i className="fas fa-external-link-alt mr-2"></i> View Live Site
-                </Button>
-              )}
-              {project.links?.github && (
-                <Button href={project.links.github} external={true} variant="secondary">
-                  <i className="fab fa-github mr-2"></i> View Code
-                </Button>
-              )}
-              {project.links?.figma && (
-                <Button href={project.links.figma} external={true} variant="ghost">
-                  <i className="fab fa-figma mr-2"></i> Design Files
-                </Button>
-              )}
+              <LikeButton
+                type="project"
+                slug={project.slug}
+                engagementType="like"
+                initialCount={project.likes || 0}
+              />
+              <LikeButton
+                type="project"
+                slug={project.slug}
+                engagementType="clap"
+                initialCount={project.claps || 0}
+              />
             </div>
           </div>
+        </div>
 
-          {project.images && project.images.length > 0 && (
-            <div className="my-12 sm:my-16">
-              <ProjectGallery images={project.images} />
+        {/* Tags strip */}
+        {project.tags?.length > 0 && (
+          <div className="border-t border-neutral-100">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap gap-2">
+              {project.tags.map((tag, i) => (
+                <span
+                  key={i}
+                  className="text-[10px] font-semibold tracking-wide text-neutral-500 bg-neutral-100 px-2.5 py-1"
+                >
+                  {tag.name}
+                </span>
+              ))}
             </div>
-          )}
+          </div>
+        )}
+      </div>
 
-          <div className="grid lg:grid-cols-3 gap-8 sm:gap-12 mb-12 sm:mb-16">
-            <div className="lg:col-span-2">
-              <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Project Overview</h2>
-              <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+      {/* ── GALLERY ──────────────────────────────────────────────── */}
+      {project.images?.length > 0 && (
+        <div className="bg-neutral-950 py-12 sm:py-16">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <ProjectGallery images={project.images} />
+          </div>
+        </div>
+      )}
+
+      {/* ── OVERVIEW ─────────────────────────────────────────────── */}
+      <section className="bg-white border-b border-neutral-200">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
+          <div className="grid lg:grid-cols-12 gap-12 lg:gap-16">
+            <div className="lg:col-span-7">
+              <SectionLabel>Overview</SectionLabel>
+              <div className="prose prose-lg max-w-none text-neutral-700 leading-relaxed prose-headings:font-['Playfair_Display'] prose-headings:font-bold">
                 <MarkdownRenderer content={project.fullDescription || ''} />
               </div>
             </div>
-            <div className="lg:col-span-1">
-              <div className="bg-gray-50 p-6 sm:p-8 rounded-lg sticky top-28">
-                <h3 className="text-lg font-bold mb-4">Project Details</h3>
-                <dl className="space-y-3 text-sm">
-                  {project.details?.client && (
-                    <div>
-                      <dt className="font-semibold text-gray-600">Client</dt>
-                      <dd className="text-gray-800">{project.details.client}</dd>
+
+            {(project.details?.challenge || project.details?.solution) && (
+              <div className="lg:col-span-5 space-y-10 lg:border-l lg:border-neutral-200 lg:pl-12">
+                {project.details.challenge && (
+                  <div>
+                    <SectionLabel>The Challenge</SectionLabel>
+                    <div className="prose prose-sm max-w-none text-neutral-600 leading-relaxed">
+                      <MarkdownRenderer content={project.details.challenge} />
                     </div>
-                  )}
-                  {project.details?.year && (
-                    <div>
-                      <dt className="font-semibold text-gray-600">Year</dt>
-                      <dd className="text-gray-800">{project.details.year}</dd>
+                  </div>
+                )}
+                {project.details.solution && (
+                  <div>
+                    <SectionLabel>The Solution</SectionLabel>
+                    <div className="prose prose-sm max-w-none text-neutral-600 leading-relaxed">
+                      <MarkdownRenderer content={project.details.solution} />
                     </div>
-                  )}
-                  {project.details?.duration && (
-                    <div>
-                      <dt className="font-semibold text-gray-600">Duration</dt>
-                      <dd className="text-gray-800">{project.details.duration}</dd>
-                    </div>
-                  )}
-                  {project.details?.role && (
-                    <div>
-                      <dt className="font-semibold text-gray-600">Role</dt>
-                      <dd className="text-gray-800">{project.details.role}</dd>
-                    </div>
-                  )}
-                </dl>
+                  </div>
+                )}
               </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* ── RESULTS ──────────────────────────────────────────────── */}
+      {project.details?.results?.length > 0 && (
+        <section className="bg-black text-white">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
+            <div className="flex items-center gap-4 mb-10">
+              <div className="h-px flex-1 bg-neutral-800" />
+              <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-neutral-500 shrink-0">
+                Results & Impact
+              </span>
+              <div className="h-px flex-1 bg-neutral-800" />
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {project.details.results.map((result, i) => (
+                <div
+                  key={i}
+                  className="border border-neutral-800 p-6 hover:border-neutral-600 transition-colors"
+                >
+                  <div className="font-['Playfair_Display'] text-4xl font-bold text-neutral-700 mb-3 leading-none">
+                    {String(i + 1).padStart(2, '0')}
+                  </div>
+                  <p className="text-sm text-neutral-300 leading-relaxed">{result}</p>
+                </div>
+              ))}
             </div>
           </div>
+        </section>
+      )}
 
-          {(project.details?.challenge || project.details?.solution) && (
-            <div className="grid md:grid-cols-2 gap-8 sm:gap-12 mb-12 sm:mb-16">
-              {project.details.challenge && (
-                <div>
-                  <h3 className="text-xl sm:text-2xl font-bold mb-4">The Challenge</h3>
-                  <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed">
-                    <MarkdownRenderer content={project.details.challenge} />
+      {/* ── TECHNOLOGY STACK ─────────────────────────────────────── */}
+      {tagsByCategory && Object.keys(tagsByCategory).length > 0 && (
+        <section className="bg-white border-b border-neutral-200">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
+            <div className="flex items-center gap-4 mb-10">
+              <div className="h-px flex-1 bg-black" />
+              <h2 className="text-xl sm:text-2xl font-bold shrink-0">Technology Stack</h2>
+              <div className="h-px flex-1 bg-black" />
+            </div>
+            <div className="divide-y divide-neutral-200 border-t border-neutral-200">
+              {Object.entries(tagsByCategory).map(([category, names]) => (
+                <div
+                  key={category}
+                  className="flex flex-col sm:flex-row sm:items-center gap-3 py-4"
+                >
+                  <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-neutral-400 sm:w-32 shrink-0">
+                    {category}
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {names.map((name, i) => (
+                      <span
+                        key={i}
+                        className="px-3 py-1 bg-black text-white text-xs font-semibold tracking-wide"
+                      >
+                        {name}
+                      </span>
+                    ))}
                   </div>
                 </div>
-              )}
-              {project.details.solution && (
-                <div>
-                  <h3 className="text-xl sm:text-2xl font-bold mb-4">The Solution</h3>
-                  <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed">
-                    <MarkdownRenderer content={project.details.solution} />
-                  </div>
-                </div>
-              )}
+              ))}
             </div>
-          )}
+          </div>
+        </section>
+      )}
 
-          {project.details?.results && project.details.results.length > 0 && (
-            <div className="bg-black text-white p-8 sm:p-12 rounded-lg mb-12 sm:mb-16">
-              <h3 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-center">
-                Results & Impact
-              </h3>
-              <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
-                {project.details.results.map((result, index) => (
-                  <div key={index} className="flex items-start">
-                    <i className="fas fa-check-circle text-green-400 text-xl mr-3 mt-1"></i>
-                    <p className="text-base sm:text-lg">{result}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Technology Stack */}
-          {project.tags && project.tags.length > 0 && (
-            <div className="mb-12 sm:mb-16">
-              <div className="flex items-center gap-4 mb-10">
-                <div className="h-px flex-1 bg-black"></div>
-                <h3 className="text-2xl sm:text-3xl font-bold shrink-0">Technology Stack</h3>
-                <div className="h-px flex-1 bg-black"></div>
-              </div>
-
-              <div className="divide-y divide-neutral-200 border-t border-neutral-200">
-                {Object.entries(
-                  project.tags.reduce((acc, tag) => {
-                    const cat = tag.category || 'Other';
-                    if (!acc[cat]) acc[cat] = [];
-                    acc[cat].push(tag.name);
-                    return acc;
-                  }, {})
-                ).map(([category, names]) => (
-                  <div
-                    key={category}
-                    className="flex flex-col sm:flex-row sm:items-center gap-3 py-4"
-                  >
-                    <span className="text-xs font-bold tracking-[0.2em] uppercase text-neutral-400 sm:w-28 shrink-0">
-                      {category}
-                    </span>
-                    <div className="flex flex-wrap gap-2">
-                      {names.map((name, i) => (
-                        <span
-                          key={i}
-                          className="px-3 py-1 bg-black text-white text-xs font-semibold tracking-wide"
-                        >
-                          {name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Contributors Section */}
-          {(currentTeam.length > 0 || pastContributors.length > 0) && (
-            <div className="mb-12 sm:mb-16">
-              {/* Current Team */}
-              {currentTeam.length > 0 && (
-                <>
-                  <h3 className="text-2xl sm:text-3xl font-bold mb-8 text-center">
+      {/* ── CONTRIBUTORS ─────────────────────────────────────────── */}
+      {(currentTeam.length > 0 || pastContributors.length > 0) && (
+        <section className="bg-neutral-50 border-b border-neutral-200">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
+            {currentTeam.length > 0 && (
+              <>
+                <div className="flex items-center gap-4 mb-10">
+                  <div className="h-px flex-1 bg-black" />
+                  <h2 className="text-xl sm:text-2xl font-bold shrink-0">
                     {pastContributors.length > 0 ? 'Current Team' : 'Contributors'}
-                  </h3>
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {currentTeam.map((contributor, index) => (
-                      <div
-                        key={index}
-                        className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow duration-300"
-                      >
-                        <div className="flex items-center mb-4">
-                          <img
-                            src={contributor.avatar}
-                            alt={contributor.name}
-                            className="w-12 h-12 rounded-full mr-4 object-cover"
-                          />
-                          <div>
-                            <h4 className="font-semibold text-gray-900">{contributor.name}</h4>
-                            <p className="text-sm text-gray-500">{contributor.role}</p>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {contributor.socialLinks?.portfolio && (
-                            <a
-                              href={contributor.socialLinks.portfolio}
-                              className="text-gray-600 hover:text-black"
-                              title="Portfolio"
-                            >
-                              <i className="fas fa-globe"></i>
-                            </a>
-                          )}
-                          {contributor.socialLinks?.linkedin && (
-                            <a
-                              href={contributor.socialLinks.linkedin}
-                              className="text-gray-600 hover:text-black"
-                              title="LinkedIn"
-                            >
-                              <i className="fab fa-linkedin"></i>
-                            </a>
-                          )}
-                          {contributor.socialLinks?.github && (
-                            <a
-                              href={contributor.socialLinks.github}
-                              className="text-gray-600 hover:text-black"
-                              title="GitHub"
-                            >
-                              <i className="fab fa-github"></i>
-                            </a>
-                          )}
-                          {contributor.socialLinks?.twitter && (
-                            <a
-                              href={contributor.socialLinks.twitter}
-                              className="text-gray-600 hover:text-black"
-                              title="Twitter"
-                            >
-                              <i className="fab fa-twitter"></i>
-                            </a>
-                          )}
-                          {contributor.socialLinks?.dribbble && (
-                            <a
-                              href={contributor.socialLinks.dribbble}
-                              className="text-gray-600 hover:text-black"
-                              title="Dribbble"
-                            >
-                              <i className="fab fa-dribbble"></i>
-                            </a>
-                          )}
-                          {contributor.socialLinks?.behance && (
-                            <a
-                              href={contributor.socialLinks.behance}
-                              className="text-gray-600 hover:text-black"
-                              title="Behance"
-                            >
-                              <i className="fab fa-behance"></i>
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {/* Past Contributors — editorial typographic layout */}
-              {pastContributors.length > 0 && (
-                <div className={currentTeam.length > 0 ? 'mt-14' : ''}>
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="h-px flex-1 bg-black"></div>
-                    <span className="text-xs font-bold tracking-[0.3em] uppercase text-black">
-                      Project Alumni
-                    </span>
-                    <div className="h-px flex-1 bg-black"></div>
-                  </div>
-                  <div className="grid sm:grid-cols-2 gap-x-12">
-                    {pastContributors.map((contributor, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-3 py-3 border-b border-neutral-200"
-                      >
-                        <img
-                          src={contributor.avatar}
-                          alt={contributor.name}
-                          className="w-8 h-8 rounded-full object-cover grayscale shrink-0"
-                        />
-                        <div className="min-w-0">
-                          <span className="font-['Playfair_Display'] font-bold text-sm text-black">
-                            {contributor.name}
-                          </span>
-                          <span className="mx-2 text-neutral-300 select-none">·</span>
-                          <span className="text-xs text-neutral-400 italic">
-                            {contributor.role}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 ml-auto shrink-0">
-                          {contributor.socialLinks?.github && (
-                            <a
-                              href={contributor.socialLinks.github}
-                              className="text-neutral-400 hover:text-black text-xs"
-                              title="GitHub"
-                            >
-                              <i className="fab fa-github"></i>
-                            </a>
-                          )}
-                          {contributor.socialLinks?.linkedin && (
-                            <a
-                              href={contributor.socialLinks.linkedin}
-                              className="text-neutral-400 hover:text-black text-xs"
-                              title="LinkedIn"
-                            >
-                              <i className="fab fa-linkedin"></i>
-                            </a>
-                          )}
-                          {contributor.socialLinks?.portfolio && (
-                            <a
-                              href={contributor.socialLinks.portfolio}
-                              className="text-neutral-400 hover:text-black text-xs"
-                              title="Portfolio"
-                            >
-                              <i className="fas fa-globe"></i>
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  </h2>
+                  <div className="h-px flex-1 bg-black" />
                 </div>
-              )}
-            </div>
-          )}
-        </div>
-      </Section>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {currentTeam.map((c, i) => (
+                    <div
+                      key={i}
+                      className="bg-white border border-neutral-200 p-5 flex items-start gap-4 hover:border-black transition-colors group"
+                    >
+                      <img
+                        src={c.avatar}
+                        alt={c.name}
+                        className="w-10 h-10 rounded-full object-cover shrink-0 mt-0.5"
+                      />
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-sm text-black leading-tight">{c.name}</h4>
+                        <p className="text-xs text-neutral-500 mt-0.5 mb-2">{c.role}</p>
+                        <div className="flex gap-3">
+                          <SocialLink
+                            href={c.socialLinks?.portfolio}
+                            icon="fas fa-globe"
+                            title="Portfolio"
+                          />
+                          <SocialLink
+                            href={c.socialLinks?.linkedin}
+                            icon="fab fa-linkedin"
+                            title="LinkedIn"
+                          />
+                          <SocialLink
+                            href={c.socialLinks?.github}
+                            icon="fab fa-github"
+                            title="GitHub"
+                          />
+                          <SocialLink
+                            href={c.socialLinks?.twitter}
+                            icon="fab fa-twitter"
+                            title="Twitter"
+                          />
+                          <SocialLink
+                            href={c.socialLinks?.dribbble}
+                            icon="fab fa-dribbble"
+                            title="Dribbble"
+                          />
+                          <SocialLink
+                            href={c.socialLinks?.behance}
+                            icon="fab fa-behance"
+                            title="Behance"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
 
-      {/* Call to Action Section */}
-      <Section className="py-16 sm:py-20 bg-gray-50">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">
-            Interested in working together?
-          </h2>
-          <p className="text-lg sm:text-xl text-gray-600 mb-8 sm:mb-10">
-            Let's create something amazing for your business
-          </p>
-          <Button
+            {pastContributors.length > 0 && (
+              <div className={currentTeam.length > 0 ? 'mt-14' : ''}>
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="h-px flex-1 bg-black" />
+                  <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-black shrink-0">
+                    Project Alumni
+                  </span>
+                  <div className="h-px flex-1 bg-black" />
+                </div>
+                <div className="grid sm:grid-cols-2 gap-x-12">
+                  {pastContributors.map((c, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-3 py-3 border-b border-neutral-200"
+                    >
+                      <img
+                        src={c.avatar}
+                        alt={c.name}
+                        className="w-8 h-8 rounded-full object-cover grayscale shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <span className="font-['Playfair_Display'] font-bold text-sm text-black">
+                          {c.name}
+                        </span>
+                        <span className="mx-2 text-neutral-300 select-none">·</span>
+                        <span className="text-xs text-neutral-400 italic">{c.role}</span>
+                      </div>
+                      <div className="flex items-center gap-2 ml-auto shrink-0">
+                        <SocialLink
+                          href={c.socialLinks?.github}
+                          icon="fab fa-github"
+                          title="GitHub"
+                        />
+                        <SocialLink
+                          href={c.socialLinks?.linkedin}
+                          icon="fab fa-linkedin"
+                          title="LinkedIn"
+                        />
+                        <SocialLink
+                          href={c.socialLinks?.portfolio}
+                          icon="fas fa-globe"
+                          title="Portfolio"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ── CTA ──────────────────────────────────────────────────── */}
+      <section className="bg-black text-white">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8">
+          <div>
+            <p className="text-[10px] font-bold tracking-[0.35em] uppercase text-neutral-600 mb-4">
+              What&apos;s next?
+            </p>
+            <h2 className="font-['Playfair_Display'] text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight">
+              Interested in
+              <br />
+              working together?
+            </h2>
+          </div>
+          <a
             href="/#contact"
-            variant="primary"
-            className="inline-flex items-center bg-black hover:bg-gray-800 text-white px-8 py-4 text-lg font-semibold"
+            className="inline-flex items-center gap-3 px-8 py-4 bg-white text-black text-xs font-bold tracking-widest uppercase hover:bg-neutral-100 transition-colors shrink-0"
           >
             Get In Touch
-            <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -411,9 +463,9 @@ export default function ProjectDetailClient({ project, relatedProjects, breadcru
                 d="M17 8l4 4m0 0l-4 4m4-4H3"
               />
             </svg>
-          </Button>
+          </a>
         </div>
-      </Section>
+      </section>
 
       <RelatedProjects projects={relatedProjects} />
     </main>
