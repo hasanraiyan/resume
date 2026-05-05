@@ -187,7 +187,7 @@ export default async function ArticlePage({ params }) {
                 {article.tags.map((tag, index) => (
                   <span
                     key={index}
-                    className="inline-flex px-3 py-1 rounded-full bg-neutral-100 text-neutral-600 text-[12px] font-medium"
+                    className="inline-flex px-3 py-1 bg-black text-white text-[11px] font-semibold tracking-wide"
                   >
                     {tag}
                   </span>
@@ -198,8 +198,9 @@ export default async function ArticlePage({ params }) {
 
           {/* Unlisted notice */}
           {article.visibility === 'unlisted' && (
-            <div className="mb-8 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700 text-center">
-              🔗 This article is not listed publicly and can only be accessed via direct link.
+            <div className="mb-8 p-4 border border-neutral-300 text-sm text-neutral-600">
+              <span className="font-bold">Unlisted</span> — This article is accessible via direct
+              link only and does not appear in the public feed.
             </div>
           )}
 
@@ -233,15 +234,15 @@ export default async function ArticlePage({ params }) {
           </div>
 
           {/* ── Newsletter CTA ── */}
-          <div className="mt-14 p-8 bg-neutral-50 rounded-2xl text-center">
-            <h3
-              className="text-2xl font-bold text-neutral-900 mb-2"
-              style={{ fontFamily: "'Georgia', 'Noto Serif', serif" }}
-            >
+          <div className="mt-14 border border-neutral-200 p-8 sm:p-10">
+            <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-neutral-400 mb-4">
+              Stay updated
+            </p>
+            <h3 className="font-['Playfair_Display'] text-2xl sm:text-3xl font-bold text-black mb-2">
               Enjoyed this article?
             </h3>
-            <p className="text-neutral-500 text-sm mb-6 max-w-md mx-auto">
-              Subscribe to get notified when new articles are published — no spam, ever.
+            <p className="text-neutral-500 text-sm mb-6">
+              Get notified when new articles are published — no spam, ever.
             </p>
             <NewsletterForm
               source="blog"
@@ -253,8 +254,13 @@ export default async function ArticlePage({ params }) {
 
           {/* ── More from Raiyan ── */}
           {relatedArticles.length > 0 && (
-            <div className="mt-16 pt-10 border-t border-neutral-100">
-              <h3 className="text-lg font-bold text-neutral-900 mb-6">More from Raiyan Hasan</h3>
+            <div className="mt-16 pt-10 border-t border-neutral-200">
+              <div className="flex items-center gap-3 mb-8">
+                <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-neutral-400 shrink-0">
+                  More from Raiyan Hasan
+                </span>
+                <div className="h-px flex-1 bg-neutral-200" />
+              </div>
               <div className="space-y-6">
                 {relatedArticles.map((related) => (
                   <Link key={related.slug} href={`/blog/${related.slug}`} className="group block">
