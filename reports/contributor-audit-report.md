@@ -40,7 +40,7 @@ This report documents the architecture and data flow for project contributors wi
 ### Server Actions
 - **`src/app/actions/projectActions.js`**:
   - `getProjectBySlug(slug, isAuthenticated)`: Fetches project and populates contributors.
-  - `createProject(formData)` / `updateProject(id, formData)`: Processes `contributors` from JSON string in `FormData`.
+  - `createProject(formData)` / `updateProject(id, formData)`: Parses `contributors` from a JSON string in `FormData` and includes that array in the full `projectData` payload. On create, the association is persisted when a new project document is instantiated and saved via `new Project(projectData)`, which writes the entire `contributors` array as part of the project document. On update, contributor associations are not modified through a dedicated route or `$push`/`$pull` operation; instead, `Project.findByIdAndUpdate(id, projectData, ...)` updates the project using the provided payload, replacing the stored `contributors` array with the one supplied in `projectData`.
 - **`src/app/actions/contributorActions.js`**:
   - `getAllContributors()`: Fetches all contributor profiles.
   - `getContributorById(id)`: Fetches a single profile.
