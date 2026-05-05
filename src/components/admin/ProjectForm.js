@@ -77,10 +77,10 @@ export default function ProjectForm({ initialData, onSave, onDelete, isEditing =
       if (initialData.contributors) {
         setContributors(
           initialData.contributors.map((c, index) => ({
-            // Ensure contributor is just the ID, and store full data for display
             contributor: c.contributor?._id || c.contributor,
             role: c.role,
             order: c.order || index,
+            isActive: c.isActive !== false,
             _contributorData: c.contributor,
           }))
         );
@@ -197,6 +197,7 @@ export default function ProjectForm({ initialData, onSave, onDelete, isEditing =
           contributor: c.contributor,
           role: c.role,
           order: c.order || 0,
+          isActive: c.isActive !== false,
         }))
       )
     );

@@ -5,6 +5,7 @@ This report documents the architecture and data flow for project contributors wi
 ## 1. Database & Models (MongoDB/Mongoose)
 
 ### Project Model
+
 - **File:** `src/models/Project.js`
 - **Field:** `contributors`
 - **Schema Detail:**
@@ -15,12 +16,13 @@ This report documents the architecture and data flow for project contributors wi
       role: { type: String, required: true },
       order: { type: Number, default: 0 },
     },
-  ]
+  ];
   ```
 - **Hooks/Middleware:**
   - `ProjectSchema.pre('save', ...)`: Sets `publishedAt` when status changes to 'published'. No specific hooks for contributor manipulation.
 
 ### Contributor Model
+
 - **File:** `src/models/Contributor.js`
 - **Fields:** `name`, `avatar`, `bio`, `socialLinks` (portfolio, linkedin, github, twitter, dribbble, behance, instagram, youtube).
 - **Indexing:** Text index on `name` and `bio` for search functionality.
@@ -30,6 +32,7 @@ This report documents the architecture and data flow for project contributors wi
 ## 2. Backend Logic (API & Server Actions)
 
 ### API Endpoints
+
 - **GET** `/api/projects/[slug]`: Retrieves project details and populates `contributors.contributor`. Handles both slugs and ObjectIDs.
 - **PUT/DELETE** `/api/projects/[slug]`: **Warning:** These routes currently perform project mutations/deletions **without** session or role-based authentication checks in the handler. Additionally, the root `middleware.js` matcher does not cover these paths, making them publicly accessible for mutation.
 - **GET** `/api/admin/contributors`: Lists all contributors with search and pagination support. Protected by admin session check.
@@ -38,6 +41,7 @@ This report documents the architecture and data flow for project contributors wi
   - **Deletion Logic (API):** The `DELETE` handler in `src/app/api/admin/contributors/[id]/route.js` includes a check: `Project.countDocuments({ 'contributors.contributor': params.id })`. It prevents deletion if the contributor is assigned to any projects.
 
 ### Server Actions
+
 - **`src/app/actions/projectActions.js`**:
   - `getProjectBySlug(slug, isAuthenticated)`: Fetches project and populates contributors.
   - `createProject(formData)` / `updateProject(id, formData)`: Parses `contributors` from a JSON string in `FormData` and includes that array in the full `projectData` payload. On create, the association is persisted when a new project document is instantiated and saved via `new Project(projectData)`, which writes the entire `contributors` array as part of the project document. On update, contributor associations are not modified through a dedicated route or `$push`/`$pull` operation; instead, `Project.findByIdAndUpdate(id, projectData, ...)` updates the project using the provided payload, replacing the stored `contributors` array with the one supplied in `projectData`.
@@ -52,6 +56,7 @@ This report documents the architecture and data flow for project contributors wi
 ## 3. Admin Panel (Frontend)
 
 ### Components & Management
+
 - **Project Management:**
   - **Page:** `src/app/(admin)/admin/projects/[id]/edit/page.js` and `src/app/(admin)/admin/projects/new/page.js`.
   - **Form:** `src/components/admin/ProjectForm.js` manages the overall project state, handles submission, and owns the contributor lookup state for the project editor.
@@ -81,6 +86,7 @@ This report documents the architecture and data flow for project contributors wi
 ---
 
 ## 5. Summary of Data Flow & Security Gaps
+
 1.  **Creation:** Contributor profiles are created independently in the Admin Contributor section.
 2.  **Association:** While editing a project, contributors are selected and assigned roles. This stores the `Contributor` ObjectID and role/order metadata in the `Project` document's `contributors` array.
 3.  **Retrieval:** The public project page fetches the project data and uses Mongoose's `.populate()` to join the contributor profile details.

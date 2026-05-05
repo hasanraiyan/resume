@@ -11,24 +11,19 @@ import LikeButton from '@/components/LikeButton';
 import SocialShare from '@/components/SocialShare';
 
 export default function ProjectDetailClient({ project, relatedProjects, breadcrumbs }) {
-  // Transform contributors from the project data
-  // Now that contributors are populated, use the actual contributor data
-  const contributors =
+  const allContributors =
     project.contributors?.map((item) => ({
       _id: item.contributor._id,
       name: item.contributor.name,
       avatar: item.contributor.avatar || '/images/avatar-placeholder.png',
       bio: item.contributor.bio,
-      role: item.role, // Use the project-specific role
+      role: item.role,
+      isActive: item.isActive !== false,
       socialLinks: item.contributor.socialLinks || {},
     })) || [];
 
-  // Debug logging for contributors
-  console.log('ProjectDetailClient - Project data:', project);
-  console.log('ProjectDetailClient - Raw contributors from project:', project.contributors);
-  console.log('ProjectDetailClient - Transformed contributors:', contributors);
-  console.log('ProjectDetailClient - Contributors length:', contributors.length);
-  console.log('ProjectDetailClient - Contributors condition check:', contributors.length > 0);
+  const currentTeam = allContributors.filter((c) => c.isActive);
+  const pastContributors = allContributors.filter((c) => !c.isActive);
 
   return (
     <main className="">
@@ -219,92 +214,157 @@ export default function ProjectDetailClient({ project, relatedProjects, breadcru
             )}
 
           {/* Contributors Section */}
-          {(() => {
-            console.log('Rendering contributors section check:', contributors.length > 0);
-            return contributors.length > 0;
-          })() && (
+          {(currentTeam.length > 0 || pastContributors.length > 0) && (
             <div className="mb-12 sm:mb-16">
-              <h3 className="text-2xl sm:text-3xl font-bold mb-8 text-center">Contributors</h3>
-              {/* Debug: Show contributors data */}
-              <div style={{ display: 'none' }}>
-                <pre>{JSON.stringify(contributors, null, 2)}</pre>
-              </div>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {contributors.map((contributor, index) => (
-                  <div
-                    key={index}
-                    className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow duration-300"
-                  >
-                    <div className="flex items-center mb-4">
-                      <img
-                        src={contributor.avatar}
-                        alt={contributor.name}
-                        className="w-12 h-12 rounded-full mr-4 object-cover"
-                      />
-                      <div>
-                        <h4 className="font-semibold text-gray-900">{contributor.name}</h4>
-                        <p className="text-sm text-gray-500">{contributor.role}</p>
+              {/* Current Team */}
+              {currentTeam.length > 0 && (
+                <>
+                  <h3 className="text-2xl sm:text-3xl font-bold mb-8 text-center">
+                    {pastContributors.length > 0 ? 'Current Team' : 'Contributors'}
+                  </h3>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {currentTeam.map((contributor, index) => (
+                      <div
+                        key={index}
+                        className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow duration-300"
+                      >
+                        <div className="flex items-center mb-4">
+                          <img
+                            src={contributor.avatar}
+                            alt={contributor.name}
+                            className="w-12 h-12 rounded-full mr-4 object-cover"
+                          />
+                          <div>
+                            <h4 className="font-semibold text-gray-900">{contributor.name}</h4>
+                            <p className="text-sm text-gray-500">{contributor.role}</p>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {contributor.socialLinks?.portfolio && (
+                            <a
+                              href={contributor.socialLinks.portfolio}
+                              className="text-gray-600 hover:text-black"
+                              title="Portfolio"
+                            >
+                              <i className="fas fa-globe"></i>
+                            </a>
+                          )}
+                          {contributor.socialLinks?.linkedin && (
+                            <a
+                              href={contributor.socialLinks.linkedin}
+                              className="text-gray-600 hover:text-black"
+                              title="LinkedIn"
+                            >
+                              <i className="fab fa-linkedin"></i>
+                            </a>
+                          )}
+                          {contributor.socialLinks?.github && (
+                            <a
+                              href={contributor.socialLinks.github}
+                              className="text-gray-600 hover:text-black"
+                              title="GitHub"
+                            >
+                              <i className="fab fa-github"></i>
+                            </a>
+                          )}
+                          {contributor.socialLinks?.twitter && (
+                            <a
+                              href={contributor.socialLinks.twitter}
+                              className="text-gray-600 hover:text-black"
+                              title="Twitter"
+                            >
+                              <i className="fab fa-twitter"></i>
+                            </a>
+                          )}
+                          {contributor.socialLinks?.dribbble && (
+                            <a
+                              href={contributor.socialLinks.dribbble}
+                              className="text-gray-600 hover:text-black"
+                              title="Dribbble"
+                            >
+                              <i className="fab fa-dribbble"></i>
+                            </a>
+                          )}
+                          {contributor.socialLinks?.behance && (
+                            <a
+                              href={contributor.socialLinks.behance}
+                              className="text-gray-600 hover:text-black"
+                              title="Behance"
+                            >
+                              <i className="fab fa-behance"></i>
+                            </a>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {contributor.socialLinks?.portfolio && (
-                        <a
-                          href={contributor.socialLinks.portfolio}
-                          className="text-gray-600 hover:text-black"
-                          title="Portfolio"
-                        >
-                          <i className="fas fa-globe"></i>
-                        </a>
-                      )}
-                      {contributor.socialLinks?.linkedin && (
-                        <a
-                          href={contributor.socialLinks.linkedin}
-                          className="text-gray-600 hover:text-black"
-                          title="LinkedIn"
-                        >
-                          <i className="fab fa-linkedin"></i>
-                        </a>
-                      )}
-                      {contributor.socialLinks?.github && (
-                        <a
-                          href={contributor.socialLinks.github}
-                          className="text-gray-600 hover:text-black"
-                          title="GitHub"
-                        >
-                          <i className="fab fa-github"></i>
-                        </a>
-                      )}
-                      {contributor.socialLinks?.twitter && (
-                        <a
-                          href={contributor.socialLinks.twitter}
-                          className="text-gray-600 hover:text-black"
-                          title="Twitter"
-                        >
-                          <i className="fab fa-twitter"></i>
-                        </a>
-                      )}
-                      {contributor.socialLinks?.dribbble && (
-                        <a
-                          href={contributor.socialLinks.dribbble}
-                          className="text-gray-600 hover:text-black"
-                          title="Dribbble"
-                        >
-                          <i className="fab fa-dribbble"></i>
-                        </a>
-                      )}
-                      {contributor.socialLinks?.behance && (
-                        <a
-                          href={contributor.socialLinks.behance}
-                          className="text-gray-600 hover:text-black"
-                          title="Behance"
-                        >
-                          <i className="fab fa-behance"></i>
-                        </a>
-                      )}
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </>
+              )}
+
+              {/* Past Contributors — editorial typographic layout */}
+              {pastContributors.length > 0 && (
+                <div className={currentTeam.length > 0 ? 'mt-14' : ''}>
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="h-px flex-1 bg-black"></div>
+                    <span className="text-xs font-bold tracking-[0.3em] uppercase text-black">
+                      Project Alumni
+                    </span>
+                    <div className="h-px flex-1 bg-black"></div>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-x-12">
+                    {pastContributors.map((contributor, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-3 py-3 border-b border-neutral-200"
+                      >
+                        <img
+                          src={contributor.avatar}
+                          alt={contributor.name}
+                          className="w-8 h-8 rounded-full object-cover grayscale shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <span className="font-['Playfair_Display'] font-bold text-sm text-black">
+                            {contributor.name}
+                          </span>
+                          <span className="mx-2 text-neutral-300 select-none">·</span>
+                          <span className="text-xs text-neutral-400 italic">
+                            {contributor.role}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 ml-auto shrink-0">
+                          {contributor.socialLinks?.github && (
+                            <a
+                              href={contributor.socialLinks.github}
+                              className="text-neutral-400 hover:text-black text-xs"
+                              title="GitHub"
+                            >
+                              <i className="fab fa-github"></i>
+                            </a>
+                          )}
+                          {contributor.socialLinks?.linkedin && (
+                            <a
+                              href={contributor.socialLinks.linkedin}
+                              className="text-neutral-400 hover:text-black text-xs"
+                              title="LinkedIn"
+                            >
+                              <i className="fab fa-linkedin"></i>
+                            </a>
+                          )}
+                          {contributor.socialLinks?.portfolio && (
+                            <a
+                              href={contributor.socialLinks.portfolio}
+                              className="text-neutral-400 hover:text-black text-xs"
+                              title="Portfolio"
+                            >
+                              <i className="fas fa-globe"></i>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

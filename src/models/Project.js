@@ -201,6 +201,7 @@ const ProjectSchema = new mongoose.Schema(
         contributor: { type: mongoose.Schema.Types.ObjectId, ref: 'Contributor', required: true },
         role: { type: String, required: true },
         order: { type: Number, default: 0 },
+        isActive: { type: Boolean, default: true },
       },
     ],
     likes: { type: Number, default: 0 },
