@@ -58,7 +58,7 @@ This report documents the architecture and data flow for project contributors wi
   - **Contributor Manager:** `src/components/admin/ContributorManager.js` is used within `ProjectForm` to:
     - Assign contributors from the existing list.
     - Define roles for each contributor on the specific project.
-    - Manage display order.
+    - Store/preserve contributor order metadata in the project payload, without a dedicated UI to edit or reorder it.
     - Remove contributor associations from the project.
 
 - **Contributor Profile Management:**
