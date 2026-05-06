@@ -76,7 +76,7 @@ export default function ProjectGallery({ images }) {
   return (
     <div>
       {/* Header bar */}
-      <div className="flex items-center justify-between border-t border-gray-200 py-2">
+      <div className="flex items-center justify-between py-2">
         <div className="flex items-center gap-3">
           <span className="font-mono text-[10px] tracking-[0.25em] text-gray-300 uppercase select-none">
             {isVideo ? 'Video' : 'Image'}
@@ -97,7 +97,7 @@ export default function ProjectGallery({ images }) {
           <div className="flex items-center gap-0">
             <button
               onClick={prevImage}
-              className="group px-2.5 py-1 transition-colors hover:bg-gray-50 border border-transparent hover:border-gray-200"
+              className="group px-2.5 py-1 transition-colors hover:bg-gray-50 border border-transparent hover:border-gray-200 cursor-pointer"
               aria-label="Previous image"
             >
               <svg
@@ -112,7 +112,7 @@ export default function ProjectGallery({ images }) {
             </button>
             <button
               onClick={nextImage}
-              className="group px-2.5 py-1 transition-colors hover:bg-gray-50 border border-transparent hover:border-gray-200"
+              className="group px-2.5 py-1 transition-colors hover:bg-gray-50 border border-transparent hover:border-gray-200 cursor-pointer"
               aria-label="Next image"
             >
               <svg
@@ -130,7 +130,10 @@ export default function ProjectGallery({ images }) {
       </div>
 
       {/* Main viewer */}
-      <div className="relative bg-[#0a0a0a] w-full overflow-hidden" style={{ height: '420px' }}>
+      <div
+        className="relative bg-[#0a0a0a] w-full overflow-hidden"
+        style={{ height: images.length > 1 ? '420px' : '300px' }}
+      >
         {isVideo && videoId ? (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative w-full h-full">
@@ -173,7 +176,10 @@ export default function ProjectGallery({ images }) {
       {/* Filmstrip */}
       {images.length > 1 && (
         <div className="mt-3">
-          <div className="flex items-stretch border border-gray-200 overflow-hidden">
+          <div
+            className="flex items-stretch border border-gray-200 overflow-hidden"
+            style={{ height: '90px' }}
+          >
             {/* Prev page */}
             <button
               onClick={prevThumbnails}
@@ -193,7 +199,7 @@ export default function ProjectGallery({ images }) {
             </button>
 
             {/* Thumbnail cells */}
-            <div className="flex flex-1 overflow-hidden" ref={thumbnailRef}>
+            <div className="flex flex-1 overflow-hidden items-stretch" ref={thumbnailRef}>
               {visibleThumbnails.map((item, index) => {
                 const actualIndex = thumbnailStart + index;
                 const itemIsVideo =
@@ -210,10 +216,10 @@ export default function ProjectGallery({ images }) {
                   <button
                     key={item.url + actualIndex}
                     onClick={() => setActiveImage(actualIndex)}
-                    className={`relative flex-1 overflow-hidden transition-opacity duration-150 ${
+                    className={`relative flex-shrink-0 h-full overflow-hidden transition-opacity duration-150 ${
                       index < visibleThumbnails.length - 1 ? 'border-r border-gray-200' : ''
                     } ${isActive ? 'opacity-100' : 'opacity-35 hover:opacity-65'}`}
-                    style={{ aspectRatio: '4/3', minWidth: 0 }}
+                    style={{ aspectRatio: '4/3' }}
                     aria-label={`View image ${actualIndex + 1}`}
                   >
                     <img
