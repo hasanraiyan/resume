@@ -1,96 +1,109 @@
-# Portfolio & Multi-App Platform
+# Portfolio & Multi-App AI Platform
 
-A modern, full-stack portfolio website built with **Next.js 15**, featuring an advanced multi-agent AI system, built-in productivity apps (Pocketly and Taskly), comprehensive analytics, and a powerful Admin CMS.
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19-blue?style=flat-square&logo=react)](https://reactjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Latest-47A248?style=flat-square&logo=mongodb)](https://www.mongodb.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+
+A modern, high-performance full-stack portfolio and productivity ecosystem built with **Next.js 15** and **React 19**. This platform isn't just a resume; it's a comprehensive suite featuring an advanced multi-agent AI system, built-in productivity applications (Pocketly, Taskly, Snaplinks), privacy-focused analytics, and a powerful Admin CMS.
+
+---
 
 ## 🚀 Key Features
 
-### 🏢 Core Portfolio
+### 🏢 Dynamic Portfolio & CMS
 
-- **Dynamic Content:** Fully dynamic hero, about, services, skills, testimonials, and contact sections.
-- **Projects & Articles Showcase:** A CMS-backed display of projects (with image galleries and tags) and markdown-supported blog articles.
-- **Advanced Global Search:** Real-time fuzzy search across projects and articles powered by `Fuse.js`.
+- **Content Management:** Fully dynamic sections for Hero, About, Services, Skills, and Testimonials managed via a secure Admin panel.
+- **Projects & Articles:** Showcases projects with rich image galleries and markdown-supported blog articles.
+- **Global Search:** Real-time fuzzy search across the entire platform powered by `Fuse.js`.
 
-### 🤖 Multi-Agent AI System
+### 📊 Custom Analytics & Privacy
 
-The platform integrates LangChain and various LLM providers (OpenAI, Google Gemini) to power an ecosystem of specialized agents:
+- **Privacy-First:** Local session tracking and event logging without third-party cookies.
+- **Bot Filtering:** Robust User-Agent parsing to separate genuine traffic from crawlers.
+- **Real-time Insights:** Interactive engagement charts using `Chart.js` in the Admin dashboard.
 
-- **Chat Assistants:** Configurable chatbots for fast, pro, or deep-thinking conversational interactions.
+### 🔒 Security & Optimization
+
+- **Role-Based Access:** Secure Admin panel protected by NextAuth.js.
+- **Encryption:** AES-256 encryption for sensitive API keys and credentials.
+- **Rate Limiting:** Built-in protection against API abuse and DDoS attempts.
+
+---
+
+## 🤖 Multi-Agent AI System
+
+Leveraging LangChain and multi-provider support (OpenAI, Google Gemini), the platform features specialized agents:
+
+- **Conversational Assistants:**
+  - **Fast:** Optimized for speed (GPT-4o-mini).
+  - **Pro:** Optimized for accuracy (GPT-4o).
+  - **Thinking:** Deep reasoning for complex logic (o1-preview).
 - **Media & Visual Agents:**
-  - _Image Analyzer & Embedder:_ Analyzes image contents and creates vector embeddings for visual semantic search (via Qdrant).
-  - _Image Generator & Editor:_ Generates images from text or edits existing ones using AI.
+  - **Image Analyzer:** Indexes images with AI descriptions for semantic search.
+  - **Image Generator & Editor:** Create and modify images directly from text prompts.
+  - **Visual Search:** Vector-based semantic search via Qdrant.
 - **Content & Coding Agents:**
-  - _Blog Writer Agent:_ Helps draft, outline, and synthesize markdown articles.
-  - _Code Reporter Agent:_ Analyzes codebase snippets.
-- **Integration Agents:** Dedicated AI handlers for external platforms like Telegram and WhatsApp.
-- **App Builder Agent:** Dynamically creates or updates UI components using natural language.
+  - **Blog Writer:** Assists in drafting and outlining markdown articles.
+  - **Code Reporter:** Analyzes codebase snippets for reviews and issue templates.
 
-### 💼 Integrated Apps
+---
 
-- **Pocketly Tracker:** A comprehensive finance tracking application integrated right into the platform, featuring accounts, transactions, categorization, and AI-driven finance chat insights.
-- **Taskly:** A robust task management and project board application, helping you stay on top of issues and kanban boards seamlessly.
+## 💼 Built-in Applications
 
-### 🛡️ Admin CMS & Security
+### 💰 Pocketly Tracker
 
-- **Role-based Dashboard:** A highly secured Admin panel (protected by NextAuth.js middleware) to manage content, configurations, and analytics.
-- **Content Management:** Create and edit Projects, Blog Posts, Heroes, Contributors, and more.
-- **SnapLinks:** Built-in URL shortener to track custom redirect links (`/r/slug`).
-- **Media Library:** High-performance media asset gallery with Prisma.
-- **Vaultly:** Multi-provider storage drive and file manager.
-- **Privacy-focused Analytics:** Local session tracking, bot filtering, and real-time Chart.js visual insights without relying on third-party cookies.
-- **Robust Security:** AES encryption for secret keys and API credentials, combined with rigorous rate limiting.
+A comprehensive finance management tool integrated directly into your dashboard.
+
+- Track accounts, transactions, and budgets.
+- AI-driven finance insights and chat.
+- Visual reports and categorization.
+
+![Pocketly](./public/images/apps/pocketly.png)
+
+### 📋 Taskly
+
+A robust task management system for personal and project productivity.
+
+- Kanban boards and issue tracking.
+- Project-based organization.
+- Seamless integration with the platform's ecosystem.
+
+![Taskly](./public/images/apps/taskly.png)
+
+### 🔗 SnapLinks
+
+A powerful built-in URL shortener and tracking tool.
+
+- Create custom redirect links (`/r/slug`).
+- Track individual click analytics and referrers.
+- Manage all links through the Admin CMS.
+
+![SnapLinks](./public/images/apps/Snaplinks.png)
 
 ---
 
 ## 🛠️ Tech Stack
 
 - **Framework:** Next.js 15 (App Router), React 19
-- **Styling & Animation:** Tailwind CSS 4, GSAP, Framer Motion
-- **Database:** MongoDB with Mongoose, Qdrant (Vector DB for AI)
-- **AI Integration:** LangChain, @google/genai, @langchain/openai, Model Context Protocol (MCP)
+- **Styling:** Tailwind CSS 4, GSAP, Framer Motion
+- **Database:** MongoDB (Mongoose), Qdrant (Vector DB)
+- **AI Ecosystem:** LangChain, OpenAI, Google Gemini, Model Context Protocol (MCP)
 - **Authentication:** NextAuth.js
-- **Media:** UploadThing, Cloudinary
-- **State/Search:** React Context, Fuse.js
+- **Media Storage:** UploadThing, Cloudinary
+- **State Management:** React Context, Fuse.js
 
 ---
 
-## 📁 Project Structure
-
-```
-resume/
-├── scripts/                  # Setup, seed, and migration scripts
-├── src/
-│   ├── app/                  # Next.js App Router (Pages & API Handlers)
-│   │   ├── (admin)/          # Protected Admin CMS routes
-│   │   ├── api/              # API endpoints (Auth, AI, Search, CMS CRUD)
-│   │   ├── apps/             # Integrated Apps (e.g. AppEditor)
-│   │   ├── pocketly/         # Pocketly Tracker frontend
-│   │   ├── r/                # SnapLinks short URL handler
-│   │   ├── taskly/           # Taskly task management frontend
-│   │   └── page.js           # Main Portfolio Homepage
-│   ├── components/           # Reusable React UI Components
-│   │   ├── admin/            # Admin Panel components
-│   │   ├── pocketly-tracker/ # Pocketly components (Charts, Modals, Chat)
-│   │   ├── search/           # Global Search Overlay
-│   │   ├── taskly/           # Taskly Kanban boards and settings
-│   │   └── ui/               # Base UI elements (Buttons, Dialogs, etc.)
-│   ├── lib/                  # Utilities, integrations, and Agents
-│   │   └── agents/           # Core Multi-Agent Architecture definitions
-│   ├── models/               # Mongoose DB Schemas
-│   └── context/              # Global React Contexts
-├── package.json              # Dependencies and scripts
-└── middleware.js             # Next.js middleware (Auth protection)
-```
-
----
-
-## ⚙️ Installation & Setup
+## ⚙️ Getting Started
 
 ### Prerequisites
 
-- **Node.js** (v18 or higher)
-- **pnpm**, **npm**, **yarn**, or **bun**
-- **MongoDB** Instance (Local or Atlas)
-- **API Keys** (OpenAI, Google Gemini, Cloudinary, etc., depending on features used)
+- **Node.js:** v18.0.0 or higher
+- **Package Manager:** `pnpm` (recommended), `npm`, or `yarn`
+- **Database:** MongoDB (Local or Atlas)
+- **API Keys:** OpenAI, Google Gemini, Cloudinary (optional, for full feature support)
 
 ### 1. Clone the repository
 
@@ -101,68 +114,75 @@ cd resume
 
 ### 2. Install dependencies
 
-Using `pnpm` is recommended for this workspace:
-
 ```bash
 pnpm install
 ```
 
-### 3. Setup Environment Variables
+### 3. Environment Configuration
 
-The repository includes a helpful setup script to configure your database and securely generate encryption/authentication secrets automatically.
-
-**Run the interactive setup:**
+The platform includes an interactive setup wizard to generate secrets and configure your `.env` file automatically.
 
 ```bash
 pnpm run project-setup
 ```
 
-This script will guide you through creating your `.env` file.
+_Alternatively, copy `.env.example` to `.env` and fill in the required fields manually._
 
-_Alternatively, you can manually copy `.env.example` to `.env` and fill in your keys._
+### 4. Seed Database (Optional)
 
-### 4. Database Setup (Optional Seeding)
-
-The platform will auto-initialize DB schemas when connecting. To add sample data:
+To populate the CMS with sample data:
 
 ```bash
 node scripts/seed-cms.js
 ```
 
-### 5. Start Development Server
+### 5. Start Development
 
 ```bash
 pnpm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the application. Access the admin dashboard at `/admin`.
+Visit `http://localhost:3000` to see the site. The Admin panel is accessible at `/admin`.
 
 ---
 
-## 👨‍💻 Development Scripts
+## 📁 Project Structure
 
-- `pnpm run dev`: Starts the Next.js development server with Turbopack.
-- `pnpm run build`: Builds the application for production.
-- `pnpm start`: Starts the production server.
-- `pnpm run lint`: Runs ESLint.
-- `pnpm run format`: Formats code using Prettier.
-- `pnpm run check-format`: Checks code formatting.
-- `pnpm run project-setup`: Interactive environment setup wizard.
+```text
+.
+├── scripts/              # Setup, seed, and migration scripts
+├── src/
+│   ├── app/              # Next.js App Router (Pages & API)
+│   │   ├── (admin)/      # Protected Admin CMS routes
+│   │   ├── api/          # API endpoints (Auth, AI, CMS)
+│   │   ├── pocketly/     # Pocketly Tracker application
+│   │   └── taskly/       # Taskly task management
+│   ├── components/       # UI Components (Admin, Apps, UI)
+│   ├── lib/              # Utilities, AI Agents, and Integrations
+│   ├── models/           # Mongoose Database Schemas
+│   └── context/          # React Global Context providers
+├── public/               # Static assets and images
+└── middleware.js         # Security & Auth middleware
+```
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! If you'd like to improve the code, add new features, or fix bugs:
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature/your-feature`).
-3. Commit your changes (`git commit -m 'Add your feature'`).
-4. Push to the branch (`git push origin feature/your-feature`).
-5. Open a Pull Request.
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+
+Created with ❤️ by [Hasan Raiyan](https://hasanraiyan.me)
