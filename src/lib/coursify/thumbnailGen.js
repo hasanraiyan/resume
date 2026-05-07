@@ -2,7 +2,19 @@ import { v2 as cloudinary } from 'cloudinary';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
 import DrivelyFile from '@/models/DrivelyFile';
+import DrivelyFolder from '@/models/DrivelyFolder';
 import DrivelyActivity from '@/models/DrivelyActivity';
+
+async function getOrCreateThumbnailFolder() {
+  const existing = await DrivelyFolder.findOne({ name: 'Coursify Thumbnails', deletedAt: null });
+  if (existing) return existing._id;
+  const folder = await DrivelyFolder.create({
+    name: 'Coursify Thumbnails',
+    parentId: null,
+    path: '',
+  });
+  return folder._id;
+}
 
 // Cloudinary is already configured globally by the Drively service on first import.
 // Re-configuring here would clobber the shared singleton with stale env values.
@@ -24,19 +36,35 @@ function buildPrompt(title, description) {
   );
 }
 
+const tag = (courseId) => `[Coursify:thumbnail:${courseId}]`;
+
 export async function generateCourseThumbnail(courseId, title, description) {
+  const t = tag(courseId);
+  const t0 = Date.now();
+  const elapsed = () => `+${Date.now() - t0}ms`;
+
   try {
+    console.log(`${t} START course="${title}"`);
+
     await dbConnect();
+    console.log(`${t} [1/5] DB connected (${elapsed()})`);
 
-    // Dynamic import keeps the agent registry out of the MCP server's cold-start path
     const { default: agentRegistry, AGENT_IDS } = await import('@/lib/agents/index.js');
+    const prompt = buildPrompt(title, description);
+    console.log(
+      `${t} [2/5] Sending to image agent — prompt length=${prompt.length} (${elapsed()})`
+    );
 
-    const { buffer } = await agentRegistry.execute(AGENT_IDS.COURSIFY_THUMBNAIL_GENERATOR, {
-      prompt: buildPrompt(title, description),
-      size: '1792x1024',
-    });
+    const { buffer, url: generatedUrl } = await agentRegistry.execute(
+      AGENT_IDS.COURSIFY_THUMBNAIL_GENERATOR,
+      { prompt, size: '1792x1024' }
+    );
+    console.log(
+      `${t} [3/5] Image generated — buffer=${(buffer.length / 1024).toFixed(1)}KB generatedUrl=${generatedUrl ?? 'none'} (${elapsed()})`
+    );
 
     const publicId = `coursify/thumbnail_${courseId}`;
+    console.log(`${t} [4/5] Uploading to Cloudinary — publicId=drively/${publicId} (${elapsed()})`);
     const uploadResult = await new Promise((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(
@@ -52,8 +80,14 @@ export async function generateCourseThumbnail(courseId, title, description) {
         )
         .end(buffer);
     });
+    console.log(
+      `${t} [4/5] Cloudinary upload done — url=${uploadResult.secure_url} bytes=${uploadResult.bytes} (${elapsed()})`
+    );
 
     const filename = `${title} - Thumbnail.webp`;
+    console.log(`${t} [5/5] Saving DrivelyFile + updating course record (${elapsed()})`);
+
+    const folderId = await getOrCreateThumbnailFolder();
 
     await DrivelyFile.findOneAndUpdate(
       { cloudinaryPublicId: uploadResult.public_id },
@@ -64,6 +98,7 @@ export async function generateCourseThumbnail(courseId, title, description) {
         cloudinaryPublicId: uploadResult.public_id,
         secureUrl: uploadResult.secure_url,
         resourceType: 'image',
+        folderId,
       },
       { upsert: true, new: true }
     );
@@ -74,8 +109,8 @@ export async function generateCourseThumbnail(courseId, title, description) {
       $set: { thumbnail: uploadResult.secure_url },
     });
 
-    console.log(`[Coursify] Thumbnail ready for course ${courseId}: ${uploadResult.secure_url}`);
+    console.log(`${t} DONE total=${elapsed()} url=${uploadResult.secure_url}`);
   } catch (err) {
-    console.error(`[Coursify] Thumbnail generation failed for course ${courseId}:`, err.message);
+    console.error(`${t} FAILED at ${elapsed()} — ${err.message}`, err.stack ?? '');
   }
 }

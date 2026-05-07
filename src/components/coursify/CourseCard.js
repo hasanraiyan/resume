@@ -70,9 +70,17 @@ export default function CourseCard({ course, index = 0 }) {
       >
         {/* Thumbnail / cover */}
         <div
-          className={`h-28 bg-gradient-to-br ${gradient} flex items-center justify-center relative`}
+          className={`h-44 bg-gradient-to-br ${gradient} flex items-center justify-center relative overflow-hidden`}
         >
-          <BookOpen className="w-10 h-10 text-white/70" />
+          {course.thumbnail ? (
+            <img
+              src={course.thumbnail}
+              alt={course.title}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <BookOpen className="w-10 h-10 text-white/70" />
+          )}
           <div className="absolute top-3 right-3">
             <span
               className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${

@@ -28,11 +28,12 @@ class CoursifyThumbnailAgent extends BaseAgent {
 
   async _onExecute(input) {
     const { prompt, size = '1792x1024' } = input;
-    const provider = this.config.provider;
     const model = input.model || this.config.model || this.config.defaultModel || 'gptimage-large';
+    const { client, baseURL } = this._buildClient();
+    const t0 = Date.now();
+    const elapsed = () => `+${Date.now() - t0}ms`;
 
-    const { client } = this._buildClient();
-    this.logger.info(`Generating thumbnail with model: ${model}`);
+    this.logger.info(`Calling images.generate — model=${model} size=${size} baseURL=${baseURL}`);
 
     const response = await client.images.generate({
       model,
@@ -41,24 +42,34 @@ class CoursifyThumbnailAgent extends BaseAgent {
       size,
       response_format: 'b64_json',
     });
+    this.logger.info(`API responded (${elapsed()})`);
 
     const item = response.data[0];
-    this.logger.info(`Response keys: ${Object.keys(item ?? {}).join(', ')}`);
+    const keys = Object.keys(item ?? {}).join(', ');
+    this.logger.info(`Response item keys: [${keys}]`);
 
     let buffer;
 
     if (item?.b64_json) {
       buffer = Buffer.from(item.b64_json, 'base64');
+      this.logger.info(
+        `Decoded b64_json → buffer ${(buffer.length / 1024).toFixed(1)}KB (${elapsed()})`
+      );
     } else if (item?.url) {
-      this.logger.info('Falling back to URL fetch...');
+      this.logger.info(`No b64_json — fetching from URL: ${item.url} (${elapsed()})`);
       const imgRes = await fetch(item.url);
-      if (!imgRes.ok) throw new Error(`Failed to fetch generated image: ${imgRes.status}`);
+      if (!imgRes.ok)
+        throw new Error(`Image URL fetch failed: ${imgRes.status} ${imgRes.statusText}`);
       buffer = Buffer.from(await imgRes.arrayBuffer());
+      this.logger.info(
+        `Fetched image → buffer ${(buffer.length / 1024).toFixed(1)}KB (${elapsed()})`
+      );
     } else {
-      this.logger.error('Unexpected response shape:', JSON.stringify(item));
-      throw new Error('No image data returned from Pollinations');
+      this.logger.error(`Unexpected response shape — full item: ${JSON.stringify(item)}`);
+      throw new Error('No image data returned from image API');
     }
 
+    this.logger.info(`Done — total=${elapsed()}`);
     return { buffer, mimeType: 'image/png', extension: 'png', url: item?.url ?? null };
   }
 }
