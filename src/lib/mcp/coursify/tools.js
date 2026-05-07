@@ -3,6 +3,7 @@ import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
 import CoursifySection from '@/models/CoursifySection';
 import {
+  COURSE_AUTHORING_GUIDE,
   READ_ONLY_ANNOTATIONS,
   MUTATION_ANNOTATIONS,
   DESTRUCTIVE_ANNOTATIONS,
@@ -10,14 +11,46 @@ import {
 import { textResult, errorResult, toolMeta, normalizeCourse, normalizeSection } from './utils.js';
 import { generateCourseThumbnail } from '@/lib/coursify/thumbnailGen.js';
 
+const resourceSchema = z.object({
+  type: z.enum(['video', 'article', 'doc', 'other']),
+  url: z.string(),
+  title: z.string(),
+});
+
+function cleanPatch(patch) {
+  return Object.fromEntries(
+    Object.entries(patch).filter(([, value]) => value !== undefined && value !== null)
+  );
+}
+
+function createThumbnailInBackground(course) {
+  generateCourseThumbnail(course._id.toString(), course.title, course.description).catch(() => {});
+}
+
 export function registerCoursifyTools(server) {
-  // ─── list_courses ────────────────────────────────────────────────────
+  server.registerTool(
+    'get_course_authoring_guide',
+    {
+      title: 'Get Course Authoring Guide',
+      description:
+        'Use this when the user asks you to create, improve, or plan a detailed Coursify course. It returns the research-first, plan-first workflow and Markdown structure to follow before saving course content.',
+      annotations: READ_ONLY_ANNOTATIONS,
+      inputSchema: {},
+      _meta: toolMeta('Loading authoring guide...', 'Authoring guide ready.'),
+    },
+    async () =>
+      textResult('Use this Coursify authoring guide before creating or revising course content.', {
+        kind: 'course_authoring_guide',
+        guide: COURSE_AUTHORING_GUIDE,
+      })
+  );
+
   server.registerTool(
     'list_courses',
     {
       title: 'List Courses',
       description:
-        'Retrieve all courses in Coursify. Use this first to see what courses exist before creating a new one to avoid duplicates.',
+        'Use this first before creating a course. Retrieve all Coursify courses so you can avoid duplicate topics and decide whether to create a new course or update an existing draft.',
       annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {
         status: z
@@ -34,7 +67,7 @@ export function registerCoursifyTools(server) {
         if (status && status !== 'all') query.status = status;
 
         const courses = await CoursifyCourse.find(query).sort({ updatedAt: -1 }).lean();
-        const courseIds = courses.map((c) => c._id);
+        const courseIds = courses.map((course) => course._id);
 
         const sections = await CoursifySection.find({
           courseId: { $in: courseIds },
@@ -44,13 +77,16 @@ export function registerCoursifyTools(server) {
           .lean();
 
         const countMap = {};
-        for (const s of sections) {
-          const id = s.courseId.toString();
+        for (const section of sections) {
+          const id = section.courseId.toString();
           countMap[id] = (countMap[id] || 0) + 1;
         }
 
-        const result = courses.map((c) =>
-          normalizeCourse({ ...c, sectionCount: countMap[c._id.toString()] || 0 })
+        const result = courses.map((course) =>
+          normalizeCourse({
+            ...course,
+            sectionCount: countMap[course._id.toString()] || 0,
+          })
         );
 
         return textResult(`Found ${result.length} courses in Coursify.`, {
@@ -63,13 +99,12 @@ export function registerCoursifyTools(server) {
     }
   );
 
-  // ─── get_course ──────────────────────────────────────────────────────
   server.registerTool(
     'get_course',
     {
       title: 'Get Course',
       description:
-        'Retrieve a single course by ID along with all its sections and their full markdown content.',
+        'Use this before revising an existing course. Retrieve a single course by ID along with all sections and their full Markdown content.',
       annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {
         id: z.string().describe('MongoDB _id of the course'),
@@ -97,13 +132,12 @@ export function registerCoursifyTools(server) {
     }
   );
 
-  // ─── create_course ───────────────────────────────────────────────────
   server.registerTool(
     'create_course',
     {
       title: 'Create Course',
       description:
-        'Create a new course in Coursify. Call this before adding sections. The course starts as a draft. After calling this, use add_section to build out the curriculum.',
+        'Use this after researching and planning the course. It creates only the course shell as a draft; then call add_section once per planned section.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         title: z.string().describe('Course title, e.g. "Mastering LangChain with CopilotKit"'),
@@ -137,10 +171,7 @@ export function registerCoursifyTools(server) {
           tags: tags || [],
         });
 
-        // Fire-and-forget — thumbnail generates in the background without blocking the response
-        generateCourseThumbnail(course._id.toString(), course.title, course.description).catch(
-          () => {}
-        );
+        createThumbnailInBackground(course);
 
         return textResult(`Created course "${course.title}" (id: ${course._id}).`, {
           success: true,
@@ -152,12 +183,12 @@ export function registerCoursifyTools(server) {
     }
   );
 
-  // ─── update_course ───────────────────────────────────────────────────
   server.registerTool(
     'update_course',
     {
       title: 'Update Course',
-      description: 'Update a course title, description, difficulty, duration, or tags.',
+      description:
+        'Use this to revise course metadata such as title, description, difficulty, duration, tags, or draft status.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         id: z.string().describe('MongoDB _id of the course'),
@@ -174,7 +205,7 @@ export function registerCoursifyTools(server) {
         await dbConnect();
         const course = await CoursifyCourse.findOneAndUpdate(
           { _id: id, deletedAt: null },
-          { $set: patch, $inc: { syncVersion: 1 } },
+          { $set: cleanPatch(patch), $inc: { syncVersion: 1 } },
           { new: true }
         ).lean();
 
@@ -189,13 +220,12 @@ export function registerCoursifyTools(server) {
     }
   );
 
-  // ─── publish_course ──────────────────────────────────────────────────
   server.registerTool(
     'publish_course',
     {
       title: 'Publish Course',
       description:
-        'Mark a course as published so it appears ready to use. Call this after all sections have been added and the content is complete.',
+        'Mark a course as published so it appears ready to use. Call this only after the user asks to publish or confirms the course content is complete.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         id: z.string().describe('MongoDB _id of the course to publish'),
@@ -222,12 +252,12 @@ export function registerCoursifyTools(server) {
     }
   );
 
-  // ─── delete_course ───────────────────────────────────────────────────
   server.registerTool(
     'delete_course',
     {
       title: 'Delete Course',
-      description: 'Permanently remove a course and all its sections from Coursify.',
+      description:
+        'Soft-delete a course and all its sections from Coursify so they no longer appear in active records.',
       annotations: DESTRUCTIVE_ANNOTATIONS,
       inputSchema: {
         id: z.string().describe('MongoDB _id of the course to delete'),
@@ -237,15 +267,16 @@ export function registerCoursifyTools(server) {
     async ({ id }) => {
       try {
         await dbConnect();
+        const deletedAt = new Date();
         const course = await CoursifyCourse.findOneAndUpdate(
           { _id: id, deletedAt: null },
-          { $set: { deletedAt: new Date() } }
+          { $set: { deletedAt }, $inc: { syncVersion: 1 } }
         ).lean();
 
         if (!course) return errorResult('Course not found.');
         await CoursifySection.updateMany(
           { courseId: id, deletedAt: null },
-          { $set: { deletedAt: new Date() } }
+          { $set: { deletedAt }, $inc: { syncVersion: 1 } }
         );
 
         return textResult(`Deleted course "${course.title}" and all its sections.`, {
@@ -258,13 +289,12 @@ export function registerCoursifyTools(server) {
     }
   );
 
-  // ─── add_section ─────────────────────────────────────────────────────
   server.registerTool(
     'add_section',
     {
       title: 'Add Section',
       description:
-        'Add a new section to a course. Write the full section content in Markdown — include explanations, code examples, key concepts, and a summary. Call this once per section of the course outline.',
+        'Use this once per planned course section after research and outlining. Write full Markdown content that follows the authoring guide: learning goals, explanation, walkthrough, examples, practice, common mistakes, and recap.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         courseId: z.string().describe('MongoDB _id of the course to add this section to'),
@@ -282,13 +312,7 @@ export function registerCoursifyTools(server) {
             'Zero-based position in the course. If omitted, the section is appended at the end.'
           ),
         resources: z
-          .array(
-            z.object({
-              type: z.enum(['video', 'article', 'doc', 'other']),
-              url: z.string(),
-              title: z.string(),
-            })
-          )
+          .array(resourceSchema)
           .optional()
           .describe(
             'Optional list of supplementary resources (YouTube videos, docs, articles) relevant to this section.'
@@ -314,6 +338,10 @@ export function registerCoursifyTools(server) {
           order: resolvedOrder,
           resources: resources || [],
         });
+        await CoursifyCourse.updateOne(
+          { _id: courseId, deletedAt: null },
+          { $inc: { syncVersion: 1 } }
+        );
 
         return textResult(
           `Added section "${section.title}" to course "${course.title}" (order: ${resolvedOrder}).`,
@@ -325,27 +353,19 @@ export function registerCoursifyTools(server) {
     }
   );
 
-  // ─── update_section ──────────────────────────────────────────────────
   server.registerTool(
     'update_section',
     {
       title: 'Update Section',
-      description: 'Edit the title, content, order, or resources of an existing section.',
+      description:
+        'Edit the title, content, order, or resources of an existing section. Use full replacement Markdown when changing content.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         id: z.string().describe('MongoDB _id of the section to update'),
         title: z.string().optional(),
         content: z.string().optional().describe('Full replacement content in Markdown'),
         order: z.number().int().optional(),
-        resources: z
-          .array(
-            z.object({
-              type: z.enum(['video', 'article', 'doc', 'other']),
-              url: z.string(),
-              title: z.string(),
-            })
-          )
-          .optional(),
+        resources: z.array(resourceSchema).optional(),
       },
       _meta: toolMeta('Updating section...', 'Section updated.'),
     },
@@ -354,11 +374,15 @@ export function registerCoursifyTools(server) {
         await dbConnect();
         const section = await CoursifySection.findOneAndUpdate(
           { _id: id, deletedAt: null },
-          { $set: patch, $inc: { syncVersion: 1 } },
+          { $set: cleanPatch(patch), $inc: { syncVersion: 1 } },
           { new: true }
         ).lean();
 
         if (!section) return errorResult('Section not found.');
+        await CoursifyCourse.updateOne(
+          { _id: section.courseId, deletedAt: null },
+          { $inc: { syncVersion: 1 } }
+        );
         return textResult(`Updated section "${section.title}".`, {
           success: true,
           section: normalizeSection(section),
@@ -369,12 +393,11 @@ export function registerCoursifyTools(server) {
     }
   );
 
-  // ─── delete_section ──────────────────────────────────────────────────
   server.registerTool(
     'delete_section',
     {
       title: 'Delete Section',
-      description: 'Remove a section from a course.',
+      description: 'Soft-delete a section from a course so it no longer appears in active records.',
       annotations: DESTRUCTIVE_ANNOTATIONS,
       inputSchema: {
         id: z.string().describe('MongoDB _id of the section to delete'),
@@ -386,10 +409,14 @@ export function registerCoursifyTools(server) {
         await dbConnect();
         const section = await CoursifySection.findOneAndUpdate(
           { _id: id, deletedAt: null },
-          { $set: { deletedAt: new Date() } }
+          { $set: { deletedAt: new Date() }, $inc: { syncVersion: 1 } }
         ).lean();
 
         if (!section) return errorResult('Section not found.');
+        await CoursifyCourse.updateOne(
+          { _id: section.courseId, deletedAt: null },
+          { $inc: { syncVersion: 1 } }
+        );
         return textResult(`Deleted section "${section.title}".`, {
           success: true,
           deletedId: id,
@@ -400,7 +427,6 @@ export function registerCoursifyTools(server) {
     }
   );
 
-  // ─── reorder_sections ────────────────────────────────────────────────
   server.registerTool(
     'reorder_sections',
     {
@@ -425,9 +451,13 @@ export function registerCoursifyTools(server) {
           sectionIds.map((id, index) =>
             CoursifySection.updateOne(
               { _id: id, courseId, deletedAt: null },
-              { $set: { order: index } }
+              { $set: { order: index }, $inc: { syncVersion: 1 } }
             )
           )
+        );
+        await CoursifyCourse.updateOne(
+          { _id: courseId, deletedAt: null },
+          { $inc: { syncVersion: 1 } }
         );
 
         return textResult(`Reordered ${sectionIds.length} sections.`, { success: true });

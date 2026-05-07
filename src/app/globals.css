@@ -353,6 +353,14 @@ body {
   font-family: var(--font-lora), Georgia, serif;
 }
 
+/* Code and pre must always use monospace — never inherit Lora */
+.coursify-md pre,
+.coursify-md code {
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+}
+
 .coursify-md h1,
 .coursify-md h2,
 .coursify-md h3,
@@ -436,15 +444,9 @@ body {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.875em;
-  margin-top: 1.75em;
-  margin-bottom: 1.75em;
   font-family: ui-sans-serif, system-ui, sans-serif;
-  overflow: hidden;
-  border-radius: 0.75rem;
-  border: 1px solid #e5e3d8;
-  display: block;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 .coursify-md thead {

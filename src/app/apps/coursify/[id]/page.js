@@ -481,9 +481,18 @@ export default function CourseDetailPage({ params }) {
                     remarkPlugins={[remarkGfm]}
                     rehypePlugins={[rehypeRaw]}
                     components={{
-                      code({ node, inline, className, children, ...props }) {
+                      table({ children }) {
+                        return (
+                          <div className="overflow-x-auto my-7 rounded-xl border border-[#e5e3d8]">
+                            <table className="w-full border-collapse text-sm">{children}</table>
+                          </div>
+                        );
+                      },
+                      code({ node, className, children, ...props }) {
                         const match = /language-(\w+)/.exec(className || '');
-                        if (!inline && match) {
+                        const isBlock = String(children).includes('\n');
+
+                        if (isBlock && match) {
                           return (
                             <SyntaxHighlighter
                               style={oneDark}
@@ -500,6 +509,23 @@ export default function CourseDetailPage({ params }) {
                             >
                               {String(children).replace(/\n$/, '')}
                             </SyntaxHighlighter>
+                          );
+                        }
+                        if (isBlock) {
+                          return (
+                            <div
+                              className="rounded-xl overflow-hidden my-3 w-full flex justify-center"
+                              style={{ background: '#18181b' }}
+                            >
+                              <pre
+                                className="overflow-x-auto p-4 text-[0.82rem] leading-relaxed font-mono whitespace-pre"
+                                style={{ background: 'transparent' }}
+                              >
+                                <code className="font-mono" style={{ color: '#e4e4e7' }}>
+                                  {children}
+                                </code>
+                              </pre>
+                            </div>
                           );
                         }
                         return (
