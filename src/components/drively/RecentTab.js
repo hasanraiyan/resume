@@ -3,9 +3,33 @@
 import { useDrively } from '@/context/DrivelyContext';
 import { Clock, HardDrive, File, Image as ImageIcon, FileText } from 'lucide-react';
 import FileCard from './FileCard';
+import SortDropdown from './SortDropdown';
+import { useMemo } from 'react';
 
 export default function RecentTab() {
-  const { recent, isLoading } = useDrively();
+  const { recent, isLoading, sortConfig, searchQuery } = useDrively();
+
+  const sortedRecent = useMemo(() => {
+    let items = [...recent];
+    if (searchQuery) {
+      items = items.filter((f) => f.filename.toLowerCase().includes(searchQuery.toLowerCase()));
+    }
+
+    return items.sort((a, b) => {
+      let valA, valB;
+      if (sortConfig.key === 'name') {
+        valA = a.filename.toLowerCase();
+        valB = b.filename.toLowerCase();
+      } else {
+        valA = a[sortConfig.key];
+        valB = b[sortConfig.key];
+      }
+
+      if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [recent, sortConfig, searchQuery]);
 
   if (isLoading && recent.length === 0) {
     return (
@@ -31,8 +55,11 @@ export default function RecentTab() {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <SortDropdown />
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {recent.map((file) => (
+        {sortedRecent.map((file) => (
           <FileCard key={file._id} file={file} viewMode="grid" />
         ))}
       </div>

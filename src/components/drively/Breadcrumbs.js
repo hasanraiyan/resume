@@ -1,27 +1,25 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useDrively } from '@/context/DrivelyContext';
 import { ChevronRight, Home, HardDrive } from 'lucide-react';
 
 export default function Breadcrumbs() {
   const { currentFolderId, setCurrentFolderId, folders } = useDrively();
 
-  const getBreadcrumbs = () => {
+  const crumbs = useMemo(() => {
     if (!currentFolderId) return [];
 
-    const crumbs = [];
+    const res = [];
     let current = folders.find((f) => f._id === currentFolderId);
 
     while (current) {
-      crumbs.unshift(current);
+      res.unshift(current);
       current = folders.find((f) => f._id === current.parentId);
     }
 
-    return crumbs;
-  };
-
-  const crumbs = getBreadcrumbs();
+    return res;
+  }, [currentFolderId, folders]);
 
   return (
     <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar whitespace-nowrap py-1">

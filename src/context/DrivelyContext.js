@@ -17,6 +17,14 @@ export function DrivelyProvider({ children }) {
   const [trashCount, setTrashCount] = useState(0);
   const [currentFolderId, setCurrentFolderId] = useState(null);
 
+  // Global search and sort state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortConfig, setSortConfig] = useState({ key: 'updatedAt', direction: 'desc' });
+
+  // Bulk selection state
+  const [selectedItems, setSelectedItems] = useState({ files: [], folders: [] });
+  const [previewFile, setPreviewFile] = useState(null);
+
   const fetchBootstrap = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -59,7 +67,10 @@ export function DrivelyProvider({ children }) {
       const data = await res.json();
       if (data.success) {
         toast.success('Upload successful');
-        fetchBootstrap();
+        // Optimistic update: Add newly uploaded files to state
+        setFiles((prev) => [...data.files, ...prev]);
+        setRecent((prev) => [...data.files, ...prev]);
+        // fetchBootstrap(); // Refresh stats and counts
         return true;
       } else {
         toast.error(data.error || 'Upload failed');
@@ -81,7 +92,8 @@ export function DrivelyProvider({ children }) {
       const data = await res.json();
       if (data.success) {
         toast.success('Folder created');
-        fetchBootstrap();
+        setFolders((prev) => [data.folder, ...prev]);
+        // fetchBootstrap();
         return true;
       } else {
         toast.error(data.error || 'Failed to create folder');
@@ -94,25 +106,48 @@ export function DrivelyProvider({ children }) {
   };
 
   const deleteItem = async (type, id, permanent = false) => {
+    // Optimistic delete
+    const prevFiles = [...files];
+    const prevFolders = [...folders];
+
+    if (!permanent) {
+      if (type === 'file') setFiles((prev) => prev.filter((f) => f._id !== id));
+      else setFolders((prev) => prev.filter((f) => f._id !== id));
+    }
+
     const endpoint = `/api/drively/${type}s/${id}${permanent ? '?permanent=true' : ''}`;
     try {
       const res = await fetch(endpoint, { method: 'DELETE' });
       const data = await res.json();
       if (data.success) {
         toast.success(permanent ? 'Permanently deleted' : 'Moved to trash');
-        fetchBootstrap();
+        // fetchBootstrap();
         return true;
       } else {
+        setFiles(prevFiles);
+        setFolders(prevFolders);
         toast.error(data.error || 'Delete failed');
         return false;
       }
     } catch (error) {
+      setFiles(prevFiles);
+      setFolders(prevFolders);
       toast.error('Delete error');
       return false;
     }
   };
 
   const updateItem = async (type, id, payload) => {
+    // Optimistic update
+    const prevFiles = [...files];
+    const prevFolders = [...folders];
+
+    if (type === 'file') {
+      setFiles((prev) => prev.map((f) => (f._id === id ? { ...f, ...payload } : f)));
+    } else {
+      setFolders((prev) => prev.map((f) => (f._id === id ? { ...f, ...payload } : f)));
+    }
+
     try {
       const res = await fetch(`/api/drively/${type}s/${id}`, {
         method: 'PATCH',
@@ -121,17 +156,79 @@ export function DrivelyProvider({ children }) {
       });
       const data = await res.json();
       if (data.success) {
-        fetchBootstrap();
+        // fetchBootstrap();
         return true;
       } else {
+        setFiles(prevFiles);
+        setFolders(prevFolders);
         toast.error(data.error || 'Update failed');
         return false;
       }
     } catch (error) {
+      setFiles(prevFiles);
+      setFolders(prevFolders);
       toast.error('Update error');
       return false;
     }
   };
+
+  const emptyTrashAction = async () => {
+    try {
+      const res = await fetch('/api/drively/trash/empty', { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Trash emptied');
+        fetchBootstrap();
+        return true;
+      } else {
+        toast.error(data.error || 'Failed to empty trash');
+        return false;
+      }
+    } catch (error) {
+      toast.error('Error emptying trash');
+      return false;
+    }
+  };
+
+  const executeBulk = async (action, targetFolderId = null) => {
+    const payload = {
+      fileIds: selectedItems.files,
+      folderIds: selectedItems.folders,
+      action,
+      targetFolderId,
+    };
+
+    try {
+      const res = await fetch('/api/drively/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Bulk action completed');
+        setSelectedItems({ files: [], folders: [] });
+        fetchBootstrap();
+        return true;
+      } else {
+        toast.error(data.error || 'Bulk action failed');
+        return false;
+      }
+    } catch (error) {
+      toast.error('Bulk action error');
+      return false;
+    }
+  };
+
+  const toggleSelection = (type, id) => {
+    setSelectedItems((prev) => {
+      const list = prev[`${type}s`];
+      const newList = list.includes(id) ? list.filter((i) => i !== id) : [...list, id];
+      return { ...prev, [`${type}s`]: newList };
+    });
+  };
+
+  const clearSelection = () => setSelectedItems({ files: [], folders: [] });
 
   return (
     <DrivelyContext.Provider
@@ -145,10 +242,21 @@ export function DrivelyProvider({ children }) {
         trashCount,
         currentFolderId,
         setCurrentFolderId,
+        searchQuery,
+        setSearchQuery,
+        sortConfig,
+        setSortConfig,
+        selectedItems,
+        toggleSelection,
+        clearSelection,
         uploadFiles,
         createNewFolder,
         deleteItem,
         updateItem,
+        emptyTrash: emptyTrashAction,
+        executeBulk,
+        previewFile,
+        setPreviewFile,
         refresh: fetchBootstrap,
       }}
     >
