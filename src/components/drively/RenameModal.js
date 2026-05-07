@@ -33,9 +33,18 @@ export default function RenameModal({ type, item, onConfirm, onClose }) {
 
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+      />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 pointer-events-auto">
+        <div
+          className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 pointer-events-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="flex items-center gap-3 mb-5">
             <div className="p-2 bg-[#f0f5f2] rounded-xl">
               <Pencil className="w-4 h-4 text-[#1f644e]" />
