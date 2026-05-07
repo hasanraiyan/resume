@@ -337,3 +337,148 @@ body {
 .custom-chat-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: #a1a1aa;
 }
+
+/* Coursify markdown — reset global font overrides so Lora renders correctly */
+.coursify-md,
+.coursify-md h1,
+.coursify-md h2,
+.coursify-md h3,
+.coursify-md h4,
+.coursify-md h5,
+.coursify-md h6,
+.coursify-md p,
+.coursify-md li,
+.coursify-md td,
+.coursify-md th {
+  font-family: var(--font-lora), Georgia, serif;
+}
+
+.coursify-md h1,
+.coursify-md h2,
+.coursify-md h3,
+.coursify-md h4,
+.coursify-md h5,
+.coursify-md h6 {
+  margin-top: 1.25em;
+  margin-bottom: 0.4em;
+  line-height: 1.3;
+}
+
+.coursify-md h1 {
+  margin-top: 0;
+}
+
+.coursify-md p {
+  margin-top: 0.6em;
+  margin-bottom: 0.6em;
+  line-height: 1.75;
+}
+
+.coursify-md ul {
+  list-style-type: disc;
+  padding-left: 1.5em;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.coursify-md ol {
+  list-style-type: decimal;
+  padding-left: 1.5em;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.coursify-md li {
+  margin-top: 0.2em;
+  margin-bottom: 0.2em;
+}
+
+.coursify-md blockquote {
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
+}
+
+.coursify-md pre {
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+.coursify-md pre > div::-webkit-scrollbar,
+.coursify-md pre::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.coursify-md pre > div::-webkit-scrollbar-track,
+.coursify-md pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.coursify-md pre > div::-webkit-scrollbar-thumb,
+.coursify-md pre::-webkit-scrollbar-thumb {
+  background-color: #2d8a6a;
+  border-radius: 99px;
+}
+
+.coursify-md pre > div::-webkit-scrollbar-thumb:hover,
+.coursify-md pre::-webkit-scrollbar-thumb:hover {
+  background-color: #1f644e;
+}
+
+.coursify-md pre > div::-webkit-scrollbar-corner,
+.coursify-md pre::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.coursify-md table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875em;
+  margin-top: 1.75em;
+  margin-bottom: 1.75em;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e3d8;
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.coursify-md thead {
+  background-color: #f0f5f2;
+  border-bottom: 2px solid #d1e7dc;
+}
+
+.coursify-md thead th {
+  padding: 0.65em 1em;
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #1f644e;
+  white-space: nowrap;
+}
+
+.coursify-md tbody tr {
+  border-bottom: 1px solid #e5e3d8;
+  transition: background-color 0.15s;
+}
+
+.coursify-md tbody tr:last-child {
+  border-bottom: none;
+}
+
+.coursify-md tbody tr:hover {
+  background-color: #f9fbf9;
+}
+
+.coursify-md tbody td {
+  padding: 0.6em 1em;
+  vertical-align: top;
+  color: #1e3a34;
+  line-height: 1.5;
+}

@@ -98,28 +98,27 @@ export default function CourseCard({ course, index = 0 }) {
           </div>
         </div>
 
-        {/* Body — flex-col so footer always sits at the bottom */}
-        <div className="p-4 flex flex-col flex-1">
-          <div className="flex items-start justify-between gap-2 mb-1">
-            <h3 className="font-bold text-[#1e3a34] text-sm leading-snug line-clamp-2 flex-1">
-              {course.title}
-            </h3>
-            <button
-              ref={buttonRef}
-              onClick={handleMenuOpen}
-              className="p-1 rounded-lg hover:bg-[#f0f5f2] text-[#7c8e88] shrink-0 -mr-1 -mt-0.5"
-            >
-              <MoreVertical className="w-4 h-4" />
-            </button>
+        {/* Body */}
+        <div className="p-4 flex flex-col flex-1 justify-between gap-3">
+          {/* Top: title + description */}
+          <div>
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <h3 className="font-bold text-[#1e3a34] text-sm leading-snug line-clamp-2 flex-1">
+                {course.title}
+              </h3>
+              <button
+                ref={buttonRef}
+                onClick={handleMenuOpen}
+                className="p-1 rounded-lg hover:bg-[#f0f5f2] text-[#7c8e88] shrink-0 -mr-1 -mt-0.5"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-[#7c8e88] line-clamp-2">{course.description || ''}</p>
           </div>
 
-          {/* description reserves 2-line space even when empty so cards align */}
-          <p className="text-xs text-[#7c8e88] line-clamp-2 mb-3 min-h-[2.5rem]">
-            {course.description || ''}
-          </p>
-
-          {/* badges + footer pushed to bottom */}
-          <div className="mt-auto space-y-2">
+          {/* Bottom: badges + meta — always at the bottom */}
+          <div className="space-y-2">
             <div className="flex flex-wrap gap-1.5">
               <span
                 className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${DIFFICULTY_COLORS[course.difficulty] || DIFFICULTY_COLORS.beginner}`}

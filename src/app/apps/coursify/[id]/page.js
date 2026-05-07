@@ -3,10 +3,12 @@
 import { useState, useEffect, useCallback, use } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Pacifico, Nunito } from 'next/font/google';
+import { Pacifico, Nunito, Lora } from 'next/font/google';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import {
   ArrowLeft,
   Plus,
@@ -41,6 +43,13 @@ const nunito = Nunito({
   display: 'swap',
 });
 
+const lora = Lora({
+  weight: ['400', '500', '600', '700'],
+  subsets: ['latin'],
+  variable: '--font-lora',
+  display: 'swap',
+});
+
 const DIFFICULTY_COLORS = {
   beginner: 'bg-emerald-100 text-emerald-700',
   intermediate: 'bg-amber-100 text-amber-700',
@@ -68,6 +77,7 @@ export default function CourseDetailPage({ params }) {
   const [showNewSection, setShowNewSection] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showMeta, setShowMeta] = useState(true);
+  const [editMode, setEditMode] = useState(false);
 
   const fetchCourse = useCallback(
     async (silent = false) => {
@@ -205,7 +215,7 @@ export default function CourseDetailPage({ params }) {
 
   return (
     <div
-      className={`h-screen bg-[#fcfbf5] font-[family-name:var(--font-sans)] text-[#1e3a34] flex flex-col ${pacifico.variable} ${nunito.variable}`}
+      className={`h-screen bg-[#fcfbf5] font-[family-name:var(--font-sans)] text-[#1e3a34] flex flex-col ${pacifico.variable} ${nunito.variable} ${lora.variable}`}
     >
       {/* ── Header ── */}
       <header className="sticky top-0 z-40 bg-white border-b border-[#e5e3d8] px-4 lg:px-6 py-3 flex items-center justify-between gap-3 shrink-0">
@@ -249,6 +259,18 @@ export default function CourseDetailPage({ params }) {
                 <span className="hidden sm:inline">Draft</span>
               </>
             )}
+          </button>
+
+          <button
+            onClick={() => setEditMode((v) => !v)}
+            title={editMode ? 'Exit edit mode' : 'Edit'}
+            className={`p-1.5 rounded-lg border transition-colors ${
+              editMode
+                ? 'bg-[#1f644e] border-[#1f644e] text-white'
+                : 'border-[#e5e3d8] bg-white text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e]'
+            }`}
+          >
+            <Pencil className="w-3.5 h-3.5" />
           </button>
 
           {/* Sidebar toggle — mobile only */}
@@ -372,19 +394,21 @@ export default function CourseDetailPage({ params }) {
             )}
           </div>
 
-          {/* Add section */}
-          <div className="p-3 border-t border-[#e5e3d8]">
-            <button
-              onClick={() => {
-                setShowNewSection(true);
-                setSidebarOpen(false);
-              }}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed border-[#e5e3d8] text-xs font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add Section
-            </button>
-          </div>
+          {/* Add section — only in edit mode */}
+          {editMode && (
+            <div className="p-3 border-t border-[#e5e3d8]">
+              <button
+                onClick={() => {
+                  setShowNewSection(true);
+                  setSidebarOpen(false);
+                }}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed border-[#e5e3d8] text-xs font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add Section
+              </button>
+            </div>
+          )}
         </aside>
 
         {/* ── Main Content ── */}
@@ -427,37 +451,68 @@ export default function CourseDetailPage({ params }) {
 
               {/* Section header */}
               <div className="flex items-start justify-between gap-4 mb-6">
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider mb-1">
-                    Section {sections.findIndex((s) => s._id === currentSection._id) + 1} of{' '}
-                    {sections.length}
-                  </p>
-                  <h2 className="text-xl lg:text-2xl font-bold text-[#1e3a34] leading-snug">
-                    {currentSection.title}
-                  </h2>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    onClick={() => setEditingSection(currentSection)}
-                    className="p-2 rounded-xl hover:bg-[#f0f5f2] text-[#7c8e88] hover:text-[#1f644e] transition-colors"
-                    title="Edit section"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteSection(currentSection._id)}
-                    className="p-2 rounded-xl hover:bg-red-50 text-[#7c8e88] hover:text-[#c94c4c] transition-colors"
-                    title="Delete section"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                <h2 className="text-xl lg:text-2xl font-bold text-[#1e3a34] leading-snug min-w-0">
+                  {currentSection.title}
+                </h2>
+                {editMode && (
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => setEditingSection(currentSection)}
+                      className="p-2 rounded-xl hover:bg-[#f0f5f2] text-[#7c8e88] hover:text-[#1f644e] transition-colors"
+                      title="Edit section"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSection(currentSection._id)}
+                      className="p-2 rounded-xl hover:bg-red-50 text-[#7c8e88] hover:text-[#c94c4c] transition-colors"
+                      title="Delete section"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Markdown content */}
               {currentSection.content ? (
-                <div className="prose prose-sm max-w-none prose-headings:font-bold prose-headings:text-[#1e3a34] prose-p:text-[#1e3a34] prose-p:leading-relaxed prose-code:bg-[#f0f5f2] prose-code:rounded prose-code:px-1 prose-code:text-[#1f644e] prose-pre:bg-[#1e3a34] prose-pre:rounded-xl prose-blockquote:border-[#1f644e] prose-a:text-[#1f644e] prose-li:text-[#1e3a34] prose-strong:text-[#1e3a34] prose-table:text-sm">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                <div className="coursify-md prose prose-sm max-w-none font-[family-name:var(--font-lora)] prose-headings:font-bold prose-headings:text-[#1e3a34] prose-p:text-[#1e3a34] prose-p:leading-relaxed prose-code:bg-[#f0f5f2] prose-code:rounded prose-code:px-1 prose-code:text-[#1f644e] prose-pre:bg-[#1e3a34] prose-pre:rounded-xl prose-blockquote:border-[#1f644e] prose-a:text-[#1f644e] prose-li:text-[#1e3a34] prose-strong:text-[#1e3a34] prose-table:text-sm">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeRaw]}
+                    components={{
+                      code({ node, inline, className, children, ...props }) {
+                        const match = /language-(\w+)/.exec(className || '');
+                        if (!inline && match) {
+                          return (
+                            <SyntaxHighlighter
+                              style={oneDark}
+                              language={match[1]}
+                              PreTag="div"
+                              customStyle={{
+                                borderRadius: '0.75rem',
+                                fontSize: '0.82rem',
+                                margin: '0.75em 0',
+                                padding: '0.6em 0.9em',
+                              }}
+                              showLineNumbers
+                              {...props}
+                            >
+                              {String(children).replace(/\n$/, '')}
+                            </SyntaxHighlighter>
+                          );
+                        }
+                        return (
+                          <code
+                            className="bg-[#f0f5f2] text-[#1f644e] rounded px-1.5 py-0.5 text-[0.82em] font-mono font-semibold"
+                            {...props}
+                          >
+                            {children}
+                          </code>
+                        );
+                      },
+                    }}
+                  >
                     {currentSection.content}
                   </ReactMarkdown>
                 </div>
