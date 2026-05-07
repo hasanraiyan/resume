@@ -9,6 +9,7 @@ import {
   FileArchive,
   Download,
   Star,
+  Link as LinkIcon,
 } from 'lucide-react';
 import ActionMenu from './ActionMenu';
 import { formatDistanceToNow } from 'date-fns';
@@ -32,9 +33,10 @@ const formatSize = (bytes) => {
 };
 
 export default function FileCard({ file, viewMode }) {
-  const { updateItem, selectedItems, toggleSelection, setPreviewFile } = useDrively();
+  const { updateItem, selectedItems, toggleSelection, setPreviewFile, shares } = useDrively();
 
   const isSelected = selectedItems.files.includes(file._id);
+  const hasShare = !!shares[file._id];
 
   const handleToggleStar = (e) => {
     e.stopPropagation();
@@ -53,9 +55,16 @@ export default function FileCard({ file, viewMode }) {
     ? file.secureUrl.replace('/upload/', '/upload/w_400,c_fill,q_auto,f_auto/')
     : null;
 
+  const handleDragStart = (e) => {
+    e.dataTransfer.setData('drivelyItem', JSON.stringify({ type: 'file', id: file._id }));
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
   if (viewMode === 'list') {
     return (
       <div
+        draggable
+        onDragStart={handleDragStart}
         onClick={() => setPreviewFile(file)}
         className={`group flex items-center justify-between p-3 border rounded-xl transition-colors cursor-pointer ${isSelected ? 'bg-[#f0f5f2] border-[#1f644e]' : 'bg-white border-[#e5e3d8] hover:border-[#1f644e]'}`}
       >
@@ -88,6 +97,11 @@ export default function FileCard({ file, viewMode }) {
               className={`w-4 h-4 ${file.starred ? 'text-[#1f644e] fill-[#1f644e]' : 'text-[#7c8e88]'}`}
             />
           </button>
+          {hasShare && (
+            <div className="p-1" title="Shared publicly">
+              <LinkIcon className="w-4 h-4 text-[#1f644e]" />
+            </div>
+          )}
           <ActionMenu type="file" item={file} />
         </div>
       </div>
@@ -96,6 +110,8 @@ export default function FileCard({ file, viewMode }) {
 
   return (
     <div
+      draggable
+      onDragStart={handleDragStart}
       onClick={() => setPreviewFile(file)}
       className={`group border rounded-2xl overflow-hidden transition-all hover:shadow-sm relative cursor-pointer ${isSelected ? 'bg-[#f0f5f2] border-[#1f644e]' : 'bg-white border-[#e5e3d8] hover:border-[#1f644e]'}`}
     >
@@ -170,6 +186,11 @@ export default function FileCard({ file, viewMode }) {
           )}
           {file.starred && !file.deletedAt && (
             <Star className="absolute top-3 right-3 w-4 h-4 text-[#1f644e] fill-[#1f644e] drop-shadow-sm" />
+          )}
+          {hasShare && (
+            <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm p-1 rounded-lg shadow-sm border border-black/5">
+              <LinkIcon className="w-3 h-3 text-[#1f644e]" />
+            </div>
           )}
         </div>
         <div className="p-3 flex items-center justify-between gap-2">

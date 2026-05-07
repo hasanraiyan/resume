@@ -15,6 +15,7 @@ export function DrivelyProvider({ children }) {
   const [recent, setRecent] = useState([]);
   const [activity, setActivity] = useState([]);
   const [starred, setStarred] = useState({ files: [], folders: [] });
+  const [shares, setShares] = useState({});
   const [trashCount, setTrashCount] = useState(0);
   const [trashFiles, setTrashFiles] = useState([]);
   const [trashFolders, setTrashFolders] = useState([]);
@@ -31,6 +32,7 @@ export function DrivelyProvider({ children }) {
   // Bulk selection state
   const [selectedItems, setSelectedItems] = useState({ files: [], folders: [] });
   const [previewFile, setPreviewFile] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState([]);
   const [renameTarget, setRenameTarget] = useState(null);
 
   const fetchBootstrap = useCallback(async (page = 1, isLoadMore = false) => {
@@ -64,6 +66,11 @@ export function DrivelyProvider({ children }) {
           setStarred(data.starred);
           setTrashCount(data.trashCount);
           setActivity(data.activity);
+          const shareMap = {};
+          data.shares.forEach((s) => {
+            shareMap[s.fileId] = s;
+          });
+          setShares(shareMap);
         }
         setPagination({ page: data.pagination.page, hasMore: data.pagination.hasMore });
       } else {
@@ -99,23 +106,47 @@ export function DrivelyProvider({ children }) {
     const concurrencyLimit = 3;
     const results = [];
 
+    // Initialize progress
+    const initialProgress = Array.from(selectedFiles).map((file) => ({
+      name: file.name,
+      progress: 0,
+      status: 'uploading',
+    }));
+    setUploadProgress((prev) => [...prev, ...initialProgress]);
+
     // Concurrent uploads with limit
     const uploadTask = async (file) => {
       const formData = new FormData();
       formData.append('file', file);
       if (folderId) formData.append('folderId', folderId);
 
-      const res = await fetch('/api/drively/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.success) {
-        setFiles((prev) => [data.file, ...prev]);
-        setRecent((prev) => [data.file, ...prev]);
-        return data.file;
-      } else {
-        throw new Error(data.error || 'Upload failed');
+      try {
+        // Simple fetch doesn't support progress easily, but we'll simulate or just update at end
+        // for real progress we'd need XMLHttpRequest or a wrapper
+        const res = await fetch('/api/drively/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          setFiles((prev) => [data.file, ...prev]);
+          setRecent((prev) => [data.file, ...prev]);
+          setUploadProgress((prev) =>
+            prev.map((p) => (p.name === file.name ? { ...p, progress: 100, status: 'success' } : p))
+          );
+          return data.file;
+        } else {
+          setUploadProgress((prev) =>
+            prev.map((p) => (p.name === file.name ? { ...p, status: 'error' } : p))
+          );
+          throw new Error(data.error || 'Upload failed');
+        }
+      } catch (err) {
+        setUploadProgress((prev) =>
+          prev.map((p) => (p.name === file.name ? { ...p, status: 'error' } : p))
+        );
+        throw err;
       }
     };
 
@@ -132,6 +163,11 @@ export function DrivelyProvider({ children }) {
 
       const successful = results.filter((r) => r.status === 'fulfilled').length;
       const failed = results.filter((r) => r.status === 'rejected').length;
+
+      // Clear successful progress after a delay
+      setTimeout(() => {
+        setUploadProgress((prev) => prev.filter((p) => p.status !== 'success'));
+      }, 3000);
 
       if (successful > 0) toast.success(`Uploaded ${successful} files`);
       if (failed > 0) toast.error(`Failed to upload ${failed} files`);
@@ -218,6 +254,12 @@ export function DrivelyProvider({ children }) {
       });
       const data = await res.json();
       if (data.success) {
+        if (payload.parentId || payload.folderId) {
+          const folderName = folders.find(
+            (f) => f._id === (payload.parentId || payload.folderId)
+          )?.name;
+          toast.success(`Moved to ${folderName || 'Root'}`);
+        }
         fetchBootstrap();
         return true;
       } else {
@@ -230,6 +272,64 @@ export function DrivelyProvider({ children }) {
       setFiles(prevFiles);
       setFolders(prevFolders);
       toast.error('Update error');
+      return false;
+    }
+  };
+
+  const duplicateItem = async (id) => {
+    try {
+      const res = await fetch(`/api/drively/files/${id}/duplicate`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('File duplicated');
+        setFiles((prev) => [data.file, ...prev]);
+        fetchBootstrap();
+        return true;
+      } else {
+        toast.error(data.error || 'Duplicate failed');
+        return false;
+      }
+    } catch (error) {
+      toast.error('Duplicate error');
+      return false;
+    }
+  };
+
+  const shareItem = async (id) => {
+    try {
+      const res = await fetch(`/api/drively/files/${id}/share`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setShares((prev) => ({ ...prev, [id]: data }));
+        return data;
+      } else {
+        toast.error(data.error || 'Share failed');
+        return null;
+      }
+    } catch (error) {
+      toast.error('Share error');
+      return null;
+    }
+  };
+
+  const revokeShare = async (id) => {
+    try {
+      const res = await fetch(`/api/drively/files/${id}/share`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Share link revoked');
+        setShares((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+        return true;
+      } else {
+        toast.error(data.error || 'Revoke failed');
+        return false;
+      }
+    } catch (error) {
+      toast.error('Revoke error');
       return false;
     }
   };
@@ -355,6 +455,7 @@ export function DrivelyProvider({ children }) {
         recent,
         activity,
         starred,
+        shares,
         trashCount,
         trashFiles,
         trashFolders,
@@ -375,6 +476,10 @@ export function DrivelyProvider({ children }) {
         executeBulk,
         previewFile,
         setPreviewFile,
+        uploadProgress,
+        duplicateItem,
+        shareItem,
+        revokeShare,
         renameTarget,
         setRenameTarget,
         refresh: fetchBootstrap,
