@@ -1,17 +1,7 @@
 'use client';
 
 import { useDrively } from '@/context/DrivelyContext';
-import {
-  PieChart,
-  HardDrive,
-  File,
-  Database,
-  ChevronRight,
-  FileText,
-  Image as ImageIcon,
-  FileArchive,
-  FileCode,
-} from 'lucide-react';
+import { File, FileText, Image as ImageIcon, FileArchive } from 'lucide-react';
 
 const formatSize = (bytes) => {
   if (bytes === 0) return '0 B';
@@ -44,7 +34,8 @@ export default function StorageTab() {
   }
 
   const totalUsed = stats.totalSize;
-  const limit = 500 * 1024 * 1024; // 500MB fake limit for UI
+  const limitMB = parseInt(process.env.NEXT_PUBLIC_DRIVELY_QUOTA_MB) || 1000;
+  const limit = limitMB * 1024 * 1024;
   const percentage = Math.min((totalUsed / limit) * 100, 100);
 
   return (
@@ -65,7 +56,7 @@ export default function StorageTab() {
                 />
               </div>
               <p className="text-[10px] text-[#7c8e88] font-bold mt-2 uppercase tracking-wider">
-                {percentage.toFixed(1)}% of 500 MB used
+                {percentage.toFixed(1)}% of {limitMB} MB used
               </p>
             </div>
           </div>

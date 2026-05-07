@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Pacifico, Nunito } from 'next/font/google';
@@ -10,15 +10,11 @@ import {
   Star,
   Trash2,
   PieChart,
-  Plus,
-  Upload,
-  FolderPlus,
-  ChevronRight,
-  MoreVertical,
   Search,
-  File,
-  Folder,
   ArrowLeft,
+  X,
+  Activity,
+  ChevronLeft,
 } from 'lucide-react';
 import { DrivelyProvider, useDrively } from '@/context/DrivelyContext';
 import MyDriveTab from '@/components/drively/MyDriveTab';
@@ -28,6 +24,10 @@ import TrashTab from '@/components/drively/TrashTab';
 import StorageTab from '@/components/drively/StorageTab';
 import BulkActionToolbar from '@/components/drively/BulkActionToolbar';
 import FilePreviewPanel from '@/components/drively/FilePreviewPanel';
+import SearchResults from '@/components/drively/SearchResults';
+import ActivityFeed from '@/components/drively/ActivityFeed';
+import ErrorBoundary from '@/components/drively/ErrorBoundary';
+import debounce from 'lodash.debounce';
 
 const pacifico = Pacifico({
   weight: '400',
@@ -47,7 +47,38 @@ function DrivelyApp() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('mydrive');
-  const { trashCount, searchQuery, setSearchQuery, previewFile, setPreviewFile } = useDrively();
+  const { trashCount, searchQuery, setSearchQuery, previewFile, setPreviewFile, activity } =
+    useDrively();
+
+  const [searchResults, setSearchResults] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showActivity, setShowActivity] = useState(false);
+
+  const performSearch = useCallback(
+    debounce(async (query) => {
+      if (!query.trim()) {
+        setSearchResults(null);
+        return;
+      }
+      setIsSearching(true);
+      try {
+        const res = await fetch(`/api/drively/search?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        if (data.success) {
+          setSearchResults({ files: data.files, folders: data.folders });
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300),
+    []
+  );
+
+  useEffect(() => {
+    performSearch(searchQuery);
+  }, [searchQuery, performSearch]);
 
   if (status === 'loading') return null;
   if (status === 'unauthenticated' || session?.user?.role !== 'admin') {
@@ -63,7 +94,17 @@ function DrivelyApp() {
     { id: 'storage', label: 'Storage', icon: PieChart },
   ];
 
-  const renderTab = () => {
+  const renderContent = () => {
+    if (searchQuery) {
+      return (
+        <SearchResults
+          results={searchResults || { files: [], folders: [] }}
+          query={searchQuery}
+          onClear={() => setSearchQuery('')}
+        />
+      );
+    }
+
     switch (activeTab) {
       case 'mydrive':
         return <MyDriveTab />;
@@ -98,9 +139,12 @@ function DrivelyApp() {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setSearchQuery('');
+                }}
                 className={`w-full cursor-pointer flex items-center justify-between px-4 py-3 rounded-lg text-sm font-bold transition-all ${
-                  activeTab === tab.id
+                  activeTab === tab.id && !searchQuery
                     ? 'bg-[#1f644e] text-white'
                     : 'text-[#7c8e88] hover:bg-[#f0f5f2] hover:text-[#1e3a34]'
                 }`}
@@ -123,7 +167,9 @@ function DrivelyApp() {
       </aside>
 
       {/* Main Content */}
-      <div className="flex min-w-0 flex-1 flex-col lg:ml-64 min-h-screen overflow-x-hidden pb-20 lg:pb-0">
+      <div
+        className={`flex min-w-0 flex-1 flex-col lg:ml-64 min-h-screen overflow-x-hidden pb-20 lg:pb-0 transition-all ${showActivity ? 'lg:mr-80' : ''}`}
+      >
         {/* Header */}
         <header className="sticky top-0 z-40 bg-[#fcfbf5]/80 backdrop-blur-md border-b border-[#e5e3d8] px-4 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -134,7 +180,7 @@ function DrivelyApp() {
               <ArrowLeft className="w-5 h-5" />
             </button>
             <h1 className="text-lg font-bold lg:text-xl">
-              {tabs.find((t) => t.id === activeTab)?.label}
+              {searchQuery ? 'Search Results' : tabs.find((t) => t.id === activeTab)?.label}
             </h1>
           </div>
 
@@ -146,17 +192,42 @@ function DrivelyApp() {
                 placeholder="Search files..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-4 py-2 rounded-xl border border-[#e5e3d8] bg-white text-sm outline-none focus:border-[#1f644e] w-64"
+                className="pl-9 pr-10 py-2 rounded-xl border border-[#e5e3d8] bg-white text-sm outline-none focus:border-[#1f644e] w-64"
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                >
+                  <X className="w-4 h-4 text-[#7c8e88] hover:text-[#1e3a34]" />
+                </button>
+              )}
             </div>
+            <button
+              onClick={() => setShowActivity(!showActivity)}
+              className={`p-2 rounded-xl border transition-colors hidden lg:flex ${showActivity ? 'bg-[#1f644e] border-[#1f644e] text-white' : 'bg-white border-[#e5e3d8] text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e]'}`}
+            >
+              <Activity className="w-5 h-5" />
+            </button>
             <div className="h-8 w-8 rounded-full bg-[#1f644e] flex items-center justify-center text-white text-xs font-bold">
               {session?.user?.name?.[0] || 'A'}
             </div>
           </div>
         </header>
 
-        <main className="flex-1 p-4 lg:p-8 max-w-6xl mx-auto w-full">{renderTab()}</main>
+        <main className="flex-1 p-4 lg:p-8 max-w-6xl mx-auto w-full">
+          <ErrorBoundary key={activeTab + searchQuery}>{renderContent()}</ErrorBoundary>
+        </main>
       </div>
+
+      {/* Desktop Activity Sidebar */}
+      <aside
+        className={`hidden lg:flex flex-col w-80 bg-white border-l border-[#e5e3d8] fixed inset-y-0 right-0 z-30 transition-transform duration-300 ${showActivity ? 'translate-x-0' : 'translate-x-full'}`}
+      >
+        <div className="p-6 h-full overflow-y-auto">
+          <ActivityFeed activity={activity} />
+        </div>
+      </aside>
 
       {previewFile && (
         <>
@@ -175,9 +246,12 @@ function DrivelyApp() {
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => {
+              setActiveTab(tab.id);
+              setSearchQuery('');
+            }}
             className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${
-              activeTab === tab.id ? 'text-[#1f644e]' : 'text-[#7c8e88]'
+              activeTab === tab.id && !searchQuery ? 'text-[#1f644e]' : 'text-[#7c8e88]'
             }`}
           >
             <div className="relative">
@@ -191,7 +265,31 @@ function DrivelyApp() {
             <span className="text-[10px] font-bold">{tab.label}</span>
           </button>
         ))}
+        <button
+          onClick={() => {
+            setActiveTab('activity');
+            setSearchQuery('');
+          }}
+          className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${
+            activeTab === 'activity' ? 'text-[#1f644e]' : 'text-[#7c8e88]'
+          }`}
+        >
+          <Activity className="w-6 h-6" strokeWidth={activeTab === 'activity' ? 2 : 1.5} />
+          <span className="text-[10px] font-bold">Activity</span>
+        </button>
       </nav>
+
+      {activeTab === 'activity' && (
+        <div className="lg:hidden fixed inset-0 bg-[#fcfbf5] z-[45] p-4 pt-20">
+          <button
+            onClick={() => setActiveTab('mydrive')}
+            className="absolute top-4 left-4 p-2 bg-white border border-[#e5e3d8] rounded-full"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <ActivityFeed activity={activity} />
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 
@@ -13,9 +13,16 @@ export function DrivelyProvider({ children }) {
   const [folders, setFolders] = useState([]);
   const [stats, setStats] = useState(null);
   const [recent, setRecent] = useState([]);
+  const [activity, setActivity] = useState([]);
   const [starred, setStarred] = useState({ files: [], folders: [] });
   const [trashCount, setTrashCount] = useState(0);
+  const [trashFiles, setTrashFiles] = useState([]);
+  const [trashFolders, setTrashFolders] = useState([]);
   const [currentFolderId, setCurrentFolderId] = useState(null);
+
+  // Pagination
+  const [pagination, setPagination] = useState({ page: 1, hasMore: false });
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
 
   // Global search and sort state
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,28 +32,59 @@ export function DrivelyProvider({ children }) {
   const [selectedItems, setSelectedItems] = useState({ files: [], folders: [] });
   const [previewFile, setPreviewFile] = useState(null);
 
-  const fetchBootstrap = useCallback(async () => {
+  const fetchBootstrap = useCallback(async (page = 1, isLoadMore = false) => {
     try {
-      setIsLoading(true);
-      const res = await fetch('/api/drively/bootstrap');
-      const data = await res.json();
+      if (isLoadMore) setIsFetchingMore(true);
+      else setIsLoading(true);
+
+      // Trigger trash expiry check (asynchronous)
+      if (page === 1) {
+        fetch('/api/drively/trash/expire', { method: 'DELETE' }).catch(console.error);
+      }
+
+      // Fetch both bootstrap and trash data
+      const [bootRes, trashRes] = await Promise.all([
+        fetch(`/api/drively/bootstrap?page=${page}&limit=100`),
+        page === 1 ? fetch('/api/drively/bootstrap?trash=true') : Promise.resolve({ json: () => ({ success: true, files: [], folders: [] }) }),
+      ]);
+      const data = await bootRes.json();
+      const trashData = await trashRes.json();
+
       if (data.success) {
-        setFiles(data.files);
-        setFolders(data.folders);
-        setStats(data.stats);
-        setRecent(data.recent);
-        setStarred(data.starred);
-        setTrashCount(data.trashCount);
+        if (isLoadMore) {
+          setFiles((prev) => [...prev, ...data.files]);
+        } else {
+          setFiles(data.files);
+          setFolders(data.folders);
+          setStats(data.stats);
+          setRecent(data.recent);
+          setStarred(data.starred);
+          setTrashCount(data.trashCount);
+          setActivity(data.activity);
+        }
+        setPagination({ page: data.pagination.page, hasMore: data.pagination.hasMore });
       } else {
         toast.error(data.error || 'Failed to load Drively');
+      }
+
+      if (trashData.success && page === 1) {
+        setTrashFiles(trashData.files);
+        setTrashFolders(trashData.folders);
       }
     } catch (error) {
       console.error(error);
       toast.error('Connection error');
     } finally {
       setIsLoading(false);
+      setIsFetchingMore(false);
     }
   }, []);
+
+  const loadMore = useCallback(() => {
+    if (pagination.hasMore && !isFetchingMore) {
+      fetchBootstrap(pagination.page + 1, true);
+    }
+  }, [pagination, isFetchingMore, fetchBootstrap]);
 
   useEffect(() => {
     if (session?.user?.role === 'admin') {
@@ -55,29 +93,50 @@ export function DrivelyProvider({ children }) {
   }, [session, fetchBootstrap]);
 
   const uploadFiles = async (selectedFiles, folderId = null) => {
-    const formData = new FormData();
-    selectedFiles.forEach((file) => formData.append('file', file));
-    if (folderId) formData.append('folderId', folderId);
+    const concurrencyLimit = 3;
+    const results = [];
 
-    try {
+    // Concurrent uploads with limit
+    const uploadTask = async (file) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      if (folderId) formData.append('folderId', folderId);
+
       const res = await fetch('/api/drively/upload', {
         method: 'POST',
         body: formData,
       });
       const data = await res.json();
       if (data.success) {
-        toast.success('Upload successful');
-        // Optimistic update: Add newly uploaded files to state
-        setFiles((prev) => [...data.files, ...prev]);
-        setRecent((prev) => [...data.files, ...prev]);
-        // fetchBootstrap(); // Refresh stats and counts
-        return true;
+        setFiles((prev) => [data.file, ...prev]);
+        setRecent((prev) => [data.file, ...prev]);
+        return data.file;
       } else {
-        toast.error(data.error || 'Upload failed');
-        return false;
+        throw new Error(data.error || 'Upload failed');
       }
+    };
+
+    try {
+      const chunks = [];
+      for (let i = 0; i < selectedFiles.length; i += concurrencyLimit) {
+        chunks.push(selectedFiles.slice(i, i + concurrencyLimit));
+      }
+
+      for (const chunk of chunks) {
+        const chunkResults = await Promise.allSettled(chunk.map(uploadTask));
+        results.push(...chunkResults);
+      }
+
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+
+      if (successful > 0) toast.success(`Uploaded ${successful} files`);
+      if (failed > 0) toast.error(`Failed to upload ${failed} files`);
+
+      fetchBootstrap();
+      return successful > 0;
     } catch (error) {
-      toast.error('Upload failed');
+      toast.error('Upload process failed');
       return false;
     }
   };
@@ -93,7 +152,7 @@ export function DrivelyProvider({ children }) {
       if (data.success) {
         toast.success('Folder created');
         setFolders((prev) => [data.folder, ...prev]);
-        // fetchBootstrap();
+        fetchBootstrap();
         return true;
       } else {
         toast.error(data.error || 'Failed to create folder');
@@ -121,7 +180,7 @@ export function DrivelyProvider({ children }) {
       const data = await res.json();
       if (data.success) {
         toast.success(permanent ? 'Permanently deleted' : 'Moved to trash');
-        // fetchBootstrap();
+        fetchBootstrap();
         return true;
       } else {
         setFiles(prevFiles);
@@ -156,7 +215,7 @@ export function DrivelyProvider({ children }) {
       });
       const data = await res.json();
       if (data.success) {
-        // fetchBootstrap();
+        fetchBootstrap();
         return true;
       } else {
         setFiles(prevFiles);
@@ -228,7 +287,53 @@ export function DrivelyProvider({ children }) {
     });
   };
 
-  const clearSelection = () => setSelectedItems({ files: [], folders: [] });
+  const clearSelection = useCallback(() => setSelectedItems({ files: [], folders: [] }), []);
+
+  // Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Escape to clear selection or close preview
+      if (e.key === 'Escape') {
+        if (previewFile) setPreviewFile(null);
+        else clearSelection();
+      }
+
+      // Delete key
+      if (e.key === 'Delete' || (e.metaKey && e.key === 'Backspace')) {
+        const totalSelected = selectedItems.files.length + selectedItems.folders.length;
+        if (totalSelected > 0) {
+          if (confirm(`Are you sure you want to delete ${totalSelected} items?`)) {
+            executeBulk('delete');
+          }
+        }
+      }
+
+      // F2 to rename single selected item
+      if (e.key === 'F2') {
+        const selectedFileCount = selectedItems.files.length;
+        const selectedFolderCount = selectedItems.folders.length;
+
+        if (selectedFileCount + selectedFolderCount === 1) {
+           // We'd need to trigger the rename modal here.
+           // For now, let's just log or skip as it requires complex wiring
+           // to find which component owns the modal.
+        }
+      }
+
+      // Ctrl/Cmd + A to select all
+      if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+        // Only trigger if not typing in an input
+        if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          // Logic to select all visible files/folders
+          // (This would need access to currently filtered files/folders)
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedItems, executeBulk, clearSelection, previewFile]);
 
   return (
     <DrivelyContext.Provider
@@ -238,8 +343,11 @@ export function DrivelyProvider({ children }) {
         folders,
         stats,
         recent,
+        activity,
         starred,
         trashCount,
+        trashFiles,
+        trashFolders,
         currentFolderId,
         setCurrentFolderId,
         searchQuery,
@@ -258,6 +366,9 @@ export function DrivelyProvider({ children }) {
         previewFile,
         setPreviewFile,
         refresh: fetchBootstrap,
+        pagination,
+        loadMore,
+        isFetchingMore,
       }}
     >
       {children}

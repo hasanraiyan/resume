@@ -1,7 +1,15 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { MoreVertical, Star, Trash2, Pencil, Download, RefreshCcw, FolderInput } from 'lucide-react';
+import {
+  MoreVertical,
+  Star,
+  Trash2,
+  Pencil,
+  Download,
+  RefreshCcw,
+  FolderInput,
+} from 'lucide-react';
 import { useDrively } from '@/context/DrivelyContext';
 import RenameModal from './RenameModal';
 import MoveModal from './MoveModal';
@@ -38,11 +46,7 @@ export default function ActionMenu({ type, item, variant = 'default' }) {
         break;
       case 'download':
         if (type === 'file') {
-          if (item.mimeType.startsWith('image/')) {
-            window.open(item.secureUrl, '_blank');
-          } else {
-            window.open(`/api/drively/download/${item._id}`, '_blank');
-          }
+          window.open(`/api/drively/download/${item._id}`, '_blank');
         }
         break;
     }
@@ -167,7 +171,8 @@ export default function ActionMenu({ type, item, variant = 'default' }) {
       {showMove && (
         <MoveModal
           onConfirm={async (targetFolderId) => {
-            const payload = type === 'file' ? { folderId: targetFolderId } : { parentId: targetFolderId };
+            const payload =
+              type === 'file' ? { folderId: targetFolderId } : { parentId: targetFolderId };
             await updateItem(type, item._id, payload);
             setShowMove(false);
           }}

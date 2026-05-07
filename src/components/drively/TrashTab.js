@@ -1,45 +1,40 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useDrively } from '@/context/DrivelyContext';
-import { Trash2, AlertTriangle, RefreshCcw, Loader2 } from 'lucide-react';
+import { Trash2, AlertTriangle, Clock } from 'lucide-react';
 import FileCard from './FileCard';
 import FolderCard from './FolderCard';
-import { toast } from 'sonner';
+import { differenceInDays } from 'date-fns';
 
 export default function TrashTab() {
-  const { isLoading, refresh, emptyTrash } = useDrively();
-  const [trashItems, setTrashItems] = useState({ folders: [], files: [] });
-  const [isFetching, setIsFetching] = useState(false);
+  const { isLoading, trashFiles, trashFolders, emptyTrash } = useDrively();
 
-  const fetchTrash = async () => {
-    try {
-      setIsFetching(true);
-      const res = await fetch('/api/drively/bootstrap?trash=true');
-      const data = await res.json();
-      if (data.success) {
-        setTrashItems({ folders: data.folders, files: data.files });
-      }
-    } catch (e) {
-      console.error(e);
-      toast.error('Failed to load trash');
-    } finally {
-      setIsFetching(false);
-    }
+  const hasItems = trashFolders.length > 0 || trashFiles.length > 0;
+
+  const renderExpiryBadge = (deletedAt) => {
+    if (!deletedAt) return null;
+    const daysLeft = 30 - differenceInDays(new Date(), new Date(deletedAt));
+    return (
+      <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-red-50 text-red-600 rounded-md text-[8px] font-extrabold flex items-center gap-1 border border-red-100 shadow-sm z-10">
+        <Clock className="w-2.5 h-2.5" />
+        {daysLeft} DAYS LEFT
+      </div>
+    );
   };
 
-  useEffect(() => {
-    fetchTrash();
-  }, []);
-
-  const hasItems = trashItems.folders.length > 0 || trashItems.files.length > 0;
-
-  if (isFetching && !hasItems) {
+  if (isLoading && !hasItems) {
     return (
-      <div className="animate-pulse space-y-4">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-16 bg-[#e5e3d8] rounded-xl" />
-        ))}
+      <div className="space-y-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-24 bg-[#e5e3d8] rounded-2xl animate-pulse" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <div key={i} className="aspect-square bg-[#e5e3d8] rounded-2xl animate-pulse" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -67,35 +62,43 @@ export default function TrashTab() {
 
       {!hasItems ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-20 h-20 bg-[#e5e3d8]/50 rounded-full flex items-center justify-center mb-4 text-[#7c8e88]">
+          <div className="w-24 h-24 bg-[#fcfbf5] border-2 border-dashed border-[#e5e3d8] rounded-full flex items-center justify-center mb-6 text-[#7c8e88]">
             <Trash2 className="w-10 h-10" />
           </div>
-          <h3 className="text-lg font-bold text-[#1e3a34]">Trash is empty</h3>
-          <p className="text-[#7c8e88] text-sm mt-1">Deleted files and folders will appear here</p>
+          <h3 className="text-xl font-bold text-[#1e3a34]">Trash is empty</h3>
+          <p className="text-[#7c8e88] max-w-xs mt-2">
+            Items you delete will stay here for 30 days before being permanently removed.
+          </p>
         </div>
       ) : (
         <div className="space-y-8">
-          {trashItems.folders.length > 0 && (
+          {trashFolders.length > 0 && (
             <section>
               <h2 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-4">
                 Folders
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {trashItems.folders.map((folder) => (
-                  <FolderCard key={folder._id} folder={folder} viewMode="grid" />
+                {trashFolders.map((folder) => (
+                  <div key={folder._id} className="relative">
+                    {renderExpiryBadge(folder.deletedAt)}
+                    <FolderCard folder={folder} viewMode="grid" />
+                  </div>
                 ))}
               </div>
             </section>
           )}
 
-          {trashItems.files.length > 0 && (
+          {trashFiles.length > 0 && (
             <section>
               <h2 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-4">
                 Files
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {trashItems.files.map((file) => (
-                  <FileCard key={file._id} file={file} viewMode="grid" />
+                {trashFiles.map((file) => (
+                  <div key={file._id} className="relative">
+                    {renderExpiryBadge(file.deletedAt)}
+                    <FileCard file={file} viewMode="grid" />
+                  </div>
                 ))}
               </div>
             </section>

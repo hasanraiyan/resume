@@ -1,6 +1,7 @@
 import dbConnect from '@/lib/dbConnect';
 import DrivelyFolder from '@/models/DrivelyFolder';
 import DrivelyFile from '@/models/DrivelyFile';
+import DrivelyActivity from '@/models/DrivelyActivity';
 import { v2 as cloudinary } from 'cloudinary';
 import { CreateFolderSchema, UpdateFolderSchema, UpdateFileSchema } from './validators';
 
@@ -15,12 +16,22 @@ export async function ensureDb() {
   await dbConnect();
 }
 
-export async function getBootstrapData() {
-  await ensureDb();
+async function logActivity(action, itemType, itemName, targetFolder = null) {
+  try {
+    await DrivelyActivity.create({ action, itemType, itemName, targetFolder });
+  } catch (err) {
+    console.error('Failed to log activity:', err);
+  }
+}
 
-  const [folders, files] = await Promise.all([
+export async function getBootstrapData(page = 1, limit = 100) {
+  await ensureDb();
+  const skip = (page - 1) * limit;
+
+  const [folders, files, totalFiles] = await Promise.all([
     DrivelyFolder.find({ deletedAt: null }).lean(),
-    DrivelyFile.find({ deletedAt: null }).lean(),
+    DrivelyFile.find({ deletedAt: null }).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    DrivelyFile.countDocuments({ deletedAt: null }),
   ]);
 
   const stats = await getStorageStats();
@@ -35,9 +46,19 @@ export async function getBootstrapData() {
     DrivelyFolder.countDocuments({ deletedAt: { $ne: null } }),
   ]).then(([f, d]) => f + d);
 
+  const activity = await DrivelyActivity.find().sort({ createdAt: -1 }).limit(50).lean();
+
   return {
     folders,
     files,
+    pagination: {
+      page,
+      limit,
+      totalFiles,
+      totalPages: Math.ceil(totalFiles / limit),
+      hasMore: page * limit < totalFiles,
+    },
+    activity,
     stats,
     recent,
     starred: {
@@ -103,7 +124,13 @@ export async function createFolder(payload) {
   });
 
   await folder.save();
+  await logActivity('upload', 'folder', folder.name);
   return folder.toObject();
+}
+
+export async function logDrivelyAction(action, itemType, itemName, targetFolder = null) {
+  await ensureDb();
+  await logActivity(action, itemType, itemName, targetFolder);
 }
 
 const getCloudinaryResourceType = (mimeType) => {
@@ -160,6 +187,7 @@ export async function uploadFile(file, folderId = null) {
   });
 
   await newFile.save();
+  await logActivity('upload', 'file', newFile.filename);
   return newFile.toObject();
 }
 
@@ -212,6 +240,10 @@ export async function updateFolder(id, payload) {
   }
 
   await folder.save();
+  if (validated.restore) await logActivity('restore', 'folder', folder.name);
+  if (validated.name) await logActivity('rename', 'folder', folder.name);
+  if (validated.parentId !== undefined) await logActivity('move', 'folder', folder.name);
+  if (validated.starred !== undefined) await logActivity('star', 'folder', folder.name);
   return folder.toObject();
 }
 
@@ -231,6 +263,10 @@ export async function updateFile(id, payload) {
   if (validated.folderId !== undefined) file.folderId = validated.folderId;
 
   await file.save();
+  if (validated.restore) await logActivity('restore', 'file', file.filename);
+  if (validated.filename) await logActivity('rename', 'file', file.filename);
+  if (validated.folderId !== undefined) await logActivity('move', 'file', file.filename);
+  if (validated.starred !== undefined) await logActivity('star', 'file', file.filename);
   return file.toObject();
 }
 
@@ -239,6 +275,8 @@ export async function softDeleteFolder(id) {
   const now = new Date();
   const folder = await DrivelyFolder.findById(id);
   if (!folder) throw new Error('Folder not found');
+
+  await logActivity('delete', 'folder', folder.name);
 
   const pathPrefix = `${folder.path}/${folder._id}`.replace(/^\/+/, '/');
 
@@ -259,7 +297,13 @@ export async function softDeleteFolder(id) {
 
 export async function softDeleteFile(id) {
   await ensureDb();
-  await DrivelyFile.findByIdAndUpdate(id, { deletedAt: new Date() });
+  const file = await DrivelyFile.findById(id);
+  if (!file) throw new Error('File not found');
+
+  await logActivity('delete', 'file', file.filename);
+  file.deletedAt = new Date();
+  await file.save();
+
   return true;
 }
 
@@ -321,6 +365,8 @@ export async function emptyTrash() {
   await ensureDb();
   const filesToDelete = await DrivelyFile.find({ deletedAt: { $ne: null } });
 
+  await logActivity('empty_trash', 'bulk', 'Trash');
+
   // Delete all trashed files from Cloudinary
   for (const file of filesToDelete) {
     try {
@@ -338,6 +384,18 @@ export async function emptyTrash() {
   ]);
 
   return true;
+}
+
+export async function searchDrively(query) {
+  await ensureDb();
+  const regex = new RegExp(query, 'i');
+
+  const [folders, files] = await Promise.all([
+    DrivelyFolder.find({ name: regex, deletedAt: null }).limit(50).lean(),
+    DrivelyFile.find({ filename: regex, deletedAt: null }).limit(100).lean(),
+  ]);
+
+  return { folders, files };
 }
 
 export async function executeBulkAction(payload) {

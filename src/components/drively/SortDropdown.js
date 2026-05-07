@@ -17,9 +17,12 @@ export default function SortDropdown() {
     { label: 'Size', key: 'size', direction: 'desc' },
   ];
 
-  const currentOption = options.find(
-    (opt) => opt.key === (sortConfig.key === 'filename' ? 'name' : sortConfig.key) && opt.direction === sortConfig.direction
-  ) || options[2];
+  const currentOption =
+    options.find(
+      (opt) =>
+        opt.key === (sortConfig.key === 'filename' ? 'name' : sortConfig.key) &&
+        opt.direction === sortConfig.direction
+    ) || options[2];
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -39,7 +42,9 @@ export default function SortDropdown() {
       >
         <ArrowUpDown className="w-3.5 h-3.5 text-[#7c8e88]" />
         <span>{currentOption.label}</span>
-        <ChevronDown className={`w-3.5 h-3.5 text-[#7c8e88] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown
+          className={`w-3.5 h-3.5 text-[#7c8e88] transition-transform ${isOpen ? 'rotate-180' : ''}`}
+        />
       </button>
 
       {isOpen && (

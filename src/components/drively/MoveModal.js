@@ -60,10 +60,14 @@ export default function MoveModal({ onConfirm, onClose }) {
           <button
             onClick={() => setSelectedFolderId(null)}
             className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left ${
-              selectedFolderId === null ? 'bg-[#f0f5f2] text-[#1f644e]' : 'hover:bg-[#fcfbf5] text-[#1e3a34]'
+              selectedFolderId === null
+                ? 'bg-[#f0f5f2] text-[#1f644e]'
+                : 'hover:bg-[#fcfbf5] text-[#1e3a34]'
             }`}
           >
-            <div className={`p-2 rounded-lg ${selectedFolderId === null ? 'bg-[#1f644e] text-white' : 'bg-[#e5e3d8] text-[#7c8e88]'}`}>
+            <div
+              className={`p-2 rounded-lg ${selectedFolderId === null ? 'bg-[#1f644e] text-white' : 'bg-[#e5e3d8] text-[#7c8e88]'}`}
+            >
               <HardDrive className="w-5 h-5" />
             </div>
             <span className="text-sm font-bold">My Drive (Root)</span>
@@ -75,10 +79,14 @@ export default function MoveModal({ onConfirm, onClose }) {
                 key={folder._id}
                 onClick={() => setSelectedFolderId(folder._id)}
                 className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left ${
-                  selectedFolderId === folder._id ? 'bg-[#f0f5f2] text-[#1f644e]' : 'hover:bg-[#fcfbf5] text-[#1e3a34]'
+                  selectedFolderId === folder._id
+                    ? 'bg-[#f0f5f2] text-[#1f644e]'
+                    : 'hover:bg-[#fcfbf5] text-[#1e3a34]'
                 }`}
               >
-                <div className={`p-2 rounded-lg ${selectedFolderId === folder._id ? 'bg-[#1f644e] text-white' : 'bg-[#f0f5f2] text-[#1f644e]'}`}>
+                <div
+                  className={`p-2 rounded-lg ${selectedFolderId === folder._id ? 'bg-[#1f644e] text-white' : 'bg-[#f0f5f2] text-[#1f644e]'}`}
+                >
                   <Folder className="w-5 h-5" fill="currentColor" />
                 </div>
                 <div className="min-w-0">
@@ -92,7 +100,9 @@ export default function MoveModal({ onConfirm, onClose }) {
 
         <div className="p-6 bg-[#fcfbf5] border-t border-[#e5e3d8] flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-wider font-bold text-[#7c8e88]">Destination</p>
+            <p className="text-[10px] uppercase tracking-wider font-bold text-[#7c8e88]">
+              Destination
+            </p>
             <p className="text-sm font-bold text-[#1e3a34] truncate">{getPath(selectedFolderId)}</p>
           </div>
           <div className="flex gap-3 shrink-0">

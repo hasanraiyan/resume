@@ -1,16 +1,47 @@
 'use client';
 
-import { X, Download, File, Star, Trash2, Calendar, HardDrive, Type } from 'lucide-react';
+import {
+  X,
+  Download,
+  File,
+  Star,
+  Trash2,
+  Calendar,
+  HardDrive,
+  Type,
+  Maximize2,
+  Minimize2,
+} from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useDrively } from '@/context/DrivelyContext';
+import { useState, useEffect } from 'react';
 
 export default function FilePreviewPanel({ file, onClose }) {
   const { updateItem, deleteItem } = useDrively();
+  const [textContent, setTextContent] = useState(null);
+  const [isZoomed, setIsZoomed] = useState(false);
+
+  useEffect(() => {
+    const isText =
+      file?.mimeType?.startsWith('text/') ||
+      file?.mimeType === 'application/json' ||
+      file?.mimeType === 'application/javascript';
+
+    if (isText && file?.secureUrl) {
+      fetch(file.secureUrl)
+        .then((res) => res.text())
+        .then((text) => setTextContent(text.slice(0, 50000))) // Cap at 50KB for preview
+        .catch((err) => console.error('Failed to fetch text content', err));
+    } else {
+      setTextContent(null);
+    }
+  }, [file]);
 
   if (!file) return null;
 
   const isImage = file.mimeType.startsWith('image/');
   const isPdf = file.mimeType === 'application/pdf';
+  const isVideo = file.mimeType.startsWith('video/');
 
   const formatSize = (bytes) => {
     if (bytes === 0) return '0 B';
@@ -21,11 +52,7 @@ export default function FilePreviewPanel({ file, onClose }) {
   };
 
   const handleDownload = () => {
-    if (file.mimeType.startsWith('image/')) {
-      window.open(file.secureUrl, '_blank');
-    } else {
-      window.open(`/api/drively/download/${file._id}`, '_blank');
-    }
+    window.open(`/api/drively/download/${file._id}`, '_blank');
   };
 
   return (
@@ -42,11 +69,40 @@ export default function FilePreviewPanel({ file, onClose }) {
 
       <div className="flex-1 overflow-y-auto">
         {/* Preview Area */}
-        <div className="aspect-video bg-[#f8f9fa] flex items-center justify-center border-b border-[#e5e3d8]">
+        <div className="aspect-video bg-[#f8f9fa] relative flex items-center justify-center border-b border-[#e5e3d8] overflow-hidden">
           {isImage ? (
-            <img src={file.secureUrl} alt={file.filename} className="max-w-full max-h-full object-contain" />
+            <div
+              className="relative w-full h-full cursor-zoom-in"
+              onClick={() => setIsZoomed(!isZoomed)}
+            >
+              <img
+                src={file.secureUrl}
+                alt={file.filename}
+                className={`w-full h-full transition-all duration-300 ${isZoomed ? 'object-contain scale-150' : 'object-cover'}`}
+              />
+              <div className="absolute bottom-2 right-2 p-1 bg-black/40 rounded-lg text-white pointer-events-none">
+                {isZoomed ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </div>
+            </div>
+          ) : isPdf ? (
+            <iframe
+              src={`${file.secureUrl}#toolbar=0`}
+              className="w-full h-full border-none"
+              title={file.filename}
+            />
+          ) : isVideo ? (
+            <video src={file.secureUrl} controls className="w-full h-full bg-black" />
+          ) : textContent !== null ? (
+            <div className="w-full h-full p-4 overflow-auto bg-[#1e1e1e] text-[#d4d4d4] text-[10px] font-mono leading-relaxed whitespace-pre-wrap selection:bg-[#264f78]">
+              {textContent}
+            </div>
           ) : (
-            <File className="w-20 h-20 text-[#7c8e88]" />
+            <div className="flex flex-col items-center gap-2">
+              <File className="w-20 h-20 text-[#7c8e88]" />
+              <p className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider">
+                No preview available
+              </p>
+            </div>
           )}
         </div>
 
@@ -65,10 +121,14 @@ export default function FilePreviewPanel({ file, onClose }) {
             onClick={() => updateItem('file', file._id, { starred: !file.starred })}
             className="flex flex-col items-center gap-2 p-3 rounded-2xl hover:bg-[#fcfbf5] transition-colors"
           >
-            <div className={`p-2 rounded-xl ${file.starred ? 'bg-[#1f644e] text-white' : 'bg-[#fcfbf5] text-[#7c8e88]'}`}>
+            <div
+              className={`p-2 rounded-xl ${file.starred ? 'bg-[#1f644e] text-white' : 'bg-[#fcfbf5] text-[#7c8e88]'}`}
+            >
               <Star className={`w-5 h-5 ${file.starred ? 'fill-current' : ''}`} />
             </div>
-            <span className="text-[10px] font-bold text-[#7c8e88]">{file.starred ? 'Starred' : 'Star'}</span>
+            <span className="text-[10px] font-bold text-[#7c8e88]">
+              {file.starred ? 'Starred' : 'Star'}
+            </span>
           </button>
           <button
             onClick={() => {
@@ -89,40 +149,52 @@ export default function FilePreviewPanel({ file, onClose }) {
         {/* Metadata */}
         <div className="p-6 space-y-6">
           <section>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-4">File Details</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-4">
+              File Details
+            </h3>
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <Type className="w-4 h-4 text-[#7c8e88]" />
                 <div>
-                  <p className="text-[10px] text-[#7c8e88] font-bold uppercase leading-none mb-1">Type</p>
+                  <p className="text-[10px] text-[#7c8e88] font-bold uppercase leading-none mb-1">
+                    Type
+                  </p>
                   <p className="text-sm font-medium text-[#1e3a34]">{file.mimeType}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <HardDrive className="w-4 h-4 text-[#7c8e88]" />
                 <div>
-                  <p className="text-[10px] text-[#7c8e88] font-bold uppercase leading-none mb-1">Size</p>
+                  <p className="text-[10px] text-[#7c8e88] font-bold uppercase leading-none mb-1">
+                    Size
+                  </p>
                   <p className="text-sm font-medium text-[#1e3a34]">{formatSize(file.size)}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <Calendar className="w-4 h-4 text-[#7c8e88]" />
                 <div>
-                  <p className="text-[10px] text-[#7c8e88] font-bold uppercase leading-none mb-1">Modified</p>
+                  <p className="text-[10px] text-[#7c8e88] font-bold uppercase leading-none mb-1">
+                    Modified
+                  </p>
                   <p className="text-sm font-medium text-[#1e3a34]">
-                    {formatDistanceToNow(new Date(file.updatedAt || file.createdAt), { addSuffix: true })}
+                    {formatDistanceToNow(new Date(file.updatedAt || file.createdAt), {
+                      addSuffix: true,
+                    })}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <Calendar className="w-4 h-4 text-[#7c8e88]" />
                 <div>
-                  <p className="text-[10px] text-[#7c8e88] font-bold uppercase leading-none mb-1">Created</p>
+                  <p className="text-[10px] text-[#7c8e88] font-bold uppercase leading-none mb-1">
+                    Created
+                  </p>
                   <p className="text-sm font-medium text-[#1e3a34]">
                     {new Date(file.createdAt).toLocaleDateString(undefined, {
                       year: 'numeric',
                       month: 'long',
-                      day: 'numeric'
+                      day: 'numeric',
                     })}
                   </p>
                 </div>
