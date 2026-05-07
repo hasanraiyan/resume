@@ -14,6 +14,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useState, useMemo } from 'react';
 
 const actionIcons = {
   upload: <Upload className="w-3.5 h-3.5" />,
@@ -32,6 +33,21 @@ const typeIcons = {
 };
 
 export default function ActivityFeed({ activity }) {
+  const [filter, setFilter] = useState('All');
+  const filters = ['All', 'Uploads', 'Deletes', 'Moves', 'Renames'];
+
+  const filteredActivity = useMemo(() => {
+    if (!activity) return [];
+    if (filter === 'All') return activity;
+    const actionMap = {
+      Uploads: 'upload',
+      Deletes: 'delete',
+      Moves: 'move',
+      Renames: 'rename',
+    };
+    return activity.filter((item) => item.action === actionMap[filter]);
+  }, [activity, filter]);
+
   if (!activity || activity.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -43,12 +59,29 @@ export default function ActivityFeed({ activity }) {
   }
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-4">
-        Recent Activity
-      </h3>
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-4">
+          Recent Activity
+        </h3>
+        <div className="flex flex-wrap gap-2 mb-2">
+          {filters.map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all ${
+                filter === f
+                  ? 'bg-[#1f644e] text-white shadow-sm'
+                  : 'bg-[#f0f5f2] text-[#7c8e88] hover:text-[#1e3a34]'
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="space-y-3">
-        {activity.map((item) => (
+        {filteredActivity.map((item) => (
           <div
             key={item._id}
             className="flex gap-3 p-3 bg-white border border-[#e5e3d8] rounded-2xl hover:border-[#1f644e]/30 transition-colors"

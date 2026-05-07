@@ -1,7 +1,8 @@
 'use client';
 
 import { useDrively } from '@/context/DrivelyContext';
-import { File, FileText, Image as ImageIcon, FileArchive } from 'lucide-react';
+import { HardDrive, File, Image as ImageIcon, Video, FileText, AlertCircle, Folder } from 'lucide-react';
+import { useMemo } from 'react';
 
 const formatSize = (bytes) => {
   if (bytes === 0) return '0 B';
@@ -19,7 +20,29 @@ const getIconForMime = (mime) => {
 };
 
 export default function StorageTab() {
-  const { stats, isLoading } = useDrively();
+  const { stats, isLoading, files, folders } = useDrively();
+
+  const folderStats = useMemo(() => {
+    if (!files || !folders) return [];
+
+    const statsMap = {};
+    files.forEach((file) => {
+      const fid = file.folderId || 'root';
+      statsMap[fid] = (statsMap[fid] || 0) + file.size;
+    });
+
+    return Object.entries(statsMap)
+      .map(([id, size]) => {
+        const folder = id === 'root' ? { name: 'Root' } : folders.find((f) => f._id === id);
+        return {
+          id,
+          name: folder?.name || 'Unknown',
+          size,
+        };
+      })
+      .sort((a, b) => b.size - a.size)
+      .slice(0, 5);
+  }, [files, folders]);
 
   if (isLoading || !stats) {
     return (
@@ -40,6 +63,15 @@ export default function StorageTab() {
 
   return (
     <div className="space-y-8">
+      {percentage > 80 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3 text-amber-800">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <p className="text-sm font-medium">
+            You are using {percentage.toFixed(1)}% of your storage. Consider deleting old files.
+          </p>
+        </div>
+      )}
+
       {/* Overview Card */}
       <div className="bg-white border border-[#e5e3d8] rounded-3xl p-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
@@ -134,6 +166,37 @@ export default function StorageTab() {
           </div>
         </section>
       </div>
+
+      <section>
+        <h3 className="text-sm font-bold text-[#1e3a34] mb-4">Storage by Folder</h3>
+        <div className="bg-white border border-[#e5e3d8] rounded-3xl p-6">
+          <div className="space-y-6">
+            {folderStats.map((item) => {
+              const fPercentage = (item.size / totalUsed) * 100;
+              return (
+                <div key={item.id} className="space-y-2">
+                  <div className="flex items-center justify-between text-sm font-bold">
+                    <div className="flex items-center gap-2">
+                      <Folder className="w-4 h-4 text-[#1f644e]" />
+                      <span>{item.name}</span>
+                    </div>
+                    <span>{formatSize(item.size)}</span>
+                  </div>
+                  <div className="h-2 w-full bg-[#f0f5f2] rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-[#1f644e] rounded-full transition-all duration-1000"
+                      style={{ width: `${fPercentage}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+            {folderStats.length === 0 && (
+              <div className="p-8 text-center text-[#7c8e88] text-sm">No storage data available</div>
+            )}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

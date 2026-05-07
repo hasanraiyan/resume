@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useDrively } from '@/context/DrivelyContext';
-import { Upload, Plus, LayoutGrid, List as ListIcon, Loader2 } from 'lucide-react';
+import { Upload, Plus, LayoutGrid, List as ListIcon, Loader2, Grid2X2, Grid3X3 } from 'lucide-react';
 import FileCard from './FileCard';
 import FolderCard from './FolderCard';
 import Breadcrumbs from './Breadcrumbs';
@@ -23,7 +23,23 @@ export default function MyDriveTab() {
     isFetchingMore,
   } = useDrively();
   const [viewMode, setViewMode] = useState('grid');
+  const [density, setDensity] = useState('normal'); // 'normal' or 'compact'
   const [showUploadModal, setShowUploadModal] = useState(false);
+
+  useEffect(() => {
+    const savedViewMode = localStorage.getItem('drively-view-mode');
+    const savedDensity = localStorage.getItem('drively-density');
+    if (savedViewMode) setViewMode(savedViewMode);
+    if (savedDensity) setDensity(savedDensity);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('drively-view-mode', viewMode);
+  }, [viewMode]);
+
+  useEffect(() => {
+    localStorage.setItem('drively-density', density);
+  }, [density]);
   const [isDragging, setIsDragging] = useState(false);
 
   const observerTarget = useRef(null);
@@ -170,16 +186,41 @@ export default function MyDriveTab() {
         <Breadcrumbs />
         <div className="flex items-center gap-2">
           <SortDropdown />
-          <button
-            onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-            className="p-2 hover:bg-[#e5e3d8] rounded-lg transition-colors text-[#7c8e88]"
-          >
-            {viewMode === 'grid' ? (
-              <ListIcon className="w-5 h-5" />
-            ) : (
-              <LayoutGrid className="w-5 h-5" />
-            )}
-          </button>
+          <div className="flex items-center bg-white border border-[#e5e3d8] rounded-xl overflow-hidden p-1">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-[#f0f5f2] text-[#1f644e]' : 'text-[#7c8e88] hover:text-[#1e3a34]'}`}
+              title="Grid View"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-1.5 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-[#f0f5f2] text-[#1f644e]' : 'text-[#7c8e88] hover:text-[#1e3a34]'}`}
+              title="List View"
+            >
+              <ListIcon className="w-4 h-4" />
+            </button>
+          </div>
+
+          {viewMode === 'grid' && (
+            <div className="flex items-center bg-white border border-[#e5e3d8] rounded-xl overflow-hidden p-1">
+              <button
+                onClick={() => setDensity('normal')}
+                className={`p-1.5 rounded-lg transition-colors ${density === 'normal' ? 'bg-[#f0f5f2] text-[#1f644e]' : 'text-[#7c8e88] hover:text-[#1e3a34]'}`}
+                title="Normal Grid"
+              >
+                <Grid2X2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setDensity('compact')}
+                className={`p-1.5 rounded-lg transition-colors ${density === 'compact' ? 'bg-[#f0f5f2] text-[#1f644e]' : 'text-[#7c8e88] hover:text-[#1e3a34]'}`}
+                title="Compact Grid"
+              >
+                <Grid3X3 className="w-4 h-4" />
+              </button>
+            </div>
+          )}
           <button
             onClick={() => setShowUploadModal(true)}
             className="flex items-center gap-2 bg-[#1f644e] text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-[#17503e] transition-colors shadow-sm"
@@ -217,7 +258,7 @@ export default function MyDriveTab() {
               <div
                 className={
                   viewMode === 'grid'
-                    ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
+                    ? `grid grid-cols-1 sm:grid-cols-2 ${density === 'compact' ? 'lg:grid-cols-4 xl:grid-cols-6' : 'lg:grid-cols-3 xl:grid-cols-4'} gap-4`
                     : 'space-y-2'
                 }
               >
@@ -236,7 +277,7 @@ export default function MyDriveTab() {
               <div
                 className={
                   viewMode === 'grid'
-                    ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4'
+                    ? `grid grid-cols-1 sm:grid-cols-2 ${density === 'compact' ? 'lg:grid-cols-6 xl:grid-cols-8' : 'lg:grid-cols-4 xl:grid-cols-5'} gap-4`
                     : 'space-y-2'
                 }
               >

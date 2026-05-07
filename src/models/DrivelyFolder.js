@@ -17,6 +17,10 @@ const DrivelyFolderSchema = new mongoose.Schema(
       type: String, // e.g., "/folder-id/subfolder-id"
       default: '',
     },
+    color: {
+      type: String,
+      default: null,
+    },
     starred: {
       type: Boolean,
       default: false,
