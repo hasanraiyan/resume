@@ -117,9 +117,10 @@ export async function POST() {
 
     await dbConnect();
     const ownerId = getSessionOwnerId(session);
+    const primaryScope = pending.scope?.split(/[\s+,]+/).find(Boolean) || 'pocketly';
     const connection = await createAppConnection({
       ownerId,
-      appKey: 'pocketly',
+      appKey: primaryScope,
       channel: 'mcp',
       connectionType: 'oauth_client',
       connectionKey: `mcp:${pending.clientId}`,

@@ -4,10 +4,10 @@ export async function GET() {
   const base = getBaseUrl();
   return Response.json(
     {
-      resource: `${base}/api/mcp`,
+      resource: `${base}/api/mcp/coursify`,
       authorization_servers: [base],
       bearer_methods_supported: ['header'],
-      scopes_supported: ['pocketly', 'snaplinks', 'coursify'],
+      scopes_supported: ['coursify'],
     },
     { headers: { 'Access-Control-Allow-Origin': '*' } }
   );

@@ -10,6 +10,7 @@ export default function McpAuthorizeClient({ pending }) {
   const scopes = (pending.scope || '').split(' ').filter(Boolean);
   const isSnaplinks = scopes.includes('snaplinks');
   const isPocketly = scopes.includes('pocketly');
+  const isCoursify = scopes.includes('coursify');
 
   const apps = [];
   if (isPocketly) {
@@ -24,6 +25,13 @@ export default function McpAuthorizeClient({ pending }) {
       name: 'SnapLinks',
       description: 'Manage your short links and view click analytics.',
       icon: '/images/apps/Snaplinks.png',
+    });
+  }
+  if (isCoursify) {
+    apps.push({
+      name: 'Coursify',
+      description: 'Create and manage AI-powered courses with sections, content, and thumbnails.',
+      icon: '/images/apps/coursify.png',
     });
   }
 
