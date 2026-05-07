@@ -121,41 +121,46 @@ Wrap up with key takeaways."
             {tab === 'resources' && (
               <div className="space-y-3">
                 {resources.map((r, i) => (
-                  <div key={i} className="flex gap-2 items-start">
-                    <select
-                      value={r.type}
-                      onChange={(e) => updateResource(i, 'type', e.target.value)}
-                      className="px-2 py-2 rounded-lg border border-[#e5e3d8] text-xs text-[#1e3a34] bg-white outline-none focus:border-[#1f644e] shrink-0"
-                    >
-                      {RESOURCE_TYPES.map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
-                      ))}
-                    </select>
+                  <div
+                    key={i}
+                    className="bg-[#fcfbf5] border border-[#e5e3d8] rounded-xl p-3 space-y-2"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <select
+                        value={r.type}
+                        onChange={(e) => updateResource(i, 'type', e.target.value)}
+                        className="px-2 py-1.5 rounded-lg border border-[#e5e3d8] text-xs text-[#1e3a34] bg-white outline-none focus:border-[#1f644e]"
+                      >
+                        {RESOURCE_TYPES.map((t) => (
+                          <option key={t} value={t}>
+                            {t.charAt(0).toUpperCase() + t.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => removeResource(i)}
+                        className="p-1.5 rounded-lg hover:bg-red-50 text-[#7c8e88] hover:text-[#c94c4c] transition-colors shrink-0"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                     <input
                       value={r.title}
                       onChange={(e) => updateResource(i, 'title', e.target.value)}
                       placeholder="Resource title"
-                      className="flex-1 px-3 py-2 rounded-lg border border-[#e5e3d8] text-xs text-[#1e3a34] outline-none focus:border-[#1f644e] bg-[#fcfbf5]"
+                      className="w-full px-3 py-2 rounded-lg border border-[#e5e3d8] text-xs text-[#1e3a34] outline-none focus:border-[#1f644e] bg-white"
                     />
                     <input
                       value={r.url}
                       onChange={(e) => updateResource(i, 'url', e.target.value)}
                       placeholder="https://..."
-                      className="flex-1 px-3 py-2 rounded-lg border border-[#e5e3d8] text-xs text-[#1e3a34] outline-none focus:border-[#1f644e] bg-[#fcfbf5]"
+                      className="w-full px-3 py-2 rounded-lg border border-[#e5e3d8] text-xs text-[#1e3a34] outline-none focus:border-[#1f644e] bg-white"
                     />
-                    <button
-                      onClick={() => removeResource(i)}
-                      className="p-2 rounded-lg hover:bg-red-50 text-[#c94c4c] shrink-0"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
                   </div>
                 ))}
                 <button
                   onClick={addResource}
-                  className="flex items-center gap-1.5 text-xs font-bold text-[#1f644e] hover:text-[#17503e] mt-1"
+                  className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 border-dashed border-[#e5e3d8] text-xs font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Add Resource

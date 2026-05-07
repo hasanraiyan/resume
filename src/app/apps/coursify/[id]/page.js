@@ -17,7 +17,6 @@ import {
   ChevronRight,
   BookOpen,
   ExternalLink,
-  GripVertical,
   RefreshCw,
   Layers,
   Clock,
@@ -274,7 +273,7 @@ export default function CourseDetailPage({ params }) {
 
         {/* Section Sidebar */}
         <aside
-          className={`fixed lg:static inset-y-0 left-0 z-40 w-72 bg-white border-r border-[#e5e3d8] flex flex-col transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+          className={`fixed lg:static inset-y-0 left-0 z-40 w-72 shrink-0 bg-white border-r border-[#e5e3d8] flex flex-col transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
           style={{ top: 0, paddingTop: sidebarOpen ? 0 : undefined }}
         >
           {/* Mobile sidebar header */}
@@ -364,6 +363,18 @@ export default function CourseDetailPage({ params }) {
             </div>
           ) : (
             <article className="max-w-3xl mx-auto px-4 lg:px-8 py-8">
+              {/* Course hero thumbnail — shown only on first section or when no section selected */}
+              {course.thumbnail &&
+                sections.findIndex((s) => s._id === currentSection._id) === 0 && (
+                  <div className="w-full h-48 rounded-2xl overflow-hidden mb-8 border border-[#e5e3d8]">
+                    <img
+                      src={course.thumbnail}
+                      alt={course.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+
               {/* Section header */}
               <div className="flex items-start justify-between gap-4 mb-6">
                 <div>
@@ -451,10 +462,10 @@ export default function CourseDetailPage({ params }) {
                       {prev ? (
                         <button
                           onClick={() => setActiveSection(prev._id)}
-                          className="flex items-center gap-2 text-sm font-bold text-[#7c8e88] hover:text-[#1f644e] transition-colors"
+                          className="flex items-center gap-2 text-sm font-bold text-[#7c8e88] hover:text-[#1f644e] transition-colors max-w-[40%] sm:max-w-xs"
                         >
-                          <ArrowLeft className="w-4 h-4" />
-                          {prev.title}
+                          <ArrowLeft className="w-4 h-4 shrink-0" />
+                          <span className="truncate">{prev.title}</span>
                         </button>
                       ) : (
                         <div />
@@ -462,10 +473,10 @@ export default function CourseDetailPage({ params }) {
                       {next ? (
                         <button
                           onClick={() => setActiveSection(next._id)}
-                          className="flex items-center gap-2 text-sm font-bold text-[#7c8e88] hover:text-[#1f644e] transition-colors"
+                          className="flex items-center gap-2 text-sm font-bold text-[#7c8e88] hover:text-[#1f644e] transition-colors max-w-[40%] sm:max-w-xs"
                         >
-                          {next.title}
-                          <ChevronRight className="w-4 h-4" />
+                          <span className="truncate">{next.title}</span>
+                          <ChevronRight className="w-4 h-4 shrink-0" />
                         </button>
                       ) : (
                         <span className="text-xs font-bold text-[#1f644e] bg-[#f0f5f2] px-3 py-1.5 rounded-full">

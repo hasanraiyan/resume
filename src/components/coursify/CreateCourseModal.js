@@ -96,35 +96,38 @@ export default function CreateCourseModal({ onClose, onCreated }) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider block mb-1.5">
-                  Difficulty
-                </label>
-                <select
-                  value={difficulty}
-                  onChange={(e) => setDifficulty(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-sm text-[#1e3a34] outline-none focus:border-[#1f644e] capitalize"
-                >
-                  {DIFFICULTIES.map((d) => (
-                    <option key={d} value={d}>
-                      {d.charAt(0).toUpperCase() + d.slice(1)}
-                    </option>
-                  ))}
-                </select>
+            <div>
+              <label className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider block mb-1.5">
+                Difficulty
+              </label>
+              <div className="flex gap-2">
+                {DIFFICULTIES.map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setDifficulty(d)}
+                    className={`flex-1 py-2 rounded-xl text-xs font-bold capitalize border transition-colors ${
+                      difficulty === d
+                        ? 'bg-[#1f644e] text-white border-[#1f644e]'
+                        : 'bg-[#fcfbf5] text-[#7c8e88] border-[#e5e3d8] hover:border-[#1f644e]/40'
+                    }`}
+                  >
+                    {d.charAt(0).toUpperCase() + d.slice(1)}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              <div>
-                <label className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider block mb-1.5">
-                  Duration
-                </label>
-                <input
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  placeholder="e.g. 2 hours"
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-sm text-[#1e3a34] outline-none focus:border-[#1f644e] focus:ring-2 focus:ring-[#1f644e]/10"
-                />
-              </div>
+            <div>
+              <label className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider block mb-1.5">
+                Duration
+              </label>
+              <input
+                value={duration}
+                onChange={(e) => setDuration(e.target.value)}
+                placeholder="e.g. 2 hours"
+                className="w-full px-4 py-2.5 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-sm text-[#1e3a34] outline-none focus:border-[#1f644e] focus:ring-2 focus:ring-[#1f644e]/10"
+              />
             </div>
 
             <div>
