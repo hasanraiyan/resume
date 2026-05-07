@@ -1,8 +1,10 @@
 import dbConnect from '@/lib/dbConnect';
 import Transaction from '@/models/Transaction';
+import RecurringTransaction from '@/models/RecurringTransaction';
 import Account from '@/models/Account';
 import Category from '@/models/Category';
 import Budget from '@/models/Budget';
+import SavingsGoal from '@/models/SavingsGoal';
 import {
   serializeTransaction,
   serializeAccount,
@@ -16,6 +18,10 @@ import {
   TransactionUpdateSchema,
   BudgetCreateSchema,
   BudgetUpdateSchema,
+  RecurringTransactionCreateSchema,
+  RecurringTransactionUpdateSchema,
+  SavingsGoalCreateSchema,
+  SavingsGoalUpdateSchema,
 } from './validators';
 
 export async function ensureDb() {
@@ -201,6 +207,177 @@ export async function deleteAccount(id) {
       $set: { deletedAt: new Date() },
       $inc: { syncVersion: 1 },
     }
+  );
+  return !!deleted;
+}
+
+export function serializeSavingsGoal(goal) {
+  return {
+    ...goal,
+    _id: goal._id.toString(),
+    id: goal._id.toString(),
+    targetDate: goal.targetDate ? new Date(goal.targetDate).toISOString() : null,
+    deletedAt: goal.deletedAt ? new Date(goal.deletedAt).toISOString() : null,
+    updatedAt: goal.updatedAt ? new Date(goal.updatedAt).toISOString() : null,
+    createdAt: goal.createdAt ? new Date(goal.createdAt).toISOString() : null,
+  };
+}
+
+export async function getSavingsGoals() {
+  await ensureDb();
+  const goals = await SavingsGoal.find({ deletedAt: null }).sort({ createdAt: -1 }).lean();
+  return goals.map(serializeSavingsGoal);
+}
+
+export async function createSavingsGoal(payload) {
+  await ensureDb();
+  const validated = SavingsGoalCreateSchema.parse(payload);
+  const goal = new SavingsGoal(validated);
+  await goal.save();
+  return serializeSavingsGoal(goal.toObject());
+}
+
+export async function updateSavingsGoal(id, patch) {
+  await ensureDb();
+  if (!isValidObjectId(id)) throw new Error('Invalid goal ID');
+  const validated = SavingsGoalUpdateSchema.parse(patch);
+  const goal = await SavingsGoal.findOneAndUpdate({ _id: id, deletedAt: null }, { $set: validated }, { new: true }).lean();
+  if (!goal) throw new Error('Savings goal not found');
+  return serializeSavingsGoal(goal);
+}
+
+export async function deleteSavingsGoal(id) {
+  await ensureDb();
+  if (!isValidObjectId(id)) throw new Error('Invalid goal ID');
+  const deleted = await SavingsGoal.findOneAndUpdate(
+    { _id: id, deletedAt: null },
+    { $set: { deletedAt: new Date() } }
+  );
+  return !!deleted;
+}
+
+export async function processDueRecurringTransactions() {
+  await ensureDb();
+  const now = new Date();
+  const dueTransactions = await RecurringTransaction.find({
+    isActive: true,
+    deletedAt: null,
+    nextDueDate: { $lte: now },
+  });
+
+  const created = [];
+
+  for (const recurring of dueTransactions) {
+    // Create transaction
+    const txData = {
+      type: recurring.type,
+      amount: recurring.amount,
+      description: recurring.description || 'Recurring Transaction',
+      category: recurring.category,
+      account: recurring.account,
+      toAccount: recurring.toAccount,
+      note: recurring.note,
+      date: recurring.nextDueDate,
+    };
+
+    const transaction = new Transaction({
+      ...txData,
+      recurringId: recurring._id,
+    });
+    await transaction.save();
+
+    // Advance nextDueDate
+    let nextDate = new Date(recurring.nextDueDate);
+    if (recurring.frequency === 'daily') nextDate.setDate(nextDate.getDate() + 1);
+    else if (recurring.frequency === 'weekly') nextDate.setDate(nextDate.getDate() + 7);
+    else if (recurring.frequency === 'monthly') nextDate.setMonth(nextDate.getMonth() + 1);
+    else if (recurring.frequency === 'yearly') nextDate.setFullYear(nextDate.getFullYear() + 1);
+
+    recurring.nextDueDate = nextDate;
+
+    // Check if ended
+    if (recurring.endDate && nextDate > recurring.endDate) {
+      recurring.isActive = false;
+    }
+
+    await recurring.save();
+    created.push(transaction);
+  }
+
+  return created;
+}
+
+export function serializeRecurringTransaction(recurring) {
+  return {
+    ...recurring,
+    _id: recurring._id.toString(),
+    id: recurring._id.toString(),
+    category: recurring.category
+      ? {
+          ...recurring.category,
+          _id: recurring.category._id ? recurring.category._id.toString() : recurring.category,
+          id: recurring.category._id ? recurring.category._id.toString() : recurring.category,
+        }
+      : null,
+    account: recurring.account
+      ? {
+          ...recurring.account,
+          _id: recurring.account._id ? recurring.account._id.toString() : recurring.account,
+          id: recurring.account._id ? recurring.account._id.toString() : recurring.account,
+        }
+      : recurring.account,
+    nextDueDate: recurring.nextDueDate ? new Date(recurring.nextDueDate).toISOString() : null,
+    endDate: recurring.endDate ? new Date(recurring.endDate).toISOString() : null,
+    deletedAt: recurring.deletedAt ? new Date(recurring.deletedAt).toISOString() : null,
+    updatedAt: recurring.updatedAt ? new Date(recurring.updatedAt).toISOString() : null,
+    createdAt: recurring.createdAt ? new Date(recurring.createdAt).toISOString() : null,
+  };
+}
+
+export async function getRecurringTransactions() {
+  await ensureDb();
+  const recurrings = await RecurringTransaction.find({ deletedAt: null })
+    .populate('category', 'name icon type color')
+    .populate('account', 'name icon currency')
+    .lean();
+  return recurrings.map(serializeRecurringTransaction);
+}
+
+export async function createRecurringTransaction(payload) {
+  await ensureDb();
+  const validated = RecurringTransactionCreateSchema.parse(payload);
+  const recurring = new RecurringTransaction(validated);
+  await recurring.save();
+
+  const populated = await RecurringTransaction.findById(recurring._id)
+    .populate('category', 'name icon type color')
+    .populate('account', 'name icon currency')
+    .lean();
+  return serializeRecurringTransaction(populated);
+}
+
+export async function updateRecurringTransaction(id, patch) {
+  await ensureDb();
+  if (!isValidObjectId(id)) throw new Error('Invalid recurring transaction ID');
+  const validated = RecurringTransactionUpdateSchema.parse(patch);
+  const recurring = await RecurringTransaction.findOneAndUpdate(
+    { _id: id, deletedAt: null },
+    { $set: validated },
+    { new: true }
+  )
+    .populate('category', 'name icon type color')
+    .populate('account', 'name icon currency')
+    .lean();
+  if (!recurring) throw new Error('Recurring transaction not found');
+  return serializeRecurringTransaction(recurring);
+}
+
+export async function deleteRecurringTransaction(id) {
+  await ensureDb();
+  if (!isValidObjectId(id)) throw new Error('Invalid recurring transaction ID');
+  const deleted = await RecurringTransaction.findOneAndUpdate(
+    { _id: id, deletedAt: null },
+    { $set: { deletedAt: new Date() } }
   );
   return !!deleted;
 }

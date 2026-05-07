@@ -13,8 +13,10 @@ import {
   X,
   AlertTriangle,
   Tag,
+  BarChart3,
 } from 'lucide-react';
 
+import { useEffect } from 'react';
 import IconRenderer from './IconRenderer';
 import BottomSheet from './BottomSheet';
 import TopTabs from '@/components/custom-ui/TopTabs';
@@ -94,9 +96,22 @@ export default function PlanningTab() {
     addBudget,
     updateBudget,
     deleteBudget,
+    addTransaction,
+    accounts,
   } = useMoney();
 
   const [activeSubTab, setActiveSubTab] = useState('categories');
+  const [goals, setGoals] = useState([]);
+
+  // Load goals
+  useEffect(() => {
+    fetch('/api/money/goals')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setGoals(data.goals);
+      })
+      .catch(console.error);
+  }, []);
 
   // Categories Tab State
   const [showCategoryForm, setShowCategoryForm] = useState(false);
@@ -120,6 +135,19 @@ export default function PlanningTab() {
     amount: '',
     period: 'monthly',
   });
+
+  // Goals Tab State
+  const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
+  const [editingGoal, setEditingGoal] = useState(null);
+  const [goalFormData, setGoalFormData] = useState({
+    name: '',
+    targetAmount: '',
+    targetDate: '',
+    icon: 'target',
+  });
+  const [isAddFundsModalOpen, setIsAddFundsModalOpen] = useState(false);
+  const [selectedGoalForFunds, setSelectedGoalForFunds] = useState(null);
+  const [fundAmount, setFundAmount] = useState('');
 
   const incomeCategories = categories.filter((c) => c.type === 'income');
   const expenseCategories = categories.filter((c) => c.type === 'expense');
@@ -167,6 +195,24 @@ export default function PlanningTab() {
     }
     setCategoryMenuOpen(null);
   };
+
+  const categoryUsage = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const usage = {};
+    transactions.forEach((t) => {
+      const tDate = new Date(t.date);
+      if (tDate.getMonth() === currentMonth && tDate.getFullYear() === currentYear) {
+        const catId = t.category?.id || t.category?._id || t.category;
+        if (catId) {
+          usage[catId] = (usage[catId] || 0) + t.amount;
+        }
+      }
+    });
+    return usage;
+  }, [transactions]);
 
   // Budgets Logic
   const budgetProgress = useMemo(() => {
@@ -251,6 +297,59 @@ export default function PlanningTab() {
     }
   };
 
+  const handleGoalSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/money/goals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(goalFormData),
+      }).then((r) => r.json());
+
+      if (res.success) {
+        setGoals([res.goal, ...goals]);
+        setIsGoalModalOpen(false);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleAddFunds = async (e) => {
+    e.preventDefault();
+    if (!selectedGoalForFunds || !fundAmount) return;
+
+    try {
+      const amount = Number(fundAmount);
+      // Update goal
+      const res = await fetch(`/api/money/goals/${selectedGoalForFunds.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentAmount: selectedGoalForFunds.currentAmount + amount,
+        }),
+      }).then((r) => r.json());
+
+      if (res.success) {
+        setGoals(goals.map((g) => (g.id === res.goal.id ? res.goal : g)));
+        // Also log as an income transaction
+        if (accounts.length > 0) {
+          await addTransaction({
+            type: 'income',
+            amount,
+            description: `Goal contribution: ${selectedGoalForFunds.name}`,
+            date: new Date().toISOString(),
+            account: accounts[0].id,
+          });
+        }
+        setIsAddFundsModalOpen(false);
+        setFundAmount('');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const renderCategoryGrid = (cats, title, icon) => (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -284,6 +383,16 @@ export default function PlanningTab() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-[#1e3a34] truncate">{cat.name}</p>
+                  {cat.type === 'expense' && categoryUsage[cat.id] > 0 && (
+                    <p className="text-[10px] font-bold text-[#c94c4c]">
+                      Spent: ₹{categoryUsage[cat.id].toLocaleString('en-IN')}
+                    </p>
+                  )}
+                  {cat.type === 'income' && categoryUsage[cat.id] > 0 && (
+                    <p className="text-[10px] font-bold text-[#1f644e]">
+                      Received: ₹{categoryUsage[cat.id].toLocaleString('en-IN')}
+                    </p>
+                  )}
                 </div>
                 <div className="relative">
                   <button
@@ -374,7 +483,7 @@ export default function PlanningTab() {
                     : 'bg-[#1f644e]/10 text-[#1f644e]'
                 }`}
               >
-                <Target className="w-4 h-4 sm:w-5 sm:h-5" />
+                <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
               <div className="min-w-0">
                 <p
@@ -389,6 +498,42 @@ export default function PlanningTab() {
                 </p>
               </div>
               {activeSubTab === 'budgets' && (
+                <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#1f644e] animate-pulse" />
+                </div>
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveSubTab('goals')}
+              className={`relative overflow-hidden p-3 sm:p-4 rounded-2xl border transition-all duration-300 text-left cursor-pointer flex items-center gap-3 ${
+                activeSubTab === 'goals'
+                  ? 'bg-white border-[#1f644e] shadow-md ring-1 ring-[#1f644e]'
+                  : 'bg-[#fcfbf5] border-[#e5e3d8] hover:border-[#1f644e]/50'
+              }`}
+            >
+              <div
+                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                  activeSubTab === 'goals'
+                    ? 'bg-[#1f644e] text-white'
+                    : 'bg-[#1f644e]/10 text-[#1f644e]'
+                }`}
+              >
+                <Target className="w-4 h-4 sm:w-5 sm:h-5" />
+              </div>
+              <div className="min-w-0">
+                <p
+                  className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider transition-colors truncate ${
+                    activeSubTab === 'goals' ? 'text-[#1f644e]' : 'text-[#7c8e88]'
+                  }`}
+                >
+                  Goals
+                </p>
+                <p className="text-lg sm:text-xl font-black text-[#1e3a34] leading-tight">
+                  {goals.length}
+                </p>
+              </div>
+              {activeSubTab === 'goals' && (
                 <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#1f644e] animate-pulse" />
                 </div>
@@ -421,12 +566,12 @@ export default function PlanningTab() {
                 </button>
               </div>
             </div>
-          ) : (
+          ) : activeSubTab === 'budgets' ? (
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
               {/* Budgets Content */}
               <div className="mb-6 flex items-center justify-between">
                 <h2 className="text-lg font-bold text-[#1e3a34] flex items-center gap-2">
-                  <Target className="w-5 h-5 text-[#1f644e]" />
+                  <BarChart3 className="w-5 h-5 text-[#1f644e]" />
                   Active Budgets
                 </h2>
                 <button
@@ -439,14 +584,21 @@ export default function PlanningTab() {
               </div>
 
               {budgets.length === 0 ? (
-                <div className="rounded-xl border border-[#e5e3d8] bg-white p-12 text-center">
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#f0f5f2]">
-                    <Target className="h-8 w-8 text-[#7c8e88]" />
+                <div className="rounded-xl border border-[#e5e3d8] bg-white p-12 text-center flex flex-col items-center">
+                  <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-[#f0f5f2] text-[#1f644e]">
+                    <Target className="h-10 w-10" />
                   </div>
-                  <p className="mb-1 text-sm font-bold text-[#1e3a34]">No budgets set</p>
-                  <p className="text-xs text-[#7c8e88]">
-                    Create a budget to track your spending limits.
+                  <h3 className="mb-1 text-lg font-black text-[#1e3a34]">No budgets set</h3>
+                  <p className="mb-8 text-sm text-[#7c8e88] max-w-[240px] mx-auto leading-relaxed">
+                    Set spending limits for different categories to stay on top of your finances.
                   </p>
+                  <button
+                    onClick={() => openBudgetModal()}
+                    className="px-8 py-2.5 bg-[#1f644e] text-white text-sm font-bold rounded-xl hover:bg-[#17503e] transition-all active:scale-95 shadow-md flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Create Budget
+                  </button>
                 </div>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2">
@@ -517,6 +669,121 @@ export default function PlanningTab() {
                         <p className="mt-2 text-right text-[10px] font-bold text-[#7c8e88]">
                           {budget.progress.toFixed(0)}%
                         </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="text-lg font-bold text-[#1e3a34] flex items-center gap-2">
+                  <Target className="w-5 h-5 text-[#1f644e]" />
+                  Savings Goals
+                </h2>
+                <button
+                  onClick={() => {
+                    setEditingGoal(null);
+                    setGoalFormData({ name: '', targetAmount: '', targetDate: '', icon: 'target' });
+                    setIsGoalModalOpen(true);
+                  }}
+                  className="flex items-center gap-2 bg-[#1f644e] text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-[#17503e] transition-colors cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  New Goal
+                </button>
+              </div>
+
+              {goals.length === 0 ? (
+                <div className="rounded-xl border border-[#e5e3d8] bg-white p-12 text-center flex flex-col items-center">
+                  <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-[#f0f5f2] text-[#1f644e]">
+                    <Target className="h-10 w-10" />
+                  </div>
+                  <h3 className="mb-1 text-lg font-black text-[#1e3a34]">No goals yet</h3>
+                  <p className="mb-8 text-sm text-[#7c8e88] max-w-[240px] mx-auto leading-relaxed">
+                    Save for a vacation, a new car, or your emergency fund.
+                  </p>
+                  <button
+                    onClick={() => setIsGoalModalOpen(true)}
+                    className="px-8 py-2.5 bg-[#1f644e] text-white text-sm font-bold rounded-xl hover:bg-[#17503e] transition-all active:scale-95 shadow-md flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Set a Goal
+                  </button>
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {goals.map((goal) => {
+                    const progress = Math.min((goal.currentAmount / goal.targetAmount) * 100, 100);
+                    const toGo = Math.max(goal.targetAmount - goal.currentAmount, 0);
+
+                    return (
+                      <div
+                        key={goal.id}
+                        className="rounded-xl border border-[#e5e3d8] bg-white p-5 relative overflow-hidden"
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1f644e]/10 text-[#1f644e]">
+                              <IconRenderer name={goal.icon || 'target'} className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <p className="font-bold text-[#1e3a34]">{goal.name}</p>
+                              {goal.targetDate && (
+                                <p className="text-[10px] font-bold text-[#7c8e88] uppercase">
+                                  by {new Date(goal.targetDate).toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                setSelectedGoalForFunds(goal);
+                                setIsAddFundsModalOpen(true);
+                              }}
+                              className="p-1.5 text-[#1f644e] hover:bg-[#f0f5f2] rounded-lg cursor-pointer"
+                              title="Add Funds"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (confirm('Delete this goal?')) {
+                                  await fetch(`/api/money/goals/${goal.id}`, { method: 'DELETE' });
+                                  setGoals(goals.filter((g) => g.id !== goal.id));
+                                }
+                              }}
+                              className="p-1.5 text-[#c94c4c] hover:bg-[#fef2f2] rounded-lg cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="mb-2 flex items-end justify-between">
+                          <div>
+                            <p className="text-2xl font-bold text-[#1e3a34]">
+                              {currencyFormatter.format(goal.currentAmount)}
+                            </p>
+                            <p className="text-xs font-semibold text-[#7c8e88]">
+                              of {currencyFormatter.format(goal.targetAmount)} target
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs font-black text-[#1f644e]">
+                              {toGo > 0 ? `${currencyFormatter.format(toGo)} to go` : 'Goal reached! 🎉'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="h-2 w-full bg-[#f0f5f2] rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-[#1f644e] rounded-full transition-all duration-1000"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
                       </div>
                     );
                   })}
@@ -704,6 +971,110 @@ export default function PlanningTab() {
                   className="w-full bg-[#1f644e] text-white py-3 rounded-xl font-bold hover:bg-[#17503e] transition-colors"
                 >
                   {editingBudget ? 'Save Changes' : 'Create Budget'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Goal Modal */}
+      {isGoalModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-[#1e3a34]">New Savings Goal</h3>
+              <button
+                onClick={() => setIsGoalModalOpen(false)}
+                className="text-[#7c8e88] hover:bg-[#f0f5f2] p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleGoalSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-1">
+                  Goal Name
+                </label>
+                <input
+                  required
+                  type="text"
+                  value={goalFormData.name}
+                  onChange={(e) => setGoalFormData((p) => ({ ...p, name: e.target.value }))}
+                  className="w-full rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] px-4 py-3 text-sm font-medium text-[#1e3a34] outline-none focus:border-[#1f644e]"
+                  placeholder="e.g. Dream House"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-1">
+                  Target Amount
+                </label>
+                <input
+                  required
+                  type="number"
+                  value={goalFormData.targetAmount}
+                  onChange={(e) =>
+                    setGoalFormData((p) => ({ ...p, targetAmount: Number(e.target.value) }))
+                  }
+                  className="w-full rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] px-4 py-3 text-sm font-medium text-[#1e3a34] outline-none focus:border-[#1f644e]"
+                  placeholder="₹ 0"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-1">
+                  Target Date (Optional)
+                </label>
+                <input
+                  type="date"
+                  value={goalFormData.targetDate}
+                  onChange={(e) => setGoalFormData((p) => ({ ...p, targetDate: e.target.value }))}
+                  className="w-full rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] px-4 py-3 text-sm font-medium text-[#1e3a34] outline-none focus:border-[#1f644e]"
+                />
+              </div>
+              <div className="mt-6">
+                <button
+                  type="submit"
+                  className="w-full bg-[#1f644e] text-white py-3 rounded-xl font-bold hover:bg-[#17503e] transition-colors"
+                >
+                  Create Goal
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Funds Modal */}
+      {isAddFundsModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl">
+            <h3 className="text-lg font-bold text-[#1e3a34] mb-4">Add Contribution</h3>
+            <p className="text-sm text-[#7c8e88] mb-4">
+              How much are you saving for <strong>{selectedGoalForFunds?.name}</strong>?
+            </p>
+            <form onSubmit={handleAddFunds} className="space-y-4">
+              <input
+                required
+                autoFocus
+                type="number"
+                value={fundAmount}
+                onChange={(e) => setFundAmount(e.target.value)}
+                className="w-full text-3xl font-black text-center border-b-2 border-[#1f644e] py-2 outline-none"
+                placeholder="₹ 0"
+              />
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setIsAddFundsModalOpen(false)}
+                  className="flex-1 py-3 border border-[#e5e3d8] rounded-xl font-bold text-[#7c8e88] hover:bg-[#f8f9f4]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-[#1f644e] text-white rounded-xl font-bold hover:bg-[#17503e]"
+                >
+                  Confirm
                 </button>
               </div>
             </form>

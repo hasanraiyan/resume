@@ -71,6 +71,7 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
     totalBalance,
     totalExpense,
     totalIncome,
+    transactions,
     addAccount,
     updateAccount,
     deleteAccount,
@@ -309,13 +310,13 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
           )}
 
           {displayAccounts.length === 0 ? (
-            <div className="bg-white border border-[#e5e3d8] rounded-xl p-12 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-[#f0f5f2] flex items-center justify-center mx-auto mb-4">
-                <Wallet className="w-8 h-8 text-[#7c8e88]" />
+            <div className="bg-white border border-[#e5e3d8] rounded-xl p-12 text-center flex flex-col items-center">
+              <div className="w-20 h-20 rounded-3xl bg-[#f0f5f2] flex items-center justify-center mb-4 text-[#1f644e]">
+                <Wallet className="w-10 h-10" />
               </div>
-              <p className="text-sm font-bold text-[#1e3a34] mb-1">No accounts yet</p>
-              <p className="text-xs text-[#7c8e88] mb-4">
-                Create your first account to start tracking money
+              <h3 className="text-lg font-black text-[#1e3a34] mb-1">No accounts found</h3>
+              <p className="text-sm text-[#7c8e88] mb-8 max-w-[240px] mx-auto leading-relaxed">
+                Connect your bank accounts, wallets, or credit cards to manage your money.
               </p>
               <button
                 onClick={() => {
@@ -323,9 +324,10 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
                   setShowForm(true);
                 }}
                 disabled={isMutatingAccounts}
-                className="bg-[#1f644e] text-white px-5 py-2 rounded-lg text-sm font-bold hover:bg-[#17503e] transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-[#1f644e]"
+                className="bg-[#1f644e] text-white px-8 py-2.5 rounded-xl text-sm font-bold hover:bg-[#17503e] transition-all active:scale-95 shadow-md flex items-center gap-2"
               >
-                Create Account
+                <Plus className="w-4 h-4" />
+                Add Account
               </button>
             </div>
           ) : (
@@ -337,6 +339,57 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
               {displayAccounts.map((account, index) => {
                 const colorSet = iconColors[index % iconColors.length];
                 const balance = account.currentBalance ?? account.initialBalance ?? 0;
+
+                // Compute 7-day balance trend
+                const now = new Date();
+                const sevenDaysAgo = new Date();
+                sevenDaysAgo.setDate(now.getDate() - 7);
+
+                const accountTxns = transactions
+                  .filter((t) => (t.account?.id === account.id || t.toAccount?.id === account.id) && new Date(t.date) >= sevenDaysAgo)
+                  .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                let rollingBalance = balance;
+                // Since we have current balance, we work backwards to find points
+                const points = [];
+                const days = 7;
+                for (let i = 0; i <= days; i++) {
+                  const d = new Date();
+                  d.setDate(now.getDate() - i);
+                  d.setHours(23, 59, 59, 999);
+
+                  // Sum transactions that happened AFTER this point in time to subtract from current balance
+                  const futureTxns = transactions.filter((t) => {
+                    const tDate = new Date(t.date);
+                    return (t.account?.id === account.id || t.toAccount?.id === account.id) && tDate > d;
+                  });
+
+                  let b = balance;
+                  futureTxns.forEach((tx) => {
+                    if (tx.type === 'income' && tx.account?.id === account.id) b -= tx.amount;
+                    else if (tx.type === 'expense' && tx.account?.id === account.id) b += tx.amount;
+                    else if (tx.type === 'transfer') {
+                      if (tx.account?.id === account.id) b += tx.amount;
+                      if (tx.toAccount?.id === account.id) b -= tx.amount;
+                    }
+                  });
+                  points.push(b);
+                }
+                points.reverse();
+
+                const min = Math.min(...points);
+                const max = Math.max(...points);
+                const range = max - min || 1;
+                const width = 80;
+                const height = 30;
+                const svgPoints = points
+                  .map((p, i) => {
+                    const x = (i / (points.length - 1)) * width;
+                    const y = height - ((p - min) / range) * height;
+                    return `${x},${y}`;
+                  })
+                  .join(' ');
+
                 return (
                   <div
                     key={account.id}
@@ -384,12 +437,22 @@ export default function AccountsTab({ openAddModal = false, onAddModalClose }) {
                       <p className="font-bold text-sm text-[#1e3a34] line-clamp-1">
                         {account.name}
                       </p>
-                      <div className="mt-1">
+                      <div className="mt-1 flex items-center justify-between">
                         <p
                           className={`text-lg sm:text-xl font-bold ${balance >= 0 ? 'text-[#1f644e]' : 'text-[#c94c4c]'}`}
                         >
                           {formatCurrencyWithCompact(balance)}
                         </p>
+                        <svg width={width} height={height} className="overflow-visible">
+                          <path
+                            d={`M ${svgPoints}`}
+                            fill="none"
+                            stroke={balance >= points[0] ? '#16a34a' : '#dc2626'}
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
                       </div>
                     </div>
                   </div>

@@ -11,6 +11,8 @@ import {
   ArrowDownLeft,
   Trash2,
   AlertTriangle,
+  FileText,
+  Repeat,
 } from 'lucide-react';
 import { PurseSVG } from '@/components/pocketly-tracker/IconRenderer';
 import dynamic from 'next/dynamic';
@@ -36,11 +38,16 @@ export default function AddTransactionModal() {
     updateTransaction,
     deleteTransaction,
     transactions,
+    setActiveTab,
   } = useMoney();
   const [open, setOpen] = useState(false);
   const [type, setType] = useState('expense');
   const [currentInput, setCurrentInput] = useState('0');
   const [description, setDescription] = useState('');
+  const [note, setNote] = useState('');
+  const [showNoteField, setShowNoteField] = useState(false);
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [frequency, setFrequency] = useState('monthly');
   const [categoryId, setCategoryId] = useState('');
   const [accountId, setAccountId] = useState('');
   const [toAccountId, setToAccountId] = useState('');
@@ -64,6 +71,8 @@ export default function AddTransactionModal() {
       setType(editTransactionData.type || 'expense');
       setCurrentInput(String(editTransactionData.amount || '0'));
       setDescription(editTransactionData.description || '');
+      setNote(editTransactionData.note || '');
+      setShowNoteField(!!editTransactionData.note);
       setCategoryId(editTransactionData.categoryId || editTransactionData.category?.id || '');
       setAccountId(editTransactionData.accountId || editTransactionData.account?.id || '');
       setToAccountId(editTransactionData.toAccountId || editTransactionData.toAccount?.id || '');
@@ -79,6 +88,10 @@ export default function AddTransactionModal() {
   const resetForm = () => {
     setCurrentInput('0');
     setDescription('');
+    setNote('');
+    setShowNoteField(false);
+    setIsRecurring(false);
+    setFrequency('monthly');
     setCategoryId('');
     setToAccountId('');
     setType('expense');
@@ -143,6 +156,7 @@ export default function AddTransactionModal() {
       type,
       amount,
       description: description || (type === 'transfer' ? 'Transfer' : 'Transaction'),
+      note: note || '',
       date: editTransactionData?.date || new Date().toISOString(),
     };
 
@@ -164,6 +178,18 @@ export default function AddTransactionModal() {
       if (editingDbTransaction) {
         await updateTransaction(editingDbTransaction.id, payload);
       } else {
+        if (isRecurring) {
+          // Logic for creating recurring transaction via API
+          await fetch('/api/money/recurring', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...payload,
+              frequency,
+              nextDueDate: payload.date,
+            }),
+          }).then((r) => r.json());
+        }
         // Preserve current tab when editing draft transactions from chat
         const options = isEditMode && !editTransactionData?.id ? { switchTab: false } : undefined;
         await addTransaction(payload, options);
@@ -247,6 +273,39 @@ export default function AddTransactionModal() {
       >
         <Plus className="w-6 h-6" strokeWidth={2.5} />
       </button>
+    );
+  }
+
+  if (accounts.length === 0) {
+    return (
+      <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center p-4">
+        <div className="bg-[#fcfbf5] w-full max-w-sm rounded-xl border border-[#e5e3d8] shadow-xl p-6 text-center animate-in zoom-in-95 duration-200">
+          <div className="w-16 h-16 rounded-2xl bg-[#f0f5f2] flex items-center justify-center mx-auto mb-4">
+            <PurseSVG className="w-8 h-8 text-[#1f644e]" />
+          </div>
+          <h3 className="text-lg font-bold text-[#1e3a34] mb-2">Add an account first</h3>
+          <p className="text-sm text-[#7c8e88] mb-6">
+            You need at least one account to record transactions.
+          </p>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => {
+                setActiveTab('accounts');
+                handleClose();
+              }}
+              className="w-full py-3 bg-[#1f644e] text-white rounded-xl font-bold hover:bg-[#17503e] transition-colors cursor-pointer"
+            >
+              Go to Accounts
+            </button>
+            <button
+              onClick={handleClose}
+              className="w-full py-3 bg-white text-[#7c8e88] border border-[#e5e3d8] rounded-xl font-bold hover:bg-[#f8f9f4] transition-colors cursor-pointer"
+            >
+              Maybe later
+            </button>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -415,17 +474,90 @@ export default function AddTransactionModal() {
             )}
           </div>
 
-          {/* Notes */}
+          {/* Description */}
           <div className="px-4 pb-2">
             <div className="border border-[#e5e3d8] rounded-xl bg-white px-3 py-2">
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full bg-transparent outline-none resize-none text-sm placeholder:text-[#7c8e88] placeholder:font-medium"
-                placeholder="Add a note..."
+                placeholder="Description..."
                 rows={1}
               />
             </div>
+          </div>
+
+          {/* Recurring Option */}
+          <div className="px-4 pb-2">
+            <div className="flex items-center justify-between bg-white border border-[#e5e3d8] rounded-xl px-3 py-2">
+              <div className="flex items-center gap-2">
+                <div className={`p-1.5 rounded-lg ${isRecurring ? 'bg-[#1f644e]/10 text-[#1f644e]' : 'bg-neutral-100 text-[#7c8e88]'}`}>
+                  <Repeat className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-bold text-[#1e3a34]">Repeat Transaction</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsRecurring(!isRecurring)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${isRecurring ? 'bg-[#1f644e]' : 'bg-[#e5e3d8]'}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isRecurring ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
+            {isRecurring && (
+              <div className="mt-2 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                {['daily', 'weekly', 'monthly', 'yearly'].map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => setFrequency(f)}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all whitespace-nowrap ${frequency === f ? 'bg-[#1f644e] text-white' : 'bg-[#f0f5f2] text-[#7c8e88] hover:text-[#1f644e]'}`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Note Field (Collapsible) */}
+          <div className="px-4 pb-2">
+            {!showNoteField ? (
+              <button
+                type="button"
+                onClick={() => setShowNoteField(true)}
+                className="flex items-center gap-1.5 text-[11px] font-bold text-[#1f644e] hover:text-[#17503e] transition cursor-pointer"
+              >
+                <FileText className="w-3 h-3" />
+                Add Note
+              </button>
+            ) : (
+              <div className="border border-[#e5e3d8] rounded-xl bg-white px-3 py-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#7c8e88] uppercase">
+                    <FileText className="w-3 h-3" />
+                    Note
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!note) setShowNoteField(false);
+                    }}
+                    className="text-[#7c8e88] hover:text-[#1e3a34]"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+                <textarea
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  className="w-full bg-transparent outline-none resize-none text-sm placeholder:text-[#7c8e88] placeholder:font-medium"
+                  placeholder="Extra details..."
+                  rows={2}
+                  autoFocus
+                />
+              </div>
+            )}
           </div>
 
           {/* Amount Display */}

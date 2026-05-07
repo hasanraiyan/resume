@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const TransactionSchema = new mongoose.Schema(
+const RecurringTransactionSchema = new mongoose.Schema(
   {
     type: { type: String, enum: ['income', 'expense', 'transfer'], required: true },
     amount: { type: Number, required: true },
@@ -20,18 +20,15 @@ const TransactionSchema = new mongoose.Schema(
       ref: 'Account',
       default: null,
     },
-    date: { type: Date, required: true },
     note: { type: String, default: '' },
-    recurringId: { type: mongoose.Schema.Types.ObjectId, ref: 'RecurringTransaction', default: null },
+    frequency: { type: String, enum: ['daily', 'weekly', 'monthly', 'yearly'], required: true },
+    nextDueDate: { type: Date, required: true },
+    endDate: { type: Date, default: null },
+    isActive: { type: Boolean, default: true },
     deletedAt: { type: Date, default: null },
-    syncVersion: { type: Number, default: 1 },
   },
   { timestamps: true }
 );
 
-TransactionSchema.index({ date: -1 });
-TransactionSchema.index({ account: 1 });
-TransactionSchema.index({ category: 1 });
-TransactionSchema.index({ type: 1 });
-
-export default mongoose.models.Transaction || mongoose.model('Transaction', TransactionSchema);
+export default mongoose.models.RecurringTransaction ||
+  mongoose.model('RecurringTransaction', RecurringTransactionSchema);
