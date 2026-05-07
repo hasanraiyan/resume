@@ -33,6 +33,7 @@ export function DrivelyProvider({ children }) {
   const [selectedItems, setSelectedItems] = useState({ files: [], folders: [] });
   const [previewFile, setPreviewFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState([]);
+  const [renameTarget, setRenameTarget] = useState(null);
 
   const fetchBootstrap = useCallback(async (page = 1, isLoadMore = false) => {
     try {
@@ -47,7 +48,9 @@ export function DrivelyProvider({ children }) {
       // Fetch both bootstrap and trash data
       const [bootRes, trashRes] = await Promise.all([
         fetch(`/api/drively/bootstrap?page=${page}&limit=100`),
-        page === 1 ? fetch('/api/drively/bootstrap?trash=true') : Promise.resolve({ json: () => ({ success: true, files: [], folders: [] }) }),
+        page === 1
+          ? fetch('/api/drively/bootstrap?trash=true')
+          : Promise.resolve({ json: () => ({ success: true, files: [], folders: [] }) }),
       ]);
       const data = await bootRes.json();
       const trashData = await trashRes.json();
@@ -410,30 +413,37 @@ export function DrivelyProvider({ children }) {
 
       // F2 to rename single selected item
       if (e.key === 'F2') {
-        const selectedFileCount = selectedItems.files.length;
-        const selectedFolderCount = selectedItems.folders.length;
-
-        if (selectedFileCount + selectedFolderCount === 1) {
-           // We'd need to trigger the rename modal here.
-           // For now, let's just log or skip as it requires complex wiring
-           // to find which component owns the modal.
+        const { files: selFiles, folders: selFolders } = selectedItems;
+        if (selFiles.length === 1 && selFolders.length === 0) {
+          const file = files.find((f) => f._id === selFiles[0]);
+          if (file) setRenameTarget({ type: 'file', item: file });
+        } else if (selFolders.length === 1 && selFiles.length === 0) {
+          const folder = folders.find((f) => f._id === selFolders[0]);
+          if (folder) setRenameTarget({ type: 'folder', item: folder });
         }
       }
 
-      // Ctrl/Cmd + A to select all
+      // Ctrl/Cmd + A to select all visible items in the current folder
       if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
-        // Only trigger if not typing in an input
-        if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+        if (
+          document.activeElement.tagName !== 'INPUT' &&
+          document.activeElement.tagName !== 'TEXTAREA'
+        ) {
           e.preventDefault();
-          // Logic to select all visible files/folders
-          // (This would need access to currently filtered files/folders)
+          const visibleFileIds = files
+            .filter((f) => (f.folderId ?? null) === currentFolderId)
+            .map((f) => f._id);
+          const visibleFolderIds = folders
+            .filter((f) => (f.parentId ?? null) === currentFolderId)
+            .map((f) => f._id);
+          setSelectedItems({ files: visibleFileIds, folders: visibleFolderIds });
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedItems, executeBulk, clearSelection, previewFile]);
+  }, [selectedItems, executeBulk, clearSelection, previewFile, files, folders, currentFolderId]);
 
   return (
     <DrivelyContext.Provider
@@ -470,6 +480,8 @@ export function DrivelyProvider({ children }) {
         duplicateItem,
         shareItem,
         revokeShare,
+        renameTarget,
+        setRenameTarget,
         refresh: fetchBootstrap,
         pagination,
         loadMore,

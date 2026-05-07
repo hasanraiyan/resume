@@ -41,6 +41,9 @@ export const AGENT_IDS = {
   // Tools / Apps
   APP_BUILDER: 'app_builder',
 
+  // Coursify
+  COURSIFY_THUMBNAIL_GENERATOR: 'coursify_thumbnail_generator',
+
   // Integrations
 };
 
@@ -260,6 +263,16 @@ export const DEFAULT_AGENT_CONFIGS = {
     persona: `You are an elite App Builder agent. Your job is to generate complete, single-file HTML/JS/CSS applications. You must use modern CDNs like TailwindCSS for styling and ensure the app is fully functional and responsive. You work iteratively: first plan out the app structure, then generate the code, and finally review it for correctness.`,
     isActive: true,
   },
+  [AGENT_IDS.COURSIFY_THUMBNAIL_GENERATOR]: {
+    name: 'Coursify Thumbnail Generator',
+    description: 'Generates course thumbnail images via Pollinations AI (gptimage-large)',
+    type: AGENT_TYPES.MEDIA,
+    category: AGENT_CATEGORIES.GENERATIVE_ART,
+    icon: 'Image',
+    defaultModel: 'gptimage-large',
+    defaultProvider: 'pollinations',
+    isActive: true,
+  },
   [AGENT_IDS.FINANCE_ASSISTANT]: {
     name: 'Finance Assistant',
     description: 'Personal finance analyst for the Pocketly workspace',
@@ -332,6 +345,7 @@ export const RATE_LIMIT_DEFAULTS = {
   [AGENT_IDS.ENGAGEMENT_ANALYZER]: { requests: 30, window: 60 },
   [AGENT_IDS.APP_BUILDER]: { requests: 10, window: 60 },
   [AGENT_IDS.FINANCE_ASSISTANT]: { requests: 10, window: 60 },
+  [AGENT_IDS.COURSIFY_THUMBNAIL_GENERATOR]: { requests: 10, window: 60 },
 };
 
 /**

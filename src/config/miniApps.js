@@ -25,4 +25,12 @@ export const MINI_APPS = [
     category: 'Cloud',
     iconSrc: '/images/apps/drively.png',
   },
+  {
+    id: 'coursify',
+    name: 'Coursify',
+    tagline: 'AI-built courses via MCP — read, edit, and learn.',
+    href: '/apps/coursify',
+    category: 'Learning',
+    iconSrc: '/images/apps/coursify.png',
+  },
 ];

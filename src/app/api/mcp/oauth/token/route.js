@@ -9,6 +9,26 @@ import {
   verifyRefreshToken,
 } from '@/lib/mcp/oauth';
 
+// RFC 8252 §7.3 — loopback URIs may use any port; compare scheme+host only.
+function isRedirectUriMatch(a, b) {
+  if (a === b) return true;
+  try {
+    const ua = new URL(a);
+    const ub = new URL(b);
+    if (
+      ua.protocol === 'http:' &&
+      ub.protocol === 'http:' &&
+      (ua.hostname === '127.0.0.1' || ua.hostname === 'localhost') &&
+      (ub.hostname === '127.0.0.1' || ub.hostname === 'localhost')
+    ) {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+  return false;
+}
+
 async function parseParams(request) {
   const contentType = request.headers.get('content-type') || '';
   if (contentType.includes('application/x-www-form-urlencoded')) {
@@ -40,7 +60,7 @@ async function handleAuthorizationCode(params) {
     );
   }
 
-  if (redirect_uri && redirect_uri !== authCode.redirectUri) {
+  if (redirect_uri && !isRedirectUriMatch(redirect_uri, authCode.redirectUri)) {
     return NextResponse.json({ error: 'invalid_grant' }, { status: 400 });
   }
 

@@ -5,14 +5,8 @@ import DrivelyActivity from '@/models/DrivelyActivity';
 import DrivelyShare from '@/models/DrivelyShare';
 import { v2 as cloudinary } from 'cloudinary';
 import crypto from 'crypto';
+import cloudinary from '@/lib/cloudinary';
 import { CreateFolderSchema, UpdateFolderSchema, UpdateFileSchema } from './validators';
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
 
 export async function ensureDb() {
   await dbConnect();

@@ -1,13 +1,5 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(git checkout *)",
-      "Bash(node d:/resume/scripts/setup-totp-2fa.js)",
-      "mcp__claude_ai_Context7__query-docs",
-      "Bash(node -e \"const m = require\\('@modelcontextprotocol/sdk/dist/cjs/server/mcp.js'\\); console.log\\(Object.keys\\(m\\)\\)\")",
-      "Bash(git add *)",
-      "WebFetch(domain:support.cloudinary.com)",
-      "WebFetch(domain:cloudinary.com)"
-    ]
+    "allow": ["mcp__coursify__add_section"]
   }
 }

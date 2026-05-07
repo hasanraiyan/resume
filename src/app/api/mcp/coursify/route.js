@@ -1,11 +1,10 @@
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { verifyAccessToken, getBaseUrl } from '@/lib/mcp/oauth';
-import { createMcpServer } from '@/lib/mcp/pocketly';
+import { createCoursifyMcpServer } from '@/lib/mcp/coursify';
 import dbConnect from '@/lib/dbConnect';
 import AppConnection from '@/models/AppConnection';
 import McpAuditLog from '@/models/McpAuditLog';
 
-// ─── Rate Limiting ──────────────────────────────────────────────────
 const rateLimits = new Map();
 const RATE_WINDOW_MS = 60 * 1000;
 const MAX_REQUESTS_PER_WINDOW = 60;
@@ -26,9 +25,7 @@ function checkRateLimit(clientId) {
 function cleanupRateLimits() {
   const now = Date.now();
   for (const [clientId, entry] of rateLimits.entries()) {
-    if (now - entry.start > RATE_WINDOW_MS) {
-      rateLimits.delete(clientId);
-    }
+    if (now - entry.start > RATE_WINDOW_MS) rateLimits.delete(clientId);
   }
 }
 
@@ -38,7 +35,7 @@ function unauthorizedResponse(description) {
     status: 401,
     headers: {
       'Content-Type': 'application/json',
-      'WWW-Authenticate': `Bearer realm="${base}/api/mcp/pocketly", resource_metadata="${base}/.well-known/oauth-protected-resource/api/mcp/pocketly"`,
+      'WWW-Authenticate': `Bearer realm="${base}/api/mcp/coursify", resource_metadata="${base}/.well-known/oauth-protected-resource/api/mcp/coursify"`,
     },
   });
 }
@@ -48,10 +45,7 @@ function rateLimitResponse(retryAfter) {
     JSON.stringify({ error: 'rate_limited', error_description: 'Too many requests' }),
     {
       status: 429,
-      headers: {
-        'Content-Type': 'application/json',
-        'Retry-After': String(retryAfter),
-      },
+      headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfter) },
     }
   );
 }
@@ -87,16 +81,9 @@ async function handleMcpRequest(request) {
   const authInfo = await getAuthInfo(request);
   if (!authInfo) return unauthorizedResponse('Valid Bearer token required');
 
-  // Rate limiting
   const rateCheck = checkRateLimit(authInfo.clientId);
-  if (!rateCheck.allowed) {
-    return rateLimitResponse(Math.ceil(RATE_WINDOW_MS / 1000));
-  }
-
-  // Periodic cleanup of stale rate limit entries
-  if (rateLimits.size > RATE_CLEANUP_THRESHOLD) {
-    cleanupRateLimits();
-  }
+  if (!rateCheck.allowed) return rateLimitResponse(Math.ceil(RATE_WINDOW_MS / 1000));
+  if (rateLimits.size > RATE_CLEANUP_THRESHOLD) cleanupRateLimits();
 
   const startTime = Date.now();
   let toolName = 'unknown';
@@ -104,7 +91,6 @@ async function handleMcpRequest(request) {
   let errorMessage = null;
 
   try {
-    // Peek at the request body to extract tool name for audit logging
     const cloned = request.clone();
     const body = await cloned.json().catch(() => null);
     if (body?.method === 'tools/call' && body?.params?.name) {
@@ -112,20 +98,16 @@ async function handleMcpRequest(request) {
     } else if (body?.method) {
       toolName = body.method;
     }
-  } catch {
-    // ignore parse errors
-  }
+  } catch {}
 
   try {
-    const server = createMcpServer();
+    const server = createCoursifyMcpServer();
     const transport = new WebStandardStreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
     });
     await server.connect(transport);
-
     const response = await transport.handleRequest(request, { authInfo });
 
-    // Update lastUsedAt for connected app
     if (authInfo.connectionId) {
       await dbConnect();
       await AppConnection.findOneAndUpdate(
@@ -138,17 +120,15 @@ async function handleMcpRequest(request) {
   } catch (err) {
     success = false;
     errorMessage = err.message || 'Internal error';
-    console.error('MCP request error:', err);
+    console.error('MCP coursify error:', err);
     return new Response(
       JSON.stringify({ error: 'server_error', error_description: errorMessage }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   } finally {
-    // Async audit log (fire-and-forget)
     const durationMs = Date.now() - startTime;
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
     const userAgent = request.headers.get('user-agent') || '';
-
     dbConnect()
       .then(() =>
         McpAuditLog.create({
