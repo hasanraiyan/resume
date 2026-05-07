@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "coursify": {
+      "type": "http",
+      "url": "https://hasanraiyan.me/api/mcp/coursify"
+    }
+  }
+}

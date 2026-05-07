@@ -9,6 +9,30 @@ import { getBaseUrl } from '@/lib/mcp/oauth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { createAppConnection, getSessionOwnerId } from '@/lib/app-connections';
 
+// RFC 8252 §7.3 — loopback redirect URIs may use any port; match on scheme+host only.
+function isRedirectUriAllowed(redirectUri, allowedUris) {
+  if (allowedUris.includes(redirectUri)) return true;
+  try {
+    const { protocol, hostname } = new URL(redirectUri);
+    if (protocol === 'http:' && (hostname === '127.0.0.1' || hostname === 'localhost')) {
+      return allowedUris.some((u) => {
+        try {
+          const allowed = new URL(u);
+          return (
+            allowed.protocol === 'http:' &&
+            (allowed.hostname === '127.0.0.1' || allowed.hostname === 'localhost')
+          );
+        } catch {
+          return false;
+        }
+      });
+    }
+  } catch {
+    return false;
+  }
+  return false;
+}
+
 // GET: validate params, store pending auth state in cookie, redirect to authorize page if logged in
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -38,7 +62,7 @@ export async function GET(request) {
     return NextResponse.json({ error: 'invalid_client' }, { status: 400 });
   }
 
-  if (redirectUri && !client.redirectUris.includes(redirectUri)) {
+  if (redirectUri && !isRedirectUriAllowed(redirectUri, client.redirectUris)) {
     return NextResponse.json({ error: 'invalid_redirect_uri' }, { status: 400 });
   }
 
