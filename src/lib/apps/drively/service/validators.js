@@ -25,6 +25,7 @@ export const UpdateFolderSchema = z.object({
     }),
   starred: z.boolean().optional(),
   restore: z.boolean().optional(),
+  color: z.string().nullable().optional(),
 });
 
 export const UpdateFileSchema = z.object({

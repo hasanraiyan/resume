@@ -2,6 +2,9 @@ import dbConnect from '@/lib/dbConnect';
 import DrivelyFolder from '@/models/DrivelyFolder';
 import DrivelyFile from '@/models/DrivelyFile';
 import DrivelyActivity from '@/models/DrivelyActivity';
+import DrivelyShare from '@/models/DrivelyShare';
+import { v2 as cloudinary } from 'cloudinary';
+import crypto from 'crypto';
 import cloudinary from '@/lib/cloudinary';
 import { CreateFolderSchema, UpdateFolderSchema, UpdateFileSchema } from './validators';
 
@@ -41,9 +44,14 @@ export async function getBootstrapData(page = 1, limit = 100) {
 
   const activity = await DrivelyActivity.find().sort({ createdAt: -1 }).limit(50).lean();
 
+  const shares = await DrivelyShare.find({
+    expiresAt: { $gt: new Date() },
+  }).lean();
+
   return {
     folders,
     files,
+    shares,
     pagination: {
       page,
       limit,
@@ -197,6 +205,7 @@ export async function updateFolder(id, payload) {
 
   if (validated.name) folder.name = validated.name;
   if (validated.starred !== undefined) folder.starred = validated.starred;
+  if (validated.color !== undefined) folder.color = validated.color;
 
   if (validated.parentId !== undefined) {
     if (validated.parentId === id) throw new Error('Cannot move folder into itself');
@@ -377,6 +386,95 @@ export async function emptyTrash() {
   ]);
 
   return true;
+}
+
+export async function duplicateFile(id) {
+  await ensureDb();
+  const file = await DrivelyFile.findById(id);
+  if (!file) throw new Error('File not found');
+
+  const nameParts = file.filename.split('.');
+  const extension = nameParts.length > 1 ? nameParts.pop() : '';
+  const baseName = nameParts.join('.');
+  const newFilename = `${baseName} (copy)${extension ? '.' + extension : ''}`;
+
+  // Cloudinary re-upload from URL
+  const uploadResult = await new Promise((resolve, reject) => {
+    cloudinary.uploader.upload(
+      file.secureUrl,
+      {
+        resource_type: file.resourceType || 'raw',
+        folder: 'drively',
+        filename_override: newFilename,
+        use_filename: true,
+      },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      }
+    );
+  });
+
+  const newFile = new DrivelyFile({
+    filename: newFilename,
+    mimeType: file.mimeType,
+    size: file.size,
+    cloudinaryPublicId: uploadResult.public_id,
+    secureUrl: uploadResult.secure_url,
+    resourceType: uploadResult.resource_type,
+    folderId: file.folderId,
+  });
+
+  await newFile.save();
+  await logActivity('upload', 'file', newFile.filename);
+  return newFile.toObject();
+}
+
+export async function createOrGetShare(fileId) {
+  await ensureDb();
+  const file = await DrivelyFile.findById(fileId);
+  if (!file) throw new Error('File not found');
+
+  // Check for existing valid share
+  let share = await DrivelyShare.findOne({
+    fileId,
+    expiresAt: { $gt: new Date() },
+  });
+
+  if (!share) {
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    share = new DrivelyShare({
+      fileId,
+      token,
+      expiresAt,
+    });
+    await share.save();
+  }
+
+  return share.toObject();
+}
+
+export async function revokeShare(fileId) {
+  await ensureDb();
+  await DrivelyShare.deleteMany({ fileId });
+  return true;
+}
+
+export async function getShareByToken(token) {
+  await ensureDb();
+  const share = await DrivelyShare.findOne({
+    token,
+    expiresAt: { $gt: new Date() },
+  }).populate('fileId');
+
+  if (!share || !share.fileId || share.fileId.deletedAt) {
+    return null;
+  }
+
+  return share;
 }
 
 export async function searchDrively(query) {
