@@ -36,13 +36,7 @@ export default function ActionMenu({ type, item, variant = 'default' }) {
           if (item.mimeType.startsWith('image/')) {
             window.open(item.secureUrl, '_blank');
           } else {
-            const url = item.secureUrl.replace('/upload/', '/upload/fl_attachment/');
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = item.filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            window.open(`/api/drively/download/${item._id}`, '_blank');
           }
         }
         break;

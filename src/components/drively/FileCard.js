@@ -42,17 +42,9 @@ export default function FileCard({ file, viewMode }) {
     e.stopPropagation();
     if (file.mimeType.startsWith('image/')) {
       window.open(file.secureUrl, '_blank');
-      return;
+    } else {
+      window.open(`/api/drively/download/${file._id}`, '_blank');
     }
-    // Non-image files: inject fl_attachment so Cloudinary serves original bytes
-    // with Content-Disposition: attachment. Works for both image/upload and raw/upload URLs.
-    const url = file.secureUrl.replace('/upload/', '/upload/fl_attachment/');
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = file.filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
   };
 
   const isImage = file.mimeType.startsWith('image/') && file.secureUrl;
