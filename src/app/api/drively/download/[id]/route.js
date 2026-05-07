@@ -16,19 +16,12 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'File not found' }, { status: 404 });
     }
 
-    const cloudinaryRes = await fetch(file.secureUrl);
-    if (!cloudinaryRes.ok) {
-      return NextResponse.json({ error: 'Failed to fetch file from storage' }, { status: 502 });
-    }
-
-    const filename = encodeURIComponent(file.filename);
-    return new NextResponse(cloudinaryRes.body, {
-      headers: {
-        'Content-Type': file.mimeType || 'application/octet-stream',
-        'Content-Disposition': `attachment; filename*=UTF-8''${filename}`,
-        'Cache-Control': 'no-cache',
-      },
-    });
+    // Redirect the browser directly to the Cloudinary URL.
+    // The browser makes the request itself (with proper headers), so Cloudinary
+    // serves it without blocking. For raw/upload URLs (new uploads) the browser
+    // downloads the original file; for image/upload PDFs (old uploads) the browser
+    // opens the PDF viewer.
+    return NextResponse.redirect(file.secureUrl, 302);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
