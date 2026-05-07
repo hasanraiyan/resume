@@ -7,7 +7,7 @@ import MoveModal from './MoveModal';
 import { toast } from 'sonner';
 
 export default function BulkActionToolbar() {
-  const { selectedItems, clearSelection, executeBulk } = useDrively();
+  const { selectedItems, clearSelection, executeBulk, files: allFiles } = useDrively();
   const [showMoveModal, setShowMoveModal] = useState(false);
 
   const totalSelected = selectedItems.files.length + selectedItems.folders.length;
@@ -26,7 +26,6 @@ export default function BulkActionToolbar() {
         toast.info('Only files can be downloaded in bulk for now');
       }
 
-      const { files: allFiles } = useDrively();
       const filesToDownload = allFiles.filter(f => selectedItems.files.includes(f._id));
 
       filesToDownload.forEach((file, index) => {

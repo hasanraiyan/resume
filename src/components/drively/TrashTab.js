@@ -8,7 +8,7 @@ import FolderCard from './FolderCard';
 import { toast } from 'sonner';
 
 export default function TrashTab() {
-  const { isLoading, refresh } = useDrively();
+  const { isLoading, refresh, emptyTrash } = useDrively();
   const [trashItems, setTrashItems] = useState({ folders: [], files: [] });
   const [isFetching, setIsFetching] = useState(false);
 
