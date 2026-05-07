@@ -8,7 +8,9 @@
       "Bash(git add *)",
       "WebFetch(domain:support.cloudinary.com)",
       "WebFetch(domain:cloudinary.com)",
-      "Bash(gh pr *)"
+      "Bash(gh pr *)",
+      "mcp__coursify__add_section",
+      "mcp__coursify__publish_course"
     ]
   }
 }

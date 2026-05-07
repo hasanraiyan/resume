@@ -8,6 +8,7 @@ import {
   DESTRUCTIVE_ANNOTATIONS,
 } from './constants.js';
 import { textResult, errorResult, toolMeta, normalizeCourse, normalizeSection } from './utils.js';
+import { generateCourseThumbnail } from '@/lib/coursify/thumbnailGen.js';
 
 export function registerCoursifyTools(server) {
   // ─── list_courses ────────────────────────────────────────────────────
@@ -135,6 +136,11 @@ export function registerCoursifyTools(server) {
           estimatedDuration: estimatedDuration || '',
           tags: tags || [],
         });
+
+        // Fire-and-forget — thumbnail generates in the background without blocking the response
+        generateCourseThumbnail(course._id.toString(), course.title, course.description).catch(
+          () => {}
+        );
 
         return textResult(`Created course "${course.title}" (id: ${course._id}).`, {
           success: true,
