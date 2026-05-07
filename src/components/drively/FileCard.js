@@ -9,9 +9,6 @@ import {
   FileArchive,
   Download,
   Star,
-  MoreVertical,
-  Trash2,
-  ExternalLink,
 } from 'lucide-react';
 import ActionMenu from './ActionMenu';
 
@@ -46,6 +43,8 @@ export default function FileCard({ file, viewMode }) {
     window.open(file.secureUrl, '_blank');
   };
 
+  const isImage = file.mimeType.startsWith('image/') && file.secureUrl;
+
   if (viewMode === 'list') {
     return (
       <div className="group flex items-center justify-between p-3 bg-white border border-[#e5e3d8] rounded-xl hover:border-[#1f644e] transition-colors">
@@ -74,45 +73,76 @@ export default function FileCard({ file, viewMode }) {
     );
   }
 
-  const isImage = file.mimeType.startsWith('image/') && file.secureUrl;
-
   return (
     <div className="group bg-white border border-[#e5e3d8] rounded-2xl overflow-hidden hover:border-[#1f644e] transition-all hover:shadow-sm relative">
-      <div
-        className={`aspect-square relative overflow-hidden ${isImage ? '' : 'bg-[#f8f9fa] flex items-center justify-center p-6 group-hover:bg-[#f0f5f2] transition-colors'}`}
-      >
-        {isImage ? (
-          <img
-            src={file.secureUrl}
-            alt={file.filename}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-        ) : (
-          <div className="w-12 h-12 text-[#7c8e88] group-hover:text-[#1f644e] transition-colors">
-            {getFileIcon(file.mimeType)}
-          </div>
-        )}
-
-        {file.starred && !file.deletedAt && (
-          <Star className="absolute top-3 right-3 w-4 h-4 text-[#1f644e] fill-[#1f644e] drop-shadow-sm" />
-        )}
-      </div>
-
-      <div className="p-3 flex items-center justify-between gap-2">
+      {/* Mobile: compact horizontal row */}
+      <div className="flex items-center gap-3 p-3 sm:hidden">
+        <div
+          className={`w-12 h-12 flex-shrink-0 rounded-xl overflow-hidden ${
+            isImage ? '' : 'bg-[#f8f9fa] flex items-center justify-center'
+          }`}
+        >
+          {isImage ? (
+            <img src={file.secureUrl} alt={file.filename} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-7 h-7 text-[#7c8e88]">{getFileIcon(file.mimeType)}</div>
+          )}
+        </div>
         <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-bold truncate leading-tight mb-0.5" title={file.filename}>
-            {file.filename}
-          </h3>
+          <h3 className="text-sm font-bold truncate leading-tight">{file.filename}</h3>
           <p className="text-[10px] text-[#7c8e88] font-medium">{formatSize(file.size)}</p>
         </div>
-        <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 flex-shrink-0">
           <button
             onClick={handleDownload}
             className="p-1.5 hover:bg-[#f0f5f2] rounded-lg transition-colors"
           >
-            <Download className="w-3.5 h-3.5 text-[#7c8e88] hover:text-[#1f644e]" />
+            <Download className="w-3.5 h-3.5 text-[#7c8e88]" />
           </button>
           <ActionMenu type="file" item={file} />
+        </div>
+      </div>
+
+      {/* Desktop (sm+): vertical card with full-bleed thumbnail */}
+      <div className="hidden sm:block">
+        <div
+          className={`aspect-square relative overflow-hidden ${
+            isImage
+              ? ''
+              : 'bg-[#f8f9fa] flex items-center justify-center p-6 group-hover:bg-[#f0f5f2] transition-colors'
+          }`}
+        >
+          {isImage ? (
+            <img
+              src={file.secureUrl}
+              alt={file.filename}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : (
+            <div className="w-12 h-12 text-[#7c8e88] group-hover:text-[#1f644e] transition-colors">
+              {getFileIcon(file.mimeType)}
+            </div>
+          )}
+          {file.starred && !file.deletedAt && (
+            <Star className="absolute top-3 right-3 w-4 h-4 text-[#1f644e] fill-[#1f644e] drop-shadow-sm" />
+          )}
+        </div>
+        <div className="p-3 flex items-center justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-sm font-bold truncate leading-tight mb-0.5" title={file.filename}>
+              {file.filename}
+            </h3>
+            <p className="text-[10px] text-[#7c8e88] font-medium">{formatSize(file.size)}</p>
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={handleDownload}
+              className="p-1.5 hover:bg-[#f0f5f2] rounded-lg transition-colors"
+            >
+              <Download className="w-3.5 h-3.5 text-[#7c8e88] hover:text-[#1f644e]" />
+            </button>
+            <ActionMenu type="file" item={file} />
+          </div>
         </div>
       </div>
     </div>

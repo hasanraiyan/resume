@@ -51,33 +51,50 @@ export default function MyDriveTab() {
         </div>
         <section>
           <div className="h-3 w-14 bg-[#e5e3d8] rounded animate-pulse mb-4" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="bg-white border border-[#e5e3d8] rounded-2xl p-4 animate-pulse"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-10 h-10 bg-[#e5e3d8] rounded-xl" />
+              <div key={i} className="bg-white border border-[#e5e3d8] rounded-2xl animate-pulse">
+                {/* Mobile skeleton row */}
+                <div className="flex items-center gap-3 p-3 sm:hidden">
+                  <div className="w-9 h-9 bg-[#e5e3d8] rounded-xl flex-shrink-0" />
+                  <div className="flex-1">
+                    <div className="h-3 bg-[#e5e3d8] rounded w-2/3 mb-1.5" />
+                    <div className="h-2 bg-[#e5e3d8] rounded w-1/4" />
+                  </div>
                 </div>
-                <div className="h-3 bg-[#e5e3d8] rounded w-3/4 mb-2" />
-                <div className="h-2 bg-[#e5e3d8] rounded w-1/4" />
+                {/* Desktop skeleton card */}
+                <div className="hidden sm:block p-4">
+                  <div className="w-10 h-10 bg-[#e5e3d8] rounded-xl mb-3" />
+                  <div className="h-3 bg-[#e5e3d8] rounded w-3/4 mb-2" />
+                  <div className="h-2 bg-[#e5e3d8] rounded w-1/4" />
+                </div>
               </div>
             ))}
           </div>
         </section>
         <section>
           <div className="h-3 w-10 bg-[#e5e3d8] rounded animate-pulse mb-4" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
                 key={i}
                 className="bg-white border border-[#e5e3d8] rounded-2xl overflow-hidden animate-pulse"
               >
-                <div className="aspect-square bg-[#e5e3d8]" />
-                <div className="p-3">
-                  <div className="h-3 bg-[#e5e3d8] rounded w-4/5 mb-2" />
-                  <div className="h-2 bg-[#e5e3d8] rounded w-1/3" />
+                {/* Mobile skeleton row */}
+                <div className="flex items-center gap-3 p-3 sm:hidden">
+                  <div className="w-12 h-12 bg-[#e5e3d8] rounded-xl flex-shrink-0" />
+                  <div className="flex-1">
+                    <div className="h-3 bg-[#e5e3d8] rounded w-3/4 mb-1.5" />
+                    <div className="h-2 bg-[#e5e3d8] rounded w-1/3" />
+                  </div>
+                </div>
+                {/* Desktop skeleton card */}
+                <div className="hidden sm:block">
+                  <div className="aspect-square bg-[#e5e3d8]" />
+                  <div className="p-3">
+                    <div className="h-3 bg-[#e5e3d8] rounded w-4/5 mb-2" />
+                    <div className="h-2 bg-[#e5e3d8] rounded w-1/3" />
+                  </div>
                 </div>
               </div>
             ))}
@@ -149,7 +166,7 @@ export default function MyDriveTab() {
               <div
                 className={
                   viewMode === 'grid'
-                    ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4'
+                    ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
                     : 'space-y-2'
                 }
               >
@@ -168,7 +185,7 @@ export default function MyDriveTab() {
               <div
                 className={
                   viewMode === 'grid'
-                    ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'
+                    ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4'
                     : 'space-y-2'
                 }
               >

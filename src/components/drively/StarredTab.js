@@ -36,7 +36,7 @@ export default function StarredTab() {
           <h2 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-4">
             Starred Folders
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {starred.folders.map((folder) => (
               <FolderCard key={folder._id} folder={folder} viewMode="grid" />
             ))}
@@ -49,7 +49,7 @@ export default function StarredTab() {
           <h2 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-4">
             Starred Files
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {starred.files.map((file) => (
               <FileCard key={file._id} file={file} viewMode="grid" />
             ))}
