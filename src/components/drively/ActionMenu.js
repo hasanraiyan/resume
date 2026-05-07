@@ -32,7 +32,19 @@ export default function ActionMenu({ type, item, variant = 'default' }) {
         await updateItem(type, item._id, { restore: true });
         break;
       case 'download':
-        if (type === 'file') window.open(item.secureUrl, '_blank');
+        if (type === 'file') {
+          if (item.mimeType.startsWith('image/')) {
+            window.open(item.secureUrl, '_blank');
+          } else {
+            const url = item.secureUrl.replace('/upload/', '/upload/fl_attachment/');
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = item.filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }
+        }
         break;
     }
   };

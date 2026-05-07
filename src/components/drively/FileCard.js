@@ -40,7 +40,19 @@ export default function FileCard({ file, viewMode }) {
 
   const handleDownload = (e) => {
     e.stopPropagation();
-    window.open(file.secureUrl, '_blank');
+    if (file.mimeType.startsWith('image/')) {
+      window.open(file.secureUrl, '_blank');
+      return;
+    }
+    // Non-image files: inject fl_attachment so Cloudinary serves original bytes
+    // with Content-Disposition: attachment. Works for both image/upload and raw/upload URLs.
+    const url = file.secureUrl.replace('/upload/', '/upload/fl_attachment/');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = file.filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   const isImage = file.mimeType.startsWith('image/') && file.secureUrl;
