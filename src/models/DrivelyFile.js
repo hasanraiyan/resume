@@ -24,6 +24,11 @@ const DrivelyFileSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    resourceType: {
+      type: String,
+      enum: ['image', 'video', 'raw'],
+      default: 'raw',
+    },
     folderId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'DrivelyFolder',

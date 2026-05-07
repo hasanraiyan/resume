@@ -106,19 +106,28 @@ export async function createFolder(payload) {
   return folder.toObject();
 }
 
+const getCloudinaryResourceType = (mimeType) => {
+  if (mimeType.startsWith('image/')) return 'image';
+  if (mimeType.startsWith('video/')) return 'video';
+  return 'raw';
+};
+
 export async function uploadFile(file, folderId = null) {
   await ensureDb();
+
+  const mimeType = file.type || 'application/octet-stream';
+  const resourceType = getCloudinaryResourceType(mimeType);
 
   // Convert file to buffer
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
-  // Upload to Cloudinary
+  // Upload to Cloudinary with explicit resource_type so PDFs/docs are served as raw bytes
   const uploadResult = await new Promise((resolve, reject) => {
     cloudinary.uploader
       .upload_stream(
         {
-          resource_type: 'auto',
+          resource_type: resourceType,
           folder: 'drively',
           filename_override: file.name,
           use_filename: true,
@@ -133,10 +142,11 @@ export async function uploadFile(file, folderId = null) {
 
   const newFile = new DrivelyFile({
     filename: file.name,
-    mimeType: file.type || 'application/octet-stream',
+    mimeType,
     size: file.size,
     cloudinaryPublicId: uploadResult.public_id,
     secureUrl: uploadResult.secure_url,
+    resourceType: uploadResult.resource_type,
     folderId: folderId || null,
   });
 
@@ -237,13 +247,9 @@ export async function permanentDeleteFile(id) {
   const file = await DrivelyFile.findById(id);
   if (!file) throw new Error('File not found');
 
-  // Delete from Cloudinary
   await cloudinary.uploader.destroy(file.cloudinaryPublicId, {
-    resource_type: file.mimeType.startsWith('image') ? 'image' : 'raw',
+    resource_type: file.resourceType || getCloudinaryResourceType(file.mimeType),
   });
-  // Note: resource_type 'auto' doesn't work for destroy.
-  // Standard files are usually 'raw', images are 'image'.
-  // PDF, DOCX etc might be 'raw'.
 
   await DrivelyFile.findByIdAndDelete(id);
   return true;
@@ -266,7 +272,7 @@ export async function permanentDeleteFolder(id) {
   for (const file of filesToDelete) {
     try {
       await cloudinary.uploader.destroy(file.cloudinaryPublicId, {
-        resource_type: file.mimeType.startsWith('image') ? 'image' : 'raw',
+        resource_type: file.resourceType || getCloudinaryResourceType(file.mimeType),
       });
     } catch (err) {
       console.error(`Failed to delete Cloudinary asset ${file.cloudinaryPublicId}`, err);
