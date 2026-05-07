@@ -27,6 +27,7 @@ import FilePreviewPanel from '@/components/drively/FilePreviewPanel';
 import SearchResults from '@/components/drively/SearchResults';
 import ActivityFeed from '@/components/drively/ActivityFeed';
 import ErrorBoundary from '@/components/drively/ErrorBoundary';
+import RenameModal from '@/components/drively/RenameModal';
 import debounce from 'lodash.debounce';
 
 const pacifico = Pacifico({
@@ -47,8 +48,17 @@ function DrivelyApp() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('mydrive');
-  const { trashCount, searchQuery, setSearchQuery, previewFile, setPreviewFile, activity } =
-    useDrively();
+  const {
+    trashCount,
+    searchQuery,
+    setSearchQuery,
+    previewFile,
+    setPreviewFile,
+    activity,
+    renameTarget,
+    setRenameTarget,
+    updateItem,
+  } = useDrively();
 
   const [searchResults, setSearchResults] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -228,6 +238,19 @@ function DrivelyApp() {
           <ActivityFeed activity={activity} />
         </div>
       </aside>
+
+      {renameTarget && (
+        <RenameModal
+          type={renameTarget.type}
+          item={renameTarget.item}
+          onConfirm={async (newName) => {
+            const payload =
+              renameTarget.type === 'file' ? { filename: newName } : { name: newName };
+            await updateItem(renameTarget.type, renameTarget.item._id, payload);
+          }}
+          onClose={() => setRenameTarget(null)}
+        />
+      )}
 
       {previewFile && (
         <>

@@ -7,7 +7,8 @@
       "Bash(node -e \"const m = require\\('@modelcontextprotocol/sdk/dist/cjs/server/mcp.js'\\); console.log\\(Object.keys\\(m\\)\\)\")",
       "Bash(git add *)",
       "WebFetch(domain:support.cloudinary.com)",
-      "WebFetch(domain:cloudinary.com)"
+      "WebFetch(domain:cloudinary.com)",
+      "Bash(gh pr *)"
     ]
   }
 }
