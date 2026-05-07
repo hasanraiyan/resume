@@ -4,11 +4,15 @@ import CoursifyCourse from '@/models/CoursifyCourse';
 import DrivelyFile from '@/models/DrivelyFile';
 import DrivelyActivity from '@/models/DrivelyActivity';
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+// Cloudinary is already configured globally by the Drively service on first import.
+// Re-configuring here would clobber the shared singleton with stale env values.
+if (!cloudinary.config().cloud_name) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+}
 
 function buildPrompt(title, description) {
   const desc = description?.trim() ? ` Topic: ${description.trim().slice(0, 200)}.` : '';

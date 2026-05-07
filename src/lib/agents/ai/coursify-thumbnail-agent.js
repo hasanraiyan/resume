@@ -29,7 +29,7 @@ class CoursifyThumbnailAgent extends BaseAgent {
   async _onExecute(input) {
     const { prompt, size = '1792x1024' } = input;
     const provider = this.config.provider;
-    const model = input.model || this.config.model || provider?.model || 'gptimage-large';
+    const model = input.model || this.config.model || this.config.defaultModel || 'gptimage-large';
 
     const { client } = this._buildClient();
     this.logger.info(`Generating thumbnail with model: ${model}`);
