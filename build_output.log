@@ -1,0 +1,191 @@
+
+> resume@0.1.0 build /app
+> pnpm build:mcp-widgets && rimraf .next/cache && next build --no-lint
+
+
+> resume@0.1.0 build:mcp-widgets /app
+> node scripts/build-pocketly-widget.mjs
+
+ ⚠ Linting is disabled.
+   ▲ Next.js 15.5.9
+   - Experiments (use with caution):
+     · serverActions
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 104s
+   Checking validity of types ...
+   Collecting page data ...
+WARNING: MONGODB_URI environment variable is not defined.
+WARNING: MONGODB_URI environment variable is not defined.
+WARNING: MONGODB_URI environment variable is not defined.
+Api key is used with unsecure connection.
+Api key is used with unsecure connection.
+=== CLOUDINARY CONFIG DEBUG ===
+Cloudinary configured: { cloud_name: 'NOT SET', api_key: 'NOT SET', api_secret: 'NOT SET' }
+=== CLOUDINARY CONFIG DEBUG ===
+Cloudinary configured: { cloud_name: 'NOT SET', api_key: 'NOT SET', api_secret: 'NOT SET' }
+Api key is used with unsecure connection.
+=== CLOUDINARY CONFIG DEBUG ===
+Cloudinary configured: { cloud_name: 'NOT SET', api_key: 'NOT SET', api_secret: 'NOT SET' }
+[agents/index.js] Registering agents...
+[agents/index.js] AppBuilderAgent: function aO
+[AgentRegistry] Registered agent: image_analyzer
+[AgentRegistry] Registered agent: chat_fast
+[AgentRegistry] Registered agent: chat_pro
+[AgentRegistry] Registered agent: chat_thinking
+[AgentRegistry] Registered agent: image_generator
+[AgentRegistry] Registered agent: image_editor
+[AgentRegistry] Registered agent: image_embedder
+[AgentRegistry] Registered agent: visual_search
+[AgentRegistry] Registered agent: blog_writer
+[AgentRegistry] Registered agent: telegram_assistant
+[AgentRegistry] Registered agent: whatsapp_assistant
+[AgentRegistry] Registered agent: app_builder
+[AgentRegistry] Registered agent: finance_assistant
+[agents/index.js] Agents registered successfully
+[agents/index.js] Registering agents...
+[agents/index.js] AppBuilderAgent: function aO
+[AgentRegistry] Registered agent: image_analyzer
+[AgentRegistry] Registered agent: chat_fast
+[AgentRegistry] Registered agent: chat_pro
+[agents/index.js] Registering agents...
+[agents/index.js] AppBuilderAgent: function aO
+[AgentRegistry] Registered agent: image_analyzer
+[AgentRegistry] Registered agent: chat_thinking
+[AgentRegistry] Registered agent: image_generator
+[AgentRegistry] Registered agent: image_editor
+[AgentRegistry] Registered agent: image_embedder
+[AgentRegistry] Registered agent: chat_fast
+[AgentRegistry] Registered agent: chat_pro
+[AgentRegistry] Registered agent: visual_search
+[AgentRegistry] Registered agent: blog_writer
+[AgentRegistry] Registered agent: telegram_assistant
+[AgentRegistry] Registered agent: whatsapp_assistant
+[AgentRegistry] Registered agent: app_builder
+[AgentRegistry] Registered agent: finance_assistant
+[agents/index.js] Agents registered successfully
+[AgentRegistry] Registered agent: chat_thinking
+[AgentRegistry] Registered agent: image_generator
+[AgentRegistry] Registered agent: image_editor
+[AgentRegistry] Registered agent: image_embedder
+[AgentRegistry] Registered agent: visual_search
+[AgentRegistry] Registered agent: blog_writer
+[AgentRegistry] Registered agent: telegram_assistant
+[AgentRegistry] Registered agent: whatsapp_assistant
+[AgentRegistry] Registered agent: app_builder
+[AgentRegistry] Registered agent: finance_assistant
+[agents/index.js] Agents registered successfully
+Failed to obtain server version. Unable to check client-server compatibility. Set checkCompatibility=false to skip version check.
+Failed to obtain server version. Unable to check client-server compatibility. Set checkCompatibility=false to skip version check.
+Failed to obtain server version. Unable to check client-server compatibility. Set checkCompatibility=false to skip version check.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Get Published Articles Error: [MongooseError: Operation `articles.aggregate()` buffering timed out after 10000ms]
+Get Published Projects Error: [MongooseError: Operation `projects.find()` buffering timed out after 10000ms]
+   Generating static pages (0/117) ...
+WARNING: MONGODB_URI environment variable is not defined.
+WARNING: MONGODB_URI environment variable is not defined.
+Api key is used with unsecure connection.
+WARNING: MONGODB_URI environment variable is not defined.
+Api key is used with unsecure connection.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Failed to obtain server version. Unable to check client-server compatibility. Set checkCompatibility=false to skip version check.
+[agents/index.js] Registering agents...
+[agents/index.js] AppBuilderAgent: function aO
+[AgentRegistry] Registered agent: image_analyzer
+[AgentRegistry] Registered agent: chat_fast
+[AgentRegistry] Registered agent: chat_pro
+[AgentRegistry] Registered agent: chat_thinking
+[AgentRegistry] Registered agent: image_generator
+[AgentRegistry] Registered agent: image_editor
+[AgentRegistry] Registered agent: image_embedder
+[AgentRegistry] Registered agent: visual_search
+[AgentRegistry] Registered agent: blog_writer
+[AgentRegistry] Registered agent: telegram_assistant
+[AgentRegistry] Registered agent: whatsapp_assistant
+[AgentRegistry] Registered agent: app_builder
+[AgentRegistry] Registered agent: finance_assistant
+[agents/index.js] Agents registered successfully
+=== CLOUDINARY CONFIG DEBUG ===
+Cloudinary configured: { cloud_name: 'NOT SET', api_key: 'NOT SET', api_secret: 'NOT SET' }
+   Generating static pages (29/117)
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+Failed to obtain server version. Unable to check client-server compatibility. Set checkCompatibility=false to skip version check.
+Skipping dbConnect because MONGODB_URI is not set.
+Skipping dbConnect because MONGODB_URI is not set.
+=== CLOUDINARY CONFIG DEBUG ===
+Cloudinary configured: { cloud_name: 'NOT SET', api_key: 'NOT SET', api_secret: 'NOT SET' }
+[agents/index.js] Registering agents...
+[agents/index.js] AppBuilderAgent: function aO
+[AgentRegistry] Registered agent: image_analyzer
+[AgentRegistry] Registered agent: chat_fast
+[AgentRegistry] Registered agent: chat_pro
+[AgentRegistry] Registered agent: chat_thinking
+[AgentRegistry] Registered agent: image_generator
+[AgentRegistry] Registered agent: image_editor
+[AgentRegistry] Registered agent: image_embedder
+[AgentRegistry] Registered agent: visual_search
+[AgentRegistry] Registered agent: blog_writer
+[AgentRegistry] Registered agent: telegram_assistant
+[AgentRegistry] Registered agent: whatsapp_assistant
+[AgentRegistry] Registered agent: app_builder
+[AgentRegistry] Registered agent: finance_assistant
+[agents/index.js] Agents registered successfully
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+Get Published Articles Error: [MongooseError: Operation `articles.aggregate()` buffering timed out after 10000ms]
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+Skipping dbConnect because MONGODB_URI is not set.
+Error occurred prerendering page "/sitemap.xml". Read more: https://nextjs.org/docs/messages/prerender-error
+[MongooseError: Operation `projects.find()` buffering timed out after 10000ms]
+Export encountered an error on /sitemap.xml/route: /sitemap.xml, exiting the build.
+ ⨯ Next.js build worker exited with code: 1 and signal: null
+ ELIFECYCLE  Command failed with exit code 1.
