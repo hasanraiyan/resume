@@ -16,6 +16,10 @@ const CoursifyCourseSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    thumbnailGenerating: {
+      type: Boolean,
+      default: false,
+    },
     status: {
       type: String,
       enum: ['draft', 'published'],

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 
@@ -10,6 +10,15 @@ export function CoursifyProvider({ children }) {
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(true);
   const [courses, setCourses] = useState([]);
+  const pollRef = useRef(null);
+
+  const silentRefresh = useCallback(async () => {
+    try {
+      const res = await fetch('/api/coursify/bootstrap');
+      const data = await res.json();
+      if (data.success) setCourses(data.courses);
+    } catch {}
+  }, []);
 
   const fetchBootstrap = useCallback(async () => {
     try {
@@ -27,6 +36,25 @@ export function CoursifyProvider({ children }) {
     } finally {
       setIsLoading(false);
     }
+  }, []);
+
+  // Poll every 8s while any course is generating a thumbnail
+  useEffect(() => {
+    const anyGenerating = courses.some((c) => c.thumbnailGenerating);
+    if (anyGenerating && !pollRef.current) {
+      pollRef.current = setInterval(silentRefresh, 8000);
+    } else if (!anyGenerating && pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    return () => {};
+  }, [courses, silentRefresh]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
   }, []);
 
   useEffect(() => {

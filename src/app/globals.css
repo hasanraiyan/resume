@@ -323,6 +323,15 @@ body {
   }
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
 /* Custom Chatblock Scrollbar */
 .custom-chat-scrollbar::-webkit-scrollbar {
   width: 6px;

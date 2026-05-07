@@ -1,4 +1,4 @@
-import { v2 as cloudinary } from 'cloudinary';
+import cloudinary from '@/lib/cloudinary';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
 import DrivelyFile from '@/models/DrivelyFile';
@@ -14,16 +14,6 @@ async function getOrCreateThumbnailFolder() {
     path: '',
   });
   return folder._id;
-}
-
-// Cloudinary is already configured globally by the Drively service on first import.
-// Re-configuring here would clobber the shared singleton with stale env values.
-if (!cloudinary.config().cloud_name) {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-  });
 }
 
 function buildPrompt(title, description) {
@@ -48,6 +38,8 @@ export async function generateCourseThumbnail(courseId, title, description) {
 
     await dbConnect();
     console.log(`${t} [1/5] DB connected (${elapsed()})`);
+
+    await CoursifyCourse.findByIdAndUpdate(courseId, { thumbnailGenerating: true });
 
     const { default: agentRegistry, AGENT_IDS } = await import('@/lib/agents/index.js');
     const prompt = buildPrompt(title, description);
@@ -106,11 +98,14 @@ export async function generateCourseThumbnail(courseId, title, description) {
     await DrivelyActivity.create({ action: 'upload', itemType: 'file', itemName: filename });
 
     await CoursifyCourse.findByIdAndUpdate(courseId, {
-      $set: { thumbnail: uploadResult.secure_url },
+      $set: { thumbnail: uploadResult.secure_url, thumbnailGenerating: false },
     });
 
     console.log(`${t} DONE total=${elapsed()} url=${uploadResult.secure_url}`);
   } catch (err) {
     console.error(`${t} FAILED at ${elapsed()} — ${err.message}`, err.stack ?? '');
+    await CoursifyCourse.findByIdAndUpdate(courseId, { thumbnailGenerating: false }).catch(
+      () => {}
+    );
   }
 }

@@ -1,7 +1,6 @@
-// src/app/actions/mediaActions.js
 'use server';
 
-import { v2 as cloudinary } from 'cloudinary';
+import cloudinary from '@/lib/cloudinary';
 import dbConnect from '@/lib/dbConnect';
 import MediaAsset from '@/models/MediaAsset';
 import MediaAgentSettings from '@/models/MediaAgentSettings';
@@ -12,13 +11,6 @@ import agentRegistry from '@/lib/agents';
 import { AGENT_IDS } from '@/lib/constants/agents';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-
-// Configure Cloudinary with your credentials
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
 
 console.log('=== CLOUDINARY CONFIG DEBUG ===');
 console.log('Cloudinary configured:', {

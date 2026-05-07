@@ -1,16 +1,8 @@
-// src/app/api/media/upload/route.js
-import { v2 as cloudinary } from 'cloudinary';
+import cloudinary from '@/lib/cloudinary';
 import dbConnect from '@/lib/dbConnect';
 import MediaAsset from '@/models/MediaAsset';
 import { processAndIndexAsset } from '@/app/actions/mediaActions';
 import { after } from 'next/server';
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
 
 export async function POST(request) {
   console.log('=== API UPLOAD DEBUG ===');

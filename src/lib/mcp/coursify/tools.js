@@ -169,6 +169,7 @@ export function registerCoursifyTools(server) {
           difficulty: difficulty || 'beginner',
           estimatedDuration: estimatedDuration || '',
           tags: tags || [],
+          thumbnailGenerating: true,
         });
 
         createThumbnailInBackground(course);

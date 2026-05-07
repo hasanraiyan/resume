@@ -2,6 +2,7 @@ import { requireAdminAuth } from '@/lib/money-auth';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
+import { generateCourseThumbnail } from '@/lib/coursify/thumbnailGen';
 
 export async function POST(request) {
   const auth = await requireAdminAuth(request);
@@ -23,7 +24,14 @@ export async function POST(request) {
       estimatedDuration: estimatedDuration || '',
       tags: Array.isArray(tags) ? tags : [],
       thumbnail: thumbnail || null,
+      thumbnailGenerating: !thumbnail,
     });
+
+    if (!thumbnail) {
+      generateCourseThumbnail(course._id.toString(), course.title, course.description).catch(
+        () => {}
+      );
+    }
 
     return NextResponse.json({
       success: true,

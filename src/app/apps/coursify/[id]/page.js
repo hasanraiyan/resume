@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, use } from 'react';
+import { useState, useEffect, useCallback, use, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Pacifico, Nunito, Lora } from 'next/font/google';
@@ -25,6 +25,7 @@ import {
   Menu,
   X,
   Tag,
+  ImagePlus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import EditSectionModal from '@/components/coursify/EditSectionModal';
@@ -78,6 +79,8 @@ export default function CourseDetailPage({ params }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showMeta, setShowMeta] = useState(true);
   const [editMode, setEditMode] = useState(false);
+  const [thumbnailUploading, setThumbnailUploading] = useState(false);
+  const thumbnailInputRef = useRef(null);
 
   const fetchCourse = useCallback(
     async (silent = false) => {
@@ -172,6 +175,32 @@ export default function CourseDetailPage({ params }) {
         setActiveSection(remaining[0]?._id || null);
       }
       toast.success('Section deleted');
+    }
+  };
+
+  const handleThumbnailUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setThumbnailUploading(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(`/api/coursify/courses/${id}/thumbnail`, {
+        method: 'POST',
+        body: form,
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCourse((c) => ({ ...c, thumbnail: data.thumbnail, thumbnailGenerating: false }));
+        toast.success('Thumbnail updated');
+      } else {
+        toast.error(data.error || 'Upload failed');
+      }
+    } catch {
+      toast.error('Upload failed');
+    } finally {
+      setThumbnailUploading(false);
+      e.target.value = '';
     }
   };
 
@@ -438,16 +467,64 @@ export default function CourseDetailPage({ params }) {
             </div>
           ) : (
             <article className="max-w-3xl mx-auto px-4 lg:px-10 py-8">
-              {/* Course thumbnail banner — always shown at top */}
-              {course.thumbnail && (
-                <div className="w-full h-52 rounded-2xl overflow-hidden mb-8 border border-[#e5e3d8] shadow-sm">
+              {/* Course thumbnail banner */}
+              <input
+                ref={thumbnailInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleThumbnailUpload}
+              />
+              {course.thumbnailGenerating ? (
+                <div className="w-full h-52 rounded-2xl overflow-hidden mb-8 border border-[#e5e3d8] shadow-sm bg-gradient-to-br from-[#1f644e] to-[#2d8a6a] relative flex items-center justify-center">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-[shimmer_1.5s_ease-in-out_infinite] bg-[length:200%_100%]" />
+                  <div className="flex flex-col items-center gap-2 z-10">
+                    <div className="w-8 h-8 rounded-full border-2 border-white/60 border-t-white animate-spin" />
+                    <span className="text-xs font-bold text-white/70 tracking-wider uppercase">
+                      Generating thumbnail…
+                    </span>
+                  </div>
+                </div>
+              ) : course.thumbnail ? (
+                <div className="w-full h-52 rounded-2xl overflow-hidden mb-8 border border-[#e5e3d8] shadow-sm relative group">
                   <img
                     src={course.thumbnail}
                     alt={course.title}
                     className="w-full h-full object-cover"
                   />
+                  {editMode && (
+                    <button
+                      onClick={() => thumbnailInputRef.current?.click()}
+                      disabled={thumbnailUploading}
+                      className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      {thumbnailUploading ? (
+                        <div className="w-7 h-7 rounded-full border-2 border-white/60 border-t-white animate-spin" />
+                      ) : (
+                        <>
+                          <ImagePlus className="w-7 h-7 text-white" />
+                          <span className="text-xs font-bold text-white">Change thumbnail</span>
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
-              )}
+              ) : editMode ? (
+                <button
+                  onClick={() => thumbnailInputRef.current?.click()}
+                  disabled={thumbnailUploading}
+                  className="w-full h-52 rounded-2xl mb-8 border-2 border-dashed border-[#e5e3d8] flex flex-col items-center justify-center gap-2 hover:border-[#1f644e] hover:bg-[#f0f5f2] transition-colors"
+                >
+                  {thumbnailUploading ? (
+                    <div className="w-7 h-7 rounded-full border-2 border-[#1f644e]/40 border-t-[#1f644e] animate-spin" />
+                  ) : (
+                    <>
+                      <ImagePlus className="w-7 h-7 text-[#7c8e88]" />
+                      <span className="text-xs font-bold text-[#7c8e88]">Upload thumbnail</span>
+                    </>
+                  )}
+                </button>
+              ) : null}
 
               {/* Section header */}
               <div className="flex items-start justify-between gap-4 mb-6">

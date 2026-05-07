@@ -72,14 +72,24 @@ export default function CourseCard({ course, index = 0 }) {
         <div
           className={`h-44 bg-gradient-to-br ${gradient} flex items-center justify-center relative overflow-hidden shrink-0`}
         >
-          {course.thumbnail ? (
+          {course.thumbnailGenerating ? (
+            <>
+              {/* Animated shimmer while thumbnail is being generated */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-[shimmer_1.5s_ease-in-out_infinite] bg-[length:200%_100%]" />
+              <div className="flex flex-col items-center gap-2 z-10">
+                <div className="w-7 h-7 rounded-full border-2 border-white/60 border-t-white animate-spin" />
+                <span className="text-[10px] font-bold text-white/70 tracking-wider uppercase">
+                  Generating…
+                </span>
+              </div>
+            </>
+          ) : course.thumbnail ? (
             <>
               <img
                 src={course.thumbnail}
                 alt={course.title}
                 className="absolute inset-0 w-full h-full object-cover"
               />
-              {/* gradient scrim so badge is always readable over photos */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10" />
             </>
           ) : (

@@ -2,15 +2,8 @@ import dbConnect from '@/lib/dbConnect';
 import DrivelyFolder from '@/models/DrivelyFolder';
 import DrivelyFile from '@/models/DrivelyFile';
 import DrivelyActivity from '@/models/DrivelyActivity';
-import { v2 as cloudinary } from 'cloudinary';
+import cloudinary from '@/lib/cloudinary';
 import { CreateFolderSchema, UpdateFolderSchema, UpdateFileSchema } from './validators';
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
 
 export async function ensureDb() {
   await dbConnect();
