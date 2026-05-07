@@ -442,263 +442,278 @@ export default function CourseDetailPage({ params }) {
 
         {/* ── Main Content ── */}
         <main className="flex-1 overflow-y-auto min-w-0">
-          {!currentSection ? (
-            <div className="flex flex-col items-center justify-center min-h-full py-24 text-center px-4">
-              <div className="h-14 w-14 bg-[#f0f5f2] rounded-2xl flex items-center justify-center mb-4">
-                <BookOpen className="w-7 h-7 text-[#1f644e]" />
+          <article className="max-w-3xl mx-auto px-4 lg:px-10 py-8">
+            {/* Course thumbnail banner — always visible */}
+            <input
+              ref={thumbnailInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleThumbnailUpload}
+            />
+            {thumbnailUploading ? (
+              <div className="w-full h-52 rounded-2xl overflow-hidden mb-8 border border-[#e5e3d8] shadow-sm bg-gradient-to-br from-[#1f644e] to-[#2d8a6a] relative flex items-center justify-center">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-[shimmer_1.5s_ease-in-out_infinite] bg-[length:200%_100%]" />
+                <div className="flex flex-col items-center gap-2 z-10">
+                  <div className="w-8 h-8 rounded-full border-2 border-white/60 border-t-white animate-spin" />
+                  <span className="text-xs font-bold text-white/70 tracking-wider uppercase">
+                    Uploading thumbnail…
+                  </span>
+                </div>
               </div>
-              <h3 className="font-bold text-[#1e3a34] mb-2">
-                {sections.length === 0 ? 'No sections yet' : 'No section selected'}
-              </h3>
-              <p className="text-sm text-[#7c8e88] mb-6 max-w-xs">
-                {sections.length === 0
-                  ? 'Add a section manually or use the MCP tools with an AI agent.'
-                  : 'Select a section from the sidebar to start reading.'}
-              </p>
-              {sections.length === 0 && (
-                <button
-                  onClick={() => setShowNewSection(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-[#1f644e] text-white rounded-xl text-sm font-bold hover:bg-[#17503e] transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add First Section
-                </button>
-              )}
-            </div>
-          ) : (
-            <article className="max-w-3xl mx-auto px-4 lg:px-10 py-8">
-              {/* Course thumbnail banner */}
-              <input
-                ref={thumbnailInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleThumbnailUpload}
-              />
-              {course.thumbnailGenerating ? (
-                <div className="w-full h-52 rounded-2xl overflow-hidden mb-8 border border-[#e5e3d8] shadow-sm bg-gradient-to-br from-[#1f644e] to-[#2d8a6a] relative flex items-center justify-center">
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-[shimmer_1.5s_ease-in-out_infinite] bg-[length:200%_100%]" />
-                  <div className="flex flex-col items-center gap-2 z-10">
-                    <div className="w-8 h-8 rounded-full border-2 border-white/60 border-t-white animate-spin" />
-                    <span className="text-xs font-bold text-white/70 tracking-wider uppercase">
-                      Generating thumbnail…
-                    </span>
-                  </div>
+            ) : course.thumbnailGenerating ? (
+              <div className="w-full h-52 rounded-2xl overflow-hidden mb-8 border border-[#e5e3d8] shadow-sm bg-gradient-to-br from-[#1f644e] to-[#2d8a6a] relative flex items-center justify-center">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-[shimmer_1.5s_ease-in-out_infinite] bg-[length:200%_100%]" />
+                <div className="flex flex-col items-center gap-2 z-10">
+                  <div className="w-8 h-8 rounded-full border-2 border-white/60 border-t-white animate-spin" />
+                  <span className="text-xs font-bold text-white/70 tracking-wider uppercase">
+                    Generating thumbnail…
+                  </span>
                 </div>
-              ) : course.thumbnail ? (
-                <div className="w-full h-52 rounded-2xl overflow-hidden mb-8 border border-[#e5e3d8] shadow-sm relative group">
-                  <img
-                    src={course.thumbnail}
-                    alt={course.title}
-                    className="w-full h-full object-cover"
-                  />
-                  {editMode && (
-                    <button
-                      onClick={() => thumbnailInputRef.current?.click()}
-                      disabled={thumbnailUploading}
-                      className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      {thumbnailUploading ? (
-                        <div className="w-7 h-7 rounded-full border-2 border-white/60 border-t-white animate-spin" />
-                      ) : (
-                        <>
-                          <ImagePlus className="w-7 h-7 text-white" />
-                          <span className="text-xs font-bold text-white">Change thumbnail</span>
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-              ) : editMode ? (
-                <button
-                  onClick={() => thumbnailInputRef.current?.click()}
-                  disabled={thumbnailUploading}
-                  className="w-full h-52 rounded-2xl mb-8 border-2 border-dashed border-[#e5e3d8] flex flex-col items-center justify-center gap-2 hover:border-[#1f644e] hover:bg-[#f0f5f2] transition-colors"
-                >
-                  {thumbnailUploading ? (
-                    <div className="w-7 h-7 rounded-full border-2 border-[#1f644e]/40 border-t-[#1f644e] animate-spin" />
-                  ) : (
-                    <>
-                      <ImagePlus className="w-7 h-7 text-[#7c8e88]" />
-                      <span className="text-xs font-bold text-[#7c8e88]">Upload thumbnail</span>
-                    </>
-                  )}
-                </button>
-              ) : null}
-
-              {/* Section header */}
-              <div className="flex items-start justify-between gap-4 mb-6">
-                <h2 className="text-xl lg:text-2xl font-bold text-[#1e3a34] leading-snug min-w-0">
-                  {currentSection.title}
-                </h2>
+              </div>
+            ) : course.thumbnail ? (
+              <div className="w-full h-52 rounded-2xl overflow-hidden mb-8 border border-[#e5e3d8] shadow-sm relative group">
+                <img
+                  src={course.thumbnail}
+                  alt={course.title}
+                  className="w-full h-full object-cover"
+                />
                 {editMode && (
-                  <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => thumbnailInputRef.current?.click()}
+                    disabled={thumbnailUploading}
+                    className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    {thumbnailUploading ? (
+                      <div className="w-7 h-7 rounded-full border-2 border-white/60 border-t-white animate-spin" />
+                    ) : (
+                      <>
+                        <ImagePlus className="w-7 h-7 text-white" />
+                        <span className="text-xs font-bold text-white">Change thumbnail</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            ) : editMode ? (
+              <button
+                onClick={() => thumbnailInputRef.current?.click()}
+                disabled={thumbnailUploading}
+                className="w-full h-52 rounded-2xl mb-8 border-2 border-dashed border-[#e5e3d8] flex flex-col items-center justify-center gap-2 hover:border-[#1f644e] hover:bg-[#f0f5f2] transition-colors"
+              >
+                {thumbnailUploading ? (
+                  <div className="w-7 h-7 rounded-full border-2 border-[#1f644e]/40 border-t-[#1f644e] animate-spin" />
+                ) : (
+                  <>
+                    <ImagePlus className="w-7 h-7 text-[#7c8e88]" />
+                    <span className="text-xs font-bold text-[#7c8e88]">Upload thumbnail</span>
+                  </>
+                )}
+              </button>
+            ) : null}
+
+            {/* Section content */}
+            {!currentSection ? (
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <div className="h-14 w-14 bg-[#f0f5f2] rounded-2xl flex items-center justify-center mb-4">
+                  <BookOpen className="w-7 h-7 text-[#1f644e]" />
+                </div>
+                <h3 className="font-bold text-[#1e3a34] mb-2">
+                  {sections.length === 0 ? 'No sections yet' : 'No section selected'}
+                </h3>
+                <p className="text-sm text-[#7c8e88] mb-6 max-w-xs">
+                  {sections.length === 0
+                    ? 'Add a section manually or use the MCP tools with an AI agent.'
+                    : 'Select a section from the sidebar to start reading.'}
+                </p>
+                {sections.length === 0 && (
+                  <button
+                    onClick={() => setShowNewSection(true)}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-[#1f644e] text-white rounded-xl text-sm font-bold hover:bg-[#17503e] transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add First Section
+                  </button>
+                )}
+              </div>
+            ) : (
+              <>
+                {/* Section header */}
+                <div className="flex items-start justify-between gap-4 mb-6">
+                  <h2 className="text-xl lg:text-2xl font-bold text-[#1e3a34] leading-snug min-w-0">
+                    {currentSection.title}
+                  </h2>
+                  {editMode && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => setEditingSection(currentSection)}
+                        className="p-2 rounded-xl hover:bg-[#f0f5f2] text-[#7c8e88] hover:text-[#1f644e] transition-colors"
+                        title="Edit section"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSection(currentSection._id)}
+                        className="p-2 rounded-xl hover:bg-red-50 text-[#7c8e88] hover:text-[#c94c4c] transition-colors"
+                        title="Delete section"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Markdown content */}
+                {currentSection.content ? (
+                  <div className="coursify-md prose prose-sm max-w-none font-[family-name:var(--font-lora)] prose-headings:font-bold prose-headings:text-[#1e3a34] prose-p:text-[#1e3a34] prose-p:leading-relaxed prose-code:bg-[#f0f5f2] prose-code:rounded prose-code:px-1 prose-code:text-[#1f644e] prose-pre:bg-[#1e3a34] prose-pre:rounded-xl prose-blockquote:border-[#1f644e] prose-a:text-[#1f644e] prose-li:text-[#1e3a34] prose-strong:text-[#1e3a34] prose-table:text-sm">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]}
+                      components={{
+                        table({ children }) {
+                          return (
+                            <div className="overflow-x-auto my-7 rounded-xl border border-[#e5e3d8]">
+                              <table className="w-full border-collapse text-sm">{children}</table>
+                            </div>
+                          );
+                        },
+                        code({ node, className, children, ...props }) {
+                          const match = /language-(\w+)/.exec(className || '');
+                          const isBlock = String(children).includes('\n');
+
+                          if (isBlock && match) {
+                            return (
+                              <SyntaxHighlighter
+                                style={oneDark}
+                                language={match[1]}
+                                PreTag="div"
+                                customStyle={{
+                                  borderRadius: '0.75rem',
+                                  fontSize: '0.82rem',
+                                  margin: '0.75em 0',
+                                  padding: '0.6em 0.9em',
+                                }}
+                                showLineNumbers
+                                {...props}
+                              >
+                                {String(children).replace(/\n$/, '')}
+                              </SyntaxHighlighter>
+                            );
+                          }
+                          if (isBlock) {
+                            return (
+                              <div
+                                className="rounded-xl overflow-hidden my-3 w-full flex justify-center"
+                                style={{ background: '#18181b' }}
+                              >
+                                <pre
+                                  className="overflow-x-auto p-4 text-[0.82rem] leading-relaxed font-mono whitespace-pre"
+                                  style={{ background: 'transparent' }}
+                                >
+                                  <code className="font-mono" style={{ color: '#e4e4e7' }}>
+                                    {children}
+                                  </code>
+                                </pre>
+                              </div>
+                            );
+                          }
+                          return (
+                            <code
+                              className="bg-[#f0f5f2] text-[#1f644e] rounded px-1.5 py-0.5 text-[0.82em] font-mono font-semibold"
+                              {...props}
+                            >
+                              {children}
+                            </code>
+                          );
+                        },
+                      }}
+                    >
+                      {currentSection.content}
+                    </ReactMarkdown>
+                  </div>
+                ) : (
+                  <div className="text-center py-12 border-2 border-dashed border-[#e5e3d8] rounded-2xl">
+                    <p className="text-sm text-[#7c8e88] mb-3">This section has no content yet.</p>
                     <button
                       onClick={() => setEditingSection(currentSection)}
-                      className="p-2 rounded-xl hover:bg-[#f0f5f2] text-[#7c8e88] hover:text-[#1f644e] transition-colors"
-                      title="Edit section"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#1f644e] text-white rounded-xl text-xs font-bold hover:bg-[#17503e] transition-colors"
                     >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteSection(currentSection._id)}
-                      className="p-2 rounded-xl hover:bg-red-50 text-[#7c8e88] hover:text-[#c94c4c] transition-colors"
-                      title="Delete section"
-                    >
-                      <Trash2 className="w-4 h-4" />
+                      <Pencil className="w-3.5 h-3.5" />
+                      Add Content
                     </button>
                   </div>
                 )}
-              </div>
 
-              {/* Markdown content */}
-              {currentSection.content ? (
-                <div className="coursify-md prose prose-sm max-w-none font-[family-name:var(--font-lora)] prose-headings:font-bold prose-headings:text-[#1e3a34] prose-p:text-[#1e3a34] prose-p:leading-relaxed prose-code:bg-[#f0f5f2] prose-code:rounded prose-code:px-1 prose-code:text-[#1f644e] prose-pre:bg-[#1e3a34] prose-pre:rounded-xl prose-blockquote:border-[#1f644e] prose-a:text-[#1f644e] prose-li:text-[#1e3a34] prose-strong:text-[#1e3a34] prose-table:text-sm">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeRaw]}
-                    components={{
-                      table({ children }) {
-                        return (
-                          <div className="overflow-x-auto my-7 rounded-xl border border-[#e5e3d8]">
-                            <table className="w-full border-collapse text-sm">{children}</table>
+                {/* Resources */}
+                {currentSection.resources?.length > 0 && (
+                  <div className="mt-8 pt-6 border-t border-[#e5e3d8]">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-3">
+                      Resources
+                    </h4>
+                    <div className="space-y-2">
+                      {currentSection.resources.map((r, i) => (
+                        <a
+                          key={i}
+                          href={r.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-3 bg-white border border-[#e5e3d8] rounded-xl hover:border-[#1f644e]/40 hover:bg-[#f0f5f2] transition-colors group"
+                        >
+                          <span className="text-base shrink-0">
+                            {RESOURCE_ICONS[r.type] || '🔗'}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-[#1e3a34] truncate">
+                              {r.title || r.url}
+                            </p>
+                            <p className="text-xs text-[#7c8e88] truncate">{r.url}</p>
                           </div>
-                        );
-                      },
-                      code({ node, className, children, ...props }) {
-                        const match = /language-(\w+)/.exec(className || '');
-                        const isBlock = String(children).includes('\n');
-
-                        if (isBlock && match) {
-                          return (
-                            <SyntaxHighlighter
-                              style={oneDark}
-                              language={match[1]}
-                              PreTag="div"
-                              customStyle={{
-                                borderRadius: '0.75rem',
-                                fontSize: '0.82rem',
-                                margin: '0.75em 0',
-                                padding: '0.6em 0.9em',
-                              }}
-                              showLineNumbers
-                              {...props}
-                            >
-                              {String(children).replace(/\n$/, '')}
-                            </SyntaxHighlighter>
-                          );
-                        }
-                        if (isBlock) {
-                          return (
-                            <div
-                              className="rounded-xl overflow-hidden my-3 w-full flex justify-center"
-                              style={{ background: '#18181b' }}
-                            >
-                              <pre
-                                className="overflow-x-auto p-4 text-[0.82rem] leading-relaxed font-mono whitespace-pre"
-                                style={{ background: 'transparent' }}
-                              >
-                                <code className="font-mono" style={{ color: '#e4e4e7' }}>
-                                  {children}
-                                </code>
-                              </pre>
-                            </div>
-                          );
-                        }
-                        return (
-                          <code
-                            className="bg-[#f0f5f2] text-[#1f644e] rounded px-1.5 py-0.5 text-[0.82em] font-mono font-semibold"
-                            {...props}
-                          >
-                            {children}
-                          </code>
-                        );
-                      },
-                    }}
-                  >
-                    {currentSection.content}
-                  </ReactMarkdown>
-                </div>
-              ) : (
-                <div className="text-center py-12 border-2 border-dashed border-[#e5e3d8] rounded-2xl">
-                  <p className="text-sm text-[#7c8e88] mb-3">This section has no content yet.</p>
-                  <button
-                    onClick={() => setEditingSection(currentSection)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#1f644e] text-white rounded-xl text-xs font-bold hover:bg-[#17503e] transition-colors"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                    Add Content
-                  </button>
-                </div>
-              )}
-
-              {/* Resources */}
-              {currentSection.resources?.length > 0 && (
-                <div className="mt-8 pt-6 border-t border-[#e5e3d8]">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-3">
-                    Resources
-                  </h4>
-                  <div className="space-y-2">
-                    {currentSection.resources.map((r, i) => (
-                      <a
-                        key={i}
-                        href={r.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 p-3 bg-white border border-[#e5e3d8] rounded-xl hover:border-[#1f644e]/40 hover:bg-[#f0f5f2] transition-colors group"
-                      >
-                        <span className="text-base shrink-0">{RESOURCE_ICONS[r.type] || '🔗'}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-[#1e3a34] truncate">
-                            {r.title || r.url}
-                          </p>
-                          <p className="text-xs text-[#7c8e88] truncate">{r.url}</p>
-                        </div>
-                        <ExternalLink className="w-3.5 h-3.5 text-[#7c8e88] group-hover:text-[#1f644e] shrink-0" />
-                      </a>
-                    ))}
+                          <ExternalLink className="w-3.5 h-3.5 text-[#7c8e88] group-hover:text-[#1f644e] shrink-0" />
+                        </a>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Prev / Next navigation */}
-              <div className="flex items-center justify-between mt-10 pt-6 border-t border-[#e5e3d8]">
-                {(() => {
-                  const idx = sections.findIndex((s) => s._id === currentSection._id);
-                  const prev = sections[idx - 1];
-                  const next = sections[idx + 1];
-                  return (
-                    <>
-                      {prev ? (
-                        <button
-                          onClick={() => setActiveSection(prev._id)}
-                          className="flex items-center gap-2 text-sm font-bold text-[#7c8e88] hover:text-[#1f644e] transition-colors max-w-[42%]"
-                        >
-                          <ArrowLeft className="w-4 h-4 shrink-0" />
-                          <span className="truncate">{prev.title}</span>
-                        </button>
-                      ) : (
-                        <div />
-                      )}
-                      {next ? (
-                        <button
-                          onClick={() => setActiveSection(next._id)}
-                          className="flex items-center gap-2 text-sm font-bold text-[#7c8e88] hover:text-[#1f644e] transition-colors max-w-[42%]"
-                        >
-                          <span className="truncate">{next.title}</span>
-                          <ChevronRight className="w-4 h-4 shrink-0" />
-                        </button>
-                      ) : (
-                        <span className="text-xs font-bold text-[#1f644e] bg-[#f0f5f2] px-3 py-1.5 rounded-full">
-                          Course complete ✓
-                        </span>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-            </article>
-          )}
+                {/* Prev / Next navigation */}
+                <div className="flex items-center justify-between mt-10 pt-6 border-t border-[#e5e3d8]">
+                  {(() => {
+                    const idx = sections.findIndex((s) => s._id === currentSection._id);
+                    const prev = sections[idx - 1];
+                    const next = sections[idx + 1];
+                    return (
+                      <>
+                        {prev ? (
+                          <button
+                            onClick={() => setActiveSection(prev._id)}
+                            className="flex items-center gap-2 text-sm font-bold text-[#7c8e88] hover:text-[#1f644e] transition-colors max-w-[42%]"
+                          >
+                            <ArrowLeft className="w-4 h-4 shrink-0" />
+                            <span className="truncate">{prev.title}</span>
+                          </button>
+                        ) : (
+                          <div />
+                        )}
+                        {next ? (
+                          <button
+                            onClick={() => setActiveSection(next._id)}
+                            className="flex items-center gap-2 text-sm font-bold text-[#7c8e88] hover:text-[#1f644e] transition-colors max-w-[42%]"
+                          >
+                            <span className="truncate">{next.title}</span>
+                            <ChevronRight className="w-4 h-4 shrink-0" />
+                          </button>
+                        ) : (
+                          <span className="text-xs font-bold text-[#1f644e] bg-[#f0f5f2] px-3 py-1.5 rounded-full">
+                            Course complete ✓
+                          </span>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              </>
+            )}
+          </article>
         </main>
       </div>
 

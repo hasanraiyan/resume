@@ -3,6 +3,9 @@ import { NextResponse } from 'next/server';
 import cloudinary from '@/lib/cloudinary';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
+import DrivelyFile from '@/models/DrivelyFile';
+import DrivelyActivity from '@/models/DrivelyActivity';
+import { getOrCreateThumbnailFolder } from '@/lib/coursify/thumbnailGen';
 
 export async function POST(request, { params }) {
   const auth = await requireAdminAuth(request);
@@ -45,6 +48,25 @@ export async function POST(request, { params }) {
     if (!course) {
       return NextResponse.json({ success: false, error: 'Course not found' }, { status: 404 });
     }
+
+    const filename = `${course.title} - Thumbnail.webp`;
+    const folderId = await getOrCreateThumbnailFolder();
+
+    await DrivelyFile.findOneAndUpdate(
+      { cloudinaryPublicId: uploadResult.public_id },
+      {
+        filename,
+        mimeType: 'image/webp',
+        size: uploadResult.bytes,
+        cloudinaryPublicId: uploadResult.public_id,
+        secureUrl: uploadResult.secure_url,
+        resourceType: 'image',
+        folderId,
+      },
+      { upsert: true, new: true }
+    );
+
+    await DrivelyActivity.create({ action: 'upload', itemType: 'file', itemName: filename });
 
     return NextResponse.json({ success: true, thumbnail: uploadResult.secure_url });
   } catch (error) {

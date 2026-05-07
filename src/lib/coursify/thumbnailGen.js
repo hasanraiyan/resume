@@ -5,7 +5,7 @@ import DrivelyFile from '@/models/DrivelyFile';
 import DrivelyFolder from '@/models/DrivelyFolder';
 import DrivelyActivity from '@/models/DrivelyActivity';
 
-async function getOrCreateThumbnailFolder() {
+export async function getOrCreateThumbnailFolder() {
   const existing = await DrivelyFolder.findOne({ name: 'Coursify Thumbnails', deletedAt: null });
   if (existing) return existing._id;
   const folder = await DrivelyFolder.create({
