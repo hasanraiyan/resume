@@ -17,4 +17,12 @@ export const MINI_APPS = [
     category: 'Finance',
     iconSrc: '/images/apps/pocketly.png',
   },
+  {
+    id: 'drively',
+    name: 'Drively',
+    tagline: 'Private cloud storage for your personal files.',
+    href: '/apps/drively',
+    category: 'Cloud',
+    iconSrc: '/images/apps/drively.png',
+  },
 ];
