@@ -608,6 +608,424 @@ src/
 
 ---
 
+---
+
+## 13. Dropdown / Context Menu Pattern
+
+### The Problem: `overflow-hidden` clips absolute dropdowns
+
+Cards commonly use `rounded-2xl overflow-hidden` to clip their children (e.g. images). Any `position: absolute` dropdown inside them gets clipped too — even with high `z-index`.
+
+**Wrong approach** (dropdown gets clipped):
+
+```jsx
+// Card with overflow-hidden
+<div className="rounded-2xl overflow-hidden">
+  <ActionMenu /> {/* absolute dropdown gets clipped */}
+</div>
+```
+
+**Correct approach** — use `position: fixed` with `getBoundingClientRect()`:
+
+```jsx
+export default function ActionMenu({ item }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
+  const buttonRef = useRef(null);
+
+  const handleOpen = (e) => {
+    e.stopPropagation();
+    if (!isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    }
+    setIsOpen(!isOpen);
+  };
+
+  return (
+    <div className="relative">
+      <button ref={buttonRef} onClick={handleOpen}>
+        <MoreVertical className="w-4 h-4" />
+      </button>
+
+      {isOpen && (
+        <>
+          {/* backdrop — z-40, closes menu */}
+          <div
+            className="fixed inset-0 z-40"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen(false);
+            }}
+          />
+          {/* menu — z-50, fixed position from button rect */}
+          <div
+            className="fixed w-48 bg-white border border-[#e5e3d8] rounded-xl shadow-xl z-50 py-1"
+            style={{ top: menuPos.top, right: menuPos.right }}
+          >
+            {/* menu items */}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+```
+
+**Key rules:**
+
+- Backdrop at `z-40`, menu at `z-50`
+- Always `e.stopPropagation()` on the trigger button (prevents parent card clicks)
+- Always `e.stopPropagation()` on the backdrop click handler
+- `right: window.innerWidth - rect.right` keeps the menu right-aligned to the button
+
+---
+
+## 14. Modal Event Propagation Bug
+
+### React bubbles events through the component tree, not the DOM tree
+
+A `position: fixed` modal looks visually detached, but if it's rendered as a React child of a clickable card, **click events still bubble up through React** to that card's `onClick`.
+
+**Symptom**: closing a modal (clicking Save, Cancel, or backdrop) also triggers the parent card's click handler (e.g. navigating into a folder, opening a detail view).
+
+**Fix**: `stopPropagation` on both the backdrop and the modal panel:
+
+```jsx
+export default function MyModal({ onClose, onConfirm }) {
+  return (
+    <>
+      {/* Backdrop — stops propagation before calling onClose */}
+      <div
+        className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+      />
+
+      {/* Centering wrapper — pointer-events-none so it doesn't intercept */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+        {/* Modal panel — pointer-events-auto, stops all propagation */}
+        <div
+          className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 pointer-events-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* content, buttons, inputs */}
+        </div>
+      </div>
+    </>
+  );
+}
+```
+
+**Rule**: Any modal rendered inside a clickable parent must stop propagation on both its backdrop and its content panel. This applies to rename modals, confirmation dialogs, and detail sheets.
+
+---
+
+## 15. Inline Rename Modal
+
+A minimal rename dialog used for renaming files and folders. Follows the same modal propagation rules above.
+
+```jsx
+export default function RenameModal({ type, item, onConfirm, onClose }) {
+  const currentName = type === 'file' ? item.filename : item.name;
+  const [name, setName] = useState(currentName);
+  const [isSaving, setIsSaving] = useState(false);
+  const inputRef = useRef(null);
+
+  // Auto-focus and select all on mount
+  useEffect(() => {
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, []);
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') handleSave();
+    if (e.key === 'Escape') onClose();
+  };
+
+  const handleSave = async () => {
+    const trimmed = name.trim();
+    if (!trimmed || trimmed === currentName) {
+      onClose();
+      return;
+    }
+    setIsSaving(true);
+    await onConfirm(trimmed);
+    setIsSaving(false);
+    onClose();
+  };
+
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+      />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+        <div
+          className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 pointer-events-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center gap-3 mb-5">
+            <div className="p-2 bg-[#f0f5f2] rounded-xl">
+              <Pencil className="w-4 h-4 text-[#1f644e]" />
+            </div>
+            <h2 className="font-bold text-[#1e3a34]">Rename {type}</h2>
+          </div>
+          <input
+            ref={inputRef}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="w-full px-4 py-2.5 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-sm text-[#1e3a34] outline-none focus:border-[#1f644e] focus:ring-2 focus:ring-[#1f644e]/10 mb-5"
+          />
+          <div className="flex gap-2 justify-end">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-bold text-[#7c8e88] hover:bg-[#f0f5f2] rounded-xl transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving || !name.trim()}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-bold bg-[#1f644e] text-white rounded-xl hover:bg-[#17503e] disabled:opacity-50 transition-colors"
+            >
+              {isSaving ? (
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Check className="w-4 h-4" />
+              )}
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+```
+
+**Usage in ActionMenu** — wire Rename to open the modal instead of `prompt()`:
+
+```jsx
+const [showRename, setShowRename] = useState(false);
+
+// in menu:
+<button
+  onClick={(e) => {
+    e.stopPropagation();
+    setIsOpen(false);
+    setShowRename(true);
+  }}
+>
+  <Pencil className="w-4 h-4" /> Rename
+</button>;
+
+// outside the dropdown div:
+{
+  showRename && (
+    <RenameModal
+      type={type}
+      item={item}
+      onConfirm={(newName) =>
+        updateItem(type, item._id, type === 'file' ? { filename: newName } : { name: newName })
+      }
+      onClose={() => setShowRename(false)}
+    />
+  );
+}
+```
+
+---
+
+## 16. File Upload with Live Progress
+
+`fetch` has no upload progress API. Use `XMLHttpRequest` with `xhr.upload.onprogress` instead. Upload files sequentially (one at a time) to track per-file progress independently.
+
+### XHR upload helper
+
+```jsx
+const uploadSingleFile = (file, fileIndex, folderId) => {
+  return new Promise((resolve, reject) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (folderId) formData.append('folderId', folderId);
+
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable) {
+        const percent = Math.round((event.loaded / event.total) * 100);
+        setFileProgress((prev) =>
+          prev.map((f, idx) => (idx === fileIndex ? { ...f, progress: percent } : f))
+        );
+      }
+    });
+
+    xhr.addEventListener('load', () => {
+      try {
+        const data = JSON.parse(xhr.responseText);
+        if (xhr.status === 200 && data.success) resolve(data);
+        else reject(new Error(data.error || 'Upload failed'));
+      } catch {
+        reject(new Error('Invalid server response'));
+      }
+    });
+
+    xhr.addEventListener('error', () => reject(new Error('Network error')));
+    xhr.open('POST', '/api/your-app/upload');
+    xhr.send(formData);
+  });
+};
+```
+
+### Sequential upload loop with per-file state
+
+```jsx
+// State: [{ progress: 0-100, status: 'pending'|'uploading'|'done'|'error' }]
+const [fileProgress, setFileProgress] = useState([]);
+
+const handleUpload = async (selectedFiles, folderId) => {
+  setFileProgress(selectedFiles.map(() => ({ progress: 0, status: 'pending' })));
+
+  for (let i = 0; i < selectedFiles.length; i++) {
+    // mark current file as uploading
+    setFileProgress((prev) =>
+      prev.map((f, idx) => (idx === i ? { ...f, status: 'uploading' } : f))
+    );
+
+    try {
+      await uploadSingleFile(selectedFiles[i], i, folderId);
+      setFileProgress((prev) =>
+        prev.map((f, idx) => (idx === i ? { ...f, progress: 100, status: 'done' } : f))
+      );
+    } catch {
+      setFileProgress((prev) => prev.map((f, idx) => (idx === i ? { ...f, status: 'error' } : f)));
+      toast.error(`Failed: ${selectedFiles[i].name}`);
+    }
+  }
+};
+```
+
+### Per-file progress bar UI
+
+```jsx
+{
+  selectedFiles.map((file, idx) => {
+    const prog = fileProgress[idx];
+    return (
+      <div
+        key={idx}
+        className="flex items-center gap-3 p-2.5 bg-[#fcfbf5] rounded-xl border border-[#e5e3d8]"
+      >
+        <File className="w-4 h-4 text-[#7c8e88] flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <span className="text-xs font-medium truncate block">{file.name}</span>
+          {prog && (
+            <div className="mt-1.5 h-1 bg-[#e5e3d8] rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-200 ${
+                  prog.status === 'error' ? 'bg-red-400' : 'bg-[#1f644e]'
+                }`}
+                style={{ width: `${prog.progress}%` }}
+              />
+            </div>
+          )}
+        </div>
+        <div className="flex-shrink-0 w-8 flex justify-end">
+          {!prog && <Check className="w-4 h-4 text-[#c8d8d0]" />}
+          {prog?.status === 'pending' && <span className="text-[10px] text-[#b0bfba]">—</span>}
+          {prog?.status === 'uploading' && (
+            <span className="text-[10px] font-bold tabular-nums text-[#1f644e]">
+              {prog.progress}%
+            </span>
+          )}
+          {prog?.status === 'done' && <Check className="w-4 h-4 text-[#1f644e]" />}
+          {prog?.status === 'error' && <AlertCircle className="w-4 h-4 text-red-400" />}
+        </div>
+      </div>
+    );
+  });
+}
+```
+
+**Header progress counter** — show "X of Y uploaded" while uploading:
+
+```jsx
+const uploadedCount = fileProgress.filter((f) => f.status === 'done').length;
+{
+  isUploading && (
+    <p className="text-xs text-[#7c8e88]">
+      {uploadedCount} of {selectedFiles.length} uploaded
+    </p>
+  );
+}
+```
+
+---
+
+## 17. Manual Skeleton Pattern (No Library)
+
+When `react-skeletonify` isn't available, mirror the real layout with `animate-pulse` blocks. Match the exact grid columns, card shapes, and spacing of the real content.
+
+```jsx
+// Skeleton that mirrors a 4-col folder grid + 5-col file grid
+if (isLoading && items.length === 0) {
+  return (
+    <div className="space-y-8">
+      {/* Section label skeleton */}
+      <section>
+        <div className="h-3 w-14 bg-[#e5e3d8] rounded animate-pulse mb-4" />
+        {/* Folder cards — 4 col grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white border border-[#e5e3d8] rounded-2xl p-4 animate-pulse">
+              <div className="w-10 h-10 bg-[#e5e3d8] rounded-xl mb-3" />
+              <div className="h-3 bg-[#e5e3d8] rounded w-3/4 mb-2" />
+              <div className="h-2 bg-[#e5e3d8] rounded w-1/4" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* File cards — 5 col grid with aspect-square thumbnail */}
+      <section>
+        <div className="h-3 w-10 bg-[#e5e3d8] rounded animate-pulse mb-4" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div
+              key={i}
+              className="bg-white border border-[#e5e3d8] rounded-2xl overflow-hidden animate-pulse"
+            >
+              <div className="aspect-square bg-[#e5e3d8]" />
+              <div className="p-3">
+                <div className="h-3 bg-[#e5e3d8] rounded w-4/5 mb-2" />
+                <div className="h-2 bg-[#e5e3d8] rounded w-1/3" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+```
+
+**Rules:**
+
+- Use `bg-[#e5e3d8]` (the app border color) as the skeleton fill — it blends with the card style
+- Match real grid columns exactly (`grid-cols-2 sm:grid-cols-3 lg:grid-cols-4`)
+- Use `aspect-square` for thumbnail placeholders — same aspect ratio as real cards
+- Gate on `isLoading && items.length === 0` so skeletons don't flash when refreshing with existing data
+
+---
+
 ## Quick Reference Checklist
 
 When creating a new app, ensure:
@@ -623,6 +1041,9 @@ When creating a new app, ensure:
 - [ ] Inactive tab: `text-[#7c8e88]`
 - [ ] Card styles consistent
 - [ ] Empty states for all lists
-- [ ] **Loading skeletons**: Use `SkeletonProvider` + `SkeletonWrapper` from `react-skeletonify`
+- [ ] **Loading skeletons**: Use `SkeletonProvider` + `SkeletonWrapper` from `react-skeletonify`, or manual `animate-pulse` pattern (section 17)
 - [ ] Responsive mobile/desktop grids
 - [ ] Currency formatting with compact support
+- [ ] **Dropdowns inside `overflow-hidden` cards**: use fixed positioning (section 13)
+- [ ] **Modals inside clickable cards**: `stopPropagation` on backdrop + content (section 14)
+- [ ] **File uploads**: use XHR (not fetch) for progress tracking (section 16)
