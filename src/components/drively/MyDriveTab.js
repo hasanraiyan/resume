@@ -2,7 +2,17 @@
 
 import { useState, useMemo } from 'react';
 import { useDrively } from '@/context/DrivelyContext';
-import { Folder, File, Plus, Upload, FolderPlus, ChevronRight, Search, LayoutGrid, List as ListIcon } from 'lucide-react';
+import {
+  Folder,
+  File,
+  Plus,
+  Upload,
+  FolderPlus,
+  ChevronRight,
+  Search,
+  LayoutGrid,
+  List as ListIcon,
+} from 'lucide-react';
 import FileCard from './FileCard';
 import FolderCard from './FolderCard';
 import Breadcrumbs from './Breadcrumbs';
@@ -15,20 +25,64 @@ export default function MyDriveTab() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const currentFolders = useMemo(() => {
-    return folders.filter(f => f.parentId === currentFolderId && !f.deletedAt);
+    return folders.filter((f) => f.parentId === currentFolderId && !f.deletedAt);
   }, [folders, currentFolderId]);
 
   const currentFiles = useMemo(() => {
-    return files.filter(f => f.folderId === currentFolderId && !f.deletedAt);
+    return files.filter((f) => f.folderId === currentFolderId && !f.deletedAt);
   }, [files, currentFolderId]);
 
-  const filteredFolders = currentFolders.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase()));
-  const filteredFiles = currentFiles.filter(f => f.filename.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredFolders = currentFolders.filter((f) =>
+    f.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  const filteredFiles = currentFiles.filter((f) =>
+    f.filename.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (isLoading && files.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1f644e]"></div>
+      <div className="space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="h-5 w-32 bg-[#e5e3d8] rounded-lg animate-pulse" />
+          <div className="flex items-center gap-2">
+            <div className="h-9 w-9 bg-[#e5e3d8] rounded-lg animate-pulse" />
+            <div className="h-9 w-20 bg-[#e5e3d8] rounded-xl animate-pulse" />
+          </div>
+        </div>
+        <section>
+          <div className="h-3 w-14 bg-[#e5e3d8] rounded animate-pulse mb-4" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="bg-white border border-[#e5e3d8] rounded-2xl p-4 animate-pulse"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="w-10 h-10 bg-[#e5e3d8] rounded-xl" />
+                </div>
+                <div className="h-3 bg-[#e5e3d8] rounded w-3/4 mb-2" />
+                <div className="h-2 bg-[#e5e3d8] rounded w-1/4" />
+              </div>
+            ))}
+          </div>
+        </section>
+        <section>
+          <div className="h-3 w-10 bg-[#e5e3d8] rounded animate-pulse mb-4" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className="bg-white border border-[#e5e3d8] rounded-2xl overflow-hidden animate-pulse"
+              >
+                <div className="aspect-square bg-[#e5e3d8]" />
+                <div className="p-3">
+                  <div className="h-3 bg-[#e5e3d8] rounded w-4/5 mb-2" />
+                  <div className="h-2 bg-[#e5e3d8] rounded w-1/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     );
   }
@@ -42,7 +96,11 @@ export default function MyDriveTab() {
             onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
             className="p-2 hover:bg-[#e5e3d8] rounded-lg transition-colors text-[#7c8e88]"
           >
-            {viewMode === 'grid' ? <ListIcon className="w-5 h-5" /> : <LayoutGrid className="w-5 h-5" />}
+            {viewMode === 'grid' ? (
+              <ListIcon className="w-5 h-5" />
+            ) : (
+              <LayoutGrid className="w-5 h-5" />
+            )}
           </button>
           <button
             onClick={() => setShowUploadModal(true)}
@@ -71,7 +129,9 @@ export default function MyDriveTab() {
             <Upload className="w-10 h-10 text-[#7c8e88]" />
           </div>
           <h3 className="text-lg font-bold text-[#1e3a34]">Folder is empty</h3>
-          <p className="text-[#7c8e88] text-sm mt-1">Upload files or create folders to get started</p>
+          <p className="text-[#7c8e88] text-sm mt-1">
+            Upload files or create folders to get started
+          </p>
           <button
             onClick={() => setShowUploadModal(true)}
             className="mt-6 text-[#1f644e] font-bold text-sm hover:underline"
@@ -83,9 +143,17 @@ export default function MyDriveTab() {
         <div className="space-y-8">
           {filteredFolders.length > 0 && (
             <section>
-              <h2 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-4">Folders</h2>
-              <div className={viewMode === 'grid' ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4" : "space-y-2"}>
-                {filteredFolders.map(folder => (
+              <h2 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-4">
+                Folders
+              </h2>
+              <div
+                className={
+                  viewMode === 'grid'
+                    ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4'
+                    : 'space-y-2'
+                }
+              >
+                {filteredFolders.map((folder) => (
                   <FolderCard key={folder._id} folder={folder} viewMode={viewMode} />
                 ))}
               </div>
@@ -94,9 +162,17 @@ export default function MyDriveTab() {
 
           {filteredFiles.length > 0 && (
             <section>
-              <h2 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-4">Files</h2>
-              <div className={viewMode === 'grid' ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4" : "space-y-2"}>
-                {filteredFiles.map(file => (
+              <h2 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-4">
+                Files
+              </h2>
+              <div
+                className={
+                  viewMode === 'grid'
+                    ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'
+                    : 'space-y-2'
+                }
+              >
+                {filteredFiles.map((file) => (
                   <FileCard key={file._id} file={file} viewMode={viewMode} />
                 ))}
               </div>
@@ -105,7 +181,9 @@ export default function MyDriveTab() {
         </div>
       )}
 
-      {showUploadModal && <UploadModal onClose={() => setShowUploadModal(false)} currentFolderId={currentFolderId} />}
+      {showUploadModal && (
+        <UploadModal onClose={() => setShowUploadModal(false)} currentFolderId={currentFolderId} />
+      )}
     </div>
   );
 }

@@ -50,6 +50,7 @@
     "framer-motion": "^12.38.0",
     "fuse.js": "^7.1.0",
     "gsap": "^3.13.0",
+    "jose": "^6.2.3",
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",
     "langchain": "^1.2.28",

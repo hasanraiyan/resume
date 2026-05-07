@@ -1,11 +1,21 @@
 'use client';
 
-import { useState } from 'react';
-import { MoreVertical, Star, Trash2, Pencil, Download, ExternalLink, RefreshCcw } from 'lucide-react';
+import { useState, useRef } from 'react';
+import {
+  MoreVertical,
+  Star,
+  Trash2,
+  Pencil,
+  Download,
+  ExternalLink,
+  RefreshCcw,
+} from 'lucide-react';
 import { useDrively } from '@/context/DrivelyContext';
 
 export default function ActionMenu({ type, item, variant = 'default' }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
+  const buttonRef = useRef(null);
   const { deleteItem, updateItem } = useDrively();
 
   const handleAction = async (action, e) => {
@@ -17,7 +27,10 @@ export default function ActionMenu({ type, item, variant = 'default' }) {
         await updateItem(type, item._id, { starred: !item.starred });
         break;
       case 'rename':
-        const newName = prompt(`Enter new name for ${type === 'file' ? 'file' : 'folder'}:`, type === 'file' ? item.filename : item.name);
+        const newName = prompt(
+          `Enter new name for ${type === 'file' ? 'file' : 'folder'}:`,
+          type === 'file' ? item.filename : item.name
+        );
         if (newName) {
           await updateItem(type, id, type === 'file' ? { filename: newName } : { name: newName });
         }
@@ -38,10 +51,20 @@ export default function ActionMenu({ type, item, variant = 'default' }) {
 
   const isDeleted = !!item.deletedAt;
 
+  const handleOpen = (e) => {
+    e.stopPropagation();
+    if (!isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    }
+    setIsOpen(!isOpen);
+  };
+
   return (
     <div className="relative">
       <button
-        onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
+        ref={buttonRef}
+        onClick={handleOpen}
         className={`p-1.5 rounded-lg transition-colors ${
           variant === 'overlay' ? 'bg-white shadow-sm' : 'hover:bg-[#fcfbf5]'
         }`}
@@ -51,8 +74,17 @@ export default function ActionMenu({ type, item, variant = 'default' }) {
 
       {isOpen && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-[#e5e3d8] rounded-xl shadow-xl z-20 overflow-hidden py-1">
+          <div
+            className="fixed inset-0 z-40"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen(false);
+            }}
+          />
+          <div
+            className="fixed w-48 bg-white border border-[#e5e3d8] rounded-xl shadow-xl z-50 overflow-hidden py-1"
+            style={{ top: menuPos.top, right: menuPos.right }}
+          >
             {!isDeleted ? (
               <>
                 {type === 'file' && (
@@ -68,7 +100,9 @@ export default function ActionMenu({ type, item, variant = 'default' }) {
                   onClick={(e) => handleAction('star', e)}
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-[#1e3a34] hover:bg-[#f0f5f2] transition-colors"
                 >
-                  <Star className={`w-4 h-4 ${item.starred ? 'fill-[#1f644e] text-[#1f644e]' : ''}`} />
+                  <Star
+                    className={`w-4 h-4 ${item.starred ? 'fill-[#1f644e] text-[#1f644e]' : ''}`}
+                  />
                   {item.starred ? 'Unstar' : 'Star'}
                 </button>
                 <button
