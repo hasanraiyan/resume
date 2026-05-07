@@ -28,9 +28,6 @@ importers:
       '@google/genai':
         specifier: ^1.43.0
         version: 1.43.0(@modelcontextprotocol/sdk@1.27.1(@cfworker/json-schema@4.1.1)(zod@4.3.6))
-      '@hello-pangea/dnd':
-        specifier: ^18.0.1
-        version: 18.0.1(@types/react@19.2.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@langchain/core':
         specifier: ^1.1.29
         version: 1.1.29(openai@6.6.0(ws@8.19.0)(zod@4.3.6))
@@ -653,15 +650,6 @@ packages:
         integrity: sha512-MqO+MLfM6kjxcKoy0p1wRzG3b4ZZXtPI+z2IE26UogS2Cm/XHO+7gGRBh6gcJsOiIVoH93UwKvW4HdgiOZCy9Q==,
       }
     engines: { node: '>=18.0.0' }
-
-  '@hello-pangea/dnd@18.0.1':
-    resolution:
-      {
-        integrity: sha512-xojVWG8s/TGrKT1fC8K2tIWeejJYTAeJuj36zM//yEm/ZrnZUSFGS15BpO+jGZT1ybWvyXmeDJwPYb4dhWlbZQ==,
-      }
-    peerDependencies:
-      react: ^18.0.0 || ^19.0.0
-      react-dom: ^18.0.0 || ^19.0.0
 
   '@hono/node-server@1.19.9':
     resolution:
@@ -1977,12 +1965,6 @@ packages:
         integrity: sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q==,
       }
 
-  '@types/use-sync-external-store@0.0.6':
-    resolution:
-      {
-        integrity: sha512-zFDAD+tlpf2r4asuHEj0XH6pY6i0g5NeAHPn+15wk3BV6JA69eERFXC1gyGThDkVa1zCyKr5jox1+2LbV/AMLg==,
-      }
-
   '@types/uuid@10.0.0':
     resolution:
       {
@@ -2999,12 +2981,6 @@ packages:
         integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==,
       }
     engines: { node: '>= 8' }
-
-  css-box-model@1.2.1:
-    resolution:
-      {
-        integrity: sha512-a7Vr4Q/kd/aw96bnJG332W9V9LkJO69JRcaCYDUqjp6/z0w6VcZjgAcTbgFxEPfBgdnAwlh3iwu+hLopa+flJw==,
-      }
 
   css-line-break@2.1.0:
     resolution:
@@ -6209,12 +6185,6 @@ packages:
         integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==,
       }
 
-  raf-schd@4.0.3:
-    resolution:
-      {
-        integrity: sha512-tQkJl2GRWh83ui2DiPTJz9wEiMN20syf+5oKfB03yYP7ioZcJwsIK8FjrtLwH1m7C7e+Tt2yYBlrOpdT+dyeIQ==,
-      }
-
   raf@3.4.1:
     resolution:
       {
@@ -6284,21 +6254,6 @@ packages:
       }
     peerDependencies:
       react: '*'
-
-  react-redux@9.2.0:
-    resolution:
-      {
-        integrity: sha512-ROY9fvHhwOD9ySfrF0wmvu//bKCQ6AeZZq1nJNtbDC+kk5DuSuNX/n6YWYF/SYy7bSba4D4FSz8DJeKY/S/r+g==,
-      }
-    peerDependencies:
-      '@types/react': ^18.2.25 || ^19
-      react: ^18.0 || ^19
-      redux: ^5.0.0
-    peerDependenciesMeta:
-      '@types/react':
-        optional: true
-      redux:
-        optional: true
 
   react-remove-scroll-bar@2.3.8:
     resolution:
@@ -6372,12 +6327,6 @@ packages:
         integrity: sha512-FS+XFBNvn3GTAWq26joslQgWNoFu08F4kl0J4CgdNKADkdSGXQyTCnKteIAJy96Br6YbpEU1LSzV5dYtjMkMDg==,
       }
     engines: { node: '>=0.10.0' }
-
-  redux@5.0.1:
-    resolution:
-      {
-        integrity: sha512-M9/ELqF6fy8FwmkpnF0S3YKOqMyoWJ4+CS5Efg2ct3oY9daQvd/Pc71FpGZsVsbl3Cpb+IIcjBDUnnyBdQbq4w==,
-      }
 
   reflect.getprototypeof@1.0.10:
     resolution:
@@ -7010,12 +6959,6 @@ packages:
         integrity: sha512-iOiPUo/BGnZ6+54OsWxZidGCsdU8YbE4PSpdPinp7DeMtUJNJBoJ/ouUSTJjHkh1KntHaltHl/gDs2FC4i5+Nw==,
       }
 
-  tiny-invariant@1.3.3:
-    resolution:
-      {
-        integrity: sha512-+FbBPE1o9QAYvviau/qC5SE3caw21q3xkvWKBtja5vgqOWIHHJ3ioaq1VPfn/Szqctz2bU/oYeKd9/z5BL+PVg==,
-      }
-
   tinyglobby@0.2.15:
     resolution:
       {
@@ -7270,14 +7213,6 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
-
-  use-sync-external-store@1.6.0:
-    resolution:
-      {
-        integrity: sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w==,
-      }
-    peerDependencies:
-      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   util-deprecate@1.0.2:
     resolution:
@@ -7749,18 +7684,6 @@ snapshots:
       - utf-8-validate
 
   '@google/generative-ai@0.24.1': {}
-
-  '@hello-pangea/dnd@18.0.1(@types/react@19.2.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
-    dependencies:
-      '@babel/runtime': 7.28.6
-      css-box-model: 1.2.1
-      raf-schd: 4.0.3
-      react: 19.1.0
-      react-dom: 19.1.0(react@19.1.0)
-      react-redux: 9.2.0(@types/react@19.2.2)(react@19.1.0)(redux@5.0.1)
-      redux: 5.0.1
-    transitivePeerDependencies:
-      - '@types/react'
 
   '@hono/node-server@1.19.9(hono@4.12.3)':
     dependencies:
@@ -8487,8 +8410,6 @@ snapshots:
 
   '@types/unist@3.0.3': {}
 
-  '@types/use-sync-external-store@0.0.6': {}
-
   '@types/uuid@10.0.0': {}
 
   '@types/webidl-conversions@7.0.3': {}
@@ -9050,10 +8971,6 @@ snapshots:
       path-key: 3.1.1
       shebang-command: 2.0.0
       which: 2.0.2
-
-  css-box-model@1.2.1:
-    dependencies:
-      tiny-invariant: 1.3.3
 
   css-line-break@2.1.0:
     dependencies:
@@ -11331,8 +11248,6 @@ snapshots:
 
   queue-microtask@1.2.3: {}
 
-  raf-schd@4.0.3: {}
-
   raf@3.4.1:
     dependencies:
       performance-now: 2.1.0
@@ -11388,15 +11303,6 @@ snapshots:
       qr.js: 0.0.0
       react: 19.1.0
 
-  react-redux@9.2.0(@types/react@19.2.2)(react@19.1.0)(redux@5.0.1):
-    dependencies:
-      '@types/use-sync-external-store': 0.0.6
-      react: 19.1.0
-      use-sync-external-store: 1.6.0(react@19.1.0)
-    optionalDependencies:
-      '@types/react': 19.2.2
-      redux: 5.0.1
-
   react-remove-scroll-bar@2.3.8(@types/react@19.2.2)(react@19.1.0):
     dependencies:
       react: 19.1.0
@@ -11447,8 +11353,6 @@ snapshots:
       refractor: 3.6.0
 
   react@19.1.0: {}
-
-  redux@5.0.1: {}
 
   reflect.getprototypeof@1.0.10:
     dependencies:
@@ -11927,8 +11831,6 @@ snapshots:
       utrie: 1.0.2
     optional: true
 
-  tiny-invariant@1.3.3: {}
-
   tinyglobby@0.2.15:
     dependencies:
       fdir: 6.5.0(picomatch@4.0.3)
@@ -12116,10 +12018,6 @@ snapshots:
       tslib: 2.8.1
     optionalDependencies:
       '@types/react': 19.2.2
-
-  use-sync-external-store@1.6.0(react@19.1.0):
-    dependencies:
-      react: 19.1.0
 
   util-deprecate@1.0.2: {}
 

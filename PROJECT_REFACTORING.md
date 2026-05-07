@@ -72,7 +72,6 @@ index.js       - Single export point
 // Route-specific middleware types
 createAdminMiddleware    - Full admin access with rate limiting
 createMoneyMiddleware    - Pocketly finance routes
-createTasklyMiddleware   - Task management routes
 createMcpMiddleware      - OAuth and MCP server routes
 createPublicMiddleware   - Public routes with rate limiting
 ```
@@ -83,7 +82,6 @@ createPublicMiddleware   - Public routes with rate limiting
 | -------------- | ---------- | ------------------------ | --------------------------- |
 | Admin Routes   | 39 routes  | `createAdminMiddleware`  | Admin role required         |
 | Money/Pocketly | 14 routes  | `createMoneyMiddleware`  | Flexible (admin/mobile/web) |
-| Taskly         | 7 routes   | `createTasklyMiddleware` | Flexible                    |
 | Public Content | 20 routes  | `createPublicMiddleware` | Optional/public             |
 | MCP OAuth      | 3 routes   | `createMcpMiddleware`    | OAuth flow                  |
 | Other          | 109 routes | Various                  | Route-specific              |
@@ -185,7 +183,7 @@ function refactorRoute(routePath) {
 1. **Critical Routes** - Authentication, health checks
 2. **Admin Routes** - All `/api/admin/*` routes
 3. **Public Routes** - Homepage, blog, contact forms
-4. **App Routes** - Pocketly, Taskly, Memoscribe routes
+4. **App Routes** - Pocketly routes
 5. **Integration Routes** - MCP, OAuth, external APIs
 
 #### Step 3.3: Manual Refactoring Process

@@ -212,11 +212,7 @@ export default function ChatbotWidget() {
 
   const suggestedPrompts = (chatbotSettings?.suggestedPrompts || []).map((t) => ({ text: t }));
 
-  if (
-    pathname.startsWith('/pocketly') ||
-    pathname.startsWith('/taskly') ||
-    pathname.startsWith('/apps')
-  ) {
+  if (pathname.startsWith('/pocketly') || pathname.startsWith('/apps')) {
     return null;
   }
 

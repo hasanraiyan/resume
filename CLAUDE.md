@@ -34,12 +34,12 @@ This is a **Next.js 15 (App Router)** personal portfolio site that also hosts se
 
 - **Public routes**: `/` (portfolio homepage), `/blog`, `/projects`, `/resume`, `/tools`, `/r/[slug]` (SnapLinks redirect), `/offline` (PWA fallback).
 - **Admin routes**: `(admin)` route group at `src/app/(admin)/` — `/admin/*` dashboard, `/login`. Admin layout is a client component wrapping `SessionProvider` with sidebar nav.
-- **Mini-app routes**: `/apps/*` — all five mini-apps are admin-only (enforced by middleware).
+- **Mini-app routes**: `/apps/*` — built-in mini-apps are admin-only (enforced by middleware).
 - **MCP/OAuth**: `/mcp-authorize` (Authorize/Decline prompt), `/.well-known/oauth-authorization-server` and `/.well-known/oauth-protected-resource` (OAuth 2.0 discovery for MCP). The OAuth flow is integrated with NextAuth: `GET /api/mcp/oauth/authorize` checks for a session, redirects to `/login` if needed, then to `/mcp-authorize` for user approval.
 
 ### Middleware
 
-`middleware.js` at project root uses `next-auth/middleware` `withAuth`. Matcher: `/admin/*`, `/apps/:path*`, `/api/pocketly/:path*`, `/api/taskly/:path*`. The `/apps` route requires `role === 'admin'`.
+`middleware.js` at project root uses `next-auth/middleware` `withAuth`. Matcher: `/admin/*`, `/apps/:path*`, `/api/pocketly/:path*`. The `/apps` route requires `role === 'admin'`.
 
 ### Server Actions
 
@@ -47,15 +47,12 @@ This is a **Next.js 15 (App Router)** personal portfolio site that also hosts se
 
 ### Mini-Apps
 
-Five self-contained apps live under `src/app/apps/`:
+Two self-contained apps live under `src/app/apps/`:
 
-| App            | Route              | Description              |
-| -------------- | ------------------ | ------------------------ |
-| **Pocketly**   | `/apps/pocketly`   | Personal finance tracker |
-| **Taskly**     | `/apps/taskly`     | Task/project manager     |
-| **Memoscribe** | `/apps/memoscribe` | AI-powered notes         |
-| **Snaplinks**  | `/apps/snaplinks`  | Short link manager       |
-| **Vaultly**    | `/apps/vaultly`    | File/media vault         |
+| App           | Route             | Description              |
+| ------------- | ----------------- | ------------------------ |
+| **Pocketly**  | `/apps/pocketly`  | Personal finance tracker |
+| **Snaplinks** | `/apps/snaplinks` | Short link manager       |
 
 Each app follows the same pattern: a layout wrapping a context provider, a main `page.js` shell, tab components in `src/components/<app-name>/`, API routes under `src/app/api/<app-name>/`, and Mongoose models in `src/models/`.
 
@@ -84,7 +81,7 @@ The most complex app. Key files:
 
 ### AI / Agent System
 
-LangChain + LangGraph for agent orchestration. `src/lib/agents/` contains `AgentManager.js`, `AgentRegistry.js`, `BaseAgent.js`, plus `utils/` with tool definitions for each domain: `finance-tools.js`, `admin-tools.js`, `portfolio-tools.js`, `skill-tools.js`, `taskly-tools.js`, `embedding-agent.js`, `chatbot-utils.js`, `context-builder.js`. A `memory/` subdirectory handles agent memory.
+LangChain + LangGraph for agent orchestration. `src/lib/agents/` contains `AgentManager.js`, `AgentRegistry.js`, `BaseAgent.js`, plus `utils/` with tool definitions for each domain: `finance-tools.js`, `admin-tools.js`, `portfolio-tools.js`, `skill-tools.js`, `chatbot-utils.js`, `context-builder.js`. A `memory/` subdirectory handles agent memory.
 
 - `@langchain/langgraph-checkpoint-mongodb` for persistent agent state.
 - Finance agent stream events: `content`, `tool_start`, `tool_result`, `tool_end` (NDJSON over `text/plain`).
@@ -100,7 +97,7 @@ LangChain + LangGraph for agent orchestration. `src/lib/agents/` contains `Agent
 
 ### Context Providers
 
-Root layout wraps everything in `SessionProvider > AnalyticsProvider > SiteProvider`. Each mini-app adds its own provider (e.g., `MoneyContext`, `TasklyContext`, `MemoscribeContext`). Additional contexts: `FinanceContext`, `FinanceChatContext`, `LoadingContext`, `TasklyChatContext`.
+Root layout wraps everything in `SessionProvider > AnalyticsProvider > SiteProvider`. Mini-apps add their own providers where needed (e.g., `MoneyContext`). Additional contexts: `FinanceContext`, `FinanceChatContext`, `LoadingContext`.
 
 ### Integrations
 

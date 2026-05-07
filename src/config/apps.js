@@ -1,4 +1,4 @@
-// Central registry for suite apps (SnapLinks, Pocketly, Taskly)
+// Central registry for suite apps (SnapLinks, Pocketly)
 
 export const MINI_APPS = [
   {
@@ -16,29 +16,5 @@ export const MINI_APPS = [
     href: '/pocketly',
     category: 'Finance',
     iconSrc: '/images/apps/pocketly.png',
-  },
-  {
-    id: 'taskly',
-    name: 'Taskly',
-    tagline: 'Personal project and task workspace.',
-    href: '/taskly',
-    category: 'Productivity',
-    iconSrc: '/images/apps/taskly.png',
-  },
-  {
-    id: 'vaultly',
-    name: 'Vaultly',
-    tagline: 'Multi-provider storage drive.',
-    href: '/apps/vaultly',
-    category: 'Storage',
-    iconSrc: '/images/apps/taskly.png', // Fallback icon
-  },
-  {
-    id: 'memoscribe',
-    name: 'Memo Scribe',
-    tagline: 'AI-powered note-taking and knowledge base.',
-    href: '/apps/memoscribe',
-    category: 'Productivity',
-    iconSrc: '/images/apps/taskly.png', // Fallback icon
   },
 ];

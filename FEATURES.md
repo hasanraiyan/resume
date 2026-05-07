@@ -44,7 +44,6 @@ A protected, role-based backend to manage every aspect of the site.
 - **Contact & Subscribers List**: View incoming messages and manage newsletter subscribers.
 - **SnapLinks (URL Shortener)**: Create, manage, and track custom redirect links (`/r/slug`) with individual click analytics.
 - **Media Library**: Control and review your media assets with Prisma.
-- **Vaultly**: Multi-provider storage drive and file manager.
 - **Agent Configuration**: Fine-tune Chatbot persona, base knowledge, and active AI tools dynamically from the UI.
 
 ## 📊 Privacy-Focused Custom Analytics

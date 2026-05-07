@@ -7,7 +7,7 @@ import { Menu } from 'lucide-react';
  * A standardized layout shell for internal mini-apps.
  *
  * @param {Object} props
- * @param {string} props.appName - The name of the application (e.g., "Pocketly", "Taskly").
+ * @param {string} props.appName - The name of the application (e.g., "Pocketly").
  * @param {string|React.ReactNode} [props.appLogo] - Optional path to the app logo image or a custom logo React node.
  * @param {Array<{id: string, label: string, icon: React.ElementType}>} props.tabs - Array of tab objects.
  * @param {string} props.activeTab - The currently active tab ID.

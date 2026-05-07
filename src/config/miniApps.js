@@ -17,28 +17,4 @@ export const MINI_APPS = [
     category: 'Finance',
     iconSrc: '/images/apps/pocketly.png',
   },
-  {
-    id: 'taskly',
-    name: 'Taskly',
-    tagline: 'Tasks, projects, and insights in one place.',
-    href: '/apps/taskly',
-    category: 'Productivity',
-    iconSrc: '/images/apps/taskly.png',
-  },
-  {
-    id: 'vaultly',
-    name: 'Vaultly',
-    tagline: 'Multi-provider storage drive and files manager.',
-    href: '/apps/vaultly',
-    category: 'Storage',
-    iconSrc: '/images/apps/taskly.png', // Fallback icon
-  },
-  {
-    id: 'memoscribe',
-    name: 'Memo Scribe',
-    tagline: 'AI-powered note-taking and knowledge base.',
-    href: '/apps/memoscribe',
-    category: 'Productivity',
-    iconSrc: '/images/apps/taskly.png', // Fallback icon
-  },
 ];

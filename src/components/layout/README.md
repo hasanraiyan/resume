@@ -1,6 +1,6 @@
 # AppLayout
 
-`AppLayout` is a shared layout shell component designed to standardize the structure of internal mini-apps like Pocketly, Taskly, SnapLinks, and Memo Scribe. It provides a consistent responsive layout with a desktop sidebar, a mobile bottom navigation bar (or optional hamburger menu), a unified header, and support for Floating Action Buttons (FABs).
+`AppLayout` is a shared layout shell component designed to standardize the structure of internal mini-apps like Pocketly and SnapLinks. It provides a consistent responsive layout with a desktop sidebar, a mobile bottom navigation bar (or optional hamburger menu), a unified header, and support for Floating Action Buttons (FABs).
 
 ## Usage
 
@@ -61,7 +61,7 @@ function MyAppContent() {
 
 ## Migration Notes
 
-When migrating an existing app (like Pocketly or Taskly) to `AppLayout`:
+When migrating an existing app to `AppLayout`:
 
 1.  Remove the app's custom `Aside`, `Header`, and Mobile Nav components.
 2.  Pass the app's `tabs` array to `AppLayout`.

@@ -6,7 +6,7 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-Latest-47A248?style=flat-square&logo=mongodb)](https://www.mongodb.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-A modern, high-performance full-stack portfolio and productivity ecosystem built with **Next.js 15** and **React 19**. This platform isn't just a resume; it's a comprehensive suite featuring an advanced multi-agent AI system, built-in productivity applications (Pocketly, Taskly, Snaplinks), privacy-focused analytics, and a powerful Admin CMS.
+A modern, high-performance full-stack portfolio and productivity ecosystem built with **Next.js 15** and **React 19**. This platform isn't just a resume; it's a comprehensive suite featuring an advanced multi-agent AI system, built-in applications (Pocketly and SnapLinks), privacy-focused analytics, and a powerful Admin CMS.
 
 ---
 
@@ -61,16 +61,6 @@ A comprehensive finance management tool integrated directly into your dashboard.
 - Visual reports and categorization.
 
 ![Pocketly](./public/images/apps/pocketly.png)
-
-### 📋 Taskly
-
-A robust task management system for personal and project productivity.
-
-- Kanban boards and issue tracking.
-- Project-based organization.
-- Seamless integration with the platform's ecosystem.
-
-![Taskly](./public/images/apps/taskly.png)
 
 ### 🔗 SnapLinks
 
@@ -155,8 +145,7 @@ Visit `http://localhost:3000` to see the site. The Admin panel is accessible at 
 │   ├── app/              # Next.js App Router (Pages & API)
 │   │   ├── (admin)/      # Protected Admin CMS routes
 │   │   ├── api/          # API endpoints (Auth, AI, CMS)
-│   │   ├── pocketly/     # Pocketly Tracker application
-│   │   └── taskly/       # Taskly task management
+│   │   └── apps/         # Built-in mini-app routes
 │   ├── components/       # UI Components (Admin, Apps, UI)
 │   ├── lib/              # Utilities, AI Agents, and Integrations
 │   ├── models/           # Mongoose Database Schemas

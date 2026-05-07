@@ -50,6 +50,5 @@ export const config = {
     '/apps/:path*',
     '/mcp-authorize',
     '/api/pocketly/:path*',
-    '/api/taskly/:path*',
   ],
 };

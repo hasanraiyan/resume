@@ -5,8 +5,7 @@ import { getSiteConfig } from '@/app/actions/siteActions';
 
 export const metadata = {
   title: 'Apps — Portfolio Mini Applications',
-  description:
-    'Explore and launch mini apps: SnapLinks, Pocketly, Taskly, Vaultly, and Memo Scribe.',
+  description: 'Explore and launch mini apps: SnapLinks and Pocketly.',
   alternates: {
     canonical: '/apps',
   },

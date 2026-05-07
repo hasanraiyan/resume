@@ -20,27 +20,7 @@ A subscription and recurring-bills tracker.
 
 ---
 
-## 2. Taskly
-
-A task and project management app.
-
-### What it does
-
-- Manage tasks, projects, deadlines, and priorities
-- Organize work by status such as todo, in progress, and done
-- Track productivity and completion trends
-- Show upcoming deadlines and overdue work
-- Support personal or small-team workflow management
-
-### Why it fits
-
-- It follows the same management + dashboard approach
-- It adds productivity to the app ecosystem
-- It can become a daily-use app, which is good for engagement
-
----
-
-## 3. Assetly
+## 2. Assetly
 
 A personal or business asset tracker.
 
@@ -60,7 +40,7 @@ A personal or business asset tracker.
 
 ---
 
-## 4. Habitly
+## 3. Habitly
 
 A habit and routine tracking app.
 
@@ -80,7 +60,7 @@ A habit and routine tracking app.
 
 ---
 
-## 5. Cliently
+## 4. Cliently
 
 A lightweight client and invoice tracker.
 
