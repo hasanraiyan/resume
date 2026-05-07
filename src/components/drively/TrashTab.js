@@ -8,7 +8,7 @@ import FolderCard from './FolderCard';
 import { toast } from 'sonner';
 
 export default function TrashTab() {
-  const { isLoading, refresh } = useDrively();
+  const { isLoading, refresh, emptyTrash } = useDrively();
   const [trashItems, setTrashItems] = useState({ folders: [], files: [] });
   const [isFetching, setIsFetching] = useState(false);
 
@@ -53,7 +53,11 @@ export default function TrashTab() {
         </div>
         {hasItems && (
           <button
-            onClick={() => toast.error('Empty trash not implemented in v1')}
+            onClick={() => {
+              if (confirm('Are you sure you want to permanently delete all items in trash?')) {
+                emptyTrash();
+              }
+            }}
             className="text-sm font-bold text-[#c94c4c] hover:underline"
           >
             Empty Trash

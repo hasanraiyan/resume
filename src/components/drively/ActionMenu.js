@@ -1,19 +1,21 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { MoreVertical, Star, Trash2, Pencil, Download, RefreshCcw } from 'lucide-react';
+import { MoreVertical, Star, Trash2, Pencil, Download, RefreshCcw, FolderInput } from 'lucide-react';
 import { useDrively } from '@/context/DrivelyContext';
 import RenameModal from './RenameModal';
+import MoveModal from './MoveModal';
 
 export default function ActionMenu({ type, item, variant = 'default' }) {
   const [isOpen, setIsOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
   const [showRename, setShowRename] = useState(false);
+  const [showMove, setShowMove] = useState(false);
   const buttonRef = useRef(null);
   const { deleteItem, updateItem } = useDrively();
 
   const handleAction = async (action, e) => {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
     setIsOpen(false);
 
     switch (action) {
@@ -22,6 +24,9 @@ export default function ActionMenu({ type, item, variant = 'default' }) {
         break;
       case 'rename':
         setShowRename(true);
+        break;
+      case 'move':
+        setShowMove(true);
         break;
       case 'delete':
         if (confirm(`Are you sure you want to delete this ${type}?`)) {
@@ -104,6 +109,13 @@ export default function ActionMenu({ type, item, variant = 'default' }) {
                     Rename
                   </button>
                   <button
+                    onClick={(e) => handleAction('move', e)}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-[#1e3a34] hover:bg-[#f0f5f2] transition-colors whitespace-nowrap"
+                  >
+                    <FolderInput className="w-4 h-4" />
+                    Move to...
+                  </button>
+                  <button
                     onClick={(e) => handleAction('star', e)}
                     className="w-full flex items-center gap-3 px-4 py-2 text-sm text-[#1e3a34] hover:bg-[#f0f5f2] transition-colors whitespace-nowrap"
                   >
@@ -149,6 +161,17 @@ export default function ActionMenu({ type, item, variant = 'default' }) {
           item={item}
           onConfirm={handleRename}
           onClose={() => setShowRename(false)}
+        />
+      )}
+
+      {showMove && (
+        <MoveModal
+          onConfirm={async (targetFolderId) => {
+            const payload = type === 'file' ? { folderId: targetFolderId } : { parentId: targetFolderId };
+            await updateItem(type, item._id, payload);
+            setShowMove(false);
+          }}
+          onClose={() => setShowMove(false)}
         />
       )}
     </>

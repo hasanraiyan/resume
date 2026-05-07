@@ -17,20 +17,67 @@ import FileCard from './FileCard';
 import FolderCard from './FolderCard';
 import Breadcrumbs from './Breadcrumbs';
 import UploadModal from './UploadModal';
+import SortDropdown from './SortDropdown';
 
 export default function MyDriveTab() {
-  const { files, folders, currentFolderId, setCurrentFolderId, isLoading } = useDrively();
+  const {
+    files,
+    folders,
+    currentFolderId,
+    setCurrentFolderId,
+    isLoading,
+    searchQuery,
+    sortConfig,
+    uploadFiles,
+  } = useDrively();
   const [viewMode, setViewMode] = useState('grid');
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    if (droppedFiles.length > 0) {
+      await uploadFiles(droppedFiles, currentFolderId);
+    }
+  };
+
+  const sortItems = (items, type) => {
+    return [...items].sort((a, b) => {
+      let valA, valB;
+      if (sortConfig.key === 'name') {
+        valA = (type === 'file' ? a.filename : a.name).toLowerCase();
+        valB = (type === 'file' ? b.filename : b.name).toLowerCase();
+      } else {
+        valA = a[sortConfig.key];
+        valB = b[sortConfig.key];
+      }
+
+      if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
 
   const currentFolders = useMemo(() => {
-    return folders.filter((f) => f.parentId === currentFolderId && !f.deletedAt);
-  }, [folders, currentFolderId]);
+    const filtered = folders.filter((f) => f.parentId === currentFolderId && !f.deletedAt);
+    return sortItems(filtered, 'folder');
+  }, [folders, currentFolderId, sortConfig]);
 
   const currentFiles = useMemo(() => {
-    return files.filter((f) => f.folderId === currentFolderId && !f.deletedAt);
-  }, [files, currentFolderId]);
+    const filtered = files.filter((f) => f.folderId === currentFolderId && !f.deletedAt);
+    return sortItems(filtered, 'file');
+  }, [files, currentFolderId, sortConfig]);
 
   const filteredFolders = currentFolders.filter((f) =>
     f.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -105,10 +152,29 @@ export default function MyDriveTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6 relative min-h-[400px]"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {isDragging && (
+        <div className="absolute inset-0 z-50 bg-[#1f644e]/10 border-2 border-dashed border-[#1f644e] rounded-3xl flex items-center justify-center backdrop-blur-[2px] animate-in fade-in duration-200">
+          <div className="bg-white px-8 py-6 rounded-2xl shadow-xl flex flex-col items-center gap-4">
+            <div className="w-16 h-16 bg-[#f0f5f2] rounded-full flex items-center justify-center text-[#1f644e]">
+              <Upload className="w-8 h-8" />
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-extrabold text-[#1e3a34]">Drop to upload</p>
+              <p className="text-sm text-[#7c8e88] font-medium">Release to start uploading to this folder</p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <Breadcrumbs />
         <div className="flex items-center gap-2">
+          <SortDropdown />
           <button
             onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
             className="p-2 hover:bg-[#e5e3d8] rounded-lg transition-colors text-[#7c8e88]"
@@ -129,16 +195,6 @@ export default function MyDriveTab() {
         </div>
       </div>
 
-      <div className="md:hidden relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7c8e88]" />
-        <input
-          type="text"
-          placeholder="Search in folder..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 rounded-xl border border-[#e5e3d8] bg-white text-sm outline-none focus:border-[#1f644e]"
-        />
-      </div>
 
       {filteredFolders.length === 0 && filteredFiles.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">

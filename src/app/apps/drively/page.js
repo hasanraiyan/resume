@@ -26,6 +26,8 @@ import RecentTab from '@/components/drively/RecentTab';
 import StarredTab from '@/components/drively/StarredTab';
 import TrashTab from '@/components/drively/TrashTab';
 import StorageTab from '@/components/drively/StorageTab';
+import BulkActionToolbar from '@/components/drively/BulkActionToolbar';
+import FilePreviewPanel from '@/components/drively/FilePreviewPanel';
 
 const pacifico = Pacifico({
   weight: '400',
@@ -45,7 +47,7 @@ function DrivelyApp() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('mydrive');
-  const { trashCount } = useDrively();
+  const { trashCount, searchQuery, setSearchQuery, previewFile, setPreviewFile } = useDrively();
 
   if (status === 'loading') return null;
   if (status === 'unauthenticated' || session?.user?.role !== 'admin') {
@@ -142,6 +144,8 @@ function DrivelyApp() {
               <input
                 type="text"
                 placeholder="Search files..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 pr-4 py-2 rounded-xl border border-[#e5e3d8] bg-white text-sm outline-none focus:border-[#1f644e] w-64"
               />
             </div>
@@ -154,7 +158,19 @@ function DrivelyApp() {
         <main className="flex-1 p-4 lg:p-8 max-w-6xl mx-auto w-full">{renderTab()}</main>
       </div>
 
+      {previewFile && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden"
+            onClick={() => setPreviewFile(null)}
+          />
+          <FilePreviewPanel file={previewFile} onClose={() => setPreviewFile(null)} />
+        </>
+      )}
+
       {/* Mobile Nav */}
+      <BulkActionToolbar />
+
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-[#e5e3d8] z-40 flex items-center justify-around py-2 px-2">
         {tabs.map((tab) => (
           <button

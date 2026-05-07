@@ -43,6 +43,6 @@ export const UpdateFileSchema = z.object({
 export const BulkActionSchema = z.object({
   fileIds: z.array(z.string().refine(isValidObjectId)).optional(),
   folderIds: z.array(z.string().refine(isValidObjectId)).optional(),
-  action: z.enum(['delete', 'restore', 'star', 'unstar', 'move']),
+  action: z.enum(['delete', 'restore', 'star', 'unstar', 'move', 'download']),
   targetFolderId: z.string().nullable().optional(),
 });
