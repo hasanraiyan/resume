@@ -7,7 +7,7 @@ import MoveModal from './MoveModal';
 import { toast } from 'sonner';
 
 export default function BulkActionToolbar() {
-  const { selectedItems, clearSelection, executeBulk, files: allFiles } = useDrively();
+  const { selectedItems, clearSelection, executeBulk } = useDrively();
   const [showMoveModal, setShowMoveModal] = useState(false);
 
   const totalSelected = selectedItems.files.length + selectedItems.folders.length;
@@ -20,29 +20,48 @@ export default function BulkActionToolbar() {
         await executeBulk('delete');
       }
     } else if (action === 'download') {
-      // For v2, we'll open download links for each file in a new tab
-      // Folders are not easily downloadable without server-side zipping
       if (selectedItems.folders.length > 0) {
-        toast.info('Only files can be downloaded in bulk for now');
+        toast.info('Folders are skipped. Only files are included in the ZIP.');
       }
 
-      const filesToDownload = allFiles.filter(f => selectedItems.files.includes(f._id));
+      if (selectedItems.files.length === 0) {
+        toast.error('No files selected for download');
+        return;
+      }
 
-      filesToDownload.forEach((file, index) => {
-        // Stagger to avoid browser popup blocks
-        setTimeout(() => {
-          if (file.mimeType.startsWith('image/')) {
-            window.open(file.secureUrl, '_blank');
-          } else {
-            window.open(`/api/drively/download/${file._id}`, '_blank');
+      toast.promise(
+        (async () => {
+          const res = await fetch('/api/drively/bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fileIds: selectedItems.files,
+              folderIds: [],
+              action: 'download',
+            }),
+          });
+
+          if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || 'Failed to generate ZIP');
           }
-        }, index * 200);
-      });
 
-      if (selectedItems.files.length > 0) {
-        toast.success(`Starting download for ${selectedItems.files.length} files`);
-        clearSelection();
-      }
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'drively-export.zip';
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          clearSelection();
+        })(),
+        {
+          loading: 'Preparing ZIP archive...',
+          success: 'Download started',
+          error: (err) => err.message,
+        }
+      );
     } else {
       await executeBulk(action);
     }
@@ -55,7 +74,7 @@ export default function BulkActionToolbar() {
 
   return (
     <>
-      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div className="fixed bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
         <div className="bg-[#1e3a34] text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-6 border border-white/10 backdrop-blur-lg">
           <div className="flex items-center gap-3 pr-4 border-r border-white/20">
             <button
@@ -108,10 +127,7 @@ export default function BulkActionToolbar() {
       </div>
 
       {showMoveModal && (
-        <MoveModal
-          onConfirm={handleMove}
-          onClose={() => setShowMoveModal(false)}
-        />
+        <MoveModal onConfirm={handleMove} onClose={() => setShowMoveModal(false)} />
       )}
     </>
   );

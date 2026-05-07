@@ -1,18 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useDrively } from '@/context/DrivelyContext';
-import {
-  Folder,
-  File,
-  Plus,
-  Upload,
-  FolderPlus,
-  ChevronRight,
-  Search,
-  LayoutGrid,
-  List as ListIcon,
-} from 'lucide-react';
+import { Upload, Plus, LayoutGrid, List as ListIcon, Loader2 } from 'lucide-react';
 import FileCard from './FileCard';
 import FolderCard from './FolderCard';
 import Breadcrumbs from './Breadcrumbs';
@@ -24,15 +14,36 @@ export default function MyDriveTab() {
     files,
     folders,
     currentFolderId,
-    setCurrentFolderId,
     isLoading,
     searchQuery,
     sortConfig,
     uploadFiles,
+    loadMore,
+    pagination,
+    isFetchingMore,
   } = useDrively();
   const [viewMode, setViewMode] = useState('grid');
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+
+  const observerTarget = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && pagination.hasMore && !isFetchingMore) {
+          loadMore();
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => observer.disconnect();
+  }, [pagination.hasMore, isFetchingMore, loadMore]);
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -101,15 +112,6 @@ export default function MyDriveTab() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="bg-white border border-[#e5e3d8] rounded-2xl animate-pulse">
-                {/* Mobile skeleton row */}
-                <div className="flex items-center gap-3 p-3 sm:hidden">
-                  <div className="w-9 h-9 bg-[#e5e3d8] rounded-xl flex-shrink-0" />
-                  <div className="flex-1">
-                    <div className="h-3 bg-[#e5e3d8] rounded w-2/3 mb-1.5" />
-                    <div className="h-2 bg-[#e5e3d8] rounded w-1/4" />
-                  </div>
-                </div>
-                {/* Desktop skeleton card */}
                 <div className="hidden sm:block p-4">
                   <div className="w-10 h-10 bg-[#e5e3d8] rounded-xl mb-3" />
                   <div className="h-3 bg-[#e5e3d8] rounded w-3/4 mb-2" />
@@ -122,20 +124,11 @@ export default function MyDriveTab() {
         <section>
           <div className="h-3 w-10 bg-[#e5e3d8] rounded animate-pulse mb-4" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <div
                 key={i}
                 className="bg-white border border-[#e5e3d8] rounded-2xl overflow-hidden animate-pulse"
               >
-                {/* Mobile skeleton row */}
-                <div className="flex items-center gap-3 p-3 sm:hidden">
-                  <div className="w-12 h-12 bg-[#e5e3d8] rounded-xl flex-shrink-0" />
-                  <div className="flex-1">
-                    <div className="h-3 bg-[#e5e3d8] rounded w-3/4 mb-1.5" />
-                    <div className="h-2 bg-[#e5e3d8] rounded w-1/3" />
-                  </div>
-                </div>
-                {/* Desktop skeleton card */}
                 <div className="hidden sm:block">
                   <div className="aspect-square bg-[#e5e3d8]" />
                   <div className="p-3">
@@ -166,7 +159,9 @@ export default function MyDriveTab() {
             </div>
             <div className="text-center">
               <p className="text-lg font-extrabold text-[#1e3a34]">Drop to upload</p>
-              <p className="text-sm text-[#7c8e88] font-medium">Release to start uploading to this folder</p>
+              <p className="text-sm text-[#7c8e88] font-medium">
+                Release to start uploading to this folder
+              </p>
             </div>
           </div>
         </div>
@@ -195,21 +190,21 @@ export default function MyDriveTab() {
         </div>
       </div>
 
-
       {filteredFolders.length === 0 && filteredFiles.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-20 h-20 bg-[#e5e3d8]/50 rounded-full flex items-center justify-center mb-4">
-            <Upload className="w-10 h-10 text-[#7c8e88]" />
+          <div className="w-24 h-24 bg-[#f0f5f2] rounded-full flex items-center justify-center mb-6 text-[#1f644e]">
+            <Upload className="w-10 h-10" />
           </div>
-          <h3 className="text-lg font-bold text-[#1e3a34]">Folder is empty</h3>
-          <p className="text-[#7c8e88] text-sm mt-1">
-            Upload files or create folders to get started
+          <h3 className="text-xl font-bold text-[#1e3a34]">Folder is empty</h3>
+          <p className="text-[#7c8e88] max-w-xs mt-2">
+            Upload files or create folders to get started with your private cloud.
           </p>
           <button
             onClick={() => setShowUploadModal(true)}
-            className="mt-6 text-[#1f644e] font-bold text-sm hover:underline"
+            className="mt-6 flex items-center gap-2 bg-white border border-[#1f644e] text-[#1f644e] px-6 py-2 rounded-xl text-sm font-bold hover:bg-[#f0f5f2] transition-colors"
           >
-            Upload your first file
+            <Plus className="w-4 h-4" />
+            Add Something
           </button>
         </div>
       ) : (
@@ -251,6 +246,16 @@ export default function MyDriveTab() {
               </div>
             </section>
           )}
+
+          {/* Infinite Scroll Trigger */}
+          <div ref={observerTarget} className="py-8 flex justify-center">
+            {isFetchingMore && (
+              <div className="flex items-center gap-2 text-[#7c8e88] text-sm font-bold animate-pulse">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Loading more files...
+              </div>
+            )}
+          </div>
         </div>
       )}
 

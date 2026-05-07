@@ -47,9 +47,23 @@ export default function StarredTab() {
 
   if (isLoading && starred.files.length === 0 && starred.folders.length === 0) {
     return (
-      <div className="animate-pulse space-y-4">
-        <div className="h-40 bg-[#e5e3d8] rounded-xl" />
-        <div className="h-40 bg-[#e5e3d8] rounded-xl" />
+      <div className="space-y-8">
+        <section>
+          <div className="h-4 w-24 bg-[#e5e3d8] rounded mb-4 animate-pulse" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-24 bg-[#e5e3d8] rounded-2xl animate-pulse" />
+            ))}
+          </div>
+        </section>
+        <section>
+          <div className="h-4 w-24 bg-[#e5e3d8] rounded mb-4 animate-pulse" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <div key={i} className="aspect-square bg-[#e5e3d8] rounded-2xl animate-pulse" />
+            ))}
+          </div>
+        </section>
       </div>
     );
   }
@@ -57,11 +71,13 @@ export default function StarredTab() {
   if (starred.files.length === 0 && starred.folders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="w-20 h-20 bg-[#e5e3d8]/50 rounded-full flex items-center justify-center mb-4 text-[#7c8e88]">
-          <Star className="w-10 h-10" />
+        <div className="w-24 h-24 bg-[#f0f5f2] rounded-full flex items-center justify-center mb-6 text-[#1f644e]">
+          <Star className="w-12 h-12" />
         </div>
-        <h3 className="text-lg font-bold text-[#1e3a34]">No starred items</h3>
-        <p className="text-[#7c8e88] text-sm mt-1">Star files and folders for quick access</p>
+        <h3 className="text-xl font-bold text-[#1e3a34]">No starred items</h3>
+        <p className="text-[#7c8e88] max-w-xs mt-2">
+          Star files and folders that you want to find easily later. They will appear here.
+        </p>
       </div>
     );
   }

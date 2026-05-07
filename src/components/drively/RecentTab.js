@@ -1,7 +1,7 @@
 'use client';
 
 import { useDrively } from '@/context/DrivelyContext';
-import { Clock, HardDrive, File, Image as ImageIcon, FileText } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import FileCard from './FileCard';
 import SortDropdown from './SortDropdown';
 import { useMemo } from 'react';
@@ -33,9 +33,9 @@ export default function RecentTab() {
 
   if (isLoading && recent.length === 0) {
     return (
-      <div className="animate-pulse space-y-4">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-16 bg-[#e5e3d8] rounded-xl" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+          <div key={i} className="aspect-square bg-[#e5e3d8] rounded-2xl animate-pulse" />
         ))}
       </div>
     );
@@ -44,11 +44,13 @@ export default function RecentTab() {
   if (recent.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="w-20 h-20 bg-[#e5e3d8]/50 rounded-full flex items-center justify-center mb-4 text-[#7c8e88]">
-          <Clock className="w-10 h-10" />
+        <div className="w-24 h-24 bg-[#f0f5f2] rounded-full flex items-center justify-center mb-6 text-[#1f644e]">
+          <Clock className="w-12 h-12" />
         </div>
-        <h3 className="text-lg font-bold text-[#1e3a34]">No recent files</h3>
-        <p className="text-[#7c8e88] text-sm mt-1">Recently uploaded files will appear here</p>
+        <h3 className="text-xl font-bold text-[#1e3a34]">No recent files</h3>
+        <p className="text-[#7c8e88] max-w-xs mt-2">
+          Your recently uploaded or modified files will show up here for quick access.
+        </p>
       </div>
     );
   }

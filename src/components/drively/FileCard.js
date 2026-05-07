@@ -43,14 +43,15 @@ export default function FileCard({ file, viewMode }) {
 
   const handleDownload = (e) => {
     e.stopPropagation();
-    if (file.mimeType.startsWith('image/')) {
-      window.open(file.secureUrl, '_blank');
-    } else {
-      window.open(`/api/drively/download/${file._id}`, '_blank');
-    }
+    window.open(`/api/drively/download/${file._id}`, '_blank');
   };
 
   const isImage = file.mimeType.startsWith('image/') && file.secureUrl;
+
+  // Optimize Cloudinary thumbnails
+  const thumbnailUrl = isImage
+    ? file.secureUrl.replace('/upload/', '/upload/w_400,c_fill,q_auto,f_auto/')
+    : null;
 
   if (viewMode === 'list') {
     return (
@@ -70,7 +71,8 @@ export default function FileCard({ file, viewMode }) {
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold truncate">{file.filename}</p>
             <p className="text-[10px] text-[#7c8e88]">
-              {formatSize(file.size)} • {formatDistanceToNow(new Date(file.updatedAt || file.createdAt), { addSuffix: true })}
+              {formatSize(file.size)} •{' '}
+              {formatDistanceToNow(new Date(file.updatedAt || file.createdAt), { addSuffix: true })}
             </p>
           </div>
         </div>
@@ -112,7 +114,7 @@ export default function FileCard({ file, viewMode }) {
           }`}
         >
           {isImage ? (
-            <img src={file.secureUrl} alt={file.filename} className="w-full h-full object-cover" />
+            <img src={thumbnailUrl} alt={file.filename} className="w-full h-full object-cover" />
           ) : (
             <div className="w-7 h-7 text-[#7c8e88]">{getFileIcon(file.mimeType)}</div>
           )}
@@ -120,7 +122,8 @@ export default function FileCard({ file, viewMode }) {
         <div className="min-w-0 flex-1">
           <h3 className="text-sm font-bold truncate leading-tight">{file.filename}</h3>
           <p className="text-[10px] text-[#7c8e88] font-medium">
-            {formatSize(file.size)} • {formatDistanceToNow(new Date(file.updatedAt || file.createdAt), { addSuffix: true })}
+            {formatSize(file.size)} •{' '}
+            {formatDistanceToNow(new Date(file.updatedAt || file.createdAt), { addSuffix: true })}
           </p>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
@@ -136,7 +139,9 @@ export default function FileCard({ file, viewMode }) {
 
       {/* Desktop (sm+): vertical card with full-bleed thumbnail */}
       <div className="hidden sm:block">
-        <div className={`absolute top-3 left-3 z-10 transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+        <div
+          className={`absolute top-3 left-3 z-10 transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+        >
           <input
             type="checkbox"
             checked={isSelected}
@@ -154,7 +159,7 @@ export default function FileCard({ file, viewMode }) {
         >
           {isImage ? (
             <img
-              src={file.secureUrl}
+              src={thumbnailUrl}
               alt={file.filename}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
@@ -173,7 +178,8 @@ export default function FileCard({ file, viewMode }) {
               {file.filename}
             </h3>
             <p className="text-[10px] text-[#7c8e88] font-medium">
-              {formatSize(file.size)} • {formatDistanceToNow(new Date(file.updatedAt || file.createdAt), { addSuffix: true })}
+              {formatSize(file.size)} •{' '}
+              {formatDistanceToNow(new Date(file.updatedAt || file.createdAt), { addSuffix: true })}
             </p>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">

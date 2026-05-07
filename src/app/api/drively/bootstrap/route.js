@@ -8,6 +8,8 @@ export async function GET(request) {
 
   const { searchParams } = new URL(request.url);
   const includeTrash = searchParams.get('trash') === 'true';
+  const page = parseInt(searchParams.get('page')) || 1;
+  const limit = parseInt(searchParams.get('limit')) || 100;
 
   try {
     if (includeTrash) {
@@ -15,7 +17,7 @@ export async function GET(request) {
       const data = await getTrash();
       return NextResponse.json({ success: true, ...data });
     }
-    const data = await getBootstrapData();
+    const data = await getBootstrapData(page, limit);
     return NextResponse.json({ success: true, ...data });
   } catch (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
