@@ -24,7 +24,10 @@ export async function getBootstrapData() {
   ]);
 
   const stats = await getStorageStats();
-  const recent = await DrivelyFile.find({ deletedAt: null }).sort({ updatedAt: -1 }).limit(20).lean();
+  const recent = await DrivelyFile.find({ deletedAt: null })
+    .sort({ updatedAt: -1 })
+    .limit(20)
+    .lean();
   const starredFiles = await DrivelyFile.find({ starred: true, deletedAt: null }).lean();
   const starredFolders = await DrivelyFolder.find({ starred: true, deletedAt: null }).lean();
   const trashCount = await Promise.all([
@@ -208,13 +211,16 @@ export async function softDeleteFolder(id) {
     DrivelyFile.updateMany({ folderId: id }, { deletedAt: now }),
     // This doesn't catch files in subfolders, need to handle that if v1 requires it.
     // Let's improve:
-    DrivelyFile.updateMany({
-       folderId: {
-         $in: await DrivelyFolder.find({
-           $or: [{ _id: id }, { path: new RegExp(`^${pathPrefix}`) }]
-         }).distinct('_id')
-       }
-    }, { deletedAt: now })
+    DrivelyFile.updateMany(
+      {
+        folderId: {
+          $in: await DrivelyFolder.find({
+            $or: [{ _id: id }, { path: new RegExp(`^${pathPrefix}`) }],
+          }).distinct('_id'),
+        },
+      },
+      { deletedAt: now }
+    ),
   ]);
 
   return true;
@@ -233,7 +239,7 @@ export async function permanentDeleteFile(id) {
 
   // Delete from Cloudinary
   await cloudinary.uploader.destroy(file.cloudinaryPublicId, {
-    resource_type: file.mimeType.startsWith('image') ? 'image' : 'raw'
+    resource_type: file.mimeType.startsWith('image') ? 'image' : 'raw',
   });
   // Note: resource_type 'auto' doesn't work for destroy.
   // Standard files are usually 'raw', images are 'image'.
@@ -250,9 +256,9 @@ export async function permanentDeleteFolder(id) {
 
   const pathPrefix = `${folder.path}/${folder._id}`.replace(/^\/+/, '/');
   const foldersToDelete = await DrivelyFolder.find({
-    $or: [{ _id: id }, { path: new RegExp(`^${pathPrefix}`) }]
+    $or: [{ _id: id }, { path: new RegExp(`^${pathPrefix}`) }],
   });
-  const folderIds = foldersToDelete.map(f => f._id);
+  const folderIds = foldersToDelete.map((f) => f._id);
 
   const filesToDelete = await DrivelyFile.find({ folderId: { $in: folderIds } });
 
@@ -260,7 +266,7 @@ export async function permanentDeleteFolder(id) {
   for (const file of filesToDelete) {
     try {
       await cloudinary.uploader.destroy(file.cloudinaryPublicId, {
-        resource_type: file.mimeType.startsWith('image') ? 'image' : 'raw'
+        resource_type: file.mimeType.startsWith('image') ? 'image' : 'raw',
       });
     } catch (err) {
       console.error(`Failed to delete Cloudinary asset ${file.cloudinaryPublicId}`, err);
@@ -269,7 +275,7 @@ export async function permanentDeleteFolder(id) {
 
   await Promise.all([
     DrivelyFile.deleteMany({ folderId: { $in: folderIds } }),
-    DrivelyFolder.deleteMany({ _id: { $in: folderIds } })
+    DrivelyFolder.deleteMany({ _id: { $in: folderIds } }),
   ]);
 
   return true;
@@ -279,7 +285,7 @@ export async function getTrash() {
   await ensureDb();
   const [folders, files] = await Promise.all([
     DrivelyFolder.find({ deletedAt: { $ne: null } }).lean(),
-    DrivelyFile.find({ deletedAt: { $ne: null } }).lean()
+    DrivelyFile.find({ deletedAt: { $ne: null } }).lean(),
   ]);
   return { folders, files };
 }

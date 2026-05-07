@@ -10,11 +10,11 @@ export default function Breadcrumbs() {
     if (!currentFolderId) return [];
 
     const crumbs = [];
-    let current = folders.find(f => f._id === currentFolderId);
+    let current = folders.find((f) => f._id === currentFolderId);
 
     while (current) {
       crumbs.unshift(current);
-      current = folders.find(f => f._id === current.parentId);
+      current = folders.find((f) => f._id === current.parentId);
     }
 
     return crumbs;
@@ -40,7 +40,9 @@ export default function Breadcrumbs() {
           <button
             onClick={() => setCurrentFolderId(crumb._id)}
             className={`px-2 py-1 rounded-lg text-sm font-bold transition-colors ${
-              idx === crumbs.length - 1 ? 'text-[#1e3a34] bg-[#e5e3d8]' : 'text-[#7c8e88] hover:bg-[#e5e3d8]/50'
+              idx === crumbs.length - 1
+                ? 'text-[#1e3a34] bg-[#e5e3d8]'
+                : 'text-[#7c8e88] hover:bg-[#e5e3d8]/50'
             }`}
           >
             {crumb.name}

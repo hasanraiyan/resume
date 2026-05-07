@@ -1,7 +1,17 @@
 'use client';
 
 import { useDrively } from '@/context/DrivelyContext';
-import { PieChart, HardDrive, File, Database, ChevronRight, FileText, Image as ImageIcon, FileArchive, FileCode } from 'lucide-react';
+import {
+  PieChart,
+  HardDrive,
+  File,
+  Database,
+  ChevronRight,
+  FileText,
+  Image as ImageIcon,
+  FileArchive,
+  FileCode,
+} from 'lucide-react';
 
 const formatSize = (bytes) => {
   if (bytes === 0) return '0 B';
@@ -22,13 +32,15 @@ export default function StorageTab() {
   const { stats, isLoading } = useDrively();
 
   if (isLoading || !stats) {
-    return <div className="animate-pulse space-y-6">
-      <div className="h-48 bg-[#e5e3d8] rounded-3xl" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="h-64 bg-[#e5e3d8] rounded-3xl" />
-        <div className="h-64 bg-[#e5e3d8] rounded-3xl" />
+    return (
+      <div className="animate-pulse space-y-6">
+        <div className="h-48 bg-[#e5e3d8] rounded-3xl" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="h-64 bg-[#e5e3d8] rounded-3xl" />
+          <div className="h-64 bg-[#e5e3d8] rounded-3xl" />
+        </div>
       </div>
-    </div>;
+    );
   }
 
   const totalUsed = stats.totalSize;
@@ -59,16 +71,16 @@ export default function StorageTab() {
           </div>
 
           <div className="grid grid-cols-2 gap-4 flex-1 max-w-md">
-             <div className="bg-[#fcfbf5] p-4 rounded-2xl border border-[#e5e3d8]">
-                <p className="text-[10px] font-bold text-[#7c8e88] uppercase mb-1">Files</p>
-                <p className="text-xl font-bold text-[#1e3a34]">{stats.fileCount}</p>
-             </div>
-             <div className="bg-[#fcfbf5] p-4 rounded-2xl border border-[#e5e3d8]">
-                <p className="text-[10px] font-bold text-[#7c8e88] uppercase mb-1">Average Size</p>
-                <p className="text-xl font-bold text-[#1e3a34]">
-                  {stats.fileCount > 0 ? formatSize(totalUsed / stats.fileCount) : '0 B'}
-                </p>
-             </div>
+            <div className="bg-[#fcfbf5] p-4 rounded-2xl border border-[#e5e3d8]">
+              <p className="text-[10px] font-bold text-[#7c8e88] uppercase mb-1">Files</p>
+              <p className="text-xl font-bold text-[#1e3a34]">{stats.fileCount}</p>
+            </div>
+            <div className="bg-[#fcfbf5] p-4 rounded-2xl border border-[#e5e3d8]">
+              <p className="text-[10px] font-bold text-[#7c8e88] uppercase mb-1">Average Size</p>
+              <p className="text-xl font-bold text-[#1e3a34]">
+                {stats.fileCount > 0 ? formatSize(totalUsed / stats.fileCount) : '0 B'}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -80,14 +92,19 @@ export default function StorageTab() {
           <div className="bg-white border border-[#e5e3d8] rounded-3xl overflow-hidden">
             <div className="divide-y divide-[#e5e3d8]">
               {stats.typeBreakdown.map((type) => (
-                <div key={type._id} className="p-4 flex items-center justify-between hover:bg-[#f0f5f2] transition-colors">
+                <div
+                  key={type._id}
+                  className="p-4 flex items-center justify-between hover:bg-[#f0f5f2] transition-colors"
+                >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-[#fcfbf5] border border-[#e5e3d8] flex items-center justify-center">
                       {getIconForMime(type._id)}
                     </div>
                     <div>
-                       <p className="text-sm font-bold text-[#1e3a34]">{type._id.split('/')[1].toUpperCase()}</p>
-                       <p className="text-[10px] text-[#7c8e88]">{type.count} files</p>
+                      <p className="text-sm font-bold text-[#1e3a34]">
+                        {type._id.split('/')[1].toUpperCase()}
+                      </p>
+                      <p className="text-[10px] text-[#7c8e88]">{type.count} files</p>
                     </div>
                   </div>
                   <p className="text-sm font-bold text-[#1e3a34]">{formatSize(type.size)}</p>
@@ -106,14 +123,17 @@ export default function StorageTab() {
           <div className="bg-white border border-[#e5e3d8] rounded-3xl overflow-hidden">
             <div className="divide-y divide-[#e5e3d8]">
               {stats.largestFiles.map((file) => (
-                <div key={file._id} className="p-4 flex items-center justify-between hover:bg-[#f0f5f2] transition-colors">
+                <div
+                  key={file._id}
+                  className="p-4 flex items-center justify-between hover:bg-[#f0f5f2] transition-colors"
+                >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 flex-shrink-0">
-                      {getIconForMime(file.mimeType)}
-                    </div>
+                    <div className="w-8 h-8 flex-shrink-0">{getIconForMime(file.mimeType)}</div>
                     <p className="text-sm font-bold text-[#1e3a34] truncate">{file.filename}</p>
                   </div>
-                  <p className="text-sm font-bold text-[#1e3a34] ml-4 flex-shrink-0">{formatSize(file.size)}</p>
+                  <p className="text-sm font-bold text-[#1e3a34] ml-4 flex-shrink-0">
+                    {formatSize(file.size)}
+                  </p>
                 </div>
               ))}
               {stats.largestFiles.length === 0 && (

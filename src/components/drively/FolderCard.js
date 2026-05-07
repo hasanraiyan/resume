@@ -26,7 +26,9 @@ export default function FolderCard({ folder, viewMode }) {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={handleToggleStar} className="p-1 hover:bg-[#fcfbf5] rounded">
-            <Star className={`w-4 h-4 ${folder.starred ? 'text-[#1f644e] fill-[#1f644e]' : 'text-[#7c8e88]'}`} />
+            <Star
+              className={`w-4 h-4 ${folder.starred ? 'text-[#1f644e] fill-[#1f644e]' : 'text-[#7c8e88]'}`}
+            />
           </button>
           <ActionMenu type="folder" item={folder} />
         </div>
@@ -44,19 +46,18 @@ export default function FolderCard({ folder, viewMode }) {
           <Folder className="w-6 h-6" fill="currentColor" />
         </div>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-           <button
-            onClick={handleToggleStar}
-            className="p-1.5 hover:bg-[#fcfbf5] rounded-lg"
-           >
-            <Star className={`w-4 h-4 ${folder.starred ? 'text-[#1f644e] fill-[#1f644e]' : 'text-[#7c8e88]'}`} />
-           </button>
-           <ActionMenu type="folder" item={folder} />
+          <button onClick={handleToggleStar} className="p-1.5 hover:bg-[#fcfbf5] rounded-lg">
+            <Star
+              className={`w-4 h-4 ${folder.starred ? 'text-[#1f644e] fill-[#1f644e]' : 'text-[#7c8e88]'}`}
+            />
+          </button>
+          <ActionMenu type="folder" item={folder} />
         </div>
       </div>
       <h3 className="text-sm font-bold truncate leading-tight mb-1">{folder.name}</h3>
       <p className="text-[10px] text-[#7c8e88] font-medium">Folder</p>
 
-      {folder.starred && ! (folder.deletedAt) && (
+      {folder.starred && !folder.deletedAt && (
         <Star className="absolute top-4 right-12 w-3 h-3 text-[#1f644e] fill-[#1f644e] group-hover:hidden" />
       )}
     </div>

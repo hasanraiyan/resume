@@ -8,9 +8,13 @@ export default function RecentTab() {
   const { recent, isLoading } = useDrively();
 
   if (isLoading && recent.length === 0) {
-    return <div className="animate-pulse space-y-4">
-      {[1,2,3,4].map(i => <div key={i} className="h-16 bg-[#e5e3d8] rounded-xl" />)}
-    </div>;
+    return (
+      <div className="animate-pulse space-y-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-16 bg-[#e5e3d8] rounded-xl" />
+        ))}
+      </div>
+    );
   }
 
   if (recent.length === 0) {
@@ -28,7 +32,7 @@ export default function RecentTab() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {recent.map(file => (
+        {recent.map((file) => (
           <FileCard key={file._id} file={file} viewMode="grid" />
         ))}
       </div>

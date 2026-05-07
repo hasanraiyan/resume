@@ -29,32 +29,36 @@ export default function TrashTab() {
   };
 
   useEffect(() => {
-     fetchTrash();
+    fetchTrash();
   }, []);
 
   const hasItems = trashItems.folders.length > 0 || trashItems.files.length > 0;
 
   if (isFetching && !hasItems) {
-    return <div className="animate-pulse space-y-4">
-      {[1,2,3].map(i => <div key={i} className="h-16 bg-[#e5e3d8] rounded-xl" />)}
-    </div>;
+    return (
+      <div className="animate-pulse space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-16 bg-[#e5e3d8] rounded-xl" />
+        ))}
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-         <div className="flex items-center gap-2 text-[#7c8e88]">
-            <AlertTriangle className="w-4 h-4" />
-            <p className="text-xs font-medium">Items in trash are deleted after 30 days</p>
-         </div>
-         {hasItems && (
-           <button
+        <div className="flex items-center gap-2 text-[#7c8e88]">
+          <AlertTriangle className="w-4 h-4" />
+          <p className="text-xs font-medium">Items in trash are deleted after 30 days</p>
+        </div>
+        {hasItems && (
+          <button
             onClick={() => toast.error('Empty trash not implemented in v1')}
             className="text-sm font-bold text-[#c94c4c] hover:underline"
-           >
+          >
             Empty Trash
-           </button>
-         )}
+          </button>
+        )}
       </div>
 
       {!hasItems ? (
@@ -69,9 +73,11 @@ export default function TrashTab() {
         <div className="space-y-8">
           {trashItems.folders.length > 0 && (
             <section>
-              <h2 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-4">Folders</h2>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-4">
+                Folders
+              </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {trashItems.folders.map(folder => (
+                {trashItems.folders.map((folder) => (
                   <FolderCard key={folder._id} folder={folder} viewMode="grid" />
                 ))}
               </div>
@@ -80,9 +86,11 @@ export default function TrashTab() {
 
           {trashItems.files.length > 0 && (
             <section>
-              <h2 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-4">Files</h2>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-4">
+                Files
+              </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {trashItems.files.map(file => (
+                {trashItems.files.map((file) => (
                   <FileCard key={file._id} file={file} viewMode="grid" />
                 ))}
               </div>

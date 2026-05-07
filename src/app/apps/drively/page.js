@@ -63,17 +63,25 @@ function DrivelyApp() {
 
   const renderTab = () => {
     switch (activeTab) {
-      case 'mydrive': return <MyDriveTab />;
-      case 'recent': return <RecentTab />;
-      case 'starred': return <StarredTab />;
-      case 'trash': return <TrashTab />;
-      case 'storage': return <StorageTab />;
-      default: return <MyDriveTab />;
+      case 'mydrive':
+        return <MyDriveTab />;
+      case 'recent':
+        return <RecentTab />;
+      case 'starred':
+        return <StarredTab />;
+      case 'trash':
+        return <TrashTab />;
+      case 'storage':
+        return <StorageTab />;
+      default:
+        return <MyDriveTab />;
     }
   };
 
   return (
-    <div className={`min-h-screen bg-[#fcfbf5] font-[family-name:var(--font-sans)] text-[#1e3a34] flex ${pacifico.variable} ${nunito.variable}`}>
+    <div
+      className={`min-h-screen bg-[#fcfbf5] font-[family-name:var(--font-sans)] text-[#1e3a34] flex ${pacifico.variable} ${nunito.variable}`}
+    >
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-[#e5e3d8] fixed inset-y-0 left-0 z-30">
         <div className="p-6">
@@ -100,7 +108,9 @@ function DrivelyApp() {
                   {tab.label}
                 </div>
                 {tab.badge > 0 && (
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === tab.id ? 'bg-white text-[#1f644e]' : 'bg-[#e5e3d8] text-[#1e3a34]'}`}>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === tab.id ? 'bg-white text-[#1f644e]' : 'bg-[#e5e3d8] text-[#1e3a34]'}`}
+                  >
                     {tab.badge}
                   </span>
                 )}
@@ -122,7 +132,7 @@ function DrivelyApp() {
               <ArrowLeft className="w-5 h-5" />
             </button>
             <h1 className="text-lg font-bold lg:text-xl">
-              {tabs.find(t => t.id === activeTab)?.label}
+              {tabs.find((t) => t.id === activeTab)?.label}
             </h1>
           </div>
 
@@ -141,9 +151,7 @@ function DrivelyApp() {
           </div>
         </header>
 
-        <main className="flex-1 p-4 lg:p-8 max-w-6xl mx-auto w-full">
-          {renderTab()}
-        </main>
+        <main className="flex-1 p-4 lg:p-8 max-w-6xl mx-auto w-full">{renderTab()}</main>
       </div>
 
       {/* Mobile Nav */}

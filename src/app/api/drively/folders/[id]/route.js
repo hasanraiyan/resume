@@ -1,5 +1,9 @@
 import { requireAdminAuth } from '@/lib/money-auth';
-import { updateFolder, softDeleteFolder, permanentDeleteFolder } from '@/lib/apps/drively/service/service';
+import {
+  updateFolder,
+  softDeleteFolder,
+  permanentDeleteFolder,
+} from '@/lib/apps/drively/service/service';
 import { NextResponse } from 'next/server';
 
 export async function PATCH(request, { params }) {

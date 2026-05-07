@@ -37,4 +37,5 @@ const DrivelyFolderSchema = new mongoose.Schema(
   }
 );
 
-export default mongoose.models.DrivelyFolder || mongoose.model('DrivelyFolder', DrivelyFolderSchema);
+export default mongoose.models.DrivelyFolder ||
+  mongoose.model('DrivelyFolder', DrivelyFolderSchema);

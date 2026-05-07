@@ -5,25 +5,37 @@ export const isValidObjectId = (val) => mongoose.Types.ObjectId.isValid(val);
 
 export const CreateFolderSchema = z.object({
   name: z.string().min(1).max(255),
-  parentId: z.string().nullable().optional().refine((val) => !val || isValidObjectId(val), {
-    message: 'Invalid parentId',
-  }),
+  parentId: z
+    .string()
+    .nullable()
+    .optional()
+    .refine((val) => !val || isValidObjectId(val), {
+      message: 'Invalid parentId',
+    }),
 });
 
 export const UpdateFolderSchema = z.object({
   name: z.string().min(1).max(255).optional(),
-  parentId: z.string().nullable().optional().refine((val) => !val || isValidObjectId(val), {
-    message: 'Invalid parentId',
-  }),
+  parentId: z
+    .string()
+    .nullable()
+    .optional()
+    .refine((val) => !val || isValidObjectId(val), {
+      message: 'Invalid parentId',
+    }),
   starred: z.boolean().optional(),
   restore: z.boolean().optional(),
 });
 
 export const UpdateFileSchema = z.object({
   filename: z.string().min(1).max(255).optional(),
-  folderId: z.string().nullable().optional().refine((val) => !val || isValidObjectId(val), {
-    message: 'Invalid folderId',
-  }),
+  folderId: z
+    .string()
+    .nullable()
+    .optional()
+    .refine((val) => !val || isValidObjectId(val), {
+      message: 'Invalid folderId',
+    }),
   starred: z.boolean().optional(),
   restore: z.boolean().optional(),
 });

@@ -9,10 +9,12 @@ export default function StarredTab() {
   const { starred, isLoading } = useDrively();
 
   if (isLoading && starred.files.length === 0 && starred.folders.length === 0) {
-    return <div className="animate-pulse space-y-4">
-      <div className="h-40 bg-[#e5e3d8] rounded-xl" />
-      <div className="h-40 bg-[#e5e3d8] rounded-xl" />
-    </div>;
+    return (
+      <div className="animate-pulse space-y-4">
+        <div className="h-40 bg-[#e5e3d8] rounded-xl" />
+        <div className="h-40 bg-[#e5e3d8] rounded-xl" />
+      </div>
+    );
   }
 
   if (starred.files.length === 0 && starred.folders.length === 0) {
@@ -31,9 +33,11 @@ export default function StarredTab() {
     <div className="space-y-8">
       {starred.folders.length > 0 && (
         <section>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-4">Starred Folders</h2>
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-4">
+            Starred Folders
+          </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {starred.folders.map(folder => (
+            {starred.folders.map((folder) => (
               <FolderCard key={folder._id} folder={folder} viewMode="grid" />
             ))}
           </div>
@@ -42,9 +46,11 @@ export default function StarredTab() {
 
       {starred.files.length > 0 && (
         <section>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-4">Starred Files</h2>
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-4">
+            Starred Files
+          </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {starred.files.map(file => (
+            {starred.files.map((file) => (
               <FileCard key={file._id} file={file} viewMode="grid" />
             ))}
           </div>
