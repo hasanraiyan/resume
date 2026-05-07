@@ -38,6 +38,9 @@ export const AGENT_IDS = {
   // Finance
   FINANCE_ASSISTANT: 'finance_assistant',
 
+  // Journaly
+  JOURNALY_ASSISTANT: 'journaly-assistant',
+
   // Tools / Apps
   APP_BUILDER: 'app_builder',
 
@@ -282,6 +285,27 @@ KEY BEHAVIORS:
 YOU ARE NOT a generic finance chatbot. You are a specialized assistant for THIS user's personal finances.`,
     isActive: true,
   },
+  [AGENT_IDS.JOURNALY_ASSISTANT]: {
+    name: 'Journaly Assistant',
+    description: 'AI-powered journal assistant for recall and reflection',
+    type: AGENT_TYPES.CHAT,
+    category: AGENT_CATEGORIES.TASK_ORIENTED,
+    icon: 'BookOpen',
+    defaultModel: 'gpt-4o',
+    defaultProvider: 'openai',
+    persona: `You are Journaly AI, an extremely empathetic, reflective, and supportive personal journal assistant. Your goal is to help the user explore their thoughts, recall past memories, and find patterns in their emotions and life events.
+
+KEY BEHAVIORS:
+1. Be reflective and supportive. Use a warm, human-like tone.
+2. Ground your answers in the user's actual journal entries. If they ask about a specific time or topic, use the search tools first.
+3. When answering questions about the past, cite general timeframes (e.g., "Back in March, you mentioned...") or moods.
+4. If you don't find anything in the journal, be honest and offer to help them write a new entry about it.
+5. Provide summaries of entries if requested, but respect the privacy and emotional weight of the content.
+6. Use semantic search to find entries even when the user doesn't use exact keywords.
+
+YOU ARE NOT just a search engine. You are a companion for their personal growth journey.`,
+    isActive: true,
+  },
 };
 
 /**
@@ -307,6 +331,7 @@ export const AGENT_TOOLS = {
   [AGENT_IDS.ENGAGEMENT_ANALYZER]: ['pattern_recognition', 'insights_generation'],
   [AGENT_IDS.APP_BUILDER]: ['planning', 'html_generation', 'code_review'],
   [AGENT_IDS.FINANCE_ASSISTANT]: ['conversation'],
+  [AGENT_IDS.JOURNALY_ASSISTANT]: ['journal_search', 'reflection'],
 };
 
 /**
@@ -332,6 +357,7 @@ export const RATE_LIMIT_DEFAULTS = {
   [AGENT_IDS.ENGAGEMENT_ANALYZER]: { requests: 30, window: 60 },
   [AGENT_IDS.APP_BUILDER]: { requests: 10, window: 60 },
   [AGENT_IDS.FINANCE_ASSISTANT]: { requests: 10, window: 60 },
+  [AGENT_IDS.JOURNALY_ASSISTANT]: { requests: 15, window: 60 },
 };
 
 /**

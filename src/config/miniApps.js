@@ -25,4 +25,12 @@ export const MINI_APPS = [
     category: 'Cloud',
     iconSrc: '/images/apps/drively.png',
   },
+  {
+    id: 'journaly',
+    name: 'Journaly',
+    tagline: 'AI-powered private journal for reflection and recall.',
+    href: '/apps/journaly',
+    category: 'Personal',
+    iconSrc: '/images/apps/journaly.png',
+  },
 ];
