@@ -22,6 +22,7 @@ import {
   Clock,
   Menu,
   X,
+  Tag,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import EditSectionModal from '@/components/coursify/EditSectionModal';
@@ -61,31 +62,40 @@ export default function CourseDetailPage({ params }) {
   const [course, setCourse] = useState(null);
   const [sections, setSections] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeSection, setActiveSection] = useState(null);
   const [editingSection, setEditingSection] = useState(null);
   const [showNewSection, setShowNewSection] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showMeta, setShowMeta] = useState(true);
 
-  const fetchCourse = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const res = await fetch(`/api/coursify/courses/${id}`);
-      const data = await res.json();
-      if (data.success) {
-        setCourse(data.course);
-        setSections(data.sections);
-        if (data.sections.length > 0 && !activeSection) {
-          setActiveSection(data.sections[0]._id);
+  const fetchCourse = useCallback(
+    async (silent = false) => {
+      try {
+        if (silent) setIsRefreshing(true);
+        else setIsLoading(true);
+
+        const res = await fetch(`/api/coursify/courses/${id}`);
+        const data = await res.json();
+        if (data.success) {
+          setCourse(data.course);
+          setSections(data.sections);
+          setActiveSection((prev) => {
+            if (prev) return prev;
+            return data.sections[0]?._id || null;
+          });
+        } else {
+          toast.error(data.error || 'Failed to load course');
         }
-      } else {
-        toast.error(data.error || 'Failed to load course');
+      } catch {
+        toast.error('Connection error');
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
       }
-    } catch {
-      toast.error('Connection error');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [id]);
+    },
+    [id]
+  );
 
   useEffect(() => {
     if (session?.user?.role === 'admin') fetchCourse();
@@ -158,15 +168,17 @@ export default function CourseDetailPage({ params }) {
   if (isLoading) {
     return (
       <div
-        className={`min-h-screen bg-[#fcfbf5] ${pacifico.variable} ${nunito.variable} font-[family-name:var(--font-sans)]`}
+        className={`h-screen bg-[#fcfbf5] ${pacifico.variable} ${nunito.variable} font-[family-name:var(--font-sans)]`}
       >
-        <div className="h-16 border-b border-[#e5e3d8] bg-white animate-pulse" />
+        <div className="h-14 border-b border-[#e5e3d8] bg-white animate-pulse" />
         <div className="flex">
-          <div className="w-64 min-h-screen border-r border-[#e5e3d8] bg-white hidden lg:block animate-pulse" />
-          <div className="flex-1 p-8 space-y-4 max-w-3xl">
-            <div className="h-6 bg-[#e5e3d8] rounded w-1/2 animate-pulse" />
+          <div className="w-72 min-h-screen border-r border-[#e5e3d8] bg-white hidden lg:block animate-pulse" />
+          <div className="flex-1 p-6 lg:p-10 space-y-4 max-w-3xl">
+            <div className="h-5 bg-[#e5e3d8] rounded w-1/3 animate-pulse" />
+            <div className="h-7 bg-[#e5e3d8] rounded w-2/3 animate-pulse" />
             <div className="h-4 bg-[#e5e3d8] rounded w-full animate-pulse" />
             <div className="h-4 bg-[#e5e3d8] rounded w-3/4 animate-pulse" />
+            <div className="h-4 bg-[#e5e3d8] rounded w-5/6 animate-pulse" />
           </div>
         </div>
       </div>
@@ -193,66 +205,53 @@ export default function CourseDetailPage({ params }) {
 
   return (
     <div
-      className={`min-h-screen bg-[#fcfbf5] font-[family-name:var(--font-sans)] text-[#1e3a34] flex flex-col ${pacifico.variable} ${nunito.variable}`}
+      className={`h-screen bg-[#fcfbf5] font-[family-name:var(--font-sans)] text-[#1e3a34] flex flex-col ${pacifico.variable} ${nunito.variable}`}
     >
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-white border-b border-[#e5e3d8] px-4 lg:px-6 py-3 flex items-center justify-between gap-4 shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
+      {/* ── Header ── */}
+      <header className="sticky top-0 z-40 bg-white border-b border-[#e5e3d8] px-4 lg:px-6 py-3 flex items-center justify-between gap-3 shrink-0">
+        {/* Left: back + title */}
+        <div className="flex items-center gap-2 min-w-0">
           <button
             onClick={() => router.push('/apps/coursify')}
-            className="p-1.5 hover:bg-[#e5e3d8] rounded-full transition-colors shrink-0"
+            className="p-1.5 hover:bg-[#f0f5f2] rounded-full transition-colors shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <div className="min-w-0">
-            <h1 className="font-bold text-[#1e3a34] text-sm lg:text-base truncate">
-              {course.title}
-            </h1>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span
-                className={`px-1.5 py-0.5 rounded text-[10px] font-bold capitalize ${DIFFICULTY_COLORS[course.difficulty] || DIFFICULTY_COLORS.beginner}`}
-              >
-                {course.difficulty}
-              </span>
-              {course.estimatedDuration && (
-                <span className="flex items-center gap-1 text-[10px] text-[#7c8e88] font-bold">
-                  <Clock className="w-2.5 h-2.5" />
-                  {course.estimatedDuration}
-                </span>
-              )}
-              <span className="flex items-center gap-1 text-[10px] text-[#7c8e88] font-bold">
-                <Layers className="w-2.5 h-2.5" />
-                {sections.length} sections
-              </span>
-            </div>
-          </div>
+          <h1 className="font-bold text-[#1e3a34] text-sm lg:text-base truncate">{course.title}</h1>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Right: actions */}
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
-            onClick={fetchCourse}
-            className="p-1.5 rounded-lg border border-[#e5e3d8] bg-white text-[#7c8e88] hover:text-[#1f644e] transition-colors hidden sm:block"
+            onClick={() => fetchCourse(true)}
+            title="Refresh"
+            className={`p-1.5 rounded-lg text-[#7c8e88] hover:text-[#1f644e] hover:bg-[#f0f5f2] transition-colors ${isRefreshing ? 'animate-spin' : ''}`}
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
+
           <button
             onClick={handleTogglePublish}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-colors ${
               course.status === 'published'
-                ? 'bg-[#f0f5f2] border-[#1f644e]/30 text-[#1f644e]'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                 : 'bg-white border-[#e5e3d8] text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e]'
             }`}
           >
             {course.status === 'published' ? (
               <>
-                <Globe className="w-3 h-3" /> Published
+                <Globe className="w-3 h-3 shrink-0" />
+                <span className="hidden sm:inline">Published</span>
               </>
             ) : (
               <>
-                <Lock className="w-3 h-3" /> Draft
+                <Lock className="w-3 h-3 shrink-0" />
+                <span className="hidden sm:inline">Draft</span>
               </>
             )}
           </button>
+
+          {/* Sidebar toggle — mobile only */}
           <button
             onClick={() => setSidebarOpen((v) => !v)}
             className="p-1.5 rounded-lg border border-[#e5e3d8] bg-white text-[#7c8e88] lg:hidden"
@@ -262,38 +261,79 @@ export default function CourseDetailPage({ params }) {
         </div>
       </header>
 
+      {/* ── Course meta strip (desktop only) ── */}
+      {showMeta && (
+        <div className="hidden lg:flex items-center gap-3 px-6 py-2 bg-[#fcfbf5] border-b border-[#e5e3d8] shrink-0">
+          <span
+            className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${DIFFICULTY_COLORS[course.difficulty] || DIFFICULTY_COLORS.beginner}`}
+          >
+            {course.difficulty}
+          </span>
+          {course.estimatedDuration && (
+            <span className="flex items-center gap-1 text-[10px] text-[#7c8e88] font-bold">
+              <Clock className="w-3 h-3" />
+              {course.estimatedDuration}
+            </span>
+          )}
+          <span className="flex items-center gap-1 text-[10px] text-[#7c8e88] font-bold">
+            <Layers className="w-3 h-3" />
+            {sections.length} section{sections.length !== 1 ? 's' : ''}
+          </span>
+          {course.tags?.length > 0 && (
+            <span className="flex items-center gap-1 text-[10px] text-[#7c8e88]">
+              <Tag className="w-3 h-3" />
+              {course.tags.slice(0, 3).join(', ')}
+              {course.tags.length > 3 && ` +${course.tags.length - 3}`}
+            </span>
+          )}
+          <button
+            onClick={() => setShowMeta(false)}
+            className="ml-auto p-1 rounded-md text-[#7c8e88] hover:text-[#1e3a34] hover:bg-[#e5e3d8] transition-colors"
+            title="Dismiss"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-1 min-h-0">
         {/* Sidebar overlay on mobile */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 bg-black/20 z-30 lg:hidden"
+            className="fixed inset-0 bg-black/40 z-30 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
 
-        {/* Section Sidebar */}
+        {/* ── Section Sidebar ── */}
         <aside
-          className={`fixed lg:static inset-y-0 left-0 z-40 w-72 shrink-0 bg-white border-r border-[#e5e3d8] flex flex-col transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
-          style={{ top: 0, paddingTop: sidebarOpen ? 0 : undefined }}
+          className={`fixed lg:static inset-y-0 left-0 z-40 w-72 shrink-0 bg-white border-r border-[#e5e3d8] flex flex-col transition-transform duration-300 lg:translate-x-0 ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
         >
-          {/* Mobile sidebar header */}
-          <div className="lg:hidden flex items-center justify-between p-4 border-b border-[#e5e3d8]">
-            <span className="font-bold text-sm">Sections</span>
-            <button onClick={() => setSidebarOpen(false)}>
+          {/* Mobile drawer header */}
+          <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-[#e5e3d8]">
+            <span className="font-bold text-sm text-[#1e3a34]">Sections</span>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="p-1.5 hover:bg-[#f0f5f2] rounded-lg transition-colors"
+            >
               <X className="w-4 h-4 text-[#7c8e88]" />
             </button>
           </div>
 
-          <div className="p-3 border-b border-[#e5e3d8] hidden lg:block">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] px-2">
+          {/* Desktop sidebar header */}
+          <div className="hidden lg:flex items-center justify-between px-4 py-3 border-b border-[#e5e3d8]">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
               Sections ({sections.length})
             </h2>
           </div>
 
+          {/* Section list */}
           <div className="flex-1 overflow-y-auto p-2">
             {sections.length === 0 ? (
-              <div className="text-center py-8 px-4">
-                <BookOpen className="w-8 h-8 text-[#e5e3d8] mx-auto mb-2" />
+              <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                <BookOpen className="w-8 h-8 text-[#e5e3d8] mb-2" />
                 <p className="text-xs text-[#7c8e88]">No sections yet</p>
               </div>
             ) : (
@@ -304,26 +344,35 @@ export default function CourseDetailPage({ params }) {
                     setActiveSection(section._id);
                     setSidebarOpen(false);
                   }}
-                  className={`w-full text-left px-3 py-2.5 rounded-xl mb-1 transition-colors group flex items-center gap-2 ${
+                  className={`w-full text-left px-3 py-2.5 rounded-xl mb-1 transition-colors group flex items-center gap-2.5 ${
                     activeSection === section._id
                       ? 'bg-[#1f644e] text-white'
                       : 'text-[#1e3a34] hover:bg-[#f0f5f2]'
                   }`}
                 >
                   <span
-                    className={`text-[10px] font-bold shrink-0 w-5 h-5 rounded flex items-center justify-center ${activeSection === section._id ? 'bg-white/20 text-white' : 'bg-[#e5e3d8] text-[#7c8e88]'}`}
+                    className={`text-[10px] font-bold shrink-0 w-5 h-5 rounded flex items-center justify-center ${
+                      activeSection === section._id
+                        ? 'bg-white/20 text-white'
+                        : 'bg-[#e5e3d8] text-[#7c8e88]'
+                    }`}
                   >
                     {i + 1}
                   </span>
                   <span className="text-xs font-bold truncate flex-1">{section.title}</span>
                   <ChevronRight
-                    className={`w-3 h-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity ${activeSection === section._id ? 'opacity-100' : ''}`}
+                    className={`w-3 h-3 shrink-0 transition-opacity ${
+                      activeSection === section._id
+                        ? 'opacity-100'
+                        : 'opacity-0 group-hover:opacity-60'
+                    }`}
                   />
                 </button>
               ))
             )}
           </div>
 
+          {/* Add section */}
           <div className="p-3 border-t border-[#e5e3d8]">
             <button
               onClick={() => {
@@ -338,17 +387,19 @@ export default function CourseDetailPage({ params }) {
           </div>
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto">
+        {/* ── Main Content ── */}
+        <main className="flex-1 overflow-y-auto min-w-0">
           {!currentSection ? (
-            <div className="flex flex-col items-center justify-center h-full py-24 text-center px-4">
+            <div className="flex flex-col items-center justify-center min-h-full py-24 text-center px-4">
               <div className="h-14 w-14 bg-[#f0f5f2] rounded-2xl flex items-center justify-center mb-4">
                 <BookOpen className="w-7 h-7 text-[#1f644e]" />
               </div>
-              <h3 className="font-bold text-[#1e3a34] mb-2">No section selected</h3>
+              <h3 className="font-bold text-[#1e3a34] mb-2">
+                {sections.length === 0 ? 'No sections yet' : 'No section selected'}
+              </h3>
               <p className="text-sm text-[#7c8e88] mb-6 max-w-xs">
                 {sections.length === 0
-                  ? 'This course has no sections yet. Add one manually or use the MCP tools with an AI agent.'
+                  ? 'Add a section manually or use the MCP tools with an AI agent.'
                   : 'Select a section from the sidebar to start reading.'}
               </p>
               {sections.length === 0 && (
@@ -362,27 +413,28 @@ export default function CourseDetailPage({ params }) {
               )}
             </div>
           ) : (
-            <article className="max-w-3xl mx-auto px-4 lg:px-8 py-8">
-              {/* Course hero thumbnail — shown only on first section or when no section selected */}
-              {course.thumbnail &&
-                sections.findIndex((s) => s._id === currentSection._id) === 0 && (
-                  <div className="w-full h-48 rounded-2xl overflow-hidden mb-8 border border-[#e5e3d8]">
-                    <img
-                      src={course.thumbnail}
-                      alt={course.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
+            <article className="max-w-3xl mx-auto px-4 lg:px-10 py-8">
+              {/* Course thumbnail banner — always shown at top */}
+              {course.thumbnail && (
+                <div className="w-full h-52 rounded-2xl overflow-hidden mb-8 border border-[#e5e3d8] shadow-sm">
+                  <img
+                    src={course.thumbnail}
+                    alt={course.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
 
               {/* Section header */}
               <div className="flex items-start justify-between gap-4 mb-6">
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider mb-1">
                     Section {sections.findIndex((s) => s._id === currentSection._id) + 1} of{' '}
                     {sections.length}
                   </p>
-                  <h2 className="text-2xl font-bold text-[#1e3a34]">{currentSection.title}</h2>
+                  <h2 className="text-xl lg:text-2xl font-bold text-[#1e3a34] leading-snug">
+                    {currentSection.title}
+                  </h2>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button
@@ -404,7 +456,7 @@ export default function CourseDetailPage({ params }) {
 
               {/* Markdown content */}
               {currentSection.content ? (
-                <div className="prose prose-sm max-w-none prose-headings:font-bold prose-headings:text-[#1e3a34] prose-p:text-[#1e3a34] prose-p:leading-relaxed prose-code:bg-[#f0f5f2] prose-code:rounded prose-code:px-1 prose-code:text-[#1f644e] prose-pre:bg-[#1e3a34] prose-pre:rounded-xl prose-blockquote:border-[#1f644e] prose-a:text-[#1f644e] prose-li:text-[#1e3a34] prose-strong:text-[#1e3a34]">
+                <div className="prose prose-sm max-w-none prose-headings:font-bold prose-headings:text-[#1e3a34] prose-p:text-[#1e3a34] prose-p:leading-relaxed prose-code:bg-[#f0f5f2] prose-code:rounded prose-code:px-1 prose-code:text-[#1f644e] prose-pre:bg-[#1e3a34] prose-pre:rounded-xl prose-blockquote:border-[#1f644e] prose-a:text-[#1f644e] prose-li:text-[#1e3a34] prose-strong:text-[#1e3a34] prose-table:text-sm">
                   <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                     {currentSection.content}
                   </ReactMarkdown>
@@ -414,7 +466,7 @@ export default function CourseDetailPage({ params }) {
                   <p className="text-sm text-[#7c8e88] mb-3">This section has no content yet.</p>
                   <button
                     onClick={() => setEditingSection(currentSection)}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-[#1f644e] text-white rounded-xl text-xs font-bold mx-auto hover:bg-[#17503e] transition-colors"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#1f644e] text-white rounded-xl text-xs font-bold hover:bg-[#17503e] transition-colors"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                     Add Content
@@ -437,7 +489,7 @@ export default function CourseDetailPage({ params }) {
                         rel="noopener noreferrer"
                         className="flex items-center gap-3 p-3 bg-white border border-[#e5e3d8] rounded-xl hover:border-[#1f644e]/40 hover:bg-[#f0f5f2] transition-colors group"
                       >
-                        <span className="text-base">{RESOURCE_ICONS[r.type] || '🔗'}</span>
+                        <span className="text-base shrink-0">{RESOURCE_ICONS[r.type] || '🔗'}</span>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold text-[#1e3a34] truncate">
                             {r.title || r.url}
@@ -451,7 +503,7 @@ export default function CourseDetailPage({ params }) {
                 </div>
               )}
 
-              {/* Navigation */}
+              {/* Prev / Next navigation */}
               <div className="flex items-center justify-between mt-10 pt-6 border-t border-[#e5e3d8]">
                 {(() => {
                   const idx = sections.findIndex((s) => s._id === currentSection._id);
@@ -462,7 +514,7 @@ export default function CourseDetailPage({ params }) {
                       {prev ? (
                         <button
                           onClick={() => setActiveSection(prev._id)}
-                          className="flex items-center gap-2 text-sm font-bold text-[#7c8e88] hover:text-[#1f644e] transition-colors max-w-[40%] sm:max-w-xs"
+                          className="flex items-center gap-2 text-sm font-bold text-[#7c8e88] hover:text-[#1f644e] transition-colors max-w-[42%]"
                         >
                           <ArrowLeft className="w-4 h-4 shrink-0" />
                           <span className="truncate">{prev.title}</span>
@@ -473,14 +525,14 @@ export default function CourseDetailPage({ params }) {
                       {next ? (
                         <button
                           onClick={() => setActiveSection(next._id)}
-                          className="flex items-center gap-2 text-sm font-bold text-[#7c8e88] hover:text-[#1f644e] transition-colors max-w-[40%] sm:max-w-xs"
+                          className="flex items-center gap-2 text-sm font-bold text-[#7c8e88] hover:text-[#1f644e] transition-colors max-w-[42%]"
                         >
                           <span className="truncate">{next.title}</span>
                           <ChevronRight className="w-4 h-4 shrink-0" />
                         </button>
                       ) : (
                         <span className="text-xs font-bold text-[#1f644e] bg-[#f0f5f2] px-3 py-1.5 rounded-full">
-                          Course complete
+                          Course complete ✓
                         </span>
                       )}
                     </>
