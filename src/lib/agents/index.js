@@ -39,6 +39,7 @@ import TelegramAgent from './ai/telegram-agent';
 import WhatsAppAgent from './ai/whatsapp-agent';
 import AppBuilderAgent from './ai/app-builder-agent-v2';
 import FinanceAssistantAgent from './ai/finance-assistant-agent';
+import JournalyAssistantAgent from './ai/journaly-assistant-agent';
 
 // Register agent classes into the registry
 console.log('[agents/index.js] Registering agents...');
@@ -56,6 +57,7 @@ agentRegistry.register(AGENT_IDS.TELEGRAM_ASSISTANT, TelegramAgent);
 agentRegistry.register(AGENT_IDS.WHATSAPP_ASSISTANT, WhatsAppAgent);
 agentRegistry.register(AGENT_IDS.APP_BUILDER, AppBuilderAgent);
 agentRegistry.register(AGENT_IDS.FINANCE_ASSISTANT, FinanceAssistantAgent);
+agentRegistry.register(AGENT_IDS.JOURNALY_ASSISTANT, JournalyAssistantAgent);
 console.log('[agents/index.js] Agents registered successfully');
 
 export {
@@ -70,6 +72,7 @@ export {
   WhatsAppAgent,
   AppBuilderAgent,
   FinanceAssistantAgent,
+  JournalyAssistantAgent,
 };
 
 export default agentRegistry;
