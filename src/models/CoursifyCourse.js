@@ -1,5 +1,21 @@
 import mongoose from 'mongoose';
 
+const ResearchNoteSchema = new mongoose.Schema(
+  {
+    title: { type: String, default: '' },
+    summary: { type: String, default: '' },
+    sourceUrl: { type: String, default: '' },
+    sourceType: {
+      type: String,
+      enum: ['web', 'paper', 'book', 'video', 'other'],
+      default: 'other',
+    },
+    notes: { type: String, default: '' },
+    accessedAt: { type: Date, default: null },
+  },
+  { timestamps: true }
+);
+
 const CoursifyCourseSchema = new mongoose.Schema(
   {
     title: {
@@ -38,6 +54,20 @@ const CoursifyCourseSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    // ── Planning workspace ──────────────────────────────────────
+    targetAudience: { type: String, default: '' },
+    learningObjectives: { type: [String], default: [] },
+    prerequisites: { type: [String], default: [] },
+    outcome: { type: String, default: '' },
+    outline: { type: String, default: '' },
+    planningNotes: { type: String, default: '' },
+    researchNotes: { type: [ResearchNoteSchema], default: [] },
+    authoringStatus: {
+      type: String,
+      enum: ['idea', 'researching', 'planned', 'drafting', 'reviewing', 'ready', 'published'],
+      default: 'idea',
+    },
+    // ────────────────────────────────────────────────────────────
     deletedAt: {
       type: Date,
       default: null,

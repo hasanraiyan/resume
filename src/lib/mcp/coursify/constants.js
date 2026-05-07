@@ -20,18 +20,18 @@ export const DESTRUCTIVE_ANNOTATIONS = {
 export const COURSE_AUTHORING_GUIDE = {
   purpose: 'Help an AI assistant create complete, practical, high-quality courses in Coursify.',
   workflow: [
-    'Call list_courses first to avoid duplicate courses with the same topic.',
-    'Call get_course_authoring_guide before planning, drafting, or rewriting a course.',
-    'Research the topic before writing. Use any available search or browsing tool outside Coursify when the topic needs current, technical, or source-backed information.',
-    'Think through the learner profile, prerequisites, final outcome, difficulty, and scope before creating anything.',
-    'Create a compact course plan in the conversation first: course title, audience, outcome, section list, and section goals.',
-    'Call create_course only after the plan is clear. This creates the course shell as a draft.',
-    'Call add_section once per section. Write and save sections sequentially so each one can use the research, prior sections, and course plan.',
-    'Use update_section when revising a section after review or after finding better research.',
-    'Keep new courses as drafts unless the user explicitly asks you to publish.',
+    '1. Call list_courses first to avoid duplicate topics. Decide whether to create a new course or update a draft.',
+    '2. Call get_course_authoring_guide before planning, drafting, or rewriting any course.',
+    '3. Research the topic thoroughly. Use any external search or browsing tool available. Gather sources, key ideas, and learning goals before writing anything.',
+    '4. Call save_course_plan to persist your thinking: target audience, learning objectives, prerequisites, expected outcome, a free-form outline, and the intended modules. Set authoringStatus to "planned".',
+    '5. Call create_module once for each planned module in the outline, in order. Provide clear titles and learning goals.',
+    '6. Call add_section once per section, specifying the moduleId so it is grouped correctly. Write full Markdown content following the section template. Change authoringStatus to "drafting" at this point.',
+    '7. Call get_course_progress at any time to check completeness — see which sections are still planned, which modules are incomplete, and what the recommended next action is.',
+    '8. Call publish_course only after the user explicitly asks to publish or confirms the content is complete.',
   ],
   courseShape: {
     recommendedSections: '6-10 sections for a practical course; 3-5 for a short primer.',
+    recommendedModules: '2-4 modules that group sections into logical learning phases.',
     sectionContent:
       'Each section should be self-contained Markdown with clear explanations, examples, practice tasks, and a recap.',
     resources:
@@ -57,6 +57,15 @@ Call out likely misunderstandings and how to avoid them.
 
 ## Recap
 Summarize the section in a few crisp bullets.`,
+  authoringStatusGuide: {
+    idea: 'Initial spark — course not yet researched or planned.',
+    researching: 'Actively gathering sources and understanding the topic.',
+    planned: 'Course plan saved: audience, objectives, modules, and outline are defined.',
+    drafting: 'Sections are being written one by one.',
+    reviewing: 'Draft complete — reviewing content quality and completeness.',
+    ready: 'Content is complete and ready for publication.',
+    published: 'Course is published and visible.',
+  },
   qualityBar: [
     'Write for the requested audience and difficulty, not a generic reader.',
     'Make the course actionable: include projects, checkpoints, or exercises.',

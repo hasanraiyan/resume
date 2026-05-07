@@ -31,6 +31,23 @@ export function normalizeCourse(course) {
     tags: course.tags || [],
     thumbnail: course.thumbnail || null,
     sectionCount: course.sectionCount ?? 0,
+    // Planning fields
+    targetAudience: course.targetAudience || '',
+    learningObjectives: course.learningObjectives || [],
+    prerequisites: course.prerequisites || [],
+    outcome: course.outcome || '',
+    outline: course.outline || '',
+    planningNotes: course.planningNotes || '',
+    researchNotes: (course.researchNotes || []).map((n) => ({
+      id: n._id?.toString?.() || n.id,
+      title: n.title || '',
+      summary: n.summary || '',
+      sourceUrl: n.sourceUrl || '',
+      sourceType: n.sourceType || 'other',
+      notes: n.notes || '',
+      accessedAt: n.accessedAt || null,
+    })),
+    authoringStatus: course.authoringStatus || 'idea',
     createdAt: course.createdAt,
     updatedAt: course.updatedAt,
   };
@@ -40,11 +57,31 @@ export function normalizeSection(section) {
   return {
     id: section._id?.toString?.() || section.id,
     courseId: section.courseId?.toString?.() || section.courseId,
+    moduleId: section.moduleId?.toString?.() || null,
     title: section.title,
     content: section.content || '',
+    summary: section.summary || '',
+    learningGoals: section.learningGoals || [],
+    estimatedDuration: section.estimatedDuration || '',
     order: section.order ?? 0,
+    status: section.status || 'draft',
     resources: section.resources || [],
     createdAt: section.createdAt,
     updatedAt: section.updatedAt,
+  };
+}
+
+export function normalizeModule(mod) {
+  return {
+    id: mod._id?.toString?.() || mod.id,
+    courseId: mod.courseId?.toString?.() || mod.courseId,
+    title: mod.title,
+    summary: mod.summary || '',
+    learningGoals: mod.learningGoals || [],
+    order: mod.order ?? 0,
+    status: mod.status || 'planned',
+    sectionCount: mod.sectionCount ?? 0,
+    createdAt: mod.createdAt,
+    updatedAt: mod.updatedAt,
   };
 }

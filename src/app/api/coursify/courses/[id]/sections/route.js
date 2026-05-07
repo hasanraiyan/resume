@@ -18,7 +18,16 @@ export async function POST(request, { params }) {
       return NextResponse.json({ success: false, error: 'Course not found' }, { status: 404 });
     }
 
-    const { title, content, resources } = body;
+    const {
+      title,
+      content,
+      resources,
+      moduleId,
+      status,
+      summary,
+      learningGoals,
+      estimatedDuration,
+    } = body;
     if (!title?.trim()) {
       return NextResponse.json({ success: false, error: 'Title is required' }, { status: 400 });
     }
@@ -35,11 +44,21 @@ export async function POST(request, { params }) {
       content: content || '',
       order,
       resources: Array.isArray(resources) ? resources : [],
+      moduleId: moduleId || null,
+      status: status || 'draft',
+      summary: summary || '',
+      learningGoals: Array.isArray(learningGoals) ? learningGoals : [],
+      estimatedDuration: estimatedDuration || '',
     });
 
     return NextResponse.json({
       success: true,
-      section: { ...section.toObject(), _id: section._id.toString(), courseId: id },
+      section: {
+        ...section.toObject(),
+        _id: section._id.toString(),
+        courseId: id,
+        moduleId: section.moduleId?.toString() || null,
+      },
     });
   } catch (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

@@ -2,13 +2,21 @@ import { z } from 'zod';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
 import CoursifySection from '@/models/CoursifySection';
+import CoursifyModule from '@/models/CoursifyModule';
 import {
   COURSE_AUTHORING_GUIDE,
   READ_ONLY_ANNOTATIONS,
   MUTATION_ANNOTATIONS,
   DESTRUCTIVE_ANNOTATIONS,
 } from './constants.js';
-import { textResult, errorResult, toolMeta, normalizeCourse, normalizeSection } from './utils.js';
+import {
+  textResult,
+  errorResult,
+  toolMeta,
+  normalizeCourse,
+  normalizeSection,
+  normalizeModule,
+} from './utils.js';
 import { generateCourseThumbnail } from '@/lib/coursify/thumbnailGen.js';
 
 const resourceSchema = z.object({
@@ -275,12 +283,18 @@ export function registerCoursifyTools(server) {
         ).lean();
 
         if (!course) return errorResult('Course not found.');
-        await CoursifySection.updateMany(
-          { courseId: id, deletedAt: null },
-          { $set: { deletedAt }, $inc: { syncVersion: 1 } }
-        );
+        await Promise.all([
+          CoursifySection.updateMany(
+            { courseId: id, deletedAt: null },
+            { $set: { deletedAt }, $inc: { syncVersion: 1 } }
+          ),
+          CoursifyModule.updateMany(
+            { courseId: id, deletedAt: null },
+            { $set: { deletedAt }, $inc: { syncVersion: 1 } }
+          ),
+        ]);
 
-        return textResult(`Deleted course "${course.title}" and all its sections.`, {
+        return textResult(`Deleted course "${course.title}" and all its sections and modules.`, {
           success: true,
           deletedId: id,
         });
@@ -295,7 +309,7 @@ export function registerCoursifyTools(server) {
     {
       title: 'Add Section',
       description:
-        'Use this once per planned course section after research and outlining. Write full Markdown content that follows the authoring guide: learning goals, explanation, walkthrough, examples, practice, common mistakes, and recap.',
+        'Use this once per planned course section after research and outlining. Specify the moduleId to group it correctly. Write full Markdown content that follows the authoring guide: learning goals, explanation, walkthrough, examples, practice, common mistakes, and recap.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         courseId: z.string().describe('MongoDB _id of the course to add this section to'),
@@ -305,23 +319,26 @@ export function registerCoursifyTools(server) {
           .describe(
             'Full section content in Markdown. Include headers, bullet points, code blocks, and examples. Aim for comprehensive coverage of the topic.'
           ),
+        moduleId: z
+          .string()
+          .optional()
+          .describe(
+            'MongoDB _id of the module this section belongs to. Strongly recommended after calling create_module.'
+          ),
         order: z
           .number()
           .int()
           .optional()
-          .describe(
-            'Zero-based position in the course. If omitted, the section is appended at the end.'
-          ),
-        resources: z
-          .array(resourceSchema)
+          .describe('Zero-based position. If omitted, appended at the end.'),
+        status: z
+          .enum(['planned', 'draft', 'needs_review', 'complete'])
           .optional()
-          .describe(
-            'Optional list of supplementary resources (YouTube videos, docs, articles) relevant to this section.'
-          ),
+          .describe('Section authoring status. Defaults to "draft".'),
+        resources: z.array(resourceSchema).optional().describe('Optional supplementary resources.'),
       },
       _meta: toolMeta('Adding section...', 'Section added.'),
     },
-    async ({ courseId, title, content, order, resources }) => {
+    async ({ courseId, title, content, order, resources, moduleId, status }) => {
       try {
         await dbConnect();
         const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
@@ -338,6 +355,8 @@ export function registerCoursifyTools(server) {
           content: content || '',
           order: resolvedOrder,
           resources: resources || [],
+          moduleId: moduleId || null,
+          status: status || 'draft',
         });
         await CoursifyCourse.updateOne(
           { _id: courseId, deletedAt: null },
@@ -464,6 +483,330 @@ export function registerCoursifyTools(server) {
         return textResult(`Reordered ${sectionIds.length} sections.`, { success: true });
       } catch (err) {
         return errorResult(`Error reordering sections: ${err.message}`);
+      }
+    }
+  );
+
+  // ── Planning tools ────────────────────────────────────────────
+
+  server.registerTool(
+    'save_course_plan',
+    {
+      title: 'Save Course Plan',
+      description:
+        'Save the course planning workspace: target audience, learning objectives, prerequisites, outcome, outline (Markdown), planning notes, and authoringStatus. Call this after research and before creating modules or sections.',
+      annotations: MUTATION_ANNOTATIONS,
+      inputSchema: {
+        courseId: z.string().describe('MongoDB _id of the course'),
+        targetAudience: z.string().optional(),
+        learningObjectives: z.array(z.string()).optional(),
+        prerequisites: z.array(z.string()).optional(),
+        outcome: z.string().optional(),
+        outline: z
+          .string()
+          .optional()
+          .describe('Free-form Markdown outline of planned modules and sections'),
+        planningNotes: z.string().optional(),
+        authoringStatus: z
+          .enum(['idea', 'researching', 'planned', 'drafting', 'reviewing', 'ready'])
+          .optional(),
+      },
+      _meta: toolMeta('Saving course plan...', 'Course plan saved.'),
+    },
+    async ({ courseId, ...patch }) => {
+      try {
+        await dbConnect();
+        const clean = Object.fromEntries(
+          Object.entries(patch).filter(([, v]) => v !== undefined && v !== null)
+        );
+        const course = await CoursifyCourse.findOneAndUpdate(
+          { _id: courseId, deletedAt: null },
+          { $set: clean, $inc: { syncVersion: 1 } },
+          { new: true }
+        ).lean();
+        if (!course) return errorResult('Course not found.');
+        return textResult(`Course plan saved for "${course.title}".`, {
+          success: true,
+          course: normalizeCourse(course),
+        });
+      } catch (err) {
+        return errorResult(`Error saving plan: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
+    'add_research_note',
+    {
+      title: 'Add Research Note',
+      description:
+        'Persist a research finding, source note, or key takeaway for a course. Call during the research phase to build context that survives across sessions.',
+      annotations: MUTATION_ANNOTATIONS,
+      inputSchema: {
+        courseId: z.string().describe('MongoDB _id of the course'),
+        title: z.string().describe('Short title for this research note'),
+        summary: z.string().describe('Key takeaway or finding'),
+        sourceUrl: z.string().optional(),
+        sourceType: z.enum(['web', 'paper', 'book', 'video', 'other']).optional(),
+        notes: z.string().optional().describe('Detailed notes or quotes from the source'),
+      },
+      _meta: toolMeta('Saving research note...', 'Research note saved.'),
+    },
+    async ({ courseId, title, summary, sourceUrl, sourceType, notes }) => {
+      try {
+        await dbConnect();
+        const note = {
+          title: title.trim(),
+          summary: summary.trim(),
+          sourceUrl: sourceUrl || '',
+          sourceType: sourceType || 'other',
+          notes: notes || '',
+        };
+        const course = await CoursifyCourse.findOneAndUpdate(
+          { _id: courseId, deletedAt: null },
+          { $push: { researchNotes: note }, $inc: { syncVersion: 1 } },
+          { new: true }
+        ).lean();
+        if (!course) return errorResult('Course not found.');
+        const saved = course.researchNotes[course.researchNotes.length - 1];
+        return textResult(`Research note "${saved.title}" saved.`, {
+          success: true,
+          note: { id: saved._id?.toString(), ...saved },
+        });
+      } catch (err) {
+        return errorResult(`Error saving research note: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
+    'list_course_modules',
+    {
+      title: 'List Course Modules',
+      description:
+        'List all modules for a course with their section progress. Use to review the course structure and identify incomplete modules or sections before publishing.',
+      annotations: READ_ONLY_ANNOTATIONS,
+      inputSchema: {
+        courseId: z.string().describe('MongoDB _id of the course'),
+      },
+      _meta: toolMeta('Loading modules...', 'Modules loaded.'),
+    },
+    async ({ courseId }) => {
+      try {
+        await dbConnect();
+        const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
+        if (!course) return errorResult('Course not found.');
+
+        const modules = await CoursifyModule.find({ courseId, deletedAt: null })
+          .sort({ order: 1 })
+          .lean();
+
+        const sections = await CoursifySection.find({ courseId, deletedAt: null })
+          .select('moduleId title status order')
+          .sort({ order: 1 })
+          .lean();
+
+        const sectionsByModule = {};
+        const unassigned = [];
+        for (const s of sections) {
+          const mid = s.moduleId?.toString();
+          if (mid) {
+            if (!sectionsByModule[mid]) sectionsByModule[mid] = [];
+            sectionsByModule[mid].push({ id: s._id.toString(), title: s.title, status: s.status });
+          } else {
+            unassigned.push({ id: s._id.toString(), title: s.title, status: s.status });
+          }
+        }
+
+        const result = modules.map((m) => ({
+          ...normalizeModule({
+            ...m,
+            sectionCount: (sectionsByModule[m._id.toString()] || []).length,
+          }),
+          sections: sectionsByModule[m._id.toString()] || [],
+        }));
+
+        return textResult(
+          `Course "${course.title}" has ${modules.length} modules and ${sections.length} sections.`,
+          {
+            kind: 'course_modules',
+            modules: result,
+            uncategorizedSections: unassigned,
+            authoringStatus: course.authoringStatus || 'idea',
+          }
+        );
+      } catch (err) {
+        return errorResult(`Error listing modules: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
+    'create_module',
+    {
+      title: 'Create Module',
+      description:
+        'Create a module under a course. Call once per planned module after saving the course plan. Then add sections to each module using add_section with the moduleId.',
+      annotations: MUTATION_ANNOTATIONS,
+      inputSchema: {
+        courseId: z.string().describe('MongoDB _id of the course'),
+        title: z.string().describe('Module title, e.g. "Fundamentals" or "Advanced Patterns"'),
+        summary: z.string().optional(),
+        learningGoals: z.array(z.string()).optional(),
+        order: z.number().int().optional(),
+      },
+      _meta: toolMeta('Creating module...', 'Module created.'),
+    },
+    async ({ courseId, title, summary, learningGoals, order }) => {
+      try {
+        await dbConnect();
+        const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
+        if (!course) return errorResult('Course not found.');
+
+        let resolvedOrder = order;
+        if (resolvedOrder === undefined) {
+          const last = await CoursifyModule.findOne({ courseId, deletedAt: null })
+            .sort({ order: -1 })
+            .lean();
+          resolvedOrder = last ? last.order + 1 : 0;
+        }
+
+        const module = await CoursifyModule.create({
+          courseId,
+          title: title.trim(),
+          summary: summary || '',
+          learningGoals: learningGoals || [],
+          order: resolvedOrder,
+        });
+        await CoursifyCourse.updateOne(
+          { _id: courseId, deletedAt: null },
+          { $inc: { syncVersion: 1 } }
+        );
+
+        return textResult(`Created module "${module.title}" (id: ${module._id}).`, {
+          success: true,
+          module: normalizeModule(module.toObject()),
+        });
+      } catch (err) {
+        return errorResult(`Error creating module: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
+    'update_module',
+    {
+      title: 'Update Module',
+      description: 'Revise a module title, summary, learning goals, order, or status.',
+      annotations: MUTATION_ANNOTATIONS,
+      inputSchema: {
+        id: z.string().describe('MongoDB _id of the module'),
+        title: z.string().optional(),
+        summary: z.string().optional(),
+        learningGoals: z.array(z.string()).optional(),
+        order: z.number().int().optional(),
+        status: z.enum(['planned', 'drafting', 'complete', 'needs_review']).optional(),
+      },
+      _meta: toolMeta('Updating module...', 'Module updated.'),
+    },
+    async ({ id, ...patch }) => {
+      try {
+        await dbConnect();
+        const clean = Object.fromEntries(
+          Object.entries(patch).filter(([, v]) => v !== undefined && v !== null)
+        );
+        const module = await CoursifyModule.findOneAndUpdate(
+          { _id: id, deletedAt: null },
+          { $set: clean, $inc: { syncVersion: 1 } },
+          { new: true }
+        ).lean();
+        if (!module) return errorResult('Module not found.');
+        await CoursifyCourse.updateOne(
+          { _id: module.courseId, deletedAt: null },
+          { $inc: { syncVersion: 1 } }
+        );
+        return textResult(`Updated module "${module.title}".`, {
+          success: true,
+          module: normalizeModule(module),
+        });
+      } catch (err) {
+        return errorResult(`Error updating module: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
+    'get_course_progress',
+    {
+      title: 'Get Course Progress',
+      description:
+        'Return a summary of course plan completeness, module statuses, section statuses, and a recommended next action. Use to review what is left before publishing.',
+      annotations: READ_ONLY_ANNOTATIONS,
+      inputSchema: {
+        courseId: z.string().describe('MongoDB _id of the course'),
+      },
+      _meta: toolMeta('Checking progress...', 'Progress report ready.'),
+    },
+    async ({ courseId }) => {
+      try {
+        await dbConnect();
+        const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
+        if (!course) return errorResult('Course not found.');
+
+        const [modules, sections] = await Promise.all([
+          CoursifyModule.find({ courseId, deletedAt: null }).sort({ order: 1 }).lean(),
+          CoursifySection.find({ courseId, deletedAt: null })
+            .select('moduleId title status order')
+            .sort({ order: 1 })
+            .lean(),
+        ]);
+
+        const planFields = {
+          targetAudience: !!course.targetAudience,
+          learningObjectives: (course.learningObjectives || []).length > 0,
+          prerequisites: (course.prerequisites || []).length > 0,
+          outcome: !!course.outcome,
+          outline: !!course.outline,
+        };
+        const planComplete = Object.values(planFields).filter(Boolean).length;
+
+        const sectionsByStatus = sections.reduce((acc, s) => {
+          acc[s.status] = (acc[s.status] || 0) + 1;
+          return acc;
+        }, {});
+        const unassigned = sections.filter((s) => !s.moduleId).length;
+        const incompleteSections = sections.filter((s) => s.status !== 'complete').length;
+        const incompleteModules = modules.filter((m) => m.status !== 'complete').length;
+
+        let nextAction = 'No action needed.';
+        if (planComplete < 3)
+          nextAction =
+            'Call save_course_plan to define the target audience, objectives, and outline.';
+        else if (modules.length === 0)
+          nextAction = 'Call create_module to set up the course structure.';
+        else if (incompleteSections > 0)
+          nextAction = `Write the remaining ${incompleteSections} section(s) with add_section.`;
+        else if (incompleteModules > 0)
+          nextAction = 'Update module statuses to "complete" using update_module.';
+        else nextAction = 'Course looks complete. Call publish_course when the user is ready.';
+
+        return textResult(
+          `Progress for "${course.title}": ${planComplete}/5 plan fields, ${modules.length} modules, ${sections.length} sections.`,
+          {
+            kind: 'course_progress',
+            authoringStatus: course.authoringStatus || 'idea',
+            planCompleteness: { filled: planComplete, total: 5, fields: planFields },
+            researchNotesCount: (course.researchNotes || []).length,
+            moduleCount: modules.length,
+            sectionCount: sections.length,
+            sectionsByStatus,
+            unassignedSections: unassigned,
+            incompleteModules,
+            nextAction,
+          }
+        );
+      } catch (err) {
+        return errorResult(`Error getting progress: ${err.message}`);
       }
     }
   );

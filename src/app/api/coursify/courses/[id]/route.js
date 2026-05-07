@@ -2,6 +2,7 @@ import { requireAdminAuth } from '@/lib/money-auth';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
+import CoursifyModule from '@/models/CoursifyModule';
 import CoursifySection from '@/models/CoursifySection';
 
 export async function GET(request, { params }) {
@@ -17,17 +18,20 @@ export async function GET(request, { params }) {
       return NextResponse.json({ success: false, error: 'Course not found' }, { status: 404 });
     }
 
-    const sections = await CoursifySection.find({ courseId: id, deletedAt: null })
-      .sort({ order: 1 })
-      .lean();
+    const [modules, sections] = await Promise.all([
+      CoursifyModule.find({ courseId: id, deletedAt: null }).sort({ order: 1 }).lean(),
+      CoursifySection.find({ courseId: id, deletedAt: null }).sort({ order: 1 }).lean(),
+    ]);
 
     return NextResponse.json({
       success: true,
       course: { ...course, _id: course._id.toString() },
+      modules: modules.map((m) => ({ ...m, _id: m._id.toString(), courseId: id })),
       sections: sections.map((s) => ({
         ...s,
         _id: s._id.toString(),
         courseId: s.courseId.toString(),
+        moduleId: s.moduleId?.toString() || null,
       })),
     });
   } catch (error) {
@@ -52,6 +56,14 @@ export async function PATCH(request, { params }) {
       'tags',
       'thumbnail',
       'status',
+      // Planning fields
+      'targetAudience',
+      'learningObjectives',
+      'prerequisites',
+      'outcome',
+      'outline',
+      'planningNotes',
+      'authoringStatus',
     ];
     const patch = {};
     for (const key of allowed) {
@@ -91,10 +103,11 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ success: false, error: 'Course not found' }, { status: 404 });
     }
 
-    await CoursifySection.updateMany(
-      { courseId: id, deletedAt: null },
-      { $set: { deletedAt: new Date() } }
-    );
+    const deletedAt = new Date();
+    await Promise.all([
+      CoursifySection.updateMany({ courseId: id, deletedAt: null }, { $set: { deletedAt } }),
+      CoursifyModule.updateMany({ courseId: id, deletedAt: null }, { $set: { deletedAt } }),
+    ]);
 
     return NextResponse.json({ success: true });
   } catch (error) {

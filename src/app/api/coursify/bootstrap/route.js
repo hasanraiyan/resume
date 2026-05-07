@@ -31,6 +31,7 @@ export async function GET(request) {
       ...c,
       _id: c._id.toString(),
       sectionCount: sectionCountMap[c._id.toString()] || 0,
+      authoringStatus: c.authoringStatus || 'idea',
     }));
 
     return NextResponse.json({ success: true, courses: result });
