@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "cloudinary-docs": {
+      "source": "cloudinary-devs/skills",
+      "sourceType": "github",
+      "skillPath": "skills/cloudinary-docs/SKILL.md",
+      "computedHash": "fcefa1f8d62c2064c0a0efad756c27226e52ead67f6033523e894719a338316d"
+    },
+    "cloudinary-react": {
+      "source": "cloudinary-devs/skills",
+      "sourceType": "github",
+      "skillPath": "skills/cloudinary-react/SKILL.md",
+      "computedHash": "b46727e81c9159c44a2071b5d9c631ce219064d779ca5324279a43faf1734d52"
+    },
+    "cloudinary-transformations": {
+      "source": "cloudinary-devs/skills",
+      "sourceType": "github",
+      "skillPath": "skills/cloudinary-transformations/SKILL.md",
+      "computedHash": "749900b16bf25b34d6bc0f4d5a4b07671182183c70dedd3d9044b04fdf08bd10"
+    }
+  }
+}
