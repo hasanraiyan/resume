@@ -94,9 +94,35 @@ export const COURSE_AUTHORING_GUIDE = {
     'apply_suggested_modules was called to create all modules in one shot',
     'Each module has a clear title and 1-3 learning goals',
     'Total planned sections: 6-10 for a full course, 3-5 for a primer',
+    'Every module ends with a standalone quiz (sectionType: quiz)',
     'At least 3 research findings saved via research_findings or add_research_note',
     'agentNotes saved with the planned section list so the session can be resumed',
   ],
+  instructionalDesignGuide: {
+    quizPlacement: [
+      'Standalone Quiz: Every module MUST end with a "Module Review" or "Knowledge Check" quiz. This covers all concepts in that module.',
+      'Embedded Quiz: Lessons with complex technical concepts or many "Core Concepts" SHOULD include 2-4 knowledge-check questions at the end of the lesson.',
+      'Frequency: Aim for 1 standalone quiz per module and 1-2 embedded quizzes per module.',
+    ],
+    sectionDepth: [
+      'A standard lesson should be 500-1200 words of high-signal Markdown.',
+      'Every lesson must include at least one practical Example and one Practice task.',
+      'Complexity: Start with "Concept" sections and move toward "Application" or "Step-by-Step" sections within a module.',
+    ],
+  },
+  sectionWritingTips: {
+    learningGoals: 'Use action verbs (Create, Build, Explain, Analyze). Avoid "Understand".',
+    coreConcepts:
+      'Explain "Why" before "How". Use Mermaid diagrams for all architecture, flows, or hierarchies.',
+    stepByStep:
+      'Keep each step focused. Use code blocks for all terminal commands or code snippets.',
+    examples: 'Use realistic, production-ready scenarios. Avoid "foo/bar" examples.',
+    practice:
+      'Provide a challenge that requires applying the core concept. Include a "Success Criteria" list.',
+    commonMistakes:
+      'Address specific errors identified during research or common developer pitfalls.',
+    recap: 'Summarize the key takeaways in 3-5 punchy bullet points.',
+  },
   diagramGuide: {
     rule: 'Use Mermaid diagrams instead of ASCII art for all visual diagrams.',
     renderer:
