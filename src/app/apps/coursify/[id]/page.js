@@ -1081,9 +1081,11 @@ export default function CourseDetailPage({ params }) {
                 <>
                   {/* Section header */}
                   <div className="flex items-start justify-between gap-4 mb-6">
-                    <h2 className="text-xl lg:text-2xl font-bold text-[#1e3a34] leading-snug min-w-0">
-                      {currentSection.title}
-                    </h2>
+                    {editMode && (
+                      <h2 className="text-xl lg:text-2xl font-bold text-[#1e3a34] leading-snug min-w-0">
+                        {currentSection.title}
+                      </h2>
+                    )}
                     {editMode && (
                       <div className="flex items-center gap-1 shrink-0">
                         <button
