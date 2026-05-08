@@ -4,6 +4,7 @@ import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
 import CoursifyModule from '@/models/CoursifyModule';
 import CoursifySection from '@/models/CoursifySection';
+import { generateUniqueSlug } from '@/lib/coursify/slugify';
 
 export async function GET(request, { params }) {
   const auth = await requireAdminAuth(request);
@@ -68,6 +69,10 @@ export async function PATCH(request, { params }) {
     const patch = {};
     for (const key of allowed) {
       if (body[key] !== undefined) patch[key] = body[key];
+    }
+
+    if (patch.title) {
+      patch.slug = await generateUniqueSlug(patch.title, id);
     }
 
     const course = await CoursifyCourse.findOneAndUpdate(

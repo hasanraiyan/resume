@@ -18,6 +18,7 @@ import {
   normalizeModule,
 } from './utils.js';
 import { generateCourseThumbnail } from '@/lib/coursify/thumbnailGen.js';
+import { generateUniqueSlug } from '@/lib/coursify/slugify.js';
 
 const resourceSchema = z.object({
   type: z.enum(['video', 'article', 'doc', 'other']),
@@ -176,8 +177,10 @@ export function registerCoursifyTools(server) {
     async ({ title, description, difficulty, estimatedDuration, tags }) => {
       try {
         await dbConnect();
+        const slug = await generateUniqueSlug(title.trim());
         const course = await CoursifyCourse.create({
           title: title.trim(),
+          slug,
           description: description?.trim() || '',
           difficulty: difficulty || 'beginner',
           estimatedDuration: estimatedDuration || '',
@@ -217,9 +220,13 @@ export function registerCoursifyTools(server) {
     async ({ id, ...patch }) => {
       try {
         await dbConnect();
+        const clean = cleanPatch(patch);
+        if (clean.title) {
+          clean.slug = await generateUniqueSlug(clean.title, id);
+        }
         const course = await CoursifyCourse.findOneAndUpdate(
           { _id: id, deletedAt: null },
-          { $set: cleanPatch(patch), $inc: { syncVersion: 1 } },
+          { $set: clean, $inc: { syncVersion: 1 } },
           { new: true }
         ).lean();
 

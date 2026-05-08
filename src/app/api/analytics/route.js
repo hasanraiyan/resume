@@ -104,7 +104,27 @@ import { isBot, hashIP } from '@/utils/analytics-helpers';
  */
 export async function POST(request) {
   try {
-    const body = await request.json();
+    // Check if the request has a body
+    const contentType = request.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid content type' },
+        { status: 400 }
+      );
+    }
+
+    const text = await request.text();
+    if (!text) {
+      return NextResponse.json({ success: false, message: 'Empty request body' }, { status: 400 });
+    }
+
+    let body;
+    try {
+      body = JSON.parse(text);
+    } catch (e) {
+      return NextResponse.json({ success: false, message: 'Invalid JSON' }, { status: 400 });
+    }
+
     // Handle both single event objects and arrays of events
     const events = Array.isArray(body) ? body : [body];
 

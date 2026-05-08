@@ -1,0 +1,61 @@
+import { NextResponse } from 'next/server';
+import dbConnect from '@/lib/dbConnect';
+import CoursifyCourse from '@/models/CoursifyCourse';
+import CoursifySection from '@/models/CoursifySection';
+import { generateUniqueSlug } from '@/lib/coursify/slugify';
+
+export async function GET() {
+  try {
+    await dbConnect();
+
+    const courses = await CoursifyCourse.find({ status: 'published', deletedAt: null })
+      .select(
+        'title slug description difficulty estimatedDuration tags thumbnail createdAt updatedAt'
+      )
+      .sort({ updatedAt: -1 })
+      .lean();
+
+    // Lazy-generate slugs for any courses that predate the slug field
+    const needsSlugs = courses.filter((c) => !c.slug);
+    if (needsSlugs.length > 0) {
+      await Promise.all(
+        needsSlugs.map(async (c) => {
+          const slug = await generateUniqueSlug(c.title, c._id);
+          if (slug) {
+            await CoursifyCourse.updateOne({ _id: c._id }, { $set: { slug } });
+            c.slug = slug;
+          }
+        })
+      );
+    }
+
+    const courseIds = courses.map((c) => c._id);
+    const sections = await CoursifySection.find({ courseId: { $in: courseIds }, deletedAt: null })
+      .select('courseId')
+      .lean();
+
+    const countMap = {};
+    for (const s of sections) {
+      const id = s.courseId.toString();
+      countMap[id] = (countMap[id] || 0) + 1;
+    }
+
+    const result = courses.map((c) => ({
+      _id: c._id.toString(),
+      slug: c.slug || c._id.toString(),
+      title: c.title,
+      description: c.description || '',
+      difficulty: c.difficulty || 'beginner',
+      estimatedDuration: c.estimatedDuration || '',
+      tags: c.tags || [],
+      thumbnail: c.thumbnail || null,
+      sectionCount: countMap[c._id.toString()] || 0,
+      createdAt: c.createdAt,
+      updatedAt: c.updatedAt,
+    }));
+
+    return NextResponse.json({ success: true, courses: result });
+  } catch (error) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}

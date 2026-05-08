@@ -23,6 +23,7 @@ export function toolMeta(invoking, invoked) {
 export function normalizeCourse(course) {
   return {
     id: course._id?.toString?.() || course.id,
+    slug: course.slug || null,
     title: course.title,
     description: course.description || '',
     status: course.status || 'draft',

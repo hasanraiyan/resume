@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
 import { generateCourseThumbnail } from '@/lib/coursify/thumbnailGen';
+import { generateUniqueSlug } from '@/lib/coursify/slugify';
 
 export async function POST(request) {
   const auth = await requireAdminAuth(request);
@@ -17,8 +18,11 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: 'Title is required' }, { status: 400 });
     }
 
+    const slug = await generateUniqueSlug(title.trim());
+
     const course = await CoursifyCourse.create({
       title: title.trim(),
+      slug,
       description: description?.trim() || '',
       difficulty: difficulty || 'beginner',
       estimatedDuration: estimatedDuration || '',
