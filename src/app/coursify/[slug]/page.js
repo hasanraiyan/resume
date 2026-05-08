@@ -92,6 +92,22 @@ export default function PublicCourseReaderPage({ params }) {
     fetchCourse();
   }, [fetchCourse]);
 
+  // Expose current section context to ChatbotWidget via window global
+  useEffect(() => {
+    if (!activeSection || !sections.length) return;
+    const section = sections.find((s) => s._id === activeSection);
+    if (section) {
+      window.__coursifyCtx = {
+        sectionId: section._id,
+        sectionTitle: section.title,
+        sectionSummary: section.summary || '',
+      };
+    }
+    return () => {
+      delete window.__coursifyCtx;
+    };
+  }, [activeSection, sections]);
+
   if (isLoading) {
     return (
       <div

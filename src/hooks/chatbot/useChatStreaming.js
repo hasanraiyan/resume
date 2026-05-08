@@ -51,7 +51,7 @@ function getToolMetadata(toolName, content) {
   }
 }
 
-export function useChatStreaming() {
+export function useChatStreaming({ endpoint = '/api/chat', getExtraBody } = {}) {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
@@ -89,7 +89,8 @@ export function useChatStreaming() {
 
     console.log('[useChatStreaming] Final chatHistory to send:', chatHistory);
 
-    const response = await fetch('/api/chat', {
+    const extraBody = typeof getExtraBody === 'function' ? getExtraBody() : {};
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -99,6 +100,7 @@ export function useChatStreaming() {
         path: window.location.pathname,
         activeMCPs: activeMCPs,
         agentId: selectedAgentId,
+        ...extraBody,
       }),
     });
 

@@ -16,7 +16,6 @@ import { ToolNode } from '@langchain/langgraph/prebuilt';
 import { MongoDBSaver } from '@langchain/langgraph-checkpoint-mongodb';
 import mongoose from 'mongoose';
 import {
-  AIMessageChunk,
   HumanMessage,
   SystemMessage,
   AIMessage,
@@ -35,11 +34,6 @@ const StateAnnotation = Annotation.Root({
     default: () => '',
   }),
 });
-
-// Filter out AIMessageChunk messages - they don't have .role and cause trimMessages to fail
-function sanitizeMessages(messages) {
-  return messages.filter((msg) => !(msg instanceof AIMessageChunk));
-}
 
 function getThreadStateApp(checkpointer) {
   return new StateGraph(StateAnnotation)

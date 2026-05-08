@@ -12,18 +12,7 @@ import ChatLog from '@/models/ChatLog';
 import { getBackendMCPConfig } from '@/lib/mcpConfig';
 import { MultiServerMCPClient } from '@langchain/mcp-adapters';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
-import {
-  AIMessageChunk,
-  HumanMessage,
-  SystemMessage,
-  AIMessage,
-  ToolMessage,
-} from '@langchain/core/messages';
-
-// Filter out AIMessageChunk messages - they don't have .role and cause trimMessages to fail
-function sanitizeMessages(messages) {
-  return messages.filter((msg) => !(msg instanceof AIMessageChunk));
-}
+import { HumanMessage, SystemMessage, AIMessage, ToolMessage } from '@langchain/core/messages';
 
 class WhatsAppAgent extends BaseAgent {
   constructor(agentId = AGENT_IDS.WHATSAPP_ASSISTANT, config = {}) {
@@ -144,12 +133,9 @@ class WhatsAppAgent extends BaseAgent {
         `Tools passed to AI: ${finalTools.length}, Names: [${finalTools.map((t) => t.name).join(', ')}]`
       );
 
-      const safeMessageModifier = async (msgs) => sanitizeMessages(msgs);
-
       const agent = createReactAgent({
         llm: llm,
         tools: finalTools,
-        messageModifier: safeMessageModifier,
       });
 
       const eventStream = await agent.streamEvents({ messages }, { version: 'v2' });

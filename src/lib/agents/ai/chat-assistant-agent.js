@@ -23,18 +23,12 @@ import {
 import { MultiServerMCPClient } from '@langchain/mcp-adapters';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import {
-  trimMessages,
   AIMessage,
   AIMessageChunk,
   HumanMessage,
   SystemMessage,
   ToolMessage,
 } from '@langchain/core/messages';
-
-// Filter out AIMessageChunk messages - they don't have .role and cause trimMessages to fail
-function sanitizeMessages(messages) {
-  return messages.filter((msg) => !(msg instanceof AIMessageChunk));
-}
 
 // System message builder moved to a static or instance method if preferred,
 // but keeping it as a standalone function for now.
@@ -230,14 +224,9 @@ class ChatAgent extends BaseAgent {
       // Disable tools if provider requires it
       const finalTools = this.config.provider?.supportsTools !== false ? allTools : [];
 
-      const safeMessageModifier = async (msgs) => {
-        return sanitizeMessages(msgs);
-      };
-
       const agent = createReactAgent({
         llm: llm,
         tools: finalTools,
-        messageModifier: safeMessageModifier,
       });
 
       const eventStream = await agent.streamEvents({ messages }, { version: 'v2' });

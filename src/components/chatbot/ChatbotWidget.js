@@ -43,22 +43,44 @@ export default function ChatbotWidget() {
     setInputMessage,
     inputRef
   );
-  const { messages, setMessages, isLoading, statusMessage, send } = useChatStreaming();
+  const isCoursifyPath = pathname.startsWith('/coursify/');
+
+  const { messages, setMessages, isLoading, statusMessage, send } = useChatStreaming(
+    isCoursifyPath
+      ? {
+          endpoint: '/api/coursify/chat',
+          getExtraBody: () => {
+            const ctx = typeof window !== 'undefined' ? window.__coursifyCtx : null;
+            const slugMatch = window.location.pathname.match(/^\/coursify\/([^/]+)/);
+            return {
+              courseSlug: slugMatch?.[1] || '',
+              currentSectionId: ctx?.sectionId || '',
+              currentSectionTitle: ctx?.sectionTitle || '',
+              currentSectionSummary: ctx?.sectionSummary || '',
+            };
+          },
+        }
+      : undefined
+  );
 
   // Initialization side effects
   useEffect(() => {
-    if (chatbotSettings?.isActive && messages.length === 0) {
+    const isReady = isCoursifyPath || chatbotSettings?.isActive;
+    if (isReady && messages.length === 0) {
+      const welcomeMessage = isCoursifyPath
+        ? "Hi! I'm your learning assistant for this course. Ask me to explain any concept, summarize a section, or help you understand the material better."
+        : chatbotSettings.welcomeMessage || 'Hello! How can I help you today?';
       setMessages([
         {
           id: 1,
           role: 'assistant',
-          content: chatbotSettings.welcomeMessage || 'Hello! How can I help you today?',
+          content: welcomeMessage,
           steps: [],
           timestamp: new Date(),
         },
       ]);
     }
-  }, [chatbotSettings, messages.length, setMessages]);
+  }, [chatbotSettings, messages.length, setMessages, isCoursifyPath]);
 
   useEffect(() => {
     async function loadMCPs() {
@@ -138,11 +160,14 @@ export default function ChatbotWidget() {
   };
 
   const clearChat = () => {
+    const welcomeMessage = isCoursifyPath
+      ? "Hi! I'm your learning assistant for this course. Ask me to explain any concept, summarize a section, or help you understand the material better."
+      : chatbotSettings?.welcomeMessage || 'Hello! How can I help you today?';
     setMessages([
       {
         id: 1,
         role: 'assistant',
-        content: chatbotSettings?.welcomeMessage || 'Hello! How can I help you today?',
+        content: welcomeMessage,
         steps: [],
         timestamp: new Date(),
       },
@@ -210,11 +235,19 @@ export default function ChatbotWidget() {
     setTimeout(() => inputRef.current?.focus(), 150);
   }, [selection.text, isOpen, settingsFetched, fetchSettings, setActiveQuote, setSelection]);
 
-  const suggestedPrompts = (chatbotSettings?.suggestedPrompts || []).map((t) => ({ text: t }));
+  const suggestedPrompts = isCoursifyPath
+    ? [
+        { text: 'Explain the current section' },
+        { text: 'Summarize this course' },
+        { text: 'What should I learn next?' },
+      ]
+    : (chatbotSettings?.suggestedPrompts || []).map((t) => ({ text: t }));
 
   if (pathname.startsWith('/pocketly') || pathname.startsWith('/apps')) {
     return null;
   }
+
+  const isCoursify = pathname.startsWith('/coursify');
 
   // 1. FAB (closed state)
   if (!isOpen) {
@@ -229,13 +262,14 @@ export default function ChatbotWidget() {
           handleOpenChat={handleOpenChat}
           chatbotSettings={chatbotSettings}
           settingsFetched={settingsFetched}
+          isCoursify={isCoursify}
         />
       </>
     );
   }
 
-  // 2. Offline state
-  if (settingsFetched && (!chatbotSettings || !chatbotSettings.isActive)) {
+  // 2. Offline state (Coursify has its own agent, not dependent on chatbot settings)
+  if (!isCoursify && settingsFetched && (!chatbotSettings || !chatbotSettings.isActive)) {
     return (
       <>
         <ContextualAIButton
@@ -257,12 +291,15 @@ export default function ChatbotWidget() {
         chatbotSettings={chatbotSettings}
       />
       <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 animate-in slide-in-from-bottom-4 duration-300 chatbot-widget-container">
-        <div className="bg-white/95 backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl w-[calc(100vw-2rem)] sm:w-96 h-[80vh] max-h-[800px] sm:h-[40rem] flex flex-col border border-white/20 shadow-black/10">
+        <div
+          className={`backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl w-[calc(100vw-2rem)] sm:w-96 h-[80vh] max-h-[800px] sm:h-[40rem] flex flex-col ${isCoursify ? 'bg-[#fcfbf5]/95 border border-[#e5e3d8]' : 'bg-white/95 border border-white/20 shadow-black/10'}`}
+        >
           <ChatHeader
             chatbotSettings={chatbotSettings}
             settingsFetched={settingsFetched}
             clearChat={clearChat}
             setIsOpen={setIsOpen}
+            isCoursify={isCoursify}
           />
 
           <MessageList
@@ -271,11 +308,14 @@ export default function ChatbotWidget() {
             messagesEndRef={messagesEndRef}
             handleUIInteract={handleUIInteract}
             handleLinkClick={handleLinkClick}
+            theme={isCoursify ? 'green' : 'default'}
           />
 
           {/* Suggested prompts / Active Quote */}
           {!isLoading && (
-            <div className="border-t border-neutral-200/50 bg-white/80 backdrop-blur-sm">
+            <div
+              className={`border-t backdrop-blur-sm ${isCoursify ? 'border-[#e5e3d8] bg-[#fcfbf5]/80' : 'border-neutral-200/50 bg-white/80'}`}
+            >
               {activeQuote ? (
                 <div className="px-3 sm:px-4 py-3 bg-neutral-50 animate-in slide-in-from-bottom-2 duration-300">
                   <div className="flex items-start gap-2 group">
@@ -301,7 +341,7 @@ export default function ChatbotWidget() {
                       <button
                         key={index}
                         onClick={() => handlePromptClick(prompt.text)}
-                        className="px-3 py-1.5 bg-white hover:bg-neutral-100 border border-neutral-200/80 rounded-full text-xs text-neutral-700 font-medium whitespace-nowrap flex-shrink-0 transition-colors duration-200"
+                        className={`px-3 py-1.5 border rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 transition-colors duration-200 ${isCoursify ? 'bg-[#f0f5f2] hover:bg-[#e5e3d8] border-[#e5e3d8] text-[#1e3a34]' : 'bg-white hover:bg-neutral-100 border-neutral-200/80 text-neutral-700'}`}
                       >
                         {prompt.text}
                       </button>
@@ -331,8 +371,9 @@ export default function ChatbotWidget() {
             chatbotSettings={chatbotSettings}
             selectedAgentId={selectedAgentId}
             setSelectedAgentId={setSelectedAgentId}
-            showModelSelector
-            showToolsMenu
+            showModelSelector={!isCoursify}
+            showToolsMenu={!isCoursify}
+            theme={isCoursify ? 'green' : 'default'}
           />
         </div>
       </div>
