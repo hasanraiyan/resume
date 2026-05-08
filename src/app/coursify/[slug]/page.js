@@ -458,7 +458,7 @@ export default function PublicCourseReaderPage({ params }) {
                   <div>
                     {/* Thumbnail */}
                     {course.thumbnail && (
-                      <div className="w-full h-52 rounded-2xl overflow-hidden mb-8 border border-[#e5e3d8] shadow-sm">
+                      <div className="w-full aspect-video rounded-2xl overflow-hidden mb-8 border border-[#e5e3d8] shadow-sm">
                         <img
                           src={course.thumbnail}
                           alt={course.title}
@@ -543,15 +543,17 @@ export default function PublicCourseReaderPage({ params }) {
                                     <p className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88] mb-1 px-2">
                                       {modIdx + 1}. {mod.title}
                                     </p>
-                                    {modSections.map((section) => (
-                                      <button
-                                        key={section._id}
-                                        onClick={() => navigateTo(section._id)}
-                                        className="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-[#1e3a34] hover:bg-[#f0f5f2] transition-colors flex items-center gap-2"
-                                      >
-                                        {section.title}
-                                      </button>
-                                    ))}
+                                    <div className="ml-4 space-y-0.5">
+                                      {modSections.map((section) => (
+                                        <button
+                                          key={section._id}
+                                          onClick={() => navigateTo(section._id)}
+                                          className="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-[#1e3a34] hover:bg-[#f0f5f2] transition-colors flex items-center gap-2"
+                                        >
+                                          {section.title}
+                                        </button>
+                                      ))}
+                                    </div>
                                   </div>
                                 );
                               })}
@@ -560,17 +562,19 @@ export default function PublicCourseReaderPage({ params }) {
                                   <p className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88] mb-1 px-2">
                                     More
                                   </p>
-                                  {sections
-                                    .filter((s) => !s.moduleId)
-                                    .map((section) => (
-                                      <button
-                                        key={section._id}
-                                        onClick={() => navigateTo(section._id)}
-                                        className="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-[#1e3a34] hover:bg-[#f0f5f2] transition-colors flex items-center gap-2"
-                                      >
-                                        {section.title}
-                                      </button>
-                                    ))}
+                                  <div className="ml-4 space-y-0.5">
+                                    {sections
+                                      .filter((s) => !s.moduleId)
+                                      .map((section) => (
+                                        <button
+                                          key={section._id}
+                                          onClick={() => navigateTo(section._id)}
+                                          className="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-[#1e3a34] hover:bg-[#f0f5f2] transition-colors flex items-center gap-2"
+                                        >
+                                          {section.title}
+                                        </button>
+                                      ))}
+                                  </div>
                                 </div>
                               )}
                             </>
