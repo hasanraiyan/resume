@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Pacifico, Nunito } from 'next/font/google';
-import { BookOpen, Clock, Layers, ChevronRight, Search, X } from 'lucide-react';
+import { BookOpen, ChevronRight, Search, X, Clock, Tag } from 'lucide-react';
 
 const pacifico = Pacifico({
   weight: '400',
@@ -25,13 +25,15 @@ const DIFFICULTY_COLORS = {
   advanced: 'bg-red-100 text-red-700',
 };
 
-const DIFFICULTY_FILTERS = ['all', 'beginner', 'intermediate', 'advanced'];
-
-function filterCourses(courses, query, difficulty) {
+function filterCourses(courses, query, difficulty, activeTag) {
   let result = courses;
 
   if (difficulty !== 'all') {
     result = result.filter((c) => c.difficulty === difficulty);
+  }
+
+  if (activeTag) {
+    result = result.filter((c) => c.tags?.includes(activeTag));
   }
 
   const q = query.trim().toLowerCase();
@@ -68,10 +70,24 @@ function CourseCard({ course }) {
             <BookOpen className="w-10 h-10 text-white/40" />
           </div>
         )}
+        {/* Module count - top right */}
+        <div className="absolute top-3 right-3">
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/40 text-white backdrop-blur-sm">
+            {count} {count === 1 ? 'module' : 'modules'}
+          </span>
+        </div>
+        {/* Difficulty badge - bottom left */}
+        <div className="absolute bottom-3 left-3">
+          <span
+            className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize backdrop-blur-sm ${DIFFICULTY_COLORS[course.difficulty] || DIFFICULTY_COLORS.beginner}`}
+          >
+            {course.difficulty}
+          </span>
+        </div>
       </div>
 
       {/* Body */}
-      <div className="p-4 flex flex-col flex-1 gap-2.5">
+      <div className="p-4 flex flex-col flex-1 gap-2">
         {/* Title */}
         <h2 className="font-bold text-[#1e3a34] text-sm leading-snug group-hover:text-[#1f644e] transition-colors line-clamp-2">
           {course.title}
@@ -79,32 +95,13 @@ function CourseCard({ course }) {
 
         {/* Description */}
         {course.description && (
-          <p className="text-xs text-[#7c8e88] leading-relaxed line-clamp-2 flex-1">
+          <p className="text-xs text-[#7c8e88] leading-relaxed line-clamp-2">
             {course.description}
           </p>
         )}
 
-        {/* Meta: difficulty + duration + sections */}
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          <span
-            className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${DIFFICULTY_COLORS[course.difficulty] || DIFFICULTY_COLORS.beginner}`}
-          >
-            {course.difficulty}
-          </span>
-          {course.estimatedDuration && (
-            <span className="flex items-center gap-1 text-[10px] font-bold text-[#7c8e88]">
-              <Clock className="w-3 h-3" />
-              {course.estimatedDuration}
-            </span>
-          )}
-          <span className="flex items-center gap-1 text-[10px] font-bold text-[#7c8e88]">
-            <Layers className="w-3 h-3" />
-            {count} {count === 1 ? 'section' : 'sections'}
-          </span>
-        </div>
-
         {/* CTA */}
-        <div className="flex items-center justify-end pt-3 mt-1 border-t border-[#f0f5f2]">
+        <div className="flex items-center justify-end pt-2 mt-auto border-t border-[#f0f5f2]">
           <span className="flex items-center gap-1 text-xs font-bold text-[#1f644e] group-hover:gap-2 group-hover:underline transition-all cursor-pointer">
             Start learning <ChevronRight className="w-3.5 h-3.5" />
           </span>
@@ -118,8 +115,8 @@ export default function CoursifyPublicPage() {
   const [courses, setCourses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [query, setQuery] = useState('');
-  const [activeQuery, setActiveQuery] = useState('');
   const [difficulty, setDifficulty] = useState('all');
+  const [activeTag, setActiveTag] = useState(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -131,28 +128,31 @@ export default function CoursifyPublicPage() {
       .finally(() => setIsLoading(false));
   }, []);
 
-  const handleSearch = () => setActiveQuery(query);
-
   const handleClear = () => {
     setQuery('');
-    setActiveQuery('');
     inputRef.current?.focus();
   };
 
   const handleResetAll = () => {
     setQuery('');
-    setActiveQuery('');
     setDifficulty('all');
+    setActiveTag(null);
   };
 
-  const visible = filterCourses(courses, activeQuery, difficulty);
-  const isFiltered = activeQuery.trim().length > 0 || difficulty !== 'all';
-
-  // Per-difficulty counts for the filter chips
-  const countByDifficulty = courses.reduce((acc, c) => {
-    acc[c.difficulty] = (acc[c.difficulty] || 0) + 1;
+  // Extract top tags from all courses
+  const tagCount = courses.reduce((acc, c) => {
+    c.tags?.forEach((t) => {
+      acc[t] = (acc[t] || 0) + 1;
+    });
     return acc;
   }, {});
+  const topTags = Object.entries(tagCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([tag]) => tag);
+
+  const filtered = filterCourses(courses, query, difficulty, activeTag);
+  const isFiltered = query.trim().length > 0 || difficulty !== 'all' || activeTag !== null;
 
   return (
     <div
@@ -175,23 +175,21 @@ export default function CoursifyPublicPage() {
 
       <main className="max-w-5xl mx-auto px-4 lg:px-8 py-10">
         {/* Hero */}
-        <div className="mb-8">
-          <h1 className="text-3xl lg:text-4xl font-extrabold text-[#1e3a34] mb-3 leading-tight">
+        <div className="mb-8 relative">
+          {/* Decorative gradient blob */}
+          <div className="absolute -top-8 -right-16 w-64 h-64 bg-[#1f644e]/5 rounded-full blur-3xl pointer-events-none" />
+
+          <h1 className="text-3xl lg:text-4xl font-extrabold text-[#1e3a34] mb-3 leading-tight relative">
             Learn something new today
           </h1>
-          <p className="text-[#7c8e88] text-base mb-7 max-w-xl">
+          <p className="text-[#7c8e88] text-base mb-6 max-w-xl">
             Explore free courses built with care. Read at your own pace, no account required.
           </p>
 
-          {/* Search bar */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSearch();
-            }}
-            className="flex items-center gap-2 max-w-xl mb-4"
-          >
-            <div className="flex-1 flex items-center gap-2 bg-white border border-[#e5e3d8] rounded-xl px-3 py-2.5 focus-within:border-[#1f644e] transition-colors">
+          {/* Search + filters row */}
+          <div className="flex flex-wrap items-center gap-2 max-w-2xl mb-3">
+            {/* Search */}
+            <div className="flex-1 min-w-[200px] flex items-center gap-2 bg-white border border-[#e5e3d8] rounded-xl px-3 py-2.5 focus-within:border-[#1f644e] transition-colors">
               <Search className="w-4 h-4 text-[#7c8e88] shrink-0" />
               <input
                 ref={inputRef}
@@ -211,44 +209,24 @@ export default function CoursifyPublicPage() {
                 </button>
               )}
             </div>
-            <button
-              type="submit"
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-[#1f644e] text-white text-sm font-bold rounded-xl hover:bg-[#17503e] transition-colors shrink-0"
-            >
-              <Search className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Search</span>
-            </button>
-          </form>
 
-          {/* Difficulty filter chips */}
-          {!isLoading && courses.length > 0 && (
-            <div className="flex items-center gap-2 flex-wrap">
-              {DIFFICULTY_FILTERS.map((d) => {
-                const count = d === 'all' ? courses.length : countByDifficulty[d] || 0;
-                const active = difficulty === d;
-                return (
-                  <button
-                    key={d}
-                    onClick={() => setDifficulty(d)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold capitalize transition-colors ${
-                      active
-                        ? 'bg-[#1f644e] text-white'
-                        : 'bg-white border border-[#e5e3d8] text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e]'
-                    }`}
-                  >
-                    {d === 'all' ? 'All levels' : d}
-                    <span
-                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                        active ? 'bg-white/20 text-white' : 'bg-[#f0f5f2] text-[#7c8e88]'
-                      }`}
-                    >
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+            {/* Difficulty dropdown */}
+            {!isLoading && courses.length > 0 && (
+              <select
+                value={difficulty}
+                onChange={(e) => {
+                  setDifficulty(e.target.value);
+                  setActiveTag(null);
+                }}
+                className="text-xs font-bold px-3 py-2.5 border border-[#e5e3d8] rounded-xl bg-white text-[#7c8e88] focus:outline-none focus:border-[#1f644e] capitalize cursor-pointer shrink-0"
+              >
+                <option value="all">All levels</option>
+                <option value="beginner">Beginner</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="advanced">Advanced</option>
+              </select>
+            )}
+          </div>
         </div>
 
         {isLoading ? (
@@ -277,7 +255,7 @@ export default function CoursifyPublicPage() {
               Check back soon — courses will appear here once they&apos;re published.
             </p>
           </div>
-        ) : visible.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="h-16 w-16 bg-[#f0f5f2] rounded-2xl flex items-center justify-center mb-4">
               <Search className="w-8 h-8 text-[#7c8e88]" />
@@ -297,11 +275,11 @@ export default function CoursifyPublicPage() {
           <>
             <p className="text-xs text-[#7c8e88] mb-5 font-bold uppercase tracking-wider">
               {isFiltered
-                ? `${visible.length} of ${courses.length} course${courses.length !== 1 ? 's' : ''}`
+                ? `${filtered.length} of ${courses.length} course${courses.length !== 1 ? 's' : ''}`
                 : `${courses.length} course${courses.length !== 1 ? 's' : ''} available`}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {visible.map((course) => (
+              {filtered.map((course) => (
                 <CourseCard key={course._id} course={course} />
               ))}
             </div>

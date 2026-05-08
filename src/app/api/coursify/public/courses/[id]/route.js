@@ -17,14 +17,14 @@ export async function GET(request, { params }) {
     // Try slug first, fall back to _id for backward compat
     let course = await CoursifyCourse.findOne({ slug: id, status: 'published', deletedAt: null })
       .select(
-        'title slug description difficulty estimatedDuration tags thumbnail createdAt updatedAt'
+        'title slug description difficulty estimatedDuration tags thumbnail learningObjectives prerequisites targetAudience createdAt updatedAt'
       )
       .lean();
 
     if (!course && isObjectId(id)) {
       course = await CoursifyCourse.findOne({ _id: id, status: 'published', deletedAt: null })
         .select(
-          'title slug description difficulty estimatedDuration tags thumbnail createdAt updatedAt'
+          'title slug description difficulty estimatedDuration tags thumbnail learningObjectives prerequisites targetAudience createdAt updatedAt'
         )
         .lean();
     }

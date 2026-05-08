@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Pacifico, Nunito } from 'next/font/google';
@@ -61,13 +61,15 @@ function CoursifyApp() {
   const { isLoading, courses, refresh } = useCoursify();
   const [showCreate, setShowCreate] = useState(false);
   const [query, setQuery] = useState('');
+  const [activeQuery, setActiveQuery] = useState('');
   const [difficulty, setDifficulty] = useState('all');
   const [statusTab, setStatusTab] = useState('all');
   const [page, setPage] = useState(1);
+  const inputRef = useRef(null);
 
   const filtered = useMemo(
-    () => filterCourses(courses, query, difficulty, statusTab),
-    [courses, query, difficulty, statusTab]
+    () => filterCourses(courses, activeQuery, difficulty, statusTab),
+    [courses, activeQuery, difficulty, statusTab]
   );
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
@@ -79,10 +81,35 @@ function CoursifyApp() {
     setPage(1);
   };
 
-  const isFiltered = query.trim().length > 0 || difficulty !== 'all' || statusTab !== 'all';
+  const handleSearch = () => {
+    setActiveQuery(query);
+    setPage(1);
+  };
+
+  const handleClear = () => {
+    setQuery('');
+    setActiveQuery('');
+    inputRef?.current?.focus();
+  };
+
+  const handleResetAll = () => {
+    setQuery('');
+    setActiveQuery('');
+    setDifficulty('all');
+    setStatusTab('all');
+    setPage(1);
+  };
+
+  const isFiltered = activeQuery.trim().length > 0 || difficulty !== 'all' || statusTab !== 'all';
 
   const publishedCount = courses.filter((c) => c.status === 'published').length;
   const draftCount = courses.filter((c) => c.status === 'draft').length;
+
+  // Per-difficulty counts for the filter chips
+  const countByDifficulty = courses.reduce((acc, c) => {
+    acc[c.difficulty] = (acc[c.difficulty] || 0) + 1;
+    return acc;
+  }, {});
 
   if (status === 'loading') return null;
   if (status === 'unauthenticated' || session?.user?.role !== 'admin') {
@@ -167,82 +194,107 @@ function CoursifyApp() {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Search + filter bar */}
-            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-              {/* Search */}
-              <div className="flex-1 flex items-center gap-2 bg-white border border-[#e5e3d8] rounded-xl px-3 py-2 focus-within:border-[#1f644e] transition-colors max-w-sm">
+            {/* Search bar */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSearch();
+              }}
+              className="flex flex-col sm:flex-row gap-2 max-w-xl"
+            >
+              <div className="flex-1 flex items-center gap-2 bg-white border border-[#e5e3d8] rounded-xl px-3 py-2.5 focus-within:border-[#1f644e] transition-colors">
                 <Search className="w-4 h-4 text-[#7c8e88] shrink-0" />
                 <input
+                  ref={inputRef}
                   type="text"
                   value={query}
-                  onChange={(e) => handleFilterChange(setQuery)(e.target.value)}
+                  onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search by title, topic, or tag…"
                   className="flex-1 text-sm text-[#1e3a34] bg-transparent outline-none placeholder:text-[#b0bfbb]"
                 />
                 {query && (
                   <button
                     type="button"
-                    onClick={() => handleFilterChange(setQuery)('')}
+                    onClick={handleClear}
                     className="p-0.5 rounded-md text-[#7c8e88] hover:text-[#1e3a34] transition-colors"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
+              <button
+                type="submit"
+                className="flex items-center gap-1.5 px-4 py-2.5 bg-[#1f644e] text-white text-sm font-bold rounded-xl hover:bg-[#17503e] transition-colors shrink-0"
+              >
+                <Search className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Search</span>
+              </button>
+            </form>
 
-              {/* Status + difficulty combined */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* Status tabs */}
-                {[
-                  { key: 'all', label: 'All', count: courses.length },
-                  { key: 'published', label: 'Published', count: publishedCount },
-                  { key: 'draft', label: 'Draft', count: draftCount },
-                ].map((tab) => (
-                  <button
-                    key={tab.key}
-                    onClick={() => handleFilterChange(setStatusTab)(tab.key)}
-                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+            {/* Filter chips: status + difficulty */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Status chips */}
+              {[
+                { key: 'all', label: 'All', count: courses.length },
+                { key: 'published', label: 'Published', count: publishedCount },
+                { key: 'draft', label: 'Draft', count: draftCount },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => handleFilterChange(setStatusTab)(tab.key)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${
+                    statusTab === tab.key
+                      ? 'bg-[#1f644e] text-white'
+                      : 'bg-white border border-[#e5e3d8] text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e]'
+                  }`}
+                >
+                  {tab.label}
+                  <span
+                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
                       statusTab === tab.key
+                        ? 'bg-white/20 text-white'
+                        : 'bg-[#f0f5f2] text-[#7c8e88]'
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
+                </button>
+              ))}
+
+              {/* Difficulty chips */}
+              {DIFFICULTY_FILTERS.map((d) => {
+                const count = d === 'all' ? courses.length : countByDifficulty[d] || 0;
+                const active = difficulty === d;
+                return (
+                  <button
+                    key={d}
+                    onClick={() => handleFilterChange(setDifficulty)(d)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold capitalize transition-colors ${
+                      active
                         ? 'bg-[#1f644e] text-white'
                         : 'bg-white border border-[#e5e3d8] text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e]'
                     }`}
                   >
-                    {tab.label}
+                    {d === 'all' ? 'All levels' : d}
                     <span
-                      className={`text-[10px] px-1 py-0.5 rounded ${
-                        statusTab === tab.key ? 'bg-white/20' : 'bg-[#f0f5f2]'
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                        active ? 'bg-white/20 text-white' : 'bg-[#f0f5f2] text-[#7c8e88]'
                       }`}
                     >
-                      {tab.count}
+                      {count}
                     </span>
                   </button>
-                ))}
+                );
+              })}
 
-                {/* Difficulty dropdown */}
-                <select
-                  value={difficulty}
-                  onChange={(e) => handleFilterChange(setDifficulty)(e.target.value)}
-                  className="text-xs font-bold px-2.5 py-1.5 border border-[#e5e3d8] rounded-lg bg-white text-[#7c8e88] focus:outline-none focus:border-[#1f644e] capitalize cursor-pointer"
+              {isFiltered && (
+                <button
+                  onClick={handleResetAll}
+                  className="text-xs font-bold text-[#1f644e] hover:underline"
                 >
-                  <option value="all">All levels</option>
-                  <option value="beginner">Beginner</option>
-                  <option value="intermediate">Intermediate</option>
-                  <option value="advanced">Advanced</option>
-                </select>
-
-                {isFiltered && (
-                  <button
-                    onClick={() => {
-                      setQuery('');
-                      setDifficulty('all');
-                      setStatusTab('all');
-                    }}
-                    className="text-xs font-bold text-[#1f644e] hover:underline"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
+                  Clear all
+                </button>
+              )}
             </div>
 
             {/* Course grid */}

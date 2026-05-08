@@ -19,6 +19,7 @@ import {
   X,
   ChevronRight,
   CheckCircle2,
+  Check,
   List,
 } from 'lucide-react';
 
@@ -65,6 +66,7 @@ export default function PublicCourseReaderPage({ params }) {
   const [sections, setSections] = useState([]);
   const [modules, setModules] = useState([]);
   const [activeSection, setActiveSection] = useState(null);
+  const [showOverview, setShowOverview] = useState(true);
   const [visited, setVisited] = useState(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -84,7 +86,6 @@ export default function PublicCourseReaderPage({ params }) {
         setCourse(data.course);
         setSections(data.sections);
         setModules(data.modules || []);
-        setActiveSection(data.sections[0]?._id || null);
       } else {
         setNotFound(true);
       }
@@ -207,7 +208,14 @@ export default function PublicCourseReaderPage({ params }) {
 
   const navigateTo = (sectionId) => {
     if (activeSection) setVisited((v) => new Set(v).add(activeSection));
+    setShowOverview(false);
     setActiveSection(sectionId);
+    setSidebarOpen(false);
+  };
+
+  const showOverviewPage = () => {
+    setShowOverview(true);
+    setActiveSection(null);
     setSidebarOpen(false);
   };
   const progressPct = sections.length > 0 ? ((currentIndex + 1) / sections.length) * 100 : 0;
@@ -250,12 +258,17 @@ export default function PublicCourseReaderPage({ params }) {
                 {course.estimatedDuration}
               </span>
             )}
-            {sections.length > 0 && (
+            {showOverview ? (
+              <span className="flex items-center gap-1 text-[10px] text-[#1f644e] font-bold">
+                <BookOpen className="w-3 h-3" />
+                Overview
+              </span>
+            ) : sections.length > 0 ? (
               <span className="flex items-center gap-1 text-[10px] text-[#7c8e88] font-bold">
                 <Layers className="w-3 h-3" />
                 {currentIndex + 1} / {sections.length}
               </span>
-            )}
+            ) : null}
           </div>
           <button
             onClick={() => setSidebarOpen((v) => !v)}
@@ -318,6 +331,18 @@ export default function PublicCourseReaderPage({ params }) {
 
           {/* Section list */}
           <div className="flex-1 overflow-y-auto p-2">
+            {/* Overview button */}
+            <button
+              onClick={showOverviewPage}
+              className={`w-full text-left px-3 py-2.5 rounded-xl mb-1 transition-colors flex items-center gap-2.5 ${
+                showOverview ? 'bg-[#1f644e] text-white' : 'text-[#1e3a34] hover:bg-[#f0f5f2]'
+              }`}
+            >
+              <BookOpen
+                className={`w-4 h-4 shrink-0 ${showOverview ? 'text-white' : 'text-[#7c8e88]'}`}
+              />
+              <span className="text-xs font-bold truncate">Overview</span>
+            </button>
             {modules.length > 0 ? (
               <>
                 {modules.map((mod) => {
@@ -388,18 +413,7 @@ export default function PublicCourseReaderPage({ params }) {
           <div className="flex min-h-0">
             {/* Article */}
             <article className="flex-1 max-w-3xl mx-auto px-4 lg:px-10 py-8" ref={contentRef}>
-              {/* Thumbnail */}
-              {course.thumbnail && (
-                <div className="w-full h-52 rounded-2xl overflow-hidden mb-8 border border-[#e5e3d8] shadow-sm">
-                  <img
-                    src={course.thumbnail}
-                    alt={course.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-
-              {!currentSection ? (
+              {!currentSection && !showOverview ? (
                 <div className="flex flex-col items-center justify-center py-24 text-center">
                   <div className="h-14 w-14 bg-[#f0f5f2] rounded-2xl flex items-center justify-center mb-4">
                     <BookOpen className="w-7 h-7 text-[#1f644e]" />
@@ -407,6 +421,163 @@ export default function PublicCourseReaderPage({ params }) {
                   <h3 className="font-bold text-[#1e3a34] mb-2">No sections yet</h3>
                   <p className="text-sm text-[#7c8e88]">Check back soon — content is on the way.</p>
                 </div>
+              ) : showOverview ? (
+                <>
+                  {/* Course Overview */}
+                  <div className="max-w-2xl mx-auto">
+                    {/* Thumbnail */}
+                    {course.thumbnail && (
+                      <div className="w-full h-52 rounded-2xl overflow-hidden mb-8 border border-[#e5e3d8] shadow-sm">
+                        <img
+                          src={course.thumbnail}
+                          alt={course.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+
+                    {/* Title + meta */}
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${DIFFICULTY_COLORS[course.difficulty] || DIFFICULTY_COLORS.beginner}`}
+                      >
+                        {course.difficulty}
+                      </span>
+                      {course.estimatedDuration && (
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-[#7c8e88]">
+                          <Clock className="w-3 h-3" />
+                          {course.estimatedDuration}
+                        </span>
+                      )}
+                      {sections.length > 0 && (
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-[#7c8e88]">
+                          <Layers className="w-3 h-3" />
+                          {sections.length} section{sections.length !== 1 ? 's' : ''}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Description */}
+                    {course.description && (
+                      <p className="text-base text-[#7c8e88] leading-relaxed mb-8">
+                        {course.description}
+                      </p>
+                    )}
+
+                    {/* What you'll learn */}
+                    {course.learningObjectives?.length > 0 && (
+                      <div className="mb-8">
+                        <h3 className="text-sm font-bold text-[#1e3a34] mb-3">
+                          What you&apos;ll learn
+                        </h3>
+                        <ul className="space-y-2">
+                          {course.learningObjectives.map((obj, i) => (
+                            <li key={i} className="flex items-start gap-2.5 text-sm text-[#1e3a34]">
+                              <Check className="w-4 h-4 text-[#1f644e] shrink-0 mt-0.5" />
+                              <span>{obj}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Prerequisites */}
+                    {course.prerequisites?.length > 0 && (
+                      <div className="mb-8">
+                        <h3 className="text-sm font-bold text-[#1e3a34] mb-3">Prerequisites</h3>
+                        <ul className="space-y-2">
+                          {course.prerequisites.map((pre, i) => (
+                            <li key={i} className="flex items-start gap-2.5 text-sm text-[#7c8e88]">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#e5e3d8] shrink-0 mt-1.5" />
+                              <span>{pre}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Section outline */}
+                    {sections.length > 0 && (
+                      <div className="mb-8">
+                        <h3 className="text-sm font-bold text-[#1e3a34] mb-3">
+                          {modules.length > 0 ? 'Course outline' : 'Sections'}
+                        </h3>
+                        <div className="space-y-1">
+                          {modules.length > 0 ? (
+                            <>
+                              {modules.map((mod) => {
+                                const modSections = sections.filter((s) => s.moduleId === mod._id);
+                                return (
+                                  <div key={mod._id} className="mb-3">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88] mb-1 px-2">
+                                      {mod.title}
+                                    </p>
+                                    {modSections.map((section) => (
+                                      <button
+                                        key={section._id}
+                                        onClick={() => navigateTo(section._id)}
+                                        className="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-[#1e3a34] hover:bg-[#f0f5f2] transition-colors flex items-center gap-2"
+                                      >
+                                        <span className="w-5 h-5 rounded bg-[#f0f5f2] text-[#7c8e88] flex items-center justify-center text-[10px] font-bold shrink-0">
+                                          {sections.indexOf(section) + 1}
+                                        </span>
+                                        {section.title}
+                                      </button>
+                                    ))}
+                                  </div>
+                                );
+                              })}
+                              {sections.filter((s) => !s.moduleId).length > 0 && (
+                                <div className="mb-3">
+                                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88] mb-1 px-2">
+                                    More
+                                  </p>
+                                  {sections
+                                    .filter((s) => !s.moduleId)
+                                    .map((section) => (
+                                      <button
+                                        key={section._id}
+                                        onClick={() => navigateTo(section._id)}
+                                        className="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-[#1e3a34] hover:bg-[#f0f5f2] transition-colors flex items-center gap-2"
+                                      >
+                                        <span className="w-5 h-5 rounded bg-[#f0f5f2] text-[#7c8e88] flex items-center justify-center text-[10px] font-bold shrink-0">
+                                          {sections.indexOf(section) + 1}
+                                        </span>
+                                        {section.title}
+                                      </button>
+                                    ))}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            sections.map((section, i) => (
+                              <button
+                                key={section._id}
+                                onClick={() => navigateTo(section._id)}
+                                className="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-[#1e3a34] hover:bg-[#f0f5f2] transition-colors flex items-center gap-2"
+                              >
+                                <span className="w-5 h-5 rounded bg-[#f0f5f2] text-[#7c8e88] flex items-center justify-center text-[10px] font-bold shrink-0">
+                                  {i + 1}
+                                </span>
+                                {section.title}
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Start Course button */}
+                    {sections.length > 0 && (
+                      <button
+                        onClick={() => navigateTo(sections[0]._id)}
+                        className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-[#1f644e] text-white rounded-xl text-sm font-bold hover:bg-[#17503e] transition-colors"
+                      >
+                        Start learning <ChevronRight className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </>
               ) : (
                 <>
                   {/* Markdown content */}
