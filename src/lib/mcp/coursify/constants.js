@@ -19,17 +19,64 @@ export const DESTRUCTIVE_ANNOTATIONS = {
 
 export const COURSE_AUTHORING_GUIDE = {
   purpose: 'Help an AI assistant create complete, practical, high-quality courses in Coursify.',
-  workflow: [
-    '1. DISCOVERY — Call list_courses first to avoid duplicate topics. Decide whether to create a new course or update an existing draft. If updating, call get_course to review current state.',
-    '2. PREP — Call get_course_authoring_guide (you already have it). Read the quality bar and section template before doing any work.',
-    '3. RESEARCH — Gather information about the topic using whatever tools you have available:\n   • If you have web search MCP tools: search for current docs, version numbers, real-world examples, and best practices. Call research_findings to batch-save all findings at once, or add_research_note for individual sources.\n   • If you do NOT have web search tools: use your built-in knowledge to research the topic. Still call research_findings to persist key findings — they survive context resets.\n   • Set authoringStatus to "researching" via save_course_plan while this is ongoing.',
-    '4. PLAN — Call save_course_plan to define the course structure: targetAudience, learningObjectives, prerequisites, outcome, and a free-form Markdown outline of planned modules and sections. The tool returns a completeness score and suggestions — address critical gaps. Set authoringStatus to "planned".',
-    '5. STRUCTURE — Call suggest_modules_from_outline to get a recommended module grouping from your saved outline. Review the suggestions, then call create_module once per module you want to keep, in order.',
-    '6. WRITE — Call add_section once per section, specifying the moduleId so it is grouped correctly. Write full Markdown content following the section template below. Set authoringStatus to "drafting" when you begin writing. For quiz or knowledge-check sections, see the quizGuide below.',
-    "7. REVIEW — Call get_course to see the full structure (modules + section metadata). Call get_section_content to read any section's full Markdown body when revising. Call get_course_progress to identify gaps.",
-    '8. FINALIZE — When all sections are written, set authoringStatus to "reviewing" via save_course_plan. Read each section with get_section_content, fix quality issues, then set to "ready" when satisfied.',
-    '9. PUBLISH — Call publish_course only after the user explicitly asks to publish or confirms the content is complete.',
+
+  sessionResumeWorkflow: [
+    'When the user asks to continue or resume a course in a NEW session (no courseId in context):',
+    '  1. Call list_courses(status: "draft") — results are sorted by updatedAt descending. The first result is almost always the active course.',
+    '  2. Confirm the course with the user if there are multiple plausible drafts.',
+    '  3. Call get_course_workspace(courseId) — single call that returns EVERYTHING: course metadata, planning fields, agentNotes, research notes, and all modules with full section content.',
+    '  4. Read agentNotes from the workspace — this is your scratchpad from the previous session. It tells you exactly what was in progress and what to do next.',
+    '  5. Read the progress summary to know which sections are complete vs. still needed.',
+    '  6. Resume writing from where you left off. Save your current working state to agentNotes via save_course_plan before finishing your turn.',
   ],
+
+  agentNotesGuide: [
+    'agentNotes is a free-text field on the course plan, returned inside get_course_workspace.',
+    'Use it as your scratchpad to survive session interruptions. At the end of each turn, save your current working state:',
+    '  • Which module you are currently writing',
+    '  • Which sections are done and which are planned next',
+    '  • Any decisions made about structure, scope, or content',
+    '  • Outstanding tasks for the next session',
+    'Example: "Completed sections: Intro, Core Concepts. Next: write Step-by-Step Walkthrough for moduleId abc123. Planned sections remaining: Examples, Practice, Recap."',
+    'Call save_course_plan({ courseId, agentNotes: "..." }) to persist this. It does not overwrite other plan fields unless you include them.',
+  ],
+
+  workflow: [
+    '0. SESSION RESUME — If the user says "continue my course" and you do not have a courseId in context, follow the sessionResumeWorkflow above before doing anything else.',
+    '1. DISCOVERY — Call list_courses first to avoid duplicate topics. Decide whether to create a new course or update an existing draft. If updating, call get_course_workspace to fully restore context in one call.',
+    '2. PREP — Call get_course_authoring_guide (you already have it). Read the quality bar and section template before doing any work.',
+    '3. RESEARCH — Gather information about the topic:\n   • If you have web search tools: search for current docs, version numbers, real-world examples, and best practices. Call research_findings to batch-save all findings at once (up to 20 per call), or add_research_note for a single source.\n   • If you do NOT have web search tools: use your built-in knowledge. Still call research_findings to persist key findings — they survive context resets and are returned by get_course_workspace.\n   • To re-read saved findings from a previous session, call get_research_notes(courseId).\n   • Set authoringStatus to "researching" via save_course_plan while this is ongoing.',
+    '4. PLAN — Call save_course_plan to define the course structure: targetAudience, learningObjectives, prerequisites, outcome, and a free-form Markdown outline. Save your planned section list to agentNotes so you can resume if interrupted. Set authoringStatus to "planned".',
+    '5. STRUCTURE — Call suggest_modules_from_outline to get a recommended module grouping. Review the suggestions. Then call apply_suggested_modules(courseId) to create ALL suggested modules in one call — do NOT call create_module individually unless you want custom overrides.',
+    '6. WRITE — Use add_sections(courseId, sections[]) to create multiple sections in one call, each with moduleId, title, content, and optional questions. This is preferred over calling add_section individually. Set authoringStatus to "drafting" when you begin. Save your progress to agentNotes after each batch. For quiz sections, see the quizGuide below.',
+    '7. REVIEW — Call get_module(moduleId) to inspect a specific module and its sections without fetching the whole course. Call get_section_content(sectionId) to read a single section body when revising. Call get_course_progress(courseId) to identify gaps and get a recommended next action.',
+    '8. FINALIZE — When all sections are written, set authoringStatus to "reviewing" via save_course_plan. Read each section with get_section_content, fix quality issues, then set to "ready".',
+    '9. PUBLISH — Call publish_course only after the user explicitly asks to publish or confirms content is complete.',
+  ],
+
+  toolQuickReference: {
+    readWorkspace:
+      'get_course_workspace(courseId) — full context in one call. Use at session start.',
+    readResearch: 'get_research_notes(courseId) — re-read all saved research findings.',
+    saveProgress: 'save_course_plan({ courseId, agentNotes }) — persist working state.',
+    createModules: 'apply_suggested_modules(courseId) — create all suggested modules in one call.',
+    createSections: 'add_sections(courseId, sections[]) — batch-create multiple sections at once.',
+    readModule:
+      'get_module(moduleId) — read one module and its sections without fetching the full course.',
+    readSection: 'get_section_content(sectionId) — read a single section body.',
+    reorderWithinModule:
+      'reorder_sections(courseId, sectionIds[], moduleId) — reorder sections inside one module.',
+    addResource:
+      'add_section_resource(sectionId, resource) — append a resource without touching content.',
+    bulkDelete:
+      'delete_sections(ids[]) or delete_modules(ids[]) — clean up multiple items at once.',
+    searchCourses: 'search_courses(query) — find courses by title, description, or tags.',
+    checkProgress:
+      'get_course_progress(courseId) — completeness summary and recommended next action.',
+    setQuiz:
+      'set_quiz_questions(sectionId, questions[]) — canonical tool for all quiz question management.',
+  },
+
   courseShape: {
     recommendedSections: '6-10 sections for a practical course; 3-5 for a short primer.',
     recommendedModules: '2-4 modules that group sections into logical learning phases.',
@@ -38,14 +85,17 @@ export const COURSE_AUTHORING_GUIDE = {
     resources:
       'Include only useful, relevant resources. Use docs and authoritative references when possible.',
     researchNotes:
-      'Use research_findings to batch-save multiple sources at once, or add_research_note for single findings. Notes are stored per-course and visible in the planning workspace. They survive context resets and let you resume research in a future session.',
+      'Use research_findings to batch-save multiple sources at once (max 20 per call), or add_research_note for a single finding. Notes are stored per-course. To re-read them in a new session, call get_research_notes(courseId). They are also included in get_course_workspace.',
   },
+
   planningChecklist: [
     'save_course_plan returned at least 4/5 completeness score',
     'suggest_modules_from_outline returned 2-4 logical module groupings',
+    'apply_suggested_modules was called to create all modules in one shot',
     'Each module has a clear title and 1-3 learning goals',
     'Total planned sections: 6-10 for a full course, 3-5 for a primer',
     'At least 3 research findings saved via research_findings or add_research_note',
+    'agentNotes saved with the planned section list so the session can be resumed',
   ],
   diagramGuide: {
     rule: 'Use Mermaid diagrams instead of ASCII art for all visual diagrams.',
@@ -115,7 +165,7 @@ Summarize the section in a few crisp bullets.`,
       'For standalone quiz sections, cover the whole module with 5-7 varied questions.',
     ],
     toolFlow:
-      'Use add_section with sectionType and questions to create a quiz section in one call. To add or update questions on an existing section, use set_quiz_questions (full replacement) or update_section with the questions field.',
+      'CANONICAL TOOL: Always use set_quiz_questions(sectionId, questions[]) to set or replace quiz questions — this is the single source of truth. Do NOT use the questions param on add_section or update_section; those are deprecated and may be removed. Workflow: create the section first with add_section (no questions), then immediately call set_quiz_questions with the full questions array.',
     correctAnswerFormats: {
       multiple_choice: 'number (0-based index of correct option)',
       true_false: '"true" or "false" (string)',
