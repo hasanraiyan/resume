@@ -2,7 +2,15 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useDrively } from '@/context/DrivelyContext';
-import { Upload, Plus, LayoutGrid, List as ListIcon, Loader2, Grid2X2, Grid3X3 } from 'lucide-react';
+import {
+  Upload,
+  Plus,
+  LayoutGrid,
+  List as ListIcon,
+  Loader2,
+  Grid2X2,
+  Grid3X3,
+} from 'lucide-react';
 import FileCard from './FileCard';
 import FolderCard from './FolderCard';
 import Breadcrumbs from './Breadcrumbs';

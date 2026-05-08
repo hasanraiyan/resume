@@ -25,5 +25,4 @@ const DrivelyShareSchema = new mongoose.Schema(
   }
 );
 
-export default mongoose.models.DrivelyShare ||
-  mongoose.model('DrivelyShare', DrivelyShareSchema);
+export default mongoose.models.DrivelyShare || mongoose.model('DrivelyShare', DrivelyShareSchema);

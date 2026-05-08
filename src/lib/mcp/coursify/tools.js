@@ -772,9 +772,7 @@ export function registerCoursifyTools(server) {
         questions: z
           .array(questionSchema)
           .optional()
-          .describe(
-            'DEPRECATED: Use set_quiz_questions instead. Quiz questions for this section.'
-          ),
+          .describe('DEPRECATED: Use set_quiz_questions instead. Quiz questions for this section.'),
         moduleId: z
           .string()
           .optional()
@@ -919,7 +917,10 @@ export function registerCoursifyTools(server) {
     async ({ courseId, sections }) => {
       try {
         const { sections: created } = await dbAddSections({ courseId, sections });
-        return textResult(`Added ${created.length} sections.`, { success: true, sections: created });
+        return textResult(`Added ${created.length} sections.`, {
+          success: true,
+          sections: created,
+        });
       } catch (err) {
         return errorResult(`Error adding sections: ${err.message}`);
       }

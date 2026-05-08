@@ -67,7 +67,9 @@ export default function FolderCard({ folder, viewMode }) {
         onDrop={handleDrop}
         onClick={() => setCurrentFolderId(folder._id)}
         className={`group flex items-center justify-between p-3 border rounded-xl transition-colors cursor-pointer ${
-          isSelected || isDragOver ? 'bg-[#f0f5f2] border-[#1f644e]' : 'bg-white border-[#e5e3d8] hover:border-[#1f644e]'
+          isSelected || isDragOver
+            ? 'bg-[#f0f5f2] border-[#1f644e]'
+            : 'bg-white border-[#e5e3d8] hover:border-[#1f644e]'
         } ${isDragOver ? 'ring-2 ring-[#1f644e] ring-inset' : ''}`}
       >
         <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -115,7 +117,9 @@ export default function FolderCard({ folder, viewMode }) {
       onDrop={handleDrop}
       onClick={() => setCurrentFolderId(folder._id)}
       className={`group p-4 border rounded-2xl transition-all hover:shadow-sm cursor-pointer relative ${
-        isSelected || isDragOver ? 'bg-[#f0f5f2] border-[#1f644e]' : 'bg-white border-[#e5e3d8] hover:border-[#1f644e]'
+        isSelected || isDragOver
+          ? 'bg-[#f0f5f2] border-[#1f644e]'
+          : 'bg-white border-[#e5e3d8] hover:border-[#1f644e]'
       } ${isDragOver ? 'ring-2 ring-[#1f644e] ring-inset' : ''}`}
     >
       <div

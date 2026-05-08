@@ -89,25 +89,25 @@ export default function SearchResults({ results, query, onClear }) {
         </button>
       </div>
 
-    <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-      <div className="flex-shrink-0 flex items-center gap-2 text-[#7c8e88] mr-2">
-        <Filter className="w-4 h-4" />
-        <span className="text-xs font-bold uppercase tracking-wider">Filters</span>
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        <div className="flex-shrink-0 flex items-center gap-2 text-[#7c8e88] mr-2">
+          <Filter className="w-4 h-4" />
+          <span className="text-xs font-bold uppercase tracking-wider">Filters</span>
+        </div>
+        {categories.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setFilter(cat)}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
+              filter === cat
+                ? 'bg-[#1f644e] text-white shadow-sm'
+                : 'bg-white border border-[#e5e3d8] text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e]'
+            }`}
+          >
+            {cat}
+          </button>
+        ))}
       </div>
-      {categories.map((cat) => (
-        <button
-          key={cat}
-          onClick={() => setFilter(cat)}
-          className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
-            filter === cat
-              ? 'bg-[#1f644e] text-white shadow-sm'
-              : 'bg-white border border-[#e5e3d8] text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e]'
-          }`}
-        >
-          {cat}
-        </button>
-      ))}
-    </div>
 
       {!hasResults ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">

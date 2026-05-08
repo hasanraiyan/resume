@@ -1,7 +1,15 @@
 'use client';
 
 import { useDrively } from '@/context/DrivelyContext';
-import { HardDrive, File, Image as ImageIcon, Video, FileText, AlertCircle, Folder } from 'lucide-react';
+import {
+  HardDrive,
+  File,
+  Image as ImageIcon,
+  Video,
+  FileText,
+  AlertCircle,
+  Folder,
+} from 'lucide-react';
 import { useMemo } from 'react';
 
 const formatSize = (bytes) => {
@@ -192,7 +200,9 @@ export default function StorageTab() {
               );
             })}
             {folderStats.length === 0 && (
-              <div className="p-8 text-center text-[#7c8e88] text-sm">No storage data available</div>
+              <div className="p-8 text-center text-[#7c8e88] text-sm">
+                No storage data available
+              </div>
             )}
           </div>
         </div>

@@ -271,7 +271,9 @@ export default function ActionMenu({ type, item, variant = 'default' }) {
                   style={{ backgroundColor: color.value }}
                   title={color.name}
                 >
-                  {item.color === color.value && <Check className="w-5 h-5" style={{ color: color.text }} />}
+                  {item.color === color.value && (
+                    <Check className="w-5 h-5" style={{ color: color.text }} />
+                  )}
                 </button>
               ))}
             </div>
