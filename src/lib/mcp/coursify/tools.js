@@ -199,7 +199,7 @@ export function registerCoursifyTools(server) {
     {
       title: 'Get Course',
       description:
-        'Use this before revising an existing course. Retrieve a single course by ID, including all planning fields (targetAudience, learningObjectives, prerequisites, outcome, outline, researchNotes, authoringStatus), all modules in order, and all sections with their full Markdown content.',
+        'Use this before revising an existing course. Returns course metadata, planning fields, modules, and sections grouped by module — but only section titles, summaries, and statuses (NOT full content). Call get_section_content when you need the full Markdown body of a specific section.',
       annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {
         id: z.string().describe('MongoDB _id of the course'),
@@ -214,20 +214,97 @@ export function registerCoursifyTools(server) {
 
         const [modules, sections] = await Promise.all([
           CoursifyModule.find({ courseId: id, deletedAt: null }).sort({ order: 1 }).lean(),
-          CoursifySection.find({ courseId: id, deletedAt: null }).sort({ order: 1 }).lean(),
+          CoursifySection.find({ courseId: id, deletedAt: null })
+            .select('moduleId title summary status order learningGoals estimatedDuration resources')
+            .sort({ order: 1 })
+            .lean(),
         ]);
 
+        // Group sections by module
+        const sectionsByModule = {};
+        const unassigned = [];
+        for (const s of sections) {
+          const mid = s.moduleId?.toString();
+          const sectionMeta = {
+            id: s._id.toString(),
+            title: s.title,
+            summary: s.summary || '',
+            status: s.status || 'draft',
+            order: s.order ?? 0,
+            learningGoals: s.learningGoals || [],
+            estimatedDuration: s.estimatedDuration || '',
+            resources: s.resources || [],
+          };
+          if (mid) {
+            if (!sectionsByModule[mid]) sectionsByModule[mid] = [];
+            sectionsByModule[mid].push(sectionMeta);
+          } else {
+            unassigned.push(sectionMeta);
+          }
+        }
+
+        const modulesWithSections = modules.map((m) => ({
+          ...normalizeModule(m),
+          sections: sectionsByModule[m._id.toString()] || [],
+        }));
+
         return textResult(
-          `Course "${course.title}" has ${modules.length} modules and ${sections.length} sections.`,
+          `Course "${course.title}" has ${modules.length} modules and ${sections.length} sections. Use get_section_content to read or edit a section's full Markdown body.`,
           {
             kind: 'course_detail',
             course: normalizeCourse({ ...course, sectionCount: sections.length }),
-            modules: modules.map(normalizeModule),
-            sections: sections.map(normalizeSection),
+            modules: modulesWithSections,
+            uncategorizedSections: unassigned,
           }
         );
       } catch (err) {
         return errorResult(`Error fetching course: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
+    'get_section_content',
+    {
+      title: 'Get Section Content',
+      description:
+        'Retrieve the full Markdown content of a single section by its ID. Use this after get_course or list_course_modules to read the body of a section you want to revise or review.',
+      annotations: READ_ONLY_ANNOTATIONS,
+      inputSchema: {
+        id: z.string().describe('MongoDB _id of the section'),
+      },
+      _meta: toolMeta('Loading section...', 'Section loaded.'),
+    },
+    async ({ id }) => {
+      try {
+        await dbConnect();
+        const section = await CoursifySection.findOne({ _id: id, deletedAt: null }).lean();
+        if (!section) return errorResult('Section not found.');
+
+        const moduleTitle = section.moduleId
+          ? (await CoursifyModule.findOne({ _id: section.moduleId, deletedAt: null }).lean())
+              ?.title || ''
+          : '';
+
+        return textResult(`Section "${section.title}" loaded.`, {
+          kind: 'section_content',
+          section: {
+            id: section._id.toString(),
+            courseId: section.courseId.toString(),
+            moduleId: section.moduleId?.toString() || null,
+            moduleTitle,
+            title: section.title,
+            content: section.content || '',
+            summary: section.summary || '',
+            status: section.status || 'draft',
+            order: section.order ?? 0,
+            learningGoals: section.learningGoals || [],
+            estimatedDuration: section.estimatedDuration || '',
+            resources: section.resources || [],
+          },
+        });
+      } catch (err) {
+        return errorResult(`Error fetching section: ${err.message}`);
       }
     }
   );
@@ -705,12 +782,219 @@ export function registerCoursifyTools(server) {
           courseId,
           deletedAt: null,
         });
-        return textResult(`Course plan saved for "${course.title}".`, {
-          success: true,
-          course: normalizeCourse({ ...course, sectionCount }),
-        });
+
+        // Compute plan completeness
+        const planFields = {
+          targetAudience: !!course.targetAudience,
+          learningObjectives: (course.learningObjectives || []).length > 0,
+          prerequisites: (course.prerequisites || []).length > 0,
+          outcome: !!course.outcome,
+          outline: !!course.outline,
+        };
+        const filled = Object.values(planFields).filter(Boolean).length;
+        const missing = Object.entries(planFields)
+          .filter(([, v]) => !v)
+          .map(([k]) => k);
+
+        // Generate suggestions for missing fields
+        const suggestions = [];
+        if (!planFields.targetAudience)
+          suggestions.push(
+            'Define who this course is for (e.g. "Developers with basic React experience who want to build full-stack apps")'
+          );
+        if (!planFields.learningObjectives)
+          suggestions.push(
+            'Add 3-5 concrete learning objectives (what the learner can DO after completing this course)'
+          );
+        if (!planFields.prerequisites)
+          suggestions.push(
+            'List prerequisites (even "None — this is a beginner course" is useful)'
+          );
+        if (!planFields.outcome)
+          suggestions.push(
+            'Add a clear outcome statement (e.g. "By the end, learners will be able to build X from scratch")'
+          );
+        if (!planFields.outline)
+          suggestions.push(
+            'Write a Markdown outline grouping planned sections into logical modules'
+          );
+
+        // Determine next step
+        let nextStep =
+          'Call suggest_modules_from_outline to get a recommended module structure, then create_module for each.';
+        if (filled < 3) nextStep = 'Fill the missing plan fields above before structuring modules.';
+        else if (course.authoringStatus === 'researching')
+          nextStep = 'Set authoringStatus to "planned" and call suggest_modules_from_outline.';
+
+        return textResult(
+          `Course plan saved for "${course.title}" (${filled}/5 fields complete).`,
+          {
+            success: true,
+            course: normalizeCourse({ ...course, sectionCount }),
+            planCompleteness: { filled, total: 5, missing },
+            suggestions,
+            nextStep,
+          }
+        );
       } catch (err) {
         return errorResult(`Error saving plan: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
+    'suggest_modules_from_outline',
+    {
+      title: 'Suggest Modules From Outline',
+      description:
+        'Read-only. Analyzes the saved course outline and returns a suggested module structure — titles, summaries, learning goals, and which outline sections belong to each module. Does NOT create modules; review the suggestions then call create_module for each you want.',
+      annotations: READ_ONLY_ANNOTATIONS,
+      inputSchema: {
+        courseId: z.string().describe('MongoDB _id of the course'),
+      },
+      _meta: toolMeta('Analyzing outline...', 'Module suggestions ready.'),
+    },
+    async ({ courseId }) => {
+      try {
+        await dbConnect();
+        const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
+        if (!course) return errorResult('Course not found.');
+        if (!course.outline)
+          return errorResult(
+            'No outline found. Call save_course_plan first with a Markdown outline of planned modules and sections.'
+          );
+
+        const outline = course.outline.trim();
+        const lines = outline.split('\n');
+
+        // Extract section titles from the outline (## headers or bullet items that look like section titles)
+        const sectionTitles = [];
+        let currentGroup = '';
+        for (const line of lines) {
+          const trimmed = line.trim();
+          // Match ## headers as section titles
+          if (trimmed.startsWith('## ') && !trimmed.toLowerCase().includes('module')) {
+            const title = trimmed.replace(/^##\s+/, '').trim();
+            if (title) sectionTitles.push({ title, group: currentGroup });
+          }
+          // Match ### headers as section titles
+          else if (trimmed.startsWith('### ')) {
+            const title = trimmed.replace(/^###\s+/, '').trim();
+            if (title && title.length < 100) sectionTitles.push({ title, group: currentGroup });
+          }
+          // Track module/group context from headers
+          else if (trimmed.match(/^#{1,2}\s+(module|phase|part|step)/i)) {
+            currentGroup = trimmed.replace(/^#{1,2}\s+/, '').trim();
+          }
+        }
+
+        // If no structured sections found, fall back to splitting by blank-line paragraphs
+        if (sectionTitles.length === 0) {
+          const paragraphs = outline
+            .split(/\n\n+/)
+            .map((p) => p.trim())
+            .filter(Boolean);
+          for (const p of paragraphs) {
+            const firstLine = p
+              .split('\n')[0]
+              .trim()
+              .replace(/^[-*]\s+/, '');
+            if (firstLine && firstLine.length > 3 && firstLine.length < 120) {
+              sectionTitles.push({ title: firstLine, group: '' });
+            }
+          }
+        }
+
+        if (sectionTitles.length === 0)
+          return errorResult(
+            'Could not parse any section titles from the outline. Make sure it uses ## or ### headers for section names.'
+          );
+
+        // Semantic module grouping
+        const moduleKeywords = [
+          {
+            words: ['fundamental', 'basic', 'intro', 'overview', 'setup', 'what', 'why'],
+            label: 'Foundations',
+          },
+          {
+            words: ['core', 'main', 'build', 'implement', 'create', 'develop', 'pattern'],
+            label: 'Core Concepts',
+          },
+          {
+            words: ['advanced', 'deep', 'optim', 'scale', 'deploy', 'product', 'real'],
+            label: 'Advanced & Applied',
+          },
+          {
+            words: ['review', 'summary', 'next', 'future', 'wrap', 'conclusion', 'recap'],
+            label: 'Review & Next Steps',
+          },
+        ];
+
+        function assignModule(title) {
+          const lower = title.toLowerCase();
+          for (const mk of moduleKeywords) {
+            if (mk.words.some((w) => lower.includes(w))) return mk.label;
+          }
+          return null;
+        }
+
+        // Group sections into modules, merging consecutive unassigned sections
+        const moduleMap = {};
+        let unassignedBuffer = [];
+        for (const s of sectionTitles) {
+          const mod = s.group || assignModule(s.title);
+          if (mod) {
+            // Flush any buffered unassigned sections into a "Misc" module first
+            if (unassignedBuffer.length > 0) {
+              const key = 'Miscellaneous';
+              if (!moduleMap[key]) moduleMap[key] = { sections: [], label: key };
+              moduleMap[key].sections.push(...unassignedBuffer);
+              unassignedBuffer = [];
+            }
+            if (!moduleMap[mod]) moduleMap[mod] = { sections: [], label: mod };
+            moduleMap[mod].sections.push(s.title);
+          } else {
+            unassignedBuffer.push(s.title);
+          }
+        }
+        // Flush remaining unassigned
+        if (unassignedBuffer.length > 0) {
+          const key = 'Miscellaneous';
+          if (!moduleMap[key]) moduleMap[key] = { sections: [], label: key };
+          moduleMap[key].sections.push(...unassignedBuffer);
+        }
+
+        // Cap at 4 modules — merge excess into the last one
+        const moduleKeys = Object.keys(moduleMap);
+        if (moduleKeys.length > 4) {
+          const keep = moduleKeys.slice(0, 3);
+          const mergeInto = keep[keep.length - 1];
+          for (const key of moduleKeys.slice(3)) {
+            moduleMap[mergeInto].sections.push(...moduleMap[key].sections);
+            delete moduleMap[key];
+          }
+        }
+
+        const suggestions = Object.values(moduleMap).map((m, i) => ({
+          order: i,
+          title: m.label,
+          summary: `Covers: ${m.sections.slice(0, 3).join(', ')}${m.sections.length > 3 ? `, and ${m.sections.length - 3} more` : ''}`,
+          learningGoals: m.sections.slice(0, 3).map((s) => `Understand and apply: ${s}`),
+          sections: m.sections,
+          sectionCount: m.sections.length,
+        }));
+
+        return textResult(
+          `Suggested ${suggestions.length} modules from ${sectionTitles.length} outline sections.`,
+          {
+            kind: 'module_suggestions',
+            outlineSectionCount: sectionTitles.length,
+            suggestedModules: suggestions,
+            note: 'Review these suggestions and call create_module once per module you want to keep.',
+          }
+        );
+      } catch (err) {
+        return errorResult(`Error analyzing outline: ${err.message}`);
       }
     }
   );
@@ -755,6 +1039,64 @@ export function registerCoursifyTools(server) {
         });
       } catch (err) {
         return errorResult(`Error saving research note: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
+    'research_findings',
+    {
+      title: 'Save Research Findings (Batch)',
+      description:
+        'Save multiple research findings, sources, or key takeaways for a course in a single call. Use this during the research phase to batch-persist findings gathered from web search or browsing. Prefer this over calling add_research_note repeatedly. Max 20 findings per call.',
+      annotations: MUTATION_ANNOTATIONS,
+      inputSchema: {
+        courseId: z.string().describe('MongoDB _id of the course'),
+        findings: z
+          .array(
+            z.object({
+              title: z.string().describe('Short title for this finding'),
+              summary: z.string().describe('Key takeaway or finding'),
+              sourceUrl: z.string().optional().describe('Source URL if available'),
+              sourceType: z
+                .enum(['web', 'paper', 'book', 'video', 'other'])
+                .optional()
+                .describe('Type of source'),
+              notes: z.string().optional().describe('Detailed notes or quotes'),
+            })
+          )
+          .max(20)
+          .describe('Array of research findings to save (max 20)'),
+      },
+      _meta: toolMeta('Saving research findings...', 'Research findings saved.'),
+    },
+    async ({ courseId, findings }) => {
+      try {
+        await dbConnect();
+        const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
+        if (!course) return errorResult('Course not found.');
+        if (!findings || findings.length === 0) return errorResult('Provide at least one finding.');
+
+        const notes = findings.map((f) => ({
+          title: f.title.trim(),
+          summary: f.summary.trim(),
+          sourceUrl: f.sourceUrl || '',
+          sourceType: f.sourceType || 'other',
+          notes: f.notes || '',
+        }));
+
+        await CoursifyCourse.updateOne(
+          { _id: courseId, deletedAt: null },
+          { $push: { researchNotes: { $each: notes } }, $inc: { syncVersion: 1 } }
+        );
+
+        return textResult(`Saved ${notes.length} research finding(s).`, {
+          success: true,
+          count: notes.length,
+          findings: notes.map((n, i) => ({ index: i, title: n.title, sourceType: n.sourceType })),
+        });
+      } catch (err) {
+        return errorResult(`Error saving research findings: ${err.message}`);
       }
     }
   );
