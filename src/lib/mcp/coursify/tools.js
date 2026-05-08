@@ -55,6 +55,80 @@ export function registerCoursifyTools(server) {
   );
 
   server.registerTool(
+    'delete_module',
+    {
+      title: 'Delete Module',
+      description: 'Soft-delete a module from a course so it no longer appears in active records.',
+      annotations: DESTRUCTIVE_ANNOTATIONS,
+      inputSchema: {
+        id: z.string().describe('MongoDB _id of the module to delete'),
+      },
+      _meta: toolMeta('Deleting module...', 'Module deleted.'),
+    },
+    async ({ id }) => {
+      try {
+        await dbConnect();
+        const module = await CoursifyModule.findOneAndUpdate(
+          { _id: id, deletedAt: null },
+          { $set: { deletedAt: new Date() }, $inc: { syncVersion: 1 } }
+        ).lean();
+
+        if (!module) return errorResult('Module not found.');
+        await CoursifyCourse.updateOne(
+          { _id: module.courseId, deletedAt: null },
+          { $inc: { syncVersion: 1 } }
+        );
+        return textResult(`Deleted module "${module.title}".`, {
+          success: true,
+          deletedId: id,
+        });
+      } catch (err) {
+        return errorResult(`Error deleting module: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
+    'reorder_modules',
+    {
+      title: 'Reorder Modules',
+      description:
+        'Set the display order of all modules in a course by providing the full ordered list of module IDs.',
+      annotations: MUTATION_ANNOTATIONS,
+      inputSchema: {
+        courseId: z.string().describe('MongoDB _id of the course'),
+        moduleIds: z
+          .array(z.string())
+          .describe(
+            'All module IDs in the desired order, from first to last. Every active module should be included.'
+          ),
+      },
+      _meta: toolMeta('Reordering modules...', 'Modules reordered.'),
+    },
+    async ({ courseId, moduleIds }) => {
+      try {
+        await dbConnect();
+        await Promise.all(
+          moduleIds.map((id, index) =>
+            CoursifyModule.updateOne(
+              { _id: id, courseId, deletedAt: null },
+              { $set: { order: index }, $inc: { syncVersion: 1 } }
+            )
+          )
+        );
+        await CoursifyCourse.updateOne(
+          { _id: courseId, deletedAt: null },
+          { $inc: { syncVersion: 1 } }
+        );
+
+        return textResult(`Reordered ${moduleIds.length} modules.`, { success: true });
+      } catch (err) {
+        return errorResult(`Error reordering modules: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
     'list_courses',
     {
       title: 'List Courses',
@@ -214,13 +288,21 @@ export function registerCoursifyTools(server) {
         difficulty: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
         estimatedDuration: z.string().optional(),
         tags: z.array(z.string()).optional(),
+        status: z.enum(['draft', 'published']).optional(),
       },
       _meta: toolMeta('Updating course...', 'Course updated.'),
     },
-    async ({ id, ...patch }) => {
+    async ({ id, title, description, difficulty, estimatedDuration, tags, status }) => {
       try {
         await dbConnect();
-        const clean = cleanPatch(patch);
+        const clean = cleanPatch({
+          title,
+          description,
+          difficulty,
+          estimatedDuration,
+          tags,
+          status,
+        });
         if (clean.title) {
           clean.slug = await generateUniqueSlug(clean.title, id);
         }
@@ -231,9 +313,13 @@ export function registerCoursifyTools(server) {
         ).lean();
 
         if (!course) return errorResult('Course not found.');
+        const sectionCount = await CoursifySection.countDocuments({
+          courseId: id,
+          deletedAt: null,
+        });
         return textResult(`Updated course "${course.title}".`, {
           success: true,
-          course: normalizeCourse(course),
+          course: normalizeCourse({ ...course, sectionCount }),
         });
       } catch (err) {
         return errorResult(`Error updating course: ${err.message}`);
@@ -258,14 +344,18 @@ export function registerCoursifyTools(server) {
         await dbConnect();
         const course = await CoursifyCourse.findOneAndUpdate(
           { _id: id, deletedAt: null },
-          { $set: { status: 'published' }, $inc: { syncVersion: 1 } },
+          { $set: { status: 'published', authoringStatus: 'published' }, $inc: { syncVersion: 1 } },
           { new: true }
         ).lean();
 
         if (!course) return errorResult('Course not found.');
+        const sectionCount = await CoursifySection.countDocuments({
+          courseId: id,
+          deletedAt: null,
+        });
         return textResult(`Published course "${course.title}".`, {
           success: true,
-          course: normalizeCourse(course),
+          course: normalizeCourse({ ...course, sectionCount }),
         });
       } catch (err) {
         return errorResult(`Error publishing course: ${err.message}`);
@@ -346,11 +436,31 @@ export function registerCoursifyTools(server) {
           .enum(['planned', 'draft', 'needs_review', 'complete'])
           .optional()
           .describe('Section authoring status. Defaults to "draft".'),
+        summary: z.string().optional().describe('Brief summary of the section.'),
+        learningGoals: z
+          .array(z.string())
+          .optional()
+          .describe('Key learning objectives for this section.'),
+        estimatedDuration: z
+          .string()
+          .optional()
+          .describe('Estimated time to complete, e.g. "15 mins".'),
         resources: z.array(resourceSchema).optional().describe('Optional supplementary resources.'),
       },
       _meta: toolMeta('Adding section...', 'Section added.'),
     },
-    async ({ courseId, title, content, order, resources, moduleId, status }) => {
+    async ({
+      courseId,
+      title,
+      content,
+      order,
+      resources,
+      moduleId,
+      status,
+      summary,
+      learningGoals,
+      estimatedDuration,
+    }) => {
       try {
         await dbConnect();
         const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
@@ -369,6 +479,9 @@ export function registerCoursifyTools(server) {
           resources: resources || [],
           moduleId: moduleId || null,
           status: status || 'draft',
+          summary: summary || '',
+          learningGoals: learningGoals || [],
+          estimatedDuration: estimatedDuration || '',
         });
         await CoursifyCourse.updateOne(
           { _id: courseId, deletedAt: null },
@@ -396,17 +509,44 @@ export function registerCoursifyTools(server) {
         id: z.string().describe('MongoDB _id of the section to update'),
         title: z.string().optional(),
         content: z.string().optional().describe('Full replacement content in Markdown'),
+        summary: z.string().optional(),
+        learningGoals: z.array(z.string()).optional(),
+        estimatedDuration: z.string().optional(),
         order: z.number().int().optional(),
+        status: z.enum(['planned', 'draft', 'needs_review', 'complete']).optional(),
+        moduleId: z.string().optional(),
         resources: z.array(resourceSchema).optional(),
       },
       _meta: toolMeta('Updating section...', 'Section updated.'),
     },
-    async ({ id, ...patch }) => {
+    async ({
+      id,
+      title,
+      content,
+      summary,
+      learningGoals,
+      estimatedDuration,
+      order,
+      status,
+      moduleId,
+      resources,
+    }) => {
       try {
         await dbConnect();
+        const clean = cleanPatch({
+          title,
+          content,
+          summary,
+          learningGoals,
+          estimatedDuration,
+          order,
+          status,
+          moduleId,
+          resources,
+        });
         const section = await CoursifySection.findOneAndUpdate(
           { _id: id, deletedAt: null },
-          { $set: cleanPatch(patch), $inc: { syncVersion: 1 } },
+          { $set: clean, $inc: { syncVersion: 1 } },
           { new: true }
         ).lean();
 
@@ -520,7 +660,7 @@ export function registerCoursifyTools(server) {
           .describe('Free-form Markdown outline of planned modules and sections'),
         planningNotes: z.string().optional(),
         authoringStatus: z
-          .enum(['idea', 'researching', 'planned', 'drafting', 'reviewing', 'ready'])
+          .enum(['idea', 'researching', 'planned', 'drafting', 'reviewing', 'ready', 'published'])
           .optional(),
       },
       _meta: toolMeta('Saving course plan...', 'Course plan saved.'),
@@ -537,9 +677,13 @@ export function registerCoursifyTools(server) {
           { new: true }
         ).lean();
         if (!course) return errorResult('Course not found.');
+        const sectionCount = await CoursifySection.countDocuments({
+          courseId,
+          deletedAt: null,
+        });
         return textResult(`Course plan saved for "${course.title}".`, {
           success: true,
-          course: normalizeCourse(course),
+          course: normalizeCourse({ ...course, sectionCount }),
         });
       } catch (err) {
         return errorResult(`Error saving plan: ${err.message}`);
@@ -737,9 +881,13 @@ export function registerCoursifyTools(server) {
           { _id: module.courseId, deletedAt: null },
           { $inc: { syncVersion: 1 } }
         );
+        const sectionCount = await CoursifySection.countDocuments({
+          moduleId: id,
+          deletedAt: null,
+        });
         return textResult(`Updated module "${module.title}".`, {
           success: true,
-          module: normalizeModule(module),
+          module: normalizeModule({ ...module, sectionCount }),
         });
       } catch (err) {
         return errorResult(`Error updating module: ${err.message}`);
