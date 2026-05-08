@@ -65,12 +65,6 @@ function CoursifyApp() {
   const [statusTab, setStatusTab] = useState('all');
   const [page, setPage] = useState(1);
 
-  if (status === 'loading') return null;
-  if (status === 'unauthenticated' || session?.user?.role !== 'admin') {
-    router.push('/login');
-    return null;
-  }
-
   const filtered = useMemo(
     () => filterCourses(courses, query, difficulty, statusTab),
     [courses, query, difficulty, statusTab]
@@ -89,6 +83,12 @@ function CoursifyApp() {
 
   const publishedCount = courses.filter((c) => c.status === 'published').length;
   const draftCount = courses.filter((c) => c.status === 'draft').length;
+
+  if (status === 'loading') return null;
+  if (status === 'unauthenticated' || session?.user?.role !== 'admin') {
+    router.push('/login');
+    return null;
+  }
 
   return (
     <div
