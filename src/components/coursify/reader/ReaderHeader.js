@@ -1,0 +1,76 @@
+'use client';
+
+import { ArrowLeft, ChevronRight, Menu, BookOpen, Clock } from 'lucide-react';
+
+const DIFFICULTY_COLORS = {
+  beginner: 'bg-emerald-100 text-emerald-700',
+  intermediate: 'bg-amber-100 text-amber-700',
+  advanced: 'bg-red-100 text-red-700',
+};
+
+export default function ReaderHeader({
+  course,
+  showOverview,
+  onBack,
+  onToggleSidebar,
+  actions,
+  children,
+}) {
+  return (
+    <header className="sticky top-0 z-40 bg-white border-b border-[#e5e3d8] px-4 lg:px-6 py-3 flex items-center justify-between gap-3 shrink-0">
+      <div className="flex items-center gap-2 min-w-0">
+        <button
+          onClick={onBack}
+          className="p-1.5 hover:bg-[#f0f5f2] rounded-full transition-colors shrink-0"
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </button>
+        <img
+          src="/images/apps/coursify.png"
+          alt="Coursify"
+          className="h-6 w-6 rounded-md object-contain shrink-0 hidden sm:block"
+        />
+        <span className="font-[family-name:var(--font-logo)] text-lg text-[#1f644e] shrink-0 hidden sm:block">
+          Coursify
+        </span>
+        <ChevronRight className="w-3.5 h-3.5 text-[#e5e3d8] shrink-0 hidden sm:block" />
+        <h1 className="font-bold text-[#1e3a34] text-sm lg:text-base truncate">{course.title}</h1>
+      </div>
+
+      <div className="flex items-center gap-2 shrink-0">
+        <div className="hidden sm:flex items-center gap-2">
+          {course.difficulty && (
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${DIFFICULTY_COLORS[course.difficulty] || DIFFICULTY_COLORS.beginner}`}
+            >
+              {course.difficulty}
+            </span>
+          )}
+          {course.estimatedDuration && (
+            <span className="flex items-center gap-1 text-[10px] text-[#7c8e88] font-bold">
+              <Clock className="w-3 h-3" />
+              {course.estimatedDuration}
+            </span>
+          )}
+          {showOverview && (
+            <span className="flex items-center gap-1 text-[10px] text-[#1f644e] font-bold">
+              <BookOpen className="w-3 h-3" />
+              Overview
+            </span>
+          )}
+        </div>
+
+        {actions}
+
+        {children}
+
+        <button
+          onClick={onToggleSidebar}
+          className="p-1.5 rounded-lg border border-[#e5e3d8] bg-white text-[#7c8e88] lg:hidden"
+        >
+          <Menu className="w-4 h-4" />
+        </button>
+      </div>
+    </header>
+  );
+}

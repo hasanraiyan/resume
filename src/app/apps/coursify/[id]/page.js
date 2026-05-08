@@ -1,34 +1,33 @@
 'use client';
 
-import { useState, useEffect, useCallback, use, useRef } from 'react';
+import { useState, useEffect, use, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Pacifico, Nunito, Lora } from 'next/font/google';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import {
-  ArrowLeft,
   Plus,
   Pencil,
   Trash2,
   Globe,
   Lock,
-  ChevronRight,
-  BookOpen,
   ExternalLink,
   RefreshCw,
   Layers,
   Clock,
-  Menu,
-  X,
   Tag,
   ImagePlus,
   Save,
+  BookOpen,
 } from 'lucide-react';
 import { toast } from 'sonner';
+
+import { useCourseReader } from '@/hooks/coursify/useCourseReader';
+import { useReaderUI } from '@/hooks/coursify/useReaderUI';
+
+import ReaderHeader from '@/components/coursify/reader/ReaderHeader';
+import ReaderSidebar from '@/components/coursify/reader/ReaderSidebar';
+import MarkdownRenderer from '@/components/coursify/reader/MarkdownRenderer';
+import ReaderNavigation from '@/components/coursify/reader/ReaderNavigation';
 import EditSectionModal from '@/components/coursify/EditSectionModal';
 
 const pacifico = Pacifico({
@@ -52,12 +51,6 @@ const lora = Lora({
   display: 'swap',
 });
 
-const DIFFICULTY_COLORS = {
-  beginner: 'bg-emerald-100 text-emerald-700',
-  intermediate: 'bg-amber-100 text-amber-700',
-  advanced: 'bg-red-100 text-red-700',
-};
-
 const AUTHORING_STATUS_COLORS = {
   idea: 'bg-gray-100 text-gray-600',
   researching: 'bg-blue-100 text-blue-700',
@@ -65,13 +58,6 @@ const AUTHORING_STATUS_COLORS = {
   drafting: 'bg-amber-100 text-amber-700',
   reviewing: 'bg-orange-100 text-orange-700',
   ready: 'bg-emerald-100 text-emerald-700',
-};
-
-const SECTION_STATUS_DOT = {
-  planned: 'bg-gray-300',
-  draft: 'bg-amber-400',
-  needs_review: 'bg-orange-400',
-  complete: 'bg-emerald-500',
 };
 
 const RESOURCE_ICONS = {
@@ -98,46 +84,36 @@ function PlanText({ value, placeholder }) {
   );
 }
 
-function SectionButton({ section, index, active, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full text-left px-3 py-2.5 rounded-xl mb-1 transition-colors group flex items-center gap-2.5 ${
-        active ? 'bg-[#1f644e] text-white' : 'text-[#1e3a34] hover:bg-[#f0f5f2]'
-      }`}
-    >
-      {index !== undefined && (
-        <span
-          className={`text-[10px] font-bold shrink-0 w-5 h-5 rounded flex items-center justify-center ${
-            active ? 'bg-white/20 text-white' : 'bg-[#e5e3d8] text-[#7c8e88]'
-          }`}
-        >
-          {index + 1}
-        </span>
-      )}
-      <span className="text-xs font-bold truncate flex-1">{section.title}</span>
-      <span
-        className={`w-1.5 h-1.5 rounded-full shrink-0 ${active ? 'bg-white/60' : SECTION_STATUS_DOT[section.status] || 'bg-gray-300'}`}
-      />
-    </button>
-  );
-}
-
 export default function CourseDetailPage({ params }) {
   const { id } = use(params);
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  const [course, setCourse] = useState(null);
-  const [sections, setSections] = useState([]);
-  const [modules, setModules] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [activeSection, setActiveSection] = useState(null);
+  const {
+    course,
+    setCourse,
+    sections,
+    setSections,
+    modules,
+    activeSection,
+    setActiveSection,
+    isLoading,
+    isRefreshing,
+    fetchCourse,
+  } = useCourseReader(id, false);
+
+  const {
+    sidebarOpen,
+    toggleSidebar,
+    expandedModules,
+    setExpandedModules,
+    toggleModule,
+    expandModule,
+  } = useReaderUI();
+
   const [activeTab, setActiveTab] = useState('content');
   const [editingSection, setEditingSection] = useState(null);
   const [showNewSection, setShowNewSection] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showMeta, setShowMeta] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [thumbnailUploading, setThumbnailUploading] = useState(false);
@@ -154,38 +130,30 @@ export default function CourseDetailPage({ params }) {
   });
   const [noteSaving, setNoteSaving] = useState(false);
 
-  const fetchCourse = useCallback(
-    async (silent = false) => {
-      try {
-        if (silent) setIsRefreshing(true);
-        else setIsLoading(true);
-
-        const res = await fetch(`/api/coursify/courses/${id}`);
-        const data = await res.json();
-        if (data.success) {
-          setCourse(data.course);
-          setSections(data.sections);
-          setModules(data.modules || []);
-          setActiveSection((prev) => {
-            if (prev) return prev;
-            return data.sections[0]?._id || null;
-          });
-        } else {
-          toast.error(data.error || 'Failed to load course');
-        }
-      } catch {
-        toast.error('Connection error');
-      } finally {
-        setIsLoading(false);
-        setIsRefreshing(false);
-      }
-    },
-    [id]
-  );
-
   useEffect(() => {
-    if (session?.user?.role === 'admin') fetchCourse();
-  }, [session, fetchCourse]);
+    if (session?.user?.role === 'admin') {
+      fetchCourse().then((data) => {
+        if (data?.success) {
+          if (data.sections.length > 0) {
+            setActiveSection(data.sections[0]._id);
+          }
+          if (data.modules) {
+            setExpandedModules(new Set(data.modules.map((m) => m._id)));
+          }
+        }
+      });
+    }
+  }, [session, fetchCourse, setActiveSection, setExpandedModules]);
+
+  // Expand module when section changes
+  useEffect(() => {
+    if (activeSection) {
+      const section = sections.find((s) => s._id === activeSection);
+      if (section?.moduleId) {
+        expandModule(section.moduleId);
+      }
+    }
+  }, [activeSection, sections, expandModule]);
 
   useEffect(() => {
     if (editMode && course) {
@@ -202,12 +170,49 @@ export default function CourseDetailPage({ params }) {
       setPlanDraft(null);
       setShowNoteForm(false);
     }
-  }, [editMode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [editMode, course]);
 
   if (status === 'loading') return null;
   if (status === 'unauthenticated' || session?.user?.role !== 'admin') {
     router.push('/login');
     return null;
+  }
+
+  if (isLoading) {
+    return (
+      <div
+        className={`h-screen bg-[#fcfbf5] ${pacifico.variable} ${nunito.variable} font-[family-name:var(--font-sans)]`}
+      >
+        <div className="h-14 border-b border-[#e5e3d8] bg-white animate-pulse" />
+        <div className="flex">
+          <div className="w-72 min-h-screen border-r border-[#e5e3d8] bg-white hidden lg:block animate-pulse" />
+          <div className="flex-1 p-6 lg:p-10 space-y-4 max-w-3xl">
+            <div className="h-5 bg-[#e5e3d8] rounded w-1/3 animate-pulse" />
+            <div className="h-7 bg-[#e5e3d8] rounded w-2/3 animate-pulse" />
+            <div className="h-4 bg-[#e5e3d8] rounded w-full animate-pulse" />
+            <div className="h-4 bg-[#e5e3d8] rounded w-3/4 animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!course) {
+    return (
+      <div
+        className={`min-h-screen bg-[#fcfbf5] ${pacifico.variable} ${nunito.variable} font-[family-name:var(--font-sans)] flex items-center justify-center`}
+      >
+        <div className="text-center">
+          <p className="text-[#7c8e88] mb-4">Course not found</p>
+          <button
+            onClick={() => router.push('/apps/coursify')}
+            className="text-[#1f644e] font-bold text-sm"
+          >
+            Back to Coursify
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const currentSection = sections.find((s) => s._id === activeSection);
@@ -376,79 +381,32 @@ export default function CourseDetailPage({ params }) {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div
-        className={`h-screen bg-[#fcfbf5] ${pacifico.variable} ${nunito.variable} font-[family-name:var(--font-sans)]`}
-      >
-        <div className="h-14 border-b border-[#e5e3d8] bg-white animate-pulse" />
-        <div className="flex">
-          <div className="w-72 min-h-screen border-r border-[#e5e3d8] bg-white hidden lg:block animate-pulse" />
-          <div className="flex-1 p-6 lg:p-10 space-y-4 max-w-3xl">
-            <div className="h-5 bg-[#e5e3d8] rounded w-1/3 animate-pulse" />
-            <div className="h-7 bg-[#e5e3d8] rounded w-2/3 animate-pulse" />
-            <div className="h-4 bg-[#e5e3d8] rounded w-full animate-pulse" />
-            <div className="h-4 bg-[#e5e3d8] rounded w-3/4 animate-pulse" />
-            <div className="h-4 bg-[#e5e3d8] rounded w-5/6 animate-pulse" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!course) {
-    return (
-      <div
-        className={`min-h-screen bg-[#fcfbf5] ${pacifico.variable} ${nunito.variable} font-[family-name:var(--font-sans)] flex items-center justify-center`}
-      >
-        <div className="text-center">
-          <p className="text-[#7c8e88] mb-4">Course not found</p>
-          <button
-            onClick={() => router.push('/apps/coursify')}
-            className="text-[#1f644e] font-bold text-sm"
-          >
-            Back to Coursify
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div
       className={`h-screen bg-[#fcfbf5] font-[family-name:var(--font-sans)] text-[#1e3a34] flex flex-col ${pacifico.variable} ${nunito.variable} ${lora.variable}`}
     >
-      {/* ── Header ── */}
-      <header className="sticky top-0 z-40 bg-white border-b border-[#e5e3d8] px-4 lg:px-6 py-3 flex items-center justify-between gap-3 shrink-0">
-        {/* Left: back + title */}
-        <div className="flex items-center gap-2 min-w-0">
-          <button
-            onClick={() => router.push('/apps/coursify')}
-            className="p-1.5 hover:bg-[#f0f5f2] rounded-full transition-colors shrink-0"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <h1 className="font-bold text-[#1e3a34] text-sm lg:text-base truncate">{course.title}</h1>
-        </div>
-
-        {/* Center: tab switcher */}
-        <div className="hidden sm:flex items-center gap-0.5 bg-[#f0f5f2] rounded-xl p-0.5 shrink-0">
-          {['content', 'planning'].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-3 py-1 rounded-lg text-xs font-bold capitalize transition-colors ${
-                activeTab === tab
-                  ? 'bg-white text-[#1e3a34] shadow-sm'
-                  : 'text-[#7c8e88] hover:text-[#1e3a34]'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        {/* Right: actions */}
+      <ReaderHeader
+        course={course}
+        onBack={() => router.push('/apps/coursify')}
+        onToggleSidebar={toggleSidebar}
+        actions={
+          <div className="hidden sm:flex items-center gap-0.5 bg-[#f0f5f2] rounded-xl p-0.5 shrink-0">
+            {['content', 'planning'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-3 py-1 rounded-lg text-xs font-bold capitalize transition-colors ${
+                  activeTab === tab
+                    ? 'bg-white text-[#1e3a34] shadow-sm'
+                    : 'text-[#7c8e88] hover:text-[#1e3a34]'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        }
+      >
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={() => fetchCourse(true)}
@@ -490,36 +448,17 @@ export default function CourseDetailPage({ params }) {
           >
             <Pencil className="w-3.5 h-3.5" />
           </button>
-
-          {/* Sidebar toggle — mobile only */}
-          <button
-            onClick={() => setSidebarOpen((v) => !v)}
-            className="p-1.5 rounded-lg border border-[#e5e3d8] bg-white text-[#7c8e88] lg:hidden"
-          >
-            <Menu className="w-4 h-4" />
-          </button>
         </div>
-      </header>
+      </ReaderHeader>
 
-      {/* ── Course meta strip (desktop only) ── */}
+      {/* Course meta strip */}
       {showMeta && (
         <div className="hidden lg:flex items-center gap-3 px-6 py-2 bg-[#fcfbf5] border-b border-[#e5e3d8] shrink-0">
-          <span
-            className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${DIFFICULTY_COLORS[course.difficulty] || DIFFICULTY_COLORS.beginner}`}
-          >
-            {course.difficulty}
-          </span>
           <span
             className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${AUTHORING_STATUS_COLORS[course.authoringStatus] || 'bg-gray-100 text-gray-600'}`}
           >
             {course.authoringStatus || 'idea'}
           </span>
-          {course.estimatedDuration && (
-            <span className="flex items-center gap-1 text-[10px] text-[#7c8e88] font-bold">
-              <Clock className="w-3 h-3" />
-              {course.estimatedDuration}
-            </span>
-          )}
           <span className="flex items-center gap-1 text-[10px] text-[#7c8e88] font-bold">
             <Layers className="w-3 h-3" />
             {sections.length} section{sections.length !== 1 ? 's' : ''}
@@ -542,125 +481,30 @@ export default function CourseDetailPage({ params }) {
       )}
 
       <div className="flex flex-1 min-h-0">
-        {/* Sidebar overlay on mobile */}
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black/40 z-30 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-
-        {/* ── Section Sidebar ── */}
-        <aside
-          className={`fixed lg:static inset-y-0 left-0 z-40 w-72 shrink-0 bg-white border-r border-[#e5e3d8] flex flex-col transition-transform duration-300 lg:translate-x-0 ${
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          }`}
+        <ReaderSidebar
+          course={course}
+          sections={sections}
+          modules={modules}
+          activeSection={activeSection}
+          showOverview={false}
+          visited={new Set()}
+          sidebarOpen={sidebarOpen}
+          expandedModules={expandedModules}
+          onToggleSidebar={toggleSidebar}
+          onNavigate={(id) => {
+            setActiveSection(id);
+            toggleSidebar(false);
+          }}
+          onShowOverview={() => {}}
+          onToggleModule={toggleModule}
+          showStatus={true}
         >
-          {/* Mobile drawer header */}
-          <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-[#e5e3d8]">
-            <span className="font-bold text-sm text-[#1e3a34]">Sections</span>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="p-1.5 hover:bg-[#f0f5f2] rounded-lg transition-colors"
-            >
-              <X className="w-4 h-4 text-[#7c8e88]" />
-            </button>
-          </div>
-
-          {/* Desktop sidebar header */}
-          <div className="hidden lg:flex items-center justify-between px-4 py-3 border-b border-[#e5e3d8]">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
-              {modules.length > 0 ? `${modules.length} Modules` : `Sections (${sections.length})`}
-            </h2>
-          </div>
-
-          {/* Section / Module list */}
-          <div className="flex-1 overflow-y-auto p-2">
-            {sections.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                <BookOpen className="w-8 h-8 text-[#e5e3d8] mb-2" />
-                <p className="text-xs text-[#7c8e88]">No sections yet</p>
-              </div>
-            ) : modules.length > 0 ? (
-              // Module-grouped view
-              <>
-                {modules.map((mod) => {
-                  const modSections = sections.filter((s) => s.moduleId === mod._id);
-                  return (
-                    <div key={mod._id} className="mb-3">
-                      <div className="px-2 py-1.5 flex items-center gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88] truncate flex-1">
-                          {mod.title}
-                        </span>
-                        <span className="text-[10px] text-[#7c8e88] shrink-0">
-                          {modSections.length}
-                        </span>
-                      </div>
-                      {modSections.map((section) => (
-                        <SectionButton
-                          key={section._id}
-                          section={section}
-                          active={activeSection === section._id}
-                          onClick={() => {
-                            setActiveSection(section._id);
-                            setSidebarOpen(false);
-                          }}
-                        />
-                      ))}
-                      {modSections.length === 0 && (
-                        <p className="text-[10px] text-[#7c8e88] px-3 py-1 italic">No sections</p>
-                      )}
-                    </div>
-                  );
-                })}
-                {/* Unassigned sections */}
-                {sections.filter((s) => !s.moduleId).length > 0 && (
-                  <div className="mb-3">
-                    <div className="px-2 py-1.5">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
-                        Unassigned
-                      </span>
-                    </div>
-                    {sections
-                      .filter((s) => !s.moduleId)
-                      .map((section) => (
-                        <SectionButton
-                          key={section._id}
-                          section={section}
-                          active={activeSection === section._id}
-                          onClick={() => {
-                            setActiveSection(section._id);
-                            setSidebarOpen(false);
-                          }}
-                        />
-                      ))}
-                  </div>
-                )}
-              </>
-            ) : (
-              // Flat view (no modules)
-              sections.map((section, i) => (
-                <SectionButton
-                  key={section._id}
-                  section={section}
-                  index={i}
-                  active={activeSection === section._id}
-                  onClick={() => {
-                    setActiveSection(section._id);
-                    setSidebarOpen(false);
-                  }}
-                />
-              ))
-            )}
-          </div>
-
-          {/* Add section — only in edit mode */}
           {editMode && (
             <div className="p-3 border-t border-[#e5e3d8]">
               <button
                 onClick={() => {
                   setShowNewSection(true);
-                  setSidebarOpen(false);
+                  toggleSidebar(false);
                 }}
                 className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed border-[#e5e3d8] text-xs font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] transition-colors"
               >
@@ -669,9 +513,8 @@ export default function CourseDetailPage({ params }) {
               </button>
             </div>
           )}
-        </aside>
+        </ReaderSidebar>
 
-        {/* ── Main Content ── */}
         <main className="flex-1 overflow-y-auto min-w-0">
           {activeTab === 'planning' && (
             <div className="max-w-3xl mx-auto px-4 lg:px-10 py-8 space-y-6">
@@ -693,7 +536,7 @@ export default function CourseDetailPage({ params }) {
                 )}
               </div>
 
-              {/* Authoring Status */}
+              {/* Planning Workspace Content */}
               <PlanCard label="Authoring Status">
                 {editMode && planDraft ? (
                   <select
@@ -701,7 +544,7 @@ export default function CourseDetailPage({ params }) {
                     onChange={(e) =>
                       setPlanDraft((d) => ({ ...d, authoringStatus: e.target.value }))
                     }
-                    className="text-xs font-bold capitalize px-2.5 py-1.5 border border-[#e5e3d8] rounded-lg bg-[#f9f9f7] focus:outline-none focus:border-[#1f644e] text-[#1e3a34]"
+                    className="text-xs font-bold capitalize px-2.5 py-1.5 border border-[#e5e3d8] rounded-lg bg-[#fcfbf5] focus:outline-none focus:border-[#1f644e] text-[#1e3a34]"
                   >
                     {['idea', 'researching', 'planned', 'drafting', 'reviewing', 'ready'].map(
                       (s) => (
@@ -720,7 +563,6 @@ export default function CourseDetailPage({ params }) {
                 )}
               </PlanCard>
 
-              {/* Target Audience */}
               <PlanCard label="Target Audience">
                 {editMode && planDraft ? (
                   <textarea
@@ -730,14 +572,13 @@ export default function CourseDetailPage({ params }) {
                       setPlanDraft((d) => ({ ...d, targetAudience: e.target.value }))
                     }
                     placeholder="Who is this course for?"
-                    className="w-full text-sm text-[#1e3a34] bg-[#f9f9f7] border border-[#e5e3d8] rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#1f644e] leading-relaxed"
+                    className="w-full text-sm text-[#1e3a34] bg-[#fcfbf5] border border-[#e5e3d8] rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#1f644e] leading-relaxed"
                   />
                 ) : (
                   <PlanText value={course.targetAudience} placeholder="Not defined yet." />
                 )}
               </PlanCard>
 
-              {/* Learning Objectives */}
               <PlanCard label="Learning Objectives">
                 {editMode && planDraft ? (
                   <>
@@ -748,7 +589,7 @@ export default function CourseDetailPage({ params }) {
                         setPlanDraft((d) => ({ ...d, learningObjectives: e.target.value }))
                       }
                       placeholder="One objective per line"
-                      className="w-full text-sm text-[#1e3a34] bg-[#f9f9f7] border border-[#e5e3d8] rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#1f644e] leading-relaxed"
+                      className="w-full text-sm text-[#1e3a34] bg-[#fcfbf5] border border-[#e5e3d8] rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#1f644e] leading-relaxed"
                     />
                     <p className="text-[10px] text-[#7c8e88] mt-1">One objective per line</p>
                   </>
@@ -766,7 +607,6 @@ export default function CourseDetailPage({ params }) {
                 )}
               </PlanCard>
 
-              {/* Prerequisites */}
               <PlanCard label="Prerequisites">
                 {editMode && planDraft ? (
                   <>
@@ -777,7 +617,7 @@ export default function CourseDetailPage({ params }) {
                         setPlanDraft((d) => ({ ...d, prerequisites: e.target.value }))
                       }
                       placeholder="One prerequisite per line"
-                      className="w-full text-sm text-[#1e3a34] bg-[#f9f9f7] border border-[#e5e3d8] rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#1f644e] leading-relaxed"
+                      className="w-full text-sm text-[#1e3a34] bg-[#fcfbf5] border border-[#e5e3d8] rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#1f644e] leading-relaxed"
                     />
                     <p className="text-[10px] text-[#7c8e88] mt-1">One prerequisite per line</p>
                   </>
@@ -795,7 +635,6 @@ export default function CourseDetailPage({ params }) {
                 )}
               </PlanCard>
 
-              {/* Outcome */}
               <PlanCard label="Outcome">
                 {editMode && planDraft ? (
                   <textarea
@@ -803,14 +642,13 @@ export default function CourseDetailPage({ params }) {
                     value={planDraft.outcome}
                     onChange={(e) => setPlanDraft((d) => ({ ...d, outcome: e.target.value }))}
                     placeholder="What will learners be able to do after this course?"
-                    className="w-full text-sm text-[#1e3a34] bg-[#f9f9f7] border border-[#e5e3d8] rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#1f644e] leading-relaxed"
+                    className="w-full text-sm text-[#1e3a34] bg-[#fcfbf5] border border-[#e5e3d8] rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#1f644e] leading-relaxed"
                   />
                 ) : (
                   <PlanText value={course.outcome} placeholder="Not defined yet." />
                 )}
               </PlanCard>
 
-              {/* Outline */}
               <PlanCard label="Outline">
                 {editMode && planDraft ? (
                   <textarea
@@ -818,7 +656,7 @@ export default function CourseDetailPage({ params }) {
                     value={planDraft.outline}
                     onChange={(e) => setPlanDraft((d) => ({ ...d, outline: e.target.value }))}
                     placeholder="Free-form outline of modules and sections…"
-                    className="w-full text-sm text-[#1e3a34] bg-[#f9f9f7] border border-[#e5e3d8] rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#1f644e] leading-relaxed font-mono"
+                    className="w-full text-sm text-[#1e3a34] bg-[#fcfbf5] border border-[#e5e3d8] rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#1f644e] leading-relaxed font-mono"
                   />
                 ) : course.outline ? (
                   <pre className="text-sm text-[#1e3a34] whitespace-pre-wrap leading-relaxed font-mono">
@@ -829,7 +667,6 @@ export default function CourseDetailPage({ params }) {
                 )}
               </PlanCard>
 
-              {/* Planning Notes */}
               <PlanCard label="Planning Notes">
                 {editMode && planDraft ? (
                   <textarea
@@ -837,7 +674,7 @@ export default function CourseDetailPage({ params }) {
                     value={planDraft.planningNotes}
                     onChange={(e) => setPlanDraft((d) => ({ ...d, planningNotes: e.target.value }))}
                     placeholder="Internal notes, reminders, decisions…"
-                    className="w-full text-sm text-[#1e3a34] bg-[#f9f9f7] border border-[#e5e3d8] rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#1f644e] leading-relaxed"
+                    className="w-full text-sm text-[#1e3a34] bg-[#fcfbf5] border border-[#e5e3d8] rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#1f644e] leading-relaxed"
                   />
                 ) : (
                   <PlanText value={course.planningNotes} placeholder="No notes yet." />
@@ -866,14 +703,14 @@ export default function CourseDetailPage({ params }) {
                       value={noteForm.title}
                       onChange={(e) => setNoteForm((f) => ({ ...f, title: e.target.value }))}
                       placeholder="Title *"
-                      className="w-full text-sm text-[#1e3a34] bg-[#f9f9f7] border border-[#e5e3d8] rounded-lg px-3 py-2 focus:outline-none focus:border-[#1f644e]"
+                      className="w-full text-sm text-[#1e3a34] bg-[#fcfbf5] border border-[#e5e3d8] rounded-lg px-3 py-2 focus:outline-none focus:border-[#1f644e]"
                     />
                     <textarea
                       rows={3}
                       value={noteForm.summary}
                       onChange={(e) => setNoteForm((f) => ({ ...f, summary: e.target.value }))}
                       placeholder="Key takeaway or finding *"
-                      className="w-full text-sm text-[#1e3a34] bg-[#f9f9f7] border border-[#e5e3d8] rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#1f644e]"
+                      className="w-full text-sm text-[#1e3a34] bg-[#fcfbf5] border border-[#e5e3d8] rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#1f644e]"
                     />
                     <div className="flex gap-2">
                       <input
@@ -881,12 +718,12 @@ export default function CourseDetailPage({ params }) {
                         value={noteForm.sourceUrl}
                         onChange={(e) => setNoteForm((f) => ({ ...f, sourceUrl: e.target.value }))}
                         placeholder="Source URL (optional)"
-                        className="flex-1 text-sm text-[#1e3a34] bg-[#f9f9f7] border border-[#e5e3d8] rounded-lg px-3 py-2 focus:outline-none focus:border-[#1f644e]"
+                        className="flex-1 text-sm text-[#1e3a34] bg-[#fcfbf5] border border-[#e5e3d8] rounded-lg px-3 py-2 focus:outline-none focus:border-[#1f644e]"
                       />
                       <select
                         value={noteForm.sourceType}
                         onChange={(e) => setNoteForm((f) => ({ ...f, sourceType: e.target.value }))}
-                        className="text-xs font-bold px-2.5 py-2 border border-[#e5e3d8] rounded-lg bg-[#f9f9f7] focus:outline-none focus:border-[#1f644e] text-[#1e3a34]"
+                        className="text-xs font-bold px-2.5 py-2 border border-[#e5e3d8] rounded-lg bg-[#fcfbf5] focus:outline-none focus:border-[#1f644e] text-[#1e3a34]"
                       >
                         {['web', 'paper', 'book', 'video', 'other'].map((t) => (
                           <option key={t} value={t}>
@@ -900,7 +737,7 @@ export default function CourseDetailPage({ params }) {
                       value={noteForm.notes}
                       onChange={(e) => setNoteForm((f) => ({ ...f, notes: e.target.value }))}
                       placeholder="Detailed notes or quotes (optional)"
-                      className="w-full text-sm text-[#1e3a34] bg-[#f9f9f7] border border-[#e5e3d8] rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#1f644e]"
+                      className="w-full text-sm text-[#1e3a34] bg-[#fcfbf5] border border-[#e5e3d8] rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#1f644e]"
                     />
                     <div className="flex gap-2">
                       <button
@@ -984,7 +821,7 @@ export default function CourseDetailPage({ params }) {
 
           {activeTab === 'content' && (
             <article className="max-w-3xl mx-auto px-4 lg:px-10 py-8">
-              {/* Course thumbnail banner — always visible */}
+              {/* Thumbnail management */}
               <input
                 ref={thumbnailInputRef}
                 type="file"
@@ -1079,13 +916,10 @@ export default function CourseDetailPage({ params }) {
                 </div>
               ) : (
                 <>
-                  {/* Section header */}
                   <div className="flex items-start justify-between gap-4 mb-6">
-                    {editMode && (
-                      <h2 className="text-xl lg:text-2xl font-bold text-[#1e3a34] leading-snug min-w-0">
-                        {currentSection.title}
-                      </h2>
-                    )}
+                    <h2 className="text-xl lg:text-2xl font-bold text-[#1e3a34] leading-snug min-w-0">
+                      {currentSection.title}
+                    </h2>
                     {editMode && (
                       <div className="flex items-center gap-1 shrink-0">
                         <button
@@ -1106,77 +940,10 @@ export default function CourseDetailPage({ params }) {
                     )}
                   </div>
 
-                  {/* Markdown content */}
-                  {currentSection.content ? (
-                    <div className="coursify-md prose prose-sm max-w-none font-[family-name:var(--font-lora)] prose-headings:font-bold prose-headings:text-[#1e3a34] prose-p:text-[#1e3a34] prose-p:leading-relaxed prose-code:bg-[#f0f5f2] prose-code:rounded prose-code:px-1 prose-code:text-[#1f644e] prose-pre:bg-[#1e3a34] prose-pre:rounded-xl prose-blockquote:border-[#1f644e] prose-a:text-[#1f644e] prose-li:text-[#1e3a34] prose-strong:text-[#1e3a34] prose-table:text-sm">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeRaw]}
-                        components={{
-                          table({ children }) {
-                            return (
-                              <div className="overflow-x-auto my-7 rounded-xl border border-[#e5e3d8]">
-                                <table className="w-full border-collapse text-sm">{children}</table>
-                              </div>
-                            );
-                          },
-                          code({ node, className, children, ...props }) {
-                            const match = /language-(\w+)/.exec(className || '');
-                            const isBlock = String(children).includes('\n');
+                  <MarkdownRenderer content={currentSection.content} />
 
-                            if (isBlock && match) {
-                              return (
-                                <SyntaxHighlighter
-                                  style={oneDark}
-                                  language={match[1]}
-                                  PreTag="div"
-                                  customStyle={{
-                                    borderRadius: '0.75rem',
-                                    fontSize: '0.82rem',
-                                    margin: '0.75em 0',
-                                    padding: '0.6em 0.9em',
-                                    maxHeight: '480px',
-                                    overflowY: 'auto',
-                                  }}
-                                  showLineNumbers
-                                  {...props}
-                                >
-                                  {String(children).replace(/\n$/, '')}
-                                </SyntaxHighlighter>
-                              );
-                            }
-                            if (isBlock) {
-                              return (
-                                <div
-                                  className="rounded-xl overflow-hidden my-3 w-full flex justify-center"
-                                  style={{ background: '#18181b' }}
-                                >
-                                  <pre
-                                    className="overflow-x-auto overflow-y-auto max-h-[480px] p-4 text-[0.82rem] leading-relaxed font-mono whitespace-pre"
-                                    style={{ background: 'transparent' }}
-                                  >
-                                    <code className="font-mono" style={{ color: '#e4e4e7' }}>
-                                      {children}
-                                    </code>
-                                  </pre>
-                                </div>
-                              );
-                            }
-                            return (
-                              <code
-                                className="bg-[#f0f5f2] text-[#1f644e] rounded px-1.5 py-0.5 text-[0.82em] font-mono font-semibold"
-                                {...props}
-                              >
-                                {children}
-                              </code>
-                            );
-                          },
-                        }}
-                      >
-                        {currentSection.content}
-                      </ReactMarkdown>
-                    </div>
-                  ) : (
+                  {/* Add Content button if empty and in edit mode */}
+                  {!currentSection.content && editMode && (
                     <div className="text-center py-12 border-2 border-dashed border-[#e5e3d8] rounded-2xl">
                       <p className="text-sm text-[#7c8e88] mb-3">
                         This section has no content yet.
@@ -1222,42 +989,11 @@ export default function CourseDetailPage({ params }) {
                     </div>
                   )}
 
-                  {/* Prev / Next navigation */}
-                  <div className="flex items-center justify-between mt-10 pt-6 border-t border-[#e5e3d8]">
-                    {(() => {
-                      const idx = sections.findIndex((s) => s._id === currentSection._id);
-                      const prev = sections[idx - 1];
-                      const next = sections[idx + 1];
-                      return (
-                        <>
-                          {prev ? (
-                            <button
-                              onClick={() => setActiveSection(prev._id)}
-                              className="flex items-center gap-2 text-sm font-bold text-[#7c8e88] hover:text-[#1f644e] transition-colors max-w-[42%]"
-                            >
-                              <ArrowLeft className="w-4 h-4 shrink-0" />
-                              <span className="truncate">{prev.title}</span>
-                            </button>
-                          ) : (
-                            <div />
-                          )}
-                          {next ? (
-                            <button
-                              onClick={() => setActiveSection(next._id)}
-                              className="flex items-center gap-2 text-sm font-bold text-[#7c8e88] hover:text-[#1f644e] transition-colors max-w-[42%]"
-                            >
-                              <span className="truncate">{next.title}</span>
-                              <ChevronRight className="w-4 h-4 shrink-0" />
-                            </button>
-                          ) : (
-                            <span className="text-xs font-bold text-[#1f644e] bg-[#f0f5f2] px-3 py-1.5 rounded-full">
-                              Course complete ✓
-                            </span>
-                          )}
-                        </>
-                      );
-                    })()}
-                  </div>
+                  <ReaderNavigation
+                    sections={sections}
+                    activeSection={activeSection}
+                    onNavigate={(id) => setActiveSection(id)}
+                  />
                 </>
               )}
             </article>
