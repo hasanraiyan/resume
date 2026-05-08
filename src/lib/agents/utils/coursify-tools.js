@@ -5,6 +5,95 @@ import CoursifyCourse from '@/models/CoursifyCourse';
 import CoursifySection from '@/models/CoursifySection';
 import CoursifyModule from '@/models/CoursifyModule';
 
+// ─── Catalog tools (no courseId required) ────────────────────────────────────
+
+const searchCourses = tool(
+  async ({ query, difficulty }) => {
+    await dbConnect();
+    const filter = { deletedAt: null, status: 'published' };
+    if (difficulty && difficulty !== 'all') filter.difficulty = difficulty;
+    if (query) {
+      filter.$or = [
+        { title: { $regex: query, $options: 'i' } },
+        { description: { $regex: query, $options: 'i' } },
+        { tags: { $elemMatch: { $regex: query, $options: 'i' } } },
+      ];
+    }
+
+    const courses = await CoursifyCourse.find(filter)
+      .select('_id slug title description difficulty estimatedDuration tags')
+      .lean();
+
+    if (!courses.length) return 'No courses found matching that query.';
+
+    return JSON.stringify(
+      courses.map((c) => ({
+        id: c._id.toString(),
+        slug: c.slug || c._id.toString(),
+        title: c.title,
+        description: c.description,
+        difficulty: c.difficulty,
+        estimatedDuration: c.estimatedDuration,
+        tags: c.tags,
+        url: `/coursify/${c.slug || c._id}`,
+      }))
+    );
+  },
+  {
+    name: 'search_courses',
+    description:
+      'Search the Coursify course catalog by keyword, topic, or difficulty level. Returns matching published courses with their URLs. Use this when the user asks about available courses or what to learn.',
+    schema: z.object({
+      query: z.string().optional().describe('Search keyword or topic (optional)'),
+      difficulty: z
+        .enum(['beginner', 'intermediate', 'advanced', 'all'])
+        .optional()
+        .describe('Filter by difficulty level'),
+    }),
+  }
+);
+
+const listCourses = tool(
+  async ({ difficulty }) => {
+    await dbConnect();
+    const filter = { deletedAt: null, status: 'published' };
+    if (difficulty && difficulty !== 'all') filter.difficulty = difficulty;
+
+    const courses = await CoursifyCourse.find(filter)
+      .select('_id slug title description difficulty estimatedDuration tags')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (!courses.length) return 'No published courses available yet.';
+
+    return JSON.stringify(
+      courses.map((c) => ({
+        id: c._id.toString(),
+        slug: c.slug || c._id.toString(),
+        title: c.title,
+        description: c.description,
+        difficulty: c.difficulty,
+        estimatedDuration: c.estimatedDuration,
+        tags: c.tags,
+        url: `/coursify/${c.slug || c._id}`,
+      }))
+    );
+  },
+  {
+    name: 'list_courses',
+    description:
+      'List all available published courses, optionally filtered by difficulty. Use this when the user wants to see what courses are available or is deciding what to study.',
+    schema: z.object({
+      difficulty: z
+        .enum(['beginner', 'intermediate', 'advanced', 'all'])
+        .optional()
+        .describe('Filter by difficulty level (omit for all levels)'),
+    }),
+  }
+);
+
+// ─── Course-specific tools (require courseId) ─────────────────────────────────
+
 export function createCoursifyTools(courseId) {
   const getCourseOutline = tool(
     async () => {
@@ -53,7 +142,7 @@ export function createCoursifyTools(courseId) {
     {
       name: 'get_course_outline',
       description:
-        'Get the complete course outline including all section titles, summaries, and learning goals. Use this to understand the course structure and help the learner navigate.',
+        'Get the complete outline of the current course including all section titles, summaries, and learning goals. Use this to understand the course structure and help the learner navigate.',
       schema: z.object({}),
     }
   );
@@ -81,9 +170,9 @@ export function createCoursifyTools(courseId) {
     {
       name: 'get_section_content',
       description:
-        'Get the full markdown content of a specific course section by its ID. Use this when the user asks about a specific topic or needs deeper explanation of a section.',
+        'Get the full markdown content of a specific section in the current course by its ID. Use this when the user asks about a specific topic or needs deeper explanation.',
       schema: z.object({
-        sectionId: z.string().describe('The section ID from the course outline'),
+        sectionId: z.string().describe('The section ID from get_course_outline'),
       }),
     }
   );
@@ -119,7 +208,7 @@ export function createCoursifyTools(courseId) {
     {
       name: 'search_course_sections',
       description:
-        'Search course sections by keyword or topic. Returns sections that match the query. Use this to find relevant sections when the user asks about a specific concept.',
+        'Search sections within the current course by keyword or topic. Use this to find relevant sections when the user asks about a specific concept.',
       schema: z.object({
         query: z.string().describe('Search keyword or phrase'),
       }),
@@ -127,4 +216,11 @@ export function createCoursifyTools(courseId) {
   );
 
   return [getCourseOutline, getSectionContent, searchCourseSections];
+}
+
+// Returns the full tool set based on context
+export function createAllCoursifyTools(courseId = null) {
+  const catalogTools = [searchCourses, listCourses];
+  if (!courseId) return catalogTools;
+  return [...catalogTools, ...createCoursifyTools(courseId)];
 }

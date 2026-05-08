@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import getAnalytics from '@/lib/analytics';
 
 function parseToolFromStatus(statusMsg) {
@@ -55,6 +55,11 @@ export function useChatStreaming({ endpoint = '/api/chat', getExtraBody } = {}) 
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
+
+  // Keep a ref to the current streamChatResponse so the memoized `send`
+  // callback always calls the latest version even after navigation changes
+  // the endpoint (avoids stale closure calling the wrong API route).
+  const streamChatResponseRef = useRef(null);
 
   const streamChatResponse = async ({
     content,
@@ -357,6 +362,9 @@ export function useChatStreaming({ endpoint = '/api/chat', getExtraBody } = {}) 
     }
   };
 
+  // Always point the ref at the latest version so the memoized send picks it up
+  streamChatResponseRef.current = streamChatResponse;
+
   const send = useCallback(
     async (content, activeQuote, activeMCPs, selectedAgentId, hidden = false) => {
       if ((!content.trim() && !activeQuote) || isLoading) return;
@@ -379,7 +387,7 @@ export function useChatStreaming({ endpoint = '/api/chat', getExtraBody } = {}) 
       setIsLoading(true);
 
       try {
-        await streamChatResponse({
+        await streamChatResponseRef.current({
           content: userMessage.content,
           history: messages,
           activeMCPs,

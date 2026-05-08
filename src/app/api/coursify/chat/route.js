@@ -24,7 +24,7 @@ export async function POST(request) {
     const {
       userMessage,
       chatHistory = [],
-      courseSlug,
+      courseSlug = '',
       currentSectionId = '',
       currentSectionTitle = '',
       currentSectionSummary = '',
@@ -32,25 +32,29 @@ export async function POST(request) {
 
     if (!userMessage)
       return NextResponse.json({ error: 'userMessage is required' }, { status: 400 });
-    if (!courseSlug) return NextResponse.json({ error: 'courseSlug is required' }, { status: 400 });
 
-    await dbConnect();
+    let courseId = null;
+    let courseTitle = '';
 
-    const query = isObjectId(courseSlug)
-      ? { _id: courseSlug, deletedAt: null, status: 'published' }
-      : { slug: courseSlug, deletedAt: null, status: 'published' };
+    // Resolve course if a slug was provided (course reader pages)
+    if (courseSlug) {
+      await dbConnect();
+      const query = isObjectId(courseSlug)
+        ? { _id: courseSlug, deletedAt: null, status: 'published' }
+        : { slug: courseSlug, deletedAt: null, status: 'published' };
 
-    const course = await CoursifyCourse.findOne(query).select('_id title description').lean();
-
-    if (!course) {
-      return NextResponse.json({ error: 'Course not found or not published' }, { status: 404 });
+      const course = await CoursifyCourse.findOne(query).select('_id title').lean();
+      if (course) {
+        courseId = course._id.toString();
+        courseTitle = course.title;
+      }
     }
 
     const inputParams = {
       userMessage,
       chatHistory,
-      courseId: course._id.toString(),
-      courseTitle: course.title,
+      courseId,
+      courseTitle,
       currentSectionId,
       currentSectionTitle,
       currentSectionSummary,

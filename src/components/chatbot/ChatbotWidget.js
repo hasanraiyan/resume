@@ -43,7 +43,8 @@ export default function ChatbotWidget() {
     setInputMessage,
     inputRef
   );
-  const isCoursifyPath = pathname.startsWith('/coursify/');
+  const isCoursifyPath = pathname.startsWith('/coursify');
+  const isCoursifyReader = pathname.startsWith('/coursify/');
 
   const { messages, setMessages, isLoading, statusMessage, send } = useChatStreaming(
     isCoursifyPath
@@ -67,9 +68,11 @@ export default function ChatbotWidget() {
   useEffect(() => {
     const isReady = isCoursifyPath || chatbotSettings?.isActive;
     if (isReady && messages.length === 0) {
-      const welcomeMessage = isCoursifyPath
+      const welcomeMessage = isCoursifyReader
         ? "Hi! I'm your learning assistant for this course. Ask me to explain any concept, summarize a section, or help you understand the material better."
-        : chatbotSettings.welcomeMessage || 'Hello! How can I help you today?';
+        : isCoursifyPath
+          ? 'Hi! I can help you find the right course to study. Ask me what courses are available, or tell me what you want to learn!'
+          : chatbotSettings.welcomeMessage || 'Hello! How can I help you today?';
       setMessages([
         {
           id: 1,
@@ -80,7 +83,7 @@ export default function ChatbotWidget() {
         },
       ]);
     }
-  }, [chatbotSettings, messages.length, setMessages, isCoursifyPath]);
+  }, [chatbotSettings, messages.length, setMessages, isCoursifyPath, isCoursifyReader]);
 
   useEffect(() => {
     async function loadMCPs() {
@@ -160,9 +163,11 @@ export default function ChatbotWidget() {
   };
 
   const clearChat = () => {
-    const welcomeMessage = isCoursifyPath
+    const welcomeMessage = isCoursifyReader
       ? "Hi! I'm your learning assistant for this course. Ask me to explain any concept, summarize a section, or help you understand the material better."
-      : chatbotSettings?.welcomeMessage || 'Hello! How can I help you today?';
+      : isCoursifyPath
+        ? 'Hi! I can help you find the right course to study. Ask me what courses are available, or tell me what you want to learn!'
+        : chatbotSettings?.welcomeMessage || 'Hello! How can I help you today?';
     setMessages([
       {
         id: 1,
@@ -235,13 +240,19 @@ export default function ChatbotWidget() {
     setTimeout(() => inputRef.current?.focus(), 150);
   }, [selection.text, isOpen, settingsFetched, fetchSettings, setActiveQuote, setSelection]);
 
-  const suggestedPrompts = isCoursifyPath
+  const suggestedPrompts = isCoursifyReader
     ? [
         { text: 'Explain the current section' },
-        { text: 'Summarize this course' },
+        { text: 'What are the key takeaways?' },
         { text: 'What should I learn next?' },
       ]
-    : (chatbotSettings?.suggestedPrompts || []).map((t) => ({ text: t }));
+    : isCoursifyPath
+      ? [
+          { text: 'What courses are available?' },
+          { text: 'Show me beginner courses' },
+          { text: 'What can I learn here?' },
+        ]
+      : (chatbotSettings?.suggestedPrompts || []).map((t) => ({ text: t }));
 
   if (pathname.startsWith('/pocketly') || pathname.startsWith('/apps')) {
     return null;
