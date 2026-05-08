@@ -71,7 +71,48 @@ export async function POST(request, { params }) {
     return NextResponse.json({
       success: true,
       note: { ...saved, id: saved._id?.toString(), _id: saved._id?.toString() },
+      researchNotes: course.researchNotes,
     });
+  } catch (error) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request, { params }) {
+  const auth = await requireAdminAuth(request);
+  if (auth instanceof NextResponse) return auth;
+
+  try {
+    await dbConnect();
+    const { id } = await params;
+    const body = await request.json();
+    const { index } = body;
+
+    if (typeof index !== 'number' || index < 0) {
+      return NextResponse.json(
+        { success: false, error: 'Valid index is required' },
+        { status: 400 }
+      );
+    }
+
+    const course = await CoursifyCourse.findOne({ _id: id, deletedAt: null }).lean();
+    if (!course) {
+      return NextResponse.json({ success: false, error: 'Course not found' }, { status: 404 });
+    }
+
+    const notes = course.researchNotes || [];
+    if (index >= notes.length) {
+      return NextResponse.json({ success: false, error: 'Index out of range' }, { status: 400 });
+    }
+
+    const noteId = notes[index]._id;
+    const updated = await CoursifyCourse.findOneAndUpdate(
+      { _id: id, deletedAt: null },
+      { $pull: { researchNotes: { _id: noteId } }, $inc: { syncVersion: 1 } },
+      { new: true }
+    ).lean();
+
+    return NextResponse.json({ success: true, researchNotes: updated.researchNotes || [] });
   } catch (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }

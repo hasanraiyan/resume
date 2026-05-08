@@ -22,12 +22,13 @@ export const COURSE_AUTHORING_GUIDE = {
   workflow: [
     '1. Call list_courses first to avoid duplicate topics. Decide whether to create a new course or update a draft.',
     '2. Call get_course_authoring_guide before planning, drafting, or rewriting any course.',
-    '3. Research the topic thoroughly. Use any external search or browsing tool available. Gather sources, key ideas, and learning goals before writing anything.',
-    '4. Call save_course_plan to persist your thinking: target audience, learning objectives, prerequisites, expected outcome, a free-form outline, and the intended modules. Set authoringStatus to "planned".',
+    '3. Research the topic thoroughly using any external search or browsing tool available. For each meaningful source or insight found, call add_research_note to persist it — title, key takeaway, source URL, and type. Set authoringStatus to "researching" while this is ongoing.',
+    '4. Call save_course_plan once research is done: fill in targetAudience, learningObjectives, prerequisites, outcome, and a free-form Markdown outline of planned modules and sections. Set authoringStatus to "planned".',
     '5. Call create_module once for each planned module in the outline, in order. Provide clear titles and learning goals.',
-    '6. Call add_section once per section, specifying the moduleId so it is grouped correctly. Write full Markdown content following the section template. Change authoringStatus to "drafting" at this point.',
+    '6. Call add_section once per section, specifying the moduleId so it is grouped correctly. Write full Markdown content following the section template. Set authoringStatus to "drafting" when you begin.',
     '7. Call get_course_progress at any time to check completeness — see which sections are still planned, which modules are incomplete, and what the recommended next action is.',
-    '8. Call publish_course only after the user explicitly asks to publish or confirms the content is complete.',
+    '8. When all sections are written, set authoringStatus to "reviewing" via save_course_plan, review quality, then "ready" when satisfied.',
+    '9. Call publish_course only after the user explicitly asks to publish or confirms the content is complete.',
   ],
   courseShape: {
     recommendedSections: '6-10 sections for a practical course; 3-5 for a short primer.',
@@ -36,6 +37,8 @@ export const COURSE_AUTHORING_GUIDE = {
       'Each section should be self-contained Markdown with clear explanations, examples, practice tasks, and a recap.',
     resources:
       'Include only useful, relevant resources. Use docs and authoritative references when possible.',
+    researchNotes:
+      'Use add_research_note liberally during research. Notes are stored per-course and visible in the planning workspace. They survive context resets and let you resume research in a future session.',
   },
   markdownTemplate: `## Learning Goals
 - What the learner will be able to do after this section

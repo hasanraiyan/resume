@@ -41,7 +41,7 @@ export function registerCoursifyTools(server) {
     {
       title: 'Get Course Authoring Guide',
       description:
-        'Use this when the user asks you to create, improve, or plan a detailed Coursify course. It returns the research-first, plan-first workflow and Markdown structure to follow before saving course content.',
+        'Use this when the user asks you to create, improve, or plan a Coursify course. Returns the full research → save_course_plan → create_module → add_section workflow, the per-section Markdown template, authoring status meanings, and quality bar. Always call this before writing any course content.',
       annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {},
       _meta: toolMeta('Loading authoring guide...', 'Authoring guide ready.'),
@@ -112,7 +112,7 @@ export function registerCoursifyTools(server) {
     {
       title: 'Get Course',
       description:
-        'Use this before revising an existing course. Retrieve a single course by ID along with all sections and their full Markdown content.',
+        'Use this before revising an existing course. Retrieve a single course by ID, including all planning fields (targetAudience, learningObjectives, prerequisites, outcome, outline, researchNotes, authoringStatus), all modules in order, and all sections with their full Markdown content.',
       annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {
         id: z.string().describe('MongoDB _id of the course'),
@@ -125,15 +125,20 @@ export function registerCoursifyTools(server) {
         const course = await CoursifyCourse.findOne({ _id: id, deletedAt: null }).lean();
         if (!course) return errorResult('Course not found.');
 
-        const sections = await CoursifySection.find({ courseId: id, deletedAt: null })
-          .sort({ order: 1 })
-          .lean();
+        const [modules, sections] = await Promise.all([
+          CoursifyModule.find({ courseId: id, deletedAt: null }).sort({ order: 1 }).lean(),
+          CoursifySection.find({ courseId: id, deletedAt: null }).sort({ order: 1 }).lean(),
+        ]);
 
-        return textResult(`Course "${course.title}" has ${sections.length} sections.`, {
-          kind: 'course_detail',
-          course: normalizeCourse({ ...course, sectionCount: sections.length }),
-          sections: sections.map(normalizeSection),
-        });
+        return textResult(
+          `Course "${course.title}" has ${modules.length} modules and ${sections.length} sections.`,
+          {
+            kind: 'course_detail',
+            course: normalizeCourse({ ...course, sectionCount: sections.length }),
+            modules: modules.map(normalizeModule),
+            sections: sections.map(normalizeSection),
+          }
+        );
       } catch (err) {
         return errorResult(`Error fetching course: ${err.message}`);
       }
