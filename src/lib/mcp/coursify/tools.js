@@ -27,6 +27,15 @@ import {
   dbListCourseModules,
   dbAddResearchNote,
   dbResearchFindings,
+  dbGetResearchNotes,
+  dbGetCourseWorkspace,
+  dbSearchCourses,
+  dbGetModule,
+  dbDeleteModules,
+  dbAddSections,
+  dbDeleteSections,
+  dbAddSectionResource,
+  dbApplySuggestedModules,
 } from '@/lib/coursify/db-ops.js';
 
 // Shared schemas
@@ -82,19 +91,21 @@ export function registerCoursifyTools(server) {
     {
       title: 'List Courses',
       description:
-        'Use this first before creating a course. Retrieve all Coursify courses so you can avoid duplicate topics and decide whether to create a new course or update an existing draft.',
+        'Retrieve all Coursify courses, sorted by last updated. Includes progress summary (sections complete/total) and authoringStatus.',
       annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {
         status: z
           .enum(['draft', 'published', 'all'])
           .optional()
           .describe('Filter by status. Defaults to "all".'),
+        limit: z.number().int().optional().default(20),
+        offset: z.number().int().optional().default(0),
       },
       _meta: toolMeta('Fetching courses...', 'Courses loaded.'),
     },
-    async ({ status } = {}) => {
+    async ({ status, limit, offset } = {}) => {
       try {
-        const courses = await dbListCourses({ status });
+        const courses = await dbListCourses({ status, limit, offset });
         return textResult(`Found ${courses.length} courses in Coursify.`, {
           kind: 'courses',
           courses,
@@ -106,26 +117,103 @@ export function registerCoursifyTools(server) {
   );
 
   server.registerTool(
+    'delete_modules',
+    {
+      title: 'Delete Modules (Bulk)',
+      description: 'Delete multiple modules in a single call.',
+      annotations: DESTRUCTIVE_ANNOTATIONS,
+      inputSchema: {
+        ids: z.array(z.string()).describe('Array of module IDs to delete'),
+      },
+      _meta: toolMeta('Deleting modules...', 'Modules deleted.'),
+    },
+    async ({ ids }) => {
+      try {
+        const { deletedCount } = await dbDeleteModules({ ids });
+        return textResult(`Deleted ${deletedCount} modules.`, { success: true, deletedCount });
+      } catch (err) {
+        return errorResult(`Error deleting modules: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
+    'search_courses',
+    {
+      title: 'Search Courses',
+      description: 'Search for courses by title, description, or tags.',
+      annotations: READ_ONLY_ANNOTATIONS,
+      inputSchema: {
+        query: z.string().describe('Search keyword'),
+      },
+      _meta: toolMeta('Searching courses...', 'Search complete.'),
+    },
+    async ({ query }) => {
+      try {
+        const courses = await dbSearchCourses({ query });
+        return textResult(`Found ${courses.length} courses matching "${query}".`, {
+          kind: 'courses',
+          courses,
+        });
+      } catch (err) {
+        return errorResult(`Error searching courses: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
     'get_course',
     {
       title: 'Get Course',
       description:
-        'Use this before revising an existing course. Returns course metadata, planning fields, modules, and sections grouped by module — but only section titles, summaries, and statuses (NOT full content). Call get_section_content when you need the full Markdown body of a specific section.',
+        'Returns course metadata, planning fields, and module structure. Set includeSectionContent: true to also fetch all section bodies in one call.',
       annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {
         id: z.string().describe('MongoDB _id of the course'),
+        includeSectionContent: z
+          .boolean()
+          .optional()
+          .describe('If true, returns full Markdown content for all sections.'),
       },
       _meta: toolMeta('Loading course...', 'Course loaded.'),
     },
-    async ({ id }) => {
+    async ({ id, includeSectionContent }) => {
       try {
-        const { course, modules, uncategorizedSections } = await dbGetCourse({ id });
+        const { course, modules, uncategorizedSections } = await dbGetCourse({
+          id,
+          includeSectionContent,
+        });
         return textResult(
-          `Course "${course.title}" has ${modules.length} modules and ${course.sectionCount} sections. Use get_section_content to read or edit a section's full Markdown body.`,
+          `Course "${course.title}" loaded. It has ${modules.length} modules and ${course.sectionCount} sections.`,
           { kind: 'course_detail', course, modules, uncategorizedSections }
         );
       } catch (err) {
         return errorResult(`Error fetching course: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
+    'get_course_workspace',
+    {
+      title: 'Get Course Workspace',
+      description:
+        'Single-call loader for session resume. Returns course metadata, planning (including agentNotes), research notes, and all modules with full section content.',
+      annotations: READ_ONLY_ANNOTATIONS,
+      inputSchema: {
+        courseId: z.string().describe('MongoDB _id of the course'),
+      },
+      _meta: toolMeta('Loading workspace...', 'Workspace loaded.'),
+    },
+    async ({ courseId }) => {
+      try {
+        const data = await dbGetCourseWorkspace({ id: courseId });
+        return textResult(`Full workspace for "${data.course.title}" loaded.`, {
+          kind: 'course_workspace',
+          ...data,
+        });
+      } catch (err) {
+        return errorResult(`Error fetching workspace: ${err.message}`);
       }
     }
   );
@@ -267,7 +355,7 @@ export function registerCoursifyTools(server) {
     {
       title: 'Save Course Plan',
       description:
-        'Save the course planning workspace: target audience, learning objectives, prerequisites, outcome, outline (Markdown), planning notes, and authoringStatus. Call this after research and before creating modules or sections.',
+        'Save the course planning workspace. Use agentNotes to save your internal working state across sessions.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         courseId: z.string().describe('MongoDB _id of the course'),
@@ -280,6 +368,7 @@ export function registerCoursifyTools(server) {
           .optional()
           .describe('Free-form Markdown outline of planned modules and sections'),
         planningNotes: z.string().optional(),
+        agentNotes: z.string().optional().describe('Internal agent state or scratchpad'),
         authoringStatus: z
           .enum(['idea', 'researching', 'planned', 'drafting', 'reviewing', 'ready', 'published'])
           .optional(),
@@ -338,7 +427,7 @@ export function registerCoursifyTools(server) {
     {
       title: 'Suggest Modules From Outline',
       description:
-        'Read-only. Analyzes the saved course outline and returns a suggested module structure — titles, summaries, learning goals, and which outline sections belong to each module. Does NOT create modules; review the suggestions then call create_module for each you want.',
+        'Read-only analyzer for course outline. Use apply_suggested_modules to create them in one call.',
       annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {
         courseId: z.string().describe('MongoDB _id of the course'),
@@ -476,6 +565,31 @@ export function registerCoursifyTools(server) {
   );
 
   // ── Modules ───────────────────────────────────────────────────────────────
+
+  server.registerTool(
+    'get_module',
+    {
+      title: 'Get Module',
+      description: 'Fetch details for a specific module including its sections.',
+      annotations: READ_ONLY_ANNOTATIONS,
+      inputSchema: {
+        id: z.string().describe('MongoDB _id of the module'),
+      },
+      _meta: toolMeta('Loading module...', 'Module loaded.'),
+    },
+    async ({ id }) => {
+      try {
+        const { module, sections } = await dbGetModule({ id });
+        return textResult(`Module "${module.title}" has ${sections.length} sections.`, {
+          kind: 'module_detail',
+          module,
+          sections,
+        });
+      } catch (err) {
+        return errorResult(`Error fetching module: ${err.message}`);
+      }
+    }
+  );
 
   server.registerTool(
     'create_module',
@@ -642,7 +756,7 @@ export function registerCoursifyTools(server) {
     {
       title: 'Add Section',
       description:
-        'Use this once per planned course section after research and outlining. Specify the moduleId to group it correctly. Write full Markdown content that follows the authoring guide.',
+        'Create a single course section. Use set_quiz_questions to manage questions separately.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         courseId: z.string().describe('MongoDB _id of the course to add this section to'),
@@ -658,7 +772,9 @@ export function registerCoursifyTools(server) {
         questions: z
           .array(questionSchema)
           .optional()
-          .describe('Quiz questions. Provide 3-7 with explanations.'),
+          .describe(
+            'DEPRECATED: Use set_quiz_questions instead. Quiz questions for this section.'
+          ),
         moduleId: z
           .string()
           .optional()
@@ -720,7 +836,7 @@ export function registerCoursifyTools(server) {
     {
       title: 'Update Section',
       description:
-        'Edit the title, content, order, or resources of an existing section. Use full replacement Markdown when changing content.',
+        'Edit an existing section. Use full replacement Markdown for content. Use set_quiz_questions to manage questions. When all sections reach complete, course authoringStatus automatically advances to reviewing.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         id: z.string().describe('MongoDB _id of the section to update'),
@@ -730,7 +846,9 @@ export function registerCoursifyTools(server) {
         questions: z
           .array(questionSchema)
           .optional()
-          .describe('Full replacement quiz questions array.'),
+          .describe(
+            'DEPRECATED: Use set_quiz_questions instead. Full replacement quiz questions array.'
+          ),
         summary: z.string().optional(),
         learningGoals: z.array(z.string()).optional(),
         estimatedDuration: z.string().optional(),
@@ -778,6 +896,37 @@ export function registerCoursifyTools(server) {
   );
 
   server.registerTool(
+    'add_sections',
+    {
+      title: 'Add Sections (Batch)',
+      description: 'Create multiple sections in one call.',
+      annotations: MUTATION_ANNOTATIONS,
+      inputSchema: {
+        courseId: z.string().describe('MongoDB _id of the course'),
+        sections: z.array(
+          z.object({
+            title: z.string(),
+            moduleId: z.string().optional(),
+            sectionType: z.enum(['lesson', 'quiz']).optional(),
+            content: z.string().optional(),
+            order: z.number().int().optional(),
+            status: z.enum(['planned', 'draft', 'needs_review', 'complete']).optional(),
+          })
+        ),
+      },
+      _meta: toolMeta('Adding sections...', 'Sections added.'),
+    },
+    async ({ courseId, sections }) => {
+      try {
+        const { sections: created } = await dbAddSections({ courseId, sections });
+        return textResult(`Added ${created.length} sections.`, { success: true, sections: created });
+      } catch (err) {
+        return errorResult(`Error adding sections: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
     'delete_section',
     {
       title: 'Delete Section',
@@ -799,21 +948,65 @@ export function registerCoursifyTools(server) {
   );
 
   server.registerTool(
+    'delete_sections',
+    {
+      title: 'Delete Sections (Bulk)',
+      description: 'Delete multiple sections in a single call.',
+      annotations: DESTRUCTIVE_ANNOTATIONS,
+      inputSchema: {
+        ids: z.array(z.string()).describe('Array of section IDs to delete'),
+      },
+      _meta: toolMeta('Deleting sections...', 'Sections deleted.'),
+    },
+    async ({ ids }) => {
+      try {
+        const { deletedCount } = await dbDeleteSections({ ids });
+        return textResult(`Deleted ${deletedCount} sections.`, { success: true, deletedCount });
+      } catch (err) {
+        return errorResult(`Error deleting sections: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
+    'add_section_resource',
+    {
+      title: 'Add Section Resource',
+      description: 'Append a single resource link to a section.',
+      annotations: MUTATION_ANNOTATIONS,
+      inputSchema: {
+        sectionId: z.string().describe('MongoDB _id of the section'),
+        resource: resourceSchema,
+      },
+      _meta: toolMeta('Adding resource...', 'Resource added.'),
+    },
+    async ({ sectionId, resource }) => {
+      try {
+        const { section } = await dbAddSectionResource({ sectionId, resource });
+        return textResult(`Added resource to "${section.title}".`, { success: true, section });
+      } catch (err) {
+        return errorResult(`Error adding resource: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
     'reorder_sections',
     {
       title: 'Reorder Sections',
       description:
-        'Set the display order of all sections in a course by providing the full ordered list of section IDs.',
+        'Set the display order of sections. Optionally provide moduleId to reorder within that module only.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         courseId: z.string().describe('MongoDB _id of the course'),
-        sectionIds: z.array(z.string()).describe('All section IDs in the desired order.'),
+        sectionIds: z.array(z.string()).describe('Ordered section IDs.'),
+        moduleId: z.string().optional().describe('Reorder within this module only.'),
       },
       _meta: toolMeta('Reordering sections...', 'Sections reordered.'),
     },
-    async ({ courseId, sectionIds }) => {
+    async ({ courseId, sectionIds, moduleId }) => {
       try {
-        const { reordered } = await dbReorderSections({ courseId, sectionIds });
+        const { reordered } = await dbReorderSections({ courseId, sectionIds, moduleId });
         return textResult(`Reordered ${reordered} sections.`, { success: true });
       } catch (err) {
         return errorResult(`Error reordering sections: ${err.message}`);
@@ -850,6 +1043,30 @@ export function registerCoursifyTools(server) {
   );
 
   // ── Research ──────────────────────────────────────────────────────────────
+
+  server.registerTool(
+    'get_research_notes',
+    {
+      title: 'Get Research Notes',
+      description: 'Retrieve all research findings for a course.',
+      annotations: READ_ONLY_ANNOTATIONS,
+      inputSchema: {
+        courseId: z.string().describe('MongoDB _id of the course'),
+      },
+      _meta: toolMeta('Loading research notes...', 'Research notes loaded.'),
+    },
+    async ({ courseId }) => {
+      try {
+        const notes = await dbGetResearchNotes({ courseId });
+        return textResult(`Found ${notes.length} research notes.`, {
+          kind: 'research_notes',
+          notes,
+        });
+      } catch (err) {
+        return errorResult(`Error fetching research notes: ${err.message}`);
+      }
+    }
+  );
 
   server.registerTool(
     'add_research_note',
@@ -918,6 +1135,32 @@ export function registerCoursifyTools(server) {
   );
 
   // ── Progress ──────────────────────────────────────────────────────────────
+
+  server.registerTool(
+    'apply_suggested_modules',
+    {
+      title: 'Apply Suggested Modules',
+      description:
+        'Runs suggestions from outline and creates all modules and sections in one call.',
+      annotations: MUTATION_ANNOTATIONS,
+      inputSchema: {
+        courseId: z.string().describe('MongoDB _id of the course'),
+      },
+      _meta: toolMeta('Applying modules...', 'Modules applied.'),
+    },
+    async ({ courseId }) => {
+      try {
+        const { modulesCreated, moduleIds } = await dbApplySuggestedModules({ courseId });
+        return textResult(`Created ${modulesCreated} modules from outline.`, {
+          success: true,
+          modulesCreated,
+          moduleIds,
+        });
+      } catch (err) {
+        return errorResult(`Error applying modules: ${err.message}`);
+      }
+    }
+  );
 
   server.registerTool(
     'get_course_progress',

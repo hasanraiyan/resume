@@ -67,6 +67,7 @@ const CoursifyCourseSchema = new mongoose.Schema(
     outcome: { type: String, default: '' },
     outline: { type: String, default: '' },
     planningNotes: { type: String, default: '' },
+    agentNotes: { type: String, default: '' },
     researchNotes: { type: [ResearchNoteSchema], default: [] },
     authoringStatus: {
       type: String,
