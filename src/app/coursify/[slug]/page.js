@@ -348,16 +348,21 @@ export default function PublicCourseReaderPage({ params }) {
 
             {/* Tags */}
             {course.tags?.length > 0 && (
-              <div className="flex items-center gap-1.5 flex-wrap mb-6">
-                <Tag className="w-3.5 h-3.5 text-[#7c8e88]" />
+              <div className="flex items-center gap-1.5 overflow-hidden whitespace-nowrap mb-6">
+                <Tag className="w-3.5 h-3.5 text-[#7c8e88] shrink-0" />
                 {course.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="px-2 py-0.5 bg-[#f0f5f2] text-[#7c8e88] text-[10px] font-bold rounded-full"
+                    className="px-2 py-0.5 bg-[#f0f5f2] text-[#7c8e88] text-[10px] font-bold rounded-full shrink-0"
                   >
                     {tag}
                   </span>
                 ))}
+                {course.tags.length > 6 && (
+                  <span className="text-[10px] font-bold text-[#7c8e88] shrink-0">
+                    +{course.tags.length - 6}
+                  </span>
+                )}
               </div>
             )}
 
