@@ -13,7 +13,9 @@
       "mcp__coursify__update_section",
       "mcp__coursify__update_course",
       "mcp__coursify__publish_course",
-      "Bash(git pull *)"
+      "Bash(git pull *)",
+      "Bash(node --input-type=module --experimental-vm-modules)",
+      "Bash(npx next *)"
     ]
   }
 }
