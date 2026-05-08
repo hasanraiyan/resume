@@ -315,17 +315,32 @@ export default function PublicCourseReaderPage({ params }) {
             </button>
           </div>
 
-          {/* Course info in sidebar */}
-          <div className="px-4 py-3 border-b border-[#e5e3d8]">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88] mb-1">
-              {modules.length > 0
-                ? `${modules.length} modules · ${sections.length} sections`
-                : `${sections.length} section${sections.length !== 1 ? 's' : ''}`}
+          {/* Sidebar header: title + progress */}
+          <div className="px-4 py-3 border-b border-[#e5e3d8] space-y-2.5">
+            <p className="font-bold text-xs text-[#1e3a34] line-clamp-2 leading-snug hidden lg:block">
+              {course.title}
             </p>
-            {course.description && (
-              <p className="text-xs text-[#7c8e88] leading-relaxed line-clamp-3">
-                {course.description}
-              </p>
+            {sections.length > 0 && (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
+                    {modules.length > 0
+                      ? `${modules.length} module${modules.length !== 1 ? 's' : ''}`
+                      : 'Progress'}
+                  </span>
+                  <span className="text-[10px] font-bold text-[#1e3a34]">
+                    {visited.size} / {sections.length} done
+                  </span>
+                </div>
+                <div className="h-1.5 bg-[#f0f5f2] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#1f644e] rounded-full transition-all duration-500"
+                    style={{
+                      width: `${sections.length > 0 ? (visited.size / sections.length) * 100 : 0}%`,
+                    }}
+                  />
+                </div>
+              </>
             )}
           </div>
 
@@ -345,51 +360,64 @@ export default function PublicCourseReaderPage({ params }) {
             </button>
             {modules.length > 0 ? (
               <>
-                {modules.map((mod) => {
+                {modules.map((mod, modIdx) => {
                   const modSections = sections.filter((s) => s.moduleId === mod._id);
+                  const doneSections = modSections.filter((s) => visited.has(s._id)).length;
                   return (
-                    <div key={mod._id} className="mb-3">
-                      <div className="px-2 py-1.5 flex items-center gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88] truncate flex-1">
+                    <div key={mod._id} className="mb-1">
+                      {/* Module header */}
+                      <div className="flex items-center gap-2 px-2 py-2 mt-1">
+                        <span className="w-5 h-5 rounded-md bg-[#1f644e]/10 text-[#1f644e] text-[10px] font-bold flex items-center justify-center shrink-0">
+                          {modIdx + 1}
+                        </span>
+                        <span className="text-[11px] font-bold text-[#1e3a34] truncate flex-1">
                           {mod.title}
                         </span>
-                        <span className="text-[10px] text-[#7c8e88] shrink-0">
-                          {modSections.length}
+                        <span className="text-[10px] font-bold text-[#b0bfbb] shrink-0">
+                          {doneSections}/{modSections.length}
                         </span>
                       </div>
-                      {modSections.map((section) => (
-                        <SidebarSectionBtn
-                          key={section._id}
-                          section={section}
-                          active={activeSection === section._id}
-                          done={visited.has(section._id)}
-                          onClick={() => navigateTo(section._id)}
-                        />
-                      ))}
-                      {modSections.length === 0 && (
-                        <p className="text-[10px] text-[#7c8e88] px-3 py-1 italic">No sections</p>
-                      )}
+                      <div className="ml-2 pl-3 border-l-2 border-[#f0f5f2] space-y-0.5">
+                        {modSections.map((section) => (
+                          <SidebarSectionBtn
+                            key={section._id}
+                            section={section}
+                            index={sections.indexOf(section)}
+                            active={activeSection === section._id}
+                            done={visited.has(section._id)}
+                            onClick={() => navigateTo(section._id)}
+                          />
+                        ))}
+                        {modSections.length === 0 && (
+                          <p className="text-[10px] text-[#b0bfbb] px-3 py-1 italic">
+                            No sections yet
+                          </p>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
                 {sections.filter((s) => !s.moduleId).length > 0 && (
-                  <div className="mb-3">
-                    <div className="px-2 py-1.5">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
+                  <div className="mb-1 mt-2">
+                    <div className="flex items-center gap-2 px-2 py-1.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#b0bfbb]">
                         More
                       </span>
                     </div>
-                    {sections
-                      .filter((s) => !s.moduleId)
-                      .map((section) => (
-                        <SidebarSectionBtn
-                          key={section._id}
-                          section={section}
-                          active={activeSection === section._id}
-                          done={visited.has(section._id)}
-                          onClick={() => navigateTo(section._id)}
-                        />
-                      ))}
+                    <div className="space-y-0.5">
+                      {sections
+                        .filter((s) => !s.moduleId)
+                        .map((section) => (
+                          <SidebarSectionBtn
+                            key={section._id}
+                            section={section}
+                            index={sections.indexOf(section)}
+                            active={activeSection === section._id}
+                            done={visited.has(section._id)}
+                            onClick={() => navigateTo(section._id)}
+                          />
+                        ))}
+                    </div>
                   </div>
                 )}
               </>
@@ -424,7 +452,7 @@ export default function PublicCourseReaderPage({ params }) {
               ) : showOverview ? (
                 <>
                   {/* Course Overview */}
-                  <div className="max-w-2xl mx-auto">
+                  <div>
                     {/* Thumbnail */}
                     {course.thumbnail && (
                       <div className="w-full h-52 rounded-2xl overflow-hidden mb-8 border border-[#e5e3d8] shadow-sm">
@@ -768,23 +796,25 @@ function SidebarSectionBtn({ section, index, active, done, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left px-3 py-2.5 rounded-xl mb-1 transition-colors flex items-center gap-2.5 ${
-        active ? 'bg-[#1f644e] text-white' : 'text-[#1e3a34] hover:bg-[#f0f5f2]'
+      className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center gap-2.5 ${
+        active ? 'bg-[#1f644e] text-white shadow-sm' : 'text-[#1e3a34] hover:bg-[#f0f5f2]'
       }`}
     >
-      {done && !active ? (
-        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-      ) : index !== undefined ? (
-        <span
-          className={`text-[10px] font-bold shrink-0 w-5 h-5 rounded flex items-center justify-center ${
-            active ? 'bg-white/20 text-white' : 'bg-[#e5e3d8] text-[#7c8e88]'
-          }`}
-        >
-          {index + 1}
-        </span>
-      ) : null}
       <span
-        className={`text-xs font-bold truncate flex-1 ${done && !active ? 'text-[#7c8e88]' : ''}`}
+        className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors ${
+          active
+            ? 'bg-white/20 text-white'
+            : done
+              ? 'bg-emerald-100 text-emerald-600'
+              : 'bg-[#f0f5f2] text-[#b0bfbb]'
+        }`}
+      >
+        {done && !active ? <Check className="w-3 h-3" /> : index !== undefined ? index + 1 : null}
+      </span>
+      <span
+        className={`text-xs font-semibold truncate flex-1 leading-snug ${
+          done && !active ? 'text-[#7c8e88]' : ''
+        }`}
       >
         {section.title}
       </span>
