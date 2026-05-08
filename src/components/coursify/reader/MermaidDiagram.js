@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 
 let mermaidReady = false;
 let mermaidInstance = null;
@@ -49,7 +49,7 @@ async function getMermaid() {
 
 let uid = 0;
 
-export function MermaidDiagram({ chart }) {
+export const MermaidDiagram = memo(function MermaidDiagram({ chart }) {
   const [svg, setSvg] = useState('');
   const [error, setError] = useState(null);
 
@@ -151,4 +151,4 @@ export function MermaidDiagram({ chart }) {
       />
     </>
   );
-}
+});

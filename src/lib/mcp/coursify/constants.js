@@ -65,6 +65,7 @@ export const COURSE_AUTHORING_GUIDE = {
       '```mermaid\ngraph TD\n  A[Start] --> B{Decision}\n  B -->|Yes| C[Do X]\n  B -->|No| D[Do Y]\n```',
     forbidden:
       'Never use ASCII art (pipes, dashes, plus signs, box-drawing characters) to represent diagrams. Always use a Mermaid block instead.',
+    math: 'For mathematical formulas and equations, use LaTeX math syntax: $...$ for inline math and $$...$$ for display/block math. Never put formulas in code blocks.',
   },
   markdownTemplate: `## Learning Goals
 - What the learner will be able to do after this section
@@ -106,5 +107,6 @@ Summarize the section in a few crisp bullets.`,
     'Use consistent terminology and build concepts in a sensible order.',
     'Do not invent fake citations or resource URLs.',
     'DIAGRAMS: Always use ```mermaid fenced blocks for any diagram or visual. Never use ASCII art (pipes, dashes, box-drawing chars). The reader renders Mermaid as interactive SVG automatically.',
+    'MATH: Use LaTeX syntax for all formulas — $...$ for inline, $$...$$ for display math. Never put equations in code blocks.',
   ],
 };

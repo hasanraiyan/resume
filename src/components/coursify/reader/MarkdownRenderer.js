@@ -1,6 +1,12 @@
+'use client';
+
+import { memo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
 import rehypeRaw from 'rehype-raw';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { MermaidDiagram } from './MermaidDiagram';
@@ -17,12 +23,12 @@ function isAsciiArt(code) {
   return lines.every((l) => ASCII_PIPE_RE.test(l));
 }
 
-export function MarkdownRenderer({ content }) {
+export const MarkdownRenderer = memo(function MarkdownRenderer({ content }) {
   return (
     <div className="coursify-md prose prose-sm max-w-none font-[family-name:var(--font-lora)] prose-headings:font-bold prose-headings:text-[#1e3a34] prose-p:text-[#1e3a34] prose-p:leading-relaxed prose-code:bg-[#f0f5f2] prose-code:rounded prose-code:px-1 prose-code:text-[#1f644e] prose-pre:bg-[#1e3a34] prose-pre:rounded-xl prose-blockquote:border-[#1f644e] prose-a:text-[#1f644e] prose-li:text-[#1e3a34] prose-strong:text-[#1e3a34] prose-table:text-sm">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeRaw, rehypeKatex]}
         components={{
           h2({ children, ...props }) {
             const text = typeof children === 'string' ? children : '';
@@ -51,8 +57,11 @@ export function MarkdownRenderer({ content }) {
           },
           code({ node, className, children, ...props }) {
             const lang = /language-(\w+)/.exec(className || '')?.[1];
-            const raw = String(children).replace(/\n$/, '');
-            const isBlock = raw.includes('\n');
+            const codeStr = String(children);
+            // Fenced blocks always have a trailing \n added by ReactMarkdown;
+            // inline code never does — check before stripping.
+            const isBlock = codeStr.endsWith('\n') || codeStr.includes('\n');
+            const raw = codeStr.replace(/\n$/, '');
 
             // Mermaid diagrams
             if (lang === 'mermaid') {
@@ -126,4 +135,4 @@ export function MarkdownRenderer({ content }) {
       </ReactMarkdown>
     </div>
   );
-}
+});
