@@ -24,38 +24,55 @@ function triggerThumbnail(course) {
 
 // ─── Courses ──────────────────────────────────────────────────────────────────
 
-export async function dbListCourses({ status } = {}) {
+export async function dbListCourses({ status, limit = 20, offset = 0 } = {}) {
   await dbConnect();
   const query = { deletedAt: null };
   if (status && status !== 'all') query.status = status;
 
-  const courses = await CoursifyCourse.find(query).sort({ updatedAt: -1 }).lean();
+  const courses = await CoursifyCourse.find(query)
+    .sort({ updatedAt: -1 })
+    .skip(offset)
+    .limit(limit)
+    .lean();
+
   const courseIds = courses.map((c) => c._id);
 
   const sections = await CoursifySection.find({ courseId: { $in: courseIds }, deletedAt: null })
-    .select('courseId')
+    .select('courseId status')
     .lean();
 
-  const countMap = {};
+  const progressMap = {};
   for (const s of sections) {
-    const id = s.courseId.toString();
-    countMap[id] = (countMap[id] || 0) + 1;
+    const cid = s.courseId.toString();
+    if (!progressMap[cid]) progressMap[cid] = { total: 0, complete: 0 };
+    progressMap[cid].total++;
+    if (s.status === 'complete') progressMap[cid].complete++;
   }
 
-  return courses.map((c) =>
-    normalizeCourse({ ...c, sectionCount: countMap[c._id.toString()] || 0 })
-  );
+  return courses.map((c) => {
+    const progress = progressMap[c._id.toString()] || { total: 0, complete: 0 };
+    return normalizeCourse({
+      ...c,
+      sectionCount: progress.total,
+      sectionsTotal: progress.total,
+      sectionsComplete: progress.complete,
+    });
+  });
 }
 
-export async function dbGetCourse({ id }) {
+export async function dbGetCourse({ id, includeSectionContent = false }) {
   await dbConnect();
   const course = await CoursifyCourse.findOne({ _id: id, deletedAt: null }).lean();
   if (!course) throw new Error('Course not found.');
 
+  const sectionSelect = includeSectionContent
+    ? 'moduleId title content sectionType quiz summary status order learningGoals estimatedDuration resources'
+    : 'moduleId title summary status order learningGoals estimatedDuration resources';
+
   const [modules, sections] = await Promise.all([
     CoursifyModule.find({ courseId: id, deletedAt: null }).sort({ order: 1 }).lean(),
     CoursifySection.find({ courseId: id, deletedAt: null })
-      .select('moduleId title summary status order learningGoals estimatedDuration resources')
+      .select(sectionSelect)
       .sort({ order: 1 })
       .lean(),
   ]);
@@ -64,15 +81,12 @@ export async function dbGetCourse({ id }) {
   const uncategorized = [];
   for (const s of sections) {
     const mid = s.moduleId?.toString();
-    const meta = {
-      id: s._id.toString(),
-      title: s.title,
-      summary: s.summary || '',
-      status: s.status || 'draft',
-      order: s.order ?? 0,
-      learningGoals: s.learningGoals || [],
-      estimatedDuration: s.estimatedDuration || '',
-    };
+    const meta = normalizeSection(s);
+    if (!includeSectionContent) {
+      delete meta.content;
+      delete meta.quiz;
+    }
+
     if (mid) {
       if (!sectionsByModule[mid]) sectionsByModule[mid] = [];
       sectionsByModule[mid].push(meta);
@@ -86,10 +100,37 @@ export async function dbGetCourse({ id }) {
     sections: sectionsByModule[m._id.toString()] || [],
   }));
 
+  const sectionsComplete = sections.filter((s) => s.status === 'complete').length;
+
   return {
-    course: normalizeCourse({ ...course, sectionCount: sections.length }),
+    course: normalizeCourse({
+      ...course,
+      sectionCount: sections.length,
+      sectionsTotal: sections.length,
+      sectionsComplete,
+    }),
     modules: modulesWithSections,
     uncategorizedSections: uncategorized,
+  };
+}
+
+export async function dbGetCourseWorkspace({ id }) {
+  // Full workspace loader: metadata, planning, research, all modules + sections with content
+  const { course, modules, uncategorizedSections } = await dbGetCourse({
+    id,
+    includeSectionContent: true,
+  });
+
+  return {
+    course,
+    modules,
+    uncategorizedSections,
+    researchNotes: course.researchNotes,
+    progressSummary: {
+      sectionsTotal: course.sectionsTotal,
+      sectionsComplete: course.sectionsComplete,
+      authoringStatus: course.authoringStatus,
+    },
   };
 }
 
@@ -219,6 +260,22 @@ export async function dbCreateModule({ courseId, title, summary, learningGoals, 
   });
   await CoursifyCourse.updateOne({ _id: courseId, deletedAt: null }, { $inc: { syncVersion: 1 } });
   return { module: normalizeModule(module.toObject()) };
+}
+
+export async function dbGetModule({ id }) {
+  await dbConnect();
+  const module = await CoursifyModule.findOne({ _id: id, deletedAt: null }).lean();
+  if (!module) throw new Error('Module not found.');
+
+  const sections = await CoursifySection.find({ moduleId: id, deletedAt: null })
+    .select('title summary status order learningGoals estimatedDuration resources')
+    .sort({ order: 1 })
+    .lean();
+
+  return {
+    module: normalizeModule({ ...module, sectionCount: sections.length }),
+    sections: sections.map(normalizeSection),
+  };
 }
 
 export async function dbUpdateModule({ id, title, summary, learningGoals, order, status }) {
@@ -351,11 +408,55 @@ export async function dbUpdateSection({
     { new: true, strict: false }
   ).lean();
   if (!section) throw new Error('Section not found.');
-  await CoursifyCourse.updateOne(
-    { _id: section.courseId, deletedAt: null },
-    { $inc: { syncVersion: 1 } }
-  );
+  const allSections = await CoursifySection.find({
+    courseId: section.courseId,
+    deletedAt: null,
+  }).lean();
+  const allComplete = allSections.length > 0 && allSections.every((s) => s.status === 'complete');
+
+  if (allComplete) {
+    await CoursifyCourse.updateOne(
+      { _id: section.courseId, deletedAt: null },
+      { $set: { authoringStatus: 'reviewing' }, $inc: { syncVersion: 1 } }
+    );
+  } else {
+    await CoursifyCourse.updateOne(
+      { _id: section.courseId, deletedAt: null },
+      { $inc: { syncVersion: 1 } }
+    );
+  }
+
   return { section: normalizeSection(section) };
+}
+
+export async function dbAddSections({ courseId, sections }) {
+  await dbConnect();
+  const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
+  if (!course) throw new Error('Course not found.');
+
+  const last = await CoursifySection.findOne({ courseId, deletedAt: null })
+    .sort({ order: -1 })
+    .lean();
+  let currentOrder = last ? last.order + 1 : 0;
+
+  const docs = sections.map((s) => ({
+    courseId,
+    title: s.title.trim(),
+    sectionType: s.sectionType || 'lesson',
+    content: s.content || '',
+    quiz: { questions: s.questions || [] },
+    order: s.order !== undefined ? s.order : currentOrder++,
+    resources: s.resources || [],
+    moduleId: s.moduleId || null,
+    status: s.status || 'draft',
+    summary: s.summary || '',
+    learningGoals: s.learningGoals || [],
+    estimatedDuration: s.estimatedDuration || '',
+  }));
+
+  const created = await CoursifySection.insertMany(docs);
+  await CoursifyCourse.updateOne({ _id: courseId, deletedAt: null }, { $inc: { syncVersion: 1 } });
+  return { sections: created.map(normalizeSection) };
 }
 
 export async function dbDeleteSection({ id }) {
@@ -372,13 +473,17 @@ export async function dbDeleteSection({ id }) {
   return { deletedId: id, title: section.title };
 }
 
-export async function dbReorderSections({ courseId, sectionIds }) {
+export async function dbReorderSections({ courseId, sectionIds, moduleId }) {
   await dbConnect();
   if (!sectionIds.length) throw new Error('sectionIds must not be empty.');
+
+  const query = { courseId, deletedAt: null };
+  if (moduleId) query.moduleId = moduleId;
+
   const results = await Promise.all(
     sectionIds.map((id, index) =>
       CoursifySection.updateOne(
-        { _id: id, courseId, deletedAt: null },
+        { ...query, _id: id },
         { $set: { order: index }, $inc: { syncVersion: 1 } }
       )
     )
@@ -494,4 +599,149 @@ export async function dbResearchFindings({ courseId, findings }) {
     { $push: { researchNotes: { $each: notes } }, $inc: { syncVersion: 1 } }
   );
   return { count: notes.length };
+}
+
+export async function dbApplySuggestedModules({ courseId }) {
+  await dbConnect();
+  const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
+  if (!course) throw new Error('Course not found.');
+  if (!course.outline) throw new Error('No course outline found.');
+
+  // Logic similar to suggest_modules_from_outline but internal
+  const lines = course.outline.trim().split('\n');
+  const sectionTitles = [];
+  let currentGroup = '';
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('## ') && !trimmed.toLowerCase().includes('module')) {
+      const title = trimmed.replace(/^##\s+/, '').trim();
+      if (title) sectionTitles.push({ title, group: currentGroup });
+    } else if (trimmed.startsWith('### ')) {
+      const title = trimmed.replace(/^###\s+/, '').trim();
+      if (title && title.length < 100) sectionTitles.push({ title, group: currentGroup });
+    } else if (trimmed.match(/^#{1,2}\s+(module|phase|part|step)/i)) {
+      currentGroup = trimmed.replace(/^#{1,2}\s+/, '').trim();
+    }
+  }
+
+  // Use simple foundations/core/advanced/wrap heuristic
+  const moduleKeywords = [
+    { words: ['fundamental', 'basic', 'intro', 'setup'], label: 'Foundations' },
+    { words: ['core', 'main', 'build', 'implement', 'pattern'], label: 'Core Concepts' },
+    { words: ['advanced', 'deep', 'optim', 'deploy', 'real'], label: 'Advanced & Applied' },
+    { words: ['review', 'summary', 'next', 'future', 'wrap'], label: 'Review & Next Steps' },
+  ];
+
+  function assignModule(title) {
+    const lower = title.toLowerCase();
+    for (const mk of moduleKeywords) {
+      if (mk.words.some((w) => lower.includes(w))) return mk.label;
+    }
+    return null;
+  }
+
+  const moduleMap = {};
+  for (const s of sectionTitles) {
+    const mod = s.group || assignModule(s.title) || 'General';
+    if (!moduleMap[mod]) moduleMap[mod] = { title: mod, sections: [] };
+    moduleMap[mod].sections.push(s.title);
+  }
+
+  const createdModules = [];
+  let moduleOrder = 0;
+  for (const modTitle in moduleMap) {
+    const modData = moduleMap[modTitle];
+    const newModule = await CoursifyModule.create({
+      courseId,
+      title: modTitle,
+      summary: `Covers: ${modData.sections.slice(0, 3).join(', ')}`,
+      order: moduleOrder++,
+    });
+    createdModules.push(newModule);
+
+    const sectionDocs = modData.sections.map((title, i) => ({
+      courseId,
+      moduleId: newModule._id,
+      title,
+      order: i,
+      status: 'planned',
+    }));
+    await CoursifySection.insertMany(sectionDocs);
+  }
+
+  await CoursifyCourse.updateOne({ _id: courseId, deletedAt: null }, { $inc: { syncVersion: 1 } });
+  return {
+    modulesCreated: createdModules.length,
+    moduleIds: createdModules.map((m) => m._id.toString()),
+  };
+}
+
+export async function dbSearchCourses({ query }) {
+  await dbConnect();
+  const filter = {
+    deletedAt: null,
+    $or: [
+      { title: { $regex: query, $options: 'i' } },
+      { description: { $regex: query, $options: 'i' } },
+      { tags: { $regex: query, $options: 'i' } },
+    ],
+  };
+  const courses = await CoursifyCourse.find(filter).sort({ updatedAt: -1 }).limit(20).lean();
+  return courses.map(normalizeCourse);
+}
+
+export async function dbAddSectionResource({ sectionId, resource }) {
+  await dbConnect();
+  const section = await CoursifySection.findOneAndUpdate(
+    { _id: sectionId, deletedAt: null },
+    { $push: { resources: resource }, $inc: { syncVersion: 1 } },
+    { new: true }
+  ).lean();
+  if (!section) throw new Error('Section not found.');
+  await CoursifyCourse.updateOne(
+    { _id: section.courseId, deletedAt: null },
+    { $inc: { syncVersion: 1 } }
+  );
+  return { section: normalizeSection(section) };
+}
+
+export async function dbDeleteSections({ ids }) {
+  await dbConnect();
+  const result = await CoursifySection.updateMany(
+    { _id: { $in: ids }, deletedAt: null },
+    { $set: { deletedAt: new Date() }, $inc: { syncVersion: 1 } }
+  );
+  return { deletedCount: result.modifiedCount };
+}
+
+export async function dbDeleteModules({ ids }) {
+  await dbConnect();
+  const result = await CoursifyModule.updateMany(
+    { _id: { $in: ids }, deletedAt: null },
+    { $set: { deletedAt: new Date() }, $inc: { syncVersion: 1 } }
+  );
+  // Also unassign sections
+  await CoursifySection.updateMany(
+    { moduleId: { $in: ids }, deletedAt: null },
+    { $set: { moduleId: null }, $inc: { syncVersion: 1 } }
+  );
+  return { deletedCount: result.modifiedCount };
+}
+
+export async function dbGetResearchNotes({ courseId }) {
+  await dbConnect();
+  const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null })
+    .select('researchNotes')
+    .lean();
+  if (!course) throw new Error('Course not found.');
+  return (course.researchNotes || []).map((n) => ({
+    id: n._id?.toString() || n.id,
+    title: n.title || '',
+    summary: n.summary || '',
+    sourceUrl: n.sourceUrl || '',
+    sourceType: n.sourceType || 'other',
+    notes: n.notes || '',
+    accessedAt: n.accessedAt || null,
+  }));
 }

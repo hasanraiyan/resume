@@ -32,6 +32,8 @@ export function normalizeCourse(course) {
     tags: course.tags || [],
     thumbnail: course.thumbnail || null,
     sectionCount: course.sectionCount ?? 0,
+    sectionsComplete: course.sectionsComplete ?? 0,
+    sectionsTotal: course.sectionsTotal ?? 0,
     // Planning fields
     targetAudience: course.targetAudience || '',
     learningObjectives: course.learningObjectives || [],
@@ -39,6 +41,7 @@ export function normalizeCourse(course) {
     outcome: course.outcome || '',
     outline: course.outline || '',
     planningNotes: course.planningNotes || '',
+    agentNotes: course.agentNotes || '',
     researchNotes: (course.researchNotes || []).map((n) => ({
       id: n._id?.toString?.() || n.id,
       title: n.title || '',
