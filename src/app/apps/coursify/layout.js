@@ -17,6 +17,10 @@ const nunito = Nunito({
 export const metadata = {
   title: 'Coursify - AI Course Builder',
   description: 'Create and manage courses built by AI agents',
+  icons: {
+    icon: '/images/apps/coursify.png',
+    apple: '/images/apps/coursify.png',
+  },
 };
 
 export default function CoursifyLayout({ children }) {
