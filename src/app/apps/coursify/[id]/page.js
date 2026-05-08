@@ -1133,6 +1133,8 @@ export default function CourseDetailPage({ params }) {
                                     fontSize: '0.82rem',
                                     margin: '0.75em 0',
                                     padding: '0.6em 0.9em',
+                                    maxHeight: '480px',
+                                    overflowY: 'auto',
                                   }}
                                   showLineNumbers
                                   {...props}
@@ -1148,7 +1150,7 @@ export default function CourseDetailPage({ params }) {
                                   style={{ background: '#18181b' }}
                                 >
                                   <pre
-                                    className="overflow-x-auto p-4 text-[0.82rem] leading-relaxed font-mono whitespace-pre"
+                                    className="overflow-x-auto overflow-y-auto max-h-[480px] p-4 text-[0.82rem] leading-relaxed font-mono whitespace-pre"
                                     style={{ background: 'transparent' }}
                                   >
                                     <code className="font-mono" style={{ color: '#e4e4e7' }}>
