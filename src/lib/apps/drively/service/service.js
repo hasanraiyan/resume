@@ -3,7 +3,6 @@ import DrivelyFolder from '@/models/DrivelyFolder';
 import DrivelyFile from '@/models/DrivelyFile';
 import DrivelyActivity from '@/models/DrivelyActivity';
 import DrivelyShare from '@/models/DrivelyShare';
-import { v2 as cloudinary } from 'cloudinary';
 import crypto from 'crypto';
 import cloudinary from '@/lib/cloudinary';
 import { CreateFolderSchema, UpdateFolderSchema, UpdateFileSchema } from './validators';
