@@ -21,7 +21,7 @@ function buildPrompt(title, description) {
   return (
     `Professional online course thumbnail for "${title}".${desc} ` +
     `Modern, sleek design, bold typography, abstract tech and education visuals, ` +
-    `vibrant gradient background, high quality, 16:9 aspect ratio, ` +
+    `clean minimalist background, high quality, 16:9 aspect ratio, ` +
     `suitable for a learning management system. No text overlays.`
   );
 }
@@ -49,7 +49,7 @@ export async function generateCourseThumbnail(courseId, title, description) {
 
     const { buffer, url: generatedUrl } = await agentRegistry.execute(
       AGENT_IDS.COURSIFY_THUMBNAIL_GENERATOR,
-      { prompt, size: '1792x1024' }
+      { prompt, size: '1024x576' }
     );
     console.log(
       `${t} [3/5] Image generated — buffer=${(buffer.length / 1024).toFixed(1)}KB generatedUrl=${generatedUrl ?? 'none'} (${elapsed()})`
