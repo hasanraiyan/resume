@@ -8,7 +8,7 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 export default function SearchOverlay({ isOpen, onClose }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
-  const [groupedResults, setGroupedResults] = useState({ projects: [], articles: [] });
+  const [groupedResults, setGroupedResults] = useState({ projects: [], articles: [], courses: [] });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -46,10 +46,14 @@ export default function SearchOverlay({ isOpen, onClose }) {
           if (selectedIndex >= 0 && selectedIndex < results.length) {
             // Navigate to selected result
             const selectedResult = results[selectedIndex];
-            const href =
-              selectedResult.type === 'project'
-                ? `/projects/${selectedResult.slug}`
-                : `/blog/${selectedResult.slug}`;
+            let href;
+            if (selectedResult.type === 'project') {
+              href = `/projects/${selectedResult.slug}`;
+            } else if (selectedResult.type === 'course') {
+              href = `/coursify/${selectedResult.slug || selectedResult._id}`;
+            } else {
+              href = `/blog/${selectedResult.slug}`;
+            }
             window.location.href = href;
             onClose();
           }
@@ -74,10 +78,12 @@ export default function SearchOverlay({ isOpen, onClose }) {
           acc.projects.push(result);
         } else if (result.type === 'article') {
           acc.articles.push(result);
+        } else if (result.type === 'course') {
+          acc.courses.push(result);
         }
         return acc;
       },
-      { projects: [], articles: [] }
+      { projects: [], articles: [], courses: [] }
     );
 
     setGroupedResults(grouped);
@@ -167,7 +173,7 @@ export default function SearchOverlay({ isOpen, onClose }) {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search projects and articles..."
+              placeholder="Search projects, articles, and courses..."
               className="w-full pl-4 pr-10 py-3 text-lg border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
@@ -190,7 +196,7 @@ export default function SearchOverlay({ isOpen, onClose }) {
         <div className="flex-1 overflow-y-auto p-4">
           {query.length < 3 ? (
             <div className="text-center text-gray-500 py-8">
-              Start typing to search for projects and articles...
+              Start typing to search for projects, articles, and courses...
             </div>
           ) : isLoading ? (
             <div className="space-y-4">
@@ -269,6 +275,36 @@ export default function SearchOverlay({ isOpen, onClose }) {
                       return (
                         <div
                           key={`article-${result.id}`}
+                          ref={globalIndex === selectedIndex ? resultsRef : null}
+                        >
+                          <SearchResultItem
+                            result={result}
+                            onNavigate={onClose}
+                            searchQuery={query}
+                            isSelected={globalIndex === selectedIndex}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Courses Section */}
+              {groupedResults.courses.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                    <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
+                    Courses ({groupedResults.courses.length})
+                  </h4>
+                  <div className="space-y-3">
+                    {groupedResults.courses.map((result) => {
+                      const globalIndex = results.findIndex(
+                        (r) => r.id === result.id && r.type === result.type
+                      );
+                      return (
+                        <div
+                          key={`course-${result.id}`}
                           ref={globalIndex === selectedIndex ? resultsRef : null}
                         >
                           <SearchResultItem

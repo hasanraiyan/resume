@@ -33,6 +33,7 @@
 import dbConnect from '@/lib/dbConnect';
 import Project from '@/models/Project';
 import Article from '@/models/Article';
+import CoursifyCourse from '@/models/CoursifyCourse';
 import Fuse from 'fuse.js';
 import { Filter } from 'bad-words';
 
@@ -43,7 +44,7 @@ import { Filter } from 'bad-words';
  * @property {string} title - Title of the project or article
  * @property {string} slug - URL-friendly identifier
  * @property {string} excerpt - Brief description or excerpt
- * @property {'project'|'article'} type - Type of content
+ * @property {'project'|'article'|'course'} type - Type of content
  * @property {number} score - Relevance score (0-1, higher is better)
  * @property {string} [category] - Project category (for projects only)
  * @property {Array} [tags] - Associated tags
@@ -123,10 +124,13 @@ export async function performSearch(query, isAuthenticated = false) {
     const visibilityFilter = isAuthenticated
       ? { $in: ['public', 'private', 'unlisted'] }
       : 'public';
-    const [projectResults, articleResults] = await Promise.all([
+    const [projectResults, articleResults, courseResults] = await Promise.all([
       Project.find({}).select('slug title description category tags thumbnail').lean(),
       Article.find({ status: 'published', visibility: visibilityFilter })
         .select('slug title excerpt tags visibility coverImage')
+        .lean(),
+      CoursifyCourse.find({ status: 'published', deletedAt: null })
+        .select('slug title description tags difficulty thumbnail')
         .lean(),
     ]);
 
@@ -137,6 +141,11 @@ export async function performSearch(query, isAuthenticated = false) {
         ...article,
         type: 'article',
         description: article.excerpt, // Use 'excerpt' for consistent searching
+      })),
+      ...courseResults.map((course) => ({
+        ...course,
+        type: 'course',
+        description: course.description,
       })),
     ];
 
@@ -167,11 +176,14 @@ export async function performSearch(query, isAuthenticated = false) {
       score: 1 - result.score, // Invert score so higher is better
       category: result.item.category,
       tags: result.item.tags,
+      difficulty: result.item.difficulty,
       thumbnail: result.item.thumbnail || result.item.coverImage,
       url:
         result.item.type === 'project'
           ? `/projects/${result.item.slug}`
-          : `/blog/${result.item.slug}`, // Add URL
+          : result.item.type === 'course'
+            ? `/coursify/${result.item.slug || result.item._id}`
+            : `/blog/${result.item.slug}`, // Add URL
     }));
 
     return results;

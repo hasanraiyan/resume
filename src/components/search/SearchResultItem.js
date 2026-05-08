@@ -20,11 +20,15 @@ function highlightSearchTerm(text, searchQuery) {
 
 export default function SearchResultItem({ result, onNavigate, searchQuery, isSelected = false }) {
   const getTypeColor = (type) => {
-    return type === 'project' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800';
+    if (type === 'project') return 'bg-blue-100 text-blue-800';
+    if (type === 'course') return 'bg-purple-100 text-purple-800';
+    return 'bg-green-100 text-green-800';
   };
 
   const getHref = (result) => {
-    return result.type === 'project' ? `/projects/${result.slug}` : `/blog/${result.slug}`;
+    if (result.type === 'project') return `/projects/${result.slug}`;
+    if (result.type === 'course') return `/coursify/${result.slug || result._id}`;
+    return `/blog/${result.slug}`;
   };
 
   return (
@@ -46,7 +50,11 @@ export default function SearchResultItem({ result, onNavigate, searchQuery, isSe
             <span
               className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(result.type)}`}
             >
-              {result.type === 'project' ? 'Project' : 'Article'}
+              {result.type === 'project'
+                ? 'Project'
+                : result.type === 'course'
+                  ? 'Course'
+                  : 'Article'}
             </span>
           </div>
 
@@ -54,6 +62,20 @@ export default function SearchResultItem({ result, onNavigate, searchQuery, isSe
             <p className="text-sm text-gray-600 mb-2">
               Category: {highlightSearchTerm(result.category, searchQuery)}
             </p>
+          )}
+
+          {result.difficulty && (
+            <span
+              className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full capitalize mr-2 mb-2 ${
+                result.difficulty === 'beginner'
+                  ? 'bg-emerald-100 text-emerald-700'
+                  : result.difficulty === 'intermediate'
+                    ? 'bg-amber-100 text-amber-700'
+                    : 'bg-red-100 text-red-700'
+              }`}
+            >
+              {result.difficulty}
+            </span>
           )}
 
           <p className="text-gray-700 text-sm line-clamp-2">
