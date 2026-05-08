@@ -159,7 +159,13 @@ export default function StorageTab() {
                   className="p-4 flex items-center justify-between hover:bg-[#f0f5f2] transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 flex-shrink-0">{getIconForMime(file.mimeType)}</div>
+                    <div className="w-8 h-8 rounded-lg bg-[#fcfbf5] border border-[#e5e3d8] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {file.mimeType.startsWith('image/') && file.secureUrl ? (
+                        <img src={file.secureUrl} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        getIconForMime(file.mimeType)
+                      )}
+                    </div>
                     <p className="text-sm font-bold text-[#1e3a34] truncate">{file.filename}</p>
                   </div>
                   <p className="text-sm font-bold text-[#1e3a34] ml-4 flex-shrink-0">
