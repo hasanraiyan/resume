@@ -3,11 +3,20 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { MermaidDiagram } from './MermaidDiagram';
 
-/**
- * Standardized Markdown renderer for Coursify with syntax highlighting and scroll-spy support.
- * @param {string} content - Markdown string.
- */
+// Box-drawing unicode block + common ASCII art patterns
+const ASCII_ART_RE = /[┌┐└┘│─├┤┬┴┼╔╗╚╝║═╠╣╦╩╬▲▼◄►]/;
+const ASCII_PIPE_RE = /^[\s|+\-=*#.oO@:~^<>]+$/;
+
+function isAsciiArt(code) {
+  if (ASCII_ART_RE.test(code)) return true;
+  // Treat as ASCII art if every non-empty line is made of pipe/dash/plus chars
+  const lines = code.split('\n').filter((l) => l.trim().length > 0);
+  if (lines.length < 2) return false;
+  return lines.every((l) => ASCII_PIPE_RE.test(l));
+}
+
 export function MarkdownRenderer({ content }) {
   return (
     <div className="coursify-md prose prose-sm max-w-none font-[family-name:var(--font-lora)] prose-headings:font-bold prose-headings:text-[#1e3a34] prose-p:text-[#1e3a34] prose-p:leading-relaxed prose-code:bg-[#f0f5f2] prose-code:rounded prose-code:px-1 prose-code:text-[#1f644e] prose-pre:bg-[#1e3a34] prose-pre:rounded-xl prose-blockquote:border-[#1f644e] prose-a:text-[#1f644e] prose-li:text-[#1e3a34] prose-strong:text-[#1e3a34] prose-table:text-sm">
@@ -41,14 +50,32 @@ export function MarkdownRenderer({ content }) {
             );
           },
           code({ node, className, children, ...props }) {
-            const match = /language-(\w+)/.exec(className || '');
-            const isBlock = String(children).includes('\n');
+            const lang = /language-(\w+)/.exec(className || '')?.[1];
+            const raw = String(children).replace(/\n$/, '');
+            const isBlock = raw.includes('\n');
 
-            if (isBlock && match) {
+            // Mermaid diagrams
+            if (lang === 'mermaid') {
+              return <MermaidDiagram chart={raw} />;
+            }
+
+            // ASCII art / box diagrams
+            if (isBlock && !lang && isAsciiArt(raw)) {
+              return (
+                <div className="my-6 overflow-x-auto rounded-xl border border-[#d4e6db] bg-[#f7faf8]">
+                  <pre className="p-4 text-[0.78rem] leading-relaxed font-mono text-[#1e3a34] whitespace-pre">
+                    {raw}
+                  </pre>
+                </div>
+              );
+            }
+
+            // Fenced code with language → syntax highlight
+            if (isBlock && lang) {
               return (
                 <SyntaxHighlighter
                   style={oneDark}
-                  language={match[1]}
+                  language={lang}
                   PreTag="div"
                   customStyle={{
                     borderRadius: '0.75rem',
@@ -59,10 +86,12 @@ export function MarkdownRenderer({ content }) {
                   showLineNumbers
                   {...props}
                 >
-                  {String(children).replace(/\n$/, '')}
+                  {raw}
                 </SyntaxHighlighter>
               );
             }
+
+            // Fenced code without language
             if (isBlock) {
               return (
                 <div
@@ -80,6 +109,8 @@ export function MarkdownRenderer({ content }) {
                 </div>
               );
             }
+
+            // Inline code
             return (
               <code
                 className="bg-[#f0f5f2] text-[#1f644e] rounded px-1.5 py-0.5 text-[0.82em] font-mono font-semibold"
