@@ -47,17 +47,38 @@ export const COURSE_AUTHORING_GUIDE = {
     'Total planned sections: 6-10 for a full course, 3-5 for a primer',
     'At least 3 research findings saved via research_findings or add_research_note',
   ],
+  diagramGuide: {
+    rule: 'Use Mermaid diagrams instead of ASCII art for all visual diagrams.',
+    renderer:
+      'The course reader renders ```mermaid fenced code blocks as interactive SVG diagrams automatically.',
+    when: 'Use a diagram whenever a concept benefits from a visual: flows, state machines, hierarchies, timelines, comparisons, architecture overviews.',
+    syntax: [
+      'Flowchart:   graph TD or graph LR',
+      'Sequence:    sequenceDiagram',
+      'State:       stateDiagram-v2',
+      'Class:       classDiagram',
+      'Timeline:    timeline',
+      'Mindmap:     mindmap',
+      'Git graph:   gitGraph',
+    ],
+    example:
+      '```mermaid\ngraph TD\n  A[Start] --> B{Decision}\n  B -->|Yes| C[Do X]\n  B -->|No| D[Do Y]\n```',
+    forbidden:
+      'Never use ASCII art (pipes, dashes, plus signs, box-drawing characters) to represent diagrams. Always use a Mermaid block instead.',
+  },
   markdownTemplate: `## Learning Goals
 - What the learner will be able to do after this section
 
 ## Core Concepts
 Explain the ideas clearly and concretely.
+Use a \`\`\`mermaid diagram when a visual helps (architecture, flow, state, hierarchy).
 
 ## Step-by-Step Walkthrough
 Break the work into teachable steps.
 
 ## Example
 Include a realistic example, code sample, prompt, checklist, or scenario when useful.
+Prefer \`\`\`mermaid over ASCII art for any diagram.
 
 ## Practice
 Give the learner a small exercise or reflection task.
@@ -84,5 +105,6 @@ Summarize the section in a few crisp bullets.`,
     'Avoid filler introductions. Every section should teach something useful.',
     'Use consistent terminology and build concepts in a sensible order.',
     'Do not invent fake citations or resource URLs.',
+    'DIAGRAMS: Always use ```mermaid fenced blocks for any diagram or visual. Never use ASCII art (pipes, dashes, box-drawing chars). The reader renders Mermaid as interactive SVG automatically.',
   ],
 };
