@@ -12,6 +12,7 @@ import Analytics from '@/models/Analytics';
 import ChatLog from '@/models/ChatLog';
 import { getToolStatusMessage } from '../utils/chatbot-utils';
 import { getBackendMCPConfig } from '@/lib/mcpConfig';
+import { createAccessToken, getBaseUrl } from '@/lib/mcp/oauth';
 import { getBackendSkillConfig } from '@/lib/skillConfig';
 import { portfolioTools } from '../utils/portfolio-tools';
 import { createAdminTools } from '../utils/admin-tools';
@@ -200,12 +201,32 @@ class ChatAgent extends BaseAgent {
       if (allActiveConfigs.length > 0) {
         yield { type: 'status', message: '🔌 Connecting to tools...' };
 
+        const internalToken = await createAccessToken({
+          clientId: 'internal-admin',
+          scope: 'all',
+        });
+
+        const ownHostname = new URL(getBaseUrl()).hostname; // "hasanraiyan.me" or "localhost"
+
         const mcpServerConfig = {};
         for (const cfg of allActiveConfigs) {
           if (cfg && cfg.type !== 'rest' && cfg.url) {
+            let mcpHostname;
+            try {
+              mcpHostname = new URL(cfg.url).hostname;
+            } catch {
+              mcpHostname = '';
+            }
+            const isOwnServer =
+              mcpHostname === ownHostname ||
+              mcpHostname === 'localhost' ||
+              mcpHostname === '127.0.0.1';
             mcpServerConfig[cfg.id] = {
-              transport: 'sse',
+              // Own-server MCPs use Streamable HTTP (POST per call, no persistent SSE connection).
+              // Calling ourselves over SSE deadlocks — the outbound SSE stream never terminates.
+              transport: isOwnServer ? 'http' : 'sse',
               url: cfg.url,
+              ...(isOwnServer && { headers: { Authorization: `Bearer ${internalToken}` } }),
             };
           }
         }
