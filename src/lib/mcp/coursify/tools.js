@@ -74,6 +74,12 @@ export function registerCoursifyTools(server) {
         ).lean();
 
         if (!module) return errorResult('Module not found.');
+        // Unassign sections from this module (don't delete them — they become Uncategorized)
+        await CoursifySection.updateMany(
+          { moduleId: id, deletedAt: null },
+          { $set: { moduleId: null }, $inc: { syncVersion: 1 } }
+        );
+
         await CoursifyCourse.updateOne(
           { _id: module.courseId, deletedAt: null },
           { $inc: { syncVersion: 1 } }
