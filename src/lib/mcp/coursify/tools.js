@@ -27,9 +27,7 @@ const resourceSchema = z.object({
 });
 
 function cleanPatch(patch) {
-  return Object.fromEntries(
-    Object.entries(patch).filter(([, value]) => value !== undefined && value !== null)
-  );
+  return Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined));
 }
 
 function createThumbnailInBackground(course) {
@@ -114,7 +112,9 @@ export function registerCoursifyTools(server) {
     async ({ courseId, moduleIds }) => {
       try {
         await dbConnect();
-        await Promise.all(
+        if (!moduleIds.length) return errorResult('moduleIds must not be empty.');
+
+        const results = await Promise.all(
           moduleIds.map((id, index) =>
             CoursifyModule.updateOne(
               { _id: id, courseId, deletedAt: null },
@@ -122,6 +122,12 @@ export function registerCoursifyTools(server) {
             )
           )
         );
+        const matched = results.reduce((sum, r) => sum + r.matchedCount, 0);
+        if (matched < moduleIds.length) {
+          return errorResult(
+            `Only ${matched}/${moduleIds.length} modules found. Some IDs may be invalid or belong to a different course.`
+          );
+        }
         await CoursifyCourse.updateOne(
           { _id: courseId, deletedAt: null },
           { $inc: { syncVersion: 1 } }
@@ -311,6 +317,12 @@ export function registerCoursifyTools(server) {
         });
         if (clean.title) {
           clean.slug = await generateUniqueSlug(clean.title, id);
+        }
+        // Mirror publish_course side effects so agents don't produce inconsistent state
+        if (clean.status === 'published') {
+          clean.authoringStatus = 'published';
+        } else if (clean.status === 'draft') {
+          clean.authoringStatus = undefined;
         }
         const course = await CoursifyCourse.findOneAndUpdate(
           { _id: id, deletedAt: null },
@@ -625,7 +637,9 @@ export function registerCoursifyTools(server) {
     async ({ courseId, sectionIds }) => {
       try {
         await dbConnect();
-        await Promise.all(
+        if (!sectionIds.length) return errorResult('sectionIds must not be empty.');
+
+        const results = await Promise.all(
           sectionIds.map((id, index) =>
             CoursifySection.updateOne(
               { _id: id, courseId, deletedAt: null },
@@ -633,6 +647,12 @@ export function registerCoursifyTools(server) {
             )
           )
         );
+        const matched = results.reduce((sum, r) => sum + r.matchedCount, 0);
+        if (matched < sectionIds.length) {
+          return errorResult(
+            `Only ${matched}/${sectionIds.length} sections found. Some IDs may be invalid or belong to a different course.`
+          );
+        }
         await CoursifyCourse.updateOne(
           { _id: courseId, deletedAt: null },
           { $inc: { syncVersion: 1 } }
@@ -674,9 +694,7 @@ export function registerCoursifyTools(server) {
     async ({ courseId, ...patch }) => {
       try {
         await dbConnect();
-        const clean = Object.fromEntries(
-          Object.entries(patch).filter(([, v]) => v !== undefined && v !== null)
-        );
+        const clean = cleanPatch(patch);
         const course = await CoursifyCourse.findOneAndUpdate(
           { _id: courseId, deletedAt: null },
           { $set: clean, $inc: { syncVersion: 1 } },
@@ -871,12 +889,16 @@ export function registerCoursifyTools(server) {
       },
       _meta: toolMeta('Updating module...', 'Module updated.'),
     },
-    async ({ id, ...patch }) => {
+    async ({ id, title, summary, learningGoals, order, status }) => {
       try {
         await dbConnect();
-        const clean = Object.fromEntries(
-          Object.entries(patch).filter(([, v]) => v !== undefined && v !== null)
-        );
+        const clean = cleanPatch({
+          title,
+          summary,
+          learningGoals,
+          order,
+          status,
+        });
         const module = await CoursifyModule.findOneAndUpdate(
           { _id: id, deletedAt: null },
           { $set: clean, $inc: { syncVersion: 1 } },
@@ -888,7 +910,7 @@ export function registerCoursifyTools(server) {
           { $inc: { syncVersion: 1 } }
         );
         const sectionCount = await CoursifySection.countDocuments({
-          moduleId: id,
+          courseId: module.courseId,
           deletedAt: null,
         });
         return textResult(`Updated module "${module.title}".`, {

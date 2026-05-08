@@ -12,7 +12,8 @@
       "mcp__coursify__update_module",
       "mcp__coursify__update_section",
       "mcp__coursify__update_course",
-      "mcp__coursify__publish_course"
+      "mcp__coursify__publish_course",
+      "Bash(git pull *)"
     ]
   }
 }
