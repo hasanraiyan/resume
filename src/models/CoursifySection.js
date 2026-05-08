@@ -9,6 +9,22 @@ const ResourceSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const QuizQuestionSchema = new mongoose.Schema(
+  {
+    type: {
+      type: String,
+      enum: ['multiple_choice', 'true_false', 'short_answer', 'multi_select'],
+      required: true,
+    },
+    question: { type: String, required: true, default: '' },
+    options: { type: [String], default: [] },
+    correctAnswer: { type: mongoose.Schema.Types.Mixed, default: null },
+    explanation: { type: String, default: '' },
+    points: { type: Number, default: 1 },
+  },
+  { _id: true }
+);
+
 const CoursifySectionSchema = new mongoose.Schema(
   {
     courseId: {
@@ -28,9 +44,17 @@ const CoursifySectionSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    sectionType: {
+      type: String,
+      enum: ['lesson', 'quiz'],
+      default: 'lesson',
+    },
     content: {
       type: String,
       default: '',
+    },
+    quiz: {
+      questions: { type: [QuizQuestionSchema], default: [] },
     },
     summary: {
       type: String,

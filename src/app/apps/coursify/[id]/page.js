@@ -18,6 +18,7 @@ import {
   Save,
   ImagePlus,
   BookOpen,
+  ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import EditSectionModal from '@/components/coursify/EditSectionModal';
@@ -28,6 +29,7 @@ import { ReaderSidebar } from '@/components/coursify/reader/ReaderSidebar';
 import { CourseOverview } from '@/components/coursify/reader/CourseOverview';
 import { MarkdownRenderer } from '@/components/coursify/reader/MarkdownRenderer';
 import { ReaderNavigation } from '@/components/coursify/reader/ReaderNavigation';
+import { QuizPlayer } from '@/components/coursify/reader/QuizPlayer';
 
 const pacifico = Pacifico({
   weight: '400',
@@ -97,6 +99,7 @@ export default function CourseDetailPage({ params }) {
   const {
     course,
     sections,
+    orderedSections,
     modules,
     activeSection,
     showOverview,
@@ -883,7 +886,12 @@ export default function CourseDetailPage({ params }) {
                     )}
                   </div>
 
-                  <MarkdownRenderer content={currentSection.content} />
+                  {currentSection.sectionType !== 'quiz' && currentSection.content && (
+                    <MarkdownRenderer content={currentSection.content} />
+                  )}
+                  {(currentSection.quiz?.questions?.length ?? 0) > 0 && (
+                    <QuizPlayer questions={currentSection.quiz.questions} />
+                  )}
 
                   {currentSection.resources?.length > 0 && (
                     <div className="mt-8 pt-6 border-t border-[#e5e3d8]">
@@ -916,7 +924,7 @@ export default function CourseDetailPage({ params }) {
                   )}
 
                   <ReaderNavigation
-                    sections={sections}
+                    sections={orderedSections}
                     activeSection={activeSection}
                     onNavigate={navigateTo}
                   />

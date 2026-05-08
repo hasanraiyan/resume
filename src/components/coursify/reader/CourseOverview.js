@@ -1,4 +1,11 @@
-import { Clock, Layers, Check, ChevronRight } from 'lucide-react';
+import { Clock, Layers, Check, ChevronRight, ScrollText } from 'lucide-react';
+import { QuizIcon } from './icons';
+
+function SectionIcon({ section }) {
+  if (section.sectionType === 'quiz')
+    return <QuizIcon className="w-3 h-3 text-[#7c8e88] shrink-0" />;
+  return <ScrollText className="w-3 h-3 text-[#7c8e88] shrink-0" />;
+}
 
 const DIFFICULTY_COLORS = {
   beginner: 'bg-emerald-100 text-emerald-700',
@@ -102,6 +109,7 @@ export function CourseOverview({ course, sections, modules, onNavigateTo, hideTh
                             onClick={() => onNavigateTo(section._id)}
                             className="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-[#1e3a34] hover:bg-[#f0f5f2] transition-colors flex items-center gap-2"
                           >
+                            <SectionIcon section={section} />
                             {section.title}
                           </button>
                         ))}
@@ -123,6 +131,7 @@ export function CourseOverview({ course, sections, modules, onNavigateTo, hideTh
                             onClick={() => onNavigateTo(section._id)}
                             className="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-[#1e3a34] hover:bg-[#f0f5f2] transition-colors flex items-center gap-2"
                           >
+                            <SectionIcon section={section} />
                             {section.title}
                           </button>
                         ))}
@@ -137,6 +146,7 @@ export function CourseOverview({ course, sections, modules, onNavigateTo, hideTh
                   onClick={() => onNavigateTo(section._id)}
                   className="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-[#1e3a34] hover:bg-[#f0f5f2] transition-colors flex items-center gap-2"
                 >
+                  <SectionIcon section={section} />
                   {section.title}
                 </button>
               ))

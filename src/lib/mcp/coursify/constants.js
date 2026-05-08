@@ -25,7 +25,7 @@ export const COURSE_AUTHORING_GUIDE = {
     '3. RESEARCH — Gather information about the topic using whatever tools you have available:\n   • If you have web search MCP tools: search for current docs, version numbers, real-world examples, and best practices. Call research_findings to batch-save all findings at once, or add_research_note for individual sources.\n   • If you do NOT have web search tools: use your built-in knowledge to research the topic. Still call research_findings to persist key findings — they survive context resets.\n   • Set authoringStatus to "researching" via save_course_plan while this is ongoing.',
     '4. PLAN — Call save_course_plan to define the course structure: targetAudience, learningObjectives, prerequisites, outcome, and a free-form Markdown outline of planned modules and sections. The tool returns a completeness score and suggestions — address critical gaps. Set authoringStatus to "planned".',
     '5. STRUCTURE — Call suggest_modules_from_outline to get a recommended module grouping from your saved outline. Review the suggestions, then call create_module once per module you want to keep, in order.',
-    '6. WRITE — Call add_section once per section, specifying the moduleId so it is grouped correctly. Write full Markdown content following the section template below. Set authoringStatus to "drafting" when you begin writing.',
+    '6. WRITE — Call add_section once per section, specifying the moduleId so it is grouped correctly. Write full Markdown content following the section template below. Set authoringStatus to "drafting" when you begin writing. For quiz or knowledge-check sections, see the quizGuide below.',
     "7. REVIEW — Call get_course to see the full structure (modules + section metadata). Call get_section_content to read any section's full Markdown body when revising. Call get_course_progress to identify gaps.",
     '8. FINALIZE — When all sections are written, set authoringStatus to "reviewing" via save_course_plan. Read each section with get_section_content, fix quality issues, then set to "ready" when satisfied.',
     '9. PUBLISH — Call publish_course only after the user explicitly asks to publish or confirms the content is complete.',
@@ -89,6 +89,40 @@ Call out likely misunderstandings and how to avoid them.
 
 ## Recap
 Summarize the section in a few crisp bullets.`,
+  quizGuide: {
+    overview:
+      'Sections support two quiz modes: (1) sectionType "quiz" — standalone quiz with no Markdown body; (2) sectionType "lesson" with questions — Markdown content followed by an embedded knowledge-check quiz.',
+    whenToUseStandalone:
+      'Use sectionType "quiz" for dedicated assessments at the end of a module (e.g. "Module 1 Knowledge Check"). The reader shows only the quiz UI, no lesson content.',
+    whenToEmbed:
+      'Use an embedded quiz (sectionType "lesson" + questions) for quick comprehension checks right after an explanation. The learner reads the lesson, then immediately answers 2-4 questions.',
+    questionTypes: {
+      multiple_choice:
+        'One correct answer from 2-4 options. correctAnswer: option index as a number (0-based). Example: correctAnswer: 1 means the second option is correct.',
+      true_false:
+        'Binary question. Do not provide options (auto True/False). correctAnswer: "true" or "false" (string).',
+      multi_select:
+        'Multiple correct answers from a list. correctAnswer: array of correct option indices, e.g. [0, 2].',
+      short_answer:
+        'Free-text answer. No auto-grading — learner self-checks against the reference. correctAnswer: reference answer string shown after submission.',
+    },
+    bestPractices: [
+      'Include 3-7 questions per quiz. More than 7 feels like a test; fewer than 3 feels trivial.',
+      'Always provide an explanation for each question — it reinforces learning after the answer is revealed.',
+      'Mix question types to test different cognitive levels: recall (MC/TF), application (short_answer), analysis (multi_select).',
+      'Make distractors (wrong options) plausible — avoid obviously wrong answers.',
+      'For lesson-embedded quizzes, keep it to 2-4 questions focused on the section just read.',
+      'For standalone quiz sections, cover the whole module with 5-7 varied questions.',
+    ],
+    toolFlow:
+      'Use add_section with sectionType and questions to create a quiz section in one call. To add or update questions on an existing section, use set_quiz_questions (full replacement) or update_section with the questions field.',
+    correctAnswerFormats: {
+      multiple_choice: 'number (0-based index of correct option)',
+      true_false: '"true" or "false" (string)',
+      multi_select: 'array of numbers, e.g. [0, 2]',
+      short_answer: 'string (reference answer shown after submit)',
+    },
+  },
   authoringStatusGuide: {
     idea: 'Initial spark — course not yet researched or planned.',
     researching: 'Actively gathering sources and understanding the topic.',

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 /**
  * Hook to manage course data fetching, progress tracking, and context.
@@ -14,6 +14,28 @@ export function useCourseReader(courseId, isAdmin = false) {
   const [visited, setVisited] = useState(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+
+  // Sections ordered by module position then section position within the module.
+  // This is the correct order for prev/next navigation — the raw `sections` array
+  // uses a global `order` field where each module independently starts at 0/1,
+  // causing cross-module collisions when sorted naively.
+  const orderedSections = useMemo(() => {
+    if (!modules.length) return [...sections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const sortedModules = [...modules].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const result = [];
+    for (const mod of sortedModules) {
+      const modSections = sections
+        .filter((s) => s.moduleId === mod._id)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      result.push(...modSections);
+    }
+    // Append any sections not assigned to a module
+    const unassigned = sections
+      .filter((s) => !s.moduleId)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    result.push(...unassigned);
+    return result;
+  }, [sections, modules]);
 
   const fetchCourse = useCallback(async () => {
     if (!courseId) return;
@@ -79,6 +101,7 @@ export function useCourseReader(courseId, isAdmin = false) {
   return {
     course,
     sections,
+    orderedSections,
     modules,
     activeSection,
     showOverview,

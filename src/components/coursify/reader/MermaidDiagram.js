@@ -94,8 +94,30 @@ export const MermaidDiagram = memo(function MermaidDiagram({ chart }) {
 
   if (!svg) {
     return (
-      <div className="my-6 flex h-24 animate-pulse items-center justify-center rounded-2xl bg-[#f0f5f2] text-xs text-[#7c8e88]">
-        Rendering diagram...
+      <div className="my-6 rounded-2xl bg-[#f0f5f2] p-6 animate-pulse">
+        {/* Top node */}
+        <div className="flex justify-center mb-4">
+          <div className="h-8 w-32 rounded-lg bg-[#d4e6db]" />
+        </div>
+        {/* Connector line */}
+        <div className="flex justify-center mb-4">
+          <div className="w-0.5 h-5 bg-[#c2d8ce]" />
+        </div>
+        {/* Middle row */}
+        <div className="flex justify-center gap-8 mb-4">
+          <div className="h-8 w-24 rounded-lg bg-[#d4e6db]" />
+          <div className="h-8 w-24 rounded-lg bg-[#d4e6db]" />
+        </div>
+        {/* Connector lines */}
+        <div className="flex justify-center gap-16 mb-4">
+          <div className="w-0.5 h-5 bg-[#c2d8ce]" />
+          <div className="w-0.5 h-5 bg-[#c2d8ce]" />
+        </div>
+        {/* Bottom row */}
+        <div className="flex justify-center gap-8">
+          <div className="h-8 w-20 rounded-lg bg-[#c2d8ce]" />
+          <div className="h-8 w-20 rounded-lg bg-[#c2d8ce]" />
+        </div>
       </div>
     );
   }

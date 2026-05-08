@@ -22,6 +22,8 @@ export async function PATCH(request, { params }) {
       'summary',
       'learningGoals',
       'estimatedDuration',
+      'sectionType',
+      'quiz',
     ];
     const patch = {};
     for (const key of allowed) {

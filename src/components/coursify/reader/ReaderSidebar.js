@@ -1,4 +1,5 @@
-import { X, BookOpen, ChevronRight, Check } from 'lucide-react';
+import { X, BookOpen, ChevronRight, ScrollText } from 'lucide-react';
+import { QuizIcon } from './icons';
 
 /**
  * Shared Sidebar for the Coursify Reader.
@@ -71,7 +72,10 @@ export function ReaderSidebar({
                 const isExpanded = expandedModules.has(mod._id);
 
                 return (
-                  <div key={mod._id} className="mb-1">
+                  <div
+                    key={mod._id}
+                    className={`mb-1 ${modIdx < modules.length - 1 ? 'pb-1 border-b border-[#f0f5f2]' : ''}`}
+                  >
                     <button
                       onClick={() => onToggleModule(mod._id)}
                       className="w-full flex items-center gap-2 px-2 py-2 mt-1 hover:bg-[#f0f5f2] rounded-lg transition-colors group"
@@ -93,7 +97,7 @@ export function ReaderSidebar({
                     </button>
 
                     {isExpanded && (
-                      <div className="ml-2 pl-3 border-l-2 border-[#f0f5f2] space-y-0.5 mt-0.5">
+                      <div className="space-y-0.5 mt-0.5">
                         {modSections.map((section) => (
                           <SidebarSectionBtn
                             key={section._id}
@@ -153,13 +157,21 @@ export function ReaderSidebar({
 }
 
 function SidebarSectionBtn({ section, active, done, onClick }) {
+  const isQuiz = section.sectionType === 'quiz';
+  const hasEmbeddedQuiz =
+    section.sectionType !== 'quiz' && (section.quiz?.questions?.length ?? 0) > 0;
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center gap-2.5 ${
+      className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center gap-2 ${
         active ? 'bg-[#1f644e] text-white shadow-sm' : 'text-[#1e3a34] hover:bg-[#f0f5f2]'
       }`}
     >
+      {isQuiz ? (
+        <QuizIcon className={`w-3 h-3 shrink-0 ${active ? 'text-white/80' : 'text-[#7c8e88]'}`} />
+      ) : (
+        <ScrollText className={`w-3 h-3 shrink-0 ${active ? 'text-white/80' : 'text-[#7c8e88]'}`} />
+      )}
       <span
         className={`text-xs font-semibold truncate flex-1 leading-snug ${
           done && !active ? 'text-[#7c8e88]' : ''
@@ -167,6 +179,11 @@ function SidebarSectionBtn({ section, active, done, onClick }) {
       >
         {section.title}
       </span>
+      {hasEmbeddedQuiz && (
+        <QuizIcon
+          className={`w-3 h-3 shrink-0 opacity-50 ${active ? 'text-white' : 'text-[#7c8e88]'}`}
+        />
+      )}
     </button>
   );
 }

@@ -26,6 +26,27 @@ const resourceSchema = z.object({
   title: z.string(),
 });
 
+const questionSchema = z.object({
+  type: z.enum(['multiple_choice', 'true_false', 'short_answer', 'multi_select']),
+  question: z.string().describe('The question text'),
+  options: z
+    .array(z.string())
+    .optional()
+    .describe(
+      'Answer options. Required for multiple_choice and multi_select. Omit for true_false (auto True/False) and short_answer.'
+    ),
+  correctAnswer: z
+    .union([z.string(), z.number(), z.array(z.number())])
+    .describe(
+      'Correct answer. multiple_choice → option index (number). true_false → "true" or "false". short_answer → reference answer string. multi_select → array of correct option indices.'
+    ),
+  explanation: z
+    .string()
+    .optional()
+    .describe('Explanation shown after the learner submits. Always include this.'),
+  points: z.number().int().optional().describe('Point value. Defaults to 1.'),
+});
+
 function cleanPatch(patch) {
   return Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined));
 }
@@ -511,10 +532,23 @@ export function registerCoursifyTools(server) {
       inputSchema: {
         courseId: z.string().describe('MongoDB _id of the course to add this section to'),
         title: z.string().describe('Section title, e.g. "Introduction to LangChain Runnables"'),
+        sectionType: z
+          .enum(['lesson', 'quiz'])
+          .optional()
+          .describe(
+            'Section type. "lesson" = Markdown content (optionally with an embedded quiz at the bottom). "quiz" = standalone quiz only, no Markdown body. Defaults to "lesson".'
+          ),
         content: z
           .string()
+          .optional()
           .describe(
-            'Full section content in Markdown. Include headers, bullet points, code blocks, and examples. Aim for comprehensive coverage of the topic.'
+            'Full section content in Markdown. Required for lesson sections. Leave empty for quiz-only sections.'
+          ),
+        questions: z
+          .array(questionSchema)
+          .optional()
+          .describe(
+            'Quiz questions. Use for sectionType "quiz" or to embed a knowledge-check at the end of a lesson. Provide 3-7 well-formed questions with explanations.'
           ),
         moduleId: z
           .string()
@@ -547,7 +581,9 @@ export function registerCoursifyTools(server) {
     async ({
       courseId,
       title,
+      sectionType,
       content,
+      questions,
       order,
       resources,
       moduleId,
@@ -565,11 +601,14 @@ export function registerCoursifyTools(server) {
           .sort({ order: -1 })
           .lean();
         const resolvedOrder = order !== undefined ? order : last ? last.order + 1 : 0;
+        const resolvedType = sectionType || 'lesson';
 
         const section = await CoursifySection.create({
           courseId,
           title: title.trim(),
-          content: content || '',
+          sectionType: resolvedType,
+          content: resolvedType === 'lesson' ? content || '' : '',
+          quiz: { questions: questions || [] },
           order: resolvedOrder,
           resources: resources || [],
           moduleId: moduleId || null,
@@ -603,7 +642,12 @@ export function registerCoursifyTools(server) {
       inputSchema: {
         id: z.string().describe('MongoDB _id of the section to update'),
         title: z.string().optional(),
+        sectionType: z.enum(['lesson', 'quiz']).optional(),
         content: z.string().optional().describe('Full replacement content in Markdown'),
+        questions: z
+          .array(questionSchema)
+          .optional()
+          .describe('Full replacement quiz questions array.'),
         summary: z.string().optional(),
         learningGoals: z.array(z.string()).optional(),
         estimatedDuration: z.string().optional(),
@@ -617,7 +661,9 @@ export function registerCoursifyTools(server) {
     async ({
       id,
       title,
+      sectionType,
       content,
+      questions,
       summary,
       learningGoals,
       estimatedDuration,
@@ -630,6 +676,7 @@ export function registerCoursifyTools(server) {
         await dbConnect();
         const clean = cleanPatch({
           title,
+          sectionType,
           content,
           summary,
           learningGoals,
@@ -639,10 +686,11 @@ export function registerCoursifyTools(server) {
           moduleId,
           resources,
         });
+        if (questions !== undefined) clean['quiz.questions'] = questions;
         const section = await CoursifySection.findOneAndUpdate(
           { _id: id, deletedAt: null },
           { $set: clean, $inc: { syncVersion: 1 } },
-          { new: true }
+          { new: true, strict: false }
         ).lean();
 
         if (!section) return errorResult('Section not found.');
@@ -1337,6 +1385,48 @@ export function registerCoursifyTools(server) {
         );
       } catch (err) {
         return errorResult(`Error getting progress: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
+    'set_quiz_questions',
+    {
+      title: 'Set Quiz Questions',
+      description:
+        'Set or fully replace the quiz questions for a section. Works for standalone quiz sections (sectionType: "quiz") and lesson sections with an embedded quiz at the bottom. Provide a complete replacement array — any existing questions are overwritten. Use an empty array to remove the quiz.',
+      annotations: MUTATION_ANNOTATIONS,
+      inputSchema: {
+        id: z.string().describe('MongoDB _id of the section'),
+        questions: z
+          .array(questionSchema)
+          .describe(
+            'Full replacement list of quiz questions. Provide 3-7 questions with explanations. Pass [] to remove all questions.'
+          ),
+      },
+      _meta: toolMeta('Saving quiz questions...', 'Quiz questions saved.'),
+    },
+    async ({ id, questions }) => {
+      try {
+        await dbConnect();
+        const section = await CoursifySection.findOneAndUpdate(
+          { _id: id, deletedAt: null },
+          { $set: { 'quiz.questions': questions }, $inc: { syncVersion: 1 } },
+          { new: true, strict: false }
+        ).lean();
+
+        if (!section) return errorResult('Section not found.');
+        await CoursifyCourse.updateOne(
+          { _id: section.courseId, deletedAt: null },
+          { $inc: { syncVersion: 1 } }
+        );
+
+        return textResult(
+          `Set ${questions.length} quiz question(s) on section "${section.title}".`,
+          { success: true, section: normalizeSection(section) }
+        );
+      } catch (err) {
+        return errorResult(`Error setting quiz questions: ${err.message}`);
       }
     }
   );

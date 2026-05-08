@@ -2,12 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
+import QuizEditor from './QuizEditor';
 
 const RESOURCE_TYPES = ['video', 'article', 'doc', 'other'];
 
 export default function EditSectionModal({ section, onSave, onClose }) {
   const [title, setTitle] = useState(section?.title || '');
+  const [sectionType, setSectionType] = useState(section?.sectionType || 'lesson');
   const [content, setContent] = useState(section?.content || '');
+  const [questions, setQuestions] = useState(section?.quiz?.questions || []);
+  const [hasEmbeddedQuiz, setHasEmbeddedQuiz] = useState(
+    section?.sectionType === 'lesson' && (section?.quiz?.questions?.length ?? 0) > 0
+  );
   const [resources, setResources] = useState(section?.resources || []);
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState('content');
@@ -15,7 +21,12 @@ export default function EditSectionModal({ section, onSave, onClose }) {
   useEffect(() => {
     if (section) {
       setTitle(section.title);
+      setSectionType(section.sectionType || 'lesson');
       setContent(section.content || '');
+      setQuestions(section.quiz?.questions || []);
+      setHasEmbeddedQuiz(
+        section.sectionType === 'lesson' && (section.quiz?.questions?.length ?? 0) > 0
+      );
       setResources(section.resources || []);
     }
   }, [section]);
@@ -35,14 +46,19 @@ export default function EditSectionModal({ section, onSave, onClose }) {
   const handleSave = async () => {
     if (!title.trim()) return;
     setLoading(true);
+    const showQuiz = sectionType === 'quiz' || (sectionType === 'lesson' && hasEmbeddedQuiz);
     await onSave({
       title: title.trim(),
-      content,
+      sectionType,
+      content: sectionType === 'lesson' ? content : '',
+      quiz: { questions: showQuiz ? questions : [] },
       resources: resources.filter((r) => r.url.trim()),
     });
     setLoading(false);
     onClose();
   };
+
+  const tabs = sectionType === 'quiz' ? ['quiz', 'resources'] : ['content', 'quiz', 'resources'];
 
   return (
     <>
@@ -66,8 +82,8 @@ export default function EditSectionModal({ section, onSave, onClose }) {
             </button>
           </div>
 
-          {/* Title */}
-          <div className="px-5 pt-4 shrink-0">
+          {/* Title + type */}
+          <div className="px-5 pt-4 space-y-3 shrink-0">
             <input
               autoFocus
               value={title}
@@ -75,11 +91,36 @@ export default function EditSectionModal({ section, onSave, onClose }) {
               placeholder="Section title"
               className="w-full px-4 py-2.5 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-sm font-bold text-[#1e3a34] outline-none focus:border-[#1f644e] focus:ring-2 focus:ring-[#1f644e]/10"
             />
+
+            {/* Section type toggle */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
+                Type
+              </span>
+              <div className="flex items-center gap-0.5 bg-[#f0f5f2] rounded-xl p-0.5">
+                {['lesson', 'quiz'].map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => {
+                      setSectionType(t);
+                      setTab(t === 'quiz' ? 'quiz' : 'content');
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold capitalize transition-colors ${
+                      sectionType === t
+                        ? 'bg-white text-[#1e3a34] shadow-sm'
+                        : 'text-[#7c8e88] hover:text-[#1e3a34]'
+                    }`}
+                  >
+                    {t === 'quiz' ? '🧠 Quiz' : '📄 Lesson'}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Tabs */}
           <div className="flex gap-1 px-5 pt-3 shrink-0">
-            {['content', 'resources'].map((t) => (
+            {tabs.map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -87,14 +128,14 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                   tab === t ? 'bg-[#1f644e] text-white' : 'text-[#7c8e88] hover:bg-[#f0f5f2]'
                 }`}
               >
-                {t}
+                {t === 'quiz' && sectionType === 'lesson' ? 'Embedded Quiz' : t}
               </button>
             ))}
           </div>
 
           {/* Body */}
           <div className="flex-1 overflow-y-auto p-5 min-h-0">
-            {tab === 'content' && (
+            {tab === 'content' && sectionType === 'lesson' && (
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
@@ -116,6 +157,32 @@ const example = 'hello world';
 Wrap up with key takeaways."
                 className="w-full h-64 px-4 py-3 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-sm text-[#1e3a34] outline-none focus:border-[#1f644e] focus:ring-2 focus:ring-[#1f644e]/10 resize-none font-mono"
               />
+            )}
+
+            {tab === 'quiz' && (
+              <div className="space-y-4">
+                {sectionType === 'lesson' && (
+                  <div className="flex items-center gap-2 pb-2 border-b border-[#e5e3d8]">
+                    <label className="flex items-center gap-2 cursor-pointer text-sm text-[#1e3a34]">
+                      <input
+                        type="checkbox"
+                        checked={hasEmbeddedQuiz}
+                        onChange={(e) => setHasEmbeddedQuiz(e.target.checked)}
+                        className="accent-[#1f644e]"
+                      />
+                      <span className="font-semibold">Add quiz at end of this lesson</span>
+                    </label>
+                  </div>
+                )}
+                {(sectionType === 'quiz' || hasEmbeddedQuiz) && (
+                  <QuizEditor questions={questions} onChange={setQuestions} />
+                )}
+                {sectionType === 'lesson' && !hasEmbeddedQuiz && (
+                  <p className="text-sm text-[#7c8e88] text-center py-4">
+                    Enable the toggle above to add a quiz at the end of this lesson.
+                  </p>
+                )}
+              </div>
             )}
 
             {tab === 'resources' && (

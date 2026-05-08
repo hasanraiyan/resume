@@ -10,6 +10,7 @@ import { ReaderHeader } from '@/components/coursify/reader/ReaderHeader';
 import { ReaderSidebar } from '@/components/coursify/reader/ReaderSidebar';
 import { CourseOverview } from '@/components/coursify/reader/CourseOverview';
 import { MarkdownRenderer } from '@/components/coursify/reader/MarkdownRenderer';
+import { QuizPlayer } from '@/components/coursify/reader/QuizPlayer';
 import { TableOfContents } from '@/components/coursify/reader/TableOfContents';
 import { ReaderNavigation } from '@/components/coursify/reader/ReaderNavigation';
 
@@ -42,6 +43,7 @@ export default function PublicCourseReaderPage({ params }) {
   const {
     course,
     sections,
+    orderedSections,
     modules,
     activeSection,
     showOverview,
@@ -147,9 +149,14 @@ export default function PublicCourseReaderPage({ params }) {
                 />
               ) : currentSection ? (
                 <>
-                  <MarkdownRenderer content={currentSection.content} />
+                  {currentSection.sectionType !== 'quiz' && currentSection.content && (
+                    <MarkdownRenderer content={currentSection.content} />
+                  )}
+                  {(currentSection.quiz?.questions?.length ?? 0) > 0 && (
+                    <QuizPlayer questions={currentSection.quiz.questions} />
+                  )}
                   <ReaderNavigation
-                    sections={sections}
+                    sections={orderedSections}
                     activeSection={activeSection}
                     onNavigate={navigateTo}
                   />
