@@ -49,7 +49,7 @@ function filterCourses(courses, query, difficulty) {
 
 function CourseCard({ course }) {
   const router = useRouter();
-  const count = course.sectionCount ?? 0;
+  const count = course.moduleCount ?? 0;
   return (
     <button
       onClick={() => router.push(`/coursify/${course.slug || course._id}`)}
