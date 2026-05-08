@@ -32,6 +32,7 @@ A fully modular AI Agent Architecture utilizing multi-provider support (OpenAI, 
 ### 📝 Content Creation & Synthesis Agents
 
 - **Blog Writer**: Structures, outlines, and helps write high-quality blog posts.
+- **Coursify MCP Agent**: A full-lifecycle instructional design agent that researches, plans, and writes complete educational courses with modules and quizzes.
 - **Presentation Synthesizer**: Researches topics and synthesizes complete, visually rich presentation slides using Gemini 1.5 Pro.
 - **Code Reporter**: Analyzes uploaded codebase snippets for reviews and issue templates.
 
@@ -43,6 +44,7 @@ A protected, role-based backend to manage every aspect of the site.
 - **Article Publishing**: Draft, write, and publish blog articles with full markdown (`react-simplemde-editor`, `react-markdown`) support.
 - **Contact & Subscribers List**: View incoming messages and manage newsletter subscribers.
 - **SnapLinks (URL Shortener)**: Create, manage, and track custom redirect links (`/r/slug`) with individual click analytics.
+- **Coursify Studio**: Management interface for AI-authored courses, including module structure and section content.
 - **Media Library**: Control and review your media assets with Prisma.
 - **Agent Configuration**: Fine-tune Chatbot persona, base knowledge, and active AI tools dynamically from the UI.
 

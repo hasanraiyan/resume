@@ -72,6 +72,20 @@ A powerful built-in URL shortener and tracking tool.
 
 ![SnapLinks](./public/images/apps/Snaplinks.png)
 
+### 🎓 Coursify MCP
+
+An AI-native course authoring platform powered by the Model Context Protocol.
+
+- **AI Authoring**: Specialized agents for research, planning, and content creation.
+- **Structured Learning**: Automated generation of modules, sections, and quizzes.
+- **Rich Content**: Full support for Markdown, Mermaid diagrams, and LaTeX math.
+- **Deep Integration**: Seamlessly connects AI workflows with the course reader.
+
+![Coursify](./public/images/apps/coursify.png)
+
+> [!TIP]
+> Read the [Coursify MCP Documentation](./docs/coursify-mcp.md) for detailed tool references and workflows.
+
 ---
 
 ## 🛠️ Tech Stack
