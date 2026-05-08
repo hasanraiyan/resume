@@ -141,7 +141,7 @@ export default function PublicCourseReaderPage({ params }) {
     }
     setHeadings(extracted);
     setActiveHeading(extracted[0]?.text || null);
-  });
+  }, [currentSection?.content]);
 
   // TOC: scroll-spy
   useEffect(() => {
@@ -160,7 +160,7 @@ export default function PublicCourseReaderPage({ params }) {
     const headingEls = contentRef.current.querySelectorAll('[data-heading]');
     headingEls.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  });
+  }, [headings]);
 
   if (isLoading) {
     return (
