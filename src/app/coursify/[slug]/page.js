@@ -37,6 +37,7 @@ const lora = Lora({
 export default function PublicCourseReaderPage({ params }) {
   const { slug } = use(params);
   const contentRef = useRef(null);
+  const mainRef = useRef(null);
 
   const {
     course,
@@ -53,7 +54,11 @@ export default function PublicCourseReaderPage({ params }) {
 
   const currentSection = sections.find((s) => s._id === activeSection);
 
-  const { headings, activeHeading } = useTableOfContents(currentSection?.content, contentRef);
+  const { headings, activeHeading } = useTableOfContents(
+    currentSection?.content,
+    contentRef,
+    mainRef
+  );
 
   const {
     sidebarOpen,
@@ -130,7 +135,7 @@ export default function PublicCourseReaderPage({ params }) {
           onToggleModule={toggleModule}
         />
 
-        <main className="flex-1 overflow-y-auto min-w-0">
+        <main ref={mainRef} className="flex-1 overflow-y-auto min-w-0">
           <div className="flex min-h-0">
             <article className="flex-1 max-w-3xl mx-auto px-4 lg:px-10 py-8" ref={contentRef}>
               {showOverview ? (

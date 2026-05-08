@@ -7,7 +7,7 @@ export function TableOfContents({ headings, activeHeading, isOpen, onToggle }) {
   if (headings.length === 0) return null;
 
   return (
-    <aside className="hidden lg:block shrink-0 sticky top-0 self-start max-h-screen overflow-y-auto py-8 pr-2 pl-2">
+    <aside className="hidden lg:block w-52 shrink-0 sticky top-0 self-start max-h-screen overflow-y-auto py-8 pr-2 pl-2">
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-1.5 text-[#7c8e88]">
           <List className="w-3.5 h-3.5" />

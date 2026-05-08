@@ -1,11 +1,6 @@
 import { useState, useEffect } from 'react';
 
-/**
- * Hook to manage Table of Contents generation and scroll-spy.
- * @param {string} content - The markdown content to parse for headings.
- * @param {React.RefObject} contentRef - Ref to the scrollable container.
- */
-export function useTableOfContents(content, contentRef) {
+export function useTableOfContents(content, contentRef, scrollContainerRef) {
   const [headings, setHeadings] = useState([]);
   const [activeHeading, setActiveHeading] = useState(null);
 
@@ -44,28 +39,36 @@ export function useTableOfContents(content, contentRef) {
 
   // Scroll-spy logic
   useEffect(() => {
-    if (headings.length === 0 || !contentRef.current) return;
+    if (headings.length === 0 || !contentRef.current || !scrollContainerRef?.current) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            const text = entry.target.getAttribute('data-heading');
-            if (text) setActiveHeading(text);
-          }
+    const scrollEl = scrollContainerRef.current;
+
+    const updateActive = () => {
+      const headingEls = contentRef.current?.querySelectorAll('[data-heading]');
+      if (!headingEls?.length) return;
+
+      // Threshold = 30% down from the top of the scroll container
+      const containerTop = scrollEl.getBoundingClientRect().top;
+      const threshold = containerTop + scrollEl.clientHeight * 0.3;
+
+      let active = null;
+      for (const el of headingEls) {
+        if (el.getBoundingClientRect().top <= threshold) {
+          active = el.getAttribute('data-heading');
+        } else {
+          break;
         }
-      },
-      {
-        rootMargin: '-80px 0px -60% 0px',
-        threshold: 0,
       }
-    );
 
-    const headingEls = contentRef.current.querySelectorAll('[data-heading]');
-    headingEls.forEach((el) => observer.observe(el));
+      setActiveHeading(active ?? headingEls[0]?.getAttribute('data-heading') ?? null);
+    };
 
-    return () => observer.disconnect();
-  }, [headings, contentRef]);
+    scrollEl.addEventListener('scroll', updateActive, { passive: true });
+    // Run once on mount so the first heading is highlighted immediately
+    updateActive();
+
+    return () => scrollEl.removeEventListener('scroll', updateActive);
+  }, [headings, contentRef, scrollContainerRef]);
 
   return { headings, activeHeading, setActiveHeading };
 }
