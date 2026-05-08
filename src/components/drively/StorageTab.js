@@ -9,6 +9,7 @@ import {
   FileText,
   AlertCircle,
   Folder,
+  FileArchive,
 } from 'lucide-react';
 import { useMemo } from 'react';
 
@@ -22,8 +23,10 @@ const formatSize = (bytes) => {
 
 const getIconForMime = (mime) => {
   if (mime.startsWith('image/')) return <ImageIcon className="w-4 h-4 text-emerald-500" />;
+  if (mime.startsWith('video/')) return <Video className="w-4 h-4 text-purple-500" />;
   if (mime === 'application/pdf') return <FileText className="w-4 h-4 text-red-500" />;
-  if (mime.includes('zip')) return <FileArchive className="w-4 h-4 text-amber-500" />;
+  if (mime.includes('zip') || mime.includes('rar') || mime.includes('tar'))
+    return <FileArchive className="w-4 h-4 text-amber-500" />;
   return <File className="w-4 h-4 text-blue-500" />;
 };
 
