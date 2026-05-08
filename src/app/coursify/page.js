@@ -49,12 +49,14 @@ function filterCourses(courses, query, difficulty) {
 
 function CourseCard({ course }) {
   const router = useRouter();
+  const count = course.sectionCount ?? 0;
   return (
     <button
       onClick={() => router.push(`/coursify/${course.slug || course._id}`)}
-      className="group text-left bg-white border border-[#e5e3d8] rounded-2xl overflow-hidden hover:shadow-lg hover:border-[#1f644e]/30 transition-all duration-200"
+      className="group text-left bg-white border border-[#e5e3d8] rounded-2xl overflow-hidden hover:shadow-lg hover:border-[#1f644e]/30 transition-all duration-200 flex flex-col"
     >
-      <div className="w-full h-44 bg-gradient-to-br from-[#1f644e] to-[#2d8a6a] relative overflow-hidden">
+      {/* Thumbnail */}
+      <div className="w-full h-44 bg-gradient-to-br from-[#1f644e] to-[#2d8a6a] relative overflow-hidden shrink-0">
         {course.thumbnail ? (
           <img
             src={course.thumbnail}
@@ -68,51 +70,55 @@ function CourseCard({ course }) {
         )}
       </div>
 
-      <div className="p-4 space-y-2.5">
-        <div className="flex items-center gap-2 flex-wrap">
+      {/* Body */}
+      <div className="p-4 flex flex-col flex-1 gap-2.5">
+        {/* Title */}
+        <h2 className="font-bold text-[#1e3a34] text-sm leading-snug group-hover:text-[#1f644e] transition-colors line-clamp-2">
+          {course.title}
+        </h2>
+
+        {/* Description */}
+        {course.description && (
+          <p className="text-xs text-[#7c8e88] leading-relaxed line-clamp-2 flex-1">
+            {course.description}
+          </p>
+        )}
+
+        {/* Badges: difficulty + duration */}
+        <div className="flex flex-wrap gap-1.5">
           <span
             className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${DIFFICULTY_COLORS[course.difficulty] || DIFFICULTY_COLORS.beginner}`}
           >
             {course.difficulty}
           </span>
           {course.estimatedDuration && (
-            <span className="flex items-center gap-1 text-[10px] text-[#7c8e88] font-bold">
-              <Clock className="w-3 h-3" />
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#f0f5f2] text-[#7c8e88]">
+              <Clock className="w-2.5 h-2.5" />
               {course.estimatedDuration}
             </span>
           )}
-          <span className="flex items-center gap-1 text-[10px] text-[#7c8e88] font-bold ml-auto">
-            <Layers className="w-3 h-3" />
-            {course.sectionCount} section{course.sectionCount !== 1 ? 's' : ''}
-          </span>
         </div>
 
-        <h2 className="font-bold text-[#1e3a34] text-sm leading-snug group-hover:text-[#1f644e] transition-colors">
-          {course.title}
-        </h2>
-
-        {course.description && (
-          <p className="text-xs text-[#7c8e88] leading-relaxed line-clamp-2">
-            {course.description}
-          </p>
-        )}
-
-        {course.tags?.length > 0 && (
-          <div className="flex items-center gap-1 flex-wrap pt-0.5">
-            <Tag className="w-3 h-3 text-[#7c8e88] shrink-0" />
-            {course.tags.slice(0, 3).map((tag) => (
-              <span key={tag} className="text-[10px] text-[#7c8e88]">
-                {tag}
+        {/* Section count + tags */}
+        <div className="flex items-center justify-between text-[#7c8e88]">
+          <span className="flex items-center gap-1 text-xs font-bold">
+            <Layers className="w-3.5 h-3.5" />
+            {count} section{count !== 1 ? 's' : ''}
+          </span>
+          {course.tags?.length > 0 && (
+            <span className="flex items-center gap-1 text-xs truncate max-w-[55%]">
+              <Tag className="w-3 h-3 shrink-0" />
+              <span className="truncate">
+                {course.tags.slice(0, 2).join(', ')}
+                {course.tags.length > 2 && ` +${course.tags.length - 2}`}
               </span>
-            ))}
-            {course.tags.length > 3 && (
-              <span className="text-[10px] text-[#7c8e88]">+{course.tags.length - 3}</span>
-            )}
-          </div>
-        )}
+            </span>
+          )}
+        </div>
 
-        <div className="flex items-center justify-end pt-1">
-          <span className="flex items-center gap-1 text-xs font-bold text-[#1f644e] group-hover:gap-2 transition-all">
+        {/* CTA */}
+        <div className="flex items-center justify-end pt-3 mt-1 border-t border-[#f0f5f2]">
+          <span className="flex items-center gap-1 text-xs font-bold text-[#1f644e] group-hover:gap-2 group-hover:underline transition-all cursor-pointer">
             Start learning <ChevronRight className="w-3.5 h-3.5" />
           </span>
         </div>
