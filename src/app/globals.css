@@ -493,3 +493,18 @@ body {
   color: #1e3a34;
   line-height: 1.5;
 }
+
+.coursify-md hr {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+  border: none;
+  border-top: 1px solid #d1e7dc;
+}
+
+/* Global hr reset / style */
+hr {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: none;
+  border-top: 1px solid #e5e7eb;
+}
