@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, use } from 'react';
+import { useState, useEffect, useCallback, use, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Pacifico, Nunito, Lora } from 'next/font/google';
 import ReactMarkdown from 'react-markdown';
@@ -19,6 +19,7 @@ import {
   X,
   ChevronRight,
   CheckCircle2,
+  List,
 } from 'lucide-react';
 
 const pacifico = Pacifico({
@@ -69,6 +70,11 @@ export default function PublicCourseReaderPage({ params }) {
   const [notFound, setNotFound] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // TOC state — must be before early returns
+  const [headings, setHeadings] = useState([]);
+  const [activeHeading, setActiveHeading] = useState(null);
+  const contentRef = useRef(null);
+
   const fetchCourse = useCallback(async () => {
     try {
       const res = await fetch(`/api/coursify/public/courses/${id}`);
@@ -107,6 +113,53 @@ export default function PublicCourseReaderPage({ params }) {
       delete window.__coursifyCtx;
     };
   }, [activeSection, sections]);
+
+  // currentSection computed here so TOC effects can access it unconditionally
+  const currentSection = sections.find((s) => s._id === activeSection);
+  const currentIndex = sections.findIndex((s) => s._id === activeSection);
+
+  // TOC: extract headings from current section content
+  useEffect(() => {
+    if (!currentSection?.content) {
+      setHeadings([]);
+      setActiveHeading(null);
+      return;
+    }
+    const lines = currentSection.content.split('\n');
+    const extracted = [];
+    for (const line of lines) {
+      const h2Match = line.match(/^##\s+(.+)$/);
+      const h3Match = line.match(/^###\s+(.+)$/);
+      if (h2Match) {
+        const text = h2Match[1].trim();
+        extracted.push({ level: 2, text, slug: text.toLowerCase().replace(/[^a-z0-9]+/g, '-') });
+      } else if (h3Match) {
+        const text = h3Match[1].trim();
+        extracted.push({ level: 3, text, slug: text.toLowerCase().replace(/[^a-z0-9]+/g, '-') });
+      }
+    }
+    setHeadings(extracted);
+    setActiveHeading(extracted[0]?.text || null);
+  });
+
+  // TOC: scroll-spy
+  useEffect(() => {
+    if (headings.length === 0 || !contentRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const text = entry.target.getAttribute('data-heading');
+            if (text) setActiveHeading(text);
+          }
+        }
+      },
+      { rootMargin: '-80px 0px -60% 0px', threshold: 0 }
+    );
+    const headingEls = contentRef.current.querySelectorAll('[data-heading]');
+    headingEls.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  });
 
   if (isLoading) {
     return (
@@ -150,9 +203,6 @@ export default function PublicCourseReaderPage({ params }) {
       </div>
     );
   }
-
-  const currentSection = sections.find((s) => s._id === activeSection);
-  const currentIndex = sections.findIndex((s) => s._id === activeSection);
 
   const navigateTo = (sectionId) => {
     if (activeSection) setVisited((v) => new Set(v).add(activeSection));
@@ -332,167 +382,197 @@ export default function PublicCourseReaderPage({ params }) {
           </div>
         </aside>
 
-        {/* ── Main Content ── */}
+        {/* ── Main Content ─ */}
         <main className="flex-1 overflow-y-auto min-w-0">
-          <article className="max-w-3xl mx-auto px-4 lg:px-10 py-8">
-            {/* Thumbnail */}
-            {course.thumbnail && (
-              <div className="w-full h-52 rounded-2xl overflow-hidden mb-8 border border-[#e5e3d8] shadow-sm">
-                <img
-                  src={course.thumbnail}
-                  alt={course.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
-
-            {/* Tags */}
-            {course.tags?.length > 0 && (
-              <div className="flex items-center gap-1.5 overflow-hidden whitespace-nowrap mb-6">
-                <Tag className="w-3.5 h-3.5 text-[#7c8e88] shrink-0" />
-                {course.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-2 py-0.5 bg-[#f0f5f2] text-[#7c8e88] text-[10px] font-bold rounded-full shrink-0"
-                  >
-                    {tag}
-                  </span>
-                ))}
-                {course.tags.length > 6 && (
-                  <span className="text-[10px] font-bold text-[#7c8e88] shrink-0">
-                    +{course.tags.length - 6}
-                  </span>
-                )}
-              </div>
-            )}
-
-            {!currentSection ? (
-              <div className="flex flex-col items-center justify-center py-24 text-center">
-                <div className="h-14 w-14 bg-[#f0f5f2] rounded-2xl flex items-center justify-center mb-4">
-                  <BookOpen className="w-7 h-7 text-[#1f644e]" />
+          <div className="flex min-h-0">
+            {/* Article */}
+            <article className="flex-1 max-w-3xl mx-auto px-4 lg:px-10 py-8" ref={contentRef}>
+              {/* Thumbnail */}
+              {course.thumbnail && (
+                <div className="w-full h-52 rounded-2xl overflow-hidden mb-8 border border-[#e5e3d8] shadow-sm">
+                  <img
+                    src={course.thumbnail}
+                    alt={course.title}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-                <h3 className="font-bold text-[#1e3a34] mb-2">No sections yet</h3>
-                <p className="text-sm text-[#7c8e88]">Check back soon — content is on the way.</p>
-              </div>
-            ) : (
-              <>
-                {/* Section header */}
-                <h2 className="text-xl lg:text-2xl font-bold text-[#1e3a34] leading-snug mb-6">
-                  {currentSection.title}
-                </h2>
+              )}
 
-                {/* Markdown content */}
-                {currentSection.content ? (
-                  <div className="coursify-md prose prose-sm max-w-none font-[family-name:var(--font-lora)] prose-headings:font-bold prose-headings:text-[#1e3a34] prose-p:text-[#1e3a34] prose-p:leading-relaxed prose-code:bg-[#f0f5f2] prose-code:rounded prose-code:px-1 prose-code:text-[#1f644e] prose-pre:bg-[#1e3a34] prose-pre:rounded-xl prose-blockquote:border-[#1f644e] prose-a:text-[#1f644e] prose-li:text-[#1e3a34] prose-strong:text-[#1e3a34] prose-table:text-sm">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      rehypePlugins={[rehypeRaw]}
-                      components={{
-                        table({ children }) {
-                          return (
-                            <div className="overflow-x-auto my-7 rounded-xl border border-[#e5e3d8]">
-                              <table className="w-full border-collapse text-sm">{children}</table>
-                            </div>
-                          );
-                        },
-                        code({ node, className, children, ...props }) {
-                          const match = /language-(\w+)/.exec(className || '');
-                          const isBlock = String(children).includes('\n');
-
-                          if (isBlock && match) {
+              {!currentSection ? (
+                <div className="flex flex-col items-center justify-center py-24 text-center">
+                  <div className="h-14 w-14 bg-[#f0f5f2] rounded-2xl flex items-center justify-center mb-4">
+                    <BookOpen className="w-7 h-7 text-[#1f644e]" />
+                  </div>
+                  <h3 className="font-bold text-[#1e3a34] mb-2">No sections yet</h3>
+                  <p className="text-sm text-[#7c8e88]">Check back soon — content is on the way.</p>
+                </div>
+              ) : (
+                <>
+                  {/* Markdown content */}
+                  {currentSection.content ? (
+                    <div className="coursify-md prose prose-sm max-w-none font-[family-name:var(--font-lora)] prose-headings:font-bold prose-headings:text-[#1e3a34] prose-p:text-[#1e3a34] prose-p:leading-relaxed prose-code:bg-[#f0f5f2] prose-code:rounded prose-code:px-1 prose-code:text-[#1f644e] prose-pre:bg-[#1e3a34] prose-pre:rounded-xl prose-blockquote:border-[#1f644e] prose-a:text-[#1f644e] prose-li:text-[#1e3a34] prose-strong:text-[#1e3a34] prose-table:text-sm">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeRaw]}
+                        components={{
+                          h2({ children, ...props }) {
+                            const text = typeof children === 'string' ? children : '';
+                            const slug = text.toLowerCase().replace(/[^a-z0-9]+/g, '-');
                             return (
-                              <SyntaxHighlighter
-                                style={oneDark}
-                                language={match[1]}
-                                PreTag="div"
-                                customStyle={{
-                                  borderRadius: '0.75rem',
-                                  fontSize: '0.82rem',
-                                  margin: '0.75em 0',
-                                  padding: '0.6em 0.9em',
-                                }}
-                                showLineNumbers
-                                {...props}
-                              >
-                                {String(children).replace(/\n$/, '')}
-                              </SyntaxHighlighter>
+                              <h2 id={slug} data-heading={text} className="scroll-mt-20" {...props}>
+                                {children}
+                              </h2>
                             );
-                          }
-                          if (isBlock) {
+                          },
+                          h3({ children, ...props }) {
+                            const text = typeof children === 'string' ? children : '';
+                            const slug = text.toLowerCase().replace(/[^a-z0-9]+/g, '-');
                             return (
-                              <div
-                                className="rounded-xl overflow-hidden my-3 w-full flex justify-center"
-                                style={{ background: '#18181b' }}
-                              >
-                                <pre
-                                  className="overflow-x-auto p-4 text-[0.82rem] leading-relaxed font-mono whitespace-pre"
-                                  style={{ background: 'transparent' }}
-                                >
-                                  <code className="font-mono" style={{ color: '#e4e4e7' }}>
-                                    {children}
-                                  </code>
-                                </pre>
+                              <h3 id={slug} data-heading={text} className="scroll-mt-20" {...props}>
+                                {children}
+                              </h3>
+                            );
+                          },
+                          table({ children }) {
+                            return (
+                              <div className="overflow-x-auto my-7 rounded-xl border border-[#e5e3d8]">
+                                <table className="w-full border-collapse text-sm">{children}</table>
                               </div>
                             );
-                          }
-                          return (
-                            <code
-                              className="bg-[#f0f5f2] text-[#1f644e] rounded px-1.5 py-0.5 text-[0.82em] font-mono font-semibold"
-                              {...props}
+                          },
+                          code({ node, className, children, ...props }) {
+                            const match = /language-(\w+)/.exec(className || '');
+                            const isBlock = String(children).includes('\n');
+
+                            if (isBlock && match) {
+                              return (
+                                <SyntaxHighlighter
+                                  style={oneDark}
+                                  language={match[1]}
+                                  PreTag="div"
+                                  customStyle={{
+                                    borderRadius: '0.75rem',
+                                    fontSize: '0.82rem',
+                                    margin: '0.75em 0',
+                                    padding: '0.6em 0.9em',
+                                  }}
+                                  showLineNumbers
+                                  {...props}
+                                >
+                                  {String(children).replace(/\n$/, '')}
+                                </SyntaxHighlighter>
+                              );
+                            }
+                            if (isBlock) {
+                              return (
+                                <div
+                                  className="rounded-xl overflow-hidden my-3 w-full flex justify-center"
+                                  style={{ background: '#18181b' }}
+                                >
+                                  <pre
+                                    className="overflow-x-auto p-4 text-[0.82rem] leading-relaxed font-mono whitespace-pre"
+                                    style={{ background: 'transparent' }}
+                                  >
+                                    <code className="font-mono" style={{ color: '#e4e4e7' }}>
+                                      {children}
+                                    </code>
+                                  </pre>
+                                </div>
+                              );
+                            }
+                            return (
+                              <code
+                                className="bg-[#f0f5f2] text-[#1f644e] rounded px-1.5 py-0.5 text-[0.82em] font-mono font-semibold"
+                                {...props}
+                              >
+                                {children}
+                              </code>
+                            );
+                          },
+                        }}
+                      >
+                        {currentSection.content}
+                      </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <div className="py-16 text-center">
+                      <p className="text-sm text-[#7c8e88]">No content yet for this section.</p>
+                    </div>
+                  )}
+
+                  {/* Resources */}
+                  {currentSection.resources?.length > 0 && (
+                    <div className="mt-10 pt-6 border-t border-[#e5e3d8]">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-3">
+                        Resources
+                      </h3>
+                      <ul className="space-y-2">
+                        {currentSection.resources.map((r, i) => (
+                          <li key={i}>
+                            <a
+                              href={r.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white border border-[#e5e3d8] hover:border-[#1f644e]/40 hover:bg-[#f0f5f2] transition-colors group"
                             >
-                              {children}
-                            </code>
-                          );
-                        },
+                              <span className="text-base shrink-0">
+                                {RESOURCE_ICONS[r.type] || RESOURCE_ICONS.other}
+                              </span>
+                              <span className="text-sm font-bold text-[#1e3a34] flex-1 truncate group-hover:text-[#1f644e] transition-colors">
+                                {r.title}
+                              </span>
+                              <ExternalLink className="w-3.5 h-3.5 text-[#7c8e88] shrink-0" />
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Prev / Next navigation */}
+                  <SectionNav
+                    sections={sections}
+                    activeSection={activeSection}
+                    onNavigate={navigateTo}
+                  />
+                </>
+              )}
+            </article>
+
+            {/* ── TOC Sidebar (desktop only) ── */}
+            {headings.length > 0 && (
+              <aside className="hidden lg:block w-56 shrink-0 sticky top-0 self-start max-h-screen overflow-y-auto py-8 pr-4 pl-2">
+                <div className="flex items-center gap-1.5 mb-3 text-[#7c8e88]">
+                  <List className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider">
+                    On this page
+                  </span>
+                </div>
+                <nav className="space-y-0.5">
+                  {headings.map((h) => (
+                    <a
+                      key={h.slug}
+                      href={`#${h.slug}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const el = document.getElementById(h.slug);
+                        el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                       }}
+                      className={`block text-xs leading-snug transition-colors py-0.5 ${
+                        h.level === 3 ? 'pl-4' : ''
+                      } ${
+                        activeHeading === h.text
+                          ? 'text-[#1f644e] font-bold'
+                          : 'text-[#7c8e88] hover:text-[#1e3a34]'
+                      }`}
                     >
-                      {currentSection.content}
-                    </ReactMarkdown>
-                  </div>
-                ) : (
-                  <div className="py-16 text-center">
-                    <p className="text-sm text-[#7c8e88]">No content yet for this section.</p>
-                  </div>
-                )}
-
-                {/* Resources */}
-                {currentSection.resources?.length > 0 && (
-                  <div className="mt-10 pt-6 border-t border-[#e5e3d8]">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-3">
-                      Resources
-                    </h3>
-                    <ul className="space-y-2">
-                      {currentSection.resources.map((r, i) => (
-                        <li key={i}>
-                          <a
-                            href={r.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white border border-[#e5e3d8] hover:border-[#1f644e]/40 hover:bg-[#f0f5f2] transition-colors group"
-                          >
-                            <span className="text-base shrink-0">
-                              {RESOURCE_ICONS[r.type] || RESOURCE_ICONS.other}
-                            </span>
-                            <span className="text-sm font-bold text-[#1e3a34] flex-1 truncate group-hover:text-[#1f644e] transition-colors">
-                              {r.title}
-                            </span>
-                            <ExternalLink className="w-3.5 h-3.5 text-[#7c8e88] shrink-0" />
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Prev / Next navigation */}
-                <SectionNav
-                  sections={sections}
-                  activeSection={activeSection}
-                  onNavigate={navigateTo}
-                />
-              </>
+                      {h.text}
+                    </a>
+                  ))}
+                </nav>
+              </aside>
             )}
-          </article>
+          </div>
         </main>
       </div>
     </div>
