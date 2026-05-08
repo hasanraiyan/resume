@@ -67,22 +67,10 @@ export default function SectionsAdminPage() {
       description: 'Main introduction, profile image, and social buttons',
     },
     {
-      href: '/admin/sections/services',
-      icon: 'fa-concierge-bell',
-      title: 'Services Section',
-      description: 'Manage your service offerings and section titles',
-    },
-    {
       href: '/admin/sections/about',
       icon: 'fa-info-circle',
       title: 'About Section',
       description: 'Bio, skills, and highlights titles',
-    },
-    {
-      href: '/admin/sections/stats',
-      icon: 'fa-chart-bar',
-      title: 'Stats Section',
-      description: 'Update achievement numbers and status stats',
     },
     {
       href: '/admin/sections/skills',
@@ -91,10 +79,22 @@ export default function SectionsAdminPage() {
       description: 'Customize skills section title and description',
     },
     {
+      href: '/admin/sections/services',
+      icon: 'fa-concierge-bell',
+      title: 'Services Section',
+      description: 'Manage your service offerings and section titles',
+    },
+    {
       href: '/admin/sections/projects',
       icon: 'fa-briefcase',
       title: 'Project Section',
       description: 'Customize featured projects title and view all CTR',
+    },
+    {
+      href: '/admin/sections/stats',
+      icon: 'fa-chart-bar',
+      title: 'Stats Section',
+      description: 'Update achievement numbers and status stats',
     },
     {
       href: '/admin/sections/achievements',

@@ -1,5 +1,18 @@
 {
   "permissions": {
-    "allow": ["mcp__coursify__add_section"]
+    "allow": [
+      "mcp__coursify__add_section",
+      "mcp__coursify__get_course_authoring_guide",
+      "mcp__coursify__list_courses",
+      "mcp__coursify__add_research_note",
+      "mcp__coursify__save_course_plan",
+      "mcp__coursify__create_module",
+      "mcp__coursify__get_course_progress",
+      "mcp__coursify__list_course_modules",
+      "mcp__coursify__update_module",
+      "mcp__coursify__update_section",
+      "mcp__coursify__update_course",
+      "mcp__coursify__publish_course"
+    ]
   }
 }

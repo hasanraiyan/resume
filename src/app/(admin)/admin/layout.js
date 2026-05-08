@@ -92,6 +92,7 @@ function AdminLayoutContent({ children }) {
       items: [
         { name: 'Articles', href: '/admin/articles', icon: Newspaper },
         { name: 'Projects', href: '/admin/projects', icon: Folder },
+        { name: 'Site Configuration', href: '/admin/site-config', icon: Settings },
         { name: 'Manage Sections', href: '/admin/sections', icon: Settings },
         { name: 'Services', href: '/admin/sections/services', icon: Wrench },
       ],
