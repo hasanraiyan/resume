@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Pacifico, Nunito } from 'next/font/google';
-import { BookOpen, Clock, Layers, Tag, ChevronRight, Search, X } from 'lucide-react';
+import { BookOpen, Clock, Layers, ChevronRight, Search, X } from 'lucide-react';
 
 const pacifico = Pacifico({
   weight: '400',
@@ -84,36 +84,23 @@ function CourseCard({ course }) {
           </p>
         )}
 
-        {/* Badges: difficulty + duration */}
-        <div className="flex flex-wrap gap-1.5">
+        {/* Meta: difficulty + duration + sections */}
+        <div className="flex flex-wrap items-center gap-2 pt-1">
           <span
             className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${DIFFICULTY_COLORS[course.difficulty] || DIFFICULTY_COLORS.beginner}`}
           >
             {course.difficulty}
           </span>
           {course.estimatedDuration && (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#f0f5f2] text-[#7c8e88]">
-              <Clock className="w-2.5 h-2.5" />
+            <span className="flex items-center gap-1 text-[10px] font-bold text-[#7c8e88]">
+              <Clock className="w-3 h-3" />
               {course.estimatedDuration}
             </span>
           )}
-        </div>
-
-        {/* Section count + tags */}
-        <div className="flex items-center justify-between text-[#7c8e88]">
-          <span className="flex items-center gap-1 text-xs font-bold">
-            <Layers className="w-3.5 h-3.5" />
-            {count} section{count !== 1 ? 's' : ''}
+          <span className="flex items-center gap-1 text-[10px] font-bold text-[#7c8e88]">
+            <Layers className="w-3 h-3" />
+            {count} {count === 1 ? 'section' : 'sections'}
           </span>
-          {course.tags?.length > 0 && (
-            <span className="flex items-center gap-1 text-xs truncate max-w-[55%]">
-              <Tag className="w-3 h-3 shrink-0" />
-              <span className="truncate">
-                {course.tags.slice(0, 2).join(', ')}
-                {course.tags.length > 2 && ` +${course.tags.length - 2}`}
-              </span>
-            </span>
-          )}
         </div>
 
         {/* CTA */}
