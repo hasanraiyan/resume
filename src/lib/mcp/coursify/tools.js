@@ -1,25 +1,35 @@
 import { z } from 'zod';
-import dbConnect from '@/lib/dbConnect';
-import CoursifyCourse from '@/models/CoursifyCourse';
-import CoursifySection from '@/models/CoursifySection';
-import CoursifyModule from '@/models/CoursifyModule';
 import {
   COURSE_AUTHORING_GUIDE,
   READ_ONLY_ANNOTATIONS,
   MUTATION_ANNOTATIONS,
   DESTRUCTIVE_ANNOTATIONS,
 } from './constants.js';
+import { textResult, errorResult, toolMeta } from './utils.js';
 import {
-  textResult,
-  errorResult,
-  toolMeta,
-  normalizeCourse,
-  normalizeSection,
-  normalizeModule,
-} from './utils.js';
-import { generateCourseThumbnail } from '@/lib/coursify/thumbnailGen.js';
-import { generateUniqueSlug } from '@/lib/coursify/slugify.js';
+  dbListCourses,
+  dbGetCourse,
+  dbCreateCourse,
+  dbUpdateCourse,
+  dbPublishCourse,
+  dbDeleteCourse,
+  dbSaveCoursePlan,
+  dbCreateModule,
+  dbUpdateModule,
+  dbDeleteModule,
+  dbReorderModules,
+  dbAddSection,
+  dbUpdateSection,
+  dbDeleteSection,
+  dbReorderSections,
+  dbGetSectionContent,
+  dbSetQuizQuestions,
+  dbListCourseModules,
+  dbAddResearchNote,
+  dbResearchFindings,
+} from '@/lib/coursify/db-ops.js';
 
+// Shared schemas
 const resourceSchema = z.object({
   type: z.enum(['video', 'article', 'doc', 'other']),
   url: z.string(),
@@ -33,27 +43,19 @@ const questionSchema = z.object({
     .array(z.string())
     .optional()
     .describe(
-      'Answer options. Required for multiple_choice and multi_select. Omit for true_false (auto True/False) and short_answer.'
+      'Answer options. Required for multiple_choice and multi_select. Omit for true_false and short_answer.'
     ),
   correctAnswer: z
     .union([z.string(), z.number(), z.array(z.number())])
     .describe(
-      'Correct answer. multiple_choice → option index (number). true_false → "true" or "false". short_answer → reference answer string. multi_select → array of correct option indices.'
+      'Correct answer. multiple_choice → option index. true_false → "true"/"false". short_answer → reference string. multi_select → array of indices.'
     ),
   explanation: z
     .string()
     .optional()
-    .describe('Explanation shown after the learner submits. Always include this.'),
+    .describe('Explanation shown after submission. Always include this.'),
   points: z.number().int().optional().describe('Point value. Defaults to 1.'),
 });
-
-function cleanPatch(patch) {
-  return Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined));
-}
-
-function createThumbnailInBackground(course) {
-  generateCourseThumbnail(course._id.toString(), course.title, course.description).catch(() => {});
-}
 
 export function registerCoursifyTools(server) {
   server.registerTool(
@@ -73,93 +75,7 @@ export function registerCoursifyTools(server) {
       })
   );
 
-  server.registerTool(
-    'delete_module',
-    {
-      title: 'Delete Module',
-      description: 'Soft-delete a module from a course so it no longer appears in active records.',
-      annotations: DESTRUCTIVE_ANNOTATIONS,
-      inputSchema: {
-        id: z.string().describe('MongoDB _id of the module to delete'),
-      },
-      _meta: toolMeta('Deleting module...', 'Module deleted.'),
-    },
-    async ({ id }) => {
-      try {
-        await dbConnect();
-        const module = await CoursifyModule.findOneAndUpdate(
-          { _id: id, deletedAt: null },
-          { $set: { deletedAt: new Date() }, $inc: { syncVersion: 1 } }
-        ).lean();
-
-        if (!module) return errorResult('Module not found.');
-        // Unassign sections from this module (don't delete them — they become Uncategorized)
-        await CoursifySection.updateMany(
-          { moduleId: id, deletedAt: null },
-          { $set: { moduleId: null }, $inc: { syncVersion: 1 } }
-        );
-
-        await CoursifyCourse.updateOne(
-          { _id: module.courseId, deletedAt: null },
-          { $inc: { syncVersion: 1 } }
-        );
-        return textResult(`Deleted module "${module.title}".`, {
-          success: true,
-          deletedId: id,
-        });
-      } catch (err) {
-        return errorResult(`Error deleting module: ${err.message}`);
-      }
-    }
-  );
-
-  server.registerTool(
-    'reorder_modules',
-    {
-      title: 'Reorder Modules',
-      description:
-        'Set the display order of all modules in a course by providing the full ordered list of module IDs.',
-      annotations: MUTATION_ANNOTATIONS,
-      inputSchema: {
-        courseId: z.string().describe('MongoDB _id of the course'),
-        moduleIds: z
-          .array(z.string())
-          .describe(
-            'All module IDs in the desired order, from first to last. Every active module should be included.'
-          ),
-      },
-      _meta: toolMeta('Reordering modules...', 'Modules reordered.'),
-    },
-    async ({ courseId, moduleIds }) => {
-      try {
-        await dbConnect();
-        if (!moduleIds.length) return errorResult('moduleIds must not be empty.');
-
-        const results = await Promise.all(
-          moduleIds.map((id, index) =>
-            CoursifyModule.updateOne(
-              { _id: id, courseId, deletedAt: null },
-              { $set: { order: index }, $inc: { syncVersion: 1 } }
-            )
-          )
-        );
-        const matched = results.reduce((sum, r) => sum + r.matchedCount, 0);
-        if (matched < moduleIds.length) {
-          return errorResult(
-            `Only ${matched}/${moduleIds.length} modules found. Some IDs may be invalid or belong to a different course.`
-          );
-        }
-        await CoursifyCourse.updateOne(
-          { _id: courseId, deletedAt: null },
-          { $inc: { syncVersion: 1 } }
-        );
-
-        return textResult(`Reordered ${moduleIds.length} modules.`, { success: true });
-      } catch (err) {
-        return errorResult(`Error reordering modules: ${err.message}`);
-      }
-    }
-  );
+  // ── Courses ──────────────────────────────────────────────────────────────
 
   server.registerTool(
     'list_courses',
@@ -178,36 +94,10 @@ export function registerCoursifyTools(server) {
     },
     async ({ status } = {}) => {
       try {
-        await dbConnect();
-        const query = { deletedAt: null };
-        if (status && status !== 'all') query.status = status;
-
-        const courses = await CoursifyCourse.find(query).sort({ updatedAt: -1 }).lean();
-        const courseIds = courses.map((course) => course._id);
-
-        const sections = await CoursifySection.find({
-          courseId: { $in: courseIds },
-          deletedAt: null,
-        })
-          .select('courseId')
-          .lean();
-
-        const countMap = {};
-        for (const section of sections) {
-          const id = section.courseId.toString();
-          countMap[id] = (countMap[id] || 0) + 1;
-        }
-
-        const result = courses.map((course) =>
-          normalizeCourse({
-            ...course,
-            sectionCount: countMap[course._id.toString()] || 0,
-          })
-        );
-
-        return textResult(`Found ${result.length} courses in Coursify.`, {
+        const courses = await dbListCourses({ status });
+        return textResult(`Found ${courses.length} courses in Coursify.`, {
           kind: 'courses',
-          courses: result,
+          courses,
         });
       } catch (err) {
         return errorResult(`Error fetching courses: ${err.message}`);
@@ -229,103 +119,13 @@ export function registerCoursifyTools(server) {
     },
     async ({ id }) => {
       try {
-        await dbConnect();
-        const course = await CoursifyCourse.findOne({ _id: id, deletedAt: null }).lean();
-        if (!course) return errorResult('Course not found.');
-
-        const [modules, sections] = await Promise.all([
-          CoursifyModule.find({ courseId: id, deletedAt: null }).sort({ order: 1 }).lean(),
-          CoursifySection.find({ courseId: id, deletedAt: null })
-            .select('moduleId title summary status order learningGoals estimatedDuration resources')
-            .sort({ order: 1 })
-            .lean(),
-        ]);
-
-        // Group sections by module
-        const sectionsByModule = {};
-        const unassigned = [];
-        for (const s of sections) {
-          const mid = s.moduleId?.toString();
-          const sectionMeta = {
-            id: s._id.toString(),
-            title: s.title,
-            summary: s.summary || '',
-            status: s.status || 'draft',
-            order: s.order ?? 0,
-            learningGoals: s.learningGoals || [],
-            estimatedDuration: s.estimatedDuration || '',
-            resources: s.resources || [],
-          };
-          if (mid) {
-            if (!sectionsByModule[mid]) sectionsByModule[mid] = [];
-            sectionsByModule[mid].push(sectionMeta);
-          } else {
-            unassigned.push(sectionMeta);
-          }
-        }
-
-        const modulesWithSections = modules.map((m) => ({
-          ...normalizeModule(m),
-          sections: sectionsByModule[m._id.toString()] || [],
-        }));
-
+        const { course, modules, uncategorizedSections } = await dbGetCourse({ id });
         return textResult(
-          `Course "${course.title}" has ${modules.length} modules and ${sections.length} sections. Use get_section_content to read or edit a section's full Markdown body.`,
-          {
-            kind: 'course_detail',
-            course: normalizeCourse({ ...course, sectionCount: sections.length }),
-            modules: modulesWithSections,
-            uncategorizedSections: unassigned,
-          }
+          `Course "${course.title}" has ${modules.length} modules and ${course.sectionCount} sections. Use get_section_content to read or edit a section's full Markdown body.`,
+          { kind: 'course_detail', course, modules, uncategorizedSections }
         );
       } catch (err) {
         return errorResult(`Error fetching course: ${err.message}`);
-      }
-    }
-  );
-
-  server.registerTool(
-    'get_section_content',
-    {
-      title: 'Get Section Content',
-      description:
-        'Retrieve the full Markdown content of a single section by its ID. Use this after get_course or list_course_modules to read the body of a section you want to revise or review.',
-      annotations: READ_ONLY_ANNOTATIONS,
-      inputSchema: {
-        id: z.string().describe('MongoDB _id of the section'),
-      },
-      _meta: toolMeta('Loading section...', 'Section loaded.'),
-    },
-    async ({ id }) => {
-      try {
-        await dbConnect();
-        const section = await CoursifySection.findOne({ _id: id, deletedAt: null }).lean();
-        if (!section) return errorResult('Section not found.');
-
-        const moduleTitle = section.moduleId
-          ? (await CoursifyModule.findOne({ _id: section.moduleId, deletedAt: null }).lean())
-              ?.title || ''
-          : '';
-
-        return textResult(`Section "${section.title}" loaded.`, {
-          kind: 'section_content',
-          section: {
-            id: section._id.toString(),
-            courseId: section.courseId.toString(),
-            moduleId: section.moduleId?.toString() || null,
-            moduleTitle,
-            title: section.title,
-            content: section.content || '',
-            summary: section.summary || '',
-            status: section.status || 'draft',
-            order: section.order ?? 0,
-            learningGoals: section.learningGoals || [],
-            estimatedDuration: section.estimatedDuration || '',
-            resources: section.resources || [],
-          },
-        });
-      } catch (err) {
-        return errorResult(`Error fetching section: ${err.message}`);
       }
     }
   );
@@ -360,23 +160,16 @@ export function registerCoursifyTools(server) {
     },
     async ({ title, description, difficulty, estimatedDuration, tags }) => {
       try {
-        await dbConnect();
-        const slug = await generateUniqueSlug(title.trim());
-        const course = await CoursifyCourse.create({
-          title: title.trim(),
-          slug,
-          description: description?.trim() || '',
-          difficulty: difficulty || 'beginner',
-          estimatedDuration: estimatedDuration || '',
-          tags: tags || [],
-          thumbnailGenerating: true,
+        const { course } = await dbCreateCourse({
+          title,
+          description,
+          difficulty,
+          estimatedDuration,
+          tags,
         });
-
-        createThumbnailInBackground(course);
-
-        return textResult(`Created course "${course.title}" (id: ${course._id}).`, {
+        return textResult(`Created course "${course.title}" (id: ${course.id}).`, {
           success: true,
-          course: normalizeCourse({ ...course.toObject(), sectionCount: 0 }),
+          course,
         });
       } catch (err) {
         return errorResult(`Error creating course: ${err.message}`);
@@ -404,8 +197,8 @@ export function registerCoursifyTools(server) {
     },
     async ({ id, title, description, difficulty, estimatedDuration, tags, status }) => {
       try {
-        await dbConnect();
-        const clean = cleanPatch({
+        const { course } = await dbUpdateCourse({
+          id,
           title,
           description,
           difficulty,
@@ -413,30 +206,7 @@ export function registerCoursifyTools(server) {
           tags,
           status,
         });
-        if (clean.title) {
-          clean.slug = await generateUniqueSlug(clean.title, id);
-        }
-        // Mirror publish_course side effects so agents don't produce inconsistent state
-        if (clean.status === 'published') {
-          clean.authoringStatus = 'published';
-        } else if (clean.status === 'draft') {
-          clean.authoringStatus = undefined;
-        }
-        const course = await CoursifyCourse.findOneAndUpdate(
-          { _id: id, deletedAt: null },
-          { $set: clean, $inc: { syncVersion: 1 } },
-          { new: true }
-        ).lean();
-
-        if (!course) return errorResult('Course not found.');
-        const sectionCount = await CoursifySection.countDocuments({
-          courseId: id,
-          deletedAt: null,
-        });
-        return textResult(`Updated course "${course.title}".`, {
-          success: true,
-          course: normalizeCourse({ ...course, sectionCount }),
-        });
+        return textResult(`Updated course "${course.title}".`, { success: true, course });
       } catch (err) {
         return errorResult(`Error updating course: ${err.message}`);
       }
@@ -457,22 +227,8 @@ export function registerCoursifyTools(server) {
     },
     async ({ id }) => {
       try {
-        await dbConnect();
-        const course = await CoursifyCourse.findOneAndUpdate(
-          { _id: id, deletedAt: null },
-          { $set: { status: 'published', authoringStatus: 'published' }, $inc: { syncVersion: 1 } },
-          { new: true }
-        ).lean();
-
-        if (!course) return errorResult('Course not found.');
-        const sectionCount = await CoursifySection.countDocuments({
-          courseId: id,
-          deletedAt: null,
-        });
-        return textResult(`Published course "${course.title}".`, {
-          success: true,
-          course: normalizeCourse({ ...course, sectionCount }),
-        });
+        const { course } = await dbPublishCourse({ id });
+        return textResult(`Published course "${course.title}".`, { success: true, course });
       } catch (err) {
         return errorResult(`Error publishing course: ${err.message}`);
       }
@@ -493,31 +249,390 @@ export function registerCoursifyTools(server) {
     },
     async ({ id }) => {
       try {
-        await dbConnect();
-        const deletedAt = new Date();
-        const course = await CoursifyCourse.findOneAndUpdate(
-          { _id: id, deletedAt: null },
-          { $set: { deletedAt }, $inc: { syncVersion: 1 } }
-        ).lean();
-
-        if (!course) return errorResult('Course not found.');
-        await Promise.all([
-          CoursifySection.updateMany(
-            { courseId: id, deletedAt: null },
-            { $set: { deletedAt }, $inc: { syncVersion: 1 } }
-          ),
-          CoursifyModule.updateMany(
-            { courseId: id, deletedAt: null },
-            { $set: { deletedAt }, $inc: { syncVersion: 1 } }
-          ),
-        ]);
-
-        return textResult(`Deleted course "${course.title}" and all its sections and modules.`, {
+        const { deletedId, title } = await dbDeleteCourse({ id });
+        return textResult(`Deleted course "${title}" and all its sections and modules.`, {
           success: true,
-          deletedId: id,
+          deletedId,
         });
       } catch (err) {
         return errorResult(`Error deleting course: ${err.message}`);
+      }
+    }
+  );
+
+  // ── Planning ──────────────────────────────────────────────────────────────
+
+  server.registerTool(
+    'save_course_plan',
+    {
+      title: 'Save Course Plan',
+      description:
+        'Save the course planning workspace: target audience, learning objectives, prerequisites, outcome, outline (Markdown), planning notes, and authoringStatus. Call this after research and before creating modules or sections.',
+      annotations: MUTATION_ANNOTATIONS,
+      inputSchema: {
+        courseId: z.string().describe('MongoDB _id of the course'),
+        targetAudience: z.string().optional(),
+        learningObjectives: z.array(z.string()).optional(),
+        prerequisites: z.array(z.string()).optional(),
+        outcome: z.string().optional(),
+        outline: z
+          .string()
+          .optional()
+          .describe('Free-form Markdown outline of planned modules and sections'),
+        planningNotes: z.string().optional(),
+        authoringStatus: z
+          .enum(['idea', 'researching', 'planned', 'drafting', 'reviewing', 'ready', 'published'])
+          .optional(),
+      },
+      _meta: toolMeta('Saving course plan...', 'Course plan saved.'),
+    },
+    async ({ courseId, ...patch }) => {
+      try {
+        const { course } = await dbSaveCoursePlan({ courseId, ...patch });
+
+        const planFields = {
+          targetAudience: !!course.targetAudience,
+          learningObjectives: (course.learningObjectives || []).length > 0,
+          prerequisites: (course.prerequisites || []).length > 0,
+          outcome: !!course.outcome,
+          outline: !!course.outline,
+        };
+        const filled = Object.values(planFields).filter(Boolean).length;
+        const missing = Object.entries(planFields)
+          .filter(([, v]) => !v)
+          .map(([k]) => k);
+
+        const suggestions = [];
+        if (!planFields.targetAudience) suggestions.push('Define who this course is for');
+        if (!planFields.learningObjectives)
+          suggestions.push('Add 3-5 concrete learning objectives');
+        if (!planFields.prerequisites) suggestions.push('List prerequisites');
+        if (!planFields.outcome) suggestions.push('Add a clear outcome statement');
+        if (!planFields.outline)
+          suggestions.push('Write a Markdown outline grouping sections into modules');
+
+        let nextStep =
+          'Call suggest_modules_from_outline to get a recommended module structure, then create_module for each.';
+        if (filled < 3) nextStep = 'Fill the missing plan fields above before structuring modules.';
+        else if (course.authoringStatus === 'researching')
+          nextStep = 'Set authoringStatus to "planned" and call suggest_modules_from_outline.';
+
+        return textResult(
+          `Course plan saved for "${course.title}" (${filled}/5 fields complete).`,
+          {
+            success: true,
+            course,
+            planCompleteness: { filled, total: 5, missing },
+            suggestions,
+            nextStep,
+          }
+        );
+      } catch (err) {
+        return errorResult(`Error saving plan: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
+    'suggest_modules_from_outline',
+    {
+      title: 'Suggest Modules From Outline',
+      description:
+        'Read-only. Analyzes the saved course outline and returns a suggested module structure — titles, summaries, learning goals, and which outline sections belong to each module. Does NOT create modules; review the suggestions then call create_module for each you want.',
+      annotations: READ_ONLY_ANNOTATIONS,
+      inputSchema: {
+        courseId: z.string().describe('MongoDB _id of the course'),
+      },
+      _meta: toolMeta('Analyzing outline...', 'Module suggestions ready.'),
+    },
+    async ({ courseId }) => {
+      try {
+        const { course } = await dbGetCourse({ id: courseId });
+        if (!course.outline)
+          return errorResult(
+            'No outline found. Call save_course_plan first with a Markdown outline.'
+          );
+
+        const outline = course.outline.trim();
+        const lines = outline.split('\n');
+        const sectionTitles = [];
+        let currentGroup = '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('## ') && !trimmed.toLowerCase().includes('module')) {
+            const title = trimmed.replace(/^##\s+/, '').trim();
+            if (title) sectionTitles.push({ title, group: currentGroup });
+          } else if (trimmed.startsWith('### ')) {
+            const title = trimmed.replace(/^###\s+/, '').trim();
+            if (title && title.length < 100) sectionTitles.push({ title, group: currentGroup });
+          } else if (trimmed.match(/^#{1,2}\s+(module|phase|part|step)/i)) {
+            currentGroup = trimmed.replace(/^#{1,2}\s+/, '').trim();
+          }
+        }
+
+        if (sectionTitles.length === 0) {
+          const paragraphs = outline
+            .split(/\n\n+/)
+            .map((p) => p.trim())
+            .filter(Boolean);
+          for (const p of paragraphs) {
+            const firstLine = p
+              .split('\n')[0]
+              .trim()
+              .replace(/^[-*]\s+/, '');
+            if (firstLine && firstLine.length > 3 && firstLine.length < 120) {
+              sectionTitles.push({ title: firstLine, group: '' });
+            }
+          }
+        }
+
+        if (sectionTitles.length === 0)
+          return errorResult(
+            'Could not parse section titles. Use ## or ### headers for section names.'
+          );
+
+        const moduleKeywords = [
+          {
+            words: ['fundamental', 'basic', 'intro', 'overview', 'setup', 'what', 'why'],
+            label: 'Foundations',
+          },
+          {
+            words: ['core', 'main', 'build', 'implement', 'create', 'develop', 'pattern'],
+            label: 'Core Concepts',
+          },
+          {
+            words: ['advanced', 'deep', 'optim', 'scale', 'deploy', 'product', 'real'],
+            label: 'Advanced & Applied',
+          },
+          {
+            words: ['review', 'summary', 'next', 'future', 'wrap', 'conclusion', 'recap'],
+            label: 'Review & Next Steps',
+          },
+        ];
+
+        function assignModule(title) {
+          const lower = title.toLowerCase();
+          for (const mk of moduleKeywords) {
+            if (mk.words.some((w) => lower.includes(w))) return mk.label;
+          }
+          return null;
+        }
+
+        const moduleMap = {};
+        let unassignedBuffer = [];
+        for (const s of sectionTitles) {
+          const mod = s.group || assignModule(s.title);
+          if (mod) {
+            if (unassignedBuffer.length > 0) {
+              if (!moduleMap['Miscellaneous'])
+                moduleMap['Miscellaneous'] = { sections: [], label: 'Miscellaneous' };
+              moduleMap['Miscellaneous'].sections.push(...unassignedBuffer);
+              unassignedBuffer = [];
+            }
+            if (!moduleMap[mod]) moduleMap[mod] = { sections: [], label: mod };
+            moduleMap[mod].sections.push(s.title);
+          } else {
+            unassignedBuffer.push(s.title);
+          }
+        }
+        if (unassignedBuffer.length > 0) {
+          if (!moduleMap['Miscellaneous'])
+            moduleMap['Miscellaneous'] = { sections: [], label: 'Miscellaneous' };
+          moduleMap['Miscellaneous'].sections.push(...unassignedBuffer);
+        }
+
+        const moduleKeys = Object.keys(moduleMap);
+        if (moduleKeys.length > 4) {
+          const mergeInto = moduleKeys[2];
+          for (const key of moduleKeys.slice(3)) {
+            moduleMap[mergeInto].sections.push(...moduleMap[key].sections);
+            delete moduleMap[key];
+          }
+        }
+
+        const suggestions = Object.values(moduleMap).map((m, i) => ({
+          order: i,
+          title: m.label,
+          summary: `Covers: ${m.sections.slice(0, 3).join(', ')}${m.sections.length > 3 ? `, and ${m.sections.length - 3} more` : ''}`,
+          learningGoals: m.sections.slice(0, 3).map((s) => `Understand and apply: ${s}`),
+          sections: m.sections,
+          sectionCount: m.sections.length,
+        }));
+
+        return textResult(
+          `Suggested ${suggestions.length} modules from ${sectionTitles.length} outline sections.`,
+          {
+            kind: 'module_suggestions',
+            outlineSectionCount: sectionTitles.length,
+            suggestedModules: suggestions,
+            note: 'Review these suggestions and call create_module once per module you want to keep.',
+          }
+        );
+      } catch (err) {
+        return errorResult(`Error analyzing outline: ${err.message}`);
+      }
+    }
+  );
+
+  // ── Modules ───────────────────────────────────────────────────────────────
+
+  server.registerTool(
+    'create_module',
+    {
+      title: 'Create Module',
+      description:
+        'Create a module under a course. Call once per planned module after saving the course plan. Then add sections to each module using add_section with the moduleId.',
+      annotations: MUTATION_ANNOTATIONS,
+      inputSchema: {
+        courseId: z.string().describe('MongoDB _id of the course'),
+        title: z.string().describe('Module title, e.g. "Fundamentals" or "Advanced Patterns"'),
+        summary: z.string().optional(),
+        learningGoals: z.array(z.string()).optional(),
+        order: z.number().int().optional(),
+      },
+      _meta: toolMeta('Creating module...', 'Module created.'),
+    },
+    async ({ courseId, title, summary, learningGoals, order }) => {
+      try {
+        const { module } = await dbCreateModule({ courseId, title, summary, learningGoals, order });
+        return textResult(`Created module "${module.title}" (id: ${module.id}).`, {
+          success: true,
+          module,
+        });
+      } catch (err) {
+        return errorResult(`Error creating module: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
+    'update_module',
+    {
+      title: 'Update Module',
+      description: 'Revise a module title, summary, learning goals, order, or status.',
+      annotations: MUTATION_ANNOTATIONS,
+      inputSchema: {
+        id: z.string().describe('MongoDB _id of the module'),
+        title: z.string().optional(),
+        summary: z.string().optional(),
+        learningGoals: z.array(z.string()).optional(),
+        order: z.number().int().optional(),
+        status: z.enum(['planned', 'drafting', 'complete', 'needs_review']).optional(),
+      },
+      _meta: toolMeta('Updating module...', 'Module updated.'),
+    },
+    async ({ id, title, summary, learningGoals, order, status }) => {
+      try {
+        const { module } = await dbUpdateModule({
+          id,
+          title,
+          summary,
+          learningGoals,
+          order,
+          status,
+        });
+        return textResult(`Updated module "${module.title}".`, { success: true, module });
+      } catch (err) {
+        return errorResult(`Error updating module: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
+    'delete_module',
+    {
+      title: 'Delete Module',
+      description: 'Soft-delete a module from a course so it no longer appears in active records.',
+      annotations: DESTRUCTIVE_ANNOTATIONS,
+      inputSchema: {
+        id: z.string().describe('MongoDB _id of the module to delete'),
+      },
+      _meta: toolMeta('Deleting module...', 'Module deleted.'),
+    },
+    async ({ id }) => {
+      try {
+        const { deletedId, title } = await dbDeleteModule({ id });
+        return textResult(`Deleted module "${title}".`, { success: true, deletedId });
+      } catch (err) {
+        return errorResult(`Error deleting module: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
+    'reorder_modules',
+    {
+      title: 'Reorder Modules',
+      description:
+        'Set the display order of all modules in a course by providing the full ordered list of module IDs.',
+      annotations: MUTATION_ANNOTATIONS,
+      inputSchema: {
+        courseId: z.string().describe('MongoDB _id of the course'),
+        moduleIds: z
+          .array(z.string())
+          .describe('All module IDs in the desired order. Every active module should be included.'),
+      },
+      _meta: toolMeta('Reordering modules...', 'Modules reordered.'),
+    },
+    async ({ courseId, moduleIds }) => {
+      try {
+        const { reordered } = await dbReorderModules({ courseId, moduleIds });
+        return textResult(`Reordered ${reordered} modules.`, { success: true });
+      } catch (err) {
+        return errorResult(`Error reordering modules: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
+    'list_course_modules',
+    {
+      title: 'List Course Modules',
+      description: 'List all modules for a course with their section progress.',
+      annotations: READ_ONLY_ANNOTATIONS,
+      inputSchema: {
+        courseId: z.string().describe('MongoDB _id of the course'),
+      },
+      _meta: toolMeta('Loading modules...', 'Modules loaded.'),
+    },
+    async ({ courseId }) => {
+      try {
+        const { course, modules, uncategorizedSections } = await dbListCourseModules({ courseId });
+        return textResult(`Course "${course.title}" has ${modules.length} modules.`, {
+          kind: 'course_modules',
+          modules,
+          uncategorizedSections,
+          authoringStatus: course.authoringStatus || 'idea',
+        });
+      } catch (err) {
+        return errorResult(`Error listing modules: ${err.message}`);
+      }
+    }
+  );
+
+  // ── Sections ──────────────────────────────────────────────────────────────
+
+  server.registerTool(
+    'get_section_content',
+    {
+      title: 'Get Section Content',
+      description: 'Retrieve the full Markdown content of a single section by its ID.',
+      annotations: READ_ONLY_ANNOTATIONS,
+      inputSchema: {
+        id: z.string().describe('MongoDB _id of the section'),
+      },
+      _meta: toolMeta('Loading section...', 'Section loaded.'),
+    },
+    async ({ id }) => {
+      try {
+        const { section } = await dbGetSectionContent({ id });
+        return textResult(`Section "${section.title}" loaded.`, {
+          kind: 'section_content',
+          section,
+        });
+      } catch (err) {
+        return errorResult(`Error fetching section: ${err.message}`);
       }
     }
   );
@@ -527,54 +642,37 @@ export function registerCoursifyTools(server) {
     {
       title: 'Add Section',
       description:
-        'Use this once per planned course section after research and outlining. Specify the moduleId to group it correctly. Write full Markdown content that follows the authoring guide: learning goals, explanation, walkthrough, examples, practice, common mistakes, and recap.',
+        'Use this once per planned course section after research and outlining. Specify the moduleId to group it correctly. Write full Markdown content that follows the authoring guide.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         courseId: z.string().describe('MongoDB _id of the course to add this section to'),
-        title: z.string().describe('Section title, e.g. "Introduction to LangChain Runnables"'),
+        title: z.string().describe('Section title'),
         sectionType: z
           .enum(['lesson', 'quiz'])
           .optional()
-          .describe(
-            'Section type. "lesson" = Markdown content (optionally with an embedded quiz at the bottom). "quiz" = standalone quiz only, no Markdown body. Defaults to "lesson".'
-          ),
+          .describe('"lesson" = Markdown content. "quiz" = standalone quiz. Defaults to "lesson".'),
         content: z
           .string()
           .optional()
-          .describe(
-            'Full section content in Markdown. Required for lesson sections. Leave empty for quiz-only sections.'
-          ),
+          .describe('Full section content in Markdown. Required for lesson sections.'),
         questions: z
           .array(questionSchema)
           .optional()
-          .describe(
-            'Quiz questions. Use for sectionType "quiz" or to embed a knowledge-check at the end of a lesson. Provide 3-7 well-formed questions with explanations.'
-          ),
+          .describe('Quiz questions. Provide 3-7 with explanations.'),
         moduleId: z
           .string()
           .optional()
-          .describe(
-            'MongoDB _id of the module this section belongs to. Strongly recommended after calling create_module.'
-          ),
+          .describe('MongoDB _id of the module this section belongs to.'),
         order: z
           .number()
           .int()
           .optional()
           .describe('Zero-based position. If omitted, appended at the end.'),
-        status: z
-          .enum(['planned', 'draft', 'needs_review', 'complete'])
-          .optional()
-          .describe('Section authoring status. Defaults to "draft".'),
-        summary: z.string().optional().describe('Brief summary of the section.'),
-        learningGoals: z
-          .array(z.string())
-          .optional()
-          .describe('Key learning objectives for this section.'),
-        estimatedDuration: z
-          .string()
-          .optional()
-          .describe('Estimated time to complete, e.g. "15 mins".'),
-        resources: z.array(resourceSchema).optional().describe('Optional supplementary resources.'),
+        status: z.enum(['planned', 'draft', 'needs_review', 'complete']).optional(),
+        summary: z.string().optional(),
+        learningGoals: z.array(z.string()).optional(),
+        estimatedDuration: z.string().optional(),
+        resources: z.array(resourceSchema).optional(),
       },
       _meta: toolMeta('Adding section...', 'Section added.'),
     },
@@ -593,39 +691,24 @@ export function registerCoursifyTools(server) {
       estimatedDuration,
     }) => {
       try {
-        await dbConnect();
-        const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
-        if (!course) return errorResult('Course not found.');
-
-        const last = await CoursifySection.findOne({ courseId, deletedAt: null })
-          .sort({ order: -1 })
-          .lean();
-        const resolvedOrder = order !== undefined ? order : last ? last.order + 1 : 0;
-        const resolvedType = sectionType || 'lesson';
-
-        const section = await CoursifySection.create({
+        const { section } = await dbAddSection({
           courseId,
-          title: title.trim(),
-          sectionType: resolvedType,
-          content: resolvedType === 'lesson' ? content || '' : '',
-          quiz: { questions: questions || [] },
-          order: resolvedOrder,
-          resources: resources || [],
-          moduleId: moduleId || null,
-          status: status || 'draft',
-          summary: summary || '',
-          learningGoals: learningGoals || [],
-          estimatedDuration: estimatedDuration || '',
+          title,
+          sectionType,
+          content,
+          questions,
+          order,
+          resources,
+          moduleId,
+          status,
+          summary,
+          learningGoals,
+          estimatedDuration,
         });
-        await CoursifyCourse.updateOne(
-          { _id: courseId, deletedAt: null },
-          { $inc: { syncVersion: 1 } }
-        );
-
-        return textResult(
-          `Added section "${section.title}" to course "${course.title}" (order: ${resolvedOrder}).`,
-          { success: true, section: normalizeSection(section.toObject()) }
-        );
+        return textResult(`Added section "${section.title}" (order: ${section.order}).`, {
+          success: true,
+          section,
+        });
       } catch (err) {
         return errorResult(`Error adding section: ${err.message}`);
       }
@@ -673,11 +756,12 @@ export function registerCoursifyTools(server) {
       resources,
     }) => {
       try {
-        await dbConnect();
-        const clean = cleanPatch({
+        const { section } = await dbUpdateSection({
+          id,
           title,
           sectionType,
           content,
+          questions,
           summary,
           learningGoals,
           estimatedDuration,
@@ -686,22 +770,7 @@ export function registerCoursifyTools(server) {
           moduleId,
           resources,
         });
-        if (questions !== undefined) clean['quiz.questions'] = questions;
-        const section = await CoursifySection.findOneAndUpdate(
-          { _id: id, deletedAt: null },
-          { $set: clean, $inc: { syncVersion: 1 } },
-          { new: true, strict: false }
-        ).lean();
-
-        if (!section) return errorResult('Section not found.');
-        await CoursifyCourse.updateOne(
-          { _id: section.courseId, deletedAt: null },
-          { $inc: { syncVersion: 1 } }
-        );
-        return textResult(`Updated section "${section.title}".`, {
-          success: true,
-          section: normalizeSection(section),
-        });
+        return textResult(`Updated section "${section.title}".`, { success: true, section });
       } catch (err) {
         return errorResult(`Error updating section: ${err.message}`);
       }
@@ -721,21 +790,8 @@ export function registerCoursifyTools(server) {
     },
     async ({ id }) => {
       try {
-        await dbConnect();
-        const section = await CoursifySection.findOneAndUpdate(
-          { _id: id, deletedAt: null },
-          { $set: { deletedAt: new Date() }, $inc: { syncVersion: 1 } }
-        ).lean();
-
-        if (!section) return errorResult('Section not found.');
-        await CoursifyCourse.updateOne(
-          { _id: section.courseId, deletedAt: null },
-          { $inc: { syncVersion: 1 } }
-        );
-        return textResult(`Deleted section "${section.title}".`, {
-          success: true,
-          deletedId: id,
-        });
+        const { deletedId, title } = await dbDeleteSection({ id });
+        return textResult(`Deleted section "${title}".`, { success: true, deletedId });
       } catch (err) {
         return errorResult(`Error deleting section: ${err.message}`);
       }
@@ -751,308 +807,55 @@ export function registerCoursifyTools(server) {
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         courseId: z.string().describe('MongoDB _id of the course'),
-        sectionIds: z
-          .array(z.string())
-          .describe(
-            'All section IDs in the desired order, from first to last. Every active section should be included.'
-          ),
+        sectionIds: z.array(z.string()).describe('All section IDs in the desired order.'),
       },
       _meta: toolMeta('Reordering sections...', 'Sections reordered.'),
     },
     async ({ courseId, sectionIds }) => {
       try {
-        await dbConnect();
-        if (!sectionIds.length) return errorResult('sectionIds must not be empty.');
-
-        const results = await Promise.all(
-          sectionIds.map((id, index) =>
-            CoursifySection.updateOne(
-              { _id: id, courseId, deletedAt: null },
-              { $set: { order: index }, $inc: { syncVersion: 1 } }
-            )
-          )
-        );
-        const matched = results.reduce((sum, r) => sum + r.matchedCount, 0);
-        if (matched < sectionIds.length) {
-          return errorResult(
-            `Only ${matched}/${sectionIds.length} sections found. Some IDs may be invalid or belong to a different course.`
-          );
-        }
-        await CoursifyCourse.updateOne(
-          { _id: courseId, deletedAt: null },
-          { $inc: { syncVersion: 1 } }
-        );
-
-        return textResult(`Reordered ${sectionIds.length} sections.`, { success: true });
+        const { reordered } = await dbReorderSections({ courseId, sectionIds });
+        return textResult(`Reordered ${reordered} sections.`, { success: true });
       } catch (err) {
         return errorResult(`Error reordering sections: ${err.message}`);
       }
     }
   );
 
-  // ── Planning tools ────────────────────────────────────────────
-
   server.registerTool(
-    'save_course_plan',
+    'set_quiz_questions',
     {
-      title: 'Save Course Plan',
+      title: 'Set Quiz Questions',
       description:
-        'Save the course planning workspace: target audience, learning objectives, prerequisites, outcome, outline (Markdown), planning notes, and authoringStatus. Call this after research and before creating modules or sections.',
+        'Set or fully replace the quiz questions for a section. Works for standalone quiz sections and lesson sections with an embedded quiz. Provide a complete replacement array — any existing questions are overwritten.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
-        courseId: z.string().describe('MongoDB _id of the course'),
-        targetAudience: z.string().optional(),
-        learningObjectives: z.array(z.string()).optional(),
-        prerequisites: z.array(z.string()).optional(),
-        outcome: z.string().optional(),
-        outline: z
-          .string()
-          .optional()
-          .describe('Free-form Markdown outline of planned modules and sections'),
-        planningNotes: z.string().optional(),
-        authoringStatus: z
-          .enum(['idea', 'researching', 'planned', 'drafting', 'reviewing', 'ready', 'published'])
-          .optional(),
+        id: z.string().describe('MongoDB _id of the section'),
+        questions: z
+          .array(questionSchema)
+          .describe('Full replacement list of quiz questions. Pass [] to remove all questions.'),
       },
-      _meta: toolMeta('Saving course plan...', 'Course plan saved.'),
+      _meta: toolMeta('Saving quiz questions...', 'Quiz questions saved.'),
     },
-    async ({ courseId, ...patch }) => {
+    async ({ id, questions }) => {
       try {
-        await dbConnect();
-        const clean = cleanPatch(patch);
-        const course = await CoursifyCourse.findOneAndUpdate(
-          { _id: courseId, deletedAt: null },
-          { $set: clean, $inc: { syncVersion: 1 } },
-          { new: true }
-        ).lean();
-        if (!course) return errorResult('Course not found.');
-        const sectionCount = await CoursifySection.countDocuments({
-          courseId,
-          deletedAt: null,
-        });
-
-        // Compute plan completeness
-        const planFields = {
-          targetAudience: !!course.targetAudience,
-          learningObjectives: (course.learningObjectives || []).length > 0,
-          prerequisites: (course.prerequisites || []).length > 0,
-          outcome: !!course.outcome,
-          outline: !!course.outline,
-        };
-        const filled = Object.values(planFields).filter(Boolean).length;
-        const missing = Object.entries(planFields)
-          .filter(([, v]) => !v)
-          .map(([k]) => k);
-
-        // Generate suggestions for missing fields
-        const suggestions = [];
-        if (!planFields.targetAudience)
-          suggestions.push(
-            'Define who this course is for (e.g. "Developers with basic React experience who want to build full-stack apps")'
-          );
-        if (!planFields.learningObjectives)
-          suggestions.push(
-            'Add 3-5 concrete learning objectives (what the learner can DO after completing this course)'
-          );
-        if (!planFields.prerequisites)
-          suggestions.push(
-            'List prerequisites (even "None — this is a beginner course" is useful)'
-          );
-        if (!planFields.outcome)
-          suggestions.push(
-            'Add a clear outcome statement (e.g. "By the end, learners will be able to build X from scratch")'
-          );
-        if (!planFields.outline)
-          suggestions.push(
-            'Write a Markdown outline grouping planned sections into logical modules'
-          );
-
-        // Determine next step
-        let nextStep =
-          'Call suggest_modules_from_outline to get a recommended module structure, then create_module for each.';
-        if (filled < 3) nextStep = 'Fill the missing plan fields above before structuring modules.';
-        else if (course.authoringStatus === 'researching')
-          nextStep = 'Set authoringStatus to "planned" and call suggest_modules_from_outline.';
-
+        const { section } = await dbSetQuizQuestions({ id, questions });
         return textResult(
-          `Course plan saved for "${course.title}" (${filled}/5 fields complete).`,
-          {
-            success: true,
-            course: normalizeCourse({ ...course, sectionCount }),
-            planCompleteness: { filled, total: 5, missing },
-            suggestions,
-            nextStep,
-          }
+          `Set ${questions.length} quiz question(s) on section "${section.title}".`,
+          { success: true, section }
         );
       } catch (err) {
-        return errorResult(`Error saving plan: ${err.message}`);
+        return errorResult(`Error setting quiz questions: ${err.message}`);
       }
     }
   );
 
-  server.registerTool(
-    'suggest_modules_from_outline',
-    {
-      title: 'Suggest Modules From Outline',
-      description:
-        'Read-only. Analyzes the saved course outline and returns a suggested module structure — titles, summaries, learning goals, and which outline sections belong to each module. Does NOT create modules; review the suggestions then call create_module for each you want.',
-      annotations: READ_ONLY_ANNOTATIONS,
-      inputSchema: {
-        courseId: z.string().describe('MongoDB _id of the course'),
-      },
-      _meta: toolMeta('Analyzing outline...', 'Module suggestions ready.'),
-    },
-    async ({ courseId }) => {
-      try {
-        await dbConnect();
-        const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
-        if (!course) return errorResult('Course not found.');
-        if (!course.outline)
-          return errorResult(
-            'No outline found. Call save_course_plan first with a Markdown outline of planned modules and sections.'
-          );
-
-        const outline = course.outline.trim();
-        const lines = outline.split('\n');
-
-        // Extract section titles from the outline (## headers or bullet items that look like section titles)
-        const sectionTitles = [];
-        let currentGroup = '';
-        for (const line of lines) {
-          const trimmed = line.trim();
-          // Match ## headers as section titles
-          if (trimmed.startsWith('## ') && !trimmed.toLowerCase().includes('module')) {
-            const title = trimmed.replace(/^##\s+/, '').trim();
-            if (title) sectionTitles.push({ title, group: currentGroup });
-          }
-          // Match ### headers as section titles
-          else if (trimmed.startsWith('### ')) {
-            const title = trimmed.replace(/^###\s+/, '').trim();
-            if (title && title.length < 100) sectionTitles.push({ title, group: currentGroup });
-          }
-          // Track module/group context from headers
-          else if (trimmed.match(/^#{1,2}\s+(module|phase|part|step)/i)) {
-            currentGroup = trimmed.replace(/^#{1,2}\s+/, '').trim();
-          }
-        }
-
-        // If no structured sections found, fall back to splitting by blank-line paragraphs
-        if (sectionTitles.length === 0) {
-          const paragraphs = outline
-            .split(/\n\n+/)
-            .map((p) => p.trim())
-            .filter(Boolean);
-          for (const p of paragraphs) {
-            const firstLine = p
-              .split('\n')[0]
-              .trim()
-              .replace(/^[-*]\s+/, '');
-            if (firstLine && firstLine.length > 3 && firstLine.length < 120) {
-              sectionTitles.push({ title: firstLine, group: '' });
-            }
-          }
-        }
-
-        if (sectionTitles.length === 0)
-          return errorResult(
-            'Could not parse any section titles from the outline. Make sure it uses ## or ### headers for section names.'
-          );
-
-        // Semantic module grouping
-        const moduleKeywords = [
-          {
-            words: ['fundamental', 'basic', 'intro', 'overview', 'setup', 'what', 'why'],
-            label: 'Foundations',
-          },
-          {
-            words: ['core', 'main', 'build', 'implement', 'create', 'develop', 'pattern'],
-            label: 'Core Concepts',
-          },
-          {
-            words: ['advanced', 'deep', 'optim', 'scale', 'deploy', 'product', 'real'],
-            label: 'Advanced & Applied',
-          },
-          {
-            words: ['review', 'summary', 'next', 'future', 'wrap', 'conclusion', 'recap'],
-            label: 'Review & Next Steps',
-          },
-        ];
-
-        function assignModule(title) {
-          const lower = title.toLowerCase();
-          for (const mk of moduleKeywords) {
-            if (mk.words.some((w) => lower.includes(w))) return mk.label;
-          }
-          return null;
-        }
-
-        // Group sections into modules, merging consecutive unassigned sections
-        const moduleMap = {};
-        let unassignedBuffer = [];
-        for (const s of sectionTitles) {
-          const mod = s.group || assignModule(s.title);
-          if (mod) {
-            // Flush any buffered unassigned sections into a "Misc" module first
-            if (unassignedBuffer.length > 0) {
-              const key = 'Miscellaneous';
-              if (!moduleMap[key]) moduleMap[key] = { sections: [], label: key };
-              moduleMap[key].sections.push(...unassignedBuffer);
-              unassignedBuffer = [];
-            }
-            if (!moduleMap[mod]) moduleMap[mod] = { sections: [], label: mod };
-            moduleMap[mod].sections.push(s.title);
-          } else {
-            unassignedBuffer.push(s.title);
-          }
-        }
-        // Flush remaining unassigned
-        if (unassignedBuffer.length > 0) {
-          const key = 'Miscellaneous';
-          if (!moduleMap[key]) moduleMap[key] = { sections: [], label: key };
-          moduleMap[key].sections.push(...unassignedBuffer);
-        }
-
-        // Cap at 4 modules — merge excess into the last one
-        const moduleKeys = Object.keys(moduleMap);
-        if (moduleKeys.length > 4) {
-          const keep = moduleKeys.slice(0, 3);
-          const mergeInto = keep[keep.length - 1];
-          for (const key of moduleKeys.slice(3)) {
-            moduleMap[mergeInto].sections.push(...moduleMap[key].sections);
-            delete moduleMap[key];
-          }
-        }
-
-        const suggestions = Object.values(moduleMap).map((m, i) => ({
-          order: i,
-          title: m.label,
-          summary: `Covers: ${m.sections.slice(0, 3).join(', ')}${m.sections.length > 3 ? `, and ${m.sections.length - 3} more` : ''}`,
-          learningGoals: m.sections.slice(0, 3).map((s) => `Understand and apply: ${s}`),
-          sections: m.sections,
-          sectionCount: m.sections.length,
-        }));
-
-        return textResult(
-          `Suggested ${suggestions.length} modules from ${sectionTitles.length} outline sections.`,
-          {
-            kind: 'module_suggestions',
-            outlineSectionCount: sectionTitles.length,
-            suggestedModules: suggestions,
-            note: 'Review these suggestions and call create_module once per module you want to keep.',
-          }
-        );
-      } catch (err) {
-        return errorResult(`Error analyzing outline: ${err.message}`);
-      }
-    }
-  );
+  // ── Research ──────────────────────────────────────────────────────────────
 
   server.registerTool(
     'add_research_note',
     {
       title: 'Add Research Note',
-      description:
-        'Persist a research finding, source note, or key takeaway for a course. Call during the research phase to build context that survives across sessions.',
+      description: 'Persist a research finding, source note, or key takeaway for a course.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         courseId: z.string().describe('MongoDB _id of the course'),
@@ -1066,25 +869,15 @@ export function registerCoursifyTools(server) {
     },
     async ({ courseId, title, summary, sourceUrl, sourceType, notes }) => {
       try {
-        await dbConnect();
-        const note = {
-          title: title.trim(),
-          summary: summary.trim(),
-          sourceUrl: sourceUrl || '',
-          sourceType: sourceType || 'other',
-          notes: notes || '',
-        };
-        const course = await CoursifyCourse.findOneAndUpdate(
-          { _id: courseId, deletedAt: null },
-          { $push: { researchNotes: note }, $inc: { syncVersion: 1 } },
-          { new: true }
-        ).lean();
-        if (!course) return errorResult('Course not found.');
-        const saved = course.researchNotes[course.researchNotes.length - 1];
-        return textResult(`Research note "${saved.title}" saved.`, {
-          success: true,
-          note: { id: saved._id?.toString(), ...saved },
+        const { note } = await dbAddResearchNote({
+          courseId,
+          title,
+          summary,
+          sourceUrl,
+          sourceType,
+          notes,
         });
+        return textResult(`Research note "${note.title}" saved.`, { success: true, note });
       } catch (err) {
         return errorResult(`Error saving research note: ${err.message}`);
       }
@@ -1096,229 +889,42 @@ export function registerCoursifyTools(server) {
     {
       title: 'Save Research Findings (Batch)',
       description:
-        'Save multiple research findings, sources, or key takeaways for a course in a single call. Use this during the research phase to batch-persist findings gathered from web search or browsing. Prefer this over calling add_research_note repeatedly. Max 20 findings per call.',
+        'Save multiple research findings for a course in a single call. Prefer this over calling add_research_note repeatedly. Max 20 findings per call.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         courseId: z.string().describe('MongoDB _id of the course'),
         findings: z
           .array(
             z.object({
-              title: z.string().describe('Short title for this finding'),
-              summary: z.string().describe('Key takeaway or finding'),
-              sourceUrl: z.string().optional().describe('Source URL if available'),
-              sourceType: z
-                .enum(['web', 'paper', 'book', 'video', 'other'])
-                .optional()
-                .describe('Type of source'),
-              notes: z.string().optional().describe('Detailed notes or quotes'),
+              title: z.string(),
+              summary: z.string(),
+              sourceUrl: z.string().optional(),
+              sourceType: z.enum(['web', 'paper', 'book', 'video', 'other']).optional(),
+              notes: z.string().optional(),
             })
           )
-          .max(20)
-          .describe('Array of research findings to save (max 20)'),
+          .max(20),
       },
       _meta: toolMeta('Saving research findings...', 'Research findings saved.'),
     },
     async ({ courseId, findings }) => {
       try {
-        await dbConnect();
-        const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
-        if (!course) return errorResult('Course not found.');
-        if (!findings || findings.length === 0) return errorResult('Provide at least one finding.');
-
-        const notes = findings.map((f) => ({
-          title: f.title.trim(),
-          summary: f.summary.trim(),
-          sourceUrl: f.sourceUrl || '',
-          sourceType: f.sourceType || 'other',
-          notes: f.notes || '',
-        }));
-
-        await CoursifyCourse.updateOne(
-          { _id: courseId, deletedAt: null },
-          { $push: { researchNotes: { $each: notes } }, $inc: { syncVersion: 1 } }
-        );
-
-        return textResult(`Saved ${notes.length} research finding(s).`, {
-          success: true,
-          count: notes.length,
-          findings: notes.map((n, i) => ({ index: i, title: n.title, sourceType: n.sourceType })),
-        });
+        const { count } = await dbResearchFindings({ courseId, findings });
+        return textResult(`Saved ${count} research finding(s).`, { success: true, count });
       } catch (err) {
         return errorResult(`Error saving research findings: ${err.message}`);
       }
     }
   );
 
-  server.registerTool(
-    'list_course_modules',
-    {
-      title: 'List Course Modules',
-      description:
-        'List all modules for a course with their section progress. Use to review the course structure and identify incomplete modules or sections before publishing.',
-      annotations: READ_ONLY_ANNOTATIONS,
-      inputSchema: {
-        courseId: z.string().describe('MongoDB _id of the course'),
-      },
-      _meta: toolMeta('Loading modules...', 'Modules loaded.'),
-    },
-    async ({ courseId }) => {
-      try {
-        await dbConnect();
-        const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
-        if (!course) return errorResult('Course not found.');
-
-        const modules = await CoursifyModule.find({ courseId, deletedAt: null })
-          .sort({ order: 1 })
-          .lean();
-
-        const sections = await CoursifySection.find({ courseId, deletedAt: null })
-          .select('moduleId title status order')
-          .sort({ order: 1 })
-          .lean();
-
-        const sectionsByModule = {};
-        const unassigned = [];
-        for (const s of sections) {
-          const mid = s.moduleId?.toString();
-          if (mid) {
-            if (!sectionsByModule[mid]) sectionsByModule[mid] = [];
-            sectionsByModule[mid].push({ id: s._id.toString(), title: s.title, status: s.status });
-          } else {
-            unassigned.push({ id: s._id.toString(), title: s.title, status: s.status });
-          }
-        }
-
-        const result = modules.map((m) => ({
-          ...normalizeModule({
-            ...m,
-            sectionCount: (sectionsByModule[m._id.toString()] || []).length,
-          }),
-          sections: sectionsByModule[m._id.toString()] || [],
-        }));
-
-        return textResult(
-          `Course "${course.title}" has ${modules.length} modules and ${sections.length} sections.`,
-          {
-            kind: 'course_modules',
-            modules: result,
-            uncategorizedSections: unassigned,
-            authoringStatus: course.authoringStatus || 'idea',
-          }
-        );
-      } catch (err) {
-        return errorResult(`Error listing modules: ${err.message}`);
-      }
-    }
-  );
-
-  server.registerTool(
-    'create_module',
-    {
-      title: 'Create Module',
-      description:
-        'Create a module under a course. Call once per planned module after saving the course plan. Then add sections to each module using add_section with the moduleId.',
-      annotations: MUTATION_ANNOTATIONS,
-      inputSchema: {
-        courseId: z.string().describe('MongoDB _id of the course'),
-        title: z.string().describe('Module title, e.g. "Fundamentals" or "Advanced Patterns"'),
-        summary: z.string().optional(),
-        learningGoals: z.array(z.string()).optional(),
-        order: z.number().int().optional(),
-      },
-      _meta: toolMeta('Creating module...', 'Module created.'),
-    },
-    async ({ courseId, title, summary, learningGoals, order }) => {
-      try {
-        await dbConnect();
-        const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
-        if (!course) return errorResult('Course not found.');
-
-        let resolvedOrder = order;
-        if (resolvedOrder === undefined) {
-          const last = await CoursifyModule.findOne({ courseId, deletedAt: null })
-            .sort({ order: -1 })
-            .lean();
-          resolvedOrder = last ? last.order + 1 : 0;
-        }
-
-        const module = await CoursifyModule.create({
-          courseId,
-          title: title.trim(),
-          summary: summary || '',
-          learningGoals: learningGoals || [],
-          order: resolvedOrder,
-        });
-        await CoursifyCourse.updateOne(
-          { _id: courseId, deletedAt: null },
-          { $inc: { syncVersion: 1 } }
-        );
-
-        return textResult(`Created module "${module.title}" (id: ${module._id}).`, {
-          success: true,
-          module: normalizeModule(module.toObject()),
-        });
-      } catch (err) {
-        return errorResult(`Error creating module: ${err.message}`);
-      }
-    }
-  );
-
-  server.registerTool(
-    'update_module',
-    {
-      title: 'Update Module',
-      description: 'Revise a module title, summary, learning goals, order, or status.',
-      annotations: MUTATION_ANNOTATIONS,
-      inputSchema: {
-        id: z.string().describe('MongoDB _id of the module'),
-        title: z.string().optional(),
-        summary: z.string().optional(),
-        learningGoals: z.array(z.string()).optional(),
-        order: z.number().int().optional(),
-        status: z.enum(['planned', 'drafting', 'complete', 'needs_review']).optional(),
-      },
-      _meta: toolMeta('Updating module...', 'Module updated.'),
-    },
-    async ({ id, title, summary, learningGoals, order, status }) => {
-      try {
-        await dbConnect();
-        const clean = cleanPatch({
-          title,
-          summary,
-          learningGoals,
-          order,
-          status,
-        });
-        const module = await CoursifyModule.findOneAndUpdate(
-          { _id: id, deletedAt: null },
-          { $set: clean, $inc: { syncVersion: 1 } },
-          { new: true }
-        ).lean();
-        if (!module) return errorResult('Module not found.');
-        await CoursifyCourse.updateOne(
-          { _id: module.courseId, deletedAt: null },
-          { $inc: { syncVersion: 1 } }
-        );
-        const sectionCount = await CoursifySection.countDocuments({
-          courseId: module.courseId,
-          deletedAt: null,
-        });
-        return textResult(`Updated module "${module.title}".`, {
-          success: true,
-          module: normalizeModule({ ...module, sectionCount }),
-        });
-      } catch (err) {
-        return errorResult(`Error updating module: ${err.message}`);
-      }
-    }
-  );
+  // ── Progress ──────────────────────────────────────────────────────────────
 
   server.registerTool(
     'get_course_progress',
     {
       title: 'Get Course Progress',
       description:
-        'Return a summary of course plan completeness, module statuses, section statuses, and a recommended next action. Use to review what is left before publishing.',
+        'Return a summary of course plan completeness, module statuses, section statuses, and a recommended next action.',
       annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {
         courseId: z.string().describe('MongoDB _id of the course'),
@@ -1327,17 +933,7 @@ export function registerCoursifyTools(server) {
     },
     async ({ courseId }) => {
       try {
-        await dbConnect();
-        const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
-        if (!course) return errorResult('Course not found.');
-
-        const [modules, sections] = await Promise.all([
-          CoursifyModule.find({ courseId, deletedAt: null }).sort({ order: 1 }).lean(),
-          CoursifySection.find({ courseId, deletedAt: null })
-            .select('moduleId title status order')
-            .sort({ order: 1 })
-            .lean(),
-        ]);
+        const { course, modules } = await dbGetCourse({ id: courseId });
 
         const planFields = {
           targetAudience: !!course.targetAudience,
@@ -1348,12 +944,12 @@ export function registerCoursifyTools(server) {
         };
         const planComplete = Object.values(planFields).filter(Boolean).length;
 
-        const sectionsByStatus = sections.reduce((acc, s) => {
+        const allSections = modules.flatMap((m) => m.sections || []);
+        const sectionsByStatus = allSections.reduce((acc, s) => {
           acc[s.status] = (acc[s.status] || 0) + 1;
           return acc;
         }, {});
-        const unassigned = sections.filter((s) => !s.moduleId).length;
-        const incompleteSections = sections.filter((s) => s.status !== 'complete').length;
+        const incompleteSections = allSections.filter((s) => s.status !== 'complete').length;
         const incompleteModules = modules.filter((m) => m.status !== 'complete').length;
 
         let nextAction = 'No action needed.';
@@ -1369,64 +965,21 @@ export function registerCoursifyTools(server) {
         else nextAction = 'Course looks complete. Call publish_course when the user is ready.';
 
         return textResult(
-          `Progress for "${course.title}": ${planComplete}/5 plan fields, ${modules.length} modules, ${sections.length} sections.`,
+          `Progress for "${course.title}": ${planComplete}/5 plan fields, ${modules.length} modules, ${allSections.length} sections.`,
           {
             kind: 'course_progress',
             authoringStatus: course.authoringStatus || 'idea',
             planCompleteness: { filled: planComplete, total: 5, fields: planFields },
             researchNotesCount: (course.researchNotes || []).length,
             moduleCount: modules.length,
-            sectionCount: sections.length,
+            sectionCount: allSections.length,
             sectionsByStatus,
-            unassignedSections: unassigned,
             incompleteModules,
             nextAction,
           }
         );
       } catch (err) {
         return errorResult(`Error getting progress: ${err.message}`);
-      }
-    }
-  );
-
-  server.registerTool(
-    'set_quiz_questions',
-    {
-      title: 'Set Quiz Questions',
-      description:
-        'Set or fully replace the quiz questions for a section. Works for standalone quiz sections (sectionType: "quiz") and lesson sections with an embedded quiz at the bottom. Provide a complete replacement array — any existing questions are overwritten. Use an empty array to remove the quiz.',
-      annotations: MUTATION_ANNOTATIONS,
-      inputSchema: {
-        id: z.string().describe('MongoDB _id of the section'),
-        questions: z
-          .array(questionSchema)
-          .describe(
-            'Full replacement list of quiz questions. Provide 3-7 questions with explanations. Pass [] to remove all questions.'
-          ),
-      },
-      _meta: toolMeta('Saving quiz questions...', 'Quiz questions saved.'),
-    },
-    async ({ id, questions }) => {
-      try {
-        await dbConnect();
-        const section = await CoursifySection.findOneAndUpdate(
-          { _id: id, deletedAt: null },
-          { $set: { 'quiz.questions': questions }, $inc: { syncVersion: 1 } },
-          { new: true, strict: false }
-        ).lean();
-
-        if (!section) return errorResult('Section not found.');
-        await CoursifyCourse.updateOne(
-          { _id: section.courseId, deletedAt: null },
-          { $inc: { syncVersion: 1 } }
-        );
-
-        return textResult(
-          `Set ${questions.length} quiz question(s) on section "${section.title}".`,
-          { success: true, section: normalizeSection(section) }
-        );
-      } catch (err) {
-        return errorResult(`Error setting quiz questions: ${err.message}`);
       }
     }
   );
