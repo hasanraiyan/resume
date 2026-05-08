@@ -849,6 +849,7 @@ export default function CourseDetailPage({ params }) {
                   sections={sections}
                   modules={modules}
                   onNavigateTo={navigateTo}
+                  hideThumbnail={true}
                 />
               ) : !currentSection ? (
                 <div className="flex flex-col items-center justify-center py-24 text-center">
