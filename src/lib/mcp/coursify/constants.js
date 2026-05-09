@@ -48,7 +48,7 @@ export const COURSE_AUTHORING_GUIDE = {
     '2. PREP — Call get_authoring_guide (you already have it). Read the quality bar and section template before doing any work.',
     '3. RESEARCH — Gather information. Call manage_research to save all findings (up to 20 findings per call). Set authoringStatus to "researching" via upsert_course.',
     '4. PLAN — Call upsert_course to define targetAudience, learningObjectives, prerequisites, outcome, and a Markdown outline. Save planned sections to agentNotes. Set authoringStatus to "planned".',
-    '5. STRUCTURE — Call analyze_outline(apply: false) to get suggestions. Review them, then call analyze_outline(apply: true) to create ALL modules and sections in one call.',
+    '5. STRUCTURE — Call upsert_module to create modules, then upsert_section(batch: []) to add planned sections under each module.',
     '6. WRITE — Use upsert_section(batch: []) to create or update sections in one call. Set authoringStatus to "drafting" when you begin. Save progress to agentNotes after each batch. For quiz sections, use the questions param.',
     '7. REVIEW — Call get_course(includeProgress: true) to identify gaps. Use get_section(id) to read single section bodies for revision.',
     '8. FINALIZE — When all sections are written, set authoringStatus to "reviewing" via upsert_course. Content is automatically marked reviewing when all sections are "complete".',
@@ -64,8 +64,6 @@ export const COURSE_AUTHORING_GUIDE = {
     upsertSection:
       'upsert_section({ id, ...fields, batch, questions }) — create/update sections (single or batch) and quizzes.',
     manageResearch: 'manage_research({ courseId, findings[] }) — save research findings.',
-    analyzeOutline:
-      'analyze_outline({ courseId, apply }) — suggest or create modules/sections from outline.',
     reorder: 'reorder_modules(...) or reorder_sections(...) — change display order.',
     bulkDelete: 'delete_courses([ids]), delete_modules([ids]), or delete_sections([ids]).',
   },

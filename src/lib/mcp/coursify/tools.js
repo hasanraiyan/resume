@@ -5,7 +5,7 @@ import {
   MUTATION_ANNOTATIONS,
   DESTRUCTIVE_ANNOTATIONS,
 } from './constants.js';
-import { textResult, errorResult, toolMeta, parseOutlineToModules } from './utils.js';
+import { textResult, errorResult, toolMeta } from './utils.js';
 import {
   dbListCourses,
   dbGetCourse,
@@ -23,7 +23,6 @@ import {
   dbReorderSections,
   dbGetSectionContent,
   dbAddSections,
-  dbApplySuggestedModules,
   dbSearchCourses,
   dbGetResearchNotes,
   dbResearchFindings,
@@ -136,8 +135,7 @@ export function registerCoursifyTools(server) {
             nextAction =
               'Call upsert_course to define the target audience, objectives, and outline.';
           else if (modules.length === 0)
-            nextAction =
-              'Call analyze_outline(apply: true) or upsert_module to structure the course.';
+            nextAction = 'Call upsert_module to add modules and structure the course.';
           else if (incompleteSections > 0)
             nextAction = `Write the remaining ${incompleteSections} section(s) with upsert_section.`;
           else
@@ -494,53 +492,6 @@ export function registerCoursifyTools(server) {
       try {
         const { count } = await dbResearchFindings({ courseId, findings });
         return textResult(`Saved ${count} research finding(s).`, { success: true, count });
-      } catch (err) {
-        return errorResult(err.message);
-      }
-    }
-  );
-
-  server.registerTool(
-    'analyze_outline',
-    {
-      title: 'Analyze or Apply Outline',
-      description:
-        'Analyze a course outline for module suggestions, or apply them to create modules and sections automatically.',
-      annotations: MUTATION_ANNOTATIONS,
-      inputSchema: {
-        courseId: z.string(),
-        apply: z
-          .boolean()
-          .optional()
-          .describe(
-            'If true, creates the modules and sections. If false, only returns suggestions.'
-          ),
-      },
-      _meta: toolMeta('Processing outline...', 'Outline processed.'),
-    },
-    async ({ courseId, apply }) => {
-      try {
-        if (apply) {
-          const { modulesCreated } = await dbApplySuggestedModules({ courseId });
-          return textResult(`Created ${modulesCreated} modules from outline.`, {
-            success: true,
-            modulesCreated,
-          });
-        }
-        const { course } = await dbGetCourse({ id: courseId });
-        if (!course.outline)
-          return errorResult('No outline found. Call upsert_course with an outline first.');
-
-        const suggestions = parseOutlineToModules(course.outline);
-        if (suggestions.length === 0)
-          return errorResult(
-            'Could not parse section titles. Use ## or ### headers for section names.'
-          );
-
-        return textResult(`Suggested ${suggestions.length} modules.`, {
-          kind: 'module_suggestions',
-          suggestedModules: suggestions,
-        });
       } catch (err) {
         return errorResult(err.message);
       }
