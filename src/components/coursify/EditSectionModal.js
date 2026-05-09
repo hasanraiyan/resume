@@ -5,11 +5,17 @@ import { X, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import QuizEditor from './QuizEditor';
 
 const RESOURCE_TYPES = ['video', 'article', 'doc', 'other'];
+const STATUS_OPTIONS = ['planned', 'draft', 'needs_review', 'complete'];
 
 export default function EditSectionModal({ section, onSave, onClose }) {
   const [title, setTitle] = useState(section?.title || '');
   const [blocks, setBlocks] = useState(section?.blocks || []);
   const [resources, setResources] = useState(section?.resources || []);
+  const [summary, setSummary] = useState(section?.summary || '');
+  const [learningGoals, setLearningGoals] = useState(section?.learningGoals || []);
+  const [estimatedDuration, setEstimatedDuration] = useState(section?.estimatedDuration || '');
+  const [status, setStatus] = useState(section?.status || 'draft');
+
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState('blocks');
 
@@ -18,6 +24,10 @@ export default function EditSectionModal({ section, onSave, onClose }) {
       setTitle(section.title);
       setBlocks(section.blocks || []);
       setResources(section.resources || []);
+      setSummary(section.summary || '');
+      setLearningGoals(section.learningGoals || []);
+      setEstimatedDuration(section.estimatedDuration || '');
+      setStatus(section.status || 'draft');
     }
   }, [section]);
 
@@ -49,17 +59,10 @@ export default function EditSectionModal({ section, onSave, onClose }) {
     });
   };
 
-  const addResource = () => {
-    setResources((prev) => [...prev, { type: 'article', url: '', title: '' }]);
-  };
-
-  const updateResource = (i, field, value) => {
-    setResources((prev) => prev.map((r, idx) => (idx === i ? { ...r, [field]: value } : r)));
-  };
-
-  const removeResource = (i) => {
-    setResources((prev) => prev.filter((_, idx) => idx !== i));
-  };
+  const addGoal = () => setLearningGoals((prev) => [...prev, '']);
+  const updateGoal = (i, val) =>
+    setLearningGoals((prev) => prev.map((g, idx) => (idx === i ? val : g)));
+  const removeGoal = (i) => setLearningGoals((prev) => prev.filter((_, idx) => idx !== i));
 
   const handleSave = async () => {
     if (!title.trim()) return;
@@ -68,6 +71,10 @@ export default function EditSectionModal({ section, onSave, onClose }) {
       title: title.trim(),
       blocks: blocks.map((b, i) => ({ ...b, order: i })),
       resources: resources.filter((r) => r.url.trim()),
+      summary: summary.trim(),
+      learningGoals: learningGoals.filter((g) => g.trim()),
+      estimatedDuration: estimatedDuration.trim(),
+      status,
     });
     setLoading(false);
     onClose();
@@ -108,7 +115,7 @@ export default function EditSectionModal({ section, onSave, onClose }) {
 
           {/* Tabs */}
           <div className="flex gap-1 px-5 pt-3 shrink-0">
-            {['blocks', 'resources'].map((t) => (
+            {['blocks', 'planning'].map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -177,7 +184,7 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                               updateBlock(i, 'video', { ...block.video, title: e.target.value })
                             }
                             placeholder="Video Title"
-                            className="w-full px-3 py-2 rounded-lg border border-[#e5e3d8] text-sm"
+                            className="w-full px-3 py-2 rounded-lg border border-[#e5e3d8] text-sm font-bold"
                           />
                           <input
                             value={block.video?.url || ''}
@@ -200,7 +207,7 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                               })
                             }
                             placeholder="Resource Title"
-                            className="w-full px-3 py-2 rounded-lg border border-[#e5e3d8] text-sm"
+                            className="w-full px-3 py-2 rounded-lg border border-[#e5e3d8] text-sm font-bold"
                           />
                           <input
                             value={block.resource?.url || ''}
@@ -219,25 +226,25 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => addBlock('MdBlock')}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#e5e3d8] text-xs font-bold hover:bg-[#f0f5f2]"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#e5e3d8] text-xs font-bold hover:bg-[#f0f5f2] transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" /> Markdown
                   </button>
                   <button
                     onClick={() => addBlock('QuizBlock')}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#e5e3d8] text-xs font-bold hover:bg-[#f0f5f2]"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#e5e3d8] text-xs font-bold hover:bg-[#f0f5f2] transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" /> Quiz
                   </button>
                   <button
                     onClick={() => addBlock('VideoBlock')}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#e5e3d8] text-xs font-bold hover:bg-[#f0f5f2]"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#e5e3d8] text-xs font-bold hover:bg-[#f0f5f2] transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" /> Video
                   </button>
                   <button
                     onClick={() => addBlock('ResourceBlock')}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#e5e3d8] text-xs font-bold hover:bg-[#f0f5f2]"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#e5e3d8] text-xs font-bold hover:bg-[#f0f5f2] transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" /> Resource Link
                   </button>
@@ -245,53 +252,87 @@ export default function EditSectionModal({ section, onSave, onClose }) {
               </div>
             )}
 
-            {tab === 'resources' && (
-              <div className="space-y-3">
-                {resources.map((r, i) => (
-                  <div
-                    key={i}
-                    className="bg-[#fcfbf5] border border-[#e5e3d8] rounded-xl p-3 space-y-2"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <select
-                        value={r.type}
-                        onChange={(e) => updateResource(i, 'type', e.target.value)}
-                        className="px-2 py-1.5 rounded-lg border border-[#e5e3d8] text-xs text-[#1e3a34] bg-white outline-none focus:border-[#1f644e]"
-                      >
-                        {RESOURCE_TYPES.map((t) => (
-                          <option key={t} value={t}>
-                            {t.charAt(0).toUpperCase() + t.slice(1)}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        onClick={() => removeResource(i)}
-                        className="p-1.5 rounded-lg hover:bg-red-50 text-[#7c8e88] hover:text-[#c94c4c] transition-colors shrink-0"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+            {tab === 'planning' && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88] px-1">
+                      Status
+                    </label>
+                    <select
+                      value={status}
+                      onChange={(e) => setStatus(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-xs font-bold text-[#1e3a34] outline-none focus:border-[#1f644e] capitalize"
+                    >
+                      {STATUS_OPTIONS.map((o) => (
+                        <option key={o} value={o}>
+                          {o.replace('_', ' ')}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88] px-1">
+                      Estimated Duration
+                    </label>
                     <input
-                      value={r.title}
-                      onChange={(e) => updateResource(i, 'title', e.target.value)}
-                      placeholder="Resource title"
-                      className="w-full px-3 py-2 rounded-lg border border-[#e5e3d8] text-xs text-[#1e3a34] outline-none focus:border-[#1f644e] bg-white"
-                    />
-                    <input
-                      value={r.url}
-                      onChange={(e) => updateResource(i, 'url', e.target.value)}
-                      placeholder="https://..."
-                      className="w-full px-3 py-2 rounded-lg border border-[#e5e3d8] text-xs text-[#1e3a34] outline-none focus:border-[#1f644e] bg-white"
+                      value={estimatedDuration}
+                      onChange={(e) => setEstimatedDuration(e.target.value)}
+                      placeholder="e.g. 15 mins"
+                      className="w-full px-3 py-2 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-xs font-bold text-[#1e3a34] outline-none focus:border-[#1f644e]"
                     />
                   </div>
-                ))}
-                <button
-                  onClick={addResource}
-                  className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 border-dashed border-[#e5e3d8] text-xs font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] transition-colors"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add Resource
-                </button>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88] px-1">
+                    Section Summary
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={summary}
+                    onChange={(e) => setSummary(e.target.value)}
+                    placeholder="Brief overview of this section..."
+                    className="w-full px-4 py-2.5 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-sm text-[#1e3a34] outline-none focus:border-[#1f644e] resize-none"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between px-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
+                      Learning Goals
+                    </label>
+                    <button
+                      onClick={addGoal}
+                      className="text-[10px] font-bold text-[#1f644e] hover:underline"
+                    >
+                      + Add Goal
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {learningGoals.map((goal, i) => (
+                      <div key={i} className="flex gap-2">
+                        <input
+                          value={goal}
+                          onChange={(e) => updateGoal(i, e.target.value)}
+                          placeholder="Learners will be able to..."
+                          className="flex-1 px-3 py-2 rounded-lg border border-[#e5e3d8] bg-[#fcfbf5] text-xs text-[#1e3a34] outline-none focus:border-[#1f644e]"
+                        />
+                        <button
+                          onClick={() => removeGoal(i)}
+                          className="p-2 text-[#7c8e88] hover:text-[#c94c4c]"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                    {learningGoals.length === 0 && (
+                      <p className="text-[11px] text-[#7c8e88] italic px-1">
+                        No learning goals added yet.
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>
