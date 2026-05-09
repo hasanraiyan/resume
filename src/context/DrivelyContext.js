@@ -16,6 +16,7 @@ export function DrivelyProvider({ children }) {
   const [activity, setActivity] = useState([]);
   const [starred, setStarred] = useState({ files: [], folders: [] });
   const [shares, setShares] = useState({});
+  const [settings, setSettings] = useState(null);
   const [trashCount, setTrashCount] = useState(0);
   const [trashFiles, setTrashFiles] = useState([]);
   const [trashFolders, setTrashFolders] = useState([]);
@@ -45,15 +46,19 @@ export function DrivelyProvider({ children }) {
         fetch('/api/drively/trash/expire', { method: 'DELETE' }).catch(console.error);
       }
 
-      // Fetch both bootstrap and trash data
-      const [bootRes, trashRes] = await Promise.all([
+      // Fetch bootstrap, trash and settings data
+      const [bootRes, trashRes, settingsRes] = await Promise.all([
         fetch(`/api/drively/bootstrap?page=${page}&limit=100`),
         page === 1
           ? fetch('/api/drively/bootstrap?trash=true')
           : Promise.resolve({ json: () => ({ success: true, files: [], folders: [] }) }),
+        page === 1
+          ? fetch('/api/drively/settings')
+          : Promise.resolve({ json: () => ({ success: true, settings: null }) }),
       ]);
       const data = await bootRes.json();
       const trashData = await trashRes.json();
+      const settingsData = await settingsRes.json();
 
       if (data.success) {
         if (isLoadMore) {
@@ -80,6 +85,10 @@ export function DrivelyProvider({ children }) {
       if (trashData.success && page === 1) {
         setTrashFiles(trashData.files);
         setTrashFolders(trashData.folders);
+      }
+
+      if (settingsData.success && page === 1) {
+        setSettings(settingsData.settings);
       }
     } catch (error) {
       console.error(error);
@@ -334,6 +343,28 @@ export function DrivelyProvider({ children }) {
     }
   };
 
+  const updateSettings = async (payload) => {
+    try {
+      const res = await fetch('/api/drively/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSettings(data.settings);
+        toast.success('Settings updated');
+        return true;
+      } else {
+        toast.error(data.error || 'Failed to update settings');
+        return false;
+      }
+    } catch (error) {
+      toast.error('Settings update error');
+      return false;
+    }
+  };
+
   const emptyTrashAction = async () => {
     try {
       const res = await fetch('/api/drively/trash/empty', { method: 'DELETE' });
@@ -456,6 +487,8 @@ export function DrivelyProvider({ children }) {
         activity,
         starred,
         shares,
+        settings,
+        updateSettings,
         trashCount,
         trashFiles,
         trashFolders,
