@@ -32,7 +32,6 @@ export async function GET(request, { params }) {
       _id: m._id.toString(),
       courseId: m.courseId.toString(),
       unitCount: countMap[m._id.toString()] || 0,
-      sectionCount: countMap[m._id.toString()] || 0,
     }));
 
     return NextResponse.json({ success: true, modules: result });

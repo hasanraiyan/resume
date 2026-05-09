@@ -6,30 +6,28 @@ import QuizEditor from './QuizEditor';
 
 const RESOURCE_TYPES = ['video', 'article', 'doc', 'other'];
 
-export default function EditSectionModal({ section, onSave, onClose }) {
-  const [title, setTitle] = useState(section?.title || '');
-  const [sectionType, setSectionType] = useState(section?.sectionType || 'lesson');
-  const [content, setContent] = useState(section?.content || '');
-  const [questions, setQuestions] = useState(section?.quiz?.questions || []);
+export default function EditUnitModal({ unit, onSave, onClose }) {
+  const [title, setTitle] = useState(unit?.title || '');
+  const [unitType, setUnitType] = useState(unit?.unitType || 'lesson');
+  const [content, setContent] = useState(unit?.content || '');
+  const [questions, setQuestions] = useState(unit?.quiz?.questions || []);
   const [hasEmbeddedQuiz, setHasEmbeddedQuiz] = useState(
-    section?.sectionType === 'lesson' && (section?.quiz?.questions?.length ?? 0) > 0
+    (unit?.unitType === 'lesson' || !unit?.unitType) && (unit?.quiz?.questions?.length ?? 0) > 0
   );
-  const [resources, setResources] = useState(section?.resources || []);
+  const [resources, setResources] = useState(unit?.resources || []);
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState('content');
 
   useEffect(() => {
-    if (section) {
-      setTitle(section.title);
-      setSectionType(section.sectionType || 'lesson');
-      setContent(section.content || '');
-      setQuestions(section.quiz?.questions || []);
-      setHasEmbeddedQuiz(
-        section.sectionType === 'lesson' && (section.quiz?.questions?.length ?? 0) > 0
-      );
-      setResources(section.resources || []);
+    if (unit) {
+      setTitle(unit.title);
+      setUnitType(unit.unitType || 'lesson');
+      setContent(unit.content || '');
+      setQuestions(unit.quiz?.questions || []);
+      setHasEmbeddedQuiz(unit.unitType === 'lesson' && (unit.quiz?.questions?.length ?? 0) > 0);
+      setResources(unit.resources || []);
     }
-  }, [section]);
+  }, [unit]);
 
   const addResource = () => {
     setResources((prev) => [...prev, { type: 'article', url: '', title: '' }]);
@@ -46,11 +44,11 @@ export default function EditSectionModal({ section, onSave, onClose }) {
   const handleSave = async () => {
     if (!title.trim()) return;
     setLoading(true);
-    const showQuiz = sectionType === 'quiz' || (sectionType === 'lesson' && hasEmbeddedQuiz);
+    const showQuiz = unitType === 'quiz' || (unitType === 'lesson' && hasEmbeddedQuiz);
     await onSave({
       title: title.trim(),
-      sectionType,
-      content: sectionType === 'lesson' ? content : '',
+      unitType,
+      content: unitType === 'lesson' ? content : '',
       quiz: { questions: showQuiz ? questions : [] },
       resources: resources.filter((r) => r.url.trim()),
     });
@@ -58,7 +56,7 @@ export default function EditSectionModal({ section, onSave, onClose }) {
     onClose();
   };
 
-  const tabs = sectionType === 'quiz' ? ['quiz', 'resources'] : ['content', 'quiz', 'resources'];
+  const tabs = unitType === 'quiz' ? ['quiz', 'resources'] : ['content', 'quiz', 'resources'];
 
   return (
     <>
@@ -76,7 +74,7 @@ export default function EditSectionModal({ section, onSave, onClose }) {
         >
           {/* Header */}
           <div className="flex items-center justify-between p-5 border-b border-[#e5e3d8] shrink-0">
-            <h2 className="font-bold text-[#1e3a34]">{section ? 'Edit Section' : 'New Section'}</h2>
+            <h2 className="font-bold text-[#1e3a34]">{unit ? 'Edit Unit' : 'New Unit'}</h2>
             <button onClick={onClose} className="p-1.5 hover:bg-[#f0f5f2] rounded-lg">
               <X className="w-4 h-4 text-[#7c8e88]" />
             </button>
@@ -88,11 +86,11 @@ export default function EditSectionModal({ section, onSave, onClose }) {
               autoFocus
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Section title"
+              placeholder="Unit title"
               className="w-full px-4 py-2.5 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-sm font-bold text-[#1e3a34] outline-none focus:border-[#1f644e] focus:ring-2 focus:ring-[#1f644e]/10"
             />
 
-            {/* Section type toggle */}
+            {/* Unit type toggle */}
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
                 Type
@@ -102,11 +100,11 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                   <button
                     key={t}
                     onClick={() => {
-                      setSectionType(t);
+                      setUnitType(t);
                       setTab(t === 'quiz' ? 'quiz' : 'content');
                     }}
                     className={`px-3 py-1 rounded-lg text-xs font-bold capitalize transition-colors ${
-                      sectionType === t
+                      unitType === t
                         ? 'bg-white text-[#1e3a34] shadow-sm'
                         : 'text-[#7c8e88] hover:text-[#1e3a34]'
                     }`}
@@ -128,21 +126,21 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                   tab === t ? 'bg-[#1f644e] text-white' : 'text-[#7c8e88] hover:bg-[#f0f5f2]'
                 }`}
               >
-                {t === 'quiz' && sectionType === 'lesson' ? 'Embedded Quiz' : t}
+                {t === 'quiz' && unitType === 'lesson' ? 'Embedded Quiz' : t}
               </button>
             ))}
           </div>
 
           {/* Body */}
           <div className="flex-1 overflow-y-auto p-5 min-h-0">
-            {tab === 'content' && sectionType === 'lesson' && (
+            {tab === 'content' && unitType === 'lesson' && (
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Write section content in Markdown...
+                placeholder="Write unit content in Markdown...
 
 ## Overview
-Explain what this section covers.
+Explain what this unit covers.
 
 ## Key Concepts
 - Concept 1
@@ -161,7 +159,7 @@ Wrap up with key takeaways."
 
             {tab === 'quiz' && (
               <div className="space-y-4">
-                {sectionType === 'lesson' && (
+                {unitType === 'lesson' && (
                   <div className="flex items-center gap-2 pb-2 border-b border-[#e5e3d8]">
                     <label className="flex items-center gap-2 cursor-pointer text-sm text-[#1e3a34]">
                       <input
@@ -174,10 +172,10 @@ Wrap up with key takeaways."
                     </label>
                   </div>
                 )}
-                {(sectionType === 'quiz' || hasEmbeddedQuiz) && (
+                {(unitType === 'quiz' || hasEmbeddedQuiz) && (
                   <QuizEditor questions={questions} onChange={setQuestions} />
                 )}
-                {sectionType === 'lesson' && !hasEmbeddedQuiz && (
+                {unitType === 'lesson' && !hasEmbeddedQuiz && (
                   <p className="text-sm text-[#7c8e88] text-center py-4">
                     Enable the toggle above to add a quiz at the end of this lesson.
                   </p>
@@ -249,7 +247,7 @@ Wrap up with key takeaways."
               disabled={!title.trim() || loading}
               className="flex-1 py-2.5 rounded-xl bg-[#1f644e] text-white text-sm font-bold hover:bg-[#17503e] transition-colors disabled:opacity-50"
             >
-              {loading ? 'Saving...' : 'Save Section'}
+              {loading ? 'Saving...' : 'Save Unit'}
             </button>
           </div>
         </div>

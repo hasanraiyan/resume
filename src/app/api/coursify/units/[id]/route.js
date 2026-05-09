@@ -22,7 +22,7 @@ export async function PATCH(request, { params }) {
       'summary',
       'learningGoals',
       'estimatedDuration',
-      'sectionType',
+      'unitType',
       'quiz',
       'blocks',
       'completionStatus',
@@ -45,13 +45,6 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({
       success: true,
       unit: {
-        ...unit,
-        _id: unit._id.toString(),
-        courseId: unit.courseId.toString(),
-        moduleId: unit.moduleId?.toString() || null,
-      },
-      // Backward compat
-      section: {
         ...unit,
         _id: unit._id.toString(),
         courseId: unit.courseId.toString(),

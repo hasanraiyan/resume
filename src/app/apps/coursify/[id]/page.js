@@ -21,7 +21,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import EditSectionModal from '@/components/coursify/EditSectionModal';
+import EditUnitModal from '@/components/coursify/EditUnitModal';
 import { useCourseReader } from '@/hooks/coursify/useCourseReader';
 import { useReaderUI } from '@/hooks/coursify/useReaderUI';
 import { ReaderHeader } from '@/components/coursify/reader/ReaderHeader';
@@ -98,29 +98,29 @@ export default function CourseDetailPage({ params }) {
 
   const {
     course,
-    sections,
-    orderedSections,
+    units,
+    orderedUnits,
     modules,
-    activeSection,
+    activeUnitId,
     showOverview,
     visited,
     isLoading,
     notFound,
     navigateTo,
     showOverviewPage,
-    setActiveSection,
+    setActiveUnitId,
     setShowOverview,
   } = useCourseReader(id, true);
 
   const { sidebarOpen, expandedModules, toggleModule, toggleSidebar, closeSidebar } = useReaderUI(
     modules,
-    activeSection,
-    sections
+    activeUnitId,
+    units
   );
 
   const [activeTab, setActiveTab] = useState('content');
-  const [editingSection, setEditingSection] = useState(null);
-  const [showNewSection, setShowNewSection] = useState(false);
+  const [editingUnit, setEditingUnit] = useState(null);
+  const [showNewUnit, setShowNewUnit] = useState(false);
   const [showMeta, setShowMeta] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -175,7 +175,7 @@ export default function CourseDetailPage({ params }) {
     return null;
   }
 
-  const currentSection = sections.find((s) => s._id === activeSection);
+  const currentUnit = units.find((u) => (u._id || u.id) === activeUnitId);
 
   const handleTogglePublish = async () => {
     const res = await fetch(`/api/coursify/courses/${id}/publish`, { method: 'POST' });
@@ -186,45 +186,45 @@ export default function CourseDetailPage({ params }) {
     }
   };
 
-  const handleSaveSection = async (payload) => {
-    if (editingSection) {
-      const res = await fetch(`/api/coursify/sections/${editingSection._id}`, {
+  const handleSaveUnit = async (payload) => {
+    if (editingUnit) {
+      const res = await fetch(`/api/coursify/units/${editingUnit._id || editingUnit.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.success) {
-        toast.success('Section updated');
+        toast.success('Unit updated');
         window.location.reload();
       } else {
         toast.error(data.error || 'Failed to update');
       }
     } else {
-      const res = await fetch(`/api/coursify/courses/${id}/sections`, {
+      const res = await fetch(`/api/coursify/courses/${id}/units`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.success) {
-        toast.success('Section added');
-        setActiveSection(data.section._id);
+        toast.success('Unit added');
+        setActiveUnitId(data.unit._id || data.unit.id);
         window.location.reload();
       } else {
-        toast.error(data.error || 'Failed to add section');
+        toast.error(data.error || 'Failed to add unit');
       }
     }
-    setEditingSection(null);
-    setShowNewSection(false);
+    setEditingUnit(null);
+    setShowNewUnit(false);
   };
 
-  const handleDeleteSection = async (sectionId) => {
-    if (!confirm('Delete this section?')) return;
-    const res = await fetch(`/api/coursify/sections/${sectionId}`, { method: 'DELETE' });
+  const handleDeleteUnit = async (unitId) => {
+    if (!confirm('Delete this unit?')) return;
+    const res = await fetch(`/api/coursify/units/${unitId}`, { method: 'DELETE' });
     const data = await res.json();
     if (data.success) {
-      toast.success('Section deleted');
+      toast.success('Unit deleted');
       window.location.reload();
     }
   };
@@ -461,7 +461,7 @@ export default function CourseDetailPage({ params }) {
           )}
           <span className="flex items-center gap-1 text-[10px] text-[#7c8e88] font-bold">
             <Layers className="w-3 h-3" />
-            {sections.length} unit{sections.length !== 1 ? 's' : ''}
+            {units.length} unit{units.length !== 1 ? 's' : ''}
           </span>
           <button
             onClick={() => setShowMeta(false)}
@@ -477,8 +477,8 @@ export default function CourseDetailPage({ params }) {
         <ReaderSidebar
           course={course}
           modules={modules}
-          sections={sections}
-          activeSection={activeSection}
+          units={units}
+          activeUnitId={activeUnitId}
           showOverview={showOverview}
           visited={visited}
           sidebarOpen={sidebarOpen}
@@ -491,13 +491,13 @@ export default function CourseDetailPage({ params }) {
             editMode && (
               <button
                 onClick={() => {
-                  setShowNewSection(true);
+                  setShowNewUnit(true);
                   closeSidebar();
                 }}
                 className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed border-[#e5e3d8] text-xs font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
-                Add Section
+                Add Unit
               </button>
             )
           }
@@ -849,35 +849,35 @@ export default function CourseDetailPage({ params }) {
               {showOverview ? (
                 <CourseOverview
                   course={course}
-                  sections={sections}
+                  units={units}
                   modules={modules}
                   onNavigateTo={navigateTo}
                   hideThumbnail={true}
                 />
-              ) : !currentSection ? (
+              ) : !currentUnit ? (
                 <div className="flex flex-col items-center justify-center py-24 text-center">
                   <div className="h-14 w-14 bg-[#f0f5f2] rounded-2xl flex items-center justify-center mb-4">
                     <BookOpen className="w-7 h-7 text-[#1f644e]" />
                   </div>
-                  <h3 className="font-bold text-[#1e3a34] mb-2">No section selected</h3>
-                  <p className="text-sm text-[#7c8e88]">Select a section from the sidebar.</p>
+                  <h3 className="font-bold text-[#1e3a34] mb-2">No unit selected</h3>
+                  <p className="text-sm text-[#7c8e88]">Select a unit from the sidebar.</p>
                 </div>
               ) : (
                 <>
                   <div className="flex items-start justify-between gap-4 mb-6">
                     <h2 className="text-xl lg:text-2xl font-bold text-[#1e3a34] leading-snug min-w-0">
-                      {currentSection.title}
+                      {currentUnit.title}
                     </h2>
                     {editMode && (
                       <div className="flex items-center gap-1 shrink-0">
                         <button
-                          onClick={() => setEditingSection(currentSection)}
+                          onClick={() => setEditingUnit(currentUnit)}
                           className="p-2 rounded-xl hover:bg-[#f0f5f2] text-[#7c8e88] hover:text-[#1f644e] transition-colors"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDeleteSection(currentSection._id)}
+                          onClick={() => handleDeleteUnit(currentUnit._id || currentUnit.id)}
                           className="p-2 rounded-xl hover:bg-red-50 text-[#7c8e88] hover:text-[#c94c4c] transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -886,20 +886,20 @@ export default function CourseDetailPage({ params }) {
                     )}
                   </div>
 
-                  {currentSection.sectionType !== 'quiz' && currentSection.content && (
-                    <MarkdownRenderer content={currentSection.content} />
+                  {currentUnit.unitType !== 'quiz' && currentUnit.content && (
+                    <MarkdownRenderer content={currentUnit.content} />
                   )}
-                  {(currentSection.quiz?.questions?.length ?? 0) > 0 && (
-                    <QuizPlayer questions={currentSection.quiz.questions} />
+                  {(currentUnit.quiz?.questions?.length ?? 0) > 0 && (
+                    <QuizPlayer questions={currentUnit.quiz.questions} />
                   )}
 
-                  {currentSection.resources?.length > 0 && (
+                  {currentUnit.resources?.length > 0 && (
                     <div className="mt-8 pt-6 border-t border-[#e5e3d8]">
                       <h4 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-3">
                         Resources
                       </h4>
                       <div className="space-y-2">
-                        {currentSection.resources.map((r, i) => (
+                        {currentUnit.resources.map((r, i) => (
                           <a
                             key={i}
                             href={r.url}
@@ -924,8 +924,8 @@ export default function CourseDetailPage({ params }) {
                   )}
 
                   <ReaderNavigation
-                    sections={orderedSections}
-                    activeSection={activeSection}
+                    units={orderedUnits}
+                    activeUnitId={activeUnitId}
                     onNavigate={navigateTo}
                   />
                 </>
@@ -935,13 +935,13 @@ export default function CourseDetailPage({ params }) {
         </main>
       </div>
 
-      {(editingSection || showNewSection) && (
-        <EditSectionModal
-          section={editingSection || null}
-          onSave={handleSaveSection}
+      {(editingUnit || showNewUnit) && (
+        <EditUnitModal
+          unit={editingUnit || null}
+          onSave={handleSaveUnit}
           onClose={() => {
-            setEditingSection(null);
-            setShowNewSection(false);
+            setEditingUnit(null);
+            setShowNewUnit(false);
           }}
         />
       )}

@@ -137,30 +137,21 @@ export function createCoursifyTools(courseId) {
           learningGoals: u.learningGoals,
           estimatedDuration: u.estimatedDuration,
         })),
-        sections: units.map((u) => ({
-          id: u._id.toString(),
-          title: u.title,
-          module: u.moduleId ? moduleMap[u.moduleId.toString()] || null : null,
-          summary: u.summary,
-          learningGoals: u.learningGoals,
-          estimatedDuration: u.estimatedDuration,
-        })),
       });
     },
     {
       name: 'get_course_outline',
       description:
-        'Get the complete outline of the current course including all section titles, summaries, and learning goals. Use this to understand the course structure and help the learner navigate.',
+        'Get the complete outline of the current course including all unit titles, summaries, and learning goals. Use this to understand the course structure and help the learner navigate.',
       schema: z.object({}),
     }
   );
 
   const getUnitContent = tool(
-    async ({ unitId, sectionId }) => {
-      const id = unitId || sectionId;
+    async ({ unitId }) => {
       await dbConnect();
       const unit = await CoursifyUnit.findOne({
-        _id: id,
+        _id: unitId,
         courseId,
         deletedAt: null,
       }).lean();
@@ -183,8 +174,7 @@ export function createCoursifyTools(courseId) {
       description:
         'Get the full content of a specific unit in the current course by its ID. Use this when the user asks about a specific topic or needs deeper explanation.',
       schema: z.object({
-        unitId: z.string().optional().describe('The unit ID from get_course_outline'),
-        sectionId: z.string().optional().describe('Legacy parameter name for unitId'),
+        unitId: z.string().describe('The unit ID from get_course_outline'),
       }),
     }
   );

@@ -7,35 +7,32 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
  */
 export function useCourseReader(courseId, isAdmin = false) {
   const [course, setCourse] = useState(null);
-  const [sections, setSections] = useState([]);
+  const [units, setUnits] = useState([]);
   const [modules, setModules] = useState([]);
-  const [activeSection, setActiveSection] = useState(null);
+  const [activeUnitId, setActiveUnitId] = useState(null);
   const [showOverview, setShowOverview] = useState(true);
   const [visited, setVisited] = useState(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
-  // Sections ordered by module position then section position within the module.
-  // This is the correct order for prev/next navigation — the raw `sections` array
-  // uses a global `order` field where each module independently starts at 0/1,
-  // causing cross-module collisions when sorted naively.
-  const orderedSections = useMemo(() => {
-    if (!modules.length) return [...sections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  // Units ordered by module position then unit position within the module.
+  const orderedUnits = useMemo(() => {
+    if (!modules.length) return [...units].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     const sortedModules = [...modules].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     const result = [];
     for (const mod of sortedModules) {
-      const modSections = sections
-        .filter((s) => s.moduleId === mod._id)
+      const modUnits = units
+        .filter((u) => u.moduleId === mod.id || u.moduleId === mod._id)
         .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-      result.push(...modSections);
+      result.push(...modUnits);
     }
-    // Append any sections not assigned to a module
-    const unassigned = sections
-      .filter((s) => !s.moduleId)
+    // Append any units not assigned to a module
+    const unassigned = units
+      .filter((u) => !u.moduleId)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     result.push(...unassigned);
     return result;
-  }, [sections, modules]);
+  }, [units, modules]);
 
   const fetchCourse = useCallback(async () => {
     if (!courseId) return;
@@ -46,7 +43,7 @@ export function useCourseReader(courseId, isAdmin = false) {
       const data = await res.json();
       if (data.success) {
         setCourse(data.course);
-        setSections(data.sections);
+        setUnits(data.units || []);
         setModules(data.modules || []);
       } else {
         setNotFound(true);
@@ -62,48 +59,48 @@ export function useCourseReader(courseId, isAdmin = false) {
     fetchCourse();
   }, [fetchCourse]);
 
-  // Expose current section context to external tools (like ChatbotWidget)
+  // Expose current unit context to external tools (like ChatbotWidget)
   useEffect(() => {
-    if (!activeSection || !sections.length) return;
-    const section = sections.find((s) => s._id === activeSection);
-    if (section) {
+    if (!activeUnitId || !units.length) return;
+    const unit = units.find((u) => (u.id || u._id) === activeUnitId);
+    if (unit) {
       window.__coursifyCtx = {
-        sectionId: section._id,
-        sectionTitle: section.title,
-        sectionSummary: section.summary || '',
+        unitId: unit.id || unit._id,
+        unitTitle: unit.title,
+        unitSummary: unit.summary || '',
       };
     }
     return () => {
       delete window.__coursifyCtx;
     };
-  }, [activeSection, sections]);
+  }, [activeUnitId, units]);
 
-  const markVisited = (sectionId) => {
-    if (!sectionId) return;
+  const markVisited = (unitId) => {
+    if (!unitId) return;
     setVisited((prev) => {
       const next = new Set(prev);
-      next.add(sectionId);
+      next.add(unitId);
       return next;
     });
   };
 
-  const navigateTo = (sectionId) => {
-    if (activeSection) markVisited(activeSection);
+  const navigateTo = (unitId) => {
+    if (activeUnitId) markVisited(activeUnitId);
     setShowOverview(false);
-    setActiveSection(sectionId);
+    setActiveUnitId(unitId);
   };
 
   const showOverviewPage = () => {
     setShowOverview(true);
-    setActiveSection(null);
+    setActiveUnitId(null);
   };
 
   return {
     course,
-    sections,
-    orderedSections,
+    units,
+    orderedUnits,
     modules,
-    activeSection,
+    activeUnitId,
     showOverview,
     visited,
     isLoading,
@@ -111,7 +108,7 @@ export function useCourseReader(courseId, isAdmin = false) {
     navigateTo,
     showOverviewPage,
     markVisited,
-    setActiveSection,
+    setActiveUnitId,
     setShowOverview,
   };
 }

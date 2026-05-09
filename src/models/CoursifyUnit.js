@@ -74,7 +74,7 @@ const CoursifyUnitSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    sectionType: {
+    unitType: {
       type: String,
       enum: ['lesson', 'quiz'],
       default: 'lesson',

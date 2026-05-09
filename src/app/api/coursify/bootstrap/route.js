@@ -31,7 +31,6 @@ export async function GET(request) {
       ...c,
       _id: c._id.toString(),
       unitCount: unitCountMap[c._id.toString()] || 0,
-      sectionCount: unitCountMap[c._id.toString()] || 0,
       authoringStatus: c.authoringStatus || 'idea',
     }));
 

@@ -34,12 +34,6 @@ export async function GET(request, { params }) {
         courseId: u.courseId.toString(),
         moduleId: u.moduleId?.toString() || null,
       })),
-      sections: units.map((u) => ({
-        ...u,
-        _id: u._id.toString(),
-        courseId: u.courseId.toString(),
-        moduleId: u.moduleId?.toString() || null,
-      })),
     });
   } catch (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

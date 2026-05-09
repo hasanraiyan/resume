@@ -73,7 +73,7 @@ export function CoursifyProvider({ children }) {
       const data = await res.json();
       if (data.success) {
         toast.success('Course created');
-        setCourses((prev) => [{ ...data.course, sectionCount: 0 }, ...prev]);
+        setCourses((prev) => [{ ...data.course, unitCount: 0 }, ...prev]);
         return data.course;
       } else {
         toast.error(data.error || 'Failed to create course');

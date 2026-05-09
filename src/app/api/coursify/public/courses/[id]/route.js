@@ -41,7 +41,7 @@ export async function GET(request, { params }) {
         .sort({ order: 1 })
         .lean(),
       CoursifyUnit.find({ courseId, deletedAt: null })
-        .select('title sectionType content quiz resources order moduleId blocks completionStatus')
+        .select('title unitType content quiz resources order moduleId blocks completionStatus')
         .sort({ order: 1 })
         .lean(),
     ]);
@@ -55,13 +55,6 @@ export async function GET(request, { params }) {
       },
       modules: modules.map((m) => ({ ...m, _id: m._id.toString(), courseId })),
       units: units.map((u) => ({
-        ...u,
-        _id: u._id.toString(),
-        courseId,
-        moduleId: u.moduleId?.toString() || null,
-      })),
-      // Keep sections for backward compatibility in the public API if needed, or just switch
-      sections: units.map((u) => ({
         ...u,
         _id: u._id.toString(),
         courseId,

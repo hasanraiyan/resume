@@ -146,7 +146,7 @@ export default function CourseCard({ course, index = 0 }) {
             <div className="flex items-center justify-between text-[#7c8e88]">
               <span className="flex items-center gap-1 text-xs font-bold">
                 <Layers className="w-3.5 h-3.5" />
-                {course.sectionCount} section{course.sectionCount !== 1 ? 's' : ''}
+                {course.unitCount} unit{course.unitCount !== 1 ? 's' : ''}
               </span>
               {course.tags?.length > 0 && (
                 <span className="flex items-center gap-1 text-xs truncate max-w-[55%]">

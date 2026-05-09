@@ -399,7 +399,7 @@ export function registerCoursifyTools(server) {
         courseId: z.string().describe('Required for creation.'),
         moduleId: z.string().optional(),
         title: z.string().optional(),
-        sectionType: z.enum(['lesson', 'quiz']).optional(),
+        unitType: z.enum(['lesson', 'quiz']).optional(),
         content: z.string().optional().describe('Markdown content (legacy). Prefer blocks.'),
         blocks: z.array(blockSchema).optional().describe('Structured content blocks.'),
         status: z.enum(['planned', 'draft', 'needs_review', 'complete']).optional(),
@@ -418,7 +418,7 @@ export function registerCoursifyTools(server) {
             z.object({
               title: z.string(),
               moduleId: z.string().optional(),
-              sectionType: z.enum(['lesson', 'quiz']).optional(),
+              unitType: z.enum(['lesson', 'quiz']).optional(),
               content: z.string().optional(),
               blocks: z.array(blockSchema).optional(),
               order: z.number().int().optional(),

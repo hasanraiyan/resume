@@ -27,7 +27,7 @@ export async function POST(request, { params }) {
       summary,
       learningGoals,
       estimatedDuration,
-      sectionType,
+      unitType,
       quiz,
       blocks,
       completionStatus,
@@ -45,7 +45,7 @@ export async function POST(request, { params }) {
     const unit = await CoursifyUnit.create({
       courseId: id,
       title: title.trim(),
-      sectionType: sectionType || 'lesson',
+      unitType: unitType || 'lesson',
       content: content || '',
       quiz: quiz || { questions: [] },
       order,
@@ -62,13 +62,6 @@ export async function POST(request, { params }) {
     return NextResponse.json({
       success: true,
       unit: {
-        ...unit.toObject(),
-        _id: unit._id.toString(),
-        courseId: id,
-        moduleId: unit.moduleId?.toString() || null,
-      },
-      // Backward compat
-      section: {
         ...unit.toObject(),
         _id: unit._id.toString(),
         courseId: id,

@@ -42,10 +42,10 @@ export default function PublicCourseReaderPage({ params }) {
 
   const {
     course,
-    sections,
-    orderedSections,
+    units,
+    orderedUnits,
     modules,
-    activeSection,
+    activeUnitId,
     showOverview,
     visited,
     isLoading,
@@ -54,13 +54,9 @@ export default function PublicCourseReaderPage({ params }) {
     showOverviewPage,
   } = useCourseReader(slug);
 
-  const currentSection = sections.find((s) => s._id === activeSection);
+  const currentUnit = units?.find((u) => (u._id || u.id) === activeUnitId);
 
-  const { headings, activeHeading } = useTableOfContents(
-    currentSection?.content,
-    contentRef,
-    mainRef
-  );
+  const { headings, activeHeading } = useTableOfContents(currentUnit?.content, contentRef, mainRef);
 
   const {
     sidebarOpen,
@@ -70,7 +66,7 @@ export default function PublicCourseReaderPage({ params }) {
     toggleSidebar,
     closeSidebar,
     toggleToc,
-  } = useReaderUI(modules, activeSection, sections);
+  } = useReaderUI(modules, activeUnitId, units);
 
   if (isLoading) {
     return (
@@ -125,8 +121,8 @@ export default function PublicCourseReaderPage({ params }) {
         <ReaderSidebar
           course={course}
           modules={modules}
-          sections={sections}
-          activeSection={activeSection}
+          units={units}
+          activeUnitId={activeUnitId}
           showOverview={showOverview}
           visited={visited}
           sidebarOpen={sidebarOpen}
@@ -143,21 +139,21 @@ export default function PublicCourseReaderPage({ params }) {
               {showOverview ? (
                 <CourseOverview
                   course={course}
-                  sections={sections}
+                  units={units}
                   modules={modules}
                   onNavigateTo={navigateTo}
                 />
-              ) : currentSection ? (
+              ) : currentUnit ? (
                 <>
-                  {currentSection.sectionType !== 'quiz' && currentSection.content && (
-                    <MarkdownRenderer content={currentSection.content} />
+                  {currentUnit.unitType !== 'quiz' && currentUnit.content && (
+                    <MarkdownRenderer content={currentUnit.content} />
                   )}
-                  {(currentSection.quiz?.questions?.length ?? 0) > 0 && (
-                    <QuizPlayer questions={currentSection.quiz.questions} />
+                  {(currentUnit.quiz?.questions?.length ?? 0) > 0 && (
+                    <QuizPlayer questions={currentUnit.quiz.questions} />
                   )}
                   <ReaderNavigation
-                    sections={orderedSections}
-                    activeSection={activeSection}
+                    units={orderedUnits}
+                    activeUnitId={activeUnitId}
                     onNavigate={navigateTo}
                   />
                 </>

@@ -8,11 +8,11 @@ const TOOL_STATUS_MESSAGES = {
   search_courses: '🔍 Searching course catalog...',
   list_courses: '📚 Loading available courses...',
   get_course_outline: '📋 Loading course outline...',
-  get_section_content: '📖 Reading section content...',
-  search_course_sections: '🔍 Searching course sections...',
+  get_unit_content: '📖 Reading unit content...',
+  search_course_units: '🔍 Searching course units...',
 };
 
-function buildSystemPrompt({ courseTitle, currentSectionTitle, currentSectionSummary }) {
+function buildSystemPrompt({ courseTitle, currentUnitTitle, currentUnitSummary }) {
   if (!courseTitle) {
     return `You are a helpful, friendly learning assistant for Coursify — a platform with free courses to learn and grow.
 
@@ -34,8 +34,8 @@ RULES:
 Your role:
 - Explain concepts from the course in clear, accessible language
 - Answer questions using your tools to fetch the actual course content
-- Help learners understand difficult sections
-- Suggest related sections when relevant
+- Help learners understand difficult units
+- Suggest related units when relevant
 - Encourage and support the learner's progress
 
 RULES:
@@ -44,10 +44,10 @@ RULES:
 3. Use markdown formatting for clarity (code blocks, bullet points, etc).
 4. You also have search_courses and list_courses available if the learner asks about other courses.`;
 
-  if (currentSectionTitle) {
-    prompt += `\n\nCURRENT SECTION: The learner is reading **"${currentSectionTitle}"**.`;
-    if (currentSectionSummary) prompt += ` (${currentSectionSummary})`;
-    prompt += `\nFor questions about this section, call get_course_outline first to get the section ID, then get_section_content.`;
+  if (currentUnitTitle) {
+    prompt += `\n\nCURRENT UNIT: The learner is reading **"${currentUnitTitle}"**.`;
+    if (currentUnitSummary) prompt += ` (${currentUnitSummary})`;
+    prompt += `\nFor questions about this unit, call get_course_outline first to get the unit ID, then get_unit_content.`;
   }
 
   return prompt;
@@ -72,8 +72,8 @@ class CoursifyChatAgent extends BaseAgent {
       chatHistory = [],
       courseId = null,
       courseTitle = '',
-      currentSectionTitle = '',
-      currentSectionSummary = '',
+      currentUnitTitle = '',
+      currentUnitSummary = '',
     } = input;
 
     const llm = await this.createChatModel();
@@ -81,8 +81,8 @@ class CoursifyChatAgent extends BaseAgent {
 
     const systemPrompt = buildSystemPrompt({
       courseTitle,
-      currentSectionTitle,
-      currentSectionSummary,
+      currentUnitTitle,
+      currentUnitSummary,
     });
 
     // Only keep user/assistant content messages — strip tool results and tool_calls.

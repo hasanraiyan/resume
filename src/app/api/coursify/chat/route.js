@@ -25,9 +25,9 @@ export async function POST(request) {
       userMessage,
       chatHistory = [],
       courseSlug = '',
-      currentSectionId = '',
-      currentSectionTitle = '',
-      currentSectionSummary = '',
+      currentUnitId = '',
+      currentUnitTitle = '',
+      currentUnitSummary = '',
     } = await request.json();
 
     if (!userMessage)
@@ -55,9 +55,9 @@ export async function POST(request) {
       chatHistory,
       courseId,
       courseTitle,
-      currentSectionId,
-      currentSectionTitle,
-      currentSectionSummary,
+      currentUnitId,
+      currentUnitTitle,
+      currentUnitSummary,
     };
 
     const stream = new ReadableStream({

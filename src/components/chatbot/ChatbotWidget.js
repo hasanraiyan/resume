@@ -55,9 +55,9 @@ export default function ChatbotWidget() {
             const slugMatch = window.location.pathname.match(/^\/coursify\/([^/]+)/);
             return {
               courseSlug: slugMatch?.[1] || '',
-              currentSectionId: ctx?.sectionId || '',
-              currentSectionTitle: ctx?.sectionTitle || '',
-              currentSectionSummary: ctx?.sectionSummary || '',
+              currentUnitId: ctx?.unitId || '',
+              currentUnitTitle: ctx?.unitTitle || '',
+              currentUnitSummary: ctx?.unitSummary || '',
             };
           },
         }
@@ -69,7 +69,7 @@ export default function ChatbotWidget() {
     const isReady = isCoursifyPath || chatbotSettings?.isActive;
     if (isReady && messages.length === 0) {
       const welcomeMessage = isCoursifyReader
-        ? "Hi! I'm your learning assistant for this course. Ask me to explain any concept, summarize a section, or help you understand the material better."
+        ? "Hi! I'm your learning assistant for this course. Ask me to explain any concept, summarize a unit, or help you understand the material better."
         : isCoursifyPath
           ? 'Hi! I can help you find the right course to study. Ask me what courses are available, or tell me what you want to learn!'
           : chatbotSettings.welcomeMessage || 'Hello! How can I help you today?';
@@ -164,7 +164,7 @@ export default function ChatbotWidget() {
 
   const clearChat = () => {
     const welcomeMessage = isCoursifyReader
-      ? "Hi! I'm your learning assistant for this course. Ask me to explain any concept, summarize a section, or help you understand the material better."
+      ? "Hi! I'm your learning assistant for this course. Ask me to explain any concept, summarize a unit, or help you understand the material better."
       : isCoursifyPath
         ? 'Hi! I can help you find the right course to study. Ask me what courses are available, or tell me what you want to learn!'
         : chatbotSettings?.welcomeMessage || 'Hello! How can I help you today?';
@@ -242,7 +242,7 @@ export default function ChatbotWidget() {
 
   const suggestedPrompts = isCoursifyReader
     ? [
-        { text: 'Explain the current section' },
+        { text: 'Explain the current unit' },
         { text: 'What are the key takeaways?' },
         { text: 'What should I learn next?' },
       ]

@@ -10,8 +10,8 @@ export async function POST(request, { params }) {
   try {
     await dbConnect();
     const { id } = await params;
-    const { unitIds, sectionIds } = await request.json();
-    const ids = unitIds || sectionIds;
+    const { unitIds } = await request.json();
+    const ids = unitIds;
 
     if (!Array.isArray(ids)) {
       return NextResponse.json(

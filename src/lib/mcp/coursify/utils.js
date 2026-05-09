@@ -49,27 +49,27 @@ function assignModule(title) {
 
 /**
  * Parses a Markdown course outline into grouped module suggestions.
- * Returns [] when no sections could be extracted.
+ * Returns [] when no units could be extracted.
  */
 export function parseOutlineToModules(outline) {
   const lines = outline.trim().split('\n');
-  const sectionTitles = [];
+  const unitTitles = [];
   let currentGroup = '';
 
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed.startsWith('## ') && !trimmed.toLowerCase().includes('module')) {
       const title = trimmed.replace(/^##\s+/, '').trim();
-      if (title) sectionTitles.push({ title, group: currentGroup });
+      if (title) unitTitles.push({ title, group: currentGroup });
     } else if (trimmed.startsWith('### ')) {
       const title = trimmed.replace(/^###\s+/, '').trim();
-      if (title && title.length < 100) sectionTitles.push({ title, group: currentGroup });
+      if (title && title.length < 100) unitTitles.push({ title, group: currentGroup });
     } else if (trimmed.match(/^#{1,2}\s+(module|phase|part|step)/i)) {
       currentGroup = trimmed.replace(/^#{1,2}\s+/, '').trim();
     }
   }
 
-  if (sectionTitles.length === 0) {
+  if (unitTitles.length === 0) {
     const paragraphs = outline
       .trim()
       .split(/\n\n+/)
@@ -81,42 +81,42 @@ export function parseOutlineToModules(outline) {
         .trim()
         .replace(/^[-*\d.]\s+/, '');
       if (firstLine && firstLine.length > 3 && firstLine.length < 120) {
-        sectionTitles.push({ title: firstLine, group: '' });
+        unitTitles.push({ title: firstLine, group: '' });
       }
     }
   }
 
-  if (sectionTitles.length === 0) return [];
+  if (unitTitles.length === 0) return [];
 
   const moduleMap = {};
   let unassignedBuffer = [];
-  for (const s of sectionTitles) {
+  for (const s of unitTitles) {
     const mod = s.group || assignModule(s.title);
     if (mod) {
       if (unassignedBuffer.length > 0) {
         if (!moduleMap['Miscellaneous'])
-          moduleMap['Miscellaneous'] = { sections: [], label: 'Miscellaneous' };
-        moduleMap['Miscellaneous'].sections.push(...unassignedBuffer);
+          moduleMap['Miscellaneous'] = { units: [], label: 'Miscellaneous' };
+        moduleMap['Miscellaneous'].units.push(...unassignedBuffer);
         unassignedBuffer = [];
       }
-      if (!moduleMap[mod]) moduleMap[mod] = { sections: [], label: mod };
-      moduleMap[mod].sections.push(s.title);
+      if (!moduleMap[mod]) moduleMap[mod] = { units: [], label: mod };
+      moduleMap[mod].units.push(s.title);
     } else {
       unassignedBuffer.push(s.title);
     }
   }
   if (unassignedBuffer.length > 0) {
     if (!moduleMap['Miscellaneous'])
-      moduleMap['Miscellaneous'] = { sections: [], label: 'Miscellaneous' };
-    moduleMap['Miscellaneous'].sections.push(...unassignedBuffer);
+      moduleMap['Miscellaneous'] = { units: [], label: 'Miscellaneous' };
+    moduleMap['Miscellaneous'].units.push(...unassignedBuffer);
   }
 
   return Object.values(moduleMap).map((m, i) => ({
     order: i,
     title: m.label,
-    summary: `Covers: ${m.sections.slice(0, 3).join(', ')}${m.sections.length > 3 ? `, and ${m.sections.length - 3} more` : ''}`,
-    sectionCount: m.sections.length,
-    sections: m.sections,
+    summary: `Covers: ${m.units.slice(0, 3).join(', ')}${m.units.length > 3 ? `, and ${m.units.length - 3} more` : ''}`,
+    unitCount: m.units.length,
+    units: m.units,
   }));
 }
 
@@ -163,7 +163,7 @@ export function normalizeUnit(unit) {
     courseId: unit.courseId?.toString?.() || unit.courseId,
     moduleId: unit.moduleId?.toString?.() || null,
     title: unit.title,
-    sectionType: unit.sectionType || 'lesson',
+    unitType: unit.unitType || 'lesson',
     content: unit.content || '',
     quiz: {
       questions: (unit.quiz?.questions || []).map((q) => ({

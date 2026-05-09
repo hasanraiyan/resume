@@ -71,7 +71,7 @@ export async function dbGetCourse({ id, includeUnitContent = false }) {
   if (!course) throw new Error('Course not found.');
 
   const unitSelect = includeUnitContent
-    ? 'moduleId title content sectionType quiz summary status order learningGoals estimatedDuration resources blocks completionStatus'
+    ? 'moduleId title content unitType quiz summary status order learningGoals estimatedDuration resources blocks completionStatus'
     : 'moduleId title summary status order learningGoals estimatedDuration resources completionStatus';
 
   const [modules, units] = await Promise.all([
@@ -343,7 +343,7 @@ export async function dbReorderModules({ courseId, moduleIds }) {
 export async function dbAddUnit({
   courseId,
   title,
-  sectionType,
+  unitType,
   content,
   questions,
   order,
@@ -362,12 +362,12 @@ export async function dbAddUnit({
 
   const last = await CoursifyUnit.findOne({ courseId, deletedAt: null }).sort({ order: -1 }).lean();
   const resolvedOrder = order !== undefined ? order : last ? last.order + 1 : 0;
-  const resolvedType = sectionType || 'lesson';
+  const resolvedType = unitType || 'lesson';
 
   const unit = await CoursifyUnit.create({
     courseId,
     title: title.trim(),
-    sectionType: resolvedType,
+    unitType: resolvedType,
     content: resolvedType === 'lesson' ? content || '' : '',
     quiz: { questions: questions || [] },
     order: resolvedOrder,
@@ -387,7 +387,7 @@ export async function dbAddUnit({
 export async function dbUpdateUnit({
   id,
   title,
-  sectionType,
+  unitType,
   content,
   questions,
   summary,
@@ -403,7 +403,7 @@ export async function dbUpdateUnit({
   await dbConnect();
   const clean = cleanPatch({
     title,
-    sectionType,
+    unitType,
     content,
     summary,
     learningGoals,
@@ -469,7 +469,7 @@ export async function dbAddUnits({ courseId, units }) {
   const docs = units.map((u) => ({
     courseId,
     title: u.title.trim(),
-    sectionType: u.sectionType || 'lesson',
+    unitType: u.unitType || 'lesson',
     content: u.content || '',
     quiz: { questions: u.questions || [] },
     order: u.order !== undefined ? u.order : currentOrder++,
@@ -653,7 +653,7 @@ export async function dbApplySuggestedModules({ courseId }) {
     });
     createdModules.push(newModule);
 
-    const unitDocs = suggestion.sections.map((title, i) => ({
+    const unitDocs = suggestion.units.map((title, i) => ({
       courseId,
       moduleId: newModule._id,
       title,
