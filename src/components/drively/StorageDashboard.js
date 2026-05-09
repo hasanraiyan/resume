@@ -21,25 +21,9 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import MoveModal from './MoveModal';
+import { formatSize, getFileIcon } from './utils';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale);
-
-const formatSize = (bytes) => {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-};
-
-const getIconForMime = (mime) => {
-  if (mime.startsWith('image/')) return <ImageIcon className="w-4 h-4 text-emerald-500" />;
-  if (mime.startsWith('video/')) return <Video className="w-4 h-4 text-purple-500" />;
-  if (mime === 'application/pdf') return <FileText className="w-4 h-4 text-red-500" />;
-  if (mime.includes('zip') || mime.includes('rar') || mime.includes('tar'))
-    return <FileArchive className="w-4 h-4 text-amber-500" />;
-  return <File className="w-4 h-4 text-blue-500" />;
-};
 
 export default function StorageDashboard() {
   const { stats, deleteItem, updateItem } = useDrively();
@@ -117,11 +101,11 @@ export default function StorageDashboard() {
               className="group flex items-center justify-between p-3 rounded-2xl hover:bg-[#f0f5f2] transition-all border border-transparent hover:border-[#e5e3d8]"
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-xl bg-[#fcfbf5] border border-[#e5e3d8] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <div className="w-10 h-10 rounded-xl bg-[#fcfbf5] border border-[#e5e3d8] flex items-center justify-center flex-shrink-0 overflow-hidden p-2">
                   {file.mimeType.startsWith('image/') && file.secureUrl ? (
                     <img src={file.secureUrl} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    getIconForMime(file.mimeType)
+                    getFileIcon(file.mimeType)
                   )}
                 </div>
                 <div className="min-w-0">

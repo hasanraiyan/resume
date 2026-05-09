@@ -16,23 +16,7 @@ import {
 import { useMemo } from 'react';
 import StorageDashboard from './StorageDashboard';
 import Switch from '../admin/Switch';
-
-const formatSize = (bytes) => {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-};
-
-const getIconForMime = (mime) => {
-  if (mime.startsWith('image/')) return <ImageIcon className="w-4 h-4 text-emerald-500" />;
-  if (mime.startsWith('video/')) return <Video className="w-4 h-4 text-purple-500" />;
-  if (mime === 'application/pdf') return <FileText className="w-4 h-4 text-red-500" />;
-  if (mime.includes('zip') || mime.includes('rar') || mime.includes('tar'))
-    return <FileArchive className="w-4 h-4 text-amber-500" />;
-  return <File className="w-4 h-4 text-blue-500" />;
-};
+import { formatSize, getFileIcon } from './utils';
 
 export default function StorageTab() {
   const { stats, isLoading, files, folders, settings, updateSettings } = useDrively();
@@ -152,12 +136,12 @@ export default function StorageTab() {
                   className="p-4 flex items-center justify-between hover:bg-[#f0f5f2] transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[#fcfbf5] border border-[#e5e3d8] flex items-center justify-center">
-                      {getIconForMime(type._id)}
+                    <div className="w-8 h-8 rounded-lg bg-[#fcfbf5] border border-[#e5e3d8] flex items-center justify-center p-2">
+                      {getFileIcon(type._id)}
                     </div>
                     <div>
                       <p className="text-sm font-bold text-[#1e3a34]">
-                        {type._id.split('/')[1].toUpperCase()}
+                        {type._id.includes('/') ? type._id.split('/')[1].toUpperCase() : type._id}
                       </p>
                       <p className="text-[10px] text-[#7c8e88]">{type.count} files</p>
                     </div>
@@ -183,11 +167,11 @@ export default function StorageTab() {
                   className="p-4 flex items-center justify-between hover:bg-[#f0f5f2] transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-[#fcfbf5] border border-[#e5e3d8] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    <div className="w-8 h-8 rounded-lg bg-[#fcfbf5] border border-[#e5e3d8] flex items-center justify-center flex-shrink-0 overflow-hidden p-2">
                       {file.mimeType.startsWith('image/') && file.secureUrl ? (
                         <img src={file.secureUrl} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        getIconForMime(file.mimeType)
+                        getFileIcon(file.mimeType)
                       )}
                     </div>
                     <p className="text-sm font-bold text-[#1e3a34] truncate">{file.filename}</p>
