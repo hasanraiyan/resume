@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation';
 import { fetchPublicCourse } from '@/lib/coursify/public-fetch';
 import { CourseReaderShell } from '@/components/coursify/reader/CourseReaderShell';
 
+export const revalidate = 3600;
+
 export async function generateMetadata({ params }) {
   const { slug, sectionId } = await params;
   const data = await fetchPublicCourse(slug);

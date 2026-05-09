@@ -123,7 +123,7 @@ export function CourseReaderShell({ initialData, slug, activeSectionId }) {
                 </div>
               ) : currentSection ? (
                 <>
-                  <CoursifyBlockRenderer blocks={currentSection.blocks} />
+                  <CoursifyBlockRenderer blocks={currentSection.blocks} sectionId={currentSection._id} />
                   <ReaderNavigation
                     sections={orderedSections}
                     activeSection={activeSection}
