@@ -122,11 +122,8 @@ export default function ExportModal({ isOpen, onClose }) {
     try {
       const { start, end } = getActiveRange();
 
-      // We use the full transaction list from context if available, or fetch
-      const txnsToUse =
-        transactions.length > 0
-          ? transactions
-          : await fetchTransactionsForPeriod(start.toISOString(), end.toISOString());
+      // Always fetch transactions for the requested range to ensure CSV accuracy
+      const txnsToUse = await fetchTransactionsForPeriod(start.toISOString(), end.toISOString());
 
       downloadTransactionsCsv(txnsToUse, {
         type: filterType,

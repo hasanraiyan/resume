@@ -4,14 +4,14 @@ import { getTransactions } from '@/lib/apps/pocketly/service/service';
 
 export async function GET(request) {
   const session = await requireAdminAuth(request);
-  if (typeof session !== 'object') return session;
+  if (session instanceof NextResponse) return session;
 
   try {
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    const transactions = await getTransactions({ startDate, endDate });
+    const transactions = await getTransactions({ startDate, endDate, limit: 1000 });
 
     const income = transactions
       .filter((t) => t.type === 'income')

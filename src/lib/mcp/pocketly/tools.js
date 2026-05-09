@@ -439,6 +439,7 @@ export function registerPocketlyTools(server) {
       const transactions = await getTransactions({
         startDate: start.toISOString(),
         endDate: end.toISOString(),
+        limit: 1000,
       });
 
       const income = transactions
