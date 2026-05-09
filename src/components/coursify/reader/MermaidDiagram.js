@@ -36,7 +36,7 @@ async function getMermaid() {
 let uid = 0;
 
 const btnCls =
-  'flex items-center justify-center rounded-lg bg-white/90 hover:bg-white text-[#1f644e] font-bold shadow-sm border border-[#d4e6db] transition-colors select-none';
+  'flex items-center justify-center rounded-lg bg-white/90 hover:bg-white text-[#1f644e] font-bold shadow-sm border border-[#d4e6db] transition-colors select-none cursor-pointer';
 
 function Controls({ onExpand }) {
   const { zoomIn, zoomOut, resetTransform } = useControls();
