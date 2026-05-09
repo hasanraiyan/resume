@@ -2,7 +2,7 @@ import { requireAdminAuth } from '@/lib/money-auth';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
-import CoursifySection from '@/models/CoursifySection';
+import CoursifyUnit from '@/models/CoursifyUnit';
 
 export async function POST(request, { params }) {
   const auth = await requireAdminAuth(request);
@@ -29,18 +29,20 @@ export async function POST(request, { params }) {
       estimatedDuration,
       sectionType,
       quiz,
+      blocks,
+      completionStatus,
     } = body;
     if (!title?.trim()) {
       return NextResponse.json({ success: false, error: 'Title is required' }, { status: 400 });
     }
 
     // Determine order: max existing + 1
-    const last = await CoursifySection.findOne({ courseId: id, deletedAt: null })
+    const last = await CoursifyUnit.findOne({ courseId: id, deletedAt: null })
       .sort({ order: -1 })
       .lean();
     const order = body.order !== undefined ? body.order : last ? last.order + 1 : 0;
 
-    const section = await CoursifySection.create({
+    const unit = await CoursifyUnit.create({
       courseId: id,
       title: title.trim(),
       sectionType: sectionType || 'lesson',
@@ -53,15 +55,24 @@ export async function POST(request, { params }) {
       summary: summary || '',
       learningGoals: Array.isArray(learningGoals) ? learningGoals : [],
       estimatedDuration: estimatedDuration || '',
+      blocks: blocks || [],
+      completionStatus: completionStatus || 'not_started',
     });
 
     return NextResponse.json({
       success: true,
-      section: {
-        ...section.toObject(),
-        _id: section._id.toString(),
+      unit: {
+        ...unit.toObject(),
+        _id: unit._id.toString(),
         courseId: id,
-        moduleId: section.moduleId?.toString() || null,
+        moduleId: unit.moduleId?.toString() || null,
+      },
+      // Backward compat
+      section: {
+        ...unit.toObject(),
+        _id: unit._id.toString(),
+        courseId: id,
+        moduleId: unit.moduleId?.toString() || null,
       },
     });
   } catch (error) {

@@ -461,7 +461,7 @@ export default function CourseDetailPage({ params }) {
           )}
           <span className="flex items-center gap-1 text-[10px] text-[#7c8e88] font-bold">
             <Layers className="w-3 h-3" />
-            {sections.length} section{sections.length !== 1 ? 's' : ''}
+            {sections.length} unit{sections.length !== 1 ? 's' : ''}
           </span>
           <button
             onClick={() => setShowMeta(false)}
@@ -634,7 +634,7 @@ export default function CourseDetailPage({ params }) {
                     rows={8}
                     value={planDraft.outline}
                     onChange={(e) => setPlanDraft((d) => ({ ...d, outline: e.target.value }))}
-                    placeholder="Free-form outline of modules and sections…"
+                    placeholder="Free-form outline of modules and units…"
                     className="w-full text-sm text-[#1e3a34] bg-[#f9f9f7] border border-[#e5e3d8] rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#1f644e] leading-relaxed font-mono"
                   />
                 ) : course.outline ? (

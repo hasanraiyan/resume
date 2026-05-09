@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
 import CoursifyModule from '@/models/CoursifyModule';
-import CoursifySection from '@/models/CoursifySection';
+import CoursifyUnit from '@/models/CoursifyUnit';
 
 export async function GET(request, { params }) {
   const auth = await requireAdminAuth(request);
@@ -17,13 +17,13 @@ export async function GET(request, { params }) {
       .sort({ order: 1 })
       .lean();
 
-    const sections = await CoursifySection.find({ courseId: id, deletedAt: null })
+    const units = await CoursifyUnit.find({ courseId: id, deletedAt: null })
       .select('moduleId')
       .lean();
 
     const countMap = {};
-    for (const s of sections) {
-      const mid = s.moduleId?.toString() || '__none__';
+    for (const u of units) {
+      const mid = u.moduleId?.toString() || '__none__';
       countMap[mid] = (countMap[mid] || 0) + 1;
     }
 
@@ -31,6 +31,7 @@ export async function GET(request, { params }) {
       ...m,
       _id: m._id.toString(),
       courseId: m.courseId.toString(),
+      unitCount: countMap[m._id.toString()] || 0,
       sectionCount: countMap[m._id.toString()] || 0,
     }));
 

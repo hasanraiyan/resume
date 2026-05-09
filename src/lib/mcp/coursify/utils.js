@@ -131,9 +131,9 @@ export function normalizeCourse(course) {
     estimatedDuration: course.estimatedDuration || '',
     tags: course.tags || [],
     thumbnail: course.thumbnail || null,
-    sectionCount: course.sectionCount ?? 0,
-    sectionsComplete: course.sectionsComplete ?? 0,
-    sectionsTotal: course.sectionsTotal ?? 0,
+    unitCount: course.unitCount ?? 0,
+    unitsComplete: course.unitsComplete ?? 0,
+    unitsTotal: course.unitsTotal ?? 0,
     // Planning fields
     targetAudience: course.targetAudience || '',
     learningObjectives: course.learningObjectives || [],
@@ -157,16 +157,16 @@ export function normalizeCourse(course) {
   };
 }
 
-export function normalizeSection(section) {
+export function normalizeUnit(unit) {
   return {
-    id: section._id?.toString?.() || section.id,
-    courseId: section.courseId?.toString?.() || section.courseId,
-    moduleId: section.moduleId?.toString?.() || null,
-    title: section.title,
-    sectionType: section.sectionType || 'lesson',
-    content: section.content || '',
+    id: unit._id?.toString?.() || unit.id,
+    courseId: unit.courseId?.toString?.() || unit.courseId,
+    moduleId: unit.moduleId?.toString?.() || null,
+    title: unit.title,
+    sectionType: unit.sectionType || 'lesson',
+    content: unit.content || '',
     quiz: {
-      questions: (section.quiz?.questions || []).map((q) => ({
+      questions: (unit.quiz?.questions || []).map((q) => ({
         id: q._id?.toString?.() || q.id,
         type: q.type,
         question: q.question,
@@ -176,14 +176,22 @@ export function normalizeSection(section) {
         points: q.points ?? 1,
       })),
     },
-    summary: section.summary || '',
-    learningGoals: section.learningGoals || [],
-    estimatedDuration: section.estimatedDuration || '',
-    order: section.order ?? 0,
-    status: section.status || 'draft',
-    resources: section.resources || [],
-    createdAt: section.createdAt,
-    updatedAt: section.updatedAt,
+    summary: unit.summary || '',
+    learningGoals: unit.learningGoals || [],
+    estimatedDuration: unit.estimatedDuration || '',
+    order: unit.order ?? 0,
+    status: unit.status || 'draft',
+    completionStatus: unit.completionStatus || 'not_started',
+    blocks: (unit.blocks || []).map((b) => ({
+      id: b._id?.toString?.() || b.id,
+      type: b.type,
+      video: b.video,
+      article: b.article,
+      quiz: b.quiz,
+    })),
+    resources: unit.resources || [],
+    createdAt: unit.createdAt,
+    updatedAt: unit.updatedAt,
   };
 }
 
@@ -196,7 +204,7 @@ export function normalizeModule(mod) {
     learningGoals: mod.learningGoals || [],
     order: mod.order ?? 0,
     status: mod.status || 'planned',
-    sectionCount: mod.sectionCount ?? 0,
+    unitCount: mod.unitCount ?? 0,
     createdAt: mod.createdAt,
     updatedAt: mod.updatedAt,
   };

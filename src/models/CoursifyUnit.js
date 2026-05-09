@@ -25,7 +25,37 @@ const QuizQuestionSchema = new mongoose.Schema(
   { _id: true }
 );
 
-const CoursifySectionSchema = new mongoose.Schema(
+const VideoBlockSchema = new mongoose.Schema(
+  {
+    videoUrl: { type: String, default: '' },
+    duration: { type: String, default: '' },
+    thumbnailUrl: { type: String, default: '' },
+  },
+  { _id: true }
+);
+
+const ArticleBlockSchema = new mongoose.Schema(
+  {
+    content: { type: String, default: '' },
+    attachments: { type: [ResourceSchema], default: [] },
+  },
+  { _id: true }
+);
+
+const BlockSchema = new mongoose.Schema(
+  {
+    type: { type: String, enum: ['video', 'article', 'quiz'], required: true },
+    video: VideoBlockSchema,
+    article: ArticleBlockSchema,
+    quiz: {
+      questions: { type: [QuizQuestionSchema], default: [] },
+      passingScore: { type: Number, default: 80 },
+    },
+  },
+  { _id: true }
+);
+
+const CoursifyUnitSchema = new mongoose.Schema(
   {
     courseId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -78,6 +108,16 @@ const CoursifySectionSchema = new mongoose.Schema(
       enum: ['planned', 'draft', 'needs_review', 'complete'],
       default: 'draft',
     },
+    completionStatus: {
+      type: String,
+      enum: ['not_started', 'in_progress', 'complete'],
+      default: 'not_started',
+      index: true,
+    },
+    blocks: {
+      type: [BlockSchema],
+      default: [],
+    },
     resources: {
       type: [ResourceSchema],
       default: [],
@@ -95,5 +135,4 @@ const CoursifySectionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.models.CoursifySection ||
-  mongoose.model('CoursifySection', CoursifySectionSchema);
+export default mongoose.models.CoursifyUnit || mongoose.model('CoursifyUnit', CoursifyUnitSchema);

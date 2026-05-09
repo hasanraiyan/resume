@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
 import CoursifyModule from '@/models/CoursifyModule';
-import CoursifySection from '@/models/CoursifySection';
+import CoursifyUnit from '@/models/CoursifyUnit';
 import { generateUniqueSlug } from '@/lib/coursify/slugify';
 
 export async function GET(request, { params }) {
@@ -19,20 +19,26 @@ export async function GET(request, { params }) {
       return NextResponse.json({ success: false, error: 'Course not found' }, { status: 404 });
     }
 
-    const [modules, sections] = await Promise.all([
+    const [modules, units] = await Promise.all([
       CoursifyModule.find({ courseId: id, deletedAt: null }).sort({ order: 1 }).lean(),
-      CoursifySection.find({ courseId: id, deletedAt: null }).sort({ order: 1 }).lean(),
+      CoursifyUnit.find({ courseId: id, deletedAt: null }).sort({ order: 1 }).lean(),
     ]);
 
     return NextResponse.json({
       success: true,
       course: { ...course, _id: course._id.toString() },
       modules: modules.map((m) => ({ ...m, _id: m._id.toString(), courseId: id })),
-      sections: sections.map((s) => ({
-        ...s,
-        _id: s._id.toString(),
-        courseId: s.courseId.toString(),
-        moduleId: s.moduleId?.toString() || null,
+      units: units.map((u) => ({
+        ...u,
+        _id: u._id.toString(),
+        courseId: u.courseId.toString(),
+        moduleId: u.moduleId?.toString() || null,
+      })),
+      sections: units.map((u) => ({
+        ...u,
+        _id: u._id.toString(),
+        courseId: u.courseId.toString(),
+        moduleId: u.moduleId?.toString() || null,
       })),
     });
   } catch (error) {
@@ -110,7 +116,7 @@ export async function DELETE(request, { params }) {
 
     const deletedAt = new Date();
     await Promise.all([
-      CoursifySection.updateMany({ courseId: id, deletedAt: null }, { $set: { deletedAt } }),
+      CoursifyUnit.updateMany({ courseId: id, deletedAt: null }, { $set: { deletedAt } }),
       CoursifyModule.updateMany({ courseId: id, deletedAt: null }, { $set: { deletedAt } }),
     ]);
 

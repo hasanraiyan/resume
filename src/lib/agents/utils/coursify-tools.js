@@ -2,7 +2,7 @@ import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
-import CoursifySection from '@/models/CoursifySection';
+import CoursifyUnit from '@/models/CoursifyUnit';
 import CoursifyModule from '@/models/CoursifyModule';
 
 // ─── Catalog tools (no courseId required) ────────────────────────────────────
@@ -107,8 +107,8 @@ export function createCoursifyTools(courseId) {
         .lean();
       if (!course) return 'Course not found.';
 
-      const [sections, modules] = await Promise.all([
-        CoursifySection.find({ courseId, deletedAt: null })
+      const [units, modules] = await Promise.all([
+        CoursifyUnit.find({ courseId, deletedAt: null })
           .sort({ order: 1 })
           .select('_id title summary learningGoals estimatedDuration moduleId order')
           .lean(),
@@ -129,13 +129,21 @@ export function createCoursifyTools(courseId) {
           estimatedDuration: course.estimatedDuration,
           tags: course.tags,
         },
-        sections: sections.map((s) => ({
-          id: s._id.toString(),
-          title: s.title,
-          module: s.moduleId ? moduleMap[s.moduleId.toString()] || null : null,
-          summary: s.summary,
-          learningGoals: s.learningGoals,
-          estimatedDuration: s.estimatedDuration,
+        units: units.map((u) => ({
+          id: u._id.toString(),
+          title: u.title,
+          module: u.moduleId ? moduleMap[u.moduleId.toString()] || null : null,
+          summary: u.summary,
+          learningGoals: u.learningGoals,
+          estimatedDuration: u.estimatedDuration,
+        })),
+        sections: units.map((u) => ({
+          id: u._id.toString(),
+          title: u.title,
+          module: u.moduleId ? moduleMap[u.moduleId.toString()] || null : null,
+          summary: u.summary,
+          learningGoals: u.learningGoals,
+          estimatedDuration: u.estimatedDuration,
         })),
       });
     },
@@ -147,40 +155,44 @@ export function createCoursifyTools(courseId) {
     }
   );
 
-  const getSectionContent = tool(
-    async ({ sectionId }) => {
+  const getUnitContent = tool(
+    async ({ unitId, sectionId }) => {
+      const id = unitId || sectionId;
       await dbConnect();
-      const section = await CoursifySection.findOne({
-        _id: sectionId,
+      const unit = await CoursifyUnit.findOne({
+        _id: id,
         courseId,
         deletedAt: null,
       }).lean();
-      if (!section) return 'Section not found.';
+      if (!unit) return 'Unit not found.';
 
       return JSON.stringify({
-        id: section._id.toString(),
-        title: section.title,
-        content: section.content,
-        summary: section.summary,
-        learningGoals: section.learningGoals,
-        estimatedDuration: section.estimatedDuration,
-        resources: section.resources,
+        id: unit._id.toString(),
+        title: unit.title,
+        content: unit.content,
+        blocks: unit.blocks,
+        summary: unit.summary,
+        learningGoals: unit.learningGoals,
+        estimatedDuration: unit.estimatedDuration,
+        resources: unit.resources,
+        completionStatus: unit.completionStatus,
       });
     },
     {
-      name: 'get_section_content',
+      name: 'get_unit_content',
       description:
-        'Get the full markdown content of a specific section in the current course by its ID. Use this when the user asks about a specific topic or needs deeper explanation.',
+        'Get the full content of a specific unit in the current course by its ID. Use this when the user asks about a specific topic or needs deeper explanation.',
       schema: z.object({
-        sectionId: z.string().describe('The section ID from get_course_outline'),
+        unitId: z.string().optional().describe('The unit ID from get_course_outline'),
+        sectionId: z.string().optional().describe('Legacy parameter name for unitId'),
       }),
     }
   );
 
-  const searchCourseSections = tool(
+  const searchCourseUnits = tool(
     async ({ query }) => {
       await dbConnect();
-      const sections = await CoursifySection.find({
+      const units = await CoursifyUnit.find({
         courseId,
         deletedAt: null,
         $or: [
@@ -190,32 +202,33 @@ export function createCoursifyTools(courseId) {
           { learningGoals: { $elemMatch: { $regex: query, $options: 'i' } } },
         ],
       })
-        .select('_id title summary learningGoals order')
+        .select('_id title summary learningGoals order completionStatus')
         .sort({ order: 1 })
         .lean();
 
-      if (!sections.length) return 'No sections found matching that query.';
+      if (!units.length) return 'No units found matching that query.';
 
       return JSON.stringify(
-        sections.map((s) => ({
-          id: s._id.toString(),
-          title: s.title,
-          summary: s.summary,
-          learningGoals: s.learningGoals,
+        units.map((u) => ({
+          id: u._id.toString(),
+          title: u.title,
+          summary: u.summary,
+          learningGoals: u.learningGoals,
+          completionStatus: u.completionStatus,
         }))
       );
     },
     {
-      name: 'search_course_sections',
+      name: 'search_course_units',
       description:
-        'Search sections within the current course by keyword or topic. Use this to find relevant sections when the user asks about a specific concept.',
+        'Search units within the current course by keyword or topic. Use this to find relevant units when the user asks about a specific concept.',
       schema: z.object({
         query: z.string().describe('Search keyword or phrase'),
       }),
     }
   );
 
-  return [getCourseOutline, getSectionContent, searchCourseSections];
+  return [getCourseOutline, getUnitContent, searchCourseUnits];
 }
 
 // Returns the full tool set based on context

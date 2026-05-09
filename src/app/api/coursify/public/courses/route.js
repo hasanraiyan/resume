@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
 import CoursifyModule from '@/models/CoursifyModule';
-import CoursifySection from '@/models/CoursifySection';
+import CoursifyUnit from '@/models/CoursifyUnit';
 import { generateUniqueSlug } from '@/lib/coursify/slugify';
 
 export async function GET() {
@@ -32,8 +32,8 @@ export async function GET() {
 
     const courseIds = courses.map((c) => c._id);
 
-    const [sections, modules] = await Promise.all([
-      CoursifySection.find({ courseId: { $in: courseIds }, deletedAt: null })
+    const [units, modules] = await Promise.all([
+      CoursifyUnit.find({ courseId: { $in: courseIds }, deletedAt: null })
         .select('courseId')
         .lean(),
       CoursifyModule.find({ courseId: { $in: courseIds }, deletedAt: null })
@@ -41,10 +41,10 @@ export async function GET() {
         .lean(),
     ]);
 
-    const sectionCountMap = {};
-    for (const s of sections) {
-      const id = s.courseId.toString();
-      sectionCountMap[id] = (sectionCountMap[id] || 0) + 1;
+    const unitCountMap = {};
+    for (const u of units) {
+      const id = u.courseId.toString();
+      unitCountMap[id] = (unitCountMap[id] || 0) + 1;
     }
 
     const moduleCountMap = {};
@@ -62,7 +62,7 @@ export async function GET() {
       estimatedDuration: c.estimatedDuration || '',
       tags: c.tags || [],
       thumbnail: c.thumbnail || null,
-      sectionCount: sectionCountMap[c._id.toString()] || 0,
+      unitCount: unitCountMap[c._id.toString()] || 0,
       moduleCount: moduleCountMap[c._id.toString()] || 0,
       createdAt: c.createdAt,
       updatedAt: c.updatedAt,

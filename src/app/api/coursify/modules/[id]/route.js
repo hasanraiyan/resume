@@ -2,7 +2,7 @@ import { requireAdminAuth } from '@/lib/money-auth';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyModule from '@/models/CoursifyModule';
-import CoursifySection from '@/models/CoursifySection';
+import CoursifyUnit from '@/models/CoursifyUnit';
 import CoursifyCourse from '@/models/CoursifyCourse';
 
 const ALLOWED_PATCH_KEYS = ['title', 'summary', 'learningGoals', 'order', 'status'];
@@ -62,8 +62,8 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ success: false, error: 'Module not found' }, { status: 404 });
     }
 
-    // Unassign sections from this module (don't delete them — they become Uncategorized)
-    await CoursifySection.updateMany(
+    // Unassign units from this module (don't delete them — they become Uncategorized)
+    await CoursifyUnit.updateMany(
       { moduleId: id, deletedAt: null },
       { $set: { moduleId: null }, $inc: { syncVersion: 1 } }
     );

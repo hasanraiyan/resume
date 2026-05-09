@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
 import CoursifyModule from '@/models/CoursifyModule';
-import CoursifySection from '@/models/CoursifySection';
+import CoursifyUnit from '@/models/CoursifyUnit';
 import mongoose from 'mongoose';
 
 function isObjectId(str) {
@@ -35,13 +35,13 @@ export async function GET(request, { params }) {
 
     const courseId = course._id.toString();
 
-    const [modules, sections] = await Promise.all([
+    const [modules, units] = await Promise.all([
       CoursifyModule.find({ courseId, deletedAt: null })
         .select('title summary order')
         .sort({ order: 1 })
         .lean(),
-      CoursifySection.find({ courseId, deletedAt: null })
-        .select('title sectionType content quiz resources order moduleId')
+      CoursifyUnit.find({ courseId, deletedAt: null })
+        .select('title sectionType content quiz resources order moduleId blocks completionStatus')
         .sort({ order: 1 })
         .lean(),
     ]);
@@ -54,11 +54,18 @@ export async function GET(request, { params }) {
         slug: course.slug || courseId,
       },
       modules: modules.map((m) => ({ ...m, _id: m._id.toString(), courseId })),
-      sections: sections.map((s) => ({
-        ...s,
-        _id: s._id.toString(),
+      units: units.map((u) => ({
+        ...u,
+        _id: u._id.toString(),
         courseId,
-        moduleId: s.moduleId?.toString() || null,
+        moduleId: u.moduleId?.toString() || null,
+      })),
+      // Keep sections for backward compatibility in the public API if needed, or just switch
+      sections: units.map((u) => ({
+        ...u,
+        _id: u._id.toString(),
+        courseId,
+        moduleId: u.moduleId?.toString() || null,
       })),
     });
   } catch (error) {

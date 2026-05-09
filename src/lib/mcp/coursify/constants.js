@@ -27,7 +27,7 @@ export const COURSE_AUTHORING_GUIDE = {
     '  2. Confirm the course with the user if there are multiple plausible drafts.',
     '  3. Call get_course({ id: courseId, includeContent: true, includeResearch: true, includeProgress: true }) — single call that returns EVERYTHING.',
     '  4. Read agentNotes from the course — this is your scratchpad from the previous session. It tells you exactly what was in progress and what to do next.',
-    '  5. Read the progress report to know which sections are complete vs. still needed.',
+    '  5. Read the progress report to know which units are complete vs. still needed.',
     '  6. Resume writing from where you left off. Save your current working state to agentNotes via upsert_course before finishing your turn.',
   ],
 
@@ -35,23 +35,23 @@ export const COURSE_AUTHORING_GUIDE = {
     'agentNotes is a free-text field on the course, returned inside get_course.',
     'Use it as your scratchpad to survive session interruptions. At the end of each turn, save your current working state:',
     '  • Which module you are currently writing',
-    '  • Which sections are done and which are planned next',
+    '  • Which units are done and which are planned next',
     '  • Any decisions made about structure, scope, or content',
     '  • Outstanding tasks for the next session',
-    'Example: "Completed sections: Intro, Core Concepts. Next: write Step-by-Step Walkthrough for moduleId abc123. Planned sections remaining: Examples, Practice, Recap."',
+    'Example: "Completed units: Intro, Core Concepts. Next: write Step-by-Step Walkthrough for moduleId abc123. Planned units remaining: Examples, Practice, Recap."',
     'Call upsert_course({ id: courseId, agentNotes: "..." }) to persist this.',
   ],
 
   workflow: [
     '0. SESSION RESUME — If the user says "continue my course" and you do not have a courseId in context, follow the sessionResumeWorkflow above.',
     '1. DISCOVERY — Call list_courses first to avoid duplicate topics. Decide whether to create a new course or update an existing draft. If updating, call get_course with all include flags.',
-    '2. PREP — Call get_authoring_guide (you already have it). Read the quality bar and section template before doing any work.',
+    '2. PREP — Call get_authoring_guide (you already have it). Read the quality bar and unit template before doing any work.',
     '3. RESEARCH — Gather information. Call manage_research to save all findings (up to 20 findings per call). Set authoringStatus to "researching" via upsert_course.',
-    '4. PLAN — Call upsert_course to define targetAudience, learningObjectives, prerequisites, outcome, and a Markdown outline. Save planned sections to agentNotes. Set authoringStatus to "planned".',
-    '5. STRUCTURE — Call analyze_outline(apply: false) to get suggestions. Review them, then call analyze_outline(apply: true) to create ALL modules and sections in one call.',
-    '6. WRITE — Use upsert_section(batch: []) to create or update sections in one call. Set authoringStatus to "drafting" when you begin. Save progress to agentNotes after each batch. For quiz sections, use the questions param.',
-    '7. REVIEW — Call get_course(includeProgress: true) to identify gaps. Use get_section(id) to read single section bodies for revision.',
-    '8. FINALIZE — When all sections are written, set authoringStatus to "reviewing" via upsert_course. Content is automatically marked reviewing when all sections are "complete".',
+    '4. PLAN — Call upsert_course to define targetAudience, learningObjectives, prerequisites, outcome, and a Markdown outline. Save planned units to agentNotes. Set authoringStatus to "planned".',
+    '5. STRUCTURE — Call analyze_outline(apply: false) to get suggestions. Review them, then call analyze_outline(apply: true) to create ALL modules and units in one call.',
+    '6. WRITE — Use upsert_unit(batch: []) to create or update units in one call. Use the blocks parameter for structured content (video, article, quiz). Set authoringStatus to "drafting" when you begin. Save progress to agentNotes after each batch.',
+    '7. REVIEW — Call get_course(includeProgress: true) to identify gaps. Use get_unit(id) to read single unit bodies for revision. Use mark_unit_complete to track progress.',
+    '8. FINALIZE — When all units are written, set authoringStatus to "reviewing" via upsert_course. Content is automatically marked reviewing when all units are "complete".',
     '9. PUBLISH — Set status: "published" via upsert_course only after the user explicitly asks to publish.',
   ],
 
@@ -61,20 +61,22 @@ export const COURSE_AUTHORING_GUIDE = {
     upsertCourse:
       'upsert_course({ id, ...fields }) — create/update metadata, plan, agentNotes, or status.',
     upsertModule: 'upsert_module({ id, ...fields }) — create/update module structure.',
-    upsertSection:
-      'upsert_section({ id, ...fields, batch, questions }) — create/update sections (single or batch) and quizzes.',
+    upsertUnit:
+      'upsert_unit({ id, ...fields, batch, blocks, questions }) — create/update units (single or batch) with block-based content.',
+    markComplete: 'mark_unit_complete({ id, completionStatus }) — update unit progress.',
     manageResearch: 'manage_research({ courseId, findings[] }) — save research findings.',
     analyzeOutline:
-      'analyze_outline({ courseId, apply }) — suggest or create modules/sections from outline.',
-    reorder: 'reorder_modules(...) or reorder_sections(...) — change display order.',
-    bulkDelete: 'delete_courses([ids]), delete_modules([ids]), or delete_sections([ids]).',
+      'analyze_outline({ courseId, apply }) — suggest or create modules/units from outline.',
+    reorder: 'reorder_modules(...) or reorder_units(...) — change display order.',
+    bulkDelete: 'delete_courses([ids]), delete_modules([ids]), or delete_units([ids]).',
   },
 
   courseShape: {
-    recommendedSections: '6-10 sections for a practical course; 3-5 for a short primer.',
-    recommendedModules: '2-4 modules that group sections into logical learning phases.',
-    sectionContent:
-      'Self-contained Markdown with explanations, examples, practice tasks, and a recap.',
+    hierarchy: 'Course → Module → Unit → Blocks',
+    recommendedUnits: '6-10 units for a practical course; 3-5 for a short primer.',
+    recommendedModules: '2-4 modules that group units into logical learning phases.',
+    unitContent:
+      'Self-contained Markdown (via blocks or content field) with explanations, examples, practice tasks, and a recap.',
     resources:
       'Include only useful, relevant resources. Use authoritative references when possible.',
   },
@@ -82,11 +84,11 @@ export const COURSE_AUTHORING_GUIDE = {
   instructionalDesignGuide: {
     quizPlacement: [
       'Standalone Quiz: Every module MUST end with a "Module Review" quiz.',
-      'Embedded Quiz: Lessons SHOULD include 2-4 knowledge-check questions at the end.',
+      'Embedded Quiz: Units SHOULD include knowledge-check blocks or questions at the end.',
     ],
-    sectionDepth: [
-      'A standard lesson should be 500-1200 words of high-signal Markdown.',
-      'Every lesson must include at least one practical Example and one Practice task.',
+    unitDepth: [
+      'A standard unit should be 500-1200 words of high-signal content.',
+      'Every unit must include at least one practical Example and one Practice task.',
     ],
   },
 
@@ -97,7 +99,7 @@ export const COURSE_AUTHORING_GUIDE = {
   },
 
   markdownTemplate: `## Learning Goals
-- What the learner will be able to do after this section
+- What the learner will be able to do after this unit
 
 ## Core Concepts
 Explain the ideas clearly and concretely.
@@ -116,13 +118,13 @@ Give the learner a small exercise or reflection task.
 Call out likely misunderstandings and how to avoid them.
 
 ## Recap
-Summarize the section in a few crisp bullets.`,
+Summarize the unit in a few crisp bullets.`,
 
   authoringStatusGuide: {
     idea: 'Initial spark — course not yet researched or planned.',
     researching: 'Actively gathering sources and understanding the topic.',
     planned: 'Plan saved: audience, objectives, modules, and outline are defined.',
-    drafting: 'Sections are being written one by one.',
+    drafting: 'Units are being written one by one.',
     reviewing: 'Draft complete — reviewing content quality.',
     ready: 'Content is complete and ready for publication.',
     published: 'Course is published and visible.',

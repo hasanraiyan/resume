@@ -17,16 +17,17 @@ import {
   dbUpdateModule,
   dbDeleteModules,
   dbReorderModules,
-  dbAddSection,
-  dbUpdateSection,
-  dbDeleteSections,
-  dbReorderSections,
-  dbGetSectionContent,
-  dbAddSections,
+  dbAddUnit,
+  dbUpdateUnit,
+  dbDeleteUnits,
+  dbReorderUnits,
+  dbGetUnitContent,
+  dbAddUnits,
   dbApplySuggestedModules,
   dbSearchCourses,
   dbGetResearchNotes,
   dbResearchFindings,
+  dbMarkUnitComplete,
 } from '@/lib/coursify/db-ops.js';
 
 // --- Shared Schemas ---
@@ -47,6 +48,29 @@ const resourceSchema = z.object({
   type: z.enum(['video', 'article', 'doc', 'other']),
   url: z.string(),
   title: z.string(),
+});
+
+const videoBlockSchema = z.object({
+  videoUrl: z.string(),
+  duration: z.string().optional(),
+  thumbnailUrl: z.string().optional(),
+});
+
+const articleBlockSchema = z.object({
+  content: z.string(),
+  attachments: z.array(resourceSchema).optional(),
+});
+
+const blockSchema = z.object({
+  type: z.enum(['video', 'article', 'quiz']),
+  video: videoBlockSchema.optional(),
+  article: articleBlockSchema.optional(),
+  quiz: z
+    .object({
+      questions: z.array(questionSchema),
+      passingScore: z.number().optional().default(80),
+    })
+    .optional(),
 });
 
 export function registerCoursifyTools(server) {
@@ -100,11 +124,14 @@ export function registerCoursifyTools(server) {
     {
       title: 'Get Course Details',
       description:
-        'Fetches course metadata. Can optionally include full section content, module structure, research notes, or a progress report.',
+        'Fetches course metadata. Can optionally include full unit content, module structure, research notes, or a progress report.',
       annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {
         id: z.string().describe('MongoDB _id of the course'),
-        includeContent: z.boolean().optional().describe('Return full Markdown for all sections.'),
+        includeContent: z
+          .boolean()
+          .optional()
+          .describe('Return full Markdown/blocks for all units.'),
         includeResearch: z.boolean().optional().describe('Return all research notes.'),
         includeProgress: z
           .boolean()
@@ -115,7 +142,7 @@ export function registerCoursifyTools(server) {
     },
     async ({ id, includeContent, includeResearch, includeProgress }) => {
       try {
-        const data = await dbGetCourse({ id, includeSectionContent: includeContent });
+        const data = await dbGetCourse({ id, includeUnitContent: includeContent });
         const res = { kind: 'course_detail', ...data };
         if (includeResearch) res.researchNotes = await dbGetResearchNotes({ courseId: id });
         if (includeProgress) {
@@ -128,8 +155,8 @@ export function registerCoursifyTools(server) {
             outline: !!course.outline,
           };
           const planComplete = Object.values(planFields).filter(Boolean).length;
-          const sections = modules.flatMap((m) => m.sections || []);
-          const incompleteSections = sections.filter((s) => s.status !== 'complete').length;
+          const units = modules.flatMap((m) => m.units || []);
+          const incompleteUnits = units.filter((u) => u.status !== 'complete').length;
 
           let nextAction = 'No action needed.';
           if (planComplete < 3)
@@ -138,8 +165,8 @@ export function registerCoursifyTools(server) {
           else if (modules.length === 0)
             nextAction =
               'Call analyze_outline(apply: true) or upsert_module to structure the course.';
-          else if (incompleteSections > 0)
-            nextAction = `Write the remaining ${incompleteSections} section(s) with upsert_section.`;
+          else if (incompleteUnits > 0)
+            nextAction = `Write the remaining ${incompleteUnits} unit(s) with upsert_unit.`;
           else
             nextAction =
               'Course looks complete. Call upsert_course(status: "published") when ready.';
@@ -150,7 +177,7 @@ export function registerCoursifyTools(server) {
               total: Object.keys(planFields).length,
               fields: planFields,
             },
-            sectionStats: { total: sections.length, incomplete: incompleteSections },
+            unitStats: { total: units.length, incomplete: incompleteUnits },
             authoringStatus: course.authoringStatus || 'idea',
             nextAction,
           };
@@ -336,23 +363,23 @@ export function registerCoursifyTools(server) {
     }
   );
 
-  // ─── Section Operations ────────────────────────────────────────────────────
+  // ─── Unit Operations ───────────────────────────────────────────────────────
 
   server.registerTool(
-    'get_section',
+    'get_unit',
     {
-      title: 'Get Section',
-      description: 'Fetch a single section including its full Markdown content and quiz.',
+      title: 'Get Unit',
+      description: 'Fetch a single unit including its content blocks and quiz.',
       annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: { id: z.string() },
-      _meta: toolMeta('Loading section...', 'Section loaded.'),
+      _meta: toolMeta('Loading unit...', 'Unit loaded.'),
     },
     async ({ id }) => {
       try {
-        const { section } = await dbGetSectionContent({ id });
-        return textResult(`Section "${section.title}" loaded.`, {
-          kind: 'section_detail',
-          section,
+        const { unit } = await dbGetUnitContent({ id });
+        return textResult(`Unit "${unit.title}" loaded.`, {
+          kind: 'unit_detail',
+          unit,
         });
       } catch (err) {
         return errorResult(err.message);
@@ -361,11 +388,11 @@ export function registerCoursifyTools(server) {
   );
 
   server.registerTool(
-    'upsert_section',
+    'upsert_unit',
     {
-      title: 'Create or Update Section',
+      title: 'Create or Update Unit',
       description:
-        'Add one or more sections, or update an existing one. Can also set quiz questions or resources.',
+        'Add one or more units, or update an existing one. Can also set blocks, quiz questions or resources.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         id: z.string().optional().describe('Update existing if provided.'),
@@ -373,8 +400,10 @@ export function registerCoursifyTools(server) {
         moduleId: z.string().optional(),
         title: z.string().optional(),
         sectionType: z.enum(['lesson', 'quiz']).optional(),
-        content: z.string().optional().describe('Full Markdown content for lesson sections.'),
+        content: z.string().optional().describe('Markdown content (legacy). Prefer blocks.'),
+        blocks: z.array(blockSchema).optional().describe('Structured content blocks.'),
         status: z.enum(['planned', 'draft', 'needs_review', 'complete']).optional(),
+        completionStatus: z.enum(['not_started', 'in_progress', 'complete']).optional(),
         order: z.number().int().optional(),
         summary: z.string().optional(),
         learningGoals: z.array(z.string()).optional(),
@@ -391,6 +420,7 @@ export function registerCoursifyTools(server) {
               moduleId: z.string().optional(),
               sectionType: z.enum(['lesson', 'quiz']).optional(),
               content: z.string().optional(),
+              blocks: z.array(blockSchema).optional(),
               order: z.number().int().optional(),
               status: z.enum(['planned', 'draft', 'needs_review', 'complete']).optional(),
               summary: z.string().optional(),
@@ -400,22 +430,22 @@ export function registerCoursifyTools(server) {
             })
           )
           .optional()
-          .describe('Create multiple sections in one call.'),
+          .describe('Create multiple units in one call.'),
       },
-      _meta: toolMeta('Saving section(s)...', 'Section(s) saved.'),
+      _meta: toolMeta('Saving unit(s)...', 'Unit(s) saved.'),
     },
     async ({ id, courseId, batch, ...fields }) => {
       try {
         if (batch) {
-          const { sections } = await dbAddSections({ courseId, sections: batch });
-          return textResult(`Added ${sections.length} sections.`, { success: true, sections });
+          const { units } = await dbAddUnits({ courseId, units: batch });
+          return textResult(`Added ${units.length} units.`, { success: true, units });
         }
         if (id) {
-          const { section } = await dbUpdateSection({ id, ...fields });
-          return textResult(`Updated section "${section.title}".`, { success: true, section });
+          const { unit } = await dbUpdateUnit({ id, ...fields });
+          return textResult(`Updated unit "${unit.title}".`, { success: true, unit });
         }
-        const { section } = await dbAddSection({ courseId, ...fields });
-        return textResult(`Added section "${section.title}".`, { success: true, section });
+        const { unit } = await dbAddUnit({ courseId, ...fields });
+        return textResult(`Added unit "${unit.title}".`, { success: true, unit });
       } catch (err) {
         return errorResult(err.message);
       }
@@ -423,20 +453,45 @@ export function registerCoursifyTools(server) {
   );
 
   server.registerTool(
-    'delete_sections',
+    'mark_unit_complete',
     {
-      title: 'Delete Section(s)',
-      description: 'Soft-delete one or more sections.',
+      title: 'Mark Unit Complete',
+      description: 'Update the completion status of a unit.',
+      annotations: MUTATION_ANNOTATIONS,
+      inputSchema: {
+        id: z.string().describe('Unit ID'),
+        completionStatus: z.enum(['not_started', 'in_progress', 'complete']),
+      },
+      _meta: toolMeta('Updating status...', 'Status updated.'),
+    },
+    async ({ id, completionStatus }) => {
+      try {
+        const { unit } = await dbMarkUnitComplete({ id, completionStatus });
+        return textResult(`Unit "${unit.title}" status updated to ${completionStatus}.`, {
+          success: true,
+          unit,
+        });
+      } catch (err) {
+        return errorResult(err.message);
+      }
+    }
+  );
+
+  server.registerTool(
+    'delete_units',
+    {
+      title: 'Delete Unit(s)',
+      description: 'Soft-delete one or more units.',
       annotations: DESTRUCTIVE_ANNOTATIONS,
       inputSchema: {
-        ids: z.array(z.string()).describe('List of section IDs to delete.'),
+        ids: z.array(z.string()).describe('List of unit IDs to delete.'),
       },
-      _meta: toolMeta('Deleting sections...', 'Sections deleted.'),
+      _meta: toolMeta('Deleting units...', 'Units deleted.'),
     },
     async ({ ids }) => {
       try {
-        const { deletedCount } = await dbDeleteSections({ ids });
-        return textResult(`Deleted ${deletedCount} sections.`, { success: true, deletedCount });
+        const { deletedCount } = await dbDeleteUnits({ ids });
+        return textResult(`Deleted ${deletedCount} units.`, { success: true, deletedCount });
       } catch (err) {
         return errorResult(err.message);
       }
@@ -444,22 +499,22 @@ export function registerCoursifyTools(server) {
   );
 
   server.registerTool(
-    'reorder_sections',
+    'reorder_units',
     {
-      title: 'Reorder Sections',
-      description: 'Set the order of sections within a course or module.',
+      title: 'Reorder Units',
+      description: 'Set the order of units within a course or module.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         courseId: z.string(),
-        sectionIds: z.array(z.string()),
+        unitIds: z.array(z.string()),
         moduleId: z.string().optional().describe('Reorder within this module only.'),
       },
       _meta: toolMeta('Reordering...', 'Reordered.'),
     },
-    async ({ courseId, sectionIds, moduleId }) => {
+    async ({ courseId, unitIds, moduleId }) => {
       try {
-        await dbReorderSections({ courseId, sectionIds, moduleId });
-        return textResult(`Reordered ${sectionIds.length} sections.`, { success: true });
+        await dbReorderUnits({ courseId, unitIds, moduleId });
+        return textResult(`Reordered ${unitIds.length} units.`, { success: true });
       } catch (err) {
         return errorResult(err.message);
       }
@@ -505,16 +560,14 @@ export function registerCoursifyTools(server) {
     {
       title: 'Analyze or Apply Outline',
       description:
-        'Analyze a course outline for module suggestions, or apply them to create modules and sections automatically.',
+        'Analyze a course outline for module suggestions, or apply them to create modules and units automatically.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         courseId: z.string(),
         apply: z
           .boolean()
           .optional()
-          .describe(
-            'If true, creates the modules and sections. If false, only returns suggestions.'
-          ),
+          .describe('If true, creates the modules and units. If false, only returns suggestions.'),
       },
       _meta: toolMeta('Processing outline...', 'Outline processed.'),
     },
@@ -533,9 +586,7 @@ export function registerCoursifyTools(server) {
 
         const suggestions = parseOutlineToModules(course.outline);
         if (suggestions.length === 0)
-          return errorResult(
-            'Could not parse section titles. Use ## or ### headers for section names.'
-          );
+          return errorResult('Could not parse unit titles. Use ## or ### headers for unit names.');
 
         return textResult(`Suggested ${suggestions.length} modules.`, {
           kind: 'module_suggestions',

@@ -2,7 +2,7 @@ import { requireAdminAuth } from '@/lib/money-auth';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
-import CoursifySection from '@/models/CoursifySection';
+import CoursifyUnit from '@/models/CoursifyUnit';
 
 export async function GET(request) {
   const auth = await requireAdminAuth(request);
@@ -14,23 +14,24 @@ export async function GET(request) {
     const courses = await CoursifyCourse.find({ deletedAt: null }).sort({ updatedAt: -1 }).lean();
 
     const courseIds = courses.map((c) => c._id);
-    const sections = await CoursifySection.find({
+    const units = await CoursifyUnit.find({
       courseId: { $in: courseIds },
       deletedAt: null,
     })
       .select('courseId order')
       .lean();
 
-    const sectionCountMap = {};
-    for (const s of sections) {
-      const id = s.courseId.toString();
-      sectionCountMap[id] = (sectionCountMap[id] || 0) + 1;
+    const unitCountMap = {};
+    for (const u of units) {
+      const id = u.courseId.toString();
+      unitCountMap[id] = (unitCountMap[id] || 0) + 1;
     }
 
     const result = courses.map((c) => ({
       ...c,
       _id: c._id.toString(),
-      sectionCount: sectionCountMap[c._id.toString()] || 0,
+      unitCount: unitCountMap[c._id.toString()] || 0,
+      sectionCount: unitCountMap[c._id.toString()] || 0,
       authoringStatus: c.authoringStatus || 'idea',
     }));
 

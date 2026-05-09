@@ -1,7 +1,7 @@
 import { requireAdminAuth } from '@/lib/money-auth';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
-import CoursifySection from '@/models/CoursifySection';
+import CoursifyUnit from '@/models/CoursifyUnit';
 
 export async function PATCH(request, { params }) {
   const auth = await requireAdminAuth(request);
@@ -24,29 +24,38 @@ export async function PATCH(request, { params }) {
       'estimatedDuration',
       'sectionType',
       'quiz',
+      'blocks',
+      'completionStatus',
     ];
     const patch = {};
     for (const key of allowed) {
       if (body[key] !== undefined) patch[key] = body[key];
     }
 
-    const section = await CoursifySection.findOneAndUpdate(
+    const unit = await CoursifyUnit.findOneAndUpdate(
       { _id: id, deletedAt: null },
       { $set: patch, $inc: { syncVersion: 1 } },
       { new: true }
     ).lean();
 
-    if (!section) {
-      return NextResponse.json({ success: false, error: 'Section not found' }, { status: 404 });
+    if (!unit) {
+      return NextResponse.json({ success: false, error: 'Unit not found' }, { status: 404 });
     }
 
     return NextResponse.json({
       success: true,
+      unit: {
+        ...unit,
+        _id: unit._id.toString(),
+        courseId: unit.courseId.toString(),
+        moduleId: unit.moduleId?.toString() || null,
+      },
+      // Backward compat
       section: {
-        ...section,
-        _id: section._id.toString(),
-        courseId: section.courseId.toString(),
-        moduleId: section.moduleId?.toString() || null,
+        ...unit,
+        _id: unit._id.toString(),
+        courseId: unit.courseId.toString(),
+        moduleId: unit.moduleId?.toString() || null,
       },
     });
   } catch (error) {
@@ -62,13 +71,13 @@ export async function DELETE(request, { params }) {
     await dbConnect();
     const { id } = await params;
 
-    const section = await CoursifySection.findOneAndUpdate(
+    const unit = await CoursifyUnit.findOneAndUpdate(
       { _id: id, deletedAt: null },
       { $set: { deletedAt: new Date() } }
     ).lean();
 
-    if (!section) {
-      return NextResponse.json({ success: false, error: 'Section not found' }, { status: 404 });
+    if (!unit) {
+      return NextResponse.json({ success: false, error: 'Unit not found' }, { status: 404 });
     }
 
     return NextResponse.json({ success: true });

@@ -1,7 +1,7 @@
 import { requireAdminAuth } from '@/lib/money-auth';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
-import CoursifySection from '@/models/CoursifySection';
+import CoursifyUnit from '@/models/CoursifyUnit';
 
 export async function POST(request, { params }) {
   const auth = await requireAdminAuth(request);
@@ -10,19 +10,20 @@ export async function POST(request, { params }) {
   try {
     await dbConnect();
     const { id } = await params;
-    const { sectionIds } = await request.json();
+    const { unitIds, sectionIds } = await request.json();
+    const ids = unitIds || sectionIds;
 
-    if (!Array.isArray(sectionIds)) {
+    if (!Array.isArray(ids)) {
       return NextResponse.json(
-        { success: false, error: 'sectionIds must be an array' },
+        { success: false, error: 'unitIds must be an array' },
         { status: 400 }
       );
     }
 
     await Promise.all(
-      sectionIds.map((sectionId, index) =>
-        CoursifySection.updateOne(
-          { _id: sectionId, courseId: id, deletedAt: null },
+      ids.map((unitId, index) =>
+        CoursifyUnit.updateOne(
+          { _id: unitId, courseId: id, deletedAt: null },
           { $set: { order: index } }
         )
       )
