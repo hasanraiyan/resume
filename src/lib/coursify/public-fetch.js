@@ -46,39 +46,43 @@ export async function fetchPublicCourse(slugOrId) {
   const courseId = course._id.toString();
 
   const [modules, sections] = await Promise.all([
-    CoursifyModule.find({ courseId, deletedAt: null })
+    CoursifyModule.find({ courseId, status: 'complete', deletedAt: null })
       .select('title summary order')
       .sort({ order: 1 })
       .lean(),
-    CoursifySection.find({ courseId, deletedAt: null })
+    CoursifySection.find({ courseId, status: 'complete', deletedAt: null })
       .select('title blocks resources order moduleId summary learningGoals estimatedDuration')
       .sort({ order: 1 })
       .lean(),
   ]);
 
+  const completeModuleIds = new Set(modules.map((m) => m._id.toString()));
+
   return {
     course: ser(course),
     modules: modules.map((m) => ser(m)),
-    sections: sections.map((s) => {
-      const flat = ser({ ...s, courseId, moduleId: s.moduleId?.toString() || null });
-      if (flat.blocks) {
-        flat.blocks = flat.blocks.map((b) => {
-          const flatB = ser(b);
-          if (flatB.type === 'QuizBlock' && flatB.quiz?.questions?.length) {
-            flatB.quiz = {
-              ...flatB.quiz,
-              questions: flatB.quiz.questions.map((q) => {
-                const safeQ = ser(q);
-                delete safeQ.correctAnswer;
-                delete safeQ.explanation;
-                return safeQ;
-              }),
-            };
-          }
-          return flatB;
-        });
-      }
-      return flat;
-    }),
+    sections: sections
+      .filter((s) => !s.moduleId || completeModuleIds.has(s.moduleId.toString()))
+      .map((s) => {
+        const flat = ser({ ...s, courseId, moduleId: s.moduleId?.toString() || null });
+        if (flat.blocks) {
+          flat.blocks = flat.blocks.map((b) => {
+            const flatB = ser(b);
+            if (flatB.type === 'QuizBlock' && flatB.quiz?.questions?.length) {
+              flatB.quiz = {
+                ...flatB.quiz,
+                questions: flatB.quiz.questions.map((q) => {
+                  const safeQ = ser(q);
+                  delete safeQ.correctAnswer;
+                  delete safeQ.explanation;
+                  return safeQ;
+                }),
+              };
+            }
+            return flatB;
+          });
+        }
+        return flat;
+      }),
   };
 }

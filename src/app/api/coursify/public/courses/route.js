@@ -33,16 +33,19 @@ export async function GET() {
     const courseIds = courses.map((c) => c._id);
 
     const [sections, modules] = await Promise.all([
-      CoursifySection.find({ courseId: { $in: courseIds }, deletedAt: null })
-        .select('courseId')
+      CoursifySection.find({ courseId: { $in: courseIds }, status: 'complete', deletedAt: null })
+        .select('courseId moduleId')
         .lean(),
-      CoursifyModule.find({ courseId: { $in: courseIds }, deletedAt: null })
+      CoursifyModule.find({ courseId: { $in: courseIds }, status: 'complete', deletedAt: null })
         .select('courseId')
         .lean(),
     ]);
 
+    const completeModuleIds = new Set(modules.map((m) => m._id.toString()));
+
     const sectionCountMap = {};
     for (const s of sections) {
+      if (s.moduleId && !completeModuleIds.has(s.moduleId.toString())) continue;
       const id = s.courseId.toString();
       sectionCountMap[id] = (sectionCountMap[id] || 0) + 1;
     }

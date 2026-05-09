@@ -16,7 +16,7 @@ const searchCourses = tool(
       filter.$or = [
         { title: { $regex: query, $options: 'i' } },
         { description: { $regex: query, $options: 'i' } },
-        { tags: { $elemMatch: { $regex: query, $options: 'i' } } },
+        { tags: { $in: [new RegExp(query, 'i')] } },
       ];
     }
 
@@ -105,21 +105,27 @@ export function createCoursifyTools(courseId) {
       })
         .select('title description difficulty estimatedDuration tags')
         .lean();
-      if (!course) return 'Course not found.';
+      if (!course) return 'Course not found or not published.';
 
       const [sections, modules] = await Promise.all([
-        CoursifySection.find({ courseId, deletedAt: null })
+        CoursifySection.find({ courseId, status: 'complete', deletedAt: null })
           .sort({ order: 1 })
           .select('_id title summary learningGoals estimatedDuration moduleId order')
           .lean(),
-        CoursifyModule.find({ courseId, deletedAt: null })
+        CoursifyModule.find({ courseId, status: 'complete', deletedAt: null })
           .sort({ order: 1 })
           .select('_id title summary')
           .lean(),
       ]);
 
+      const completeModuleIds = new Set(modules.map((m) => m._id.toString()));
       const moduleMap = {};
       modules.forEach((m) => (moduleMap[m._id.toString()] = m.title));
+
+      // Filter sections: must be complete AND if they have a module, the module must be complete
+      const filteredSections = sections.filter(
+        (s) => !s.moduleId || completeModuleIds.has(s.moduleId.toString())
+      );
 
       return JSON.stringify({
         course: {
@@ -129,7 +135,7 @@ export function createCoursifyTools(courseId) {
           estimatedDuration: course.estimatedDuration,
           tags: course.tags,
         },
-        sections: sections.map((s) => ({
+        sections: filteredSections.map((s) => ({
           id: s._id.toString(),
           title: s.title,
           module: s.moduleId ? moduleMap[s.moduleId.toString()] || null : null,
@@ -150,12 +156,35 @@ export function createCoursifyTools(courseId) {
   const getSectionContent = tool(
     async ({ sectionId }) => {
       await dbConnect();
+      // First check if course is published
+      const course = await CoursifyCourse.findOne({
+        _id: courseId,
+        deletedAt: null,
+        status: 'published',
+      })
+        .select('_id')
+        .lean();
+      if (!course) return 'Course not found or not published.';
+
       const section = await CoursifySection.findOne({
         _id: sectionId,
         courseId,
+        status: 'complete',
         deletedAt: null,
       }).lean();
-      if (!section) return 'Section not found.';
+      if (!section) return 'Section not found or not complete.';
+
+      // If it belongs to a module, that module must be complete
+      if (section.moduleId) {
+        const mod = await CoursifyModule.findOne({
+          _id: section.moduleId,
+          status: 'complete',
+          deletedAt: null,
+        })
+          .select('_id')
+          .lean();
+        if (!mod) return 'Section content not available (parent module not complete).';
+      }
 
       return JSON.stringify({
         id: section._id.toString(),
@@ -180,8 +209,29 @@ export function createCoursifyTools(courseId) {
   const searchCourseSections = tool(
     async ({ query }) => {
       await dbConnect();
+      // Only search published courses
+      const course = await CoursifyCourse.findOne({
+        _id: courseId,
+        deletedAt: null,
+        status: 'published',
+      })
+        .select('_id')
+        .lean();
+      if (!course) return 'Course not found or not published.';
+
+      // Get complete modules first for hierarchical filtering
+      const modules = await CoursifyModule.find({
+        courseId,
+        status: 'complete',
+        deletedAt: null,
+      })
+        .select('_id')
+        .lean();
+      const completeModuleIds = new Set(modules.map((m) => m._id.toString()));
+
       const sections = await CoursifySection.find({
         courseId,
+        status: 'complete',
         deletedAt: null,
         $or: [
           { title: { $regex: query, $options: 'i' } },
@@ -190,14 +240,19 @@ export function createCoursifyTools(courseId) {
           { learningGoals: { $elemMatch: { $regex: query, $options: 'i' } } },
         ],
       })
-        .select('_id title summary learningGoals order')
+        .select('_id title summary learningGoals order moduleId')
         .sort({ order: 1 })
         .lean();
 
-      if (!sections.length) return 'No sections found matching that query.';
+      // Hierarchical filter
+      const filteredSections = sections.filter(
+        (s) => !s.moduleId || completeModuleIds.has(s.moduleId.toString())
+      );
+
+      if (!filteredSections.length) return 'No sections found matching that query.';
 
       return JSON.stringify(
-        sections.map((s) => ({
+        filteredSections.map((s) => ({
           id: s._id.toString(),
           title: s.title,
           summary: s.summary,

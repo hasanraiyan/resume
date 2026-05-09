@@ -36,15 +36,20 @@ export async function GET(request, { params }) {
     const courseId = course._id.toString();
 
     const [modules, sections] = await Promise.all([
-      CoursifyModule.find({ courseId, deletedAt: null })
+      CoursifyModule.find({ courseId, status: 'complete', deletedAt: null })
         .select('title summary order')
         .sort({ order: 1 })
         .lean(),
-      CoursifySection.find({ courseId, deletedAt: null })
+      CoursifySection.find({ courseId, status: 'complete', deletedAt: null })
         .select('title blocks resources order moduleId summary learningGoals estimatedDuration')
         .sort({ order: 1 })
         .lean(),
     ]);
+
+    const completeModuleIds = new Set(modules.map((m) => m._id.toString()));
+    const filteredSections = sections.filter(
+      (s) => !s.moduleId || completeModuleIds.has(s.moduleId.toString())
+    );
 
     return NextResponse.json({
       success: true,
@@ -54,7 +59,7 @@ export async function GET(request, { params }) {
         slug: course.slug || courseId,
       },
       modules: modules.map((m) => ({ ...m, _id: m._id.toString(), courseId })),
-      sections: sections.map((s) => ({
+      sections: filteredSections.map((s) => ({
         ...s,
         _id: s._id.toString(),
         courseId,

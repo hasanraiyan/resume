@@ -6,12 +6,14 @@ import { X, Save } from 'lucide-react';
 export default function EditModuleModal({ module, onSave, onClose }) {
   const [title, setTitle] = useState(module?.title || '');
   const [summary, setSummary] = useState(module?.summary || '');
+  const [status, setStatus] = useState(module?.status || 'planned');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (module) {
       setTitle(module.title || '');
       setSummary(module.summary || '');
+      setStatus(module.status || 'planned');
     }
   }, [module]);
 
@@ -21,6 +23,7 @@ export default function EditModuleModal({ module, onSave, onClose }) {
     await onSave({
       title: title.trim(),
       summary: summary.trim(),
+      status,
     });
     setLoading(false);
     onClose();
@@ -53,21 +56,40 @@ export default function EditModuleModal({ module, onSave, onClose }) {
 
           {/* Body */}
           <div className="p-5 space-y-4">
-            <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88] mb-1.5 block">
-                Module Title
-              </label>
-              <input
-                autoFocus
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Introduction to React"
-                className="w-full px-4 py-2.5 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-sm font-bold text-[#1e3a34] outline-none focus:border-[#1f644e] focus:ring-2 focus:ring-[#1f644e]/10"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88] mb-1.5 block px-1">
+                  Module Title
+                </label>
+                <input
+                  autoFocus
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Introduction to React"
+                  className="w-full px-4 py-2.5 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-sm font-bold text-[#1e3a34] outline-none focus:border-[#1f644e] focus:ring-2 focus:ring-[#1f644e]/10"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88] mb-1.5 block px-1">
+                  Status
+                </label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-sm font-bold text-[#1e3a34] outline-none focus:border-[#1f644e] capitalize"
+                >
+                  {['planned', 'drafting', 'complete', 'needs_review'].map((o) => (
+                    <option key={o} value={o}>
+                      {o.replace('_', ' ')}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88] mb-1.5 block">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88] mb-1.5 block px-1">
                 Summary (Optional)
               </label>
               <textarea

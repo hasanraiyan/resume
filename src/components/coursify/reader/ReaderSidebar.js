@@ -31,6 +31,7 @@ export function ReaderSidebar({
       )}
 
       <aside
+        aria-label="Course Content Sidebar"
         className={`fixed lg:static inset-y-0 left-0 z-40 w-72 shrink-0 bg-white border-r border-[#e5e3d8] flex flex-col transition-transform duration-300 lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
@@ -40,6 +41,7 @@ export function ReaderSidebar({
           <span className="font-bold text-sm text-[#1e3a34]">Sections</span>
           <button
             onClick={onClose}
+            aria-label="Close sidebar"
             className="p-1.5 hover:bg-[#f0f5f2] rounded-lg transition-colors"
           >
             <X className="w-4 h-4 text-[#7c8e88]" />
@@ -54,7 +56,7 @@ export function ReaderSidebar({
         </div>
 
         {/* Section list */}
-        <div className="flex-1 overflow-y-auto p-2">
+        <nav className="flex-1 overflow-y-auto p-2" aria-label="Course outline">
           {/* Overview button */}
           <button
             onClick={onShowOverview}
@@ -82,6 +84,8 @@ export function ReaderSidebar({
                   >
                     <button
                       onClick={() => onToggleModule(mod._id)}
+                      aria-expanded={isExpanded}
+                      aria-controls={`module-sections-${mod._id}`}
                       className="w-full flex items-center gap-2 px-2 py-2 mt-1 hover:bg-[#f0f5f2] rounded-lg transition-colors group"
                     >
                       <span className="w-5 h-5 rounded-md bg-[#1f644e]/10 text-[#1f644e] text-[10px] font-bold flex items-center justify-center shrink-0">
@@ -98,6 +102,7 @@ export function ReaderSidebar({
                                 e.stopPropagation();
                                 onEditModule(mod);
                               }}
+                              aria-label="Edit Module"
                               className="p-1 rounded hover:bg-white/50 text-[#7c8e88] hover:text-[#1f644e] transition-colors"
                               title="Edit Module"
                             >
@@ -108,6 +113,7 @@ export function ReaderSidebar({
                                 e.stopPropagation();
                                 onDeleteModule(mod._id);
                               }}
+                              aria-label="Delete Module"
                               className="p-1 rounded hover:bg-white/50 text-[#7c8e88] hover:text-[#c94c4c] transition-colors"
                               title="Delete Module"
                             >
@@ -125,7 +131,11 @@ export function ReaderSidebar({
                     </button>
 
                     {isExpanded && (
-                      <div className="space-y-0.5 mt-0.5">
+                      <div
+                        id={`module-sections-${mod._id}`}
+                        className="space-y-0.5 mt-0.5"
+                        role="group"
+                      >
                         {modSections.map((section) => (
                           <SidebarSectionBtn
                             key={section._id}
@@ -204,7 +214,7 @@ export function ReaderSidebar({
               )}
             </>
           )}
-        </div>
+        </nav>
 
         {/* Footer actions (e.g. Add Module) */}
         {editMode && (

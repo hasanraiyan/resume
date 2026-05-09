@@ -1,5 +1,6 @@
 import { requireAdminAuth } from '@/lib/money-auth';
 import { NextResponse } from 'next/server';
+import { dbUpdateCourse } from '@/lib/coursify/db-ops';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
 
@@ -17,15 +18,11 @@ export async function POST(request, { params }) {
     }
 
     const newStatus = course.status === 'published' ? 'draft' : 'published';
-    const updated = await CoursifyCourse.findByIdAndUpdate(
-      id,
-      { $set: { status: newStatus }, $inc: { syncVersion: 1 } },
-      { new: true }
-    ).lean();
+    const { course: updated } = await dbUpdateCourse({ id, status: newStatus });
 
     return NextResponse.json({
       success: true,
-      course: { ...updated, _id: updated._id.toString() },
+      course: updated,
     });
   } catch (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
