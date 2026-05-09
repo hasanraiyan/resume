@@ -684,14 +684,14 @@ export async function dbDeleteSections({ ids }) {
 
 export async function dbDeleteModules({ ids }) {
   await dbConnect();
+  const deletedAt = new Date();
   const result = await CoursifyModule.updateMany(
     { _id: { $in: ids }, deletedAt: null },
-    { $set: { deletedAt: new Date() }, $inc: { syncVersion: 1 } }
+    { $set: { deletedAt }, $inc: { syncVersion: 1 } }
   );
-  // Also unassign sections
   await CoursifySection.updateMany(
     { moduleId: { $in: ids }, deletedAt: null },
-    { $set: { moduleId: null }, $inc: { syncVersion: 1 } }
+    { $set: { deletedAt }, $inc: { syncVersion: 1 } }
   );
   return { deletedCount: result.modifiedCount };
 }
