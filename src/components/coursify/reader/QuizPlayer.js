@@ -237,28 +237,9 @@ export const QuizPlayer = memo(function QuizPlayer({ questions }) {
         </div>
       )}
 
-      {/* Progress bar + counter */}
-      <div className="mb-6 space-y-2">
-        <div className="flex justify-between text-xs text-[#7c8e88] font-medium">
-          <span>
-            {current + 1} of {questions.length}
-          </span>
-          {!submitted && (
-            <span>
-              {Object.keys(answers).filter((k) => hasAnswer(questions[k], answers[k])).length}{' '}
-              answered
-            </span>
-          )}
-        </div>
-        <div className="h-1.5 bg-[#e5e3d8] rounded-full overflow-hidden">
-          <div
-            className="h-full bg-[#1f644e] rounded-full transition-all duration-300"
-            style={{ width: `${((current + 1) / questions.length) * 100}%` }}
-          />
-        </div>
-
-        {/* Dot navigator */}
-        <div className="flex gap-1.5 flex-wrap pt-1">
+      {/* Dot navigator */}
+      <div className="mb-6">
+        <div className="flex gap-1.5 flex-wrap">
           {questions.map((q, i) => {
             const ans = answers[i];
             const done = hasAnswer(q, ans);
