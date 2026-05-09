@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Clock, Layers, Check, ChevronRight, ScrollText, Save } from 'lucide-react';
 import { QuizIcon } from './icons';
 
@@ -57,8 +58,14 @@ export function CourseOverview({
     <div>
       {/* Thumbnail */}
       {course.thumbnail && !hideThumbnail && (
-        <div className="w-full aspect-video rounded-2xl overflow-hidden mb-8 border border-[#e5e3d8] shadow-sm">
-          <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
+        <div className="w-full aspect-video rounded-2xl overflow-hidden mb-8 border border-[#e5e3d8] shadow-sm relative">
+          <Image
+            src={course.thumbnail}
+            alt={course.title}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="w-full h-full object-cover"
+          />
         </div>
       )}
 
