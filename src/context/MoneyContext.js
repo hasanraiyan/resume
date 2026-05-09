@@ -1,6 +1,14 @@
 'use client';
 
-import { createContext, useContext, useReducer, useEffect, useCallback, useRef } from 'react';
+import {
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from 'react';
 
 const MoneyContext = createContext(null);
 
@@ -586,11 +594,124 @@ export function MoneyProvider({ children }) {
   const accountsWithBalance = state.accounts;
   const totalBalance = state.stats.totalAccountBalance || 0;
 
+  // --- Gamification Logic ---
+  const savingsStreak = useMemo(() => {
+    if (state.transactions.length === 0) return 0;
+
+    // Get transactions for the last 30 days
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.setDate(now.getDate() - 30));
+    const recentTxns = state.transactions.filter((t) => new Date(t.date) >= thirtyDaysAgo);
+
+    // Calculate daily limit based on total monthly budget
+    const totalMonthlyBudget = state.budgets
+      .filter((b) => b.period === 'monthly')
+      .reduce((sum, b) => sum + b.amount, 0);
+    const dailyLimit = totalMonthlyBudget / 30;
+
+    if (dailyLimit <= 0) return 0;
+
+    // Group expenses by date
+    const dailyExpenses = recentTxns
+      .filter((t) => t.type === 'expense')
+      .reduce((acc, t) => {
+        const dateStr = new Date(t.date).toISOString().split('T')[0];
+        acc[dateStr] = (acc[dateStr] || 0) + t.amount;
+        return acc;
+      }, {});
+
+    let streak = 0;
+    const checkDate = new Date();
+    checkDate.setHours(0, 0, 0, 0);
+
+    // Count backwards from today
+    for (let i = 0; i < 30; i++) {
+      const dateStr = checkDate.toISOString().split('T')[0];
+      const spent = dailyExpenses[dateStr] || 0;
+
+      if (spent <= dailyLimit) {
+        streak++;
+      } else {
+        break;
+      }
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+
+    return streak;
+  }, [state.transactions, state.budgets]);
+
+  const achievements = useMemo(() => {
+    const list = [];
+
+    // 1. Debt Destroyer: All account balances >= 0
+    const hasDebt = state.accounts.some((a) => a.balance < 0);
+    if (state.accounts.length > 0 && !hasDebt) {
+      list.push({
+        id: 'debt-destroyer',
+        title: 'Debt Destroyer',
+        description: 'All accounts have a positive balance.',
+        icon: 'ShieldCheck',
+      });
+    }
+
+    // 2. Super Saver: Last month savings > 20% of income
+    // Note: Using current transactions as a proxy if it's the full month
+    if (totalIncome > 0) {
+      const savingsRate = (totalIncome - totalExpense) / totalIncome;
+      if (savingsRate > 0.2) {
+        list.push({
+          id: 'super-saver',
+          title: 'Super Saver',
+          description: 'Saved more than 20% of your income this period.',
+          icon: 'PiggyBank',
+        });
+      }
+    }
+
+    // 3. Budget Master: All budgets are within limit
+    const budgetsCount = state.budgets.length;
+    if (budgetsCount > 0) {
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      const allUnderBudget = state.budgets.every((budget) => {
+        const categoryId = budget.category?._id || budget.category?.id || budget.category;
+        const spent = state.transactions
+          .filter((t) => {
+            const tDate = new Date(t.date);
+            const tCatId = t.category?._id || t.category?.id || t.category;
+            return (
+              t.type === 'expense' &&
+              tCatId === categoryId &&
+              tDate.getMonth() === currentMonth &&
+              tDate.getFullYear() === currentYear
+            );
+          })
+          .reduce((sum, t) => sum + t.amount, 0);
+        return spent <= budget.amount;
+      });
+
+      if (allUnderBudget) {
+        list.push({
+          id: 'budget-master',
+          title: 'Budget Master',
+          description: 'Stayed within all your category budgets.',
+          icon: 'Trophy',
+        });
+      }
+    }
+
+    return list;
+  }, [state.accounts, state.budgets, state.transactions, totalIncome, totalExpense]);
+
   const value = {
     ...state,
     totalExpense,
     totalIncome,
     totalBalance,
+    savingsStreak,
+    achievements,
     accountsWithBalance,
     fetchData: fetchBootstrap,
     fetchBootstrap,
