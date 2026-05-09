@@ -1,6 +1,10 @@
 export function textResult(text, structuredContent = undefined, extra = {}) {
+  const content = [{ type: 'text', text }];
+  if (structuredContent) {
+    content.push({ type: 'text', text: JSON.stringify(structuredContent, null, 2) });
+  }
   return {
-    content: [{ type: 'text', text }],
+    content,
     ...(structuredContent ? { structuredContent } : {}),
     ...extra,
   };

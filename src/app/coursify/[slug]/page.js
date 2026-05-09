@@ -13,6 +13,7 @@ import { MarkdownRenderer } from '@/components/coursify/reader/MarkdownRenderer'
 import { QuizPlayer } from '@/components/coursify/reader/QuizPlayer';
 import { TableOfContents } from '@/components/coursify/reader/TableOfContents';
 import { ReaderNavigation } from '@/components/coursify/reader/ReaderNavigation';
+import { BookOpen } from 'lucide-react';
 
 const pacifico = Pacifico({
   weight: '400',
