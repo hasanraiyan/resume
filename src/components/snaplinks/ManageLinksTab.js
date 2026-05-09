@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button, Card, Badge, Skeleton } from '@/components/custom-ui';
+import QRCodeModal from './QRCodeModal';
+import GeoMap from './GeoMap';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -26,6 +28,7 @@ import {
   Trash,
   Copy,
   Check,
+  QrCode,
 } from 'lucide-react';
 
 ChartJS.register(
@@ -64,6 +67,7 @@ export default function ManageLinksTab() {
   const [analytics, setAnalytics] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [copiedSlug, setCopiedSlug] = useState(null);
+  const [qrLink, setQrLink] = useState(null);
 
   useEffect(() => {
     fetchLinks();
@@ -417,29 +421,7 @@ export default function ManageLinksTab() {
             </div>
           </Card>
 
-          <Card variant="flat" className="p-6 bg-white  border-neutral-200">
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-[#1e3a34] ">
-              <Globe className="w-5 h-5 text-[#7c8e88]" /> Countries
-            </h3>
-            <div className="space-y-2">
-              {countries?.length > 0 ? (
-                countries.slice(0, 5).map((country, i) => (
-                  <div
-                    key={i}
-                    className="relative z-10 flex justify-between items-center text-sm p-2 rounded-md"
-                  >
-                    {renderProgressBar(country.count, totalCountryClicks)}
-                    <span className="font-medium text-[#1e3a34] ">
-                      {country.country || 'Unknown'}
-                    </span>
-                    <span className="font-bold text-[#1f644e] ">{country.count}</span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-[#7c8e88]">No location data.</p>
-              )}
-            </div>
-          </Card>
+          <GeoMap countries={countries} />
         </div>
       </div>
     );
@@ -557,6 +539,15 @@ export default function ManageLinksTab() {
                           <Button
                             variant="outline"
                             size="sm"
+                            className="px-2 py-1 h-8 text-[#1e3a34] hover:text-[#1f644e] hover:border-[#1f644e] hover:bg-[#1f644e]/5 border-transparent shadow-none"
+                            onClick={() => setQrLink(link)}
+                            title="QR Code"
+                          >
+                            <QrCode className="w-4 h-4" strokeWidth={2.5} />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             className="px-2 py-1 h-8 text-[#1e3a34] hover:text-[#1e3a34] border-transparent hover:bg-neutral-100 shadow-none"
                             onClick={() => openEditModal(link)}
                             title="Edit Link"
@@ -657,6 +648,15 @@ export default function ManageLinksTab() {
                       <Button
                         variant="outline"
                         size="sm"
+                        className="px-2 py-1 h-8 text-[#1e3a34] hover:text-[#1f644e] hover:border-[#1f644e] hover:bg-[#1f644e]/5 border-transparent shadow-none"
+                        onClick={() => setQrLink(link)}
+                        title="QR Code"
+                      >
+                        <QrCode className="w-4 h-4" strokeWidth={2.5} />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="px-2 py-1 h-8 text-[#1e3a34] hover:text-[#1e3a34] border-transparent hover:bg-neutral-100 shadow-none"
                         onClick={() => openEditModal(link)}
                       >
@@ -678,6 +678,13 @@ export default function ManageLinksTab() {
           </div>
         )}
       </Card>
+
+      {/* QR Code Modal */}
+      <QRCodeModal
+        isOpen={!!qrLink}
+        onClose={() => setQrLink(null)}
+        link={qrLink}
+      />
 
       {/* Modal / Form overlay */}
       {isModalOpen && (
