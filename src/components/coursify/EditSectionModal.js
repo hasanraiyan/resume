@@ -1,11 +1,179 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
+import { X, Plus, Trash2, ChevronUp, ChevronDown, Wand2 } from 'lucide-react';
+import { toast } from 'sonner';
 import QuizEditor from './QuizEditor';
 
 const RESOURCE_TYPES = ['video', 'article', 'doc', 'other'];
 const STATUS_OPTIONS = ['planned', 'draft', 'needs_review', 'complete'];
+
+function parseMarkdownSection(text) {
+  console.log('Magic Import: Starting parse...');
+  const result = {
+    title: '',
+    summary: '',
+    learningGoals: [],
+    estimatedDuration: '',
+    status: 'draft',
+    blocks: [],
+  };
+
+  // 1. Parse YAML Front-matter
+  const frontMatterMatch = text.match(/^---\s*\n([\s\S]*?)\n---\s*\n/);
+  if (frontMatterMatch) {
+    const yaml = frontMatterMatch[1];
+    const lines = yaml.split('\n');
+    let currentKey = '';
+
+    lines.forEach((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return;
+
+      if (trimmed.startsWith('-')) {
+        if (currentKey === 'learningGoals') {
+          result.learningGoals.push(
+            trimmed
+              .replace(/^-/, '')
+              .trim()
+              .replace(/^["'](.*)["']$/, '$1')
+          );
+        }
+      } else if (trimmed.includes(':')) {
+        const idx = trimmed.indexOf(':');
+        const k = trimmed.substring(0, idx).trim();
+        const v = trimmed.substring(idx + 1).trim();
+        currentKey = k;
+        const cleanV = v.replace(/^["'](.*)["']$/, '$1');
+        if (k === 'title') result.title = cleanV;
+        if (k === 'summary') result.summary = cleanV;
+        if (k === 'estimatedDuration') result.estimatedDuration = cleanV;
+        if (k === 'status') result.status = cleanV;
+      }
+    });
+    text = text.replace(frontMatterMatch[0], '');
+  }
+
+  // 2. Extract Blocks
+  const blockRegex = /##\s*\[(MdBlock|QuizBlock|VideoBlock|ResourceBlock)\]/g;
+  const matches = [];
+  let match;
+  while ((match = blockRegex.exec(text)) !== null) {
+    matches.push({ type: match[1], index: match.index, full: match[0] });
+  }
+
+  console.log(`Magic Import: Found ${matches.length} blocks.`);
+
+  for (let i = 0; i < matches.length; i++) {
+    const m = matches[i];
+    const nextIndex = matches[i + 1] ? matches[i + 1].index : text.length;
+    let rawContent = text.substring(m.index + m.full.length, nextIndex).trim();
+
+    // Strip trailing separators and clean whitespace
+    rawContent = rawContent.replace(/\n\s*---\s*$/, '').trim();
+
+    const block = { type: m.type, order: i };
+
+    if (m.type === 'MdBlock') {
+      // Keep everything after the first optional ### title line
+      block.content = rawContent.replace(/^###.*\n?/, '').trim();
+    } else if (m.type === 'VideoBlock') {
+      const urlMatch = rawContent.match(/url:\s*(.*)/);
+      const titleMatch = rawContent.match(/title:\s*(.*)/);
+      block.video = {
+        url: urlMatch?.[1].trim() || '',
+        title: titleMatch?.[1].trim() || '',
+        platform: 'youtube',
+      };
+    } else if (m.type === 'ResourceBlock') {
+      const urlMatch = rawContent.match(/url:\s*(.*)/);
+      const titleMatch = rawContent.match(/title:\s*(.*)/);
+      block.resource = {
+        url: urlMatch?.[1].trim() || '',
+        title: titleMatch?.[1].trim() || '',
+        type: 'other',
+      };
+    } else if (m.type === 'QuizBlock') {
+      block.quiz = { questions: [] };
+      // Unified split that handles the first question even if no leading newline
+      const qParts = rawContent.split(/\s*-\s*question:/).filter((p) => p.trim());
+
+      // If the first part doesn't contain actual question fields, it's just the header
+      if (qParts.length > 0 && !qParts[0].includes('correctAnswer:')) {
+        qParts.shift();
+      }
+
+      qParts.forEach((qStr) => {
+        const qObj = {
+          type: 'multiple_choice',
+          question: '',
+          options: [],
+          correctAnswer: '',
+          explanation: '',
+          points: 1,
+          _tempId: Math.random().toString(36).slice(2),
+        };
+
+        const lines = qStr.split('\n');
+        qObj.question = lines[0].trim().replace(/^["'](.*)["']$/, '$1');
+
+        lines.forEach((line) => {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('type:')) qObj.type = trimmed.split(':')[1].trim();
+          if (trimmed.startsWith('correctAnswer:'))
+            qObj.correctAnswer = trimmed
+              .split(':')[1]
+              .trim()
+              .replace(/^["'](.*)["']$/, '$1');
+          if (trimmed.startsWith('explanation:'))
+            qObj.explanation = trimmed
+              .split(':')[1]
+              .trim()
+              .replace(/^["'](.*)["']$/, '$1');
+          if (trimmed.startsWith('points:')) qObj.points = parseInt(trimmed.split(':')[1]) || 1;
+        });
+
+        const optionsMatch = qStr.match(/options:\s*\n((?:\s*-\s*.*\n?)*)/);
+        if (optionsMatch) {
+          qObj.options = optionsMatch[1]
+            .split('\n')
+            .map((o) =>
+              o
+                .replace(/^\s*-\s*/, '')
+                .replace(/^["'](.*)["']$/, '$1')
+                .trim()
+            )
+            .filter(Boolean);
+        }
+
+        // Logic to convert literal correctAnswer to index/bool
+        if (qObj.options.length > 0) {
+          const idx = qObj.options.findIndex(
+            (o) => o.toLowerCase() === qObj.correctAnswer.toLowerCase()
+          );
+          if (idx !== -1) {
+            qObj.correctAnswer = String(idx);
+          }
+          // Special case for True/False
+          if (
+            qObj.options.length === 2 &&
+            qObj.options.some((o) => o.toLowerCase() === 'true') &&
+            qObj.options.some((o) => o.toLowerCase() === 'false')
+          ) {
+            qObj.type = 'true_false';
+            qObj.correctAnswer = qObj.correctAnswer.toLowerCase();
+          }
+        }
+
+        if (qObj.question) block.quiz.questions.push(qObj);
+      });
+      console.log(`Magic Import: Parsed Quiz with ${block.quiz.questions.length} questions.`);
+    }
+    result.blocks.push(block);
+  }
+
+  return result;
+}
 
 export default function EditSectionModal({ section, onSave, onClose }) {
   const [title, setTitle] = useState(section?.title || '');
@@ -15,6 +183,7 @@ export default function EditSectionModal({ section, onSave, onClose }) {
   const [learningGoals, setLearningGoals] = useState(section?.learningGoals || []);
   const [estimatedDuration, setEstimatedDuration] = useState(section?.estimatedDuration || '');
   const [status, setStatus] = useState(section?.status || 'draft');
+  const [importText, setImportText] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState('blocks');
@@ -64,6 +233,20 @@ export default function EditSectionModal({ section, onSave, onClose }) {
     setLearningGoals((prev) => prev.map((g, idx) => (idx === i ? val : g)));
   const removeGoal = (i) => setLearningGoals((prev) => prev.filter((_, idx) => idx !== i));
 
+  const handleMagicImport = () => {
+    if (!importText.trim()) return;
+    const parsed = parseMarkdownSection(importText);
+    setTitle(parsed.title || title);
+    setSummary(parsed.summary || summary);
+    setLearningGoals(parsed.learningGoals.length ? parsed.learningGoals : learningGoals);
+    setEstimatedDuration(parsed.estimatedDuration || estimatedDuration);
+    setStatus(parsed.status || status);
+    if (parsed.blocks.length) setBlocks(parsed.blocks);
+    setTab('blocks');
+    setImportText('');
+    toast.success('Magic Import complete!');
+  };
+
   const handleSave = async () => {
     if (!title.trim()) return;
     setLoading(true);
@@ -97,7 +280,10 @@ export default function EditSectionModal({ section, onSave, onClose }) {
           {/* Header */}
           <div className="flex items-center justify-between p-5 border-b border-[#e5e3d8] shrink-0">
             <h2 className="font-bold text-[#1e3a34]">{section ? 'Edit Section' : 'New Section'}</h2>
-            <button onClick={onClose} className="p-1.5 hover:bg-[#f0f5f2] rounded-lg">
+            <button
+              onClick={onClose}
+              className="p-1.5 hover:bg-[#f0f5f2] rounded-lg transition-colors"
+            >
               <X className="w-4 h-4 text-[#7c8e88]" />
             </button>
           </div>
@@ -115,7 +301,7 @@ export default function EditSectionModal({ section, onSave, onClose }) {
 
           {/* Tabs */}
           <div className="flex gap-1 px-5 pt-3 shrink-0">
-            {['blocks', 'planning'].map((t) => (
+            {['blocks', 'planning', 'import'].map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -130,6 +316,29 @@ export default function EditSectionModal({ section, onSave, onClose }) {
 
           {/* Body */}
           <div className="flex-1 overflow-y-auto p-5 min-h-0">
+            {tab === 'import' && (
+              <div className="h-full flex flex-col space-y-4">
+                <p className="text-[11px] text-[#7c8e88] px-1">
+                  Paste the structured Markdown content here to automatically fill all fields and
+                  blocks.
+                </p>
+                <textarea
+                  value={importText}
+                  onChange={(e) => setImportText(e.target.value)}
+                  placeholder="--- \ntitle: My Section...\n---"
+                  className="flex-1 w-full min-h-[300px] p-4 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-xs font-mono outline-none focus:border-[#1f644e] resize-none"
+                />
+                <button
+                  onClick={handleMagicImport}
+                  disabled={!importText.trim()}
+                  className="w-full py-3 bg-[#1f644e] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-[#17503e] transition-colors disabled:opacity-50"
+                >
+                  <Wand2 className="w-4 h-4" />
+                  Magic Import
+                </button>
+              </div>
+            )}
+
             {tab === 'blocks' && (
               <div className="space-y-6">
                 {blocks.map((block, i) => (

@@ -210,6 +210,7 @@ function FullscreenModal({ svg, onClose }) {
 }
 
 const DIAGRAM_STYLES = `
+  .mermaid-diagram { width: 100%; display: flex; justify-content: center; }
   .mermaid-diagram svg { max-width: 100%; height: auto; overflow: visible; display: block; }
   .mermaid-diagram-fs svg { width: 100%; height: 100%; max-width: none !important; overflow: visible; display: block; }
   .mermaid-diagram svg .node rect,
@@ -321,7 +322,7 @@ export const MermaidDiagram = memo(function MermaidDiagram({ chart }) {
           <Controls onExpand={() => setFullscreen(true)} />
           <TransformComponent
             wrapperStyle={{ width: '100%', cursor: 'grab' }}
-            contentStyle={{ padding: '24px' }}
+            contentStyle={{ width: '100%', padding: '24px', boxSizing: 'border-box' }}
           >
             <div className="mermaid-diagram" dangerouslySetInnerHTML={{ __html: svg }} />
           </TransformComponent>

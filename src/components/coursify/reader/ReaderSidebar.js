@@ -160,17 +160,22 @@ export function ReaderSidebar({
                 );
               })}
               {/* Unassigned sections */}
-              {sections.filter((s) => !s.moduleId).length > 0 && (
-                <div className="mb-1 mt-2">
-                  <div className="flex items-center gap-2 px-2 py-1.5">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#b0bfbb]">
-                      More
-                    </span>
-                  </div>
-                  <div className="space-y-0.5">
-                    {sections
-                      .filter((s) => !s.moduleId)
-                      .map((section) => (
+              {(() => {
+                const moduleIds = new Set(modules.map((m) => m._id));
+                const unassigned = sections.filter(
+                  (s) => !s.moduleId || !moduleIds.has(s.moduleId)
+                );
+                if (unassigned.length === 0) return null;
+
+                return (
+                  <div className="mb-1 mt-2">
+                    <div className="flex items-center gap-2 px-2 py-1.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#b0bfbb]">
+                        More
+                      </span>
+                    </div>
+                    <div className="space-y-0.5">
+                      {unassigned.map((section) => (
                         <SidebarSectionBtn
                           key={section._id}
                           section={section}
@@ -179,18 +184,19 @@ export function ReaderSidebar({
                           onClick={() => onNavigateTo(section._id)}
                         />
                       ))}
-                    {editMode && (
-                      <button
-                        onClick={() => onAddSection(null)}
-                        className="w-full flex items-center gap-2 px-3 py-1.5 mt-1 rounded-lg border border-dashed border-[#e5e3d8] text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] text-[10px] font-bold transition-all"
-                      >
-                        <Plus className="w-3 h-3" />
-                        Add Section
-                      </button>
-                    )}
+                      {editMode && (
+                        <button
+                          onClick={() => onAddSection(null)}
+                          className="w-full flex items-center gap-2 px-3 py-1.5 mt-1 rounded-lg border border-dashed border-[#e5e3d8] text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] text-[10px] font-bold transition-all"
+                        >
+                          <Plus className="w-3 h-3" />
+                          Add Section
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </>
           ) : (
             <>

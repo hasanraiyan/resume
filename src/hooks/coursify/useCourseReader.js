@@ -61,6 +61,7 @@ export function useCourseReader(courseIdOrConfig, isAdmin = false) {
   const orderedSections = useMemo(() => {
     if (!modules.length) return [...sections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     const sortedModules = [...modules].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const moduleIds = new Set(modules.map((m) => m._id));
     const result = [];
     for (const mod of sortedModules) {
       const modSections = sections
@@ -69,7 +70,7 @@ export function useCourseReader(courseIdOrConfig, isAdmin = false) {
       result.push(...modSections);
     }
     const unassigned = sections
-      .filter((s) => !s.moduleId)
+      .filter((s) => !s.moduleId || !moduleIds.has(s.moduleId))
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     result.push(...unassigned);
     return result;
