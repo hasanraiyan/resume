@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import EditSectionModal from '@/components/coursify/EditSectionModal';
+import EditModuleModal from '@/components/coursify/EditModuleModal';
 import { useCourseReader } from '@/hooks/coursify/useCourseReader';
 import { useReaderUI } from '@/hooks/coursify/useReaderUI';
 import { ReaderHeader } from '@/components/coursify/reader/ReaderHeader';
@@ -104,11 +105,13 @@ export default function CourseDetailPage({ params }) {
     showOverview,
     visited,
     isLoading,
+    sectionLoading,
     notFound,
     navigateTo,
     showOverviewPage,
     setActiveSection,
     setShowOverview,
+    refresh,
   } = useCourseReader(id, true);
 
   const { sidebarOpen, expandedModules, toggleModule, toggleSidebar, closeSidebar } = useReaderUI(
@@ -119,7 +122,9 @@ export default function CourseDetailPage({ params }) {
 
   const [activeTab, setActiveTab] = useState('content');
   const [editingSection, setEditingSection] = useState(null);
+  const [editingModule, setEditingModule] = useState(null);
   const [showNewSection, setShowNewSection] = useState(false);
+  const [targetModuleId, setTargetModuleId] = useState(null);
   const [showMeta, setShowMeta] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -141,11 +146,7 @@ export default function CourseDetailPage({ params }) {
   const refreshCourse = async () => {
     setIsRefreshing(true);
     try {
-      const res = await fetch(`/api/coursify/courses/${id}`);
-      const data = await res.json();
-      if (data.success) {
-        window.location.reload();
-      }
+      await refresh();
     } finally {
       setIsRefreshing(false);
     }
@@ -181,7 +182,7 @@ export default function CourseDetailPage({ params }) {
     const data = await res.json();
     if (data.success) {
       toast.success(data.course.status === 'published' ? 'Published' : 'Unpublished');
-      window.location.reload();
+      refreshCourse();
     }
   };
 
@@ -195,7 +196,7 @@ export default function CourseDetailPage({ params }) {
       const data = await res.json();
       if (data.success) {
         toast.success('Section updated');
-        window.location.reload();
+        refreshCourse();
       } else {
         toast.error(data.error || 'Failed to update');
       }
@@ -203,19 +204,82 @@ export default function CourseDetailPage({ params }) {
       const res = await fetch(`/api/coursify/courses/${id}/sections`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ ...payload, moduleId: targetModuleId }),
       });
       const data = await res.json();
       if (data.success) {
         toast.success('Section added');
         setActiveSection(data.section._id);
-        window.location.reload();
+        refreshCourse();
       } else {
         toast.error(data.error || 'Failed to add section');
       }
     }
     setEditingSection(null);
     setShowNewSection(false);
+    setTargetModuleId(null);
+  };
+
+  const handleSaveModule = async (payload) => {
+    if (editingModule?._id) {
+      const res = await fetch(`/api/coursify/modules/${editingModule._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Module updated');
+        refreshCourse();
+      } else {
+        toast.error(data.error || 'Failed to update');
+      }
+    } else {
+      const res = await fetch(`/api/coursify/courses/${id}/modules`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Module created');
+        refreshCourse();
+      } else {
+        toast.error(data.error || 'Failed to create');
+      }
+    }
+    setEditingModule(null);
+  };
+
+  const handleCreateModule = () => {
+    setEditingModule({ title: '', summary: '' });
+  };
+
+  const handleEditModule = (mod) => {
+    setEditingModule(mod);
+  };
+
+  const handleDeleteModule = async (moduleId) => {
+    if (!confirm('Delete this module? Sections will become uncategorized.')) return;
+    try {
+      const res = await fetch(`/api/coursify/modules/${moduleId}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Module deleted');
+        refreshCourse();
+      } else {
+        toast.error(data.error || 'Failed to delete module');
+      }
+    } catch {
+      toast.error('Error deleting module');
+    }
+  };
+
+  const handleAddSectionClick = (moduleId) => {
+    setTargetModuleId(moduleId);
+    setShowNewSection(true);
   };
 
   const handleDeleteSection = async (sectionId) => {
@@ -224,7 +288,7 @@ export default function CourseDetailPage({ params }) {
     const data = await res.json();
     if (data.success) {
       toast.success('Section deleted');
-      window.location.reload();
+      refreshCourse();
     }
   };
 
@@ -251,7 +315,7 @@ export default function CourseDetailPage({ params }) {
       const data = await res.json();
       if (data.success) {
         toast.success('Plan saved');
-        window.location.reload();
+        refreshCourse();
       } else {
         toast.error(data.error || 'Failed to save plan');
       }
@@ -279,7 +343,7 @@ export default function CourseDetailPage({ params }) {
         setNoteForm({ title: '', summary: '', sourceUrl: '', sourceType: 'other', notes: '' });
         setShowNoteForm(false);
         toast.success('Note added');
-        window.location.reload();
+        refreshCourse();
       } else {
         toast.error(data.error || 'Failed to add note');
       }
@@ -301,7 +365,7 @@ export default function CourseDetailPage({ params }) {
       const data = await res.json();
       if (data.success) {
         toast.success('Note deleted');
-        window.location.reload();
+        refreshCourse();
       } else {
         toast.error(data.error || 'Failed to delete note');
       }
@@ -324,7 +388,7 @@ export default function CourseDetailPage({ params }) {
       const data = await res.json();
       if (data.success) {
         toast.success('Thumbnail updated');
-        window.location.reload();
+        refreshCourse();
       } else {
         toast.error(data.error || 'Upload failed');
       }
@@ -333,6 +397,28 @@ export default function CourseDetailPage({ params }) {
     } finally {
       setThumbnailUploading(false);
       e.target.value = '';
+    }
+  };
+
+  const handleUpdateMeta = async (payload) => {
+    setPlanSaving(true);
+    try {
+      const res = await fetch(`/api/coursify/courses/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Course information updated');
+        refreshCourse();
+      } else {
+        toast.error(data.error || 'Update failed');
+      }
+    } catch {
+      toast.error('Update failed');
+    } finally {
+      setPlanSaving(false);
     }
   };
 
@@ -486,20 +572,11 @@ export default function CourseDetailPage({ params }) {
           onShowOverview={showOverviewPage}
           onNavigateTo={navigateTo}
           onToggleModule={toggleModule}
-          footer={
-            editMode && (
-              <button
-                onClick={() => {
-                  setShowNewSection(true);
-                  closeSidebar();
-                }}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed border-[#e5e3d8] text-xs font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Add Section
-              </button>
-            )
-          }
+          editMode={editMode}
+          onAddSection={handleAddSectionClick}
+          onAddModule={handleCreateModule}
+          onEditModule={handleEditModule}
+          onDeleteModule={handleDeleteModule}
         />
 
         <main className="flex-1 overflow-y-auto min-w-0">
@@ -852,6 +929,9 @@ export default function CourseDetailPage({ params }) {
                   modules={modules}
                   onNavigateTo={navigateTo}
                   hideThumbnail={true}
+                  editMode={editMode}
+                  onUpdateMeta={handleUpdateMeta}
+                  isSaving={planSaving}
                 />
               ) : !currentSection ? (
                 <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -885,7 +965,17 @@ export default function CourseDetailPage({ params }) {
                     )}
                   </div>
 
-                  <CoursifyBlockRenderer blocks={currentSection.blocks} />
+                  {sectionLoading &&
+                  (!currentSection.blocks || currentSection.blocks.length === 0) ? (
+                    <div className="space-y-6 animate-pulse">
+                      <div className="h-4 bg-[#e5e3d8] rounded w-full" />
+                      <div className="h-4 bg-[#e5e3d8] rounded w-5/6" />
+                      <div className="h-32 bg-[#e5e3d8] rounded-2xl w-full" />
+                      <div className="h-4 bg-[#e5e3d8] rounded w-4/6" />
+                    </div>
+                  ) : (
+                    <CoursifyBlockRenderer blocks={currentSection.blocks} />
+                  )}
 
                   {currentSection.resources?.length > 0 && (
                     <div className="mt-8 pt-6 border-t border-[#e5e3d8]">
@@ -937,6 +1027,14 @@ export default function CourseDetailPage({ params }) {
             setEditingSection(null);
             setShowNewSection(false);
           }}
+        />
+      )}
+
+      {editingModule && (
+        <EditModuleModal
+          module={editingModule?._id ? editingModule : null}
+          onSave={handleSaveModule}
+          onClose={() => setEditingModule(null)}
         />
       )}
     </div>

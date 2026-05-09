@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 /**
@@ -20,7 +20,43 @@ export function useCourseReader(courseIdOrConfig, isAdmin = false) {
   const [showOverview, setShowOverview] = useState(!activeSectionId);
   const [visited, setVisited] = useState(new Set(activeSectionId ? [activeSectionId] : []));
   const [isLoading, setIsLoading] = useState(!initialData);
+  const [sectionLoading, setSectionLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
+
+  // Track fetching state to prevent loops
+  const inFlightRef = useRef(new Set());
+  const loadedRef = useRef(new Set());
+
+  // Initialize loadedRef with sections that already have content (from SSR)
+  useEffect(() => {
+    if (sections.length > 0) {
+      sections.forEach((s) => {
+        if (s.blocks?.length > 0) {
+          loadedRef.current.add(s._id);
+        }
+      });
+    }
+  }, [sections]);
+
+  useEffect(() => {
+    if (initialData) {
+      setCourse(initialData.course);
+      setSections(initialData.sections);
+      setModules(initialData.modules);
+      setActiveSection(activeSectionId || null);
+      setShowOverview(!activeSectionId);
+
+      // Clear refs for new initial data (public routing)
+      inFlightRef.current.clear();
+      loadedRef.current.clear();
+
+      if (initialData.sections) {
+        initialData.sections.forEach((s) => {
+          if (s.blocks?.length > 0) loadedRef.current.add(s._id);
+        });
+      }
+    }
+  }, [initialData, activeSectionId]);
 
   const orderedSections = useMemo(() => {
     if (!modules.length) return [...sections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
@@ -39,6 +75,34 @@ export function useCourseReader(courseIdOrConfig, isAdmin = false) {
     return result;
   }, [sections, modules]);
 
+  const fetchSectionContent = useCallback(
+    async (sectionId) => {
+      if (!sectionId || inFlightRef.current.has(sectionId) || loadedRef.current.has(sectionId)) {
+        return;
+      }
+
+      inFlightRef.current.add(sectionId);
+      try {
+        setSectionLoading(true);
+        const baseUrl = isAdmin ? '/api/coursify/sections' : '/api/coursify/public/sections';
+        const res = await fetch(`${baseUrl}/${sectionId}`);
+        const data = await res.json();
+        if (data.success) {
+          setSections((prev) =>
+            prev.map((s) => (s._id === sectionId ? { ...s, blocks: data.section.blocks } : s))
+          );
+          loadedRef.current.add(sectionId);
+        }
+      } catch (err) {
+        console.error('Lazy load failed:', err);
+      } finally {
+        inFlightRef.current.delete(sectionId);
+        setSectionLoading(false);
+      }
+    },
+    [isAdmin]
+  );
+
   const fetchCourse = useCallback(async () => {
     if (!courseId || initialData) return;
     try {
@@ -50,6 +114,9 @@ export function useCourseReader(courseIdOrConfig, isAdmin = false) {
         setCourse(data.course);
         setSections(data.sections);
         setModules(data.modules || []);
+        // Reset fetch tracking on full refresh
+        inFlightRef.current.clear();
+        loadedRef.current.clear();
       } else {
         setNotFound(true);
       }
@@ -63,6 +130,17 @@ export function useCourseReader(courseIdOrConfig, isAdmin = false) {
   useEffect(() => {
     fetchCourse();
   }, [fetchCourse]);
+
+  useEffect(() => {
+    if (activeSection) {
+      const section = sections.find((s) => s._id === activeSection);
+      const isLoaded = loadedRef.current.has(activeSection) || section?.blocks?.length > 0;
+
+      if (!isLoaded && !inFlightRef.current.has(activeSection)) {
+        fetchSectionContent(activeSection);
+      }
+    }
+  }, [activeSection, fetchSectionContent, sections]);
 
   useEffect(() => {
     if (!activeSection || !sections.length) return;
@@ -108,6 +186,10 @@ export function useCourseReader(courseIdOrConfig, isAdmin = false) {
     }
   }, [slug, isAdmin, router]);
 
+  const refresh = useCallback(() => {
+    fetchCourse();
+  }, [fetchCourse]);
+
   return {
     course,
     sections,
@@ -117,11 +199,13 @@ export function useCourseReader(courseIdOrConfig, isAdmin = false) {
     showOverview,
     visited,
     isLoading,
+    sectionLoading,
     notFound,
     navigateTo,
     showOverviewPage,
     markVisited,
     setActiveSection,
     setShowOverview,
+    refresh,
   };
 }

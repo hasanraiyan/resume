@@ -52,9 +52,11 @@ export function CourseReaderShell({ initialData, slug, activeSectionId }) {
     visited,
     navigateTo,
     showOverviewPage,
+    sectionLoading,
   } = useCourseReader({ initialData, slug, activeSectionId });
 
   const currentSection = sections.find((s) => s._id === activeSection);
+  const isSectionLoaded = currentSection?.blocks?.length > 0;
 
   // Combine markdown content from all blocks for TOC
   const combinedContent =
@@ -112,6 +114,13 @@ export function CourseReaderShell({ initialData, slug, activeSectionId }) {
                   modules={modules}
                   onNavigateTo={navigateTo}
                 />
+              ) : sectionLoading && !isSectionLoaded ? (
+                <div className="space-y-6 animate-pulse">
+                  <div className="h-6 bg-[#e5e3d8] rounded w-3/4 mb-4" />
+                  <div className="h-4 bg-[#e5e3d8] rounded w-full" />
+                  <div className="h-4 bg-[#e5e3d8] rounded w-5/6" />
+                  <div className="h-40 bg-[#e5e3d8] rounded-2xl w-full" />
+                </div>
               ) : currentSection ? (
                 <>
                   <CoursifyBlockRenderer blocks={currentSection.blocks} />

@@ -1,4 +1,5 @@
-import { Clock, Layers, Check, ChevronRight, ScrollText } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Clock, Layers, Check, ChevronRight, ScrollText, Save } from 'lucide-react';
 import { QuizIcon } from './icons';
 
 function SectionIcon({ section }) {
@@ -13,11 +14,44 @@ const DIFFICULTY_COLORS = {
   advanced: 'bg-red-100 text-red-700',
 };
 
+const DIFFICULTIES = ['beginner', 'intermediate', 'advanced'];
+
 /**
  * Shared Course Overview component.
  */
-export function CourseOverview({ course, sections, modules, onNavigateTo, hideThumbnail = false }) {
+export function CourseOverview({
+  course,
+  sections,
+  modules,
+  onNavigateTo,
+  hideThumbnail = false,
+  editMode = false,
+  onUpdateMeta,
+  isSaving = false,
+}) {
+  const [meta, setMeta] = useState({
+    title: course?.title || '',
+    description: course?.description || '',
+    difficulty: course?.difficulty || 'beginner',
+    estimatedDuration: course?.estimatedDuration || '',
+  });
+
+  useEffect(() => {
+    if (course) {
+      setMeta({
+        title: course.title,
+        description: course.description,
+        difficulty: course.difficulty,
+        estimatedDuration: course.estimatedDuration,
+      });
+    }
+  }, [course]);
+
   if (!course) return null;
+
+  const handleSave = () => {
+    onUpdateMeta?.(meta);
+  };
 
   return (
     <div>
@@ -28,32 +62,106 @@ export function CourseOverview({ course, sections, modules, onNavigateTo, hideTh
         </div>
       )}
 
-      {/* Title + meta */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        <span
-          className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${
-            DIFFICULTY_COLORS[course.difficulty] || DIFFICULTY_COLORS.beginner
-          }`}
-        >
-          {course.difficulty}
-        </span>
-        {course.estimatedDuration && (
-          <span className="flex items-center gap-1 text-[10px] font-bold text-[#7c8e88]">
-            <Clock className="w-3 h-3" />
-            {course.estimatedDuration}
-          </span>
-        )}
-        {sections.length > 0 && (
-          <span className="flex items-center gap-1 text-[10px] font-bold text-[#7c8e88]">
-            <Layers className="w-3 h-3" />
-            {sections.length} section{sections.length !== 1 ? 's' : ''}
-          </span>
-        )}
-      </div>
+      {/* Meta Headers */}
+      {editMode ? (
+        <div className="mb-8 space-y-4">
+          <div>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88] mb-1 block">
+              Course Title
+            </label>
+            <input
+              type="text"
+              value={meta.title}
+              onChange={(e) => setMeta((prev) => ({ ...prev, title: e.target.value }))}
+              className="w-full px-4 py-2 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-lg font-bold text-[#1e3a34] outline-none focus:border-[#1f644e]"
+            />
+          </div>
 
-      {/* Description */}
-      {course.description && (
-        <p className="text-base text-[#7c8e88] leading-relaxed mb-8">{course.description}</p>
+          <div className="flex flex-wrap gap-4">
+            <div className="flex-1 min-w-[200px]">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88] mb-1 block">
+                Difficulty
+              </label>
+              <select
+                value={meta.difficulty}
+                onChange={(e) => setMeta((prev) => ({ ...prev, difficulty: e.target.value }))}
+                className="w-full px-3 py-2 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-sm font-bold text-[#1e3a34] outline-none focus:border-[#1f644e] capitalize"
+              >
+                {DIFFICULTIES.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88] mb-1 block">
+                Duration (e.g. 40hrs)
+              </label>
+              <input
+                type="text"
+                value={meta.estimatedDuration}
+                onChange={(e) =>
+                  setMeta((prev) => ({ ...prev, estimatedDuration: e.target.value }))
+                }
+                className="w-full px-3 py-2 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-sm font-bold text-[#1e3a34] outline-none focus:border-[#1f644e]"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88] mb-1 block">
+              Description
+            </label>
+            <textarea
+              rows={3}
+              value={meta.description}
+              onChange={(e) => setMeta((prev) => ({ ...prev, description: e.target.value }))}
+              className="w-full px-4 py-2 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-sm text-[#1e3a34] leading-relaxed outline-none focus:border-[#1f644e] resize-none"
+            />
+          </div>
+
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="flex items-center gap-2 px-4 py-2 bg-[#1f644e] text-white rounded-xl text-xs font-bold hover:bg-[#17503e] transition-colors disabled:opacity-50"
+          >
+            {isSaving ? (
+              <div className="w-3.5 h-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+            ) : (
+              <Save className="w-3.5 h-3.5" />
+            )}
+            Save Overview
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${
+                DIFFICULTY_COLORS[course.difficulty] || DIFFICULTY_COLORS.beginner
+              }`}
+            >
+              {course.difficulty}
+            </span>
+            {course.estimatedDuration && (
+              <span className="flex items-center gap-1 text-[10px] font-bold text-[#7c8e88]">
+                <Clock className="w-3 h-3" />
+                {course.estimatedDuration}
+              </span>
+            )}
+            {sections.length > 0 && (
+              <span className="flex items-center gap-1 text-[10px] font-bold text-[#7c8e88]">
+                <Layers className="w-3 h-3" />
+                {sections.length} section{sections.length !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+
+          {course.description && (
+            <p className="text-base text-[#7c8e88] leading-relaxed mb-8">{course.description}</p>
+          )}
+        </>
       )}
 
       {/* What you'll learn */}

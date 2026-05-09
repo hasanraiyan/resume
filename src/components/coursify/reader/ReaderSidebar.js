@@ -1,4 +1,4 @@
-import { X, BookOpen, ChevronRight, ScrollText } from 'lucide-react';
+import { X, BookOpen, ChevronRight, ScrollText, Plus, Trash2, Pencil } from 'lucide-react';
 import { QuizIcon } from './icons';
 
 /**
@@ -17,7 +17,11 @@ export function ReaderSidebar({
   onShowOverview,
   onNavigateTo,
   onToggleModule,
-  footer,
+  editMode,
+  onAddSection,
+  onAddModule,
+  onEditModule,
+  onDeleteModule,
 }) {
   return (
     <>
@@ -86,8 +90,32 @@ export function ReaderSidebar({
                       <span className="text-[11px] font-bold text-[#1e3a34] truncate flex-1 text-left">
                         {mod.title}
                       </span>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-[10px] font-bold text-[#b0bfbb]">
+                      <div className="flex items-center gap-1 shrink-0">
+                        {editMode && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEditModule(mod);
+                              }}
+                              className="p-1 rounded hover:bg-white/50 text-[#7c8e88] hover:text-[#1f644e] transition-colors"
+                              title="Edit Module"
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteModule(mod._id);
+                              }}
+                              className="p-1 rounded hover:bg-white/50 text-[#7c8e88] hover:text-[#c94c4c] transition-colors"
+                              title="Delete Module"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </>
+                        )}
+                        <span className="text-[10px] font-bold text-[#b0bfbb] ml-1">
                           {doneSections}/{modSections.length}
                         </span>
                         <ChevronRight
@@ -107,6 +135,15 @@ export function ReaderSidebar({
                             onClick={() => onNavigateTo(section._id)}
                           />
                         ))}
+                        {editMode && (
+                          <button
+                            onClick={() => onAddSection(mod._id)}
+                            className="w-full flex items-center gap-2 px-3 py-1.5 mt-1 rounded-lg border border-dashed border-[#e5e3d8] text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] text-[10px] font-bold transition-all"
+                          >
+                            <Plus className="w-3 h-3" />
+                            Add Section
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -132,25 +169,55 @@ export function ReaderSidebar({
                           onClick={() => onNavigateTo(section._id)}
                         />
                       ))}
+                    {editMode && (
+                      <button
+                        onClick={() => onAddSection(null)}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 mt-1 rounded-lg border border-dashed border-[#e5e3d8] text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] text-[10px] font-bold transition-all"
+                      >
+                        <Plus className="w-3 h-3" />
+                        Add Section
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
             </>
           ) : (
-            sections.map((section) => (
-              <SidebarSectionBtn
-                key={section._id}
-                section={section}
-                active={activeSection === section._id}
-                done={visited.has(section._id)}
-                onClick={() => onNavigateTo(section._id)}
-              />
-            ))
+            <>
+              {sections.map((section) => (
+                <SidebarSectionBtn
+                  key={section._id}
+                  section={section}
+                  active={activeSection === section._id}
+                  done={visited.has(section._id)}
+                  onClick={() => onNavigateTo(section._id)}
+                />
+              ))}
+              {editMode && (
+                <button
+                  onClick={() => onAddSection(null)}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 mt-1 rounded-lg border border-dashed border-[#e5e3d8] text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] text-[10px] font-bold transition-all"
+                >
+                  <Plus className="w-3 h-3" />
+                  Add Section
+                </button>
+              )}
+            </>
           )}
         </div>
 
-        {/* Footer actions (e.g. Add Section) */}
-        {footer && <div className="p-3 border-t border-[#e5e3d8]">{footer}</div>}
+        {/* Footer actions (e.g. Add Module) */}
+        {editMode && (
+          <div className="p-3 border-t border-[#e5e3d8]">
+            <button
+              onClick={onAddModule}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed border-[#e5e3d8] text-xs font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Module
+            </button>
+          </div>
+        )}
       </aside>
     </>
   );

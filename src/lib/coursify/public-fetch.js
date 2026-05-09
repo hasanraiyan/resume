@@ -57,25 +57,25 @@ export async function fetchPublicCourse(slugOrId) {
   ]);
 
   return {
-    course: ser({ ...course, slug: course.slug || courseId }),
-    modules: modules.map((m) => ser({ ...m, courseId })),
+    course: ser(course),
+    modules: modules.map((m) => ser(m)),
     sections: sections.map((s) => {
       const flat = ser({ ...s, courseId, moduleId: s.moduleId?.toString() || null });
       if (flat.blocks) {
         flat.blocks = flat.blocks.map((b) => {
-          if (b.type === 'QuizBlock' && b.quiz?.questions?.length) {
-            return {
-              ...b,
-              quiz: {
-                ...b.quiz,
-                questions: b.quiz.questions.map((q) => ({
-                  ...q,
-                  _id: q._id?.toString?.() ?? q._id,
-                })),
-              },
+          const flatB = ser(b);
+          if (flatB.type === 'QuizBlock' && flatB.quiz?.questions?.length) {
+            flatB.quiz = {
+              ...flatB.quiz,
+              questions: flatB.quiz.questions.map((q) => {
+                const safeQ = ser(q);
+                delete safeQ.correctAnswer;
+                delete safeQ.explanation;
+                return safeQ;
+              }),
             };
           }
-          return b;
+          return flatB;
         });
       }
       return flat;

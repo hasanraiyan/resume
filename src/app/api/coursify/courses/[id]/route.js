@@ -30,7 +30,10 @@ export async function GET(request, { params }) {
 
     const [modules, sections] = await Promise.all([
       CoursifyModule.find({ courseId: id, deletedAt: null }).sort({ order: 1 }).lean(),
-      CoursifySection.find({ courseId: id, deletedAt: null }).sort({ order: 1 }).lean(),
+      CoursifySection.find({ courseId: id, deletedAt: null })
+        .select('-blocks')
+        .sort({ order: 1 })
+        .lean(),
     ]);
 
     return NextResponse.json({
