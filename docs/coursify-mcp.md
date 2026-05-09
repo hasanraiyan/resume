@@ -6,107 +6,89 @@ Coursify MCP is a specialized **Model Context Protocol (MCP)** server integrated
 
 ## Purpose
 
-The primary goal of Coursify MCP is to turn an AI assistant into a professional **Instructional Designer**. By providing a set of granular tools and a strict authoring guide, the MCP ensures that AI-generated courses follow educational best practices, including clear learning objectives, structured modules, practical examples, and knowledge-checks.
+The primary goal of Coursify MCP is to turn an AI assistant into a professional **Instructional Designer**. By consolidating 32 granular operations into a streamlined set of ~14 powerful tools, the MCP ensures that AI-generated courses follow educational best practices without overwhelming the agent with excessive options.
 
 ## Architecture
 
-Coursify MCP is embedded directly within the Next.js application as a set of MCP tools. It communicates with the same MongoDB database used by the main platform, ensuring data consistency across the web reader and the AI authoring environment.
+Coursify MCP is embedded directly within the Next.js application. It shares the same MongoDB database and shared logic (`db-ops.js`) as the web reader, ensuring a seamless transition from AI authoring to user consumption.
 
 ```mermaid
 graph TD
     Client[MCP Client / Claude Desktop] <--> Server[Next.js MCP Route]
-    Server <--> Tools[Coursify MCP Tools]
+    Server <--> Tools[Consolidated Coursify Tools]
     Tools <--> DBOps[Coursify DB Ops]
     DBOps <--> MongoDB[(MongoDB)]
     MongoDB <--> Reader[Coursify Web Reader]
 ```
 
-## Core Features & Workflows
+## Streamlined Workflows
 
-### 1. Research & Discovery
+### 1. Discovery & Context Loading
 
-AI agents can search for existing courses to avoid duplication and save research findings (notes, sources, key takeaways) directly to the course context.
+The `get_course` tool is the primary entry point for context. It can fetch metadata, full content, research findings, and a progress report in a single call using optional flags.
 
-- **Tools**: `list_courses`, `search_courses`, `add_research_note`, `research_findings` (batch).
+- **Tools**: `list_courses`, `get_course`.
 
-### 2. Planning & Strategy
+### 2. Strategy & Lifecycle
 
-The agent defines the target audience, learning objectives, and a high-level outline before writing content.
+All metadata updates, planning (audience, objectives, outline), and status changes (authoring status, publication) are handled by a single `upsert_course` tool.
 
-- **Tools**: `save_course_plan`, `get_course_authoring_guide`.
+- **Tools**: `upsert_course`, `get_authoring_guide`.
 
-### 3. Automated Structuring
+### 3. Structural Automation
 
-Based on a Markdown outline, the MCP can suggest and automatically generate a logical module and section hierarchy.
+AI agents can analyze an outline to get module suggestions and then apply them to automatically generate the course hierarchy.
 
-- **Tools**: `suggest_modules_from_outline`, `apply_suggested_modules`.
+- **Tools**: `analyze_outline`, `upsert_module`, `reorder_modules`.
 
-### 4. Content Authoring
+### 4. Content Writing
 
-Agents write course sections using full Markdown support, including Mermaid diagrams for visuals and LaTeX for mathematical formulas.
+The `upsert_section` tool handles single section creation/updates, batch creation of multiple sections, and quiz question management.
 
-- **Tools**: `add_sections` (batch), `update_section`, `set_quiz_questions`.
+- **Tools**: `get_section`, `upsert_section`, `reorder_sections`.
 
-### 5. Quality Control & Progress
+### 5. Research Management
 
-Track course completeness and get AI-driven recommendations for the next steps.
+Agents can save multiple research findings (sources, quotes, key takeaways) in a single batch call.
 
-- **Tools**: `get_course_progress`, `get_course_workspace`.
+- **Tools**: `manage_research`.
 
 ---
 
 ## Tool Reference
 
-| Category       | Key Tools                                    | Description                                                |
-| :------------- | :------------------------------------------- | :--------------------------------------------------------- |
-| **Meta**       | `get_course_authoring_guide`                 | Returns the instructional design quality bar and workflow. |
-| **Planning**   | `save_course_plan`, `add_research_note`      | Persists the strategy and research notes for a course.     |
-| **Structure**  | `apply_suggested_modules`, `reorder_modules` | Manages the hierarchy of modules and sections.             |
-| **Content**    | `add_sections`, `set_quiz_questions`         | The primary tools for writing lessons and assessments.     |
-| **Management** | `publish_course`, `get_course_progress`      | Handles the course lifecycle and completeness tracking.    |
+| Category   | Tool                  | Description                                                  |
+| :--------- | :-------------------- | :----------------------------------------------------------- |
+| **Meta**   | `get_authoring_guide` | Quality bar, workflows, and Mermaid/LaTeX templates.         |
+| **Meta**   | `list_courses`        | List all courses or search by keywords/tags.                 |
+| **Read**   | `get_course`          | Fetch metadata, content, research, and progress (via flags). |
+| **Read**   | `get_section`         | Fetch full Markdown content and quiz for one section.        |
+| **Write**  | `upsert_course`       | Create/Update course, plan, agentNotes, and status.          |
+| **Write**  | `upsert_module`       | Create or update a module grouping.                          |
+| **Write**  | `upsert_section`      | Create/Update sections (single or batch) and quizzes.        |
+| **Write**  | `manage_research`     | Save one or more research findings.                          |
+| **Write**  | `analyze_outline`     | Suggest modules from outline or apply them automatically.    |
+| **Order**  | `reorder_modules`     | Reorder modules within a course.                             |
+| **Order**  | `reorder_sections`    | Reorder sections within a course or module.                  |
+| **Delete** | `delete_courses`      | Soft-delete one or more courses.                             |
+| **Delete** | `delete_modules`      | Soft-delete one or more modules.                             |
+| **Delete** | `delete_sections`     | Soft-delete one or more sections.                            |
 
 ---
 
 ## Workflow Guide: The Authoring Lifecycle
 
-1.  **Research**: Gather sources and save them using `research_findings`.
-2.  **Plan**: Define objectives and outline using `save_course_plan`.
-3.  **Structure**: Generate modules from the outline using `apply_suggested_modules`.
-4.  **Draft**: Write sections in batches using `add_sections`.
-5.  **Review**: Check progress with `get_course_progress`.
-6.  **Publish**: Mark the course as ready using `publish_course`.
+1.  **Research**: Gather sources and save them using `manage_research`.
+2.  **Plan**: Define objectives and outline using `upsert_course`.
+3.  **Structure**: Generate modules from the outline using `analyze_outline(apply: true)`.
+4.  **Draft**: Write sections in batches using `upsert_section(batch: [...])`.
+5.  **Review**: Check gaps with `get_course(includeProgress: true)`.
+6.  **Publish**: Mark the course as ready using `upsert_course(status: "published")`.
 
 ---
 
-## Setup Instructions
+## Technical Details
 
-To use Coursify MCP with a compatible client like **Claude Desktop**:
-
-1.  **Obtain API Credentials**: Ensure you have an active session or API key for the platform.
-2.  **Configure MCP Client**: Add the following to your MCP configuration (e.g., `claude_desktop_config.json`):
-
-```json
-{
-  "mcpServers": {
-    "coursify": {
-      "command": "node",
-      "args": ["path/to/your/project/src/lib/mcp/coursify/index.js"],
-      "env": {
-        "MONGODB_URI": "your_mongodb_uri",
-        "NEXTAUTH_SECRET": "your_secret"
-      }
-    }
-  }
-}
-```
-
-_Note: Since the server is integrated into Next.js, it is typically accessed via the platform's MCP SSE or WebStandard transport in production._
-
----
-
-## Future Roadmap
-
-- [ ] **Dedicated Admin UI**: A visual dashboard for managing AI-authored courses.
-- [ ] **AI Thumbnail Generation**: Automated thumbnail creation for new courses.
-- [ ] **Collaboration Tools**: Multi-agent authoring support.
-- [ ] **Advanced Assessments**: More quiz types (matching, drag-and-drop).
+- **Diagrams**: Use \`\`\`mermaid blocks for interactive SVG diagrams.
+- **Math**: Use LaTeX syntax ($...$ for inline, $$...$$ for display math).
+- **Persistence**: Use the `agentNotes` field in `upsert_course` to save your internal working state between sessions.
