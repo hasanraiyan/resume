@@ -7,6 +7,18 @@ import rehypeRaw from 'rehype-raw';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
+// Box-drawing unicode block + common ASCII art patterns
+const ASCII_ART_RE = /[┌┐└┘│─├┤┬┴┼╔╗╚╝║═╠╣╦╩╬▲▼◄►]/;
+const ASCII_PIPE_RE = /^[\s|+\-=*#.oO@:~^<>\\/()[\]{}_,.'"]+$/;
+
+function isAsciiArt(code) {
+  if (ASCII_ART_RE.test(code)) return true;
+  // Treat as ASCII art if every non-empty line is made of pipe/dash/plus/symbol chars
+  const lines = code.split('\n').filter((l) => l.trim().length > 0);
+  if (lines.length < 2) return false;
+  return lines.every((l) => ASCII_PIPE_RE.test(l));
+}
+
 /**
  * Medium-style Markdown Renderer.
  * Beautiful prose typography with Georgia/serif fonts, proper spacing,
@@ -143,14 +155,30 @@ export default function MarkdownRenderer({ content }) {
           // Code blocks
           code({ node, inline, className, children, ...props }) {
             const match = /language-(\w+)/.exec(className || '');
-            return !inline && match ? (
-              <div className="my-6 -mx-5 sm:mx-0 rounded-none sm:rounded-lg overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-2 bg-neutral-800 text-neutral-400 text-[11px] font-mono">
-                  <span>{match[1]}</span>
+            const lang = match ? match[1] : null;
+            const codeStr = String(children).replace(/\n$/, '');
+
+            // ASCII art / box diagrams or explicit ascii tag
+            if (!inline && (lang === 'ascii' || (!lang && isAsciiArt(codeStr)))) {
+              return (
+                <div className="my-6 -mx-5 sm:mx-0 rounded-none sm:rounded-lg overflow-hidden border border-neutral-200 bg-neutral-50">
+                  <pre className="p-5 text-[13px] sm:text-[14px] leading-relaxed font-mono text-neutral-800 overflow-x-auto whitespace-pre">
+                    {codeStr}
+                  </pre>
                 </div>
+              );
+            }
+
+            return !inline ? (
+              <div className="my-6 -mx-5 sm:mx-0 rounded-none sm:rounded-lg overflow-hidden">
+                {lang && (
+                  <div className="flex items-center justify-between px-4 py-2 bg-neutral-800 text-neutral-400 text-[11px] font-mono">
+                    <span>{lang}</span>
+                  </div>
+                )}
                 <SyntaxHighlighter
                   style={atomDark}
-                  language={match[1]}
+                  language={lang || 'text'}
                   PreTag="div"
                   customStyle={{
                     margin: 0,
@@ -161,7 +189,7 @@ export default function MarkdownRenderer({ content }) {
                   }}
                   {...props}
                 >
-                  {String(children).replace(/\n$/, '')}
+                  {codeStr}
                 </SyntaxHighlighter>
               </div>
             ) : (

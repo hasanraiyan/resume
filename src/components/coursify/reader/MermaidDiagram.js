@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useEffect, useRef, useState } from 'react';
+import { TransformWrapper, TransformComponent, useControls } from 'react-zoom-pan-pinch';
 
 let mermaidReady = false;
 let mermaidInstance = null;
@@ -49,6 +50,35 @@ async function getMermaid() {
 
 let uid = 0;
 
+function ZoomControls() {
+  const { zoomIn, zoomOut, resetTransform } = useControls();
+  return (
+    <div className="absolute top-3 right-3 flex items-center gap-1 z-10">
+      <button
+        onClick={() => zoomIn(0.25)}
+        className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/80 hover:bg-white text-[#1f644e] font-bold text-base shadow-sm border border-[#d4e6db] transition-colors"
+        aria-label="Zoom in"
+      >
+        +
+      </button>
+      <button
+        onClick={() => zoomOut(0.25)}
+        className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/80 hover:bg-white text-[#1f644e] font-bold text-base shadow-sm border border-[#d4e6db] transition-colors"
+        aria-label="Zoom out"
+      >
+        −
+      </button>
+      <button
+        onClick={() => resetTransform()}
+        className="h-7 px-2 flex items-center justify-center rounded-lg bg-white/80 hover:bg-white text-[#1f644e] text-xs font-medium shadow-sm border border-[#d4e6db] transition-colors"
+        aria-label="Reset zoom"
+      >
+        Reset
+      </button>
+    </div>
+  );
+}
+
 export const MermaidDiagram = memo(function MermaidDiagram({ chart }) {
   const [svg, setSvg] = useState('');
   const [error, setError] = useState(null);
@@ -59,16 +89,9 @@ export const MermaidDiagram = memo(function MermaidDiagram({ chart }) {
     if (!code) return '';
     let sanitized = code;
 
-    // 1. Replace escaped quotes \" which LLMs often generate but Mermaid parser hates in 11.x
-    // We convert them to single quotes or simple double quotes if we can safely do so.
-    // For now, replacing \" with ' is the safest way to prevent string termination errors.
     sanitized = sanitized.replace(/\\"/g, "'");
-
-    // 2. Replace literal \n with <br/> inside node labels
-    // Mermaid 10+ handles <br/> much better than literal \n in many chart types.
     sanitized = sanitized.replace(/\\n/g, '<br/>');
 
-    // 3. Ensure the graph starts with a valid type if it's missing (rare but happens)
     if (
       !sanitized.trim().startsWith('graph') &&
       !sanitized.trim().startsWith('flowchart') &&
@@ -129,25 +152,20 @@ export const MermaidDiagram = memo(function MermaidDiagram({ chart }) {
   if (!svg) {
     return (
       <div className="my-6 rounded-2xl bg-[#f0f5f2] p-6 animate-pulse">
-        {/* Top node */}
         <div className="flex justify-center mb-4">
           <div className="h-8 w-32 rounded-lg bg-[#d4e6db]" />
         </div>
-        {/* Connector line */}
         <div className="flex justify-center mb-4">
           <div className="w-0.5 h-5 bg-[#c2d8ce]" />
         </div>
-        {/* Middle row */}
         <div className="flex justify-center gap-8 mb-4">
           <div className="h-8 w-24 rounded-lg bg-[#d4e6db]" />
           <div className="h-8 w-24 rounded-lg bg-[#d4e6db]" />
         </div>
-        {/* Connector lines */}
         <div className="flex justify-center gap-16 mb-4">
           <div className="w-0.5 h-5 bg-[#c2d8ce]" />
           <div className="w-0.5 h-5 bg-[#c2d8ce]" />
         </div>
-        {/* Bottom row */}
         <div className="flex justify-center gap-8">
           <div className="h-8 w-20 rounded-lg bg-[#c2d8ce]" />
           <div className="h-8 w-20 rounded-lg bg-[#c2d8ce]" />
@@ -165,7 +183,6 @@ export const MermaidDiagram = memo(function MermaidDiagram({ chart }) {
           overflow: visible;
         }
 
-        /* Node shapes */
         .mermaid-diagram svg .node rect,
         .mermaid-diagram svg .node polygon,
         .mermaid-diagram svg .node path {
@@ -174,12 +191,10 @@ export const MermaidDiagram = memo(function MermaidDiagram({ chart }) {
           stroke-width: 2px;
         }
 
-        /* Label container */
         .mermaid-diagram svg .label {
           padding: 18px !important;
         }
 
-        /* Fix clipped text */
         .mermaid-diagram svg .label text {
           dominant-baseline: central !important;
         }
@@ -189,22 +204,34 @@ export const MermaidDiagram = memo(function MermaidDiagram({ chart }) {
           dominant-baseline: central;
         }
 
-        /* Prevent SVG clipping */
         .mermaid-diagram svg text,
         .mermaid-diagram svg foreignObject {
           overflow: visible !important;
         }
 
-        /* Better arrows */
         .mermaid-diagram svg .edgePath path {
           stroke-width: 2px;
         }
       `}</style>
 
-      <div
-        className="mermaid-diagram my-6 overflow-x-auto rounded-2xl bg-[#f0f5f2] p-6 shadow-sm"
-        dangerouslySetInnerHTML={{ __html: svg }}
-      />
+      <div className="relative my-6 rounded-2xl bg-[#f0f5f2] shadow-sm overflow-hidden">
+        <TransformWrapper
+          initialScale={1}
+          minScale={0.25}
+          maxScale={3}
+          doubleClick={{ disabled: false, step: 0.5 }}
+          wheel={{ step: 0.1 }}
+          panning={{ velocityDisabled: true }}
+        >
+          <ZoomControls />
+          <TransformComponent
+            wrapperStyle={{ width: '100%', cursor: 'grab' }}
+            contentStyle={{ padding: '24px' }}
+          >
+            <div className="mermaid-diagram" dangerouslySetInnerHTML={{ __html: svg }} />
+          </TransformComponent>
+        </TransformWrapper>
+      </div>
     </>
   );
 });

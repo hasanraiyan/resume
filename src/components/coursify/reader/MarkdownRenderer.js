@@ -13,11 +13,11 @@ import { MermaidDiagram } from './MermaidDiagram';
 
 // Box-drawing unicode block + common ASCII art patterns
 const ASCII_ART_RE = /[┌┐└┘│─├┤┬┴┼╔╗╚╝║═╠╣╦╩╬▲▼◄►]/;
-const ASCII_PIPE_RE = /^[\s|+\-=*#.oO@:~^<>]+$/;
+const ASCII_PIPE_RE = /^[\s|+\-=*#.oO@:~^<>\\/()[\]{}_,.'"]+$/;
 
 function isAsciiArt(code) {
   if (ASCII_ART_RE.test(code)) return true;
-  // Treat as ASCII art if every non-empty line is made of pipe/dash/plus chars
+  // Treat as ASCII art if every non-empty line is made of pipe/dash/plus/symbol chars
   const lines = code.split('\n').filter((l) => l.trim().length > 0);
   if (lines.length < 2) return false;
   return lines.every((l) => ASCII_PIPE_RE.test(l));
@@ -69,7 +69,7 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({ content }) {
             }
 
             // ASCII art / box diagrams
-            if (isBlock && !lang && isAsciiArt(raw)) {
+            if (isBlock && (lang === 'ascii' || (!lang && isAsciiArt(raw)))) {
               return (
                 <div className="my-6 overflow-x-auto rounded-xl border border-[#d4e6db] bg-[#f7faf8]">
                   <pre className="p-4 text-[0.78rem] leading-relaxed font-mono text-[#1e3a34] whitespace-pre">
