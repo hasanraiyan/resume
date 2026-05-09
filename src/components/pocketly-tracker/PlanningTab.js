@@ -458,65 +458,106 @@ export default function PlanningTab() {
                     return (
                       <div
                         key={budget.id || budget._id}
-                        className="rounded-xl border border-[#e5e3d8] bg-white p-5"
+                        className="rounded-2xl border border-[#e5e3d8] bg-white p-5 flex flex-col sm:flex-row items-center gap-6"
                       >
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-3">
+                        <div className="relative shrink-0 flex items-center justify-center">
+                          <svg width="80" height="80" className="-rotate-90">
+                            <circle
+                              cx="40"
+                              cy="40"
+                              r="34"
+                              fill="none"
+                              stroke="#f0f5f2"
+                              strokeWidth="8"
+                            />
+                            <circle
+                              cx="40"
+                              cy="40"
+                              r="34"
+                              fill="none"
+                              stroke={
+                                budget.spent > budget.amount
+                                  ? '#c94c4c'
+                                  : budget.spent > budget.amount * 0.8
+                                    ? '#f59e0b'
+                                    : '#1f644e'
+                              }
+                              strokeWidth="8"
+                              strokeDasharray={`${2 * Math.PI * 34}`}
+                              strokeDashoffset={
+                                2 * Math.PI * 34 * (1 - Math.min(budget.progress, 100) / 100)
+                              }
+                              strokeLinecap="round"
+                              className="transition-all duration-700 ease-out"
+                            />
+                          </svg>
+                          <div
+                            className="absolute inset-0 flex items-center justify-center rounded-full text-white"
+                            style={{ margin: '14px' }}
+                          >
                             <div
-                              className="flex h-10 w-10 items-center justify-center rounded-xl text-white"
+                              className="w-full h-full rounded-full flex items-center justify-center shadow-sm"
                               style={{ backgroundColor: catColor }}
                             >
                               <IconRenderer name={catIcon} className="w-5 h-5" />
                             </div>
+                          </div>
+                        </div>
+
+                        <div className="flex-1 w-full min-w-0">
+                          <div className="flex items-center justify-between mb-2">
                             <div>
-                              <p className="font-bold text-[#1e3a34]">{catName}</p>
-                              <p className="text-xs text-[#7c8e88] capitalize">{budget.period}</p>
+                              <p className="font-bold text-[#1e3a34] truncate">{catName}</p>
+                              <p className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider">
+                                {budget.period}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => openBudgetModal(budget)}
+                                className="p-1.5 text-[#7c8e88] hover:bg-[#f0f5f2] rounded-lg transition-colors"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleBudgetDelete(budget.id || budget._id)}
+                                className="p-1.5 text-[#c94c4c] hover:bg-[#fef2f2] rounded-lg transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => openBudgetModal(budget)}
-                              className="p-1.5 text-[#7c8e88] hover:bg-[#f0f5f2] rounded-lg"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleBudgetDelete(budget.id || budget._id)}
-                              className="p-1.5 text-[#c94c4c] hover:bg-[#fef2f2] rounded-lg"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
 
-                        <div className="mb-2 flex items-end justify-between">
-                          <div>
-                            <p
-                              className={`text-2xl font-bold ${budget.isExceeded ? 'text-[#c94c4c]' : 'text-[#1e3a34]'}`}
-                            >
-                              {currencyFormatter.format(budget.spent)}
-                            </p>
-                            <p className="text-xs font-semibold text-[#7c8e88]">
-                              of {currencyFormatter.format(budget.amount)} limit
-                            </p>
-                          </div>
-                          {budget.isExceeded && (
-                            <div className="flex items-center gap-1 text-xs font-bold text-[#c94c4c] bg-[#fef2f2] px-2 py-1 rounded-md">
-                              <AlertTriangle className="w-3 h-3" />
-                              Exceeded
+                          <div className="flex items-end justify-between">
+                            <div>
+                              <div className="flex items-baseline gap-1">
+                                <p
+                                  className={`text-xl font-black ${
+                                    budget.spent > budget.amount
+                                      ? 'text-[#c94c4c]'
+                                      : budget.spent > budget.amount * 0.8
+                                        ? 'text-[#f59e0b]'
+                                        : 'text-[#1e3a34]'
+                                  }`}
+                                >
+                                  {currencyFormatter.format(budget.spent)}
+                                </p>
+                                <p className="text-[10px] font-bold text-[#7c8e88]">
+                                  / {currencyFormatter.format(budget.amount)}
+                                </p>
+                              </div>
+                              <p className="text-[10px] font-bold text-[#7c8e88]">
+                                {budget.progress.toFixed(0)}% used
+                              </p>
                             </div>
-                          )}
+                            {budget.isExceeded && (
+                              <div className="flex items-center gap-1 text-[10px] font-bold text-[#c94c4c] bg-[#fef2f2] px-2 py-1 rounded-full border border-[#f0d2d2]">
+                                <AlertTriangle className="w-3 h-3" />
+                                Over
+                              </div>
+                            )}
+                          </div>
                         </div>
-
-                        <div className="h-2 w-full bg-[#f0f5f2] rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-500 ${budget.isExceeded ? 'bg-[#c94c4c]' : 'bg-[#1f644e]'}`}
-                            style={{ width: `${budget.progress}%` }}
-                          />
-                        </div>
-                        <p className="mt-2 text-right text-[10px] font-bold text-[#7c8e88]">
-                          {budget.progress.toFixed(0)}%
-                        </p>
                       </div>
                     );
                   })}

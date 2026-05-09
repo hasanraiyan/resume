@@ -1,9 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { X, FileText, TrendingUp, LayoutGrid, ArrowDownToLine, Calendar } from 'lucide-react';
+import {
+  X,
+  FileText,
+  TrendingUp,
+  LayoutGrid,
+  ArrowDownToLine,
+  Calendar,
+  Filter,
+  Download,
+} from 'lucide-react';
 import { useMoney } from '@/context/MoneyContext';
 import { generatePocketlyPdf } from '@/utils/pdfGenerator';
+import { downloadTransactionsCsv } from '@/utils/csvExport';
 
 const RANGES = [
   { value: 'last-7-days', label: 'Last 7 Days' },
@@ -20,50 +30,78 @@ const PREVIEW_SECTIONS = [
 ];
 
 export default function ExportModal({ isOpen, onClose }) {
-  const { fetchTransactionsForPeriod, totalBalance, accountsWithBalance, accounts } = useMoney();
+  const {
+    fetchTransactionsForPeriod,
+    totalBalance,
+    accountsWithBalance,
+    accounts,
+    categories,
+    transactions,
+  } = useMoney();
   const [dateRange, setDateRange] = useState('this-month');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Advanced Filters
+  const [filterType, setFilterType] = useState('all');
+  const [filterCategory, setFilterCategory] = useState('all');
+
   if (!isOpen) return null;
+
+  const getActiveRange = () => {
+    const now = new Date();
+    let start, end;
+
+    if (dateRange === 'this-month') {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    } else if (dateRange === 'last-month') {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      end = new Date(now.getFullYear(), now.getMonth(), 0);
+    } else if (dateRange === 'last-7-days') {
+      start = new Date(now);
+      start.setDate(now.getDate() - 7);
+      end = new Date(now);
+    } else if (dateRange === 'all-time') {
+      start = new Date(2000, 0, 1);
+      end = new Date(2100, 0, 1);
+    } else if (dateRange === 'custom') {
+      start = fromDate ? new Date(fromDate) : new Date(2000, 0, 1);
+      end = toDate ? new Date(toDate) : new Date(2100, 0, 1);
+    }
+
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
+  };
 
   const handleGeneratePdf = async () => {
     setIsGenerating(true);
     try {
-      const now = new Date();
-      let start, end;
-
-      if (dateRange === 'this-month') {
-        start = new Date(now.getFullYear(), now.getMonth(), 1);
-        end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      } else if (dateRange === 'last-month') {
-        start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        end = new Date(now.getFullYear(), now.getMonth(), 0);
-      } else if (dateRange === 'last-7-days') {
-        start = new Date(now);
-        start.setDate(now.getDate() - 7);
-        end = new Date(now);
-      } else if (dateRange === 'all-time') {
-        start = new Date(2000, 0, 1);
-        end = new Date(2100, 0, 1);
-      } else if (dateRange === 'custom') {
-        start = fromDate ? new Date(fromDate) : new Date(2000, 0, 1);
-        end = toDate ? new Date(toDate) : new Date(2100, 0, 1);
-      }
-
-      end.setHours(23, 59, 59, 999);
+      const { start, end } = getActiveRange();
 
       const fetchedTransactions = await fetchTransactionsForPeriod(
         start.toISOString(),
         end.toISOString()
       );
 
+      // Apply advanced filters to PDF as well
+      let finalTransactions = fetchedTransactions;
+      if (filterType !== 'all') {
+        finalTransactions = finalTransactions.filter((t) => t.type === filterType);
+      }
+      if (filterCategory !== 'all') {
+        finalTransactions = finalTransactions.filter((t) => {
+          const tCatId = t.category?._id || t.category?.id || t.category;
+          return tCatId === filterCategory;
+        });
+      }
+
       const doc = await generatePocketlyPdf({
         start,
         end,
         dateRange,
-        transactions: fetchedTransactions,
+        transactions: finalTransactions,
         totalBalance,
         accountsWithBalance,
         accounts,
@@ -74,6 +112,32 @@ export default function ExportModal({ isOpen, onClose }) {
     } catch (err) {
       console.error('Error generating PDF:', err);
       alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleGenerateCsv = async () => {
+    setIsGenerating(true);
+    try {
+      const { start, end } = getActiveRange();
+
+      // We use the full transaction list from context if available, or fetch
+      const txnsToUse =
+        transactions.length > 0
+          ? transactions
+          : await fetchTransactionsForPeriod(start.toISOString(), end.toISOString());
+
+      downloadTransactionsCsv(txnsToUse, {
+        type: filterType,
+        categoryId: filterCategory,
+        startDate: start.toISOString(),
+        endDate: end.toISOString(),
+      });
+      onClose();
+    } catch (err) {
+      console.error('Error generating CSV:', err);
+      alert('Failed to generate CSV. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -204,6 +268,25 @@ export default function ExportModal({ isOpen, onClose }) {
           box-sizing: border-box;
         }
         .date-field input:focus { border-color: #1f644e; box-shadow: 0 0 0 3px rgba(31,100,78,0.1); }
+
+        /* Advanced Filters */
+        .advanced-filters {
+          display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+          padding: 14px; background: #f0f7f4; border-radius: 12px;
+          border: 1px solid #dce8e4;
+        }
+        .filter-field label {
+          display: block; font-size: 10px; font-weight: 600;
+          letter-spacing: 0.08em; text-transform: uppercase;
+          color: #5a7a6e; margin-bottom: 5px;
+        }
+        .filter-field select {
+          width: 100%; padding: 8px 10px;
+          border: 1.5px solid #dce8e4; border-radius: 8px;
+          background: #ffffff; color: #1e3a34; font-family: 'DM Sans', sans-serif;
+          font-size: 12px; font-weight: 500;
+          outline: none; cursor: pointer;
+        }
 
         /* Divider */
         .divider { height: 1px; background: linear-gradient(to right, transparent, #dce8e4 20%, #dce8e4 80%, transparent); }
@@ -349,6 +432,39 @@ export default function ExportModal({ isOpen, onClose }) {
               </div>
             )}
 
+            {/* Advanced Filtering */}
+            <div>
+              <div className="preview-label flex items-center gap-2">
+                <Filter size={12} />
+                Advanced Filters
+              </div>
+              <div className="advanced-filters">
+                <div className="filter-field">
+                  <label>Type</label>
+                  <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+                    <option value="all">All Types</option>
+                    <option value="income">Income</option>
+                    <option value="expense">Expense</option>
+                    <option value="transfer">Transfer</option>
+                  </select>
+                </div>
+                <div className="filter-field">
+                  <label>Category</label>
+                  <select
+                    value={filterCategory}
+                    onChange={(e) => setFilterCategory(e.target.value)}
+                  >
+                    <option value="all">All Categories</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id || cat._id} value={cat.id || cat._id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
             <div className="divider" />
 
             {/* Report preview */}
@@ -383,12 +499,20 @@ export default function ExportModal({ isOpen, onClose }) {
 
           {/* Footer */}
           <div className="modal-footer">
-            <span className="footer-hint">
-              Format: <strong>PDF</strong>
-            </span>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <button className="btn-cancel" onClick={onClose} disabled={isGenerating}>
-                Cancel
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                className="btn-generate"
+                style={{
+                  background: 'white',
+                  color: '#1f644e',
+                  border: '1.5px solid #1f644e',
+                  boxShadow: 'none',
+                }}
+                onClick={handleGenerateCsv}
+                disabled={isGenerating}
+              >
+                <Download size={14} />
+                CSV
               </button>
               <button className="btn-generate" onClick={handleGeneratePdf} disabled={isGenerating}>
                 {isGenerating ? (
@@ -399,11 +523,14 @@ export default function ExportModal({ isOpen, onClose }) {
                 ) : (
                   <>
                     <ArrowDownToLine size={14} />
-                    Export PDF
+                    PDF
                   </>
                 )}
               </button>
             </div>
+            <button className="btn-cancel" onClick={onClose} disabled={isGenerating}>
+              Cancel
+            </button>
           </div>
         </div>
       </div>

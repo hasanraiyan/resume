@@ -12,17 +12,21 @@ import {
   AlertTriangle,
   Wallet,
   SlidersHorizontal,
+  Trophy,
 } from 'lucide-react';
 import TopTabs from '@/components/custom-ui/TopTabs';
 import dynamic from 'next/dynamic';
 
 const IconRenderer = dynamic(() => import('./IconRenderer'), { ssr: false });
+const GamificationSection = dynamic(() => import('./GamificationSection'), { ssr: false });
+const MonthlyReview = dynamic(() => import('./MonthlyReview'), { ssr: false });
 
 const viewOptions = [
   { id: 'expense', label: 'Expense', icon: TrendingDown },
   { id: 'income', label: 'Income', icon: TrendingUp },
   { id: 'flow', label: 'Flow', icon: BarChart3 },
   { id: 'accounts', label: 'Accounts', icon: Wallet },
+  { id: 'gamification', label: 'Rewards', icon: Trophy },
 ];
 
 const periodOptions = ['Daily', 'Weekly', 'Monthly', '3 Months', '6 Months', 'Yearly'];
@@ -50,6 +54,7 @@ export default function AnalysisTab() {
   const [viewMode, setViewMode] = useState('expense');
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('Weekly');
+  const [isMonthlyReviewOpen, setIsMonthlyReviewOpen] = useState(false);
 
   useEffect(() => {
     fetchAnalysis(periodStart, periodEnd).catch(() => {});
@@ -537,6 +542,15 @@ export default function AnalysisTab() {
             />
 
             <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => setIsMonthlyReviewOpen(true)}
+                className="flex cursor-pointer items-center gap-2 rounded-xl border border-[#1f644e] bg-[#f0f5f2] px-3 py-2 text-xs font-bold text-[#1f644e] transition hover:bg-[#1f644e] hover:text-white"
+              >
+                <RefreshCw className="h-4 w-4" />
+                <span className="hidden sm:inline">Monthly Review</span>
+                <span className="sm:hidden">Review</span>
+              </button>
+
               <div className="relative">
                 <button
                   onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
@@ -593,10 +607,13 @@ export default function AnalysisTab() {
               {(viewMode === 'expense' || viewMode === 'income') && renderCategoryOverview()}
               {viewMode === 'flow' && renderExpenseFlow()}
               {viewMode === 'accounts' && renderAccountAnalysis()}
+              {viewMode === 'gamification' && <GamificationSection />}
             </div>
           )}
         </div>
       </div>
+
+      <MonthlyReview isOpen={isMonthlyReviewOpen} onClose={() => setIsMonthlyReviewOpen(false)} />
     </div>
   );
 }

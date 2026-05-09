@@ -77,6 +77,12 @@ export const generatePocketlyPdf = async ({
   // ─── 2. KPI SUMMARY TABLE ───────────────────────────────────────────────
   let cursorY = M + 20;
 
+  // Calculate MoM if possible
+  let momIncome = 0;
+  let momExpense = 0;
+  // This is a simplified MoM comparison as we don't have historical data here easily
+  // In a real app we might pass this in. For now, we'll focus on top categories.
+
   autoTable(doc, {
     startY: cursorY,
     head: [['Total Income', 'Total Expense', 'Period Savings', 'Net Balance']],
@@ -110,6 +116,40 @@ export const generatePocketlyPdf = async ({
   });
 
   cursorY = doc.lastAutoTable.finalY + 10;
+
+  // ─── 2.5 TOP CATEGORIES ────────────────────────────────────────────────
+  const categoryTotals = {};
+  transactions.forEach((t) => {
+    if (t.type === 'expense' && t.category) {
+      const name = t.category.name;
+      categoryTotals[name] = (categoryTotals[name] || 0) + t.amount;
+    }
+  });
+
+  const topCategories = Object.entries(categoryTotals)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  if (topCategories.length > 0) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('Top Spending Categories', M, cursorY);
+    cursorY += 5;
+
+    autoTable(doc, {
+      startY: cursorY,
+      head: [['Category', 'Amount', '% of Total Expense']],
+      body: topCategories.map(([name, amount]) => [
+        name,
+        fmt(amount),
+        `${((amount / totalExpense) * 100).toFixed(1)}%`,
+      ]),
+      theme: 'grid',
+      headStyles: { fillColor: [240, 245, 242], textColor: rgb(C.textDark), fontStyle: 'bold' },
+      styles: { fontSize: 8, cellPadding: 2 },
+    });
+    cursorY = doc.lastAutoTable.finalY + 10;
+  }
 
   // ─── 3. TRANSACTION TABLE ───────────────────────────────────────────────
   const tableData = transactions.map((t) => {
@@ -186,6 +226,60 @@ export const generatePocketlyPdf = async ({
       );
     },
   });
+
+  // ─── 4. AI SUMMARY ─────────────────────────────────────────────────────
+  try {
+    const summaryResponse = await fetch(
+      `/api/money/report-summary?startDate=${start.toISOString()}&endDate=${end.toISOString()}`
+    );
+    const summaryData = await summaryResponse.json();
+
+    if (summaryData.success && summaryData.summary) {
+      cursorY = doc.lastAutoTable.finalY + 15;
+      if (cursorY + 40 > PH) {
+        doc.addPage();
+        cursorY = M;
+      }
+
+      doc.setDrawColor(...rgb(C.primary));
+      doc.setLineWidth(0.5);
+      doc.line(M, cursorY, M + 10, cursorY);
+
+      cursorY += 7;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(...rgb(C.primary));
+      doc.text('Finance Assistant Summary', M, cursorY);
+
+      cursorY += 6;
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(9);
+      doc.setTextColor(...rgb(C.textDark));
+
+      const splitText = doc.splitTextToSize(summaryData.summary, PW - 2 * M);
+      doc.text(splitText, M, cursorY);
+    }
+  } catch (e) {
+    // Fallback if AI summary fails
+    if (doc.lastAutoTable.finalY < PH - 40) {
+      cursorY = doc.lastAutoTable.finalY + 15;
+      doc.setDrawColor(...rgb(C.borderLight));
+      doc.setLineDash([2, 2]);
+      doc.rect(M, cursorY, PW - 2 * M, 25);
+      doc.setLineDash([]);
+
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(9);
+      doc.setTextColor(...rgb(C.textMuted));
+      doc.text('Finance Assistant Insights', M + 5, cursorY + 7);
+      doc.setFontSize(8);
+      doc.text(
+        'Tip: Use the Pocketly Chat to get a detailed AI analysis of these transactions.',
+        M + 5,
+        cursorY + 15
+      );
+    }
+  }
 
   return doc;
 };

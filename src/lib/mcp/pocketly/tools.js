@@ -32,6 +32,7 @@ import {
   buildBudgetsPayload,
   buildSummaryPayload,
 } from './payloads.js';
+import { getTransactions } from '@/lib/apps/pocketly/service/service';
 
 export function registerPocketlyTools(server) {
   server.registerTool(
@@ -417,6 +418,55 @@ export function registerPocketlyTools(server) {
       } catch (err) {
         return errorResult(err.message);
       }
+    }
+  );
+
+  server.registerTool(
+    'get_monthly_report_summary',
+    {
+      title: 'Get Monthly Report Summary',
+      description:
+        "Retrieve a structured financial summary for the current month. Ideal for the Finance Assistant to provide a text-based 'Summary of the Month' for reports.",
+      annotations: READ_ONLY_ANNOTATIONS,
+      inputSchema: {},
+      _meta: toolMeta('Aggregating monthly data...', 'Monthly summary ready.'),
+    },
+    async () => {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+      const transactions = await getTransactions({
+        startDate: start.toISOString(),
+        endDate: end.toISOString(),
+      });
+
+      const income = transactions
+        .filter((t) => t.type === 'income')
+        .reduce((sum, t) => sum + t.amount, 0);
+      const expense = transactions
+        .filter((t) => t.type === 'expense')
+        .reduce((sum, t) => sum + t.amount, 0);
+      const net = income - expense;
+
+      const categoryTotals = {};
+      transactions
+        .filter((t) => t.type === 'expense')
+        .forEach((t) => {
+          const name = t.category?.name || 'Uncategorized';
+          categoryTotals[name] = (categoryTotals[name] || 0) + t.amount;
+        });
+
+      const topCategories = Object.entries(categoryTotals)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([name, amount]) => ({ name, amount }));
+
+      return textResult(`Monthly Summary: Income ${income}, Expense ${expense}, Net ${net}.`, {
+        period: now.toLocaleString('default', { month: 'long', year: 'numeric' }),
+        stats: { income, expense, net },
+        topSpendingCategories: topCategories,
+      });
     }
   );
 }
