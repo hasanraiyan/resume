@@ -2,8 +2,8 @@ import { Clock, Layers, Check, ChevronRight, ScrollText } from 'lucide-react';
 import { QuizIcon } from './icons';
 
 function SectionIcon({ section }) {
-  if (section.sectionType === 'quiz')
-    return <QuizIcon className="w-3 h-3 text-[#7c8e88] shrink-0" />;
+  const onlyQuiz = section.blocks?.length === 1 && section.blocks[0].type === 'QuizBlock';
+  if (onlyQuiz) return <QuizIcon className="w-3 h-3 text-[#7c8e88] shrink-0" />;
   return <ScrollText className="w-3 h-3 text-[#7c8e88] shrink-0" />;
 }
 

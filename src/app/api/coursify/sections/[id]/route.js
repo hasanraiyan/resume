@@ -2,6 +2,11 @@ import { requireAdminAuth } from '@/lib/money-auth';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import CoursifySection from '@/models/CoursifySection';
+import mongoose from 'mongoose';
+
+function isObjectId(str) {
+  return mongoose.Types.ObjectId.isValid(str) && String(new mongoose.Types.ObjectId(str)) === str;
+}
 
 export async function PATCH(request, { params }) {
   const auth = await requireAdminAuth(request);
@@ -10,11 +15,15 @@ export async function PATCH(request, { params }) {
   try {
     await dbConnect();
     const { id } = await params;
+
+    if (!isObjectId(id)) {
+      return NextResponse.json({ success: false, error: 'Invalid section ID' }, { status: 400 });
+    }
+
     const body = await request.json();
 
     const allowed = [
       'title',
-      'content',
       'order',
       'resources',
       'moduleId',
@@ -22,8 +31,7 @@ export async function PATCH(request, { params }) {
       'summary',
       'learningGoals',
       'estimatedDuration',
-      'sectionType',
-      'quiz',
+      'blocks',
     ];
     const patch = {};
     for (const key of allowed) {
@@ -61,6 +69,10 @@ export async function DELETE(request, { params }) {
   try {
     await dbConnect();
     const { id } = await params;
+
+    if (!isObjectId(id)) {
+      return NextResponse.json({ success: false, error: 'Invalid section ID' }, { status: 400 });
+    }
 
     const section = await CoursifySection.findOneAndUpdate(
       { _id: id, deletedAt: null },

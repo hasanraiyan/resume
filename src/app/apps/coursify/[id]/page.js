@@ -27,9 +27,8 @@ import { useReaderUI } from '@/hooks/coursify/useReaderUI';
 import { ReaderHeader } from '@/components/coursify/reader/ReaderHeader';
 import { ReaderSidebar } from '@/components/coursify/reader/ReaderSidebar';
 import { CourseOverview } from '@/components/coursify/reader/CourseOverview';
-import { MarkdownRenderer } from '@/components/coursify/reader/MarkdownRenderer';
+import { CoursifyBlockRenderer } from '@/components/coursify/reader/CoursifyBlockRenderer';
 import { ReaderNavigation } from '@/components/coursify/reader/ReaderNavigation';
-import { QuizPlayer } from '@/components/coursify/reader/QuizPlayer';
 
 const pacifico = Pacifico({
   weight: '400',
@@ -886,12 +885,7 @@ export default function CourseDetailPage({ params }) {
                     )}
                   </div>
 
-                  {currentSection.sectionType !== 'quiz' && currentSection.content && (
-                    <MarkdownRenderer content={currentSection.content} />
-                  )}
-                  {(currentSection.quiz?.questions?.length ?? 0) > 0 && (
-                    <QuizPlayer questions={currentSection.quiz.questions} />
-                  )}
+                  <CoursifyBlockRenderer blocks={currentSection.blocks} />
 
                   {currentSection.resources?.length > 0 && (
                     <div className="mt-8 pt-6 border-t border-[#e5e3d8]">

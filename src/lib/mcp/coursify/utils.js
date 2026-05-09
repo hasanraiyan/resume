@@ -167,19 +167,27 @@ export function normalizeSection(section) {
     courseId: section.courseId?.toString?.() || section.courseId,
     moduleId: section.moduleId?.toString?.() || null,
     title: section.title,
-    sectionType: section.sectionType || 'lesson',
-    content: section.content || '',
-    quiz: {
-      questions: (section.quiz?.questions || []).map((q) => ({
-        id: q._id?.toString?.() || q.id,
-        type: q.type,
-        question: q.question,
-        options: q.options || [],
-        correctAnswer: q.correctAnswer ?? null,
-        explanation: q.explanation || '',
-        points: q.points ?? 1,
-      })),
-    },
+    blocks: (section.blocks || []).map((b) => ({
+      id: b._id?.toString?.() || b.id,
+      type: b.type,
+      content: b.content,
+      quiz: b.quiz
+        ? {
+            questions: (b.quiz.questions || []).map((q) => ({
+              id: q._id?.toString?.() || q.id,
+              type: q.type,
+              question: q.question,
+              options: q.options || [],
+              correctAnswer: q.correctAnswer ?? null,
+              explanation: q.explanation || '',
+              points: q.points ?? 1,
+            })),
+          }
+        : undefined,
+      video: b.video,
+      resource: b.resource,
+      order: b.order ?? 0,
+    })),
     summary: section.summary || '',
     learningGoals: section.learningGoals || [],
     estimatedDuration: section.estimatedDuration || '',

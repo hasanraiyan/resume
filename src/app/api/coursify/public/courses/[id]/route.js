@@ -41,7 +41,7 @@ export async function GET(request, { params }) {
         .sort({ order: 1 })
         .lean(),
       CoursifySection.find({ courseId, deletedAt: null })
-        .select('title sectionType content quiz resources order moduleId')
+        .select('title blocks resources order moduleId summary learningGoals estimatedDuration')
         .sort({ order: 1 })
         .lean(),
     ]);

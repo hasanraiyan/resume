@@ -4,8 +4,13 @@ import dbConnect from '@/lib/dbConnect';
 import CoursifyModule from '@/models/CoursifyModule';
 import CoursifySection from '@/models/CoursifySection';
 import CoursifyCourse from '@/models/CoursifyCourse';
+import mongoose from 'mongoose';
 
 const ALLOWED_PATCH_KEYS = ['title', 'summary', 'learningGoals', 'order', 'status'];
+
+function isObjectId(str) {
+  return mongoose.Types.ObjectId.isValid(str) && String(new mongoose.Types.ObjectId(str)) === str;
+}
 
 export async function PATCH(request, { params }) {
   const auth = await requireAdminAuth(request);
@@ -14,6 +19,11 @@ export async function PATCH(request, { params }) {
   try {
     await dbConnect();
     const { id } = await params;
+
+    if (!isObjectId(id)) {
+      return NextResponse.json({ success: false, error: 'Invalid module ID' }, { status: 400 });
+    }
+
     const body = await request.json();
 
     const patch = {};
@@ -52,6 +62,10 @@ export async function DELETE(request, { params }) {
   try {
     await dbConnect();
     const { id } = await params;
+
+    if (!isObjectId(id)) {
+      return NextResponse.json({ success: false, error: 'Invalid module ID' }, { status: 400 });
+    }
 
     const module = await CoursifyModule.findOneAndUpdate(
       { _id: id, deletedAt: null },

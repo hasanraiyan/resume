@@ -160,7 +160,7 @@ export function createCoursifyTools(courseId) {
       return JSON.stringify({
         id: section._id.toString(),
         title: section.title,
-        content: section.content,
+        blocks: section.blocks,
         summary: section.summary,
         learningGoals: section.learningGoals,
         estimatedDuration: section.estimatedDuration,
@@ -170,7 +170,7 @@ export function createCoursifyTools(courseId) {
     {
       name: 'get_section_content',
       description:
-        'Get the full markdown content of a specific section in the current course by its ID. Use this when the user asks about a specific topic or needs deeper explanation.',
+        'Get the full content (blocks) of a specific section in the current course by its ID. A section contains multiple blocks like text (MdBlock), quizzes (QuizBlock), or videos. Use this when the user asks about a specific topic or needs deeper explanation.',
       schema: z.object({
         sectionId: z.string().describe('The section ID from get_course_outline'),
       }),
@@ -185,7 +185,7 @@ export function createCoursifyTools(courseId) {
         deletedAt: null,
         $or: [
           { title: { $regex: query, $options: 'i' } },
-          { content: { $regex: query, $options: 'i' } },
+          { 'blocks.content': { $regex: query, $options: 'i' } },
           { summary: { $regex: query, $options: 'i' } },
           { learningGoals: { $elemMatch: { $regex: query, $options: 'i' } } },
         ],
@@ -208,7 +208,7 @@ export function createCoursifyTools(courseId) {
     {
       name: 'search_course_sections',
       description:
-        'Search sections within the current course by keyword or topic. Use this to find relevant sections when the user asks about a specific concept.',
+        'Search sections within the current course by keyword or topic. It searches titles and markdown content blocks. Use this to find relevant sections when the user asks about a specific concept.',
       schema: z.object({
         query: z.string().describe('Search keyword or phrase'),
       }),

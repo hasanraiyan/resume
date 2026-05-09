@@ -47,7 +47,7 @@ RULES:
   if (currentSectionTitle) {
     prompt += `\n\nCURRENT SECTION: The learner is reading **"${currentSectionTitle}"**.`;
     if (currentSectionSummary) prompt += ` (${currentSectionSummary})`;
-    prompt += `\nFor questions about this section, call get_course_outline first to get the section ID, then get_section_content.`;
+    prompt += `\nFor questions about this section, call get_course_outline first to get the section ID, then get_section_content to read its blocks (text, quizzes, videos).`;
   }
 
   return prompt;

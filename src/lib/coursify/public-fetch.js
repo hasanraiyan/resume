@@ -51,9 +51,7 @@ export async function fetchPublicCourse(slugOrId) {
       .sort({ order: 1 })
       .lean(),
     CoursifySection.find({ courseId, deletedAt: null })
-      .select(
-        'title sectionType content quiz resources order moduleId summary learningGoals estimatedDuration'
-      )
+      .select('title blocks resources order moduleId summary learningGoals estimatedDuration')
       .sort({ order: 1 })
       .lean(),
   ]);
@@ -63,14 +61,22 @@ export async function fetchPublicCourse(slugOrId) {
     modules: modules.map((m) => ser({ ...m, courseId })),
     sections: sections.map((s) => {
       const flat = ser({ ...s, courseId, moduleId: s.moduleId?.toString() || null });
-      if (flat.quiz?.questions?.length) {
-        flat.quiz = {
-          ...flat.quiz,
-          questions: flat.quiz.questions.map((q) => ({
-            ...q,
-            _id: q._id?.toString?.() ?? q._id,
-          })),
-        };
+      if (flat.blocks) {
+        flat.blocks = flat.blocks.map((b) => {
+          if (b.type === 'QuizBlock' && b.quiz?.questions?.length) {
+            return {
+              ...b,
+              quiz: {
+                ...b.quiz,
+                questions: b.quiz.questions.map((q) => ({
+                  ...q,
+                  _id: q._id?.toString?.() ?? q._id,
+                })),
+              },
+            };
+          }
+          return b;
+        });
       }
       return flat;
     }),

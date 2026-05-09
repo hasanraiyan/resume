@@ -45,11 +45,11 @@ export const COURSE_AUTHORING_GUIDE = {
   workflow: [
     '0. SESSION RESUME — If the user says "continue my course" and you do not have a courseId in context, follow the sessionResumeWorkflow above.',
     '1. DISCOVERY — Call list_courses first to avoid duplicate topics. Decide whether to create a new course or update an existing draft. If updating, call get_course with all include flags.',
-    '2. PREP — Call get_authoring_guide (you already have it). Read the quality bar and section template before doing any work.',
+    '2. PREP — Call get_authoring_guide (you already have it). Read the quality bar and block-based architecture before doing any work.',
     '3. RESEARCH — Gather information. Call manage_research to save all findings (up to 20 findings per call). Set authoringStatus to "researching" via upsert_course.',
     '4. PLAN — Call upsert_course to define targetAudience, learningObjectives, prerequisites, outcome, and a Markdown outline. Save planned sections to agentNotes. Set authoringStatus to "planned".',
     '5. STRUCTURE — Call upsert_module to create modules, then upsert_section(batch: []) to add planned sections under each module.',
-    '6. WRITE — Use upsert_section(batch: []) to create or update sections in one call. Set authoringStatus to "drafting" when you begin. Save progress to agentNotes after each batch. For quiz sections, use the questions param.',
+    '6. WRITE — Use upsert_section(batch: []) to create or update sections. A section is a collection of BLOCKS. Use MdBlock for text, QuizBlock for assessments, VideoBlock for embeds, and ResourceBlock for links. Set authoringStatus to "drafting" when you begin. Save progress to agentNotes after each batch.',
     '7. REVIEW — Call get_course(includeProgress: true) to identify gaps. Use get_section(id) to read single section bodies for revision.',
     '8. FINALIZE — When all sections are written, set authoringStatus to "reviewing" via upsert_course. Content is automatically marked reviewing when all sections are "complete".',
     '9. PUBLISH — Set status: "published" via upsert_course only after the user explicitly asks to publish.',
@@ -62,7 +62,7 @@ export const COURSE_AUTHORING_GUIDE = {
       'upsert_course({ id, ...fields }) — create/update metadata, plan, agentNotes, or status.',
     upsertModule: 'upsert_module({ id, ...fields }) — create/update module structure.',
     upsertSection:
-      'upsert_section({ id, ...fields, batch, questions }) — create/update sections (single or batch) and quizzes.',
+      'upsert_section({ id, ...fields, blocks: [{ type: "MdBlock", content: "..." }, { type: "QuizBlock", quiz: { questions: [...] } }] }) — create/update sections using blocks.',
     manageResearch: 'manage_research({ courseId, findings[] }) — save research findings.',
     reorder: 'reorder_modules(...) or reorder_sections(...) — change display order.',
     bulkDelete: 'delete_courses([ids]), delete_modules([ids]), or delete_sections([ids]).',
@@ -71,19 +71,21 @@ export const COURSE_AUTHORING_GUIDE = {
   courseShape: {
     recommendedSections: '6-10 sections for a practical course; 3-5 for a short primer.',
     recommendedModules: '2-4 modules that group sections into logical learning phases.',
-    sectionContent:
-      'Self-contained Markdown with explanations, examples, practice tasks, and a recap.',
+    sectionBlocks:
+      'A section is composed of multiple blocks (MdBlock, QuizBlock, VideoBlock, ResourceBlock). Arrange them to create a seamless learning flow.',
     resources:
-      'Include only useful, relevant resources. Use authoritative references when possible.',
+      'Include useful resources using ResourceBlock or the resources array. Authoritative references are preferred.',
   },
 
   instructionalDesignGuide: {
-    quizPlacement: [
-      'Standalone Quiz: Every module MUST end with a "Module Review" quiz.',
-      'Embedded Quiz: Lessons SHOULD include 2-4 knowledge-check questions at the end.',
+    blockComposition: [
+      'Every lesson section should start with an MdBlock (Intro/Overview).',
+      'Use VideoBlock for relevant demonstrations.',
+      'Mix MdBlocks with practice tasks and examples.',
+      'Knowledge Checks: Use QuizBlocks after key concepts to keep the learner engaged.',
     ],
     sectionDepth: [
-      'A standard lesson should be 500-1200 words of high-signal Markdown.',
+      'A standard lesson should have roughly 500-1200 words of text content (split across MdBlocks).',
       'Every lesson must include at least one practical Example and one Practice task.',
     ],
   },

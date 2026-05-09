@@ -157,9 +157,9 @@ export function ReaderSidebar({
 }
 
 function SidebarSectionBtn({ section, active, done, onClick }) {
-  const isQuiz = section.sectionType === 'quiz';
-  const hasEmbeddedQuiz =
-    section.sectionType !== 'quiz' && (section.quiz?.questions?.length ?? 0) > 0;
+  const hasQuiz = section.blocks?.some((b) => b.type === 'QuizBlock');
+  const onlyQuiz = section.blocks?.length === 1 && section.blocks[0].type === 'QuizBlock';
+
   return (
     <button
       onClick={onClick}
@@ -167,7 +167,7 @@ function SidebarSectionBtn({ section, active, done, onClick }) {
         active ? 'bg-[#1f644e] text-white shadow-sm' : 'text-[#1e3a34] hover:bg-[#f0f5f2]'
       }`}
     >
-      {isQuiz ? (
+      {onlyQuiz ? (
         <QuizIcon className={`w-3 h-3 shrink-0 ${active ? 'text-white/80' : 'text-[#7c8e88]'}`} />
       ) : (
         <ScrollText className={`w-3 h-3 shrink-0 ${active ? 'text-white/80' : 'text-[#7c8e88]'}`} />
@@ -179,7 +179,7 @@ function SidebarSectionBtn({ section, active, done, onClick }) {
       >
         {section.title}
       </span>
-      {hasEmbeddedQuiz && (
+      {!onlyQuiz && hasQuiz && (
         <QuizIcon
           className={`w-3 h-3 shrink-0 opacity-50 ${active ? 'text-white' : 'text-[#7c8e88]'}`}
         />

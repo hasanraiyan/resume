@@ -20,15 +20,13 @@ export async function POST(request, { params }) {
 
     const {
       title,
-      content,
       resources,
       moduleId,
       status,
       summary,
       learningGoals,
       estimatedDuration,
-      sectionType,
-      quiz,
+      blocks,
     } = body;
     if (!title?.trim()) {
       return NextResponse.json({ success: false, error: 'Title is required' }, { status: 400 });
@@ -43,9 +41,7 @@ export async function POST(request, { params }) {
     const section = await CoursifySection.create({
       courseId: id,
       title: title.trim(),
-      sectionType: sectionType || 'lesson',
-      content: content || '',
-      quiz: quiz || { questions: [] },
+      blocks: blocks || [],
       order,
       resources: Array.isArray(resources) ? resources : [],
       moduleId: moduleId || null,

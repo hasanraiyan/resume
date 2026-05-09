@@ -5,6 +5,11 @@ import CoursifyCourse from '@/models/CoursifyCourse';
 import CoursifyModule from '@/models/CoursifyModule';
 import CoursifySection from '@/models/CoursifySection';
 import { generateUniqueSlug } from '@/lib/coursify/slugify';
+import mongoose from 'mongoose';
+
+function isObjectId(str) {
+  return mongoose.Types.ObjectId.isValid(str) && String(new mongoose.Types.ObjectId(str)) === str;
+}
 
 export async function GET(request, { params }) {
   const auth = await requireAdminAuth(request);
@@ -13,6 +18,10 @@ export async function GET(request, { params }) {
   try {
     await dbConnect();
     const { id } = await params;
+
+    if (!isObjectId(id)) {
+      return NextResponse.json({ success: false, error: 'Invalid course ID' }, { status: 400 });
+    }
 
     const course = await CoursifyCourse.findOne({ _id: id, deletedAt: null }).lean();
     if (!course) {

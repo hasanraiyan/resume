@@ -25,6 +25,40 @@ const QuizQuestionSchema = new mongoose.Schema(
   { _id: true }
 );
 
+const BlockSchema = new mongoose.Schema(
+  {
+    type: {
+      type: String,
+      enum: ['MdBlock', 'QuizBlock', 'VideoBlock', 'ResourceBlock'],
+      required: true,
+    },
+    // Markdown content
+    content: { type: String, default: '' },
+    // Quiz content
+    quiz: {
+      questions: { type: [QuizQuestionSchema], default: [] },
+    },
+    // Video content
+    video: {
+      url: { type: String, default: '' },
+      title: { type: String, default: '' },
+      platform: {
+        type: String,
+        enum: ['youtube', 'gdrive', 'vimeo', 'other'],
+        default: 'youtube',
+      },
+    },
+    // Resource content
+    resource: {
+      url: { type: String, default: '' },
+      title: { type: String, default: '' },
+      type: { type: String, enum: ['video', 'article', 'doc', 'other'], default: 'other' },
+    },
+    order: { type: Number, default: 0 },
+  },
+  { _id: true, timestamps: true }
+);
+
 const CoursifySectionSchema = new mongoose.Schema(
   {
     courseId: {
@@ -44,17 +78,9 @@ const CoursifySectionSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    sectionType: {
-      type: String,
-      enum: ['lesson', 'quiz'],
-      default: 'lesson',
-    },
-    content: {
-      type: String,
-      default: '',
-    },
-    quiz: {
-      questions: { type: [QuizQuestionSchema], default: [] },
+    blocks: {
+      type: [BlockSchema],
+      default: [],
     },
     summary: {
       type: String,

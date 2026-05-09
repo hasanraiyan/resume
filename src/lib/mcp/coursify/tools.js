@@ -42,6 +42,32 @@ const questionSchema = z.object({
   points: z.number().int().optional().default(1),
 });
 
+const blockSchema = z.object({
+  type: z.enum(['MdBlock', 'QuizBlock', 'VideoBlock', 'ResourceBlock']),
+  content: z.string().optional().describe('Markdown content for MdBlock.'),
+  quiz: z
+    .object({ questions: z.array(questionSchema).optional() })
+    .optional()
+    .describe('Quiz questions for QuizBlock.'),
+  video: z
+    .object({
+      url: z.string().optional(),
+      title: z.string().optional(),
+      platform: z.enum(['youtube', 'gdrive', 'vimeo', 'other']).optional(),
+    })
+    .optional()
+    .describe('Video details for VideoBlock.'),
+  resource: z
+    .object({
+      url: z.string().optional(),
+      title: z.string().optional(),
+      type: z.enum(['video', 'article', 'doc', 'other']).optional(),
+    })
+    .optional()
+    .describe('Resource details for ResourceBlock.'),
+  order: z.number().int().optional(),
+});
+
 const resourceSchema = z.object({
   type: z.enum(['video', 'article', 'doc', 'other']),
   url: z.string(),
@@ -370,25 +396,19 @@ export function registerCoursifyTools(server) {
         courseId: z.string().describe('Required for creation.'),
         moduleId: z.string().optional(),
         title: z.string().optional(),
-        sectionType: z.enum(['lesson', 'quiz']).optional(),
-        content: z.string().optional().describe('Full Markdown content for lesson sections.'),
+        blocks: z.array(blockSchema).optional().describe('Content blocks for this section.'),
         status: z.enum(['planned', 'draft', 'needs_review', 'complete']).optional(),
         order: z.number().int().optional(),
         summary: z.string().optional(),
         learningGoals: z.array(z.string()).optional(),
         estimatedDuration: z.string().optional(),
         resources: z.array(resourceSchema).optional(),
-        questions: z
-          .array(questionSchema)
-          .optional()
-          .describe('Quiz questions. Replaces existing list.'),
         batch: z
           .array(
             z.object({
               title: z.string(),
               moduleId: z.string().optional(),
-              sectionType: z.enum(['lesson', 'quiz']).optional(),
-              content: z.string().optional(),
+              blocks: z.array(blockSchema).optional(),
               order: z.number().int().optional(),
               status: z.enum(['planned', 'draft', 'needs_review', 'complete']).optional(),
               summary: z.string().optional(),

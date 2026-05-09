@@ -14,6 +14,7 @@ import { MarkdownRenderer } from '@/components/coursify/reader/MarkdownRenderer'
 import { QuizPlayer } from '@/components/coursify/reader/QuizPlayer';
 import { TableOfContents } from '@/components/coursify/reader/TableOfContents';
 import { ReaderNavigation } from '@/components/coursify/reader/ReaderNavigation';
+import { CoursifyBlockRenderer } from '@/components/coursify/reader/CoursifyBlockRenderer';
 
 const pacifico = Pacifico({
   weight: '400',
@@ -55,11 +56,14 @@ export function CourseReaderShell({ initialData, slug, activeSectionId }) {
 
   const currentSection = sections.find((s) => s._id === activeSection);
 
-  const { headings, activeHeading } = useTableOfContents(
-    currentSection?.content,
-    contentRef,
-    mainRef
-  );
+  // Combine markdown content from all blocks for TOC
+  const combinedContent =
+    currentSection?.blocks
+      ?.filter((b) => b.type === 'MdBlock')
+      ?.map((b) => b.content)
+      ?.join('\n\n') || '';
+
+  const { headings, activeHeading } = useTableOfContents(combinedContent, contentRef, mainRef);
 
   const {
     sidebarOpen,
@@ -110,12 +114,7 @@ export function CourseReaderShell({ initialData, slug, activeSectionId }) {
                 />
               ) : currentSection ? (
                 <>
-                  {currentSection.sectionType !== 'quiz' && currentSection.content && (
-                    <MarkdownRenderer content={currentSection.content} />
-                  )}
-                  {(currentSection.quiz?.questions?.length ?? 0) > 0 && (
-                    <QuizPlayer questions={currentSection.quiz.questions} />
-                  )}
+                  <CoursifyBlockRenderer blocks={currentSection.blocks} />
                   <ReaderNavigation
                     sections={orderedSections}
                     activeSection={activeSection}

@@ -71,7 +71,7 @@ export async function dbGetCourse({ id, includeSectionContent = false }) {
   if (!course) throw new Error('Course not found.');
 
   const sectionSelect = includeSectionContent
-    ? 'moduleId title content sectionType quiz summary status order learningGoals estimatedDuration resources'
+    ? 'moduleId title blocks summary status order learningGoals estimatedDuration resources'
     : 'moduleId title summary status order learningGoals estimatedDuration resources';
 
   const [modules, sections] = await Promise.all([
@@ -88,8 +88,7 @@ export async function dbGetCourse({ id, includeSectionContent = false }) {
     const mid = s.moduleId?.toString();
     const meta = normalizeSection(s);
     if (!includeSectionContent) {
-      delete meta.content;
-      delete meta.quiz;
+      delete meta.blocks;
     }
 
     if (mid) {
@@ -342,9 +341,7 @@ export async function dbReorderModules({ courseId, moduleIds }) {
 export async function dbAddSection({
   courseId,
   title,
-  sectionType,
-  content,
-  questions,
+  blocks,
   order,
   resources,
   moduleId,
@@ -361,14 +358,11 @@ export async function dbAddSection({
     .sort({ order: -1 })
     .lean();
   const resolvedOrder = order !== undefined ? order : last ? last.order + 1 : 0;
-  const resolvedType = sectionType || 'lesson';
 
   const section = await CoursifySection.create({
     courseId,
     title: title.trim(),
-    sectionType: resolvedType,
-    content: resolvedType === 'lesson' ? content || '' : '',
-    quiz: { questions: questions || [] },
+    blocks: blocks || [],
     order: resolvedOrder,
     resources: resources || [],
     moduleId: moduleId || null,
@@ -384,9 +378,7 @@ export async function dbAddSection({
 export async function dbUpdateSection({
   id,
   title,
-  sectionType,
-  content,
-  questions,
+  blocks,
   summary,
   learningGoals,
   estimatedDuration,
@@ -398,8 +390,7 @@ export async function dbUpdateSection({
   await dbConnect();
   const clean = cleanPatch({
     title,
-    sectionType,
-    content,
+    blocks,
     summary,
     learningGoals,
     estimatedDuration,
@@ -408,7 +399,6 @@ export async function dbUpdateSection({
     moduleId,
     resources,
   });
-  if (questions !== undefined) clean['quiz.questions'] = questions;
   const section = await CoursifySection.findOneAndUpdate(
     { _id: id, deletedAt: null },
     { $set: clean, $inc: { syncVersion: 1 } },
@@ -449,9 +439,7 @@ export async function dbAddSections({ courseId, sections }) {
   const docs = sections.map((s) => ({
     courseId,
     title: s.title.trim(),
-    sectionType: s.sectionType || 'lesson',
-    content: s.content || '',
-    quiz: { questions: s.questions || [] },
+    blocks: s.blocks || (s.content ? [{ type: 'MdBlock', content: s.content, order: 0 }] : []),
     order: s.order !== undefined ? s.order : currentOrder++,
     resources: s.resources || [],
     moduleId: s.moduleId || null,
@@ -510,21 +498,6 @@ export async function dbGetSectionContent({ id }) {
     ? (await CoursifyModule.findOne({ _id: section.moduleId, deletedAt: null }).lean())?.title || ''
     : '';
   return { section: { ...normalizeSection(section), moduleTitle } };
-}
-
-export async function dbSetQuizQuestions({ id, questions }) {
-  await dbConnect();
-  const section = await CoursifySection.findOneAndUpdate(
-    { _id: id, deletedAt: null },
-    { $set: { 'quiz.questions': questions }, $inc: { syncVersion: 1 } },
-    { new: true, strict: false }
-  ).lean();
-  if (!section) throw new Error('Section not found.');
-  await CoursifyCourse.updateOne(
-    { _id: section.courseId, deletedAt: null },
-    { $inc: { syncVersion: 1 } }
-  );
-  return { section: normalizeSection(section) };
 }
 
 export async function dbListCourseModules({ courseId }) {
@@ -631,6 +604,7 @@ export async function dbApplySuggestedModules({ courseId }) {
       courseId,
       moduleId: newModule._id,
       title,
+      blocks: [],
       order: i,
       status: 'planned',
     }));
