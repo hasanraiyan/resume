@@ -58,7 +58,13 @@ function DrivelyApp() {
     renameTarget,
     setRenameTarget,
     updateItem,
+    stats,
   } = useDrively();
+
+  const limitMB = parseInt(process.env.NEXT_PUBLIC_DRIVELY_QUOTA_MB) || 1000;
+  const usedBytes = stats?.totalSize || 0;
+  const quotaBytes = limitMB * 1024 * 1024;
+  const usagePercentage = Math.min((usedBytes / quotaBytes) * 100, 100);
 
   const [searchResults, setSearchResults] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -145,7 +151,7 @@ function DrivelyApp() {
             <span className="font-[family-name:var(--font-logo)] text-2xl">Drively</span>
           </div>
 
-          <nav className="space-y-1">
+          <nav className="space-y-1 mb-8">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -173,6 +179,56 @@ function DrivelyApp() {
               </button>
             ))}
           </nav>
+
+          {/* Storage Usage Ring */}
+          <div className="mt-auto pt-6 border-t border-[#e5e3d8]">
+            <div className="bg-[#fcfbf5] rounded-2xl p-4 border border-[#e5e3d8]">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="relative w-10 h-10 flex-shrink-0">
+                  <svg className="w-full h-full -rotate-90">
+                    <circle
+                      cx="20"
+                      cy="20"
+                      r="18"
+                      fill="transparent"
+                      stroke="#e5e3d8"
+                      strokeWidth="3"
+                    />
+                    <circle
+                      cx="20"
+                      cy="20"
+                      r="18"
+                      fill="transparent"
+                      stroke="#1f644e"
+                      strokeWidth="3"
+                      strokeDasharray={`${2 * Math.PI * 18}`}
+                      strokeDashoffset={`${2 * Math.PI * 18 * (1 - usagePercentage / 100)}`}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-[8px] font-bold text-[#1f644e]">
+                      {Math.round(usagePercentage)}%
+                    </span>
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-[#1e3a34] uppercase tracking-wider">
+                    Storage
+                  </p>
+                  <p className="text-[10px] text-[#7c8e88] font-bold truncate">
+                    {Math.round(usedBytes / (1024 * 1024))}MB of {limitMB}MB
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveTab('storage')}
+                className="w-full py-1.5 bg-white border border-[#e5e3d8] rounded-lg text-[10px] font-bold text-[#1e3a34] hover:bg-[#f0f5f2] transition-colors"
+              >
+                Upgrade Storage
+              </button>
+            </div>
+          </div>
         </div>
       </aside>
 

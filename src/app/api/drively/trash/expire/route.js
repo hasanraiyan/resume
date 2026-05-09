@@ -1,5 +1,5 @@
 import { requireAdminAuth } from '@/lib/money-auth';
-import { ensureDb } from '@/lib/apps/drively/service/service';
+import { ensureDb, getDrivelySettings } from '@/lib/apps/drively/service/service';
 import DrivelyFile from '@/models/DrivelyFile';
 import DrivelyFolder from '@/models/DrivelyFolder';
 import { v2 as cloudinary } from 'cloudinary';
@@ -11,6 +11,15 @@ export async function DELETE(request) {
 
   try {
     await ensureDb();
+
+    const settings = await getDrivelySettings();
+    if (!settings.autoEmptyTrash) {
+      return NextResponse.json({
+        success: true,
+        message: 'Auto-empty trash is disabled',
+      });
+    }
+
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() - 30);
 

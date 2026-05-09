@@ -10,8 +10,12 @@ import {
   AlertCircle,
   Folder,
   FileArchive,
+  Settings,
+  Trash2,
 } from 'lucide-react';
 import { useMemo } from 'react';
+import StorageDashboard from './StorageDashboard';
+import Switch from '../admin/Switch';
 
 const formatSize = (bytes) => {
   if (bytes === 0) return '0 B';
@@ -31,7 +35,7 @@ const getIconForMime = (mime) => {
 };
 
 export default function StorageTab() {
-  const { stats, isLoading, files, folders } = useDrively();
+  const { stats, isLoading, files, folders, settings, updateSettings } = useDrively();
 
   const folderStats = useMemo(() => {
     if (!files || !folders) return [];
@@ -74,6 +78,20 @@ export default function StorageTab() {
 
   return (
     <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-extrabold text-[#1e3a34]">Storage Analytics</h2>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 bg-white border border-[#e5e3d8] px-4 py-2 rounded-2xl shadow-sm">
+            <Settings className="w-4 h-4 text-[#7c8e88]" />
+            <span className="text-xs font-bold text-[#1e3a34]">Auto-Empty Trash</span>
+            <Switch
+              checked={settings?.autoEmptyTrash ?? true}
+              onCheckedChange={(checked) => updateSettings({ autoEmptyTrash: checked })}
+            />
+          </div>
+        </div>
+      </div>
+
       {percentage > 80 && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3 text-amber-800">
           <AlertCircle className="w-5 h-5 flex-shrink-0" />
@@ -82,6 +100,9 @@ export default function StorageTab() {
           </p>
         </div>
       )}
+
+      {/* Dashboard Section */}
+      <StorageDashboard />
 
       {/* Overview Card */}
       <div className="bg-white border border-[#e5e3d8] rounded-3xl p-8">

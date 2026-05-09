@@ -10,14 +10,14 @@
 
  ✓ Starting...
  ○ Compiling middleware ...
- ✓ Compiled middleware in 936ms
- ✓ Ready in 2.9s
+ ✓ Compiled middleware in 1097ms
+ ✓ Ready in 3.5s
  ○ Compiling /apps/drively ...
- ✓ Compiled /apps/drively in 19.8s
+ ✓ Compiled /apps/drively in 29.8s
 WARNING: MONGODB_URI environment variable is not defined.
 Skipping dbConnect because MONGODB_URI is not set.
 Skipping dbConnect because MONGODB_URI is not set.
- GET /apps/drively 200 in 29959ms
+ GET /apps/drively 200 in 32390ms
 [getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
 Skipping dbConnect because MONGODB_URI is not set.
 [getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
@@ -35,48 +35,28 @@ Skipping dbConnect because MONGODB_URI is not set.
 WARNING: MONGODB_URI environment variable is not defined.
 Skipping dbConnect because MONGODB_URI is not set.
 Skipping dbConnect because MONGODB_URI is not set.
+ ✓ Compiled /api/analytics in 3.3s
 Skipping dbConnect because MONGODB_URI is not set.
 [next-auth][warn][NEXTAUTH_URL]
 https://next-auth.js.org/warnings#nextauth_url
 [next-auth][warn][NO_SECRET]
 https://next-auth.js.org/warnings#no_secret
 Skipping dbConnect because MONGODB_URI is not set.
- ✓ Compiled /api/analytics in 5.7s
-Skipping dbConnect because MONGODB_URI is not set.
-Skipping dbConnect because MONGODB_URI is not set.
-Skipping dbConnect because MONGODB_URI is not set.
+ GET /api/auth/session 200 in 4222ms
+ ○ Compiling /login ...
+ POST /api/analytics 200 in 8498ms
+ GET /apps/drively 200 in 30010ms
+ POST /api/analytics 200 in 8499ms
+ GET /api/admin/chatbot 200 in 7775ms
+ GET /api/mcps 200 in 7772ms
 [getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
- GET /apps/drively 200 in 30251ms
- ○ Compiling /_not-found/page ...
- ✓ Compiled /_not-found/page in 2.1s
-Skipping dbConnect because MONGODB_URI is not set.
+ ✓ Compiled /login in 4.2s
 Skipping dbConnect because MONGODB_URI is not set.
 Skipping dbConnect because MONGODB_URI is not set.
 Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
- POST /api/analytics 500 in 11356ms
 Analytics tracking error: [MongooseError: Operation `analytics.insertOne()` buffering timed out after 10000ms]
- POST /api/analytics 500 in 11371ms
- GET / 200 in 11047ms
- GET /api/admin/chatbot 200 in 11279ms
- GET /api/mcps 200 in 11233ms
- GET /3D.png 404 in 2883ms
 Error fetching chatbot settings: [MongooseError: Operation `chatbotsettings.findOne()` buffering timed out after 10000ms]
 Error fetching dynamic MCP config: [MongooseError: Operation `mcpservers.find()` buffering timed out after 10000ms]
-[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
-Skipping dbConnect because MONGODB_URI is not set.
-[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
- ⨯ [MongooseError: Operation `projects.find()` buffering timed out after 10000ms] {
-  digest: '3380451460'
-}
-[getHeroData] Failed to fetch hero section from DB: [MongooseError: Operation `herosections.findOne()` buffering timed out after 10000ms]
-Skipping dbConnect because MONGODB_URI is not set.
 [getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
 [getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
-[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
-Skipping dbConnect because MONGODB_URI is not set.
-Skipping dbConnect because MONGODB_URI is not set.
-[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
-Skipping dbConnect because MONGODB_URI is not set.
-[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
-[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
-[getSiteConfig] Error: [MongooseError: Operation `siteconfigs.findOne()` buffering timed out after 10000ms]
+[?25h
