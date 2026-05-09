@@ -9,6 +9,7 @@ export const MUTATION_ANNOTATIONS = {
   readOnlyHint: false,
   openWorldHint: false,
   destructiveHint: false,
+  idempotentHint: true,
 };
 
 export const DESTRUCTIVE_ANNOTATIONS = {

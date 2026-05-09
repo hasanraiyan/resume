@@ -5,7 +5,7 @@ import {
   MUTATION_ANNOTATIONS,
   DESTRUCTIVE_ANNOTATIONS,
 } from './constants.js';
-import { textResult, errorResult, toolMeta } from './utils.js';
+import { textResult, errorResult, toolMeta, parseOutlineToModules } from './utils.js';
 import {
   dbListCourses,
   dbGetCourse,
@@ -145,7 +145,11 @@ export function registerCoursifyTools(server) {
               'Course looks complete. Call upsert_course(status: "published") when ready.';
 
           res.progressReport = {
-            planCompleteness: { filled: planComplete, total: 5, fields: planFields },
+            planCompleteness: {
+              filled: planComplete,
+              total: Object.keys(planFields).length,
+              fields: planFields,
+            },
             sectionStats: { total: sections.length, incomplete: incompleteSections },
             authoringStatus: course.authoringStatus || 'idea',
             nextAction,
@@ -186,30 +190,39 @@ export function registerCoursifyTools(server) {
       _meta: toolMeta('Saving course...', 'Course saved.'),
     },
     async ({ id, ...fields }) => {
+      const BASIC_KEYS = [
+        'title',
+        'description',
+        'difficulty',
+        'estimatedDuration',
+        'tags',
+        'status',
+      ];
+      const PLAN_KEYS = [
+        'targetAudience',
+        'learningObjectives',
+        'prerequisites',
+        'outcome',
+        'outline',
+        'authoringStatus',
+        'agentNotes',
+      ];
+
       try {
         let result;
         if (!id) {
           result = await dbCreateCourse(fields);
-          const patch = { ...fields };
-          delete patch.title;
-          delete patch.description;
-          delete patch.difficulty;
-          delete patch.estimatedDuration;
-          delete patch.tags;
-          if (Object.keys(patch).length > 0) {
-            result = await dbSaveCoursePlan({ courseId: result.course.id, ...patch });
+          const hasPlanFields = PLAN_KEYS.some((k) => fields[k] !== undefined);
+          if (hasPlanFields) {
+            result = await dbSaveCoursePlan({ courseId: result.course.id, ...fields });
           }
         } else {
-          const isPlan = [
-            'targetAudience',
-            'learningObjectives',
-            'prerequisites',
-            'outcome',
-            'outline',
-            'authoringStatus',
-            'agentNotes',
-          ].some((k) => fields[k] !== undefined);
-          if (isPlan) {
+          const hasBasic = BASIC_KEYS.some((k) => fields[k] !== undefined);
+          const hasPlan = PLAN_KEYS.some((k) => fields[k] !== undefined);
+          if (hasBasic && hasPlan) {
+            await dbUpdateCourse({ id, ...fields });
+            result = await dbSaveCoursePlan({ courseId: id, ...fields });
+          } else if (hasPlan) {
             result = await dbSaveCoursePlan({ courseId: id, ...fields });
           } else {
             result = await dbUpdateCourse({ id, ...fields });
@@ -238,7 +251,7 @@ export function registerCoursifyTools(server) {
     },
     async ({ ids }) => {
       try {
-        for (const id of ids) await dbDeleteCourse({ id });
+        await Promise.all(ids.map((id) => dbDeleteCourse({ id })));
         return textResult(`Deleted ${ids.length} course(s).`, { success: true });
       } catch (err) {
         return errorResult(err.message);
@@ -379,6 +392,11 @@ export function registerCoursifyTools(server) {
               sectionType: z.enum(['lesson', 'quiz']).optional(),
               content: z.string().optional(),
               order: z.number().int().optional(),
+              status: z.enum(['planned', 'draft', 'needs_review', 'complete']).optional(),
+              summary: z.string().optional(),
+              learningGoals: z.array(z.string()).optional(),
+              estimatedDuration: z.string().optional(),
+              resources: z.array(resourceSchema).optional(),
             })
           )
           .optional()
@@ -513,102 +531,11 @@ export function registerCoursifyTools(server) {
         if (!course.outline)
           return errorResult('No outline found. Call upsert_course with an outline first.');
 
-        const outline = course.outline.trim();
-        const lines = outline.split('\n');
-        const sectionTitles = [];
-        let currentGroup = '';
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (trimmed.startsWith('## ') && !trimmed.toLowerCase().includes('module')) {
-            const title = trimmed.replace(/^##\s+/, '').trim();
-            if (title) sectionTitles.push({ title, group: currentGroup });
-          } else if (trimmed.startsWith('### ')) {
-            const title = trimmed.replace(/^###\s+/, '').trim();
-            if (title && title.length < 100) sectionTitles.push({ title, group: currentGroup });
-          } else if (trimmed.match(/^#{1,2}\s+(module|phase|part|step)/i)) {
-            currentGroup = trimmed.replace(/^#{1,2}\s+/, '').trim();
-          }
-        }
-
-        if (sectionTitles.length === 0) {
-          const paragraphs = outline
-            .split(/\n\n+/)
-            .map((p) => p.trim())
-            .filter(Boolean);
-          for (const p of paragraphs) {
-            const firstLine = p
-              .split('\n')[0]
-              .trim()
-              .replace(/^[-*]\s+/, '');
-            if (firstLine && firstLine.length > 3 && firstLine.length < 120) {
-              sectionTitles.push({ title: firstLine, group: '' });
-            }
-          }
-        }
-
-        if (sectionTitles.length === 0)
+        const suggestions = parseOutlineToModules(course.outline);
+        if (suggestions.length === 0)
           return errorResult(
             'Could not parse section titles. Use ## or ### headers for section names.'
           );
-
-        const moduleKeywords = [
-          {
-            words: ['fundamental', 'basic', 'intro', 'overview', 'setup', 'what', 'why'],
-            label: 'Foundations',
-          },
-          {
-            words: ['core', 'main', 'build', 'implement', 'create', 'develop', 'pattern'],
-            label: 'Core Concepts',
-          },
-          {
-            words: ['advanced', 'deep', 'optim', 'scale', 'deploy', 'product', 'real'],
-            label: 'Advanced & Applied',
-          },
-          {
-            words: ['review', 'summary', 'next', 'future', 'wrap', 'conclusion', 'recap'],
-            label: 'Review & Next Steps',
-          },
-        ];
-
-        function assignModule(title) {
-          const lower = title.toLowerCase();
-          for (const mk of moduleKeywords) {
-            if (mk.words.some((w) => lower.includes(w))) return mk.label;
-          }
-          return null;
-        }
-
-        const moduleMap = {};
-        let unassignedBuffer = [];
-        for (const s of sectionTitles) {
-          const mod = s.group || assignModule(s.title);
-          if (mod) {
-            if (unassignedBuffer.length > 0) {
-              if (!moduleMap['Miscellaneous'])
-                moduleMap['Miscellaneous'] = { sections: [], label: 'Miscellaneous' };
-              moduleMap['Miscellaneous'].sections.push(...unassignedBuffer);
-              unassignedBuffer = [];
-            }
-            if (!moduleMap[mod]) moduleMap[mod] = { sections: [], label: mod };
-            moduleMap[mod].sections.push(s.title);
-          } else {
-            unassignedBuffer.push(s.title);
-          }
-        }
-        if (unassignedBuffer.length > 0) {
-          if (!moduleMap['Miscellaneous'])
-            moduleMap['Miscellaneous'] = { sections: [], label: 'Miscellaneous' };
-          moduleMap['Miscellaneous'].sections.push(...unassignedBuffer);
-        }
-
-        const suggestions = Object.values(moduleMap).map((m, i) => ({
-          order: i,
-          title: m.label,
-          summary: `Covers: ${m.sections.slice(0, 3).join(', ')}${m.sections.length > 3 ? `, and ${m.sections.length - 3} more` : ''}`,
-          sectionCount: m.sections.length,
-          sections: m.sections,
-        }));
 
         return textResult(`Suggested ${suggestions.length} modules.`, {
           kind: 'module_suggestions',

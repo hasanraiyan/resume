@@ -12,7 +12,12 @@ import CoursifyModule from '@/models/CoursifyModule';
 import CoursifySection from '@/models/CoursifySection';
 import { generateUniqueSlug } from './slugify.js';
 import { generateCourseThumbnail } from './thumbnailGen.js';
-import { normalizeCourse, normalizeModule, normalizeSection } from '@/lib/mcp/coursify/utils.js';
+import {
+  normalizeCourse,
+  normalizeModule,
+  normalizeSection,
+  parseOutlineToModules,
+} from '@/lib/mcp/coursify/utils.js';
 
 function cleanPatch(patch) {
   return Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined));
@@ -216,6 +221,7 @@ export async function dbSaveCoursePlan({
   outline,
   planningNotes,
   authoringStatus,
+  agentNotes,
 }) {
   await dbConnect();
   const clean = cleanPatch({
@@ -226,6 +232,7 @@ export async function dbSaveCoursePlan({
     outline,
     planningNotes,
     authoringStatus,
+    agentNotes,
   });
   const course = await CoursifyCourse.findOneAndUpdate(
     { _id: courseId, deletedAt: null },
@@ -607,60 +614,20 @@ export async function dbApplySuggestedModules({ courseId }) {
   if (!course) throw new Error('Course not found.');
   if (!course.outline) throw new Error('No course outline found.');
 
-  // Logic similar to suggest_modules_from_outline but internal
-  const lines = course.outline.trim().split('\n');
-  const sectionTitles = [];
-  let currentGroup = '';
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (trimmed.startsWith('## ') && !trimmed.toLowerCase().includes('module')) {
-      const title = trimmed.replace(/^##\s+/, '').trim();
-      if (title) sectionTitles.push({ title, group: currentGroup });
-    } else if (trimmed.startsWith('### ')) {
-      const title = trimmed.replace(/^###\s+/, '').trim();
-      if (title && title.length < 100) sectionTitles.push({ title, group: currentGroup });
-    } else if (trimmed.match(/^#{1,2}\s+(module|phase|part|step)/i)) {
-      currentGroup = trimmed.replace(/^#{1,2}\s+/, '').trim();
-    }
-  }
-
-  // Use simple foundations/core/advanced/wrap heuristic
-  const moduleKeywords = [
-    { words: ['fundamental', 'basic', 'intro', 'setup'], label: 'Foundations' },
-    { words: ['core', 'main', 'build', 'implement', 'pattern'], label: 'Core Concepts' },
-    { words: ['advanced', 'deep', 'optim', 'deploy', 'real'], label: 'Advanced & Applied' },
-    { words: ['review', 'summary', 'next', 'future', 'wrap'], label: 'Review & Next Steps' },
-  ];
-
-  function assignModule(title) {
-    const lower = title.toLowerCase();
-    for (const mk of moduleKeywords) {
-      if (mk.words.some((w) => lower.includes(w))) return mk.label;
-    }
-    return null;
-  }
-
-  const moduleMap = {};
-  for (const s of sectionTitles) {
-    const mod = s.group || assignModule(s.title) || 'General';
-    if (!moduleMap[mod]) moduleMap[mod] = { title: mod, sections: [] };
-    moduleMap[mod].sections.push(s.title);
-  }
+  const suggestions = parseOutlineToModules(course.outline);
+  if (suggestions.length === 0) throw new Error('Could not parse section titles from outline.');
 
   const createdModules = [];
-  let moduleOrder = 0;
-  for (const modTitle in moduleMap) {
-    const modData = moduleMap[modTitle];
+  for (const suggestion of suggestions) {
     const newModule = await CoursifyModule.create({
       courseId,
-      title: modTitle,
-      summary: `Covers: ${modData.sections.slice(0, 3).join(', ')}`,
-      order: moduleOrder++,
+      title: suggestion.title,
+      summary: suggestion.summary,
+      order: suggestion.order,
     });
     createdModules.push(newModule);
 
-    const sectionDocs = modData.sections.map((title, i) => ({
+    const sectionDocs = suggestion.sections.map((title, i) => ({
       courseId,
       moduleId: newModule._id,
       title,
