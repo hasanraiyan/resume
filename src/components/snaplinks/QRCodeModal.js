@@ -21,11 +21,11 @@ export default function QRCodeModal({ isOpen, onClose, link }) {
 
   if (!link) return null;
 
-  const fullUrl = `${window.location.origin}/r/${link.slug}`;
+  const fullUrl = typeof window !== 'undefined' ? `${window.location.origin}/r/${link.slug}` : '';
   const brandGreen = '#1f644e';
 
   const downloadPNG = () => {
-    const canvas = document.getElementById('qr-canvas');
+    const canvas = canvasRef.current;
     if (!canvas) return;
 
     const pngUrl = canvas
@@ -42,7 +42,7 @@ export default function QRCodeModal({ isOpen, onClose, link }) {
   };
 
   const downloadSVG = () => {
-    const svg = document.getElementById('qr-svg');
+    const svg = svgRef.current;
     if (!svg) return;
 
     const svgData = new XMLSerializer().serializeToString(svg);
@@ -79,7 +79,7 @@ export default function QRCodeModal({ isOpen, onClose, link }) {
             {/* Hidden SVG for download */}
             <div className="hidden">
               <QRCodeSVG
-                id="qr-svg"
+                ref={svgRef}
                 value={fullUrl}
                 size={512}
                 fgColor={color}
@@ -88,7 +88,7 @@ export default function QRCodeModal({ isOpen, onClose, link }) {
             </div>
 
             <QRCodeCanvas
-              id="qr-canvas"
+              ref={canvasRef}
               value={fullUrl}
               size={256}
               fgColor={color}

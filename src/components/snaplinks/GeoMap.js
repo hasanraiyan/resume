@@ -18,10 +18,41 @@ export default function GeoMap({ countries = [] }) {
 
   const data = useMemo(() => {
     const stats = {};
+    const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
+
+    const overrides = {
+      'United States': 'United States of America',
+      'Congo - Kinshasa': 'Dem. Rep. Congo',
+      'Congo - Brazzaville': 'Congo',
+      'Central African Republic': 'Central African Rep.',
+      'Dominican Republic': 'Dominican Rep.',
+      'Falkland Islands': 'Falkland Is.',
+      'Solomon Islands': 'Solomon Is.',
+      'Western Sahara': 'W. Sahara',
+      'Bosnia & Herzegovina': 'Bosnia and Herz.',
+      'South Sudan': 'S. Sudan',
+      'North Macedonia': 'Macedonia',
+    };
+
     countries.forEach((c) => {
-      // Handle potential country name differences
-      const name = c.country === 'United States' ? 'United States of America' : c.country;
-      stats[name] = c.count;
+      let name = c.country || 'Unknown';
+
+      // Convert ISO-2 codes (like 'US', 'GB') to full names
+      if (name.length === 2) {
+        try {
+          name = regionNames.of(name.toUpperCase());
+        } catch (e) {
+          // Fallback to original if lookup fails
+        }
+      }
+
+      // Apply naming overrides for world-atlas compatibility
+      if (overrides[name]) {
+        name = overrides[name];
+      }
+
+      // If we already have this name (e.g. from multiple ISO codes or name variants), sum them
+      stats[name] = (stats[name] || 0) + c.count;
     });
     return stats;
   }, [countries]);
