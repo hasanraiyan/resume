@@ -310,6 +310,32 @@ export default function CoursifyPublicPage() {
           </>
         )}
       </main>
+
+      {/* ── Footer ── */}
+      <footer className="mt-auto py-10 border-t border-[#e5e3d8] bg-white/50">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <a
+            href="https://coursify-website.vercel.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2.5 group transition-opacity hover:opacity-80"
+          >
+            <img
+              src="/images/apps/coursify.png"
+              alt="Coursify"
+              className="h-5 w-5 rounded object-contain grayscale opacity-40 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
+            />
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7c8e88] group-hover:text-[#1f644e] transition-colors">
+              Powered by Coursify
+            </span>
+          </a>
+          <div className="flex items-center gap-4">
+            <p className="text-[10px] font-bold text-[#b0bfbb] uppercase tracking-widest">
+              © {new Date().getFullYear()} • Built by Raiyan Hasan
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
