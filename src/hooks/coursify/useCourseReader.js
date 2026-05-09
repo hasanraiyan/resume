@@ -18,7 +18,7 @@ export function useCourseReader(courseIdOrConfig, isAdmin = false) {
   const [modules, setModules] = useState(initialData?.modules ?? []);
   const [activeSection, setActiveSection] = useState(activeSectionId ?? null);
   const [showOverview, setShowOverview] = useState(!activeSectionId);
-  const [visited, setVisited] = useState(new Set(activeSectionId ? [activeSectionId] : []));
+  const [visited, setVisited] = useState(new Set());
   const [isLoading, setIsLoading] = useState(!initialData);
   const [sectionLoading, setSectionLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
@@ -131,6 +131,30 @@ export function useCourseReader(courseIdOrConfig, isAdmin = false) {
   useEffect(() => {
     fetchCourse();
   }, [fetchCourse]);
+
+  // Load visited from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined' && courseId) {
+      const saved = localStorage.getItem(`coursify_visited_${courseId}`);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            setVisited(new Set(parsed));
+          }
+        } catch (e) {
+          console.error('Failed to parse visited sections', e);
+        }
+      }
+    }
+  }, [courseId]);
+
+  // Save visited to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined' && courseId && visited.size > 0) {
+      localStorage.setItem(`coursify_visited_${courseId}`, JSON.stringify(Array.from(visited)));
+    }
+  }, [courseId, visited]);
 
   useEffect(() => {
     if (activeSection) {

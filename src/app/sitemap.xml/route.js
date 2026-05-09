@@ -1,5 +1,6 @@
 import { getAllPublishedArticles } from '@/app/actions/articleActions';
 import Project from '@/models/Project';
+import CoursifyCourse from '@/models/CoursifyCourse';
 import dbConnect from '@/lib/dbConnect';
 import { getBaseUrl } from '@/lib/mcp/oauth';
 
@@ -58,7 +59,31 @@ export async function GET() {
     priority: 0.6,
   }));
 
-  const allEntries = [...staticPages, ...articleEntries, ...projectEntries];
+  // Fetch published Coursify courses
+  const courses = await CoursifyCourse.find({
+    status: 'published',
+    deletedAt: null,
+  }).lean();
+
+  const courseEntries = courses.map((course) => ({
+    url: `${baseUrl}/coursify/${course.slug}`,
+    lastModified: new Date(course.updatedAt || course.createdAt),
+    changeFrequency: 'weekly',
+    priority: 0.8,
+  }));
+
+  const allEntries = [
+    ...staticPages,
+    ...articleEntries,
+    ...projectEntries,
+    ...courseEntries,
+    {
+      url: `${baseUrl}/coursify`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+  ];
 
   const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

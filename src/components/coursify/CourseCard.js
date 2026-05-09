@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
   BookOpen,
   MoreVertical,
@@ -85,9 +86,11 @@ export default function CourseCard({ course, index = 0 }) {
             </>
           ) : course.thumbnail ? (
             <>
-              <img
+              <Image
                 src={course.thumbnail}
                 alt={course.title}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 className="absolute inset-0 w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10" />
