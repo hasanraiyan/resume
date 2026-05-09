@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { Search, X, BookOpen } from 'lucide-react';
-import CourseCard from './CourseCard';
+import { PublicCourseCard } from './PublicCourseCard';
 
 const DIFFICULTY_FILTERS = ['all', 'beginner', 'intermediate', 'advanced'];
 
@@ -195,7 +195,7 @@ export function CourseListClient({ initialCourses }) {
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
               {filtered.map((course) => (
-                <CourseCard key={course.id || course._id} course={course} />
+                <PublicCourseCard key={course.id || course._id} course={course} />
               ))}
             </div>
           </>
