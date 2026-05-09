@@ -55,6 +55,39 @@ export const MermaidDiagram = memo(function MermaidDiagram({ chart }) {
 
   const idRef = useRef(`mermaid-${++uid}`);
 
+  const sanitizeMermaid = (code) => {
+    if (!code) return '';
+    let sanitized = code;
+
+    // 1. Replace escaped quotes \" which LLMs often generate but Mermaid parser hates in 11.x
+    // We convert them to single quotes or simple double quotes if we can safely do so.
+    // For now, replacing \" with ' is the safest way to prevent string termination errors.
+    sanitized = sanitized.replace(/\\"/g, "'");
+
+    // 2. Replace literal \n with <br/> inside node labels
+    // Mermaid 10+ handles <br/> much better than literal \n in many chart types.
+    sanitized = sanitized.replace(/\\n/g, '<br/>');
+
+    // 3. Ensure the graph starts with a valid type if it's missing (rare but happens)
+    if (
+      !sanitized.trim().startsWith('graph') &&
+      !sanitized.trim().startsWith('flowchart') &&
+      !sanitized.trim().startsWith('sequenceDiagram') &&
+      !sanitized.trim().startsWith('classDiagram') &&
+      !sanitized.trim().startsWith('stateDiagram') &&
+      !sanitized.trim().startsWith('erDiagram') &&
+      !sanitized.trim().startsWith('gantt') &&
+      !sanitized.trim().startsWith('pie') &&
+      !sanitized.trim().startsWith('gitGraph') &&
+      !sanitized.trim().startsWith('mindmap') &&
+      !sanitized.trim().startsWith('timeline')
+    ) {
+      sanitized = 'graph TD\n' + sanitized;
+    }
+
+    return sanitized;
+  };
+
   useEffect(() => {
     let cancelled = false;
 
@@ -64,8 +97,9 @@ export const MermaidDiagram = memo(function MermaidDiagram({ chart }) {
     async function renderDiagram() {
       try {
         const mermaid = await getMermaid();
+        const sanitizedChart = sanitizeMermaid(chart);
 
-        const { svg: renderedSvg } = await mermaid.render(idRef.current, chart);
+        const { svg: renderedSvg } = await mermaid.render(idRef.current, sanitizedChart);
 
         if (!cancelled) {
           setSvg(renderedSvg);
