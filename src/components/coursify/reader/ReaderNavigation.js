@@ -24,7 +24,7 @@ export function ReaderNavigation({ sections, activeSection, onNavigate }) {
             <p className="text-[10px] text-[#7c8e88] font-bold uppercase tracking-wider">
               Previous
             </p>
-            <p className="text-xs font-bold text-[#1e3a34] truncate max-w-[160px] group-hover:text-[#1f644e] transition-colors">
+            <p className="hidden sm:block text-xs font-bold text-[#1e3a34] truncate max-w-[160px] group-hover:text-[#1f644e] transition-colors">
               {prev.title}
             </p>
           </div>
@@ -42,7 +42,7 @@ export function ReaderNavigation({ sections, activeSection, onNavigate }) {
             <p className="text-[10px] text-[#7c8e88] font-bold uppercase tracking-wider text-right">
               Next
             </p>
-            <p className="text-xs font-bold text-[#1e3a34] truncate max-w-[160px] group-hover:text-[#1f644e] transition-colors">
+            <p className="hidden sm:block text-xs font-bold text-[#1e3a34] truncate max-w-[160px] group-hover:text-[#1f644e] transition-colors">
               {next.title}
             </p>
           </div>

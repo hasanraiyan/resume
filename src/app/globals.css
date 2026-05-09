@@ -449,6 +449,14 @@ body {
   background: transparent;
 }
 
+.coursify-table-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.coursify-table-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 .coursify-md table {
   width: 100%;
   border-collapse: collapse;

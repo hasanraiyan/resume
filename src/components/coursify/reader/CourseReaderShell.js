@@ -95,9 +95,12 @@ export function CourseReaderShell({ initialData, slug, activeSectionId }) {
           onToggleModule={toggleModule}
         />
 
-        <main ref={mainRef} className="flex-1 overflow-y-auto min-w-0">
-          <div className="flex min-h-0">
-            <article className="flex-1 max-w-3xl mx-auto px-4 lg:px-10 py-8" ref={contentRef}>
+        <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden min-w-0">
+          <div className="flex min-h-0 w-full min-w-0">
+            <article
+              className="flex-1 min-w-0 max-w-3xl mx-auto px-4 lg:px-10 py-8"
+              ref={contentRef}
+            >
               {showOverview ? (
                 <CourseOverview
                   course={course}

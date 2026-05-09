@@ -25,7 +25,7 @@ function isAsciiArt(code) {
 
 export const MarkdownRenderer = memo(function MarkdownRenderer({ content }) {
   return (
-    <div className="coursify-md prose prose-sm max-w-none font-[family-name:var(--font-lora)] prose-headings:font-bold prose-headings:text-[#1e3a34] prose-p:text-[#1e3a34] prose-p:leading-relaxed prose-code:bg-[#f0f5f2] prose-code:rounded prose-code:px-1 prose-code:text-[#1f644e] prose-pre:bg-[#1e3a34] prose-pre:rounded-xl prose-blockquote:border-[#1f644e] prose-a:text-[#1f644e] prose-li:text-[#1e3a34] prose-strong:text-[#1e3a34] prose-table:text-sm">
+    <div className="coursify-md prose prose-sm max-w-none min-w-0 overflow-x-hidden font-[family-name:var(--font-lora)] prose-headings:font-bold prose-headings:text-[#1e3a34] prose-p:text-[#1e3a34] prose-p:leading-relaxed prose-code:bg-[#f0f5f2] prose-code:rounded prose-code:px-1 prose-code:text-[#1f644e] prose-pre:bg-[#1e3a34] prose-pre:rounded-xl prose-blockquote:border-[#1f644e] prose-a:text-[#1f644e] prose-li:text-[#1e3a34] prose-strong:text-[#1e3a34] prose-table:text-sm">
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeRaw, rehypeKatex]}
@@ -50,7 +50,7 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({ content }) {
           },
           table({ children }) {
             return (
-              <div className="overflow-x-auto my-7 rounded-xl border border-[#e5e3d8]">
+              <div className="coursify-table-scroll overflow-x-auto my-7 rounded-xl border border-[#e5e3d8]">
                 <table className="w-full border-collapse text-sm">{children}</table>
               </div>
             );
@@ -82,21 +82,23 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({ content }) {
             // Fenced code with language → syntax highlight
             if (isBlock && lang) {
               return (
-                <SyntaxHighlighter
-                  style={oneDark}
-                  language={lang}
-                  PreTag="div"
-                  customStyle={{
-                    borderRadius: '0.75rem',
-                    fontSize: '0.82rem',
-                    margin: '0.75em 0',
-                    padding: '0.6em 0.9em',
-                  }}
-                  showLineNumbers
-                  {...props}
-                >
-                  {raw}
-                </SyntaxHighlighter>
+                <div className="overflow-x-auto my-3 rounded-xl">
+                  <SyntaxHighlighter
+                    style={oneDark}
+                    language={lang}
+                    PreTag="div"
+                    customStyle={{
+                      borderRadius: '0.75rem',
+                      fontSize: '0.82rem',
+                      margin: 0,
+                      padding: '0.6em 0.9em',
+                    }}
+                    showLineNumbers
+                    {...props}
+                  >
+                    {raw}
+                  </SyntaxHighlighter>
+                </div>
               );
             }
 
@@ -104,11 +106,11 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({ content }) {
             if (isBlock) {
               return (
                 <div
-                  className="rounded-xl overflow-hidden my-3 w-full flex justify-center"
+                  className="rounded-xl overflow-x-auto my-3 w-full"
                   style={{ background: '#18181b' }}
                 >
                   <pre
-                    className="overflow-x-auto p-4 text-[0.82rem] leading-relaxed font-mono whitespace-pre"
+                    className="p-4 text-[0.82rem] leading-relaxed font-mono whitespace-pre"
                     style={{ background: 'transparent' }}
                   >
                     <code className="font-mono" style={{ color: '#e4e4e7' }}>
