@@ -224,7 +224,12 @@ courses
       updateIdMap(c.title, c.id);
     });
 
-    console.log(JSON.stringify(result, null, 2));
+    const output = result.map((c) => ({
+      ...c,
+      title: c.isFrozen ? `[FROZEN] ${c.title}` : c.title,
+    }));
+
+    console.log(JSON.stringify(output, null, 2));
   });
 
 courses
@@ -288,47 +293,88 @@ courses
     if (payload.id) payload.id = resolveFromCache(payload.id);
 
     logVerbose('Upserting course with payload', payload);
-    const PLAN_KEYS = [
-      'targetAudience',
-      'learningObjectives',
-      'prerequisites',
-      'outcome',
-      'outline',
-      'authoringStatus',
-      'agentNotes',
-    ];
-
-    let result;
-    if (!payload.id) {
-      result = await dbOps.dbCreateCourse(payload);
-      const hasPlanFields = PLAN_KEYS.some((k) => payload[k] !== undefined);
-      if (hasPlanFields) {
-        result = await dbOps.dbSaveCoursePlan({ courseId: result.course.id, ...payload });
-      }
-    } else {
-      const BASIC_KEYS = [
-        'title',
-        'description',
-        'difficulty',
-        'estimatedDuration',
-        'tags',
-        'status',
+    try {
+      const PLAN_KEYS = [
+        'targetAudience',
+        'learningObjectives',
+        'prerequisites',
+        'outcome',
+        'outline',
+        'authoringStatus',
+        'agentNotes',
       ];
-      const hasBasic = BASIC_KEYS.some((k) => payload[k] !== undefined);
-      const hasPlan = PLAN_KEYS.some((k) => payload[k] !== undefined);
-      const id = payload.id;
 
-      if (hasBasic && hasPlan) {
-        await dbOps.dbUpdateCourse(payload);
-        result = await dbOps.dbSaveCoursePlan({ courseId: id, ...payload });
-      } else if (hasPlan) {
-        result = await dbOps.dbSaveCoursePlan({ courseId: id, ...payload });
+      let result;
+      if (!payload.id) {
+        result = await dbOps.dbCreateCourse(payload);
+        const hasPlanFields = PLAN_KEYS.some((k) => payload[k] !== undefined);
+        if (hasPlanFields) {
+          result = await dbOps.dbSaveCoursePlan({ courseId: result.course.id, ...payload });
+        }
       } else {
-        result = await dbOps.dbUpdateCourse(payload);
+        const BASIC_KEYS = [
+          'title',
+          'description',
+          'difficulty',
+          'estimatedDuration',
+          'tags',
+          'status',
+          'isFrozen',
+        ];
+        const hasBasic = BASIC_KEYS.some((k) => payload[k] !== undefined);
+        const hasPlan = PLAN_KEYS.some((k) => payload[k] !== undefined);
+        const id = payload.id;
+
+        if (hasBasic && hasPlan) {
+          await dbOps.dbUpdateCourse(payload);
+          result = await dbOps.dbSaveCoursePlan({ courseId: id, ...payload });
+        } else if (hasPlan) {
+          result = await dbOps.dbSaveCoursePlan({ courseId: id, ...payload });
+        } else {
+          result = await dbOps.dbUpdateCourse(payload);
+        }
       }
+      updateIdMap(result.course.slug, result.course.id);
+      console.log(JSON.stringify(result, null, 2));
+    } catch (err) {
+      handleFrozenError(err, payload.id || payload.title);
     }
-    updateIdMap(result.course.slug, result.course.id);
-    console.log(JSON.stringify(result, null, 2));
+  });
+
+courses
+  .command('freeze <id>')
+  .description('Freeze a course (makes it read-only)')
+  .action(async (id) => {
+    await connect();
+    const resolvedId = resolveFromCache(id);
+    try {
+      const result = await dbOps.dbUpdateCourse({ id: resolvedId, isFrozen: true });
+      console.log(
+        JSON.stringify({ success: true, message: `Course "${result.course.title}" frozen.` }, null, 2)
+      );
+    } catch (err) {
+      handleFrozenError(err, id);
+    }
+  });
+
+courses
+  .command('unfreeze <id>')
+  .description('Unfreeze a course (allows editing again)')
+  .action(async (id) => {
+    await connect();
+    const resolvedId = resolveFromCache(id);
+    try {
+      const result = await dbOps.dbUpdateCourse({ id: resolvedId, isFrozen: false });
+      console.log(
+        JSON.stringify(
+          { success: true, message: `Course "${result.course.title}" unfrozen.` },
+          null,
+          2
+        )
+      );
+    } catch (err) {
+      handleFrozenError(err, id);
+    }
   });
 
 courses
@@ -360,10 +406,14 @@ modules
     payload.courseId = resolveFromCache(payload.courseId);
 
     const { id, courseId, ...fields } = payload;
-    const result = id
-      ? await dbOps.dbUpdateModule({ id, ...fields })
-      : await dbOps.dbCreateModule({ courseId, ...fields });
-    console.log(JSON.stringify(result, null, 2));
+    try {
+      const result = id
+        ? await dbOps.dbUpdateModule({ id, ...fields })
+        : await dbOps.dbCreateModule({ courseId, ...fields });
+      console.log(JSON.stringify(result, null, 2));
+    } catch (err) {
+      handleFrozenError(err, courseId);
+    }
   });
 
 modules
@@ -374,8 +424,12 @@ modules
   .action(async (ids, options) => {
     await connect();
     const courseId = resolveFromCache(options.courseId);
-    const result = await dbOps.dbReorderModules({ courseId, moduleIds: ids });
-    console.log(JSON.stringify(result, null, 2));
+    try {
+      const result = await dbOps.dbReorderModules({ courseId, moduleIds: ids });
+      console.log(JSON.stringify(result, null, 2));
+    } catch (err) {
+      handleFrozenError(err, courseId);
+    }
   });
 
 modules
@@ -383,8 +437,12 @@ modules
   .description('Soft-delete one or more modules')
   .action(async (ids) => {
     await connect();
-    const result = await dbOps.dbDeleteModules({ ids });
-    console.log(JSON.stringify(result, null, 2));
+    try {
+      const result = await dbOps.dbDeleteModules({ ids });
+      console.log(JSON.stringify(result, null, 2));
+    } catch (err) {
+      handleFrozenError(err, 'Selected Module(s)');
+    }
   });
 
 // 4. Section Operations
@@ -448,9 +506,16 @@ sections
         const issues = lintContent(file, content);
         results.push({ file, title, issues, action: 'skip (dry-run)' });
       } else {
-        logVerbose(`Syncing section: ${title} from ${file}`);
-        const result = await dbOps.dbAddSection(payload);
-        results.push({ file, title, sectionId: result.section.id, action: 'created' });
+        try {
+          logVerbose(`Syncing section: ${title} from ${file}`);
+          const result = await dbOps.dbAddSection(payload);
+          results.push({ file, title, sectionId: result.section.id, action: 'created' });
+        } catch (err) {
+          if (err.message.includes('frozen')) {
+            handleFrozenError(err, courseId);
+          }
+          results.push({ file, title, error: err.message, action: 'failed' });
+        }
       }
     }
 
@@ -499,13 +564,17 @@ sections
     }
 
     logVerbose('Upserting section with payload', fields);
-    let result;
-    if (id) {
-      result = await dbOps.dbUpdateSection({ id, ...fields });
-    } else {
-      result = await dbOps.dbAddSection(fields);
+    try {
+      let result;
+      if (id) {
+        result = await dbOps.dbUpdateSection({ id, ...fields });
+      } else {
+        result = await dbOps.dbAddSection(fields);
+      }
+      console.log(JSON.stringify(result, null, 2));
+    } catch (err) {
+      handleFrozenError(err, courseId);
     }
-    console.log(JSON.stringify(result, null, 2));
   });
 
 sections
@@ -517,12 +586,16 @@ sections
   .action(async (ids, options) => {
     await connect();
     const courseId = resolveFromCache(options.courseId);
-    const result = await dbOps.dbReorderSections({
-      courseId,
-      moduleId: options.moduleId,
-      sectionIds: ids,
-    });
-    console.log(JSON.stringify(result, null, 2));
+    try {
+      const result = await dbOps.dbReorderSections({
+        courseId,
+        moduleId: options.moduleId,
+        sectionIds: ids,
+      });
+      console.log(JSON.stringify(result, null, 2));
+    } catch (err) {
+      handleFrozenError(err, courseId);
+    }
   });
 
 sections
@@ -530,8 +603,12 @@ sections
   .description('Soft-delete one or more sections')
   .action(async (ids) => {
     await connect();
-    const result = await dbOps.dbDeleteSections({ ids });
-    console.log(JSON.stringify(result, null, 2));
+    try {
+      const result = await dbOps.dbDeleteSections({ ids });
+      console.log(JSON.stringify(result, null, 2));
+    } catch (err) {
+      handleFrozenError(err, 'Selected Section(s)');
+    }
   });
 
 // 5. Research Operations
@@ -550,11 +627,28 @@ research
       console.error('Research file must contain an array of findings');
       process.exit(1);
     }
-    const result = await dbOps.dbResearchFindings({ courseId, findings });
-    console.log(JSON.stringify(result, null, 2));
+    try {
+      const result = await dbOps.dbResearchFindings({ courseId, findings });
+      console.log(JSON.stringify(result, null, 2));
+    } catch (err) {
+      handleFrozenError(err, courseId);
+    }
   });
 
 // --- Utility for File Parsing ---
+
+function handleFrozenError(err, idOrSlug) {
+  if (err.message.includes('frozen')) {
+    console.error(`\n❌ Error: Cannot modify content.`);
+    console.error(`The course "${idOrSlug}" is currently frozen.`);
+    console.error(
+      `To make changes, unfreeze it first using: \`node .agent/skills/coursify-studio/scripts/coursify.js courses unfreeze ${idOrSlug}\`\n`
+    );
+    process.exit(1);
+  }
+  console.error(JSON.stringify({ success: false, error: err.message }, null, 2));
+  process.exit(1);
+}
 
 function parseJsonFile(filePath) {
   if (!filePath) return {};

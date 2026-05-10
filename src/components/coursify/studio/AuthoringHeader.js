@@ -1,6 +1,6 @@
 'use client';
 
-import { RefreshCw, Globe, Lock, Pencil } from 'lucide-react';
+import { RefreshCw, Globe, Lock, Pencil, Snowflake } from 'lucide-react';
 import { ReaderHeader } from '@/components/coursify/reader/ReaderHeader';
 import { useCoursifyStudio } from '@/context/CoursifyStudioContext';
 
@@ -53,13 +53,21 @@ export function AuthoringHeader() {
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
 
+          {course.isFrozen && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-blue-50 border border-blue-200 text-blue-700">
+              <Snowflake className="w-3 h-3 shrink-0" />
+              <span className="hidden sm:inline">Frozen</span>
+            </div>
+          )}
+
           <button
             onClick={handleTogglePublish}
+            disabled={course.isFrozen}
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-colors ${
               course.status === 'published'
                 ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                 : 'bg-white border-[#e5e3d8] text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e]'
-            }`}
+            } ${course.isFrozen ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {course.status === 'published' ? (
               <Globe className="w-3 h-3 shrink-0" />

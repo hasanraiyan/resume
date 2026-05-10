@@ -48,6 +48,22 @@ async function resolveCourseId(idOrSlug) {
   return course._id.toString();
 }
 
+/**
+ * Ensures the course is not frozen before allowing mutations.
+ */
+async function ensureNotFrozen(idOrSlug, isFrozenToggle = false) {
+  if (isFrozenToggle) return; // Explicitly allowed
+
+  await dbConnect();
+  const courseId = await resolveCourseId(idOrSlug);
+  const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null })
+    .select('isFrozen')
+    .lean();
+  if (course?.isFrozen) {
+    throw new Error('Course is frozen and cannot be modified.');
+  }
+}
+
 // ─── Courses ──────────────────────────────────────────────────────────────────
 
 export async function dbListCourses({ status, limit = 20, offset = 0 } = {}) {
@@ -196,10 +212,20 @@ export async function dbUpdateCourse({
   estimatedDuration,
   tags,
   status,
+  isFrozen,
 }) {
   await dbConnect();
   const courseId = await resolveCourseId(id);
-  const clean = cleanPatch({ title, description, difficulty, estimatedDuration, tags, status });
+  await ensureNotFrozen(courseId, isFrozen !== undefined);
+  const clean = cleanPatch({
+    title,
+    description,
+    difficulty,
+    estimatedDuration,
+    tags,
+    status,
+    isFrozen,
+  });
   if (clean.title) clean.slug = await generateUniqueSlug(clean.title, courseId);
   if (clean.status === 'published') clean.authoringStatus = 'published';
 
@@ -229,6 +255,7 @@ export async function dbPublishCourse({ id }) {
 export async function dbDeleteCourse({ id }) {
   await dbConnect();
   const courseId = await resolveCourseId(id);
+  await ensureNotFrozen(courseId);
   const deletedAt = new Date();
   const course = await CoursifyCourse.findOneAndUpdate(
     { _id: courseId, deletedAt: null },
@@ -261,6 +288,7 @@ export async function dbSaveCoursePlan({
 }) {
   await dbConnect();
   const courseId = await resolveCourseId(id);
+  await ensureNotFrozen(courseId);
   const clean = cleanPatch({
     targetAudience,
     learningObjectives,
@@ -286,6 +314,7 @@ export async function dbSaveCoursePlan({
 export async function dbCreateModule({ courseId: id, title, summary, learningGoals, order }) {
   await dbConnect();
   const courseId = await resolveCourseId(id);
+  await ensureNotFrozen(courseId);
   const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
   if (!course) throw new Error('Course not found.');
 
@@ -325,6 +354,10 @@ export async function dbGetModule({ id }) {
 
 export async function dbUpdateModule({ id, title, summary, learningGoals, order, status }) {
   await dbConnect();
+  const existing = await CoursifyModule.findOne({ _id: id, deletedAt: null }).select('courseId').lean();
+  if (!existing) throw new Error('Module not found.');
+  await ensureNotFrozen(existing.courseId);
+
   const clean = cleanPatch({ title, summary, learningGoals, order, status });
   const module = await CoursifyModule.findOneAndUpdate(
     { _id: id, deletedAt: null },
@@ -341,6 +374,10 @@ export async function dbUpdateModule({ id, title, summary, learningGoals, order,
 
 export async function dbDeleteModule({ id }) {
   await dbConnect();
+  const existing = await CoursifyModule.findOne({ _id: id, deletedAt: null }).select('courseId').lean();
+  if (!existing) throw new Error('Module not found.');
+  await ensureNotFrozen(existing.courseId);
+
   const module = await CoursifyModule.findOneAndUpdate(
     { _id: id, deletedAt: null },
     { $set: { deletedAt: new Date() }, $inc: { syncVersion: 1 } }
@@ -359,6 +396,7 @@ export async function dbDeleteModule({ id }) {
 
 export async function dbReorderModules({ courseId, moduleIds }) {
   await dbConnect();
+  await ensureNotFrozen(courseId);
   if (!moduleIds.length) throw new Error('moduleIds must not be empty.');
   const results = await Promise.all(
     moduleIds.map((id, index) =>
@@ -392,6 +430,7 @@ export async function dbAddSection({
 }) {
   await dbConnect();
   const courseId = await resolveCourseId(id);
+  await ensureNotFrozen(courseId);
   const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
   if (!course) throw new Error('Course not found.');
 
@@ -430,6 +469,10 @@ export async function dbUpdateSection({
   resources,
 }) {
   await dbConnect();
+  const existing = await CoursifySection.findOne({ _id: id, deletedAt: null }).select('courseId').lean();
+  if (!existing) throw new Error('Section not found.');
+  await ensureNotFrozen(existing.courseId);
+
   const clean = cleanPatch({
     title,
     blocks: blocks || (content ? parseMarkdownToBlocks(content) : undefined),
@@ -470,6 +513,7 @@ export async function dbUpdateSection({
 
 export async function dbAddSections({ courseId, sections }) {
   await dbConnect();
+  await ensureNotFrozen(courseId);
   const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
   if (!course) throw new Error('Course not found.');
 
@@ -498,6 +542,10 @@ export async function dbAddSections({ courseId, sections }) {
 
 export async function dbDeleteSection({ id }) {
   await dbConnect();
+  const existing = await CoursifySection.findOne({ _id: id, deletedAt: null }).select('courseId').lean();
+  if (!existing) throw new Error('Section not found.');
+  await ensureNotFrozen(existing.courseId);
+
   const section = await CoursifySection.findOneAndUpdate(
     { _id: id, deletedAt: null },
     { $set: { deletedAt: new Date() }, $inc: { syncVersion: 1 } }
@@ -513,6 +561,7 @@ export async function dbDeleteSection({ id }) {
 export async function dbReorderSections({ courseId: id, sectionIds, moduleId }) {
   await dbConnect();
   const courseId = await resolveCourseId(id);
+  await ensureNotFrozen(courseId);
   if (!sectionIds.length) throw new Error('sectionIds must not be empty.');
 
   const query = { courseId, deletedAt: null };
@@ -590,6 +639,7 @@ export async function dbAddResearchNote({
 }) {
   await dbConnect();
   const courseId = await resolveCourseId(id);
+  await ensureNotFrozen(courseId);
   const note = {
     title: title.trim(),
     summary: summary.trim(),
@@ -610,6 +660,7 @@ export async function dbAddResearchNote({
 export async function dbResearchFindings({ courseId: id, findings }) {
   await dbConnect();
   const courseId = await resolveCourseId(id);
+  await ensureNotFrozen(courseId);
   const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
   if (!course) throw new Error('Course not found.');
   if (!findings?.length) throw new Error('Provide at least one finding.');
@@ -643,6 +694,10 @@ export async function dbSearchCourses({ query }) {
 
 export async function dbAddSectionResource({ sectionId, resource }) {
   await dbConnect();
+  const existing = await CoursifySection.findOne({ _id: sectionId, deletedAt: null }).select('courseId').lean();
+  if (!existing) throw new Error('Section not found.');
+  await ensureNotFrozen(existing.courseId);
+
   const section = await CoursifySection.findOneAndUpdate(
     { _id: sectionId, deletedAt: null },
     { $push: { resources: resource }, $inc: { syncVersion: 1 } },
@@ -658,6 +713,10 @@ export async function dbAddSectionResource({ sectionId, resource }) {
 
 export async function dbDeleteSections({ ids }) {
   await dbConnect();
+  if (!ids.length) return { deletedCount: 0 };
+  const first = await CoursifySection.findOne({ _id: ids[0] }).select('courseId').lean();
+  if (first) await ensureNotFrozen(first.courseId);
+
   const result = await CoursifySection.updateMany(
     { _id: { $in: ids }, deletedAt: null },
     { $set: { deletedAt: new Date() }, $inc: { syncVersion: 1 } }
@@ -667,6 +726,10 @@ export async function dbDeleteSections({ ids }) {
 
 export async function dbDeleteModules({ ids }) {
   await dbConnect();
+  if (!ids.length) return { deletedCount: 0 };
+  const first = await CoursifyModule.findOne({ _id: ids[0] }).select('courseId').lean();
+  if (first) await ensureNotFrozen(first.courseId);
+
   const deletedAt = new Date();
   const result = await CoursifyModule.updateMany(
     { _id: { $in: ids }, deletedAt: null },

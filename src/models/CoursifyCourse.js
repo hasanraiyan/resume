@@ -74,6 +74,10 @@ const CoursifyCourseSchema = new mongoose.Schema(
       enum: ['idea', 'researching', 'planned', 'drafting', 'reviewing', 'ready', 'published'],
       default: 'idea',
     },
+    isFrozen: {
+      type: Boolean,
+      default: false,
+    },
     // ────────────────────────────────────────────────────────────
     deletedAt: {
       type: Date,

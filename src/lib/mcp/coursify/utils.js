@@ -289,6 +289,7 @@ export function normalizeCourse(course) {
       accessedAt: n.accessedAt || null,
     })),
     authoringStatus: course.authoringStatus || 'idea',
+    isFrozen: !!course.isFrozen,
     createdAt: course.createdAt,
     updatedAt: course.updatedAt,
   };

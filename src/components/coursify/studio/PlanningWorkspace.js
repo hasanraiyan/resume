@@ -52,7 +52,7 @@ export function PlanningWorkspace() {
     <div className="max-w-3xl mx-auto px-4 lg:px-10 py-8 space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-[#1e3a34]">Planning Workspace</h2>
-        {editMode && planDraft && (
+        {editMode && planDraft && !course.isFrozen && (
           <button
             onClick={handleSavePlan}
             disabled={planSaving}
@@ -69,7 +69,7 @@ export function PlanningWorkspace() {
       </div>
 
       <PlanCard label="Authoring Status">
-        {editMode && planDraft ? (
+        {editMode && planDraft && !course.isFrozen ? (
           <select
             value={planDraft.authoringStatus}
             onChange={(e) => setPlanDraft((d) => ({ ...d, authoringStatus: e.target.value }))}
@@ -93,7 +93,7 @@ export function PlanningWorkspace() {
       </PlanCard>
 
       <PlanCard label="Target Audience">
-        {editMode && planDraft ? (
+        {editMode && planDraft && !course.isFrozen ? (
           <textarea
             rows={2}
             value={planDraft.targetAudience}
@@ -107,7 +107,7 @@ export function PlanningWorkspace() {
       </PlanCard>
 
       <PlanCard label="Learning Objectives">
-        {editMode && planDraft ? (
+        {editMode && planDraft && !course.isFrozen ? (
           <textarea
             rows={4}
             value={planDraft.learningObjectives}
@@ -130,7 +130,7 @@ export function PlanningWorkspace() {
       </PlanCard>
 
       <PlanCard label="Prerequisites">
-        {editMode && planDraft ? (
+        {editMode && planDraft && !course.isFrozen ? (
           <textarea
             rows={3}
             value={planDraft.prerequisites}
@@ -153,7 +153,7 @@ export function PlanningWorkspace() {
       </PlanCard>
 
       <PlanCard label="Outcome">
-        {editMode && planDraft ? (
+        {editMode && planDraft && !course.isFrozen ? (
           <textarea
             rows={2}
             value={planDraft.outcome}
@@ -167,7 +167,7 @@ export function PlanningWorkspace() {
       </PlanCard>
 
       <PlanCard label="Outline">
-        {editMode && planDraft ? (
+        {editMode && planDraft && !course.isFrozen ? (
           <textarea
             rows={8}
             value={planDraft.outline}
@@ -185,7 +185,7 @@ export function PlanningWorkspace() {
       </PlanCard>
 
       <PlanCard label="Planning Notes">
-        {editMode && planDraft ? (
+        {editMode && planDraft && !course.isFrozen ? (
           <textarea
             rows={3}
             value={planDraft.planningNotes}
@@ -205,7 +205,8 @@ export function PlanningWorkspace() {
           </h3>
           <button
             onClick={() => setShowNoteForm(!showNoteForm)}
-            className="flex items-center gap-1 px-2.5 py-1 bg-[#f0f5f2] hover:bg-[#e0ede8] text-[#1f644e] text-xs font-bold rounded-lg transition-colors"
+            disabled={course.isFrozen}
+            className={`flex items-center gap-1 px-2.5 py-1 bg-[#f0f5f2] hover:bg-[#e0ede8] text-[#1f644e] text-xs font-bold rounded-lg transition-colors ${course.isFrozen ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <Plus className="w-3 h-3" />
             Add Note
@@ -288,13 +289,15 @@ export function PlanningWorkspace() {
                     <span className="text-[10px] font-bold px-1.5 py-0.5 bg-[#f0f5f2] rounded text-[#7c8e88] capitalize">
                       {note.sourceType || 'other'}
                     </span>
-                    <button
-                      onClick={() => handleDeleteNote(i)}
-                      className="p-1 rounded-md hover:bg-red-50 text-[#7c8e88] hover:text-[#c94c4c] transition-colors"
-                      title="Delete note"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
+                    {!course.isFrozen && (
+                      <button
+                        onClick={() => handleDeleteNote(i)}
+                        className="p-1 rounded-md hover:bg-red-50 text-[#7c8e88] hover:text-[#c94c4c] transition-colors"
+                        title="Delete note"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
                 </div>
                 {note.summary && (
