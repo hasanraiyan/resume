@@ -25,7 +25,11 @@ function cleanPatch(patch) {
 }
 
 function triggerThumbnail(course) {
-  generateCourseThumbnail(course._id.toString(), course.title, course.description).catch(() => {});
+  return generateCourseThumbnail(course._id.toString(), course.title, course.description).catch(
+    (err) => {
+      console.error(`[db-ops:triggerThumbnail] Background generation failed: ${err.message}`);
+    }
+  );
 }
 
 // ─── Courses ──────────────────────────────────────────────────────────────────
@@ -139,7 +143,14 @@ export async function dbGetCourseWorkspace({ id }) {
   };
 }
 
-export async function dbCreateCourse({ title, description, difficulty, estimatedDuration, tags }) {
+export async function dbCreateCourse({
+  title,
+  description,
+  difficulty,
+  estimatedDuration,
+  tags,
+  waitForThumbnail = false,
+}) {
   await dbConnect();
   const slug = await generateUniqueSlug(title.trim());
   const course = await CoursifyCourse.create({
@@ -151,7 +162,12 @@ export async function dbCreateCourse({ title, description, difficulty, estimated
     tags: tags || [],
     thumbnailGenerating: true,
   });
-  triggerThumbnail(course);
+
+  const thumbnailPromise = triggerThumbnail(course);
+  if (waitForThumbnail) {
+    await thumbnailPromise;
+  }
+
   return { course: normalizeCourse({ ...course.toObject(), sectionCount: 0 }) };
 }
 

@@ -6,7 +6,6 @@ import { MultiServerMCPClient } from '@langchain/mcp-adapters';
 import { getBackendMCPConfig } from '@/lib/mcpConfig';
 import agentRegistry from '../AgentRegistry';
 import Article from '@/models/Article';
-import { uploadGeneratedImage } from '@/app/actions/mediaActions';
 
 // Dynamic date context for time-sensitive research
 const CURRENT_DATE = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -377,6 +376,8 @@ Do NOT output any JSON metadata block — just the article content.`;
       const generatedImages = {};
 
       if (state.imagePrompts && state.imagePrompts.length > 0) {
+        // Dynamic import to break circular dependency
+        const { uploadGeneratedImage } = await import('@/app/actions/mediaActions');
         const imageGenerator = agentRegistry.get(AGENT_IDS.IMAGE_GENERATOR);
 
         const generateSingleImage = async (img) => {

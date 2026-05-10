@@ -16,6 +16,8 @@ import { ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings } from '@langchain
 import { GoogleGenAI } from '@google/genai';
 
 class BaseAgent {
+  static isAgent = true;
+
   /**
    * Create a new agent instance
    * @param {string} agentId - The unique agent ID from AGENT_IDS

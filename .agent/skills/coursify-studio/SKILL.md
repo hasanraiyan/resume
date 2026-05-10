@@ -23,15 +23,22 @@ This skill transforms ai agent into a specialized Instructional Design Agent for
 
 ### Authoring Content
 
-- **Text**: Use `MdBlock` with clear hierarchy (H1, H2, H3).
+- **Text**: Use `MdBlock` with clear hierarchy (H1, H2, H3). **Note**: The `## [MdBlock]` header is required at the very top of your content file for the parser to recognize the first block correctly.
 - **Interactive**: Always include a `QuizBlock` to reinforce learning.
 - **Videos**: Embed relevant YouTube/GDrive content via `VideoBlock`.
+
+**Important Parser Warning**: The current `QuizBlock` parser may incorrectly split options if they contain commas (e.g., `"Option, with comma"`). Avoid commas inside quiz option strings to ensure deterministic parsing.
 
 ### Managing Publication
 
 - Use `status: 'complete'` only when the content is polished.
 - Remember: A section is hidden if its parent module or course is not yet published.
 - Use `authoringStatus` on the Course model to track the internal production lifecycle.
+
+## Troubleshooting
+
+- **Thumbnail Generation Failure**: If you see `Error: Agent class must extend BaseAgent`, this is a non-fatal error in the backend agent registry. The course and its content will still be created successfully.
+- **Missing Blocks**: Ensure every block starts with the `## [BlockType]` header. If a block is missing from the DB after an upsert, check the header syntax.
 
 ## Scripts & Utilities
 

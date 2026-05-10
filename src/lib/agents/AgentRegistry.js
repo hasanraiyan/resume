@@ -38,7 +38,10 @@ class AgentRegistry {
       throw new Error('Agent ID is required for registration');
     }
 
-    if (!(AgentClass.prototype instanceof BaseAgent) && AgentClass !== BaseAgent) {
+    // Handle potential module objects from dynamic imports/jiti
+    const ActualClass = AgentClass?.default || AgentClass;
+
+    if (!ActualClass || (typeof ActualClass !== 'function' && !ActualClass.isAgent)) {
       throw new Error('Agent class must extend BaseAgent');
     }
 
@@ -46,7 +49,7 @@ class AgentRegistry {
       console.warn(`Agent ${agentId} is already registered. Overwriting.`);
     }
 
-    this._agentClasses.set(agentId, { AgentClass, config });
+    this._agentClasses.set(agentId, { AgentClass: ActualClass, config });
     console.log(`[AgentRegistry] Registered agent: ${agentId}`);
     return true;
   }
