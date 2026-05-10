@@ -31,7 +31,7 @@ export function toolMeta(invoking, invoked) {
 /**
  * Unescapes a string that was potentially wrapped in quotes and contained escaped characters.
  */
-function unescapeString(str) {
+export function unescapeString(str) {
   if (!str) return '';
   let val = str.trim();
   // Remove surrounding quotes if they exist

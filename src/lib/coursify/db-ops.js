@@ -31,6 +31,23 @@ function triggerThumbnail(course) {
   );
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Resolves a course ID from either a MongoDB ObjectId or a slug.
+ */
+async function resolveCourseId(idOrSlug) {
+  if (!idOrSlug) return null;
+  if (idOrSlug.match(/^[0-9a-fA-F]{24}$/)) return idOrSlug;
+
+  await dbConnect();
+  const course = await CoursifyCourse.findOne({ slug: idOrSlug, deletedAt: null })
+    .select('_id')
+    .lean();
+  if (!course) throw new Error(`Course with slug or ID "${idOrSlug}" not found.`);
+  return course._id.toString();
+}
+
 // ─── Courses ──────────────────────────────────────────────────────────────────
 
 export async function dbListCourses({ status, limit = 20, offset = 0 } = {}) {
@@ -71,7 +88,8 @@ export async function dbListCourses({ status, limit = 20, offset = 0 } = {}) {
 
 export async function dbGetCourse({ id, includeSectionContent = false }) {
   await dbConnect();
-  const course = await CoursifyCourse.findOne({ _id: id, deletedAt: null }).lean();
+  const courseId = await resolveCourseId(id);
+  const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
   if (!course) throw new Error('Course not found.');
 
   const sectionSelect = includeSectionContent
@@ -79,8 +97,8 @@ export async function dbGetCourse({ id, includeSectionContent = false }) {
     : 'moduleId title summary status order learningGoals estimatedDuration resources';
 
   const [modules, sections] = await Promise.all([
-    CoursifyModule.find({ courseId: id, deletedAt: null }).sort({ order: 1 }).lean(),
-    CoursifySection.find({ courseId: id, deletedAt: null })
+    CoursifyModule.find({ courseId, deletedAt: null }).sort({ order: 1 }).lean(),
+    CoursifySection.find({ courseId, deletedAt: null })
       .select(sectionSelect)
       .sort({ order: 1 })
       .lean(),
@@ -180,55 +198,58 @@ export async function dbUpdateCourse({
   status,
 }) {
   await dbConnect();
+  const courseId = await resolveCourseId(id);
   const clean = cleanPatch({ title, description, difficulty, estimatedDuration, tags, status });
-  if (clean.title) clean.slug = await generateUniqueSlug(clean.title, id);
+  if (clean.title) clean.slug = await generateUniqueSlug(clean.title, courseId);
   if (clean.status === 'published') clean.authoringStatus = 'published';
 
   const course = await CoursifyCourse.findOneAndUpdate(
-    { _id: id, deletedAt: null },
+    { _id: courseId, deletedAt: null },
     { $set: clean, $inc: { syncVersion: 1 } },
     { new: true }
   ).lean();
   if (!course) throw new Error('Course not found.');
-  const sectionCount = await CoursifySection.countDocuments({ courseId: id, deletedAt: null });
+  const sectionCount = await CoursifySection.countDocuments({ courseId, deletedAt: null });
   return { course: normalizeCourse({ ...course, sectionCount }) };
 }
 
 export async function dbPublishCourse({ id }) {
   await dbConnect();
+  const courseId = await resolveCourseId(id);
   const course = await CoursifyCourse.findOneAndUpdate(
-    { _id: id, deletedAt: null },
+    { _id: courseId, deletedAt: null },
     { $set: { status: 'published', authoringStatus: 'published' }, $inc: { syncVersion: 1 } },
     { new: true }
   ).lean();
   if (!course) throw new Error('Course not found.');
-  const sectionCount = await CoursifySection.countDocuments({ courseId: id, deletedAt: null });
+  const sectionCount = await CoursifySection.countDocuments({ courseId, deletedAt: null });
   return { course: normalizeCourse({ ...course, sectionCount }) };
 }
 
 export async function dbDeleteCourse({ id }) {
   await dbConnect();
+  const courseId = await resolveCourseId(id);
   const deletedAt = new Date();
   const course = await CoursifyCourse.findOneAndUpdate(
-    { _id: id, deletedAt: null },
+    { _id: courseId, deletedAt: null },
     { $set: { deletedAt }, $inc: { syncVersion: 1 } }
   ).lean();
   if (!course) throw new Error('Course not found.');
   await Promise.all([
     CoursifySection.updateMany(
-      { courseId: id, deletedAt: null },
+      { courseId, deletedAt: null },
       { $set: { deletedAt }, $inc: { syncVersion: 1 } }
     ),
     CoursifyModule.updateMany(
-      { courseId: id, deletedAt: null },
+      { courseId, deletedAt: null },
       { $set: { deletedAt }, $inc: { syncVersion: 1 } }
     ),
   ]);
-  return { deletedId: id, title: course.title };
+  return { deletedId: courseId, title: course.title };
 }
 
 export async function dbSaveCoursePlan({
-  courseId,
+  courseId: id,
   targetAudience,
   learningObjectives,
   prerequisites,
@@ -239,6 +260,7 @@ export async function dbSaveCoursePlan({
   agentNotes,
 }) {
   await dbConnect();
+  const courseId = await resolveCourseId(id);
   const clean = cleanPatch({
     targetAudience,
     learningObjectives,
@@ -261,8 +283,9 @@ export async function dbSaveCoursePlan({
 
 // ─── Modules ──────────────────────────────────────────────────────────────────
 
-export async function dbCreateModule({ courseId, title, summary, learningGoals, order }) {
+export async function dbCreateModule({ courseId: id, title, summary, learningGoals, order }) {
   await dbConnect();
+  const courseId = await resolveCourseId(id);
   const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
   if (!course) throw new Error('Course not found.');
 
@@ -355,7 +378,7 @@ export async function dbReorderModules({ courseId, moduleIds }) {
 // ─── Sections ─────────────────────────────────────────────────────────────────
 
 export async function dbAddSection({
-  courseId,
+  courseId: id,
   title,
   blocks,
   content,
@@ -368,6 +391,7 @@ export async function dbAddSection({
   estimatedDuration,
 }) {
   await dbConnect();
+  const courseId = await resolveCourseId(id);
   const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
   if (!course) throw new Error('Course not found.');
 
@@ -486,8 +510,9 @@ export async function dbDeleteSection({ id }) {
   return { deletedId: id, title: section.title };
 }
 
-export async function dbReorderSections({ courseId, sectionIds, moduleId }) {
+export async function dbReorderSections({ courseId: id, sectionIds, moduleId }) {
   await dbConnect();
+  const courseId = await resolveCourseId(id);
   if (!sectionIds.length) throw new Error('sectionIds must not be empty.');
 
   const query = { courseId, deletedAt: null };
@@ -518,8 +543,9 @@ export async function dbGetSectionContent({ id }) {
   return { section: { ...normalizeSection(section), moduleTitle } };
 }
 
-export async function dbListCourseModules({ courseId }) {
+export async function dbListCourseModules({ courseId: id }) {
   await dbConnect();
+  const courseId = await resolveCourseId(id);
   const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
   if (!course) throw new Error('Course not found.');
 
@@ -555,7 +581,7 @@ export async function dbListCourseModules({ courseId }) {
 }
 
 export async function dbAddResearchNote({
-  courseId,
+  courseId: id,
   title,
   summary,
   sourceUrl,
@@ -563,6 +589,7 @@ export async function dbAddResearchNote({
   notes,
 }) {
   await dbConnect();
+  const courseId = await resolveCourseId(id);
   const note = {
     title: title.trim(),
     summary: summary.trim(),
@@ -580,8 +607,9 @@ export async function dbAddResearchNote({
   return { note: { id: saved._id?.toString(), ...saved } };
 }
 
-export async function dbResearchFindings({ courseId, findings }) {
+export async function dbResearchFindings({ courseId: id, findings }) {
   await dbConnect();
+  const courseId = await resolveCourseId(id);
   const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
   if (!course) throw new Error('Course not found.');
   if (!findings?.length) throw new Error('Provide at least one finding.');
@@ -651,8 +679,9 @@ export async function dbDeleteModules({ ids }) {
   return { deletedCount: result.modifiedCount };
 }
 
-export async function dbGetResearchNotes({ courseId }) {
+export async function dbGetResearchNotes({ courseId: id }) {
   await dbConnect();
+  const courseId = await resolveCourseId(id);
   const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null })
     .select('researchNotes')
     .lean();
