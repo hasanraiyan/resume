@@ -10,28 +10,16 @@ import {
   AlertCircle,
   Folder,
   FileArchive,
+  Settings,
+  Trash2,
 } from 'lucide-react';
 import { useMemo } from 'react';
-
-const formatSize = (bytes) => {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-};
-
-const getIconForMime = (mime) => {
-  if (mime.startsWith('image/')) return <ImageIcon className="w-4 h-4 text-emerald-500" />;
-  if (mime.startsWith('video/')) return <Video className="w-4 h-4 text-purple-500" />;
-  if (mime === 'application/pdf') return <FileText className="w-4 h-4 text-red-500" />;
-  if (mime.includes('zip') || mime.includes('rar') || mime.includes('tar'))
-    return <FileArchive className="w-4 h-4 text-amber-500" />;
-  return <File className="w-4 h-4 text-blue-500" />;
-};
+import StorageDashboard from './StorageDashboard';
+import Switch from '../admin/Switch';
+import { formatSize, getFileIcon } from './utils';
 
 export default function StorageTab() {
-  const { stats, isLoading, files, folders } = useDrively();
+  const { stats, isLoading, files, folders, settings, updateSettings } = useDrively();
 
   const folderStats = useMemo(() => {
     if (!files || !folders) return [];
@@ -74,6 +62,20 @@ export default function StorageTab() {
 
   return (
     <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-extrabold text-[#1e3a34]">Storage Analytics</h2>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 bg-white border border-[#e5e3d8] px-4 py-2 rounded-2xl shadow-sm">
+            <Settings className="w-4 h-4 text-[#7c8e88]" />
+            <span className="text-xs font-bold text-[#1e3a34]">Auto-Empty Trash</span>
+            <Switch
+              checked={settings?.autoEmptyTrash ?? true}
+              onCheckedChange={(checked) => updateSettings({ autoEmptyTrash: checked })}
+            />
+          </div>
+        </div>
+      </div>
+
       {percentage > 80 && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3 text-amber-800">
           <AlertCircle className="w-5 h-5 flex-shrink-0" />
@@ -82,6 +84,9 @@ export default function StorageTab() {
           </p>
         </div>
       )}
+
+      {/* Dashboard Section */}
+      <StorageDashboard />
 
       {/* Overview Card */}
       <div className="bg-white border border-[#e5e3d8] rounded-3xl p-8">
@@ -131,12 +136,12 @@ export default function StorageTab() {
                   className="p-4 flex items-center justify-between hover:bg-[#f0f5f2] transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[#fcfbf5] border border-[#e5e3d8] flex items-center justify-center">
-                      {getIconForMime(type._id)}
+                    <div className="w-8 h-8 rounded-lg bg-[#fcfbf5] border border-[#e5e3d8] flex items-center justify-center p-2">
+                      {getFileIcon(type._id)}
                     </div>
                     <div>
                       <p className="text-sm font-bold text-[#1e3a34]">
-                        {type._id.split('/')[1].toUpperCase()}
+                        {type._id.includes('/') ? type._id.split('/')[1].toUpperCase() : type._id}
                       </p>
                       <p className="text-[10px] text-[#7c8e88]">{type.count} files</p>
                     </div>
@@ -162,11 +167,11 @@ export default function StorageTab() {
                   className="p-4 flex items-center justify-between hover:bg-[#f0f5f2] transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-[#fcfbf5] border border-[#e5e3d8] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    <div className="w-8 h-8 rounded-lg bg-[#fcfbf5] border border-[#e5e3d8] flex items-center justify-center flex-shrink-0 overflow-hidden p-2">
                       {file.mimeType.startsWith('image/') && file.secureUrl ? (
                         <img src={file.secureUrl} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        getIconForMime(file.mimeType)
+                        getFileIcon(file.mimeType)
                       )}
                     </div>
                     <p className="text-sm font-bold text-[#1e3a34] truncate">{file.filename}</p>

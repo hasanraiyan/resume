@@ -3,6 +3,7 @@ import DrivelyFolder from '@/models/DrivelyFolder';
 import DrivelyFile from '@/models/DrivelyFile';
 import DrivelyActivity from '@/models/DrivelyActivity';
 import DrivelyShare from '@/models/DrivelyShare';
+import DrivelySettings from '@/models/DrivelySettings';
 import crypto from 'crypto';
 import cloudinary from '@/lib/cloudinary';
 import { CreateFolderSchema, UpdateFolderSchema, UpdateFileSchema } from './validators';
@@ -85,12 +86,43 @@ export async function getStorageStats() {
   const typeBreakdown = await DrivelyFile.aggregate([
     { $match: { deletedAt: null } },
     {
+      $project: {
+        size: 1,
+        category: {
+          $cond: {
+            if: { $regexMatch: { input: '$mimeType', regex: /^image\// } },
+            then: 'Images',
+            else: {
+              $cond: {
+                if: { $regexMatch: { input: '$mimeType', regex: /^video\// } },
+                then: 'Videos',
+                else: {
+                  $cond: {
+                    if: {
+                      $or: [
+                        { $eq: ['$mimeType', 'application/pdf'] },
+                        { $regexMatch: { input: '$mimeType', regex: /msword|officedocument/ } },
+                        { $regexMatch: { input: '$mimeType', regex: /^text\// } },
+                      ],
+                    },
+                    then: 'Documents',
+                    else: 'Others',
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    {
       $group: {
-        _id: '$mimeType',
+        _id: '$category',
         count: { $sum: 1 },
         size: { $sum: '$size' },
       },
     },
+    { $sort: { size: -1 } },
   ]);
 
   const largestFiles = await DrivelyFile.find({ deletedAt: null })
@@ -486,6 +518,24 @@ export async function searchDrively(query) {
   ]);
 
   return { folders, files };
+}
+
+export async function getDrivelySettings() {
+  await ensureDb();
+  const settings = await DrivelySettings.getSettings();
+  return settings;
+}
+
+export async function updateDrivelySettings(payload) {
+  await ensureDb();
+  const settings = await DrivelySettings.getSettings();
+
+  if (payload.autoEmptyTrash !== undefined) {
+    settings.autoEmptyTrash = payload.autoEmptyTrash;
+  }
+
+  await settings.save();
+  return settings;
 }
 
 export async function executeBulkAction(payload) {

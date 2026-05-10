@@ -13,11 +13,17 @@ export default function TrashTab() {
 
   const renderExpiryBadge = (deletedAt) => {
     if (!deletedAt) return null;
-    const daysLeft = 30 - differenceInDays(new Date(), new Date(deletedAt));
+    const daysLeft = Math.max(0, 30 - differenceInDays(new Date(), new Date(deletedAt)));
     return (
-      <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-red-50 text-red-600 rounded-md text-[8px] font-extrabold flex items-center gap-1 border border-red-100 shadow-sm z-10">
+      <div
+        className={`absolute top-2 right-2 px-1.5 py-0.5 rounded-md text-[8px] font-extrabold flex items-center gap-1 border shadow-sm z-10 ${
+          daysLeft <= 5
+            ? 'bg-red-100 text-red-700 border-red-200'
+            : 'bg-amber-50 text-amber-700 border-amber-100'
+        }`}
+      >
         <Clock className="w-2.5 h-2.5" />
-        {daysLeft} DAYS LEFT
+        {daysLeft} DAYS UNTIL DELETION
       </div>
     );
   };
