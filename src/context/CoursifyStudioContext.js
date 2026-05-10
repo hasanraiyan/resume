@@ -1,6 +1,14 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from 'react';
 import { toast } from 'sonner';
 
 const CoursifyStudioContext = createContext();
@@ -371,11 +379,7 @@ export function CoursifyStudioProvider({ id, children }) {
     handleDeleteNote,
   };
 
-  return (
-    <CoursifyStudioContext.Provider value={value}>
-      {children}
-    </CoursifyStudioContext.Provider>
-  );
+  return <CoursifyStudioContext.Provider value={value}>{children}</CoursifyStudioContext.Provider>;
 }
 
 export const useCoursifyStudio = () => {

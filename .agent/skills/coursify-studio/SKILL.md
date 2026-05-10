@@ -12,7 +12,25 @@ This skill transforms Gemini CLI into a specialized Instructional Design Agent f
 1. **Understand the Domain**: Review [schemas.md](references/schemas.md) for database models, relationships, and block types (includes class diagram).
 2. **Pedagogical Strategy**: Review [pedagogy.md](references/pedagogy.md) for the "Concept-Context-Check" framework and scaffolding rules.
 3. **Follow Best Practices**: Use the pedagogical flow outlined in [workflows.md](references/workflows.md) (includes flowchart).
-4. **Generate Deliverables**: Author content using the structured template for Magic Import.
+4. **CLI Integration**: Use the `coursify` CLI tool (via `node scripts/coursify.js`) for large content delivery to avoid token limits.
+
+## CLI Tool (coursify-cli)
+
+The `coursify` CLI tool (`node scripts/coursify.js`) mirrors all MCP tools and is optimized for file-based workflows.
+
+### Key CLI Commands:
+
+- `node scripts/coursify.js guide`: Get the authoring guide.
+- `node scripts/coursify.js courses list`: List all courses.
+- `node scripts/coursify.js sections upsert --courseId <id> --content-file <path>`: Create/update a section using a local Markdown file.
+- `node scripts/coursify.js research add --courseId <id> --file <path>`: Add research findings from a JSON file.
+
+### Agent Workflow with CLI:
+
+1. Generate course/section content and save it to a temporary local file (e.g., `tmp_section.md`).
+2. Execute the CLI command to push the content to the database:
+   `node scripts/coursify.js sections upsert --courseId 64b... --title "Next.js" --content-file tmp_section.md --status complete`
+3. This approach is more robust for large sections than passing strings via MCP tool parameters.
 
 ## Core Procedures
 

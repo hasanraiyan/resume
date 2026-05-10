@@ -12,10 +12,7 @@ async function main() {
 
   // Find RAG course
   const ragCourse = await CoursifyCourse.findOne({
-    $or: [
-      { title: /rag/i },
-      { slug: /rag/i },
-    ],
+    $or: [{ title: /rag/i }, { slug: /rag/i }],
     deletedAt: null,
   }).lean();
 
@@ -37,7 +34,9 @@ async function main() {
   const modules = await CoursifyModule.find({
     courseId: ragCourse._id,
     deletedAt: null,
-  }).sort({ order: 1 }).lean();
+  })
+    .sort({ order: 1 })
+    .lean();
 
   console.log(`\nModules (${modules.length}):`);
   for (const mod of modules) {
@@ -48,7 +47,9 @@ async function main() {
       courseId: ragCourse._id,
       moduleId: mod._id,
       deletedAt: null,
-    }).sort({ order: 1 }).lean();
+    })
+      .sort({ order: 1 })
+      .lean();
 
     console.log(`    Sections (${sections.length}):`);
     for (const sec of sections) {
@@ -60,14 +61,16 @@ async function main() {
   const allSections = await CoursifySection.find({
     courseId: ragCourse._id,
     deletedAt: null,
-  }).sort({ order: 1 }).lean();
+  })
+    .sort({ order: 1 })
+    .lean();
 
   console.log(`\nTotal sections in course: ${allSections.length}`);
 
   // Specific check for module-3
-  const module3 = modules.find(m => m.order === 3 || /module.?3/i.test(m.title));
+  const module3 = modules.find((m) => m.order === 3 || /module.?3/i.test(m.title));
   if (module3) {
-    const module3Sections = allSections.filter(s => String(s.moduleId) === String(module3._id));
+    const module3Sections = allSections.filter((s) => String(s.moduleId) === String(module3._id));
     console.log(`\nModule 3 ("${module3.title}") has ${module3Sections.length} section(s):`);
     for (const sec of module3Sections) {
       console.log(`  - "${sec.title}" (order: ${sec.order}, status: ${sec.status})`);
