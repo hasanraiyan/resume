@@ -106,6 +106,16 @@ title: Splitting Mastery Check
     correctAnswer: To provide enough surrounding context for the LLM to understand facts that appear near the edge of a chunk.
     explanation: Overlap ensures that the "edges" of your data are not lost, allowing the LLM to see the "before and after" of a specific sentence.
 
+- question: Which strategy should you use if your document contains highly structured data like Python code?
+  type: multiple_choice
+  options:
+  - Randomly cut the file into 500-byte pieces.
+  - Use a Language-Specific Splitter that understands AST (Abstract Syntax Tree) boundaries.
+  - Use a simple whitespace splitter.
+  - Never split code; always feed the whole file.
+    correctAnswer: Use a Language-Specific Splitter that understands AST (Abstract Syntax Tree) boundaries.
+    explanation: Code has strict syntax rules. Specialized splitters ensure that functions, classes, and logic blocks aren't broken in half, preserving the "runnable" context for the LLM.
+
 ---
 
 ## [ResourceBlock]

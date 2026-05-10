@@ -94,6 +94,16 @@ title: Compression Knowledge Check
     correctAnswer: Lossy (Small amount of precision is traded for massive space gains)
     explanation: PQ is lossy because it represents a group of similar vectors with a single 'average' centroid index.
 
+- question: Why is the 'Training Phase' required for Product Quantization?
+  type: multiple_choice
+  options:
+  - To teach the LLM new facts.
+  - To build a codebook of optimal centroids (patterns) that best represent your specific dataset.
+  - To speed up the internet connection.
+  - To encrypt the database password.
+    correctAnswer: To build a codebook of optimal centroids (patterns) that best represent your specific dataset.
+    explanation: PQ depends on clustering. The codebook needs to know what the "typical" vectors in your dataset look like to compress them accurately.
+
 ---
 
 ## [ResourceBlock]

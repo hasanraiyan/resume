@@ -93,6 +93,16 @@ title: Loaders Technical Check
     correctAnswer: page_content and metadata
     explanation: Every document in LangChain follows this 2-field schema to ensure it can be passed into any splitter or vector store.
 
+- question: What happens if a Document Loader fails to extract text from a specific page?
+  type: multiple_choice
+  options:
+  - It deletes the entire file.
+  - It usually returns an empty string for that page and may log a warning or raise an error depending on the 'on_error' strategy.
+  - It automatically translates the page using AI.
+  - It crashes the entire database.
+    correctAnswer: It usually returns an empty string for that page and may log a warning or raise an error depending on the 'on_error' strategy.
+    explanation: High-fidelity loaders are built to be resilient. They usually report failures gracefully so the rest of the ingestion pipeline can continue.
+
 ---
 
 ## [ResourceBlock]

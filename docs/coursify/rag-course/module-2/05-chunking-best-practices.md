@@ -94,6 +94,16 @@ title: Chunking Decision Check
     correctAnswer: Small (200 tokens)
     explanation: FAQ answers are usually concise. A small chunk size provides high precision without adding unnecessary noise to the prompt.
 
+- question: What is the risk of using chunks that are too large (e.g., 8000 tokens)?
+  type: multiple_choice
+  options:
+  - The search engine will become too accurate.
+  - The LLM's context window will be filled with 'noise' (irrelevant info), reducing the focus on the actual answer and increasing cost.
+  - The vectors will disappear.
+  - It is impossible to embed large chunks.
+    correctAnswer: The LLM's context window will be filled with 'noise' (irrelevant info), reducing the focus on the actual answer and increasing cost.
+    explanation: High-quality RAG is about signal-to-noise ratio. Large chunks increase noise, making it harder for the model to find the specific fact it needs.
+
 ---
 
 ## [ResourceBlock]

@@ -50,6 +50,7 @@ When you query a database with millions of vectors, there are two ways to handle
 1.  **Post-filtering**: The system finds the Top 100 most similar chunks, THEN removes those that aren't in the "Sales" department. **Warning**: If all of the Top 100 chunks happen to be from "Marketing," you will end up with zero results, even if Sales data exists.
 2.  **Pre-filtering**: The database removes all non-"Sales" chunks _before_ calculating similarity. This is the gold standard for accuracy and performance.
 
+> [!TIP]
 > **Dynamic Enrichment**: During ingestion, you can use a small LLM (like GPT-4o-mini) to look at a chunk and automatically tag it with keywords or a 1-sentence summary, which is then stored in metadata to improve future searchability.
 
 ---
@@ -93,6 +94,16 @@ title: Metadata Strategy Check
   - Increasing the number of dimensions in a vector.
     correctAnswer: Using an LLM to generate a summary or category for a text chunk and adding it to the metadata dictionary during ingestion.
     explanation: Enrichment adds new, high-value data to your metadata that wasn't in the original raw file, making it much easier for the system to find that specific content later.
+
+- question: If you wanted to filter a vector search to only include documents from the 'HR' department, where would you typically store that department info?
+  type: multiple_choice
+  options:
+  - In the middle of the 'page_content' string.
+  - In the 'metadata' dictionary of the Document object.
+  - In a separate CSV file on your desktop.
+  - In the user's browser cache.
+    correctAnswer: In the 'metadata' dictionary of the Document object.
+    explanation: The metadata dictionary is the dedicated place for structured, searchable attributes that accompany the unstructured text content.
 
 ---
 

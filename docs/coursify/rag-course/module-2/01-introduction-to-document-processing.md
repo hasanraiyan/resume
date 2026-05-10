@@ -92,6 +92,16 @@ title: Ingestion Foundations Check
     correctAnswer: Splitting (Chunking)
     explanation: Splitting is the process of decomposing large documents into smaller pieces that fit into the LLM's context window.
 
+- question: What is the primary purpose of the 'Enrichment' stage in the ingestion pipeline?
+  type: multiple_choice
+  options:
+  - To make the chunks larger.
+  - To add searchable metadata like author, date, or category to help narrow down future searches.
+  - To translate the documents into different languages.
+  - To encrypt the text for storage.
+    correctAnswer: To add searchable metadata like author, date, or category to help narrow down future searches.
+    explanation: Enrichment adds "contextual tags" that allow the retrieval system to perform precise filtering (e.g., searching only documents from 2024).
+
 ---
 
 ## [ResourceBlock]

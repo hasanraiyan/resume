@@ -95,6 +95,16 @@ title: Pipeline Implementation Check
     correctAnswer: Important context at the split point might be lost, making the chunk unreadable or confusing to the model.
     explanation: Overlap creates a 'buffer' that ensures sentences aren't sliced in half without context, providing a smoother semantic transition between chunks.
 
+- question: Why do we use 'separators=["\n\n", "\n", ".", " ", ""]' in the Recursive splitter?
+  type: multiple_choice
+  options:
+  - To make the code look more complex.
+  - To tell the splitter to try breaking at paragraphs first, then sentences, then words, to preserve the natural structure of human language.
+  - To increase the cost of the embedding API.
+  - To delete all whitespace from the document.
+    correctAnswer: To tell the splitter to try breaking at paragraphs first, then sentences, then words, to preserve the natural structure of human language.
+    explanation: This priority list ensures the splitter is as "logical" as possible, only breaking at words or characters as a last resort if a paragraph is too long.
+
 ---
 
 ## [ResourceBlock]
