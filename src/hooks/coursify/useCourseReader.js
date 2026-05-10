@@ -16,8 +16,21 @@ export function useCourseReader(courseIdOrConfig, isAdmin = false) {
   const [course, setCourse] = useState(initialData?.course ?? null);
   const [sections, setSections] = useState(initialData?.sections ?? []);
   const [modules, setModules] = useState(initialData?.modules ?? []);
-  const [activeSection, setActiveSection] = useState(activeSectionId ?? null);
-  const [showOverview, setShowOverview] = useState(!activeSectionId);
+
+  const [activeSection, setActiveSection] = useState(() => {
+    if (!activeSectionId) return null;
+    const initialSections = initialData?.sections || [];
+    const found = initialSections.some((s) => s._id === activeSectionId);
+    return found ? activeSectionId : null;
+  });
+
+  const [showOverview, setShowOverview] = useState(() => {
+    if (!activeSectionId) return true;
+    const initialSections = initialData?.sections || [];
+    const found = initialSections.some((s) => s._id === activeSectionId);
+    return !found;
+  });
+
   const [visited, setVisited] = useState(new Set());
   const [isLoading, setIsLoading] = useState(!initialData);
   const [sectionLoading, setSectionLoading] = useState(false);
@@ -43,8 +56,15 @@ export function useCourseReader(courseIdOrConfig, isAdmin = false) {
       setCourse(initialData.course);
       setSections(initialData.sections);
       setModules(initialData.modules);
-      setActiveSection(activeSectionId || null);
-      setShowOverview(!activeSectionId);
+
+      const isValidSection = initialData.sections?.some((s) => s._id === activeSectionId);
+      if (activeSectionId && !isValidSection) {
+        setActiveSection(null);
+        setShowOverview(true);
+      } else {
+        setActiveSection(activeSectionId || null);
+        setShowOverview(!activeSectionId);
+      }
 
       // Clear refs for new initial data (public routing)
       inFlightRef.current.clear();
