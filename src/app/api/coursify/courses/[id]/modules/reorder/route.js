@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyModule from '@/models/CoursifyModule';
 import CoursifyCourse from '@/models/CoursifyCourse';
+import { revalidatePath } from 'next/cache';
 
 export async function POST(request, { params }) {
   const auth = await requireAdminAuth(request);
@@ -31,6 +32,11 @@ export async function POST(request, { params }) {
     );
 
     await CoursifyCourse.updateOne({ _id: id, deletedAt: null }, { $inc: { syncVersion: 1 } });
+
+    const course = await CoursifyCourse.findById(id).select('slug').lean();
+    if (course?.slug) {
+      revalidatePath(`/coursify/${course.slug}`);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

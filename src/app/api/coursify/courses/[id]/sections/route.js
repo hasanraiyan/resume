@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
 import CoursifySection from '@/models/CoursifySection';
+import { revalidatePath } from 'next/cache';
 
 export async function POST(request, { params }) {
   const auth = await requireAdminAuth(request);
@@ -50,6 +51,10 @@ export async function POST(request, { params }) {
       learningGoals: Array.isArray(learningGoals) ? learningGoals : [],
       estimatedDuration: estimatedDuration || '',
     });
+
+    if (course.slug) {
+      revalidatePath(`/coursify/${course.slug}`);
+    }
 
     return NextResponse.json({
       success: true,

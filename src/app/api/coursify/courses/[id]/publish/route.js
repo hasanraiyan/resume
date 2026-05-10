@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { dbUpdateCourse } from '@/lib/coursify/db-ops';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
+import { revalidatePath } from 'next/cache';
 
 export async function POST(request, { params }) {
   const auth = await requireAdminAuth(request);
@@ -19,6 +20,9 @@ export async function POST(request, { params }) {
 
     const newStatus = course.status === 'published' ? 'draft' : 'published';
     const { course: updated } = await dbUpdateCourse({ id, status: newStatus });
+
+    revalidatePath('/coursify');
+    revalidatePath(`/coursify/${updated.slug}`);
 
     return NextResponse.json({
       success: true,

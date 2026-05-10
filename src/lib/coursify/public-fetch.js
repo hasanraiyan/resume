@@ -46,23 +46,23 @@ export async function fetchPublicCourse(slugOrId) {
   const courseId = course._id.toString();
 
   const [modules, sections] = await Promise.all([
-    CoursifyModule.find({ courseId, status: 'complete', deletedAt: null })
+    CoursifyModule.find({ courseId, deletedAt: null })
       .select('title summary order')
       .sort({ order: 1 })
       .lean(),
-    CoursifySection.find({ courseId, status: 'complete', deletedAt: null })
+    CoursifySection.find({ courseId, deletedAt: null })
       .select('title blocks resources order moduleId summary learningGoals estimatedDuration')
       .sort({ order: 1 })
       .lean(),
   ]);
 
-  const completeModuleIds = new Set(modules.map((m) => m._id.toString()));
+  const moduleIds = new Set(modules.map((m) => m._id.toString()));
 
   return {
     course: ser(course),
     modules: modules.map((m) => ser(m)),
     sections: sections
-      .filter((s) => !s.moduleId || completeModuleIds.has(s.moduleId.toString()))
+      .filter((s) => !s.moduleId || moduleIds.has(s.moduleId.toString()))
       .map((s) => {
         const flat = ser({ ...s, courseId, moduleId: s.moduleId?.toString() || null });
         if (flat.blocks) {

@@ -6,6 +6,7 @@ import CoursifyModule from '@/models/CoursifyModule';
 import CoursifySection from '@/models/CoursifySection';
 import { generateUniqueSlug } from '@/lib/coursify/slugify';
 import mongoose from 'mongoose';
+import { revalidatePath } from 'next/cache';
 
 function isObjectId(str) {
   return mongoose.Types.ObjectId.isValid(str) && String(new mongoose.Types.ObjectId(str)) === str;
@@ -97,6 +98,9 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ success: false, error: 'Course not found' }, { status: 404 });
     }
 
+    revalidatePath('/coursify');
+    revalidatePath(`/coursify/${course.slug}`);
+
     return NextResponse.json({ success: true, course: { ...course, _id: course._id.toString() } });
   } catch (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -125,6 +129,11 @@ export async function DELETE(request, { params }) {
       CoursifySection.updateMany({ courseId: id, deletedAt: null }, { $set: { deletedAt } }),
       CoursifyModule.updateMany({ courseId: id, deletedAt: null }, { $set: { deletedAt } }),
     ]);
+
+    revalidatePath('/coursify');
+    if (course.slug) {
+      revalidatePath(`/coursify/${course.slug}`);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
