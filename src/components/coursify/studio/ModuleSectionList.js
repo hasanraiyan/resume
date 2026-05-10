@@ -62,7 +62,7 @@ export function ModuleSectionList() {
       ) : course.thumbnail ? (
         <div className="w-full aspect-video rounded-2xl overflow-hidden mb-8 border border-[#e5e3d8] shadow-sm relative group">
           <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
-          {editMode && (
+          {editMode && !course.isFrozen && (
             <button
               onClick={() => thumbnailInputRef.current?.click()}
               disabled={thumbnailUploading}
@@ -79,7 +79,7 @@ export function ModuleSectionList() {
             </button>
           )}
         </div>
-      ) : editMode ? (
+      ) : editMode && !course.isFrozen ? (
         <button
           onClick={() => thumbnailInputRef.current?.click()}
           disabled={thumbnailUploading}
@@ -97,7 +97,7 @@ export function ModuleSectionList() {
           modules={modules}
           onNavigateTo={navigateTo}
           hideThumbnail={true}
-          editMode={editMode}
+          editMode={editMode && !course.isFrozen}
           onUpdateMeta={handleUpdateMeta}
           isSaving={planSaving}
         />
@@ -115,7 +115,7 @@ export function ModuleSectionList() {
             <h2 className="text-xl lg:text-2xl font-bold text-[#1e3a34] leading-snug min-w-0">
               {currentSection.title}
             </h2>
-            {editMode && (
+            {editMode && !course.isFrozen && (
               <div className="flex items-center gap-1 shrink-0">
                 <button
                   onClick={() => setEditingSection(currentSection)}

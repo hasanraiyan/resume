@@ -201,6 +201,7 @@ export function registerCoursifyTools(server) {
         estimatedDuration: z.string().optional(),
         tags: z.array(z.string()).optional(),
         status: z.enum(['draft', 'published']).optional(),
+        isFrozen: z.boolean().optional().describe('Freeze the course to prevent modifications.'),
         authoringStatus: z
           .enum(['idea', 'researching', 'planned', 'drafting', 'reviewing', 'ready', 'published'])
           .optional(),
@@ -221,6 +222,7 @@ export function registerCoursifyTools(server) {
         'estimatedDuration',
         'tags',
         'status',
+        'isFrozen',
       ];
       const PLAN_KEYS = [
         'targetAudience',
@@ -255,6 +257,31 @@ export function registerCoursifyTools(server) {
         return textResult(`Course "${result.course.title}" saved.`, {
           success: true,
           course: result.course,
+        });
+      } catch (err) {
+        return errorResult(err.message);
+      }
+    }
+  );
+
+  server.registerTool(
+    'freeze_course',
+    {
+      title: 'Freeze or Unfreeze Course',
+      description: 'Explicitly lock or unlock a course to prevent or allow modifications.',
+      annotations: MUTATION_ANNOTATIONS,
+      inputSchema: {
+        id: z.string().describe('MongoDB _id of the course'),
+        frozen: z.boolean().describe('True to freeze, false to unfreeze.'),
+      },
+      _meta: toolMeta('Toggling freeze state...', 'Freeze state updated.'),
+    },
+    async ({ id, frozen }) => {
+      try {
+        const result = await dbUpdateCourse({ id, isFrozen: frozen });
+        return textResult(`Course "${result.course.title}" is now ${frozen ? 'frozen' : 'unfrozen'}.`, {
+          success: true,
+          isFrozen: result.course.isFrozen,
         });
       } catch (err) {
         return errorResult(err.message);

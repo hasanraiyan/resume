@@ -70,6 +70,7 @@ export async function PATCH(request, { params }) {
       'tags',
       'thumbnail',
       'status',
+      'isFrozen',
       // Planning fields
       'targetAudience',
       'learningObjectives',
