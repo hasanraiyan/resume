@@ -6,7 +6,7 @@ A premium section should follow this pedagogical flow:
 
 ```mermaid
 graph TD
-    A[Mind Map / Context] -->|MindMapBlock| B[Visual Demonstration]
+    A[Introduction / Context] -->|MdBlock| B[Visual Demonstration]
     B -->|VideoBlock| C[Detailed Instruction]
     C -->|MdBlock| D[Procedural Breakdown]
     D -->|StepByStepBlock| E[Interactive Check]
@@ -14,7 +14,7 @@ graph TD
     F -->|ResourceBlock| G[Complete]
 ```
 
-1. **Contextual Overview**: Use a `MindMapBlock` or a short, engaging summary to set the mental stage.
+1. **Instructional Context**: Use a short, engaging summary or a diagram within an `MdBlock` to set the mental stage.
 2. **Visual Stimulus**: A `VideoBlock` (if available) to demonstrate the concept in motion.
 3. **Core Instruction**: 1-3 `MdBlock`s with clear headings, bold terms, and Mermaid diagrams for structural clarity.
 4. **Procedural Flow**: A `StepByStepBlock` for sequences (e.g., "The 3-Way Handshake").

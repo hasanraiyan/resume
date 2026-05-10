@@ -39,7 +39,6 @@ classDiagram
     Block <|-- QuizBlock : is
     Block <|-- ResourceBlock : is
     Block <|-- StepByStepBlock : is
-    Block <|-- MindMapBlock : is
 ```
 
 ## CoursifySection
@@ -73,5 +72,3 @@ The actual learning unit containing content blocks.
 - **StepByStepBlock**: Procedural timelines with numbering control.
   - `{ type: 'StepByStepBlock', title: String, showNumbering: Boolean, steps: [{ title: String, content: String }] }`
   - _Note: Use literal `\n\n` within step content strings to represent newlines for correct Markdown rendering._
-- **MindMapBlock**: Structural concept overviews.
-  - `{ type: 'MindMapBlock', title: String, mindmap: { nodes: [], edges: [] } }`

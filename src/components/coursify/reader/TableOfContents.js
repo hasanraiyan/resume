@@ -13,7 +13,6 @@ const ICON_MAP = {
   video: PlayCircle,
   quiz: CheckCircle2,
   step: ListTree,
-  mindmap: Share2,
   resource: FileText,
   md: Type,
 };

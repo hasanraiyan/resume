@@ -59,10 +59,10 @@ The agent must optimize each block type using these specific standards:
 - **Feedback**: Every question MUST have an `explanation`. Explain _why_ the correct answer is right.
 - **Literal Answers**: For the `correctAnswer` field, use the **exact literal text** of the option (e.g., `correctAnswer: "UDP"`) to ensure the parser maps it correctly.
 
-#### **5. MindMapBlock (The Overview)**
+#### **5. ResourceBlock (The Extension)**
 
-- **Usage**: Use at the beginning of modules or complex sections to provide a structural overview of concepts.
-- **Format**: Use an indented list to represent the hierarchy.
+- **Relevance**: Only include high-authority links (e.g., RFC documents, MDN, Cisco Whitepapers).
+- **Categorization**: Use the correct `type`: `doc` for manuals, `video` for supplemental clips, `article` for blogs.
 
 ### Technical Writing Standards
 
@@ -110,17 +110,6 @@ showNumbering: true
   content: "Detailed explanation of phase 1.\n\nUse literal backslash-n for newlines."
 - step: "Phase 2 Title"
   content: "Detailed explanation of phase 2."
-
-## [MindMapBlock]
-
-title: "Topic Hierarchy"
-
-Root Topic
-Branch A
-Leaf 1
-Leaf 2
-Branch B
-Leaf 3
 
 ## [QuizBlock]
 

@@ -14,7 +14,6 @@ import {
   Type,
   PlayCircle,
   ListTree,
-  Share2,
   FileText,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -28,7 +27,6 @@ const BLOCK_TYPES = [
   { type: 'VideoBlock', label: 'Video', icon: PlayCircle },
   { type: 'StepByStepBlock', label: 'Step-by-Step', icon: ListTree },
   { type: 'QuizBlock', label: 'Quiz', icon: CheckCircle2 },
-  { type: 'MindMapBlock', label: 'Mind Map', icon: Share2 },
   { type: 'ResourceBlock', label: 'Resource', icon: FileText },
 ];
 
@@ -82,13 +80,14 @@ function parseMarkdownSection(text) {
   }
 
   // 2. Extract Blocks
-  const blockRegex =
-    /##\s*\[(MdBlock|QuizBlock|VideoBlock|ResourceBlock|StepByStepBlock|MindMapBlock)\]/g;
+  const blockRegex = /##\s*\[(MdBlock|QuizBlock|VideoBlock|ResourceBlock|StepByStepBlock)\]/g;
   const matches = [];
   let match;
   while ((match = blockRegex.exec(text)) !== null) {
     matches.push({ type: match[1], index: match.index, full: match[0] });
   }
+
+  console.log(`Magic Import: Found ${matches.length} blocks.`);
 
   for (let i = 0; i < matches.length; i++) {
     const m = matches[i];
@@ -146,29 +145,6 @@ function parseMarkdownSection(text) {
         stepContent = stepContent.replace(/^["']([\s\S]*)["']$/, '$1').replace(/\\n/g, '\n');
 
         if (title) block.steps.push({ title, content: stepContent });
-      });
-    } else if (m.type === 'MindMapBlock') {
-      block.mindmap = { nodes: [], edges: [] };
-      const lines = rawContent.split('\n');
-      const stack = [];
-      lines.forEach((line, idx) => {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith('#')) return;
-        const indent = line.search(/\S/);
-        const nodeId = `node_${idx}_${Math.random().toString(36).slice(2, 5)}`;
-        const node = { id: nodeId, label: trimmed.replace(/^-/, '').trim(), parentId: null };
-        while (stack.length > 0 && stack[stack.length - 1].indent >= indent) stack.pop();
-        if (stack.length > 0) {
-          const parent = stack[stack.length - 1];
-          node.parentId = parent.id;
-          block.mindmap.edges.push({
-            id: `edge_${parent.id}_${nodeId}`,
-            source: parent.id,
-            target: nodeId,
-          });
-        }
-        block.mindmap.nodes.push(node);
-        stack.push({ id: nodeId, indent });
       });
     } else if (m.type === 'QuizBlock') {
       block.quiz = { questions: [] };
@@ -302,24 +278,6 @@ function generateMarkdownExport(data) {
       if (block.showNumbering === false) output += 'showNumbering: false\n';
       (block.steps || []).forEach((s) => {
         output += `- step: "${s.title}"\n  content: "${(s.content || '').replace(/\n/g, '\\n')}"\n`;
-      });
-      output += '\n';
-    } else if (block.type === 'MindMapBlock') {
-      const nodes = block.mindmap?.nodes || [];
-      const edges = block.mindmap?.edges || [];
-      const renderNode = (nodeId, depth = 0) => {
-        const node = nodes.find((n) => n.id === nodeId);
-        if (!node) return '';
-        let line = '  '.repeat(depth) + node.label + '\n';
-        const children = edges.filter((e) => e.source === nodeId).map((e) => e.target);
-        children.forEach((childId) => {
-          line += renderNode(childId, depth + 1);
-        });
-        return line;
-      };
-      const roots = nodes.filter((n) => !n.parentId || n.parentId === 'root');
-      roots.forEach((r) => {
-        output += renderNode(r.id, 0);
       });
       output += '\n';
     } else if (block.type === 'QuizBlock') {
@@ -463,12 +421,6 @@ export default function EditSectionModal({ section, onSave, onClose }) {
       newBlock.steps = [{ title: '', content: '' }];
       newBlock.showNumbering = true;
       newBlock.title = '';
-    }
-    if (type === 'MindMapBlock') {
-      newBlock.mindmap = {
-        nodes: [{ id: 'root', label: 'Main Topic', parentId: null }],
-        edges: [],
-      };
     }
 
     setBlocks((prev) => {
@@ -841,70 +793,6 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                             className="w-full py-3 rounded-2xl border-2 border-dashed border-[#e5e3d8] text-xs font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] hover:bg-[#f0f5f2]/50 transition-all shadow-sm"
                           >
                             + Add Step to Flow
-                          </button>
-                        </div>
-                      )}
-                      {block.type === 'MindMapBlock' && (
-                        <div className="space-y-4">
-                          <p className="text-[10px] text-[#7c8e88] italic px-1 bg-[#fcfbf5] py-2 rounded-xl border border-[#e5e3d8]/50">
-                            Note: For best results, use "Magic Import" with an indented list. Manual
-                            editing adds nodes to the root.
-                          </p>
-                          <div className="space-y-2">
-                            {(block.mindmap?.nodes || []).map((node, ni) => (
-                              <div
-                                key={ni}
-                                className="flex gap-2 items-center bg-[#fcfbf5] p-3 rounded-xl border border-[#e5e3d8] shadow-sm"
-                              >
-                                <input
-                                  value={node.label}
-                                  onChange={(e) => {
-                                    const nextNodes = block.mindmap.nodes.map((n, idx) =>
-                                      ni === idx ? { ...n, label: e.target.value } : n
-                                    );
-                                    updateBlock(i, 'mindmap', {
-                                      ...block.mindmap,
-                                      nodes: nextNodes,
-                                    });
-                                  }}
-                                  className="flex-1 px-2 py-1 text-sm font-semibold border-none bg-transparent focus:ring-0"
-                                />
-                                <button
-                                  onClick={() => {
-                                    const nextNodes = block.mindmap.nodes.filter(
-                                      (_, idx) => ni !== idx
-                                    );
-                                    const nextEdges = block.mindmap.edges.filter(
-                                      (e) => e.source !== node.id && e.target !== node.id
-                                    );
-                                    updateBlock(i, 'mindmap', {
-                                      nodes: nextNodes,
-                                      edges: nextEdges,
-                                    });
-                                  }}
-                                  className="text-[#7c8e88] hover:text-[#c94c4c] p-2 hover:bg-white rounded-lg transition-colors"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                          <button
-                            onClick={() => {
-                              const newId = `node_${Date.now()}`;
-                              const nextNodes = [
-                                ...(block.mindmap?.nodes || []),
-                                { id: newId, label: 'New Node', parentId: 'root' },
-                              ];
-                              const nextEdges = [
-                                ...(block.mindmap?.edges || []),
-                                { id: `edge_root_${newId}`, source: 'root', target: newId },
-                              ];
-                              updateBlock(i, 'mindmap', { nodes: nextNodes, edges: nextEdges });
-                            }}
-                            className="w-full py-3 rounded-2xl border-2 border-dashed border-[#e5e3d8] text-xs font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] hover:bg-[#f0f5f2]/50 transition-all"
-                          >
-                            + Add Node to Root
                           </button>
                         </div>
                       )}

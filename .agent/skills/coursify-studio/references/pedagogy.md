@@ -37,7 +37,6 @@ Quizzes are for learning, not just testing.
 
 Human brains process visuals 60,000x faster than text.
 
-- **Interactive Maps**: Use `MindMapBlock` at the start of complex modules to provide a structural overview.
 - **Diagram Placement**: Never put a complex diagram at the end. Use it early to provide a "mental map" of the topic.
 - **Mermaid Selection**:
   - `graph TD/LR`: Use for hierarchies and network layouts.

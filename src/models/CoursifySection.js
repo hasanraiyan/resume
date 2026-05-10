@@ -42,7 +42,7 @@ const BlockSchema = new mongoose.Schema(
     },
     // Markdown content
     content: { type: String, default: '' },
-    // Generic block title (used by StepByStep, MindMap, etc)
+    // Generic block title
     title: { type: String, default: '' },
     // Quiz content
     quiz: {
@@ -72,7 +72,7 @@ const BlockSchema = new mongoose.Schema(
     showNumbering: { type: Boolean, default: true },
     order: { type: Number, default: 0 },
   },
-  { _id: true, timestamps: true }
+  { _id: true, timestamps: true, strict: false }
 );
 
 const CoursifySectionSchema = new mongoose.Schema(
@@ -134,7 +134,7 @@ const CoursifySectionSchema = new mongoose.Schema(
       default: 0,
     },
   },
-  { timestamps: true, minimize: false }
+  { timestamps: true, minimize: false, strict: false }
 );
 
 // Force model re-creation to pick up schema changes in dev

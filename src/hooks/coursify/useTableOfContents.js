@@ -43,13 +43,6 @@ export function useTableOfContents(blocks, contentRef, scrollContainerRef) {
           slug: getSlug(block.video.title),
           type: 'video',
         });
-      } else if (block.type === 'MindMapBlock' && block.title) {
-        extracted.push({
-          level: 3,
-          text: block.title,
-          slug: getSlug(block.title),
-          type: 'mindmap',
-        });
       } else if (block.type === 'ResourceBlock' && block.resource?.title) {
         extracted.push({
           level: 3,
