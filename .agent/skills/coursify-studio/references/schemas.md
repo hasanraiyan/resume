@@ -72,5 +72,6 @@ The actual learning unit containing content blocks.
   - `{ type: 'ResourceBlock', resource: { url: String, title: String, type: 'video'|'article'|'doc' } }`
 - **StepByStepBlock**: Procedural timelines with numbering control.
   - `{ type: 'StepByStepBlock', title: String, showNumbering: Boolean, steps: [{ title: String, content: String }] }`
+  - _Note: Use literal `\n\n` within step content strings to represent newlines for correct Markdown rendering._
 - **MindMapBlock**: Structural concept overviews.
   - `{ type: 'MindMapBlock', title: String, mindmap: { nodes: [], edges: [] } }`

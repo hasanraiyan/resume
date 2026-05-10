@@ -36,63 +36,46 @@ The agent must optimize each block type using these specific standards:
 
 #### **1. MdBlock (The Foundation)**
 
-- **Structure**: Start with an `###` H3 header for the block's main topic.
+- **Structure**: Every section should ideally start with an introductory `MdBlock` to set the context.
 - **Micro-Copy**: Use short, punchy sentences. Use `> [!TIP]` style callouts (within the markdown) to highlight critical engineering facts.
 - **Formatting**: Use tables for data comparisons and `code` spans for technical terms (e.g., `802.11ax`).
 - **Diagrams**: Place Mermaid diagrams _inside_ MdBlocks, usually immediately after the introductory paragraph.
 
 #### **2. VideoBlock (The Demonstration)**
 
-- **Placement**: Place near the top of the section if it's an overview, or immediately after a complex `MdBlock` if it's a specific demonstration.
-- **Metadata**: Always provide a descriptive `title` (e.g., "Lab: Configuring a VLAN").
+- **Placement**: Place near the top of the section (usually as the second block, after the intro Markdown) if it's an overview.
+- **Metadata**: Always provide a descriptive `title` without quotes (e.g., `title: Lab: Configuring a VLAN`).
 
 #### **3. StepByStepBlock (The Flow)**
 
 - **Usage**: Mandatory for any concept involving a sequence of events.
-- **Atomicity**: Each step must represent one discrete action or state.
-- **Block Heading**: Use the `title:` field to provide an overall name for the process (e.g., "The TCP 3-Way Handshake"). This appears as a prominent header in the reader.
-- **Numbering Control**: By default, steps are numbered (1, 2, 3). Use `showNumbering: false` at the top of the block if the phases are iterative, parallel, or non-sequential.
-- **Content**: The `content` field should be 1-2 paragraphs max. Use it to explain the "internal mechanics" of that specific step.
-- **Example**: Use for "The 4-Step DHCP Handshake" or "Building a Cat6 Cable."
+- **Block Heading**: Use the `title:` field for an overall name (e.g., `title: "The TCP Handshake"`).
+- **Numbering Control**: Set `showNumbering: false` if phases are iterative or parallel; `true` for linear sequences.
+- **Content**: The `content` field should be 1-2 paragraphs. Use `\n\n` for literal newlines within the step content to ensure correct rendering.
 
 #### **4. QuizBlock (The Validation)**
 
-- **Diversity**: Mix `multiple_choice` (conceptual) with `true_false` (fact-checking).
-- **Feedback**: Every question MUST have an `explanation`. Do not just say "Correct"; explain _why_ the concept works that way.
-- **Points**: Standardize to `1` point for standard questions, `2` for complex calculations.
+- **Diversity**: Mix `multiple_choice`, `true_false`, and `multi_select`.
+- **Feedback**: Every question MUST have an `explanation`. Explain _why_ the correct answer is right.
+- **Literal Answers**: For the `correctAnswer` field, use the **exact literal text** of the option (e.g., `correctAnswer: "UDP"`) to ensure the parser maps it correctly.
 
-#### **5. ResourceBlock (The Extension)**
+#### **5. MindMapBlock (The Overview)**
 
-- **Relevance**: Only include high-authority links (e.g., RFC documents, MDN, Cisco Whitepapers).
-- **Categorization**: Use the correct `type`: `doc` for manuals, `video` for supplemental clips, `article` for blogs.
+- **Usage**: Use at the beginning of modules or complex sections to provide a structural overview of concepts.
+- **Format**: Use an indented list to represent the hierarchy.
 
 ### Technical Writing Standards
 
-- **Voice**: Maintain a professional, authoritative, yet accessible voice. Use "we" or "let's" to create a collaborative learning environment.
-- **Precision**: Use exact terminology (e.g., "Full-Duplex" instead of "Two-way").
-- **Clarity**: Keep paragraphs short (3-5 lines). Use **bolding** for key terms on first mention.
-- **Tone**: Engineering-focused. Avoid excessive fluff or conversational filler.
-
-### Deep Learning Patterns (Pedagogy)
-
-The agent must implement these patterns from [pedagogy.md](references/pedagogy.md):
-
-- **Concept-Context-Check**: Each major concept should be followed by a demo and a quick assessment.
-- **Scaffolding**: Always link the current section's concepts to those learned in the previous section.
-- **Visual Mental Maps**: Use Mermaid diagrams early in a section to provide a structural overview.
-
-### Visual Communication (Mermaid)
-
-- **Flowcharts**: Use for procedures or logic.
-- **Sequence Diagrams**: Use for interactions or API flows.
-- **Class Diagrams**: Use for data modeling or inheritance.
-- **Mind Maps**: Use for brainstorming or course overviews.
+- **Voice**: Professional, authoritative, yet accessible. Engineering-focused.
+- **Tone**: Direct and concise. Avoid conversational fluff.
+- **Precision**: Use exact terminology (e.g., "Full-Duplex").
+- **Clarity**: Paragraphs should be 3-5 lines max. **Bold** key terms on first mention.
 
 ### Deliverable Format (Magic Import)
 
 The final output of any authoring task MUST be a structured Markdown block (or file) formatted for the **Magic Import** feature.
 
-#### **The Template:**
+#### **The Master Template:**
 
 ```markdown
 ---
@@ -107,34 +90,47 @@ status: 'complete'
 
 # Blocks
 
+## [MdBlock]
+
+### Conceptual Overview
+
+Welcome to this lesson on **concept name**. In this section, we will explore the core mechanics of...
+
 ## [VideoBlock]
 
 url: https://youtu.be/...
-title: "Video Title"
-
-## [MdBlock]
-
-### Sub-heading
-
-Main text content with **bolding** and [links](...).
+title: Video Title Without Quotes
 
 ## [StepByStepBlock]
 
-title: "Overall Process Title"
+title: "Process Heading"
 showNumbering: true
 
 - step: "Phase 1 Title"
-  content: "Detailed explanation of phase 1."
+  content: "Detailed explanation of phase 1.\n\nUse literal backslash-n for newlines."
 - step: "Phase 2 Title"
   content: "Detailed explanation of phase 2."
 
+## [MindMapBlock]
+
+title: "Topic Hierarchy"
+
+Root Topic
+Branch A
+Leaf 1
+Leaf 2
+Branch B
+Leaf 3
+
 ## [QuizBlock]
 
-- question: "Question text?"
+title: "Knowledge Check"
+
+- question: "Which protocol is connectionless?"
   type: "multiple_choice"
-  options: ["A", "B", "C", "D"]
-  correctAnswer: "A"
-  explanation: "Why A is correct."
+  options: ["TCP", "UDP", "HTTP", "FTP"]
+  correctAnswer: "UDP"
+  explanation: "UDP is connectionless because it does not perform a handshake before sending data."
 
 ## [ResourceBlock]
 
