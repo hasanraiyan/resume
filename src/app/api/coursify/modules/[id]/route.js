@@ -5,6 +5,7 @@ import CoursifyModule from '@/models/CoursifyModule';
 import CoursifySection from '@/models/CoursifySection';
 import CoursifyCourse from '@/models/CoursifyCourse';
 import mongoose from 'mongoose';
+import { revalidatePath } from 'next/cache';
 
 const ALLOWED_PATCH_KEYS = ['title', 'summary', 'learningGoals', 'order', 'status'];
 
@@ -46,6 +47,11 @@ export async function PATCH(request, { params }) {
       { $inc: { syncVersion: 1 } }
     );
 
+    const course = await CoursifyCourse.findById(module.courseId).select('slug').lean();
+    if (course?.slug) {
+      revalidatePath(`/coursify/${course.slug}`);
+    }
+
     return NextResponse.json({
       success: true,
       module: { ...module, _id: module._id.toString(), courseId: module.courseId.toString() },
@@ -86,6 +92,11 @@ export async function DELETE(request, { params }) {
       { _id: module.courseId, deletedAt: null },
       { $inc: { syncVersion: 1 } }
     );
+
+    const course = await CoursifyCourse.findById(module.courseId).select('slug').lean();
+    if (course?.slug) {
+      revalidatePath(`/coursify/${course.slug}`);
+    }
 
     return NextResponse.json({ success: true, deletedId: id });
   } catch (error) {

@@ -2,7 +2,9 @@ import { requireAdminAuth } from '@/lib/money-auth';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import CoursifySection from '@/models/CoursifySection';
+import CoursifyCourse from '@/models/CoursifyCourse';
 import mongoose from 'mongoose';
+import { revalidatePath } from 'next/cache';
 
 function isObjectId(str) {
   return mongoose.Types.ObjectId.isValid(str) && String(new mongoose.Types.ObjectId(str)) === str;
@@ -80,6 +82,11 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ success: false, error: 'Section not found' }, { status: 404 });
     }
 
+    const course = await CoursifyCourse.findById(section.courseId).select('slug').lean();
+    if (course?.slug) {
+      revalidatePath(`/coursify/${course.slug}`);
+    }
+
     return NextResponse.json({
       success: true,
       section: {
@@ -113,6 +120,11 @@ export async function DELETE(request, { params }) {
 
     if (!section) {
       return NextResponse.json({ success: false, error: 'Section not found' }, { status: 404 });
+    }
+
+    const course = await CoursifyCourse.findById(section.courseId).select('slug').lean();
+    if (course?.slug) {
+      revalidatePath(`/coursify/${course.slug}`);
     }
 
     return NextResponse.json({ success: true });

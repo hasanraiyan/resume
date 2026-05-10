@@ -2,6 +2,8 @@ import { requireAdminAuth } from '@/lib/money-auth';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import CoursifySection from '@/models/CoursifySection';
+import CoursifyCourse from '@/models/CoursifyCourse';
+import { revalidatePath } from 'next/cache';
 
 export async function POST(request, { params }) {
   const auth = await requireAdminAuth(request);
@@ -27,6 +29,11 @@ export async function POST(request, { params }) {
         )
       )
     );
+
+    const course = await CoursifyCourse.findById(id).select('slug').lean();
+    if (course?.slug) {
+      revalidatePath(`/coursify/${course.slug}`);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
