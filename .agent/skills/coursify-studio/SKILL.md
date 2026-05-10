@@ -1,146 +1,58 @@
----
+﻿---
 name: coursify-studio
-description: Specialized instructional design and course authoring for the Coursify platform. Focuses on generating structured Markdown deliverables (.md) perfectly formatted for the platform's Magic Import feature.
+description: Specialized instructional design and course authoring for the Coursify platform. Use when creating, updating, or planning courses, modules, and sections, ensuring high-quality pedagogical structure and hierarchical publication logic.
 ---
 
 # Coursify Studio
 
-This skill transforms Gemini CLI into a specialized Instructional Design Agent for the Coursify platform. Its primary role is to generate high-quality, structured course content that can be instantly imported into the Studio dashboard.
+This skill transforms ai agent into a specialized Instructional Design Agent for the Coursify platform.
 
 ## Quick Start
 
-1. **Understand the Domain**: Review [schemas.md](references/schemas.md) for database models, relationships, and block types (includes class diagram).
-2. **Pedagogical Strategy**: Review [pedagogy.md](references/pedagogy.md) for the "Concept-Context-Check" framework and scaffolding rules.
-3. **Follow Best Practices**: Use the pedagogical flow outlined in [workflows.md](references/workflows.md) (includes flowchart).
-4. **CLI Integration**: Use the `coursify` CLI tool (via `node scripts/coursify.js`) for large content delivery to avoid token limits.
-
-## CLI Tool (coursify-cli)
-
-The `coursify` CLI tool (`node scripts/coursify.js`) mirrors all MCP tools and is optimized for file-based workflows.
-
-### Key CLI Commands:
-
-- `node scripts/coursify.js guide`: Get the authoring guide.
-- `node scripts/coursify.js courses list`: List all courses.
-- `node scripts/coursify.js sections upsert --courseId <id> --content-file <path>`: Create/update a section using a local Markdown file.
-- `node scripts/coursify.js research add --courseId <id> --file <path>`: Add research findings from a JSON file.
-
-### Agent Workflow with CLI:
-
-1. Generate course/section content and save it to a temporary local file (e.g., `tmp_section.md`).
-2. Execute the CLI command to push the content to the database:
-   `node scripts/coursify.js sections upsert --courseId 64b... --title "Next.js" --content-file tmp_section.md --status complete`
-3. This approach is more robust for large sections than passing strings via MCP tool parameters.
+1. **Understand the Domain**: Review [schemas.md](references/schemas.md) for database models and block types.
+2. **Follow Best Practices**: Use the high-quality section design outlined in [workflows.md](references/workflows.md).
+3. **Respect Publication Rules**: Always ensure the hierarchical visibility logic is maintained.
 
 ## Core Procedures
 
 ### Planning a New Course
 
 - Define clear `learningGoals` at the section level.
-- Organize content into logical modules.
+- Organize content into `CoursifyModule` groups for better structure.
 - Assign appropriate `difficulty` and `tags` for search optimization.
 
 ### Authoring Content
 
 - **Text**: Use `MdBlock` with clear hierarchy (H1, H2, H3).
-- **Visuals**: MANDATORY use of ```mermaid for all diagrams, flowcharts, or architecture visuals. NEVER use ASCII art.
 - **Interactive**: Always include a `QuizBlock` to reinforce learning.
 - **Videos**: Embed relevant YouTube/GDrive content via `VideoBlock`.
-- **Procedures**: Use `StepByStepBlock` for all multi-step instructions, protocol handshakes, data flows, or project timelines.
 
-### Block-Specific Authoring Guide
+### Managing Publication
 
-The agent must optimize each block type using these specific standards:
+- Use `status: 'complete'` only when the content is polished.
+- Remember: A section is hidden if its parent module or course is not yet published.
+- Use `authoringStatus` on the Course model to track the internal production lifecycle.
 
-#### **1. MdBlock (The Foundation)**
+## Tools & Utilities
 
-- **Structure**: Every section should ideally start with an introductory `MdBlock` to set the context.
-- **Micro-Copy**: Use short, punchy sentences. Use `` style callouts (within the markdown) to highlight critical engineering facts.
-- **Formatting**: Use tables for data comparisons and `code` spans for technical terms (e.g., `802.11ax`).
-- **Diagrams**: Place Mermaid diagrams _inside_ MdBlocks, usually immediately after the introductory paragraph.
+### Bundled CLI Tool: `coursify.js`
 
-#### **2. VideoBlock (The Demonstration)**
+The skill includes a deterministic CLI script to manage content directly. Use it via `node` from the workspace root:
 
-- **Placement**: Place near the top of the section (usually as the second block, after the intro Markdown) if it's an overview.
-- **Metadata**: Always provide a descriptive `title` without quotes (e.g., `title: Lab: Configuring a VLAN`).
+`Bash
 
-#### **3. StepByStepBlock (The Flow)**
+# List all courses
 
-- **Usage**: Mandatory for any concept involving a sequence of events.
-- **Block Heading**: Use the `title:` field for an overall name (e.g., `title: "The TCP Handshake"`).
-- **Numbering Control**: Set `showNumbering: false` if phases are iterative or parallel; `true` for linear sequences.
-- **Content**: The `content` field should be 1-2 paragraphs. Use `\n\n` for literal newlines within the step content to ensure correct rendering.
+node .agent/skills/coursify-studio/tools/coursify.js courses list
 
-#### **4. QuizBlock (The Validation)**
+# Get full course content
 
-- **Diversity**: Mix `multiple_choice`, `true_false`, and `multi_select`.
-- **Feedback**: Every question MUST have an `explanation`. Explain _why_ the correct answer is right.
-- **Literal Answers**: For the `correctAnswer` field, use the **exact literal text** of the option (e.g., `correctAnswer: "UDP"`) to ensure the parser maps it correctly.
+node .agent/skills/coursify-studio/tools/coursify.js courses get <id>
 
-#### **5. ResourceBlock (The Extension)**
+# Upsert a section
 
-- **Relevance**: Only include high-authority links (e.g., RFC documents, MDN, Cisco Whitepapers).
-- **Categorization**: Use the correct `type` WITHOUT quotes: `doc` for manuals, `video` for supplemental clips, `article` for blogs.
+node .agent/skills/coursify-studio/tools/coursify.js sections upsert --courseId="..." --title="New Lesson" --status="complete"
+`
 
-### Technical Writing Standards
-
-- **Voice**: Professional, authoritative, yet accessible. Engineering-focused.
-- **Tone**: Direct and concise. Avoid conversational fluff.
-- **Metadata**: NEVER wrap enum values (status, difficulty, type) in quotes in the Markdown output.
-
-### Deliverable Format (Magic Import)
-
-The final output of any authoring task MUST be a structured Markdown block (or file) formatted for the **Magic Import** feature.
-
-#### **The Master Template:**
-
-```markdown
----
-title: Section Title
-summary: High-level overview of the section.
-learningGoals:
-  - Goal 1
-  - Goal 2
-estimatedDuration: 20 mins
-status: complete
----
-
-# Blocks
-
-## [MdBlock]
-
-### Conceptual Overview
-
-Welcome to this lesson on **concept name**. In this section, we will explore the core mechanics of...
-
-## [VideoBlock]
-
-url: https://youtu.be/...
-title: Video Title Without Quotes
-
-## [StepByStepBlock]
-
-title: Process Heading
-showNumbering: true
-
-- step: Phase 1 Title
-  content: Detailed explanation of phase 1.\n\nUse literal backslash-n for newlines.
-- step: Phase 2 Title
-  content: Detailed explanation of phase 2.
-
-## [QuizBlock]
-
-title: Knowledge Check
-
-- question: Which protocol is connectionless?
-  type: multiple_choice
-  options: ["TCP", "UDP", "HTTP", "FTP"]
-  correctAnswer: UDP
-  explanation: UDP is connectionless because it does not perform a handshake before sending data.
-
-## [ResourceBlock]
-
-url: https://...
-title: Reference Title
-type: doc
-```
+- **Logic Layer**: The CLI tool wraps `src/lib/coursify/db-ops.js` to ensure consistent side-effects.
+- **Transports**: This is the primary tool for Gemini CLI when performing complex database operations.
