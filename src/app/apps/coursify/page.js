@@ -17,6 +17,7 @@ import {
 import { CoursifyProvider, useCoursify } from '@/context/CoursifyContext';
 import CourseCard from '@/components/coursify/CourseCard';
 import CreateCourseModal from '@/components/coursify/CreateCourseModal';
+import SessionProvider from '@/components/SessionProvider';
 
 const pacifico = Pacifico({
   weight: '400',
@@ -376,8 +377,10 @@ function CoursifyApp() {
 
 export default function CoursifyPage() {
   return (
-    <CoursifyProvider>
-      <CoursifyApp />
-    </CoursifyProvider>
+    <SessionProvider>
+      <CoursifyProvider>
+        <CoursifyApp />
+      </CoursifyProvider>
+    </SessionProvider>
   );
 }

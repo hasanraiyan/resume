@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Plus, Trash2, ChevronUp, ChevronDown, Wand2 } from 'lucide-react';
+import { X, Plus, Trash2, ChevronUp, ChevronDown, Wand2, CheckCircle2, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import QuizEditor from './QuizEditor';
 
@@ -55,7 +55,7 @@ function parseMarkdownSection(text) {
   }
 
   // 2. Extract Blocks
-  const blockRegex = /##\s*\[(MdBlock|QuizBlock|VideoBlock|ResourceBlock)\]/g;
+  const blockRegex = /##\s*\[(MdBlock|QuizBlock|VideoBlock|ResourceBlock|StepByStepBlock)\]/g;
   const matches = [];
   let match;
   while ((match = blockRegex.exec(text)) !== null) {
@@ -75,7 +75,6 @@ function parseMarkdownSection(text) {
     const block = { type: m.type, order: i };
 
     if (m.type === 'MdBlock') {
-      // Keep everything after the first optional ### title line
       block.content = rawContent.replace(/^###.*\n?/, '').trim();
     } else if (m.type === 'VideoBlock') {
       const urlMatch = rawContent.match(/url:\s*(.*)/);
@@ -93,12 +92,30 @@ function parseMarkdownSection(text) {
         title: titleMatch?.[1].trim() || '',
         type: 'other',
       };
+    } else if (m.type === 'StepByStepBlock') {
+      block.steps = [];
+      // Split by "- step:" while preserving the content following it
+      const sParts = rawContent.split(/\s*-\s*step:/).filter((p) => p.trim());
+
+      sParts.forEach((s) => {
+        const lines = s.split('\n');
+        const title = lines[0].trim().replace(/^["'](.*)["']$/, '$1');
+
+        // Extract content by finding the 'content:' key or just taking the remaining lines
+        let stepContent = lines.slice(1).join('\n').trim();
+        if (stepContent.startsWith('content:')) {
+          stepContent = stepContent.replace(/^content:\s*/, '').trim();
+        }
+        // Clean up quotes from the entire block if present
+        stepContent = stepContent.replace(/^["']([\s\S]*)["']$/, '$1');
+
+        if (title) block.steps.push({ title, content: stepContent });
+      });
+      console.log(`Magic Import: Parsed StepByStep with ${block.steps.length} steps.`);
     } else if (m.type === 'QuizBlock') {
       block.quiz = { questions: [] };
-      // Unified split that handles the first question even if no leading newline
       const qParts = rawContent.split(/\s*-\s*question:/).filter((p) => p.trim());
 
-      // If the first part doesn't contain actual question fields, it's just the header
       if (qParts.length > 0 && !qParts[0].includes('correctAnswer:')) {
         qParts.shift();
       }
@@ -146,7 +163,6 @@ function parseMarkdownSection(text) {
             .filter(Boolean);
         }
 
-        // Logic to convert literal correctAnswer to index/bool
         if (qObj.options.length > 0) {
           const idx = qObj.options.findIndex(
             (o) => o.toLowerCase() === qObj.correctAnswer.toLowerCase()
@@ -154,7 +170,6 @@ function parseMarkdownSection(text) {
           if (idx !== -1) {
             qObj.correctAnswer = String(idx);
           }
-          // Special case for True/False
           if (
             qObj.options.length === 2 &&
             qObj.options.some((o) => o.toLowerCase() === 'true') &&
@@ -167,7 +182,6 @@ function parseMarkdownSection(text) {
 
         if (qObj.question) block.quiz.questions.push(qObj);
       });
-      console.log(`Magic Import: Parsed Quiz with ${block.quiz.questions.length} questions.`);
     }
     result.blocks.push(block);
   }
@@ -206,6 +220,7 @@ export default function EditSectionModal({ section, onSave, onClose }) {
     if (type === 'QuizBlock') newBlock.quiz = { questions: [] };
     if (type === 'VideoBlock') newBlock.video = { url: '', title: '', platform: 'youtube' };
     if (type === 'ResourceBlock') newBlock.resource = { url: '', title: '', type: 'other' };
+    if (type === 'StepByStepBlock') newBlock.steps = [{ title: '', content: '' }];
     setBlocks((prev) => [...prev, newBlock]);
   };
 
@@ -315,9 +330,9 @@ export default function EditSectionModal({ section, onSave, onClose }) {
           </div>
 
           {/* Body */}
-          <div className="flex-1 overflow-y-auto p-5 min-h-0">
+          <div className="flex-1 overflow-y-auto p-5 pb-6 min-h-0">
             {tab === 'import' && (
-              <div className="h-full flex flex-col space-y-4">
+              <div className="flex min-h-0 flex-col gap-4">
                 <p className="text-[11px] text-[#7c8e88] px-1">
                   Paste the structured Markdown content here to automatically fill all fields and
                   blocks.
@@ -326,7 +341,7 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                   value={importText}
                   onChange={(e) => setImportText(e.target.value)}
                   placeholder="--- \ntitle: My Section...\n---"
-                  className="flex-1 w-full min-h-[300px] p-4 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-xs font-mono outline-none focus:border-[#1f644e] resize-none"
+                  className="h-[42vh] min-h-[220px] max-h-[360px] w-full p-4 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-xs font-mono outline-none focus:border-[#1f644e] resize-y"
                 />
                 <button
                   onClick={handleMagicImport}
@@ -428,6 +443,64 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                           />
                         </div>
                       )}
+                      {block.type === 'StepByStepBlock' && (
+                        <div className="space-y-4">
+                          {(block.steps || []).map((step, si) => (
+                            <div
+                              key={si}
+                              className="bg-[#f9f9f7] border border-[#e5e3d8] rounded-xl p-3 space-y-2 relative group/step"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold text-[#1f644e]">
+                                  STEP {si + 1}
+                                </span>
+                                <button
+                                  onClick={() => {
+                                    const nextSteps = block.steps.filter((_, idx) => idx !== si);
+                                    updateBlock(i, 'steps', nextSteps);
+                                  }}
+                                  className="p-1 text-[#7c8e88] hover:text-[#c94c4c] opacity-0 group-hover/step:opacity-100 transition-opacity"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                              <input
+                                value={step.title}
+                                onChange={(e) => {
+                                  const nextSteps = block.steps.map((s, idx) =>
+                                    idx === si ? { ...s, title: e.target.value } : s
+                                  );
+                                  updateBlock(i, 'steps', nextSteps);
+                                }}
+                                placeholder="Step Title"
+                                className="w-full px-3 py-2 rounded-lg border border-[#e5e3d8] text-sm font-bold bg-white"
+                              />
+                              <textarea
+                                value={step.content}
+                                onChange={(e) => {
+                                  const nextSteps = block.steps.map((s, idx) =>
+                                    idx === si ? { ...s, content: e.target.value } : s
+                                  );
+                                  updateBlock(i, 'steps', nextSteps);
+                                }}
+                                placeholder="Step Content (Markdown supported)"
+                                className="w-full h-20 px-3 py-2 rounded-lg border border-[#e5e3d8] text-xs bg-white resize-none"
+                              />
+                            </div>
+                          ))}
+                          <button
+                            onClick={() =>
+                              updateBlock(i, 'steps', [
+                                ...(block.steps || []),
+                                { title: '', content: '' },
+                              ])
+                            }
+                            className="w-full py-2 rounded-xl border border-dashed border-[#e5e3d8] text-[10px] font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] transition-all"
+                          >
+                            + Add Step
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -456,6 +529,12 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#e5e3d8] text-xs font-bold hover:bg-[#f0f5f2] transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" /> Resource Link
+                  </button>
+                  <button
+                    onClick={() => addBlock('StepByStepBlock')}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#e5e3d8] text-xs font-bold hover:bg-[#f0f5f2] transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Step-by-Step
                   </button>
                 </div>
               </div>

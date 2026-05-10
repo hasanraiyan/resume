@@ -186,6 +186,7 @@ export function normalizeSection(section) {
         : undefined,
       video: b.video,
       resource: b.resource,
+      steps: b.steps,
       order: b.order ?? 0,
     })),
     summary: section.summary || '',

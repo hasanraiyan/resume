@@ -1,5 +1,45 @@
 # Coursify Data Models & Schemas
 
+```mermaid
+classDiagram
+    class CoursifyCourse {
+        +String title
+        +String slug
+        +String difficulty
+        +String status
+        +String authoringStatus
+        +String[] tags
+    }
+    class CoursifyModule {
+        +ObjectId courseId
+        +String title
+        +String status
+        +Number order
+    }
+    class CoursifySection {
+        +ObjectId courseId
+        +ObjectId moduleId
+        +String title
+        +Block[] blocks
+        +String status
+    }
+    class Block {
+        +String type
+        +Object data
+        +Number order
+    }
+
+    CoursifyCourse "1" --* "many" CoursifyModule : contains
+    CoursifyModule "1" --* "many" CoursifySection : contains
+    CoursifySection "1" --* "many" Block : composed of
+
+    Block <|-- MdBlock : is
+    Block <|-- VideoBlock : is
+    Block <|-- QuizBlock : is
+    Block <|-- ResourceBlock : is
+    Block <|-- StepByStepBlock : is
+```
+
 ## CoursifyCourse
 
 The top-level entity representing an entire course.
@@ -56,3 +96,5 @@ The actual learning unit containing content blocks.
 - **VideoBlock**: Embedded video `{ type: 'VideoBlock', video: { url: String, title: String, platform: 'youtube'|'gdrive' } }`
 - **QuizBlock**: Assessment `{ type: 'QuizBlock', quiz: { questions: [QuizQuestionSchema] } }`
 - **ResourceBlock**: External links `{ type: 'ResourceBlock', resource: { url: String, title: String, type: 'video'|'article'|'doc' } }`
+- **StepByStepBlock**: Procedural content `{ type: 'StepByStepBlock', steps: [{ title: String, content: String }] }`
+  - _Note: `content` in steps supports full Markdown._

@@ -12,6 +12,7 @@ import { CoursifyStudioProvider, useCoursifyStudio } from '@/context/CoursifyStu
 import { AuthoringHeader } from '@/components/coursify/studio/AuthoringHeader';
 import { PlanningWorkspace } from '@/components/coursify/studio/PlanningWorkspace';
 import { ModuleSectionList } from '@/components/coursify/studio/ModuleSectionList';
+import SessionProvider from '@/components/SessionProvider';
 
 const pacifico = Pacifico({
   weight: '400',
@@ -52,9 +53,11 @@ const AUTHORING_STATUS_COLORS = {
 export default function CourseDetailPage({ params }) {
   const { id } = use(params);
   return (
-    <CoursifyStudioProvider id={id}>
-      <CourseStudioInner />
-    </CoursifyStudioProvider>
+    <SessionProvider>
+      <CoursifyStudioProvider id={id}>
+        <CourseStudioInner />
+      </CoursifyStudioProvider>
+    </SessionProvider>
   );
 }
 

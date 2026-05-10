@@ -90,6 +90,7 @@ export default function CourseCard({ course, index = 0 }) {
                 src={course.thumbnail}
                 alt={course.title}
                 fill
+                unoptimized
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 className="absolute inset-0 w-full h-full object-cover"
               />

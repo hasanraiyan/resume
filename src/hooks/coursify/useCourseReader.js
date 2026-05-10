@@ -82,6 +82,7 @@ export function useCourseReader(courseIdOrConfig, isAdmin = false) {
         return;
       }
 
+      console.log(`useCourseReader: Lazy loading section ${sectionId}...`);
       inFlightRef.current.add(sectionId);
       try {
         setSectionLoading(true);
@@ -89,13 +90,19 @@ export function useCourseReader(courseIdOrConfig, isAdmin = false) {
         const res = await fetch(`${baseUrl}/${sectionId}`);
         const data = await res.json();
         if (data.success) {
+          console.log(
+            `useCourseReader: Successfully loaded section ${sectionId}. Full Data:`,
+            data.section
+          );
           setSections((prev) =>
             prev.map((s) => (s._id === sectionId ? { ...s, blocks: data.section.blocks } : s))
           );
           loadedRef.current.add(sectionId);
+        } else {
+          console.warn(`useCourseReader: Failed to load section ${sectionId}:`, data.error);
         }
       } catch (err) {
-        console.error('Lazy load failed:', err);
+        console.error(`useCourseReader: Error loading section ${sectionId}:`, err);
       } finally {
         inFlightRef.current.delete(sectionId);
         setSectionLoading(false);
@@ -106,12 +113,16 @@ export function useCourseReader(courseIdOrConfig, isAdmin = false) {
 
   const fetchCourse = useCallback(async () => {
     if (!courseId || initialData) return;
+    console.log(`useCourseReader: Fetching course skeleton for ${courseId}...`);
     try {
       setIsLoading(true);
       const baseUrl = isAdmin ? '/api/coursify/courses' : '/api/coursify/public/courses';
       const res = await fetch(`${baseUrl}/${courseId}`);
       const data = await res.json();
       if (data.success) {
+        console.log(
+          `useCourseReader: Course skeleton loaded. Modules: ${data.modules?.length}, Sections: ${data.sections?.length}`
+        );
         setCourse(data.course);
         setSections(data.sections);
         setModules(data.modules || []);
@@ -119,9 +130,11 @@ export function useCourseReader(courseIdOrConfig, isAdmin = false) {
         inFlightRef.current.clear();
         loadedRef.current.clear();
       } else {
+        console.warn(`useCourseReader: Course not found:`, courseId);
         setNotFound(true);
       }
-    } catch {
+    } catch (err) {
+      console.error(`useCourseReader: Error fetching course:`, err);
       setNotFound(true);
     } finally {
       setIsLoading(false);

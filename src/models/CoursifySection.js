@@ -25,11 +25,19 @@ const QuizQuestionSchema = new mongoose.Schema(
   { _id: true }
 );
 
+const StepSchema = new mongoose.Schema(
+  {
+    title: { type: String, default: '' },
+    content: { type: String, default: '' },
+  },
+  { _id: false }
+);
+
 const BlockSchema = new mongoose.Schema(
   {
     type: {
       type: String,
-      enum: ['MdBlock', 'QuizBlock', 'VideoBlock', 'ResourceBlock'],
+      enum: ['MdBlock', 'QuizBlock', 'VideoBlock', 'ResourceBlock', 'StepByStepBlock'],
       required: true,
     },
     // Markdown content
@@ -53,6 +61,11 @@ const BlockSchema = new mongoose.Schema(
       url: { type: String, default: '' },
       title: { type: String, default: '' },
       type: { type: String, enum: ['video', 'article', 'doc', 'other'], default: 'other' },
+    },
+    // StepByStep content
+    steps: {
+      type: [StepSchema],
+      default: [],
     },
     order: { type: Number, default: 0 },
   },
@@ -118,8 +131,13 @@ const CoursifySectionSchema = new mongoose.Schema(
       default: 0,
     },
   },
-  { timestamps: true }
+  { timestamps: true, minimize: false }
 );
+
+// Force model re-creation to pick up schema changes in dev
+if (process.env.NODE_ENV === 'development') {
+  delete mongoose.models.CoursifySection;
+}
 
 export default mongoose.models.CoursifySection ||
   mongoose.model('CoursifySection', CoursifySectionSchema);

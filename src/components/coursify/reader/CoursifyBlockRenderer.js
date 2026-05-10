@@ -2,39 +2,9 @@
 
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { QuizPlayer } from './QuizPlayer';
+import { VideoBlock } from './VideoBlock';
+import { StepByStepBlock } from './StepByStepBlock';
 import { PlayCircle, ExternalLink, FileText } from 'lucide-react';
-
-function VideoBlock({ block }) {
-  const { url, title, platform } = block.video || {};
-  if (!url) return null;
-
-  // Ensure url is absolute to prevent relative path hijacking
-  if (!url.startsWith('http://') && !url.startsWith('https://')) return null;
-
-  // Simple YouTube embed logic
-  let embedUrl = url;
-  if (platform === 'youtube') {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(regExp);
-    if (match && match[2].length === 11) {
-      embedUrl = `https://www.youtube.com/embed/${match[2]}`;
-    }
-  }
-
-  return (
-    <div className="my-8">
-      {title && <h4 className="text-lg font-bold text-[#1e3a34] mb-3">{title}</h4>}
-      <div className="relative aspect-video rounded-2xl overflow-hidden border border-[#e5e3d8] bg-black">
-        <iframe
-          src={embedUrl}
-          className="absolute inset-0 w-full h-full"
-          allowFullScreen
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        />
-      </div>
-    </div>
-  );
-}
 
 function ResourceBlock({ block }) {
   const { url, title, type } = block.resource || {};
@@ -81,6 +51,8 @@ export function CoursifyBlockRenderer({ blocks }) {
             return <VideoBlock key={block._id || idx} block={block} />;
           case 'ResourceBlock':
             return <ResourceBlock key={block._id || idx} block={block} />;
+          case 'StepByStepBlock':
+            return <StepByStepBlock key={block._id || idx} block={block} />;
           default:
             return null;
         }

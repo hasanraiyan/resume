@@ -1,5 +1,4 @@
 import { Pacifico, Nunito } from 'next/font/google';
-import SessionProvider from '@/components/SessionProvider';
 
 const pacifico = Pacifico({
   weight: '400',
@@ -25,9 +24,5 @@ export const metadata = {
 };
 
 export default function CoursifyLayout({ children }) {
-  return (
-    <SessionProvider>
-      <div className={`${pacifico.variable} ${nunito.variable}`}>{children}</div>
-    </SessionProvider>
-  );
+  return <div className={`${pacifico.variable} ${nunito.variable}`}>{children}</div>;
 }
