@@ -21,6 +21,33 @@ export const DESTRUCTIVE_ANNOTATIONS = {
 export const COURSE_AUTHORING_GUIDE = {
   purpose: 'Help an AI assistant create complete, practical, high-quality courses in Coursify.',
 
+  studioSkill: `# Coursify Studio (Internal Guide)
+
+This skill transforms Gemini CLI into a specialized Instructional Design Agent for the Coursify platform.
+
+## Quick Start
+1. **Understand the Domain**: Review database models and block types.
+2. **Markdown-First Authoring**: Use the \`write_section\` tool to author content in raw Markdown with \`## [BlockType]\` headers.
+3. **Respect Publication Rules**: Always ensure the hierarchical visibility logic is maintained.
+
+## Core Procedures
+
+### Planning a New Course
+- Define clear \`learningGoals\` at the section level.
+- Organize content into \`CoursifyModule\` groups for better structure.
+- Assign appropriate \`difficulty\` and \`tags\` for search optimization.
+
+### Authoring Content (Magic Markdown)
+Use the \`write_section\` tool to author sections. This saves a local file and syncs the DB automatically.
+- **Headers**: Use \`## [MdBlock]\`, \`## [QuizBlock]\`, \`## [VideoBlock]\`, or \`## [ResourceBlock]\`.
+- **Interactivity**: Always include a \`QuizBlock\` to reinforce learning.
+- **Media**: Embed relevant YouTube content via \`VideoBlock\`.
+
+### Managing Publication
+- Use \`status: 'complete'\` only when the content is polished.
+- Remember: A section is hidden if its parent module or course is not yet published.
+- Use \`authoringStatus\` on the Course model to track the internal production lifecycle.`,
+
   sessionResumeWorkflow: [
     'When the user asks to continue or resume a course in a NEW session (no courseId in context):',
     '  1. Call list_courses(status: "draft") — results are sorted by updatedAt descending. The first result is almost always the active course.',
@@ -45,11 +72,11 @@ export const COURSE_AUTHORING_GUIDE = {
   workflow: [
     '0. SESSION RESUME — If the user says "continue my course" and you do not have a courseId in context, follow the sessionResumeWorkflow above.',
     '1. DISCOVERY — Call list_courses first to avoid duplicate topics. Decide whether to create a new course or update an existing draft. If updating, call get_course with all include flags.',
-    '2. PREP — Call get_authoring_guide (you already have it). Read the quality bar and block-based architecture before doing any work.',
+    '2. PREP — Call get_authoring_guide (you already have it). Read the quality bar and the "write_section" tool guide.',
     '3. RESEARCH — Gather information. Call manage_research to save all findings (up to 20 findings per call). Set authoringStatus to "researching" via upsert_course.',
-    '4. PLAN — Call upsert_course to define targetAudience, learningObjectives, prerequisites, outcome, and a Markdown outline. Save planned sections to agentNotes. Set authoringStatus to "planned".',
-    '5. STRUCTURE — Call upsert_module to create modules, then upsert_section(batch: []) to add planned sections under each module.',
-    '6. WRITE — Use upsert_section(batch: []) to create or update sections. A section is a collection of BLOCKS. Use MdBlock for text, QuizBlock for assessments, VideoBlock for embeds, and ResourceBlock for links. Set authoringStatus to "drafting" when you begin. Save progress to agentNotes after each batch.',
+    '4. PLAN — Call upsert_course to define targetAudience, learningObjectives, prerequisites, outcome, and a Markdown outline. Set authoringStatus to "planned".',
+    '5. STRUCTURE — Call upsert_module to create modules, then upsert_section(batch: []) to add planned section placeholders under each module.',
+    '6. WRITE — Use write_section as your primary tool. Provide raw Markdown with ## [BlockType] headers (## [MdBlock], ## [QuizBlock], ## [VideoBlock], ## [ResourceBlock]). This tool saves a local file for the user and syncs the DB automatically. Set authoringStatus to "drafting" when you begin. Save progress to agentNotes after each section.',
     '7. REVIEW — Call get_course(includeProgress: true) to identify gaps. Use get_section(id) to read single section bodies for revision.',
     '8. FINALIZE — When all sections are written, set authoringStatus to "reviewing" via upsert_course. Content is automatically marked reviewing when all sections are "complete".',
     '9. PUBLISH — Set status: "published" via upsert_course only after the user explicitly asks to publish.',
@@ -61,11 +88,12 @@ export const COURSE_AUTHORING_GUIDE = {
     upsertCourse:
       'upsert_course({ id, ...fields }) — create/update metadata, plan, agentNotes, or status.',
     upsertModule: 'upsert_module({ id, ...fields }) — create/update module structure.',
+    writeSection:
+      'write_section({ courseId, title, content, ... }) — PRIMARY TOOL. Saves local .md file and syncs DB using magic blocks.',
     upsertSection:
-      'upsert_section({ id, ...fields, blocks: [{ type: "MdBlock", content: "..." }, { type: "QuizBlock", quiz: { questions: [...] } }] }) — create/update sections using blocks.',
+      'upsert_section({ id, ...fields, content: "..." }) — alternative for direct DB updates without local file creation.',
     manageResearch: 'manage_research({ courseId, findings[] }) — save research findings.',
     reorder: 'reorder_modules(...) or reorder_sections(...) — change display order.',
-    bulkDelete: 'delete_courses([ids]), delete_modules([ids]), or delete_sections([ids]).',
   },
 
   courseShape: {
@@ -78,15 +106,16 @@ export const COURSE_AUTHORING_GUIDE = {
   },
 
   instructionalDesignGuide: {
-    blockComposition: [
-      'Every lesson section should start with an MdBlock (Intro/Overview).',
-      'Use VideoBlock for relevant demonstrations.',
-      'Mix MdBlocks with practice tasks and examples.',
-      'Knowledge Checks: Use QuizBlocks after key concepts to keep the learner engaged.',
+    markdownAuthoring: [
+      'Write in a single Markdown string using ## [BlockType] headers.',
+      '## [MdBlock] — Standard text, support Mermaid, LaTeX, and GFM.',
+      '## [QuizBlock] — Follow the format: - question: "..." \\n options: ["A", "B"] \\n correctAnswer: "A".',
+      '## [VideoBlock] — Follow: url: "..." \\n title: "...".',
+      '## [ResourceBlock] — Follow: url: "..." \\n title: "..." \\n type: "article".',
     ],
     sectionDepth: [
-      'A standard lesson should have roughly 500-1200 words of text content (split across MdBlocks).',
-      'Every lesson must include at least one practical Example and one Practice task.',
+      'A standard lesson should have roughly 500-1200 words of text content.',
+      'Every lesson must include at least one QuizBlock and one practical Example.',
     ],
   },
 

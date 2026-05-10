@@ -24,31 +24,231 @@ export function toolMeta(invoking, invoked) {
   };
 }
 
-const MODULE_KEYWORDS = [
-  {
-    words: ['fundamental', 'basic', 'intro', 'overview', 'setup', 'what', 'why'],
-    label: 'Foundations',
-  },
-  {
-    words: ['core', 'main', 'build', 'implement', 'create', 'develop', 'pattern'],
-    label: 'Core Concepts',
-  },
-  {
-    words: ['advanced', 'deep', 'optim', 'scale', 'deploy', 'product', 'real'],
-    label: 'Advanced & Applied',
-  },
-  {
-    words: ['review', 'summary', 'next', 'future', 'wrap', 'conclusion', 'recap'],
-    label: 'Review & Next Steps',
-  },
-];
+/**
+ * Parses a Markdown string with ## [BlockType] headers into structured Coursify blocks.
+ * Ported from EditSectionModal.js (Magic Import logic).
+ */
+export function parseMarkdownToBlocks(text) {
+  if (!text || typeof text !== 'string') return [];
 
-function assignModule(title) {
-  const lower = title.toLowerCase();
-  for (const mk of MODULE_KEYWORDS) {
-    if (mk.words.some((w) => lower.includes(w))) return mk.label;
+  // Remove potential YAML frontmatter
+  const cleanText = text.replace(/^---[\s\S]*?---/, '').trim();
+
+  const blockRegex = /##\s*\[(MdBlock|QuizBlock|VideoBlock|ResourceBlock|StepByStepBlock)\]/g;
+  const blocks = [];
+  const matches = [];
+  let match;
+
+  while ((match = blockRegex.exec(cleanText)) !== null) {
+    matches.push({ type: match[1], index: match.index, full: match[0] });
   }
-  return null;
+
+  // If no block headers found, treat entire text as a single MdBlock
+  if (matches.length === 0) {
+    return [{ type: 'MdBlock', content: cleanText, order: 0 }];
+  }
+
+  for (let i = 0; i < matches.length; i++) {
+    const m = matches[i];
+    const nextIndex = matches[i + 1] ? matches[i + 1].index : cleanText.length;
+    let rawContent = cleanText.substring(m.index + m.full.length, nextIndex).trim();
+
+    // Clean up trailing separators
+    rawContent = rawContent.replace(/\n\s*---\s*$/, '').trim();
+    const block = { type: m.type, order: i };
+
+    if (m.type === 'MdBlock') {
+      block.content = rawContent;
+    } else if (m.type === 'VideoBlock') {
+      const urlMatch = rawContent.match(/url:\s*(.*)/);
+      const titleMatch = rawContent.match(/title:\s*(.*)/);
+      block.video = {
+        url: urlMatch?.[1].trim() || '',
+        title: titleMatch?.[1].trim().replace(/^["'](.*)["']$/, '$1') || '',
+        platform: 'youtube',
+      };
+    } else if (m.type === 'ResourceBlock') {
+      const urlMatch = rawContent.match(/url:\s*(.*)/);
+      const titleMatch = rawContent.match(/title:\s*(.*)/);
+      const typeMatch = rawContent.match(/type:\s*(.*)/);
+      block.resource = {
+        url: urlMatch?.[1].trim() || '',
+        title: titleMatch?.[1].trim().replace(/^["'](.*)["']$/, '$1') || '',
+        type: typeMatch?.[1].trim() || 'other',
+      };
+    } else if (m.type === 'StepByStepBlock') {
+      block.steps = [];
+      const titleMatch = rawContent.match(/^title:\s*(.*)/m);
+      if (titleMatch) {
+        block.title = titleMatch[1].trim().replace(/^["'](.*)["']$/, '$1');
+        rawContent = rawContent.replace(titleMatch[0], '');
+      }
+      const numMatch = rawContent.match(/^showNumbering:\s*(.*)/m);
+      if (numMatch) {
+        block.showNumbering = numMatch[1].trim() !== 'false';
+        rawContent = rawContent.replace(numMatch[0], '');
+      } else {
+        block.showNumbering = true;
+      }
+
+      const sParts = rawContent.split(/(?:^|\n)\s*-\s*step:\s*/).filter((p) => p.trim());
+      sParts.forEach((s) => {
+        const lines = s.split('\n');
+        const title = lines[0].trim().replace(/^["'](.*)["']$/, '$1');
+        let stepContent = lines.slice(1).join('\n').trim();
+        if (stepContent.startsWith('content:')) {
+          stepContent = stepContent.replace(/^content:\s*/, '').trim();
+        }
+        stepContent = stepContent.replace(/^["']([\s\S]*)["']$/, '$1').replace(/\\n/g, '\n');
+        if (title) block.steps.push({ title, content: stepContent });
+      });
+    } else if (m.type === 'QuizBlock') {
+      block.quiz = { questions: [] };
+      const qRegex = /(?:^|\n)\s*-\s*question:\s*/g;
+      const qMatches = [];
+      let qMatch;
+      while ((qMatch = qRegex.exec(rawContent)) !== null) {
+        qMatches.push({ index: qMatch.index, full: qMatch[0] });
+      }
+
+      for (let j = 0; j < qMatches.length; j++) {
+        const start = qMatches[j].index + qMatches[j].full.length;
+        const end = qMatches[j + 1] ? qMatches[j + 1].index : rawContent.length;
+        const qRaw = rawContent.substring(start, end);
+
+        const qObj = {
+          type: 'multiple_choice',
+          question: '',
+          options: [],
+          correctAnswer: '',
+          explanation: '',
+          points: 1,
+        };
+
+        const lines = qRaw.split('\n');
+        qObj.question = lines[0].trim().replace(/^["'](.*)["']$/, '$1');
+
+        let parsingKey = '';
+        lines.slice(1).forEach((line) => {
+          const trimmed = line.trim();
+          if (!trimmed) return;
+
+          if (trimmed.includes(':') && !trimmed.startsWith('-')) {
+            const sIdx = trimmed.indexOf(':');
+            const key = trimmed.substring(0, sIdx).trim();
+            const val = trimmed.substring(sIdx + 1).trim();
+
+            if (key === 'type') qObj.type = val.replace(/^["'](.*)["']$/, '$1');
+            else if (key === 'correctAnswer')
+              qObj.correctAnswer = val.replace(/^["'](.*)["']$/, '$1');
+            else if (key === 'explanation') qObj.explanation = val.replace(/^["'](.*)["']$/, '$1');
+            else if (key === 'points') qObj.points = parseInt(val) || 1;
+            else if (key === 'options') {
+              parsingKey = 'options';
+              const arrMatch = trimmed.match(/\[(.*?)\]/);
+              if (arrMatch) {
+                qObj.options = arrMatch[1]
+                  .split(',')
+                  .map((o) => o.trim().replace(/^["'](.*)["']$/, '$1'));
+                parsingKey = '';
+              }
+            } else {
+              parsingKey = key;
+            }
+          } else if (trimmed.startsWith('-') && parsingKey === 'options') {
+            qObj.options.push(
+              trimmed
+                .replace(/^-/, '')
+                .trim()
+                .replace(/^["'](.*)["']$/, '$1')
+            );
+          }
+        });
+
+        // Resolve correctAnswer index from text if needed
+        if (qObj.options.length > 0) {
+          const lowerCA = qObj.correctAnswer.toString().toLowerCase();
+          if (qObj.type === 'multi_select') {
+            const answers = [];
+            qObj.options.forEach((opt, idx) => {
+              if (lowerCA.includes(opt.toLowerCase())) answers.push(idx);
+            });
+            qObj.correctAnswer = answers;
+          } else {
+            const foundIdx = qObj.options.findIndex((o) => o.toLowerCase() === lowerCA);
+            if (foundIdx !== -1) {
+              qObj.correctAnswer = foundIdx;
+            }
+          }
+          // True/False detection
+          if (
+            qObj.options.length === 2 &&
+            qObj.options.some((o) => o.toLowerCase() === 'true') &&
+            qObj.options.some((o) => o.toLowerCase() === 'false')
+          ) {
+            qObj.type = 'true_false';
+          }
+        }
+        if (qObj.question) block.quiz.questions.push(qObj);
+      }
+    }
+    blocks.push(block);
+  }
+
+  return blocks;
+}
+
+/**
+ * Generates a Markdown string from structured Coursify blocks.
+ * Ported from EditSectionModal.js (generateMarkdownExport logic).
+ */
+export function generateMarkdownFromBlocks(blocks) {
+  if (!blocks || !Array.isArray(blocks)) return '';
+  let output = '';
+
+  blocks.forEach((block, i) => {
+    output += `## [${block.type}]\n`;
+    if (block.type === 'MdBlock') {
+      output += `${block.content}\n\n`;
+    } else if (block.type === 'VideoBlock') {
+      output += `url: ${block.video?.url || ''}\n`;
+      output += `title: "${block.video?.title || ''}"\n\n`;
+    } else if (block.type === 'ResourceBlock') {
+      output += `url: ${block.resource?.url || ''}\n`;
+      output += `title: "${block.resource?.title || ''}"\n`;
+      output += `type: "${block.resource?.type || 'other'}"\n\n`;
+    } else if (block.type === 'StepByStepBlock') {
+      if (block.title) output += `title: "${block.title}"\n`;
+      if (block.showNumbering === false) output += 'showNumbering: false\n';
+      (block.steps || []).forEach((s) => {
+        output += `- step: "${s.title}"\n  content: "${(s.content || '').replace(/\n/g, '\\n')}"\n`;
+      });
+      output += '\n';
+    } else if (block.type === 'QuizBlock') {
+      (block.quiz?.questions || []).forEach((q) => {
+        output += `- question: "${q.question}"\n`;
+        output += `  type: "${q.type}"\n`;
+        output += `  options:\n${(q.options || []).map((o) => `    - "${o}"`).join('\n')}\n`;
+        let answerText = q.correctAnswer;
+        if (q.type === 'multiple_choice' || q.type === 'true_false') {
+          const idx = parseInt(q.correctAnswer);
+          if (!isNaN(idx) && q.options[idx]) answerText = q.options[idx];
+        } else if (q.type === 'multi_select' && Array.isArray(q.correctAnswer)) {
+          answerText = q.correctAnswer
+            .map((idx) => q.options[parseInt(idx)])
+            .filter(Boolean)
+            .join(', ');
+        }
+        output += `  correctAnswer: "${answerText}"\n`;
+        output += `  explanation: "${q.explanation}"\n`;
+        output += `  points: ${q.points}\n`;
+      });
+      output += '\n';
+    }
+    if (i < blocks.length - 1) output += '---\n\n';
+  });
+
+  return output;
 }
 
 /**
@@ -95,12 +295,12 @@ export function parseOutlineToModules(outline) {
   const moduleMap = {};
   let unassignedBuffer = [];
   for (const s of sectionTitles) {
-    const mod = s.group || assignModule(s.title);
+    const mod = s.group;
     if (mod) {
       if (unassignedBuffer.length > 0) {
-        if (!moduleMap['Miscellaneous'])
-          moduleMap['Miscellaneous'] = { sections: [], label: 'Miscellaneous' };
-        moduleMap['Miscellaneous'].sections.push(...unassignedBuffer);
+        const fallback = 'General';
+        if (!moduleMap[fallback]) moduleMap[fallback] = { sections: [], label: fallback };
+        moduleMap[fallback].sections.push(...unassignedBuffer);
         unassignedBuffer = [];
       }
       if (!moduleMap[mod]) moduleMap[mod] = { sections: [], label: mod };
@@ -109,10 +309,11 @@ export function parseOutlineToModules(outline) {
       unassignedBuffer.push(s.title);
     }
   }
+
   if (unassignedBuffer.length > 0) {
-    if (!moduleMap['Miscellaneous'])
-      moduleMap['Miscellaneous'] = { sections: [], label: 'Miscellaneous' };
-    moduleMap['Miscellaneous'].sections.push(...unassignedBuffer);
+    const label = sectionTitles[0].group || 'Module 1';
+    if (!moduleMap[label]) moduleMap[label] = { sections: [], label };
+    moduleMap[label].sections.push(...unassignedBuffer);
   }
 
   return Object.values(moduleMap).map((m, i) => ({

@@ -17,6 +17,7 @@ import {
   normalizeModule,
   normalizeSection,
   parseOutlineToModules,
+  parseMarkdownToBlocks,
 } from '@/lib/mcp/coursify/utils.js';
 
 function cleanPatch(patch) {
@@ -342,6 +343,7 @@ export async function dbAddSection({
   courseId,
   title,
   blocks,
+  content,
   order,
   resources,
   moduleId,
@@ -362,7 +364,7 @@ export async function dbAddSection({
   const section = await CoursifySection.create({
     courseId,
     title: title.trim(),
-    blocks: blocks || [],
+    blocks: blocks || (content ? parseMarkdownToBlocks(content) : []),
     order: resolvedOrder,
     resources: resources || [],
     moduleId: moduleId || null,
@@ -379,6 +381,7 @@ export async function dbUpdateSection({
   id,
   title,
   blocks,
+  content,
   summary,
   learningGoals,
   estimatedDuration,
@@ -390,7 +393,7 @@ export async function dbUpdateSection({
   await dbConnect();
   const clean = cleanPatch({
     title,
-    blocks,
+    blocks: blocks || (content ? parseMarkdownToBlocks(content) : undefined),
     summary,
     learningGoals,
     estimatedDuration,
@@ -439,7 +442,7 @@ export async function dbAddSections({ courseId, sections }) {
   const docs = sections.map((s) => ({
     courseId,
     title: s.title.trim(),
-    blocks: s.blocks || (s.content ? [{ type: 'MdBlock', content: s.content, order: 0 }] : []),
+    blocks: s.blocks || (s.content ? parseMarkdownToBlocks(s.content) : []),
     order: s.order !== undefined ? s.order : currentOrder++,
     resources: s.resources || [],
     moduleId: s.moduleId || null,

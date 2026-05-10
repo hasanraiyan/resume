@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { promises as fs } from 'fs';
+import path from 'path';
 import {
   COURSE_AUTHORING_GUIDE,
   READ_ONLY_ANNOTATIONS,
@@ -389,14 +391,18 @@ export function registerCoursifyTools(server) {
     {
       title: 'Create or Update Section',
       description:
-        'Add one or more sections, or update an existing one. Can also set quiz questions or resources.',
+        'Add one or more sections, or update an existing one. Use "content" for raw Markdown (supports magic blocks ## [Type]) or "blocks" for structured JSON.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         id: z.string().optional().describe('Update existing if provided.'),
         courseId: z.string().describe('Required for creation.'),
         moduleId: z.string().optional(),
         title: z.string().optional(),
-        blocks: z.array(blockSchema).optional().describe('Content blocks for this section.'),
+        content: z
+          .string()
+          .optional()
+          .describe('Raw Markdown content. Automatically parsed into blocks.'),
+        blocks: z.array(blockSchema).optional().describe('Structured content blocks.'),
         status: z.enum(['planned', 'draft', 'needs_review', 'complete']).optional(),
         order: z.number().int().optional(),
         summary: z.string().optional(),
@@ -408,6 +414,7 @@ export function registerCoursifyTools(server) {
             z.object({
               title: z.string(),
               moduleId: z.string().optional(),
+              content: z.string().optional(),
               blocks: z.array(blockSchema).optional(),
               order: z.number().int().optional(),
               status: z.enum(['planned', 'draft', 'needs_review', 'complete']).optional(),
@@ -434,6 +441,76 @@ export function registerCoursifyTools(server) {
         }
         const { section } = await dbAddSection({ courseId, ...fields });
         return textResult(`Added section "${section.title}".`, { success: true, section });
+      } catch (err) {
+        return errorResult(err.message);
+      }
+    }
+  );
+
+  server.registerTool(
+    'write_section',
+    {
+      title: 'Write Section File & Sync DB',
+      description:
+        'Saves section content to a local Markdown file and syncs it with the database. Use this as your primary writing tool. Format: ## [MdBlock], ## [QuizBlock], etc.',
+      annotations: MUTATION_ANNOTATIONS,
+      inputSchema: {
+        courseId: z.string().describe('MongoDB _id of the course.'),
+        moduleId: z.string().optional().describe('Optional module ID.'),
+        title: z.string().describe('The section title.'),
+        content: z.string().describe('The full Markdown content.'),
+        status: z
+          .enum(['planned', 'draft', 'needs_review', 'complete'])
+          .optional()
+          .default('draft'),
+        order: z.number().int().optional(),
+      },
+      _meta: toolMeta('Writing section file...', 'Section synced.'),
+    },
+    async ({ courseId, moduleId, title, content, status, order }) => {
+      try {
+        // 1. Get Course Info for Slug
+        const { course, modules } = await dbGetCourse({ id: courseId });
+        const slug = course.slug || course.title.toLowerCase().replace(/\s+/g, '-');
+
+        // 2. Identify/Create local path
+        const safeTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const dirPath = path.join(process.cwd(), 'docs', 'coursify', slug);
+        const filePath = path.join(dirPath, `${safeTitle}.md`);
+
+        await fs.mkdir(dirPath, { recursive: true });
+        await fs.writeFile(filePath, content, 'utf8');
+
+        // 3. Sync with DB
+        // Check if section exists in this module/course with same title
+        const allSections = modules.flatMap((m) => m.sections || []);
+        const existing = allSections.find((s) => s.title.toLowerCase() === title.toLowerCase());
+
+        let result;
+        if (existing) {
+          result = await dbUpdateSection({
+            id: existing.id,
+            content,
+            status,
+            order,
+            moduleId,
+          });
+        } else {
+          result = await dbAddSection({
+            courseId,
+            moduleId,
+            title,
+            content,
+            status,
+            order,
+          });
+        }
+
+        return textResult(`Section "${title}" written to ${filePath} and synced to DB.`, {
+          success: true,
+          filePath,
+          section: result.section,
+        });
       } catch (err) {
         return errorResult(err.message);
       }
