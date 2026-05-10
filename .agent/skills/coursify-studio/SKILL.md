@@ -18,17 +18,17 @@ This skill transforms ai agent into a specialized Instructional Design Agent for
 ### Planning & Progress Tracking
 
 - **Discovery**: Always call `courses list` first to avoid duplicates.
+- **ID Synchronization**: Before updating any existing module or section, call `courses get <id>` or a specific list command to ensure you have the most current Database IDs. Stale context is the #1 cause of "Resource not found" errors.
 - **Scratchpad**: Use the `agentNotes` field via `courses upsert` as your session scratchpad. Store current state (which module/section is next, decisions made, tasks remaining) to survive session interruptions.
-- **Auto-Planning**: Once an outline is defined in the course metadata, use `courses plan <id>` (coming soon) to generate module/section placeholders.
 
 ### Authoring Content (The Quality Bar)
 
 Follow the **Standardized Section Flow** in [pedagogy.md](references/pedagogy.md).
 
 - **Depth**: Lessons must be **500-1200 words**. Be thorough and technical.
-- **TOC Compatibility**: Always use `##` for primary headings and `###` for secondary headings within `MdBlock`.
-- **Procedural Content**: **Mandatory usage** of `StepByStepBlock` for all setups, workflows, and multi-step processes. Do NOT use simple Markdown lists for procedures.
-- **Visuals**: Always wrap Mermaid diagrams in standard ` ```mermaid ` code blocks within an `MdBlock`.
+- **TOC Compatibility**: Use `##` for primary headings and `###` for secondary headings within `MdBlock`.
+- **Procedural Content**: **Mandatory usage** of `StepByStepBlock` for all setups and workflows.
+- **Architectural Clarity**: Use Mermaid `graph TD/LR` to visualize any multi-stage logic, data flows, or system architectures.
 - **Interactivity**: Always end with a `QuizBlock` (3-5 questions). Use literal text mapping for `correctAnswer`.
 - **Magic Blocks**: Start files with `## [MdBlock]`. Use `## [BlockType]` headers for all transitions.
 
