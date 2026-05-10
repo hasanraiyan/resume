@@ -23,6 +23,28 @@ function isAsciiArt(code) {
   return lines.every((l) => ASCII_PIPE_RE.test(l));
 }
 
+/**
+ * Standardizes slug generation for TOC anchors.
+ */
+function getSlug(text) {
+  return String(text || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Flattens React children into a plain string.
+ */
+function extractTextContent(children) {
+  if (typeof children === 'string') return children;
+  if (Array.isArray(children)) return children.map(extractTextContent).join('');
+  if (children?.props?.children) return extractTextContent(children.props.children);
+  return '';
+}
+
 export const MarkdownRenderer = memo(function MarkdownRenderer({ content }) {
   return (
     <div className="coursify-md prose prose-sm max-w-none min-w-0 overflow-x-hidden font-[family-name:var(--font-lora)] prose-headings:font-bold prose-headings:text-[#1e3a34] prose-p:text-[#1e3a34] prose-p:leading-relaxed prose-code:bg-[#f0f5f2] prose-code:rounded prose-code:px-1 prose-code:text-[#1f644e] prose-pre:bg-[#1e3a34] prose-pre:rounded-xl prose-blockquote:border-[#1f644e] prose-a:text-[#1f644e] prose-li:text-[#1e3a34] prose-strong:text-[#1e3a34] prose-table:text-sm">
@@ -31,19 +53,19 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({ content }) {
         rehypePlugins={[rehypeRaw, rehypeKatex]}
         components={{
           h2({ children, ...props }) {
-            const text = typeof children === 'string' ? children : '';
-            const slug = text.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            const text = extractTextContent(children);
+            const slug = getSlug(text);
             return (
-              <h2 id={slug} data-heading={text} className="scroll-mt-20" {...props}>
+              <h2 id={slug} data-heading={text} className="scroll-mt-24" {...props}>
                 {children}
               </h2>
             );
           },
           h3({ children, ...props }) {
-            const text = typeof children === 'string' ? children : '';
-            const slug = text.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            const text = extractTextContent(children);
+            const slug = getSlug(text);
             return (
-              <h3 id={slug} data-heading={text} className="scroll-mt-20" {...props}>
+              <h3 id={slug} data-heading={text} className="scroll-mt-24" {...props}>
                 {children}
               </h3>
             );

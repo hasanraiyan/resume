@@ -50,6 +50,8 @@ The agent must optimize each block type using these specific standards:
 
 - **Usage**: Mandatory for any concept involving a sequence of events.
 - **Atomicity**: Each step must represent one discrete action or state.
+- **Block Heading**: Use the `title:` field to provide an overall name for the process (e.g., "The TCP 3-Way Handshake"). This appears as a prominent header in the reader.
+- **Numbering Control**: By default, steps are numbered (1, 2, 3). Use `showNumbering: false` at the top of the block if the phases are iterative, parallel, or non-sequential.
 - **Content**: The `content` field should be 1-2 paragraphs max. Use it to explain the "internal mechanics" of that specific step.
 - **Example**: Use for "The 4-Step DHCP Handshake" or "Building a Cat6 Cable."
 
@@ -117,6 +119,9 @@ title: "Video Title"
 Main text content with **bolding** and [links](...).
 
 ## [StepByStepBlock]
+
+title: "Overall Process Title"
+showNumbering: true
 
 - step: "Phase 1 Title"
   content: "Detailed explanation of phase 1."

@@ -46,7 +46,13 @@ export function CoursifyBlockRenderer({ blocks }) {
           case 'MdBlock':
             return <MarkdownRenderer key={block._id || idx} content={block.content} />;
           case 'QuizBlock':
-            return <QuizPlayer key={block._id || idx} questions={block.quiz?.questions || []} />;
+            return (
+              <QuizPlayer
+                key={block._id || idx}
+                questions={block.quiz?.questions || []}
+                title={block.title}
+              />
+            );
           case 'VideoBlock':
             return <VideoBlock key={block._id || idx} block={block} />;
           case 'ResourceBlock':

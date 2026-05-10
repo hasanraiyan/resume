@@ -1,5 +1,17 @@
 'use client';
 
+/**
+ * Standardizes slug generation for TOC anchors.
+ */
+function getSlug(text) {
+  return String(text || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 export function VideoBlock({ block }) {
   const { url, title, platform } = block.video || {};
   if (!url) return null;
@@ -17,7 +29,15 @@ export function VideoBlock({ block }) {
 
   return (
     <div className="my-8">
-      {title && <h4 className="text-lg font-bold text-[#1e3a34] mb-3">{title}</h4>}
+      {title && (
+        <h4
+          id={getSlug(title)}
+          data-heading={title}
+          className="text-lg font-bold text-[#1e3a34] mb-3 scroll-mt-24"
+        >
+          {title}
+        </h4>
+      )}
       <div className="relative aspect-video rounded-2xl overflow-hidden border border-[#e5e3d8] bg-black">
         <iframe
           src={embedUrl}

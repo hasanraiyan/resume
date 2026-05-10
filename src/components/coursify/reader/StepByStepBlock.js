@@ -31,13 +31,38 @@ const lineVariants = {
   },
 };
 
+/**
+ * Standardizes slug generation for TOC anchors.
+ */
+function getSlug(text) {
+  return String(text || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 export function StepByStepBlock({ block }) {
   const steps = block.steps || [];
+  const showNumbering = block.showNumbering !== false; // Default to true
 
   if (!steps.length) return null;
 
   return (
-    <section className="my-8 overflow-visible px-0.5">
+    <section className="my-10 overflow-visible px-0.5">
+      {block.title && (
+        <div className="mb-8 pl-1">
+          <h3
+            id={getSlug(block.title)}
+            data-heading={block.title}
+            className="text-xl font-bold text-[#1e3a34] tracking-tight sm:text-2xl scroll-mt-24"
+          >
+            {block.title}
+          </h3>
+          <div className="mt-2 h-1 w-12 rounded-full bg-[#1f644e]/20" />
+        </div>
+      )}
       <div className="relative">
         {/* Decorative background element for the timeline area */}
         <div className="absolute -left-3 -top-2 -bottom-2 w-16 bg-gradient-to-r from-[#f0f5f2]/30 to-transparent rounded-l-2xl pointer-events-none" />
@@ -67,9 +92,13 @@ export function StepByStepBlock({ block }) {
                   {/* Node Background */}
                   <div className="absolute inset-0 rounded-full bg-white ring-1 ring-[#e5e3d8] shadow-sm transition-all group-hover:ring-[#1f644e]/30 group-hover:shadow-md" />
 
-                  {/* Inner Number Circle */}
+                  {/* Inner Marker Circle */}
                   <div className="relative flex h-5 w-5 items-center justify-center rounded-full bg-[#1f644e] text-white shadow-[0_1px_3px_rgba(31,100,78,0.2)] transition-transform group-hover:scale-105 sm:h-6 sm:w-6">
-                    <span className="text-[9px] font-black sm:text-xs">{i + 1}</span>
+                    {showNumbering ? (
+                      <span className="text-[9px] font-black sm:text-xs">{i + 1}</span>
+                    ) : (
+                      <div className="h-1.5 w-1.5 rounded-full bg-white/80" />
+                    )}
                   </div>
                 </div>
               </div>
@@ -77,16 +106,18 @@ export function StepByStepBlock({ block }) {
               {/* Step Content Card */}
               <div className="relative">
                 {/* Header Metadata */}
-                <div className="mb-1.5 flex items-center gap-2.5">
-                  <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-[#1f644e]/50">
-                    Step {i + 1}
-                  </span>
-                  <div className="h-px flex-1 bg-gradient-to-r from-[#e5e3d8] to-transparent" />
-                </div>
+                {showNumbering && (
+                  <div className="mb-1.5 flex items-center gap-2.5">
+                    <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-[#1f644e]/50">
+                      Step {i + 1}
+                    </span>
+                    <div className="h-px flex-1 bg-gradient-to-r from-[#e5e3d8] to-transparent" />
+                  </div>
+                )}
 
                 <div className="rounded-xl border border-[#e5e3d8] bg-white p-4 shadow-[0_2px_12px_-6px_rgba(0,0,0,0.05)] transition-all hover:border-[#1f644e]/15 hover:shadow-[0_8px_24px_-12px_rgba(31,100,78,0.1)] sm:p-6">
                   <h4 className="font-serif text-lg font-bold leading-tight text-[#1e3a34] transition-colors group-hover:text-[#1f644e] sm:text-xl">
-                    {step.title || `Step ${i + 1}`}
+                    {step.title || (showNumbering ? `Step ${i + 1}` : '')}
                   </h4>
 
                   <div className="mt-2.5 prose prose-sm max-w-none text-[#536b64] selection:bg-[#1f644e]/10 [&_.prose]:text-inherit">

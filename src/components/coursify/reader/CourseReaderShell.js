@@ -58,14 +58,11 @@ export function CourseReaderShell({ initialData, slug, activeSectionId }) {
   const currentSection = sections.find((s) => s._id === activeSection);
   const isSectionLoaded = currentSection?.blocks?.length > 0;
 
-  // Combine markdown content from all blocks for TOC
-  const combinedContent =
-    currentSection?.blocks
-      ?.filter((b) => b.type === 'MdBlock')
-      ?.map((b) => b.content)
-      ?.join('\n\n') || '';
-
-  const { headings, activeHeading } = useTableOfContents(combinedContent, contentRef, mainRef);
+  const { headings, activeHeading } = useTableOfContents(
+    currentSection?.blocks || [],
+    contentRef,
+    mainRef
+  );
 
   const {
     sidebarOpen,
@@ -123,7 +120,10 @@ export function CourseReaderShell({ initialData, slug, activeSectionId }) {
                 </div>
               ) : currentSection ? (
                 <>
-                  <CoursifyBlockRenderer blocks={currentSection.blocks} sectionId={currentSection._id} />
+                  <CoursifyBlockRenderer
+                    blocks={currentSection.blocks}
+                    sectionId={currentSection._id}
+                  />
                   <ReaderNavigation
                     sections={orderedSections}
                     activeSection={activeSection}

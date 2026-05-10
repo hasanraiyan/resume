@@ -42,6 +42,8 @@ const BlockSchema = new mongoose.Schema(
     },
     // Markdown content
     content: { type: String, default: '' },
+    // Generic block title (used by StepByStep, MindMap, etc)
+    title: { type: String, default: '' },
     // Quiz content
     quiz: {
       questions: { type: [QuizQuestionSchema], default: [] },
@@ -67,6 +69,7 @@ const BlockSchema = new mongoose.Schema(
       type: [StepSchema],
       default: [],
     },
+    showNumbering: { type: Boolean, default: true },
     order: { type: Number, default: 0 },
   },
   { _id: true, timestamps: true }

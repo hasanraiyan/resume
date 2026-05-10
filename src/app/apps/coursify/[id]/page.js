@@ -8,6 +8,8 @@ import { X, Clock, Layers } from 'lucide-react';
 import EditSectionModal from '@/components/coursify/EditSectionModal';
 import EditModuleModal from '@/components/coursify/EditModuleModal';
 import { ReaderSidebar } from '@/components/coursify/reader/ReaderSidebar';
+import { TableOfContents } from '@/components/coursify/reader/TableOfContents';
+import { useTableOfContents } from '@/hooks/coursify/useTableOfContents';
 import { CoursifyStudioProvider, useCoursifyStudio } from '@/context/CoursifyStudioContext';
 import { AuthoringHeader } from '@/components/coursify/studio/AuthoringHeader';
 import { PlanningWorkspace } from '@/components/coursify/studio/PlanningWorkspace';
@@ -64,6 +66,9 @@ export default function CourseDetailPage({ params }) {
 function CourseStudioInner() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const mainRef = useRef(null);
+  const contentRef = useRef(null);
+  const [tocOpen, setTocOpen] = useState(true);
 
   const {
     course,
@@ -95,6 +100,13 @@ function CourseStudioInner() {
     handleSaveModule,
     handleDeleteModule,
   } = useCoursifyStudio();
+
+  const currentSection = sections.find((s) => s._id === activeSection);
+  const { headings, activeHeading } = useTableOfContents(
+    showOverview ? [] : currentSection?.blocks || [],
+    contentRef,
+    mainRef
+  );
 
   if (status === 'loading') return null;
   if (status === 'unauthenticated' || session?.user?.role !== 'admin') {
@@ -215,8 +227,20 @@ function CourseStudioInner() {
           onDeleteModule={handleDeleteModule}
         />
 
-        <main className="flex-1 overflow-y-auto min-w-0">
-          {activeTab === 'planning' ? <PlanningWorkspace /> : <ModuleSectionList />}
+        <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden min-w-0">
+          <div className="flex min-h-0 w-full min-w-0">
+            <div className="flex-1 min-w-0" ref={contentRef}>
+              {activeTab === 'planning' ? <PlanningWorkspace /> : <ModuleSectionList />}
+            </div>
+            {!showOverview && activeTab !== 'planning' && (
+              <TableOfContents
+                headings={headings}
+                activeHeading={activeHeading}
+                isOpen={tocOpen}
+                onToggle={() => setTocOpen(!tocOpen)}
+              />
+            )}
+          </div>
         </main>
       </div>
 

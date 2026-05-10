@@ -6,7 +6,7 @@ A premium section should follow this pedagogical flow:
 
 ```mermaid
 graph TD
-    A[Summary/Context] -->|Intro| B[Visual Demonstration]
+    A[Mind Map / Context] -->|MindMapBlock| B[Visual Demonstration]
     B -->|VideoBlock| C[Detailed Instruction]
     C -->|MdBlock| D[Procedural Breakdown]
     D -->|StepByStepBlock| E[Interactive Check]
@@ -14,29 +14,30 @@ graph TD
     F -->|ResourceBlock| G[Complete]
 ```
 
-1. **Context**: A short, engaging summary.
-2. **Visual**: A `VideoBlock` (if available).
-3. **Core Content**: 1-3 `MdBlock`s with clear headings, bold terms, and clean formatting.
-4. **Procedural Flow**: A `StepByStepBlock` if the topic involves a sequence (e.g., "The Life of a Packet" or "3-Way Handshake").
-5. **Assessment**: A `QuizBlock` with 3-5 challenging questions.
-6. **Resources**: A `ResourceBlock` for further reading.
+1. **Contextual Overview**: Use a `MindMapBlock` or a short, engaging summary to set the mental stage.
+2. **Visual Stimulus**: A `VideoBlock` (if available) to demonstrate the concept in motion.
+3. **Core Instruction**: 1-3 `MdBlock`s with clear headings, bold terms, and Mermaid diagrams for structural clarity.
+4. **Procedural Flow**: A `StepByStepBlock` for sequences (e.g., "The 3-Way Handshake"). Use the `title:` field for a professional heading.
+5. **Interactive Validation**: A `QuizBlock` with 3-5 challenging questions.
+6. **Reference Extension**: A `ResourceBlock` for official documentation or specialized deep-dives.
 
-## Procedural Tutorials with StepByStepBlock
+## Procedural Tutorials (StepByStepBlock)
 
-Avoid using long numbered lists in `MdBlock` for complex procedures. Instead, use the `StepByStepBlock`:
+Avoid using long numbered lists in `MdBlock`. Use the `StepByStepBlock` for:
 
-- **Why**: It provides a high-signal vertical timeline UI that clearly separates phases and reduces cognitive load.
-- **When**: Use for protocol state transitions, installation guides, data path tracking, or project timelines.
-- **How**: Ensure each step is atomic. Use the `title` for the "What" and the `content` (Markdown supported) for the "How/Why".
+- **State Transitions**: Protocol handshakes, server lifecycle states.
+- **Hardware Assembly**: Building cables, rack mounting.
+- **Data Flow**: Path of a packet through the OSI stack.
 
-## Publication Logic (Strict)
+**Configuration**:
 
-1. **Hierarchical Visibility**:
-   - A Section is ONLY visible if its `status` is `complete` AND its parent Module's `status` is `complete` AND the Course `status` is `published`.
-2. **Metadata Accuracy**:
-   - Section/Module counts on the homepage only include items that meet the visibility criteria above.
+- Use `showNumbering: true` for strict sequences.
+- Use `showNumbering: false` for iterative or parallel phases (e.g., "Principles of Design").
 
-## Search Optimization
+## Studio Workspace (The Sidebar Workflow)
 
-- Always use `tags` on the Course model for better discoverability.
-- Use `learningGoals` in Sections to help the AI Tutor find relevant content.
+The platform utilizes a right-side **Studio Sidebar** for content editing.
+
+- **Dynamic Addition**: Mouse over the line between blocks to use the **Quick Adder** for precise insertion.
+- **Magic Import**: Paste structured Markdown/YAML into the "Import" tab for instant block generation.
+- **Round-trip Export**: Use the "Export" tab to back up content or edit it in a local technical writing environment.

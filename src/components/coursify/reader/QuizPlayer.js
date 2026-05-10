@@ -156,7 +156,19 @@ function QuestionView({ index, total, question, answer, submitted, onChange }) {
   );
 }
 
-export const QuizPlayer = memo(function QuizPlayer({ questions }) {
+/**
+ * Standardizes slug generation for TOC anchors.
+ */
+function getSlug(text) {
+  return String(text || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+export const QuizPlayer = memo(function QuizPlayer({ questions, title }) {
   const [answers, setAnswers] = useState({});
   const [current, setCurrent] = useState(0);
   const [submitted, setSubmitted] = useState(false);
@@ -198,13 +210,27 @@ export const QuizPlayer = memo(function QuizPlayer({ questions }) {
   const percentage = score ? Math.round((score.earned / score.total) * 100) : 0;
   const passed = percentage >= 70;
 
+  const displayTitle = title || 'Knowledge Check';
+
   return (
     <div className="mt-10 border-t border-[#e5e3d8] pt-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
-          Quiz · {questions.length} question{questions.length !== 1 ? 's' : ''}
+      <div className="mb-6 pl-1">
+        <h3
+          id={getSlug(displayTitle)}
+          data-heading={displayTitle}
+          className="text-xl font-bold text-[#1e3a34] tracking-tight sm:text-2xl scroll-mt-24 mb-2"
+        >
+          {displayTitle}
         </h3>
+        <div className="h-1 w-12 rounded-full bg-[#1f644e]/20" />
+      </div>
+
+      <div className="flex items-center justify-between mb-5">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
+          Assessment · {questions.length} question{questions.length !== 1 ? 's' : ''}
+        </h4>
+        ...
         {submitted && (
           <button
             onClick={handleReset}
