@@ -1,4 +1,4 @@
-﻿---
+---
 name: coursify-studio
 description: Specialized instructional design and course authoring for the Coursify platform. Use when creating, updating, or planning courses, modules, and sections, ensuring high-quality pedagogical structure and hierarchical publication logic.
 ---
@@ -33,26 +33,22 @@ This skill transforms ai agent into a specialized Instructional Design Agent for
 - Remember: A section is hidden if its parent module or course is not yet published.
 - Use `authoringStatus` on the Course model to track the internal production lifecycle.
 
-## Tools & Utilities
+## Scripts & Utilities
 
 ### Bundled CLI Tool: `coursify.js`
 
 The skill includes a deterministic CLI script to manage content directly. Use it via `node` from the workspace root:
 
-`Bash
-
+```bash
 # List all courses
-
-node .agent/skills/coursify-studio/tools/coursify.js courses list
+node .agent/skills/coursify-studio/scripts/coursify.js courses list
 
 # Get full course content
-
-node .agent/skills/coursify-studio/tools/coursify.js courses get <id>
+node .agent/skills/coursify-studio/scripts/coursify.js courses get <id>
 
 # Upsert a section
-
-node .agent/skills/coursify-studio/tools/coursify.js sections upsert --courseId="..." --title="New Lesson" --status="complete"
-`
+node .agent/skills/coursify-studio/scripts/coursify.js sections upsert --courseId="..." --title="New Lesson" --status="complete"
+```
 
 - **Logic Layer**: The CLI tool wraps `src/lib/coursify/db-ops.js` to ensure consistent side-effects.
 - **Transports**: This is the primary tool for Gemini CLI when performing complex database operations.
