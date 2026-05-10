@@ -28,6 +28,20 @@ export function toolMeta(invoking, invoked) {
  * Parses a Markdown string with ## [BlockType] headers into structured Coursify blocks.
  * Ported from EditSectionModal.js (Magic Import logic).
  */
+/**
+ * Unescapes a string that was potentially wrapped in quotes and contained escaped characters.
+ */
+function unescapeString(str) {
+  if (!str) return '';
+  let val = str.trim();
+  // Remove surrounding quotes if they exist
+  if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+    val = val.substring(1, val.length - 1);
+  }
+  // Handle escaped characters
+  return val.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/\\\\/g, '\\');
+}
+
 export function parseMarkdownToBlocks(text) {
   if (!text || typeof text !== 'string') return [];
 
@@ -63,8 +77,8 @@ export function parseMarkdownToBlocks(text) {
       const urlMatch = rawContent.match(/url:\s*(.*)/);
       const titleMatch = rawContent.match(/title:\s*(.*)/);
       block.video = {
-        url: urlMatch?.[1].trim().replace(/^["'](.*)["']$/, '$1') || '',
-        title: titleMatch?.[1].trim().replace(/^["'](.*)["']$/, '$1') || '',
+        url: unescapeString(urlMatch?.[1] || ''),
+        title: unescapeString(titleMatch?.[1] || ''),
         platform: 'youtube',
       };
     } else if (m.type === 'ResourceBlock') {
@@ -72,20 +86,20 @@ export function parseMarkdownToBlocks(text) {
       const titleMatch = rawContent.match(/title:\s*(.*)/);
       const typeMatch = rawContent.match(/type:\s*(.*)/);
       block.resource = {
-        url: urlMatch?.[1].trim().replace(/^["'](.*)["']$/, '$1') || '',
-        title: titleMatch?.[1].trim().replace(/^["'](.*)["']$/, '$1') || '',
-        type: typeMatch?.[1].trim() || 'other',
+        url: unescapeString(urlMatch?.[1] || ''),
+        title: unescapeString(titleMatch?.[1] || ''),
+        type: unescapeString(typeMatch?.[1] || 'other'),
       };
     } else if (m.type === 'StepByStepBlock') {
       block.steps = [];
       const titleMatch = rawContent.match(/^title:\s*(.*)/m);
       if (titleMatch) {
-        block.title = titleMatch[1].trim().replace(/^["'](.*)["']$/, '$1');
+        block.title = unescapeString(titleMatch[1]);
         rawContent = rawContent.replace(titleMatch[0], '');
       }
       const numMatch = rawContent.match(/^showNumbering:\s*(.*)/m);
       if (numMatch) {
-        block.showNumbering = numMatch[1].trim() !== 'false';
+        block.showNumbering = unescapeString(numMatch[1]) !== 'false';
         rawContent = rawContent.replace(numMatch[0], '');
       } else {
         block.showNumbering = true;
@@ -94,12 +108,12 @@ export function parseMarkdownToBlocks(text) {
       const sParts = rawContent.split(/(?:^|\n)\s*-\s*step:\s*/).filter((p) => p.trim());
       sParts.forEach((s) => {
         const lines = s.split('\n');
-        const title = lines[0].trim().replace(/^["'](.*)["']$/, '$1');
+        const title = unescapeString(lines[0]);
         let stepContent = lines.slice(1).join('\n').trim();
         if (stepContent.startsWith('content:')) {
           stepContent = stepContent.replace(/^content:\s*/, '').trim();
         }
-        stepContent = stepContent.replace(/^["']([\s\S]*)["']$/, '$1').replace(/\\n/g, '\n');
+        stepContent = unescapeString(stepContent);
         if (title) block.steps.push({ title, content: stepContent });
       });
     } else if (m.type === 'QuizBlock') {
@@ -126,7 +140,7 @@ export function parseMarkdownToBlocks(text) {
         };
 
         const lines = qRaw.split('\n');
-        qObj.question = lines[0].trim().replace(/^["'](.*)["']$/, '$1');
+        qObj.question = unescapeString(lines[0]);
 
         let parsingKey = '';
         lines.slice(1).forEach((line) => {
@@ -138,30 +152,22 @@ export function parseMarkdownToBlocks(text) {
             const key = trimmed.substring(0, sIdx).trim();
             const val = trimmed.substring(sIdx + 1).trim();
 
-            if (key === 'type') qObj.type = val.replace(/^["'](.*)["']$/, '$1');
-            else if (key === 'correctAnswer')
-              qObj.correctAnswer = val.replace(/^["'](.*)["']$/, '$1');
-            else if (key === 'explanation') qObj.explanation = val.replace(/^["'](.*)["']$/, '$1');
+            if (key === 'type') qObj.type = unescapeString(val);
+            else if (key === 'correctAnswer') qObj.correctAnswer = unescapeString(val);
+            else if (key === 'explanation') qObj.explanation = unescapeString(val);
             else if (key === 'points') qObj.points = parseInt(val) || 1;
             else if (key === 'options') {
               parsingKey = 'options';
               const arrMatch = trimmed.match(/\[(.*?)\]/);
               if (arrMatch) {
-                qObj.options = arrMatch[1]
-                  .split(',')
-                  .map((o) => o.trim().replace(/^["'](.*)["']$/, '$1'));
+                qObj.options = arrMatch[1].split(',').map((o) => unescapeString(o));
                 parsingKey = '';
               }
             } else {
               parsingKey = key;
             }
           } else if (trimmed.startsWith('-') && parsingKey === 'options') {
-            qObj.options.push(
-              trimmed
-                .replace(/^-/, '')
-                .trim()
-                .replace(/^["'](.*)["']$/, '$1')
-            );
+            qObj.options.push(unescapeString(trimmed.replace(/^-/, '')));
           }
         });
 
@@ -249,80 +255,6 @@ export function generateMarkdownFromBlocks(blocks) {
   });
 
   return output;
-}
-
-/**
- * Parses a Markdown course outline into grouped module suggestions.
- * Returns [] when no sections could be extracted.
- */
-export function parseOutlineToModules(outline) {
-  const lines = outline.trim().split('\n');
-  const sectionTitles = [];
-  let currentGroup = '';
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (trimmed.startsWith('## ') && !trimmed.toLowerCase().includes('module')) {
-      const title = trimmed.replace(/^##\s+/, '').trim();
-      if (title) sectionTitles.push({ title, group: currentGroup });
-    } else if (trimmed.startsWith('### ')) {
-      const title = trimmed.replace(/^###\s+/, '').trim();
-      if (title && title.length < 100) sectionTitles.push({ title, group: currentGroup });
-    } else if (trimmed.match(/^#{1,2}\s+(module|phase|part|step)/i)) {
-      currentGroup = trimmed.replace(/^#{1,2}\s+/, '').trim();
-    }
-  }
-
-  if (sectionTitles.length === 0) {
-    const paragraphs = outline
-      .trim()
-      .split(/\n\n+/)
-      .map((p) => p.trim())
-      .filter(Boolean);
-    for (const p of paragraphs) {
-      const firstLine = p
-        .split('\n')[0]
-        .trim()
-        .replace(/^[-*\d.]\s+/, '');
-      if (firstLine && firstLine.length > 3 && firstLine.length < 120) {
-        sectionTitles.push({ title: firstLine, group: '' });
-      }
-    }
-  }
-
-  if (sectionTitles.length === 0) return [];
-
-  const moduleMap = {};
-  let unassignedBuffer = [];
-  for (const s of sectionTitles) {
-    const mod = s.group;
-    if (mod) {
-      if (unassignedBuffer.length > 0) {
-        const fallback = 'General';
-        if (!moduleMap[fallback]) moduleMap[fallback] = { sections: [], label: fallback };
-        moduleMap[fallback].sections.push(...unassignedBuffer);
-        unassignedBuffer = [];
-      }
-      if (!moduleMap[mod]) moduleMap[mod] = { sections: [], label: mod };
-      moduleMap[mod].sections.push(s.title);
-    } else {
-      unassignedBuffer.push(s.title);
-    }
-  }
-
-  if (unassignedBuffer.length > 0) {
-    const label = sectionTitles[0].group || 'Module 1';
-    if (!moduleMap[label]) moduleMap[label] = { sections: [], label };
-    moduleMap[label].sections.push(...unassignedBuffer);
-  }
-
-  return Object.values(moduleMap).map((m, i) => ({
-    order: i,
-    title: m.label,
-    summary: `Covers: ${m.sections.slice(0, 3).join(', ')}${m.sections.length > 3 ? `, and ${m.sections.length - 3} more` : ''}`,
-    sectionCount: m.sections.length,
-    sections: m.sections,
-  }));
 }
 
 export function normalizeCourse(course) {

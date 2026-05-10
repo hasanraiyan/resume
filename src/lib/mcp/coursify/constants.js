@@ -28,7 +28,8 @@ This skill transforms Gemini CLI into a specialized Instructional Design Agent f
 ## Quick Start
 1. **Understand the Domain**: Review database models and block types.
 2. **Markdown-First Authoring**: Use the \`upsert_section\` tool to author content in raw Markdown with \`## [BlockType]\` headers.
-3. **Respect Publication Rules**: Always ensure the hierarchical visibility logic is maintained.
+3. **TOC Compatibility**: Always use \`##\` for primary headings and \`###\` for secondary headings to ensure the Table of Contents renders correctly.
+4. **Respect Publication Rules**: Always ensure the hierarchical visibility logic is maintained.
 
 ## Core Procedures
 
@@ -40,7 +41,8 @@ This skill transforms Gemini CLI into a specialized Instructional Design Agent f
 ### Authoring Content (Magic Markdown)
 Use the \`upsert_section\` tool to author sections.
 - **Headers**: Use \`## [MdBlock]\`, \`## [QuizBlock]\`, \`## [VideoBlock]\`, or \`## [ResourceBlock]\`.
-- **Interactivity**: Always include a \`QuizBlock\` to reinforce learning.
+- **Visuals**: Wrap Mermaid diagrams in standard \` \`\`\`mermaid \` code blocks within an \`MdBlock\`. Do NOT use a standalone \`[MermaidBlock]\`.
+- **Interactivity**: Always include a \`QuizBlock\` to reinforce learning. Use literal text mapping for \`correctAnswer\`.
 - **Media**: Embed relevant YouTube content via \`VideoBlock\`.
 
 ### Managing Publication
@@ -107,8 +109,8 @@ Use the \`upsert_section\` tool to author sections.
   instructionalDesignGuide: {
     markdownAuthoring: [
       'Write in a single Markdown string using ## [BlockType] headers.',
-      '## [MdBlock] — Standard text, support Mermaid, LaTeX, and GFM.',
-      '## [QuizBlock] — Follow the format: - question: "..." \\n options: ["A", "B"] \\n correctAnswer: "A".',
+      '## [MdBlock] — Standard text. Always use ## for primary headings to ensure TOC rendering. Support Mermaid (wrapped in code blocks), LaTeX ($...$), and GFM.',
+      '## [QuizBlock] — Follow format: - question: "..." \\n options: ["A", "B"] \\n correctAnswer: "A" (Literal text matching).',
       '## [VideoBlock] — Follow: url: "..." \\n title: "...".',
       '## [ResourceBlock] — Follow: url: "..." \\n title: "..." \\n type: "article".',
     ],
@@ -120,16 +122,25 @@ Use the \`upsert_section\` tool to author sections.
 
   diagramGuide: {
     rule: 'Use Mermaid diagrams instead of ASCII art for all visuals.',
-    renderer: 'The reader renders ```mermaid blocks automatically.',
+    renderer: 'The reader renders \`\`\`mermaid code blocks within an MdBlock automatically.',
     math: 'Use LaTeX syntax: $...$ for inline and $$...$$ for display math.',
   },
 
-  markdownTemplate: `## Learning Goals
+  markdownTemplate: `## [MdBlock]
+
+## Learning Goals
 - What the learner will be able to do after this section
 
 ## Core Concepts
 Explain the ideas clearly and concretely.
-Use a \`\`\`mermaid diagram when a visual helps.
+
+\`\`\`mermaid
+graph TD
+    A[Concept] --> B[Implementation]
+\`\`\`
+
+### Sub-topic Title
+Detailed explanation using Level 3 headings.
 
 ## Step-by-Step Walkthrough
 Break the work into teachable steps.
@@ -144,7 +155,15 @@ Give the learner a small exercise or reflection task.
 Call out likely misunderstandings and how to avoid them.
 
 ## Recap
-Summarize the section in a few crisp bullets.`,
+Summarize the section in a few crisp bullets.
+
+---
+
+## [QuizBlock]
+- question: "..."
+  options: ["A", "B"]
+  correctAnswer: "A"
+  explanation: "Reinforce the why."`,
 
   authoringStatusGuide: {
     idea: 'Initial spark — course not yet researched or planned.',
@@ -158,9 +177,10 @@ Summarize the section in a few crisp bullets.`,
 
   qualityBar: [
     'Write for the requested audience and difficulty.',
+    'Use ## for primary headings and ### for secondary headings for TOC rendering.',
     'Make the course actionable with projects or exercises.',
     'Prefer concrete examples over vague text.',
-    'Use ```mermaid for ALL visuals. Never use ASCII art.',
+    'Use \`\`\`mermaid code blocks within MdBlock for ALL visuals.',
     'Use LaTeX for all math formulas.',
   ],
 };

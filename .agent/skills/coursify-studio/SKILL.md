@@ -15,19 +15,22 @@ This skill transforms ai agent into a specialized Instructional Design Agent for
 
 ## Core Procedures
 
-### Planning a New Course
+### Planning & Progress Tracking
 
-- Define clear `learningGoals` at the section level.
-- Organize content into `CoursifyModule` groups for better structure.
-- Assign appropriate `difficulty` and `tags` for search optimization.
+- **Discovery**: Always call `courses list` first to avoid duplicates.
+- **Scratchpad**: Use the `agentNotes` field via `courses upsert` as your session scratchpad. Store current state (which module/section is next, decisions made, tasks remaining) to survive session interruptions.
+- **Auto-Planning**: Once an outline is defined in the course metadata, use `courses plan <id>` (coming soon) to generate module/section placeholders.
 
-### Authoring Content
+### Authoring Content (The Quality Bar)
 
-- **Text**: Use `MdBlock` with clear hierarchy (H1, H2, H3). **Note**: The `## [MdBlock]` header is required at the very top of your content file for the parser to recognize the first block correctly.
-- **Interactive**: Always include a `QuizBlock` to reinforce learning.
-- **Videos**: Embed relevant YouTube/GDrive content via `VideoBlock`.
+Follow the **Standardized Section Flow** in [pedagogy.md](references/pedagogy.md).
 
-**Important Parser Warning**: The current `QuizBlock` parser may incorrectly split options if they contain commas (e.g., `"Option, with comma"`). Avoid commas inside quiz option strings to ensure deterministic parsing.
+- **Depth**: Lessons must be **500-1200 words**. Be thorough and technical.
+- **TOC Compatibility**: Always use `##` for primary headings and `###` for secondary headings within `MdBlock`.
+- **Procedural Content**: **Mandatory usage** of `StepByStepBlock` for all setups, workflows, and multi-step processes. Do NOT use simple Markdown lists for procedures.
+- **Visuals**: Always wrap Mermaid diagrams in standard ` ```mermaid ` code blocks within an `MdBlock`.
+- **Interactivity**: Always end with a `QuizBlock` (3-5 questions). Use literal text mapping for `correctAnswer`.
+- **Magic Blocks**: Start files with `## [MdBlock]`. Use `## [BlockType]` headers for all transitions.
 
 ### Managing Publication
 

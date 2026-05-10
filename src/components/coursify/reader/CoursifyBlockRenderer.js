@@ -11,9 +11,10 @@ function ResourceBlock({ block }) {
   if (!url) return null;
 
   const Icon = type === 'video' ? PlayCircle : type === 'doc' ? FileText : ExternalLink;
+  const displayTitle = title || 'Resource';
 
   return (
-    <div className="my-4">
+    <div className="my-4" id={getSlug(displayTitle)} data-heading={displayTitle}>
       <a
         href={url}
         target="_blank"
@@ -24,13 +25,25 @@ function ResourceBlock({ block }) {
           <Icon className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-[#1e3a34] truncate">{title || 'Resource'}</p>
+          <p className="font-bold text-[#1e3a34] truncate">{displayTitle}</p>
           <p className="text-xs text-[#7c8e88] capitalize">{type || 'link'}</p>
         </div>
         <ExternalLink className="w-4 h-4 text-[#b5c4be]" />
       </a>
     </div>
   );
+}
+
+/**
+ * Standardizes slug generation for TOC anchors.
+ */
+function getSlug(text) {
+  return String(text || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 export function CoursifyBlockRenderer({ blocks }) {

@@ -45,6 +45,21 @@ function extractTextContent(children) {
   return '';
 }
 
+/**
+ * Helper to create heading components with ID and data-heading.
+ */
+function createHeading(Level) {
+  return ({ children, ...props }) => {
+    const text = extractTextContent(children).trim();
+    const slug = getSlug(text);
+    return (
+      <Level id={slug} data-heading={text} className="scroll-mt-24" {...props}>
+        {children}
+      </Level>
+    );
+  };
+}
+
 export const MarkdownRenderer = memo(function MarkdownRenderer({ content }) {
   return (
     <div className="coursify-md prose prose-sm max-w-none min-w-0 overflow-x-hidden font-[family-name:var(--font-lora)] prose-headings:font-bold prose-headings:text-[#1e3a34] prose-p:text-[#1e3a34] prose-p:leading-relaxed prose-code:bg-[#f0f5f2] prose-code:rounded prose-code:px-1 prose-code:text-[#1f644e] prose-pre:bg-[#1e3a34] prose-pre:rounded-xl prose-blockquote:border-[#1f644e] prose-a:text-[#1f644e] prose-li:text-[#1e3a34] prose-strong:text-[#1e3a34] prose-table:text-sm">
@@ -52,24 +67,10 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({ content }) {
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeRaw, rehypeKatex]}
         components={{
-          h2({ children, ...props }) {
-            const text = extractTextContent(children);
-            const slug = getSlug(text);
-            return (
-              <h2 id={slug} data-heading={text} className="scroll-mt-24" {...props}>
-                {children}
-              </h2>
-            );
-          },
-          h3({ children, ...props }) {
-            const text = extractTextContent(children);
-            const slug = getSlug(text);
-            return (
-              <h3 id={slug} data-heading={text} className="scroll-mt-24" {...props}>
-                {children}
-              </h3>
-            );
-          },
+          h1: createHeading('h1'),
+          h2: createHeading('h2'),
+          h3: createHeading('h3'),
+          h4: createHeading('h4'),
           table({ children }) {
             return (
               <div className="coursify-table-scroll overflow-x-auto my-7 rounded-xl border border-[#e5e3d8]">

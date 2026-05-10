@@ -16,7 +16,6 @@ import {
   normalizeCourse,
   normalizeModule,
   normalizeSection,
-  parseOutlineToModules,
   parseMarkdownToBlocks,
 } from '@/lib/mcp/coursify/utils.js';
 
@@ -598,43 +597,6 @@ export async function dbResearchFindings({ courseId, findings }) {
     { $push: { researchNotes: { $each: notes } }, $inc: { syncVersion: 1 } }
   );
   return { count: notes.length };
-}
-
-export async function dbApplySuggestedModules({ courseId }) {
-  await dbConnect();
-  const course = await CoursifyCourse.findOne({ _id: courseId, deletedAt: null }).lean();
-  if (!course) throw new Error('Course not found.');
-  if (!course.outline) throw new Error('No course outline found.');
-
-  const suggestions = parseOutlineToModules(course.outline);
-  if (suggestions.length === 0) throw new Error('Could not parse section titles from outline.');
-
-  const createdModules = [];
-  for (const suggestion of suggestions) {
-    const newModule = await CoursifyModule.create({
-      courseId,
-      title: suggestion.title,
-      summary: suggestion.summary,
-      order: suggestion.order,
-    });
-    createdModules.push(newModule);
-
-    const sectionDocs = suggestion.sections.map((title, i) => ({
-      courseId,
-      moduleId: newModule._id,
-      title,
-      blocks: [],
-      order: i,
-      status: 'planned',
-    }));
-    await CoursifySection.insertMany(sectionDocs);
-  }
-
-  await CoursifyCourse.updateOne({ _id: courseId, deletedAt: null }, { $inc: { syncVersion: 1 } });
-  return {
-    modulesCreated: createdModules.length,
-    moduleIds: createdModules.map((m) => m._id.toString()),
-  };
 }
 
 export async function dbSearchCourses({ query }) {

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 
 /**
  * Standardizes slug generation for TOC anchors.
+ * Must match the implementation in components like MarkdownRenderer.
  */
 function getSlug(text) {
   return String(text || '')
@@ -12,53 +13,64 @@ function getSlug(text) {
     .replace(/^-+|-+$/g, '');
 }
 
+/**
+ * Robustly extracts headings from a list of blocks.
+ */
 export function useTableOfContents(blocks, contentRef, scrollContainerRef) {
   const [activeHeading, setActiveHeading] = useState(null);
 
-  // Memoize heading extraction to prevent unnecessary re-renders and infinite loops
   const headings = useMemo(() => {
     if (!blocks || !Array.isArray(blocks)) return [];
 
+    // 1. Sort blocks by order to ensure TOC follows document flow
+    const sortedBlocks = [...blocks].sort((a, b) => (a.order || 0) - (b.order || 0));
+
     const extracted = [];
-    blocks.forEach((block) => {
+    sortedBlocks.forEach((block) => {
       if (block.type === 'MdBlock' && block.content) {
-        const lines = block.content.split('\n');
+        // Support both \n and \r\n
+        const lines = block.content.split(/\r?\n/);
         for (const line of lines) {
-          const h2Match = line.match(/^##\s+(.+)$/);
-          const h3Match = line.match(/^###\s+(.+)$/);
-          if (h2Match) {
-            const text = h2Match[1].trim().replace(/[*_~`]/g, '');
-            extracted.push({ level: 2, text, slug: getSlug(text), type: 'md' });
-          } else if (h3Match) {
-            const text = h3Match[1].trim().replace(/[*_~`]/g, '');
-            extracted.push({ level: 3, text, slug: getSlug(text), type: 'md' });
+          const trimmedLine = line.trim();
+          // Regex for headings: Level 1-4
+          // Allows 1-3 spaces before hashes as per Markdown spec
+          const headingMatch = trimmedLine.match(/^(#{1,4})\s+(.+)$/);
+
+          if (headingMatch) {
+            const level = headingMatch[1].length;
+            // Clean markdown formatting from heading text
+            const text = headingMatch[2].trim().replace(/[*_~`]/g, '');
+            extracted.push({ level, text, slug: getSlug(text), type: 'md' });
           }
         }
       } else if (block.type === 'StepByStepBlock' && block.title) {
-        extracted.push({ level: 3, text: block.title, slug: getSlug(block.title), type: 'step' });
+        const text = block.title.trim();
+        extracted.push({ level: 2, text, slug: getSlug(text), type: 'step' });
       } else if (block.type === 'VideoBlock' && block.video?.title) {
+        const text = block.video.title.trim();
         extracted.push({
-          level: 3,
-          text: block.video.title,
-          slug: getSlug(block.video.title),
+          level: 2,
+          text,
+          slug: getSlug(text),
           type: 'video',
         });
       } else if (block.type === 'ResourceBlock' && block.resource?.title) {
+        const text = block.resource.title.trim();
         extracted.push({
           level: 3,
-          text: block.resource.title,
-          slug: getSlug(block.resource.title),
+          text,
+          slug: getSlug(text),
           type: 'resource',
         });
       } else if (block.type === 'QuizBlock') {
-        const text = block.title || 'Knowledge Check';
-        extracted.push({ level: 3, text, slug: getSlug(text), type: 'quiz' });
+        const text = (block.title || 'Knowledge Check').trim();
+        extracted.push({ level: 2, text, slug: getSlug(text), type: 'quiz' });
       }
     });
     return extracted;
   }, [blocks]);
 
-  // Update initial active heading when headings change
+  // Update initial active heading
   useEffect(() => {
     if (headings.length > 0 && !activeHeading) {
       setActiveHeading(headings[0].text);
@@ -72,26 +84,31 @@ export function useTableOfContents(blocks, contentRef, scrollContainerRef) {
     const scrollEl = scrollContainerRef.current;
 
     const updateActive = () => {
+      // Find all elements with data-heading in the content article
       const headingEls = contentRef.current?.querySelectorAll('[data-heading]');
       if (!headingEls?.length) return;
 
       const containerTop = scrollEl.getBoundingClientRect().top;
-      const threshold = containerTop + 120;
+      const threshold = containerTop + 120; // 120px offset for active detection
 
       let active = null;
       for (const el of headingEls) {
         if (el.getBoundingClientRect().top <= threshold) {
           active = el.getAttribute('data-heading');
         } else {
+          // Once we pass the threshold, the previous one was the active one
           break;
         }
       }
 
       const currentActive = active ?? headingEls[0]?.getAttribute('data-heading') ?? null;
-      setActiveHeading((prev) => (prev !== currentActive ? currentActive : prev));
+      if (currentActive) {
+        setActiveHeading(currentActive);
+      }
     };
 
     scrollEl.addEventListener('scroll', updateActive, { passive: true });
+    // Initial check
     updateActive();
 
     return () => scrollEl.removeEventListener('scroll', updateActive);
