@@ -23,6 +23,7 @@ export async function POST(request, { params }) {
 
     revalidatePath('/coursify');
     revalidatePath(`/coursify/${updated.slug}`);
+    revalidatePath('/');
 
     return NextResponse.json({
       success: true,

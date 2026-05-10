@@ -11,7 +11,7 @@ export function ReaderNavigation({ sections, activeSection, onNavigate }) {
   if (!prev && !next) return null;
 
   return (
-    <div className="mt-10 pt-6 border-t border-[#e5e3d8] flex items-center justify-between gap-4">
+    <div className="mt-10 pt-6 pb-20 border-t border-[#e5e3d8] flex items-center justify-between gap-4">
       {prev ? (
         <button
           onClick={() => onNavigate(prev._id)}
