@@ -1,11 +1,4 @@
-import {
-  File,
-  Image as ImageIcon,
-  Video,
-  FileText,
-  FileArchive,
-  FileCode,
-} from 'lucide-react';
+import { File, Image as ImageIcon, Video, FileText, FileArchive, FileCode } from 'lucide-react';
 import React from 'react';
 
 export const getFileIcon = (mimeType) => {
