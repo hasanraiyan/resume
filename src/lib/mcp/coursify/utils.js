@@ -63,7 +63,7 @@ export function parseMarkdownToBlocks(text) {
       const urlMatch = rawContent.match(/url:\s*(.*)/);
       const titleMatch = rawContent.match(/title:\s*(.*)/);
       block.video = {
-        url: urlMatch?.[1].trim() || '',
+        url: urlMatch?.[1].trim().replace(/^["'](.*)["']$/, '$1') || '',
         title: titleMatch?.[1].trim().replace(/^["'](.*)["']$/, '$1') || '',
         platform: 'youtube',
       };
@@ -72,7 +72,7 @@ export function parseMarkdownToBlocks(text) {
       const titleMatch = rawContent.match(/title:\s*(.*)/);
       const typeMatch = rawContent.match(/type:\s*(.*)/);
       block.resource = {
-        url: urlMatch?.[1].trim() || '',
+        url: urlMatch?.[1].trim().replace(/^["'](.*)["']$/, '$1') || '',
         title: titleMatch?.[1].trim().replace(/^["'](.*)["']$/, '$1') || '',
         type: typeMatch?.[1].trim() || 'other',
       };

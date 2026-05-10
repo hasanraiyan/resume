@@ -27,7 +27,7 @@ This skill transforms Gemini CLI into a specialized Instructional Design Agent f
 
 ## Quick Start
 1. **Understand the Domain**: Review database models and block types.
-2. **Markdown-First Authoring**: Use the \`write_section\` tool to author content in raw Markdown with \`## [BlockType]\` headers.
+2. **Markdown-First Authoring**: Use the \`upsert_section\` tool to author content in raw Markdown with \`## [BlockType]\` headers.
 3. **Respect Publication Rules**: Always ensure the hierarchical visibility logic is maintained.
 
 ## Core Procedures
@@ -38,7 +38,7 @@ This skill transforms Gemini CLI into a specialized Instructional Design Agent f
 - Assign appropriate \`difficulty\` and \`tags\` for search optimization.
 
 ### Authoring Content (Magic Markdown)
-Use the \`write_section\` tool to author sections. This saves a local file and syncs the DB automatically.
+Use the \`upsert_section\` tool to author sections.
 - **Headers**: Use \`## [MdBlock]\`, \`## [QuizBlock]\`, \`## [VideoBlock]\`, or \`## [ResourceBlock]\`.
 - **Interactivity**: Always include a \`QuizBlock\` to reinforce learning.
 - **Media**: Embed relevant YouTube content via \`VideoBlock\`.
@@ -72,11 +72,11 @@ Use the \`write_section\` tool to author sections. This saves a local file and s
   workflow: [
     '0. SESSION RESUME — If the user says "continue my course" and you do not have a courseId in context, follow the sessionResumeWorkflow above.',
     '1. DISCOVERY — Call list_courses first to avoid duplicate topics. Decide whether to create a new course or update an existing draft. If updating, call get_course with all include flags.',
-    '2. PREP — Call get_authoring_guide (you already have it). Read the quality bar and the "write_section" tool guide.',
+    '2. PREP — Call get_authoring_guide (you already have it). Read the quality bar and the "upsert_section" tool guide.',
     '3. RESEARCH — Gather information. Call manage_research to save all findings (up to 20 findings per call). Set authoringStatus to "researching" via upsert_course.',
     '4. PLAN — Call upsert_course to define targetAudience, learningObjectives, prerequisites, outcome, and a Markdown outline. Set authoringStatus to "planned".',
-    '5. STRUCTURE — Call upsert_module to create modules, then upsert_section(batch: []) to add planned section placeholders under each module.',
-    '6. WRITE — Use write_section as your primary tool. Provide raw Markdown with ## [BlockType] headers (## [MdBlock], ## [QuizBlock], ## [VideoBlock], ## [ResourceBlock]). This tool saves a local file for the user and syncs the DB automatically. Set authoringStatus to "drafting" when you begin. Save progress to agentNotes after each section.',
+    '5. STRUCTURE — Call upsert_module to create modules, then upsert_section to add planned section placeholders under each module one by one.',
+    '6. WRITE — Use upsert_section as your primary tool. Provide raw Markdown in the "content" field using ## [BlockType] headers (## [MdBlock], ## [QuizBlock], ## [VideoBlock], ## [ResourceBlock]). This tool parses the text into structured blocks and syncs the DB. Set authoringStatus to "drafting" when you begin. Save progress to agentNotes after each section.',
     '7. REVIEW — Call get_course(includeProgress: true) to identify gaps. Use get_section(id) to read single section bodies for revision.',
     '8. FINALIZE — When all sections are written, set authoringStatus to "reviewing" via upsert_course. Content is automatically marked reviewing when all sections are "complete".',
     '9. PUBLISH — Set status: "published" via upsert_course only after the user explicitly asks to publish.',
@@ -88,12 +88,11 @@ Use the \`write_section\` tool to author sections. This saves a local file and s
     upsertCourse:
       'upsert_course({ id, ...fields }) — create/update metadata, plan, agentNotes, or status.',
     upsertModule: 'upsert_module({ id, ...fields }) — create/update module structure.',
-    writeSection:
-      'write_section({ courseId, title, content, ... }) — PRIMARY TOOL. Saves local .md file and syncs DB using magic blocks.',
     upsertSection:
-      'upsert_section({ id, ...fields, content: "..." }) — alternative for direct DB updates without local file creation.',
+      'upsert_section({ id, ...fields, content: "..." }) — PRIMARY TOOL. Parses magic blocks (## [BlockType]) and syncs DB.',
     manageResearch: 'manage_research({ courseId, findings[] }) — save research findings.',
     reorder: 'reorder_modules(...) or reorder_sections(...) — change display order.',
+    bulkDelete: 'delete_courses([ids]), delete_modules([ids]), or delete_sections([ids]).',
   },
 
   courseShape: {
