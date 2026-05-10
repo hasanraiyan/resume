@@ -10,8 +10,9 @@ This skill transforms Gemini CLI into a specialized Instructional Design Agent f
 ## Quick Start
 
 1. **Understand the Domain**: Review [schemas.md](references/schemas.md) for database models, relationships, and block types (includes class diagram).
-2. **Follow Best Practices**: Use the pedagogical flow outlined in [workflows.md](references/workflows.md) (includes flowchart).
-3. **Generate Deliverables**: Author content using the structured template for Magic Import.
+2. **Pedagogical Strategy**: Review [pedagogy.md](references/pedagogy.md) for the "Concept-Context-Check" framework and scaffolding rules.
+3. **Follow Best Practices**: Use the pedagogical flow outlined in [workflows.md](references/workflows.md) (includes flowchart).
+4. **Generate Deliverables**: Author content using the structured template for Magic Import.
 
 ## Core Procedures
 
@@ -28,8 +29,55 @@ This skill transforms Gemini CLI into a specialized Instructional Design Agent f
 - **Interactive**: Always include a `QuizBlock` to reinforce learning.
 - **Videos**: Embed relevant YouTube/GDrive content via `VideoBlock`.
 - **Procedures**: Use `StepByStepBlock` for all multi-step instructions, protocol handshakes, data flows, or project timelines.
-  - Each step MUST have a concise `title`.
-  - The `content` should explain the "Why" and "How" using Markdown.
+
+### Block-Specific Authoring Guide
+
+The agent must optimize each block type using these specific standards:
+
+#### **1. MdBlock (The Foundation)**
+
+- **Structure**: Start with an `###` H3 header for the block's main topic.
+- **Micro-Copy**: Use short, punchy sentences. Use `> [!TIP]` style callouts (within the markdown) to highlight critical engineering facts.
+- **Formatting**: Use tables for data comparisons and `code` spans for technical terms (e.g., `802.11ax`).
+- **Diagrams**: Place Mermaid diagrams _inside_ MdBlocks, usually immediately after the introductory paragraph.
+
+#### **2. VideoBlock (The Demonstration)**
+
+- **Placement**: Place near the top of the section if it's an overview, or immediately after a complex `MdBlock` if it's a specific demonstration.
+- **Metadata**: Always provide a descriptive `title` (e.g., "Lab: Configuring a VLAN").
+
+#### **3. StepByStepBlock (The Flow)**
+
+- **Usage**: Mandatory for any concept involving a sequence of events.
+- **Atomicity**: Each step must represent one discrete action or state.
+- **Content**: The `content` field should be 1-2 paragraphs max. Use it to explain the "internal mechanics" of that specific step.
+- **Example**: Use for "The 4-Step DHCP Handshake" or "Building a Cat6 Cable."
+
+#### **4. QuizBlock (The Validation)**
+
+- **Diversity**: Mix `multiple_choice` (conceptual) with `true_false` (fact-checking).
+- **Feedback**: Every question MUST have an `explanation`. Do not just say "Correct"; explain _why_ the concept works that way.
+- **Points**: Standardize to `1` point for standard questions, `2` for complex calculations.
+
+#### **5. ResourceBlock (The Extension)**
+
+- **Relevance**: Only include high-authority links (e.g., RFC documents, MDN, Cisco Whitepapers).
+- **Categorization**: Use the correct `type`: `doc` for manuals, `video` for supplemental clips, `article` for blogs.
+
+### Technical Writing Standards
+
+- **Voice**: Maintain a professional, authoritative, yet accessible voice. Use "we" or "let's" to create a collaborative learning environment.
+- **Precision**: Use exact terminology (e.g., "Full-Duplex" instead of "Two-way").
+- **Clarity**: Keep paragraphs short (3-5 lines). Use **bolding** for key terms on first mention.
+- **Tone**: Engineering-focused. Avoid excessive fluff or conversational filler.
+
+### Deep Learning Patterns (Pedagogy)
+
+The agent must implement these patterns from [pedagogy.md](references/pedagogy.md):
+
+- **Concept-Context-Check**: Each major concept should be followed by a demo and a quick assessment.
+- **Scaffolding**: Always link the current section's concepts to those learned in the previous section.
+- **Visual Mental Maps**: Use Mermaid diagrams early in a section to provide a structural overview.
 
 ### Visual Communication (Mermaid)
 
