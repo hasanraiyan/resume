@@ -16,9 +16,9 @@ export function PublicCourseCard({ course }) {
   return (
     <button
       onClick={() => router.push(`/coursify/${course.slug || course.id || course._id}`)}
-      className="group text-left bg-white border border-[#e5e3d8] rounded-2xl overflow-hidden hover:shadow-lg hover:border-[#1f644e]/30 transition-all duration-200 flex flex-col w-full"
+      className="group text-left bg-white border border-[#e5e3d8] rounded-2xl overflow-hidden hover:shadow-lg hover:border-[#1f644e]/30 transition-all duration-200 flex flex-col w-full h-full"
     >
-      <div className="w-full h-40 sm:h-44 bg-gradient-to-br from-[#1f644e] to-[#2d8a6a] relative overflow-hidden shrink-0">
+      <div className="w-full h-40 sm:h-44 bg-[#1f644e] relative overflow-hidden shrink-0">
         {course.thumbnail ? (
           <Image
             src={course.thumbnail}
@@ -50,7 +50,7 @@ export function PublicCourseCard({ course }) {
       </div>
 
       <div className="p-4 flex flex-col flex-1 gap-2">
-        <h2 className="font-bold text-[#1e3a34] text-sm leading-snug group-hover:text-[#1f644e] transition-colors line-clamp-2">
+        <h2 className="font-bold text-[#1e3a34] text-sm leading-snug group-hover:text-[#1f644e] transition-colors line-clamp-1">
           {course.title}
         </h2>
         {course.description && (
