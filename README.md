@@ -83,7 +83,6 @@ An AI-native course authoring platform powered by the Model Context Protocol.
 
 ![Coursify](./public/images/apps/coursify.png)
 
-> [!TIP]
 > Read the [Coursify MCP Documentation](./docs/coursify-mcp.md) for detailed tool references and workflows.
 
 ---

@@ -37,7 +37,7 @@ The agent must optimize each block type using these specific standards:
 #### **1. MdBlock (The Foundation)**
 
 - **Structure**: Every section should ideally start with an introductory `MdBlock` to set the context.
-- **Micro-Copy**: Use short, punchy sentences. Use `> [!TIP]` style callouts (within the markdown) to highlight critical engineering facts.
+- **Micro-Copy**: Use short, punchy sentences. Use `` style callouts (within the markdown) to highlight critical engineering facts.
 - **Formatting**: Use tables for data comparisons and `code` spans for technical terms (e.g., `802.11ax`).
 - **Diagrams**: Place Mermaid diagrams _inside_ MdBlocks, usually immediately after the introductory paragraph.
 
@@ -62,14 +62,13 @@ The agent must optimize each block type using these specific standards:
 #### **5. ResourceBlock (The Extension)**
 
 - **Relevance**: Only include high-authority links (e.g., RFC documents, MDN, Cisco Whitepapers).
-- **Categorization**: Use the correct `type`: `doc` for manuals, `video` for supplemental clips, `article` for blogs.
+- **Categorization**: Use the correct `type` WITHOUT quotes: `doc` for manuals, `video` for supplemental clips, `article` for blogs.
 
 ### Technical Writing Standards
 
 - **Voice**: Professional, authoritative, yet accessible. Engineering-focused.
 - **Tone**: Direct and concise. Avoid conversational fluff.
-- **Precision**: Use exact terminology (e.g., "Full-Duplex").
-- **Clarity**: Paragraphs should be 3-5 lines max. **Bold** key terms on first mention.
+- **Metadata**: NEVER wrap enum values (status, difficulty, type) in quotes in the Markdown output.
 
 ### Deliverable Format (Magic Import)
 
@@ -79,13 +78,13 @@ The final output of any authoring task MUST be a structured Markdown block (or f
 
 ```markdown
 ---
-title: 'Section Title'
-summary: 'High-level overview of the section.'
+title: Section Title
+summary: High-level overview of the section.
 learningGoals:
-  - 'Goal 1'
-  - 'Goal 2'
-estimatedDuration: '20 mins'
-status: 'complete'
+  - Goal 1
+  - Goal 2
+estimatedDuration: 20 mins
+status: complete
 ---
 
 # Blocks
@@ -103,27 +102,27 @@ title: Video Title Without Quotes
 
 ## [StepByStepBlock]
 
-title: "Process Heading"
+title: Process Heading
 showNumbering: true
 
-- step: "Phase 1 Title"
-  content: "Detailed explanation of phase 1.\n\nUse literal backslash-n for newlines."
-- step: "Phase 2 Title"
-  content: "Detailed explanation of phase 2."
+- step: Phase 1 Title
+  content: Detailed explanation of phase 1.\n\nUse literal backslash-n for newlines.
+- step: Phase 2 Title
+  content: Detailed explanation of phase 2.
 
 ## [QuizBlock]
 
-title: "Knowledge Check"
+title: Knowledge Check
 
-- question: "Which protocol is connectionless?"
-  type: "multiple_choice"
+- question: Which protocol is connectionless?
+  type: multiple_choice
   options: ["TCP", "UDP", "HTTP", "FTP"]
-  correctAnswer: "UDP"
-  explanation: "UDP is connectionless because it does not perform a handshake before sending data."
+  correctAnswer: UDP
+  explanation: UDP is connectionless because it does not perform a handshake before sending data.
 
 ## [ResourceBlock]
 
 url: https://...
-title: "Reference Title"
-type: "doc"
+title: Reference Title
+type: doc
 ```
