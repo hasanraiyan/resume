@@ -5,7 +5,25 @@ description: Specialized instructional design and course authoring for the Cours
 
 # Coursify Studio
 
-This skill transforms the agent into a specialized **Instructional Design Agent** for the Coursify platform, emphasizing a **Local-First Authoring Workflow** using the `@coursify/cli` tool.
+This skill transforms the agent into a specialized **Instructional Design Agent** for the Coursify platform, emphasizing a **Local-First Authoring Workflow** using the `@coursify/cli` npm package.
+
+## Setup & Configuration
+
+Before you begin authoring, ensure the CLI is installed and configured.
+
+```bash
+# Install the CLI globally
+npm install -g @coursify/cli
+
+# Initialize the configuration
+coursify setup init
+
+# Set the base URL for the server
+coursify setup set-base-url https://hasanraiyan.me
+
+# Authenticate
+coursify auth login
+```
 
 ## Local-First Workflow (Recommended)
 
@@ -16,7 +34,7 @@ Authoring courses locally in an IDE provides the best experience for technical c
 Start by scaffolding a new course directory:
 
 ```bash
-node packages/coursify-cli/bin/coursify.js init "My Awesome Course"
+coursify init "My Awesome Course"
 cd "my-awesome-course"
 ```
 
@@ -26,13 +44,13 @@ Add modules and sections using the scaffolding commands:
 
 ```bash
 # Add a module
-node ../packages/coursify-cli/bin/coursify.js init-module "Getting Started" --order 1
+coursify init-module "Getting Started" --order 1
 
 # Add a section to that module
-node ../packages/coursify-cli/bin/coursify.js init-section "Introduction" --module m1-getting-started --order 1 --type standard
+coursify init-section "Introduction" --module m1-getting-started --order 1 --type standard
 
 # Add a lab/procedural section
-node ../packages/coursify-cli/bin/coursify.js init-section "Setup Lab" --module m1-getting-started --order 2 --type lab
+coursify init-section "Setup Lab" --module m1-getting-started --order 2 --type lab
 ```
 
 ### 3. Authoring Content (Magic Blocks)
@@ -49,37 +67,33 @@ Edit the `data.md` files in each section. Follow the **Standardized Section Flow
 Always validate your content before syncing to ensure TOC compatibility and block integrity:
 
 ```bash
-node ../packages/coursify-cli/bin/coursify.js validate .
+coursify validate .
 ```
 
 ### 5. Deployment (Syncing to Server)
 
 Authenticate and then publish your course.
 
-**Authentication:**
+**Authentication Check:**
 
 ```bash
-# Production (hasanraiyan.me)
-node packages/coursify-cli/bin/coursify.js auth login
-
-# Development (localhost:3000)
-node packages/coursify-cli/bin/coursify.js auth login --dev
+coursify auth status
 ```
 
 **Syncing:**
 
 ```bash
 # Preview changes (Dry Run)
-node packages/coursify-cli/bin/coursify.js publish . --dry-run
+coursify publish . --dry-run
 
 # Sync to production
-node packages/coursify-cli/bin/coursify.js publish .
-
-# Sync to development
-node packages/coursify-cli/bin/coursify.js publish . --dev
+coursify publish .
 
 # Sync and immediately mark as published on the UI
-node packages/coursify-cli/bin/coursify.js publish . --publish
+coursify publish . --publish
+
+# Verbose mode for debugging
+coursify publish . --verbose
 ```
 
 ## Core Procedures for Agents
@@ -89,21 +103,22 @@ node packages/coursify-cli/bin/coursify.js publish . --publish
 - **Slug-based Updates**: Use a unique `slug` in your `info.yaml`. The CLI will automatically find and update the existing course on the server if the slug matches, preventing duplicate courses.
 - **ID Overrides**: If you have a specific Database ID, you can provide it in `info.yaml` as `id: "your-id"`.
 
-### Observability & Debugging
-
-If a sync fails or you see "Resource not found" errors, use the `--verbose` flag to see the raw communication:
-
-```bash
-node packages/coursify-cli/bin/coursify.js publish . --verbose
-```
-
 ### Pedagogy Standards
 
-- **Depth**: Lessons must be thorough and technical.
+- **Depth**: Lessons must be thorough and technical (500-1200 words).
 - **TOC Compatibility**: **NEVER** use Level 1 headers (`#`) inside a section's Markdown. Always start with `##`.
 - **Interactivity**: Every section should ideally end with a `QuizBlock`.
 
 ## Troubleshooting
 
-- **Unauthorized**: Run `coursify auth login` again. Tokens expire every 60 minutes but should refresh automatically if you have a refresh token.
+- **Unauthorized**: Run `coursify auth login` again.
 - **Validation Errors**: Check for Level 1 headers or missing `correctAnswer` in Quizzes.
+- **Configuration issues**: Run `coursify setup show` to see current settings.
+
+## Skill Resources
+
+For detailed guidance, refer to the following files in the `references/` directory:
+
+- `pedagogy.md`: Standards for high-fidelity technical content.
+- `schemas.md`: Data models and Magic Block syntax.
+- `workflows.md`: Detailed authoring and publishing workflows.

@@ -78,12 +78,19 @@ Agents and developers can architect entire courses offline using a structured di
 - **Frontmatter**: `title`, `description`, `status`, `order`, `estimatedDuration`, `learningGoals` (list), `resources` (list).
 - **Body**: Standard Magic Blocks (e.g., `## [MdBlock]`, `## [QuizBlock]`).
 
-### Packaging & Importing
+### Packaging & Publishing
 
-Run the packager to create `course-bundle.json`:
+Use the CLI to publish your course directly to the platform. The CLI handles packaging, validation, and syncing in one step.
 
 ```bash
-node scripts/coursify-package.mjs "My Course"
+# Preview changes without uploading
+coursify publish . --dry-run
+
+# Sync to production
+coursify publish .
+
+# Sync and immediately mark as published on the UI
+coursify publish . --publish
 ```
 
-Import this file through the **\"Import Bundle\"** button on the platform to create or update the course in the database.
+The CLI will automatically find or create the course on the server based on the `slug` in your `info.yaml`.
