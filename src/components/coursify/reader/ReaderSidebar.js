@@ -1,5 +1,7 @@
-import { X, BookOpen, ChevronRight, ScrollText, Plus, Trash2, Pencil } from 'lucide-react';
+import { X, BookOpen, ChevronRight, ScrollText, Plus, Trash2, Pencil, Upload } from 'lucide-react';
 import { QuizIcon } from './icons';
+import { useState } from 'react';
+import ImportBundleModal from '../ImportBundleModal';
 
 /**
  * Shared Sidebar for the Coursify Reader.
@@ -23,6 +25,8 @@ export function ReaderSidebar({
   onEditModule,
   onDeleteModule,
 }) {
+  const [showImport, setShowImport] = useState(false);
+
   return (
     <>
       {/* Mobile overlay */}
@@ -224,10 +228,17 @@ export function ReaderSidebar({
 
         {/* Footer actions (e.g. Add Module) */}
         {editMode && (
-          <div className="p-3 border-t border-[#e5e3d8]">
+          <div className="p-3 border-t border-[#e5e3d8] space-y-2">
+            <button
+              onClick={() => setShowImport(true)}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-[#fcfbf5] border border-[#e5e3d8] text-xs font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] transition-colors"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              Import Bundle
+            </button>
             <button
               onClick={onAddModule}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed border-[#e5e3d8] text-xs font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] transition-colors"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border-2 border-dashed border-[#e5e3d8] text-xs font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
               Add Module
@@ -235,6 +246,16 @@ export function ReaderSidebar({
           </div>
         )}
       </aside>
+
+      {showImport && (
+        <ImportBundleModal
+          courseId={course.id || course._id}
+          onClose={() => setShowImport(false)}
+          onSuccess={() => {
+            window.location.reload(); // Refresh to show new structure
+          }}
+        />
+      )}
     </>
   );
 }

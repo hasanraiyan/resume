@@ -13,10 +13,12 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  Upload,
 } from 'lucide-react';
 import { CoursifyProvider, useCoursify } from '@/context/CoursifyContext';
 import CourseCard from '@/components/coursify/CourseCard';
 import CreateCourseModal from '@/components/coursify/CreateCourseModal';
+import ImportBundleModal from '@/components/coursify/ImportBundleModal';
 import SessionProvider from '@/components/SessionProvider';
 
 const pacifico = Pacifico({
@@ -61,6 +63,7 @@ function CoursifyApp() {
   const router = useRouter();
   const { isLoading, courses, refresh } = useCoursify();
   const [showCreate, setShowCreate] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [query, setQuery] = useState('');
   const [activeQuery, setActiveQuery] = useState('');
   const [difficulty, setDifficulty] = useState('all');
@@ -140,6 +143,13 @@ function CoursifyApp() {
             className="p-2 rounded-xl text-[#7c8e88] hover:text-[#1f644e] hover:bg-[#f0f5f2] transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setShowImport(true)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-white border border-[#e5e3d8] text-[#7c8e88] rounded-xl text-sm font-bold hover:border-[#1f644e] hover:text-[#1f644e] active:scale-95 transition-all"
+          >
+            <Upload className="w-3.5 h-3.5" />
+            Import
           </button>
           <button
             onClick={() => setShowCreate(true)}
@@ -369,6 +379,16 @@ function CoursifyApp() {
         <CreateCourseModal
           onClose={() => setShowCreate(false)}
           onCreated={(course) => router.push(`/apps/coursify/${course._id}`)}
+        />
+      )}
+
+      {showImport && (
+        <ImportBundleModal
+          onClose={() => setShowImport(false)}
+          onSuccess={(courseId) => {
+            router.push(`/apps/coursify/${courseId}`);
+            refresh();
+          }}
         />
       )}
     </div>
