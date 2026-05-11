@@ -1,7 +1,7 @@
 import { requireAdminAuth } from '@/lib/money-auth';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
-import { dbReorderModules } from '@/lib/coursify/db-ops';
+import { dbReorderSections } from '@/lib/coursify/db-ops';
 
 export async function POST(request, { params }) {
   const auth = await requireAdminAuth(request);
@@ -11,18 +11,19 @@ export async function POST(request, { params }) {
     await dbConnect();
     const { id: courseId } = await params;
     const body = await request.json();
-    const { moduleIds } = body;
+    const { sectionIds, moduleId } = body;
 
-    if (!Array.isArray(moduleIds) || moduleIds.length === 0) {
+    if (!Array.isArray(sectionIds) || sectionIds.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'moduleIds must be a non-empty array' },
+        { success: false, error: 'sectionIds must be a non-empty array' },
         { status: 400 }
       );
     }
 
-    const result = await dbReorderModules({
+    const result = await dbReorderSections({
       courseId,
-      moduleIds,
+      sectionIds,
+      moduleId,
     });
 
     return NextResponse.json({ success: true, ...result });

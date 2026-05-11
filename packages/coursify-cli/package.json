@@ -1,0 +1,23 @@
+{
+  "name": "@coursify/cli",
+  "version": "1.0.0",
+  "description": "Standalone CLI for Coursify",
+  "main": "src/index.js",
+  "bin": {
+    "coursify": "./src/index.js"
+  },
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "commander": "latest",
+    "conf": "latest",
+    "undici": "latest",
+    "chalk": "latest",
+    "ora": "latest",
+    "enquirer": "latest",
+    "date-fns": "latest",
+    "boxen": "latest"
+  }
+}
