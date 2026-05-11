@@ -6,7 +6,12 @@ import {
   exchangeCodeForTokens,
   registerClient,
 } from './oauth.js';
-import { loadCredentials, saveCredentials, clearCredentials } from './token-store.js';
+import {
+  loadCredentials,
+  saveCredentials,
+  clearCredentials,
+  isTokenExpired,
+} from './token-store.js';
 
 export async function authLogin({ baseUrl }) {
   try {
@@ -62,20 +67,40 @@ export async function authLogin({ baseUrl }) {
 
 export async function authStatus() {
   const credentials = loadCredentials();
+
+  console.log(chalk.bold('\n--- Coursify Auth Status ---'));
+
   if (!credentials) {
-    console.log(chalk.yellow('Not authenticated. Run `coursify auth login` to sign in.'));
+    console.log(`${chalk.bold('Status:')} ${chalk.red('Not Authenticated')}`);
+    console.log(chalk.yellow('\nRun `coursify auth login` to sign in.'));
     return;
   }
 
-  const expiresInMin = Math.round((credentials.expiresAt - Date.now()) / 1000 / 60);
+  const isExpired = isTokenExpired(credentials);
+  const statusColor = isExpired ? chalk.red : chalk.green;
+  const statusText = isExpired ? 'Expired' : 'Authenticated';
 
-  console.log(chalk.bold('\nAuth Status: ') + chalk.green('Authenticated'));
-  console.log(`${chalk.bold('Server:')} ${credentials.base_url}`);
+  console.log(`${chalk.bold('Status:')} ${statusColor(statusText)}`);
+  console.log(`${chalk.bold('Server:')} ${credentials.base_url || 'N/A'}`);
   console.log(`${chalk.bold('Client ID:')} ${credentials.client_id}`);
-  if (expiresInMin > 0) {
-    console.log(`${chalk.bold('Token expires in:')} ${expiresInMin} minutes`);
-  } else {
-    console.log(`${chalk.bold('Token status:')} ${chalk.red('Expired')}`);
+
+  if (credentials.expiresAt) {
+    const remainingMs = credentials.expiresAt - Date.now();
+    const expiresInMin = Math.round(remainingMs / 1000 / 60);
+
+    if (remainingMs > 0) {
+      console.log(
+        `${chalk.bold('Expires in:')} ${expiresInMin} minutes (${new Date(credentials.expiresAt).toLocaleString()})`
+      );
+    } else {
+      console.log(
+        `${chalk.bold('Expired at:')} ${new Date(credentials.expiresAt).toLocaleString()}`
+      );
+    }
+  }
+
+  if (isExpired) {
+    console.log(chalk.yellow('\nYour token has expired. Please run `coursify auth login` again.'));
   }
 }
 

@@ -79,10 +79,17 @@ const auth = program.command('auth').description('Manage authentication');
 
 auth
   .command('login')
-  .option('--base-url <url>', 'Server base URL', 'http://localhost:3000')
+  .option('--base-url <url>', 'Server base URL')
+  .option('--dev', 'Use localhost for development', false)
   .description('Authenticate via OAuth (opens browser)')
   .action(async (options) => {
+    if (options.dev) {
+      options.baseUrl = options.baseUrl || 'http://localhost:3000';
+    } else {
+      options.baseUrl = options.baseUrl || 'https://hasanraiyan.me';
+    }
     await authLogin(options);
+    process.exit(0);
   });
 
 auth
@@ -101,10 +108,16 @@ auth
 
 program
   .command('list')
-  .option('--base-url <url>', 'Server base URL', 'http://localhost:3000')
+  .option('--base-url <url>', 'Server base URL')
+  .option('--dev', 'Use localhost for development', false)
   .description('List courses from server')
   .action(async (options) => {
     try {
+      if (options.dev) {
+        options.baseUrl = options.baseUrl || 'http://localhost:3000';
+      } else {
+        options.baseUrl = options.baseUrl || 'https://hasanraiyan.me';
+      }
       const client = new CoursifyApiClient(options.baseUrl);
       const courses = await client.listCourses();
       console.log(chalk.bold(`\nCourses on ${options.baseUrl}:`));
@@ -120,11 +133,17 @@ program
 program
   .command('publish')
   .argument('[dir]', 'Directory of the course', '.')
-  .option('--base-url <url>', 'Server base URL', 'http://localhost:3000')
+  .option('--base-url <url>', 'Server base URL')
+  .option('--dev', 'Use localhost for development', false)
   .option('--publish', 'Set course status to published after sync', false)
   .description('Package and push course to server')
   .action(async (dir, options) => {
     try {
+      if (options.dev) {
+        options.baseUrl = options.baseUrl || 'http://localhost:3000';
+      } else {
+        options.baseUrl = options.baseUrl || 'https://hasanraiyan.me';
+      }
       await publishCourse(dir, options);
     } catch (err) {
       console.error(chalk.red(`Error: ${err.message}`));

@@ -18,22 +18,27 @@ export async function receiveAuthorizationCode(authorizeUrl) {
       const code = url.searchParams.get('code');
 
       if (code) {
-        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.writeHead(200, {
+          'Content-Type': 'text/html',
+          Connection: 'close',
+        });
         res.end('<h1>Authorization successful!</h1><p>You can close this window now.</p>');
+        const { port } = server.address();
         server.close();
         resolve({
           code,
-          redirectUri: `http://127.0.0.1:${server.address().port}`,
-          port: server.address().port,
+          redirectUri: `http://127.0.0.1:${port}`,
+          port,
         });
       } else {
-        res.writeHead(400);
+        res.writeHead(400, { Connection: 'close' });
         res.end('Authorization code missing');
       }
     });
 
     server.listen(0, '127.0.0.1', () => {
       const { port } = server.address();
+      server.unref(); // Prevent server from keeping the process alive
       const finalAuthorizeUrl = new URL(authorizeUrl);
       finalAuthorizeUrl.searchParams.set('redirect_uri', `http://127.0.0.1:${port}`);
       open(finalAuthorizeUrl.toString());
