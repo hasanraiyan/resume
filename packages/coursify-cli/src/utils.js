@@ -1,6 +1,18 @@
+import fs from 'fs';
+import path from 'path';
+import yaml from 'js-yaml';
+
 /**
  * Ported from src/lib/mcp/coursify/utils.js
  */
+
+export function parseFile(filePath) {
+  const content = fs.readFileSync(path.resolve(process.cwd(), filePath), 'utf8');
+  if (filePath.endsWith('.yaml') || filePath.endsWith('.yml')) {
+    return yaml.load(content);
+  }
+  return JSON.parse(content);
+}
 
 export function unescapeString(str) {
   if (!str) return '';
