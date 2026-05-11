@@ -55,13 +55,20 @@ export async function createLink(payload) {
 
   const finalSlug = await ensureUniqueSlug(validated.slug);
 
-  const link = new ShortLink({
+  const linkData = {
     ...validated,
     slug: finalSlug,
     tags: Array.isArray(validated.tags) ? validated.tags : [],
     expiresAt: validated.expiresAt ? new Date(validated.expiresAt) : null,
     isActive: validated.isActive !== undefined ? validated.isActive : true,
-  });
+  };
+
+  // Only include createdBy if it's a valid ObjectId to prevent Mongoose cast errors
+  if (validated.createdBy && !isValidObjectId(validated.createdBy)) {
+    delete linkData.createdBy;
+  }
+
+  const link = new ShortLink(linkData);
 
   await link.save();
   return link.toObject();
