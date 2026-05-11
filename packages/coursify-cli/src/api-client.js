@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import { loadCredentials, saveCredentials, isTokenExpired } from './token-store.js';
 import { refreshToken } from './oauth.js';
 
@@ -99,6 +100,13 @@ export class CoursifyApiClient {
   async publishCourse(id) {
     return this._request(`/api/coursify/courses/${id}/publish`, {
       method: 'POST',
+    });
+  }
+
+  async importCourse(bundle) {
+    return this._request('/api/coursify/import', {
+      method: 'POST',
+      body: JSON.stringify(bundle),
     });
   }
 

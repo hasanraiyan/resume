@@ -1,11 +1,20 @@
 import chalk from 'chalk';
 import { packageCourse } from './packager.js';
 import { CoursifyApiClient } from './api-client.js';
+import { authLogin } from './auth-commands.js';
+import { loadCredentials, isTokenExpired } from './token-store.js';
 
 export async function publishCourse(
   dir,
   { baseUrl, publish = false, dryRun = false, verbose = false } = {}
 ) {
+  // 1. Auto-login check
+  const credentials = loadCredentials();
+  if (!credentials || isTokenExpired(credentials)) {
+    console.log(chalk.yellow('No valid credentials found. Starting login flow...'));
+    await authLogin({ baseUrl });
+  }
+
   const client = new CoursifyApiClient(baseUrl, { verbose });
 
   if (dryRun) {
@@ -15,6 +24,20 @@ export async function publishCourse(
   console.log(chalk.blue('Packaging course...'));
   const bundle = await packageCourse(dir);
 
+  // 2. Schema compliance: Map section status 'published' -> 'complete'
+  // Server schema for sections only allows: ['planned', 'draft', 'needs_review', 'complete']
+  if (bundle.modules) {
+    bundle.modules.forEach((mod) => {
+      if (mod.sections) {
+        mod.sections.forEach((sec) => {
+          if (sec.status === 'published') {
+            sec.status = 'complete';
+          }
+        });
+      }
+    });
+  }
+
   let courseId = bundle.id;
 
   // Slug-based resolution if ID is missing
@@ -23,7 +46,8 @@ export async function publishCourse(
       if (verbose) console.log(chalk.gray(`Searching for course by slug: ${bundle.slug}`));
       const existingCourse = await client.getCourseBySlug(bundle.slug);
       if (existingCourse) {
-        courseId = existingCourse._id;
+        courseId = existingCourse.id;
+        bundle.id = courseId; // Set it in bundle for the import API
         console.log(chalk.blue(`Found existing course via slug: ${bundle.slug} (ID: ${courseId})`));
       }
     } catch (err) {
@@ -37,99 +61,24 @@ export async function publishCourse(
       console.log(chalk.yellow(`[DRY RUN] Would update existing course (ID: ${courseId})`));
     } else {
       console.log(chalk.yellow(`[DRY RUN] Would create new course: "${bundle.title}"`));
-      courseId = 'MOCK-COURSE-ID';
     }
+    console.log(
+      chalk.yellow(
+        `[DRY RUN] Would import ${bundle.modules.length} modules and ${bundle.modules.reduce((acc, m) => acc + m.sections.length, 0)} sections.`
+      )
+    );
   } else {
-    let course;
-    if (courseId) {
-      console.log(chalk.blue(`Updating existing course (ID: ${courseId})...`));
-      course = await client.updateCourse(courseId, {
-        title: bundle.title,
-        description: bundle.description,
-        difficulty: bundle.difficulty,
-        estimatedDuration: bundle.estimatedDuration,
-        tags: bundle.tags,
-        targetAudience: bundle.targetAudience,
-        learningObjectives: bundle.learningObjectives,
-        prerequisites: bundle.prerequisites,
-        outcome: bundle.outcome,
-        outline: bundle.outline,
-        authoringStatus: bundle.authoringStatus,
-      });
-    } else {
-      console.log(chalk.blue('Creating new course...'));
-      course = await client.createCourse({
-        title: bundle.title,
-        description: bundle.description,
-        difficulty: bundle.difficulty,
-        estimatedDuration: bundle.estimatedDuration,
-        tags: bundle.tags,
-      });
-
-      // Update planning fields if present
-      if (
-        bundle.targetAudience ||
-        bundle.learningObjectives ||
-        bundle.outline ||
-        bundle.authoringStatus
-      ) {
-        course = await client.updateCourse(course._id, {
-          targetAudience: bundle.targetAudience,
-          learningObjectives: bundle.learningObjectives,
-          prerequisites: bundle.prerequisites,
-          outcome: bundle.outcome,
-          outline: bundle.outline,
-          authoringStatus: bundle.authoringStatus,
-        });
-      }
-    }
-    courseId = course._id;
-    console.log(chalk.green(`Course: ${course.title} (ID: ${courseId})`));
+    console.log(
+      chalk.blue(
+        courseId ? `Updating course (ID: ${courseId})...` : 'Creating new course via import...'
+      )
+    );
+    const result = await client.importCourse(bundle);
+    courseId = result.courseId;
+    console.log(chalk.green(`Successfully imported course (ID: ${courseId})`));
   }
 
-  for (const moduleBundle of bundle.modules) {
-    let moduleId = moduleBundle.id;
-    if (dryRun) {
-      console.log(
-        chalk.yellow(
-          `  [DRY RUN] Would create/update module: "${moduleBundle.title}" (Order: ${moduleBundle.order})`
-        )
-      );
-      moduleId = `MOCK-MOD-ID-${moduleBundle.order}`;
-    } else {
-      console.log(chalk.blue(`  Creating module: ${moduleBundle.title}...`));
-      const mod = await client.createModule(courseId, {
-        title: moduleBundle.title,
-        summary: moduleBundle.summary,
-        learningGoals: moduleBundle.learningGoals,
-        order: moduleBundle.order,
-      });
-      moduleId = mod._id;
-    }
-
-    for (const sectionBundle of moduleBundle.sections) {
-      if (dryRun) {
-        console.log(
-          chalk.yellow(
-            `    [DRY RUN] Would create/update section: "${sectionBundle.title}" (Order: ${sectionBundle.order})`
-          )
-        );
-      } else {
-        console.log(chalk.blue(`    Creating section: ${sectionBundle.title}...`));
-        await client.createSection(courseId, {
-          title: sectionBundle.title,
-          summary: sectionBundle.summary,
-          learningGoals: sectionBundle.learningGoals,
-          estimatedDuration: sectionBundle.estimatedDuration,
-          order: sectionBundle.order,
-          moduleId: moduleId,
-          content: sectionBundle.content, // Raw markdown
-        });
-      }
-    }
-  }
-
-  if (publish) {
+  if (publish && courseId) {
     if (dryRun) {
       console.log(chalk.yellow('[DRY RUN] Would publish course'));
     } else {

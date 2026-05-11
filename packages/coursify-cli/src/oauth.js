@@ -38,7 +38,6 @@ export async function receiveAuthorizationCode(authorizeUrl) {
 
     server.listen(0, '127.0.0.1', () => {
       const { port } = server.address();
-      server.unref(); // Prevent server from keeping the process alive
       const finalAuthorizeUrl = new URL(authorizeUrl);
       finalAuthorizeUrl.searchParams.set('redirect_uri', `http://127.0.0.1:${port}`);
       open(finalAuthorizeUrl.toString());

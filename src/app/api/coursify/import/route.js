@@ -1,4 +1,4 @@
-import { requireAdminAuth } from '@/lib/money-auth';
+import { requireCoursifyAuth } from '@/lib/coursify-auth';
 import { NextResponse } from 'next/server';
 import {
   dbCreateCourse,
@@ -9,7 +9,7 @@ import {
 } from '@/lib/coursify/db-ops';
 
 export async function POST(request) {
-  const auth = await requireAdminAuth(request);
+  const auth = await requireCoursifyAuth(request);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -62,6 +62,7 @@ export async function POST(request) {
 
     // 3. Process Modules and Sections
     if (bundle.modules && Array.isArray(bundle.modules)) {
+      console.log(`[Import] Processing ${bundle.modules.length} modules...`);
       for (const [mIndex, modData] of bundle.modules.entries()) {
         const { module } = await dbCreateModule({
           courseId: course.id,
@@ -73,6 +74,9 @@ export async function POST(request) {
         });
 
         if (modData.sections && Array.isArray(modData.sections)) {
+          console.log(
+            `[Import]   Processing ${modData.sections.length} sections for module: ${modData.title}`
+          );
           for (const [sIndex, secData] of modData.sections.entries()) {
             await dbAddSection({
               courseId: course.id,
@@ -91,9 +95,17 @@ export async function POST(request) {
       }
     }
 
+    console.log(`[Import] Successfully imported course: ${course.title}`);
     return NextResponse.json({ success: true, courseId: course.id });
   } catch (error) {
     console.error('[Import API Error]:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      },
+      { status: 500 }
+    );
   }
 }

@@ -1,4 +1,4 @@
-import { requireAdminAuth } from '@/lib/money-auth';
+import { requireCoursifyAuth } from '@/lib/coursify-auth';
 import { NextResponse } from 'next/server';
 import cloudinary from '@/lib/cloudinary';
 import dbConnect from '@/lib/dbConnect';
@@ -8,7 +8,7 @@ import DrivelyActivity from '@/models/DrivelyActivity';
 import { getOrCreateThumbnailFolder } from '@/lib/coursify/thumbnailGen';
 
 export async function POST(request, { params }) {
-  const auth = await requireAdminAuth(request);
+  const auth = await requireCoursifyAuth(request);
   if (auth instanceof NextResponse) return auth;
 
   try {

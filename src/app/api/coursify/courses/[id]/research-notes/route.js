@@ -1,10 +1,10 @@
-import { requireAdminAuth } from '@/lib/money-auth';
+import { requireCoursifyAuth } from '@/lib/coursify-auth';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
 
 export async function GET(request, { params }) {
-  const auth = await requireAdminAuth(request);
+  const auth = await requireCoursifyAuth(request);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -32,7 +32,7 @@ export async function GET(request, { params }) {
 }
 
 export async function POST(request, { params }) {
-  const auth = await requireAdminAuth(request);
+  const auth = await requireCoursifyAuth(request);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -79,7 +79,7 @@ export async function POST(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-  const auth = await requireAdminAuth(request);
+  const auth = await requireCoursifyAuth(request);
   if (auth instanceof NextResponse) return auth;
 
   try {
