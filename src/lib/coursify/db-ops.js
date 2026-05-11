@@ -166,6 +166,15 @@ export async function dbCreateCourse({
   difficulty,
   estimatedDuration,
   tags,
+  targetAudience,
+  learningObjectives,
+  prerequisites,
+  outcome,
+  outline,
+  planningNotes,
+  agentNotes,
+  researchNotes,
+  authoringStatus,
   waitForThumbnail = false,
 }) {
   await dbConnect();
@@ -177,6 +186,15 @@ export async function dbCreateCourse({
     difficulty: difficulty || 'beginner',
     estimatedDuration: estimatedDuration || '',
     tags: tags || [],
+    targetAudience: targetAudience || '',
+    learningObjectives: learningObjectives || [],
+    prerequisites: prerequisites || [],
+    outcome: outcome || '',
+    outline: outline || '',
+    planningNotes: planningNotes || '',
+    agentNotes: agentNotes || '',
+    researchNotes: researchNotes || [],
+    authoringStatus: authoringStatus || 'idea',
     thumbnailGenerating: true,
   });
 

@@ -4,7 +4,7 @@ import Conf from 'conf';
 const config = new Conf({ projectName: 'coursify-cli' });
 
 export async function apiClient(endpoint, options = {}) {
-  const baseUrl = config.get('baseUrl', 'https://hasanraiyan.me');
+  const baseUrl = config.get('baseUrl', 'http://localhost:3000');
   const token = config.get('token');
 
   const url = endpoint.startsWith('http') ? endpoint : `${baseUrl}${endpoint}`;

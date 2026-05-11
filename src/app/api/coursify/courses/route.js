@@ -34,7 +34,22 @@ export async function POST(request) {
 
   try {
     const body = await request.json();
-    const { title, description, difficulty, estimatedDuration, tags } = body;
+    const {
+      title,
+      description,
+      difficulty,
+      estimatedDuration,
+      tags,
+      targetAudience,
+      learningObjectives,
+      prerequisites,
+      outcome,
+      outline,
+      planningNotes,
+      agentNotes,
+      researchNotes,
+      authoringStatus,
+    } = body;
 
     if (!title?.trim()) {
       return NextResponse.json({ success: false, error: 'Title is required' }, { status: 400 });
@@ -46,6 +61,15 @@ export async function POST(request) {
       difficulty,
       estimatedDuration,
       tags,
+      targetAudience,
+      learningObjectives,
+      prerequisites,
+      outcome,
+      outline,
+      planningNotes,
+      agentNotes,
+      researchNotes,
+      authoringStatus,
     });
 
     return NextResponse.json({ success: true, course });

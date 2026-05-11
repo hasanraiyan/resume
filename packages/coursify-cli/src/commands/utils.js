@@ -5,7 +5,7 @@ import { parseMarkdownToBlocks, lintContent } from '../utils.js';
 export function setupUtilsCommands(program) {
   program
     .command('preview <file>')
-    .description('Dry-run: Parse and lint a Markdown file')
+    .description('Validate and preview Markdown content blocks (dry-run)')
     .action((file) => {
       try {
         const content = fs.readFileSync(file, 'utf8');
@@ -16,7 +16,7 @@ export function setupUtilsCommands(program) {
 
         if (issues.length > 0) {
           console.log(chalk.yellow('\nLint Issues:'));
-          issues.forEach(i => console.log(chalk.yellow(`- ${i}`)));
+          issues.forEach((i) => console.log(chalk.yellow(`- ${i}`)));
         } else {
           console.log(chalk.green('\nNo lint issues found.'));
         }
@@ -27,22 +27,25 @@ export function setupUtilsCommands(program) {
 
   program
     .command('init-section')
-    .description('Generate a scaffolded Markdown file')
+    .description('Generate a scaffolded Markdown lesson file')
+    .option('-t, --title <string>', 'Section title', 'New Section')
     .option('-o, --output <path>', 'Output file path', 'new-section.md')
     .action((options) => {
       const template = `---
-title: New Section
+title: ${options.title}
 status: draft
 ---
 
 ## [MdBlock]
-Introduction content here...
+### Overview
+
+Introduction to ${options.title}...
 
 ## [QuizBlock]
-- question: "What is 2+2?"
-  options: ["3", "4", "5"]
-  correctAnswer: "4"
-  explanation: "Basic math."
+- question: "Quick check: What is..."
+  options: ["Option A", "Option B", "Option C"]
+  correctAnswer: "Option B"
+  explanation: "Contextual explanation..."
 `;
       fs.writeFileSync(options.output, template);
       console.log(chalk.green(`Template created: ${options.output}`));

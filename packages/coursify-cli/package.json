@@ -4,20 +4,30 @@
   "description": "Standalone CLI for Coursify",
   "main": "src/index.js",
   "bin": {
-    "coursify": "./src/index.js"
+    "coursify": "src/index.js"
   },
   "type": "module",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "build:bin": "pkg . --out-path dist"
+  },
+  "pkg": {
+    "targets": [
+      "node18-win-x64",
+      "node18-macos-x64",
+      "node18-linux-x64"
+    ],
+    "outputPath": "dist"
   },
   "dependencies": {
+    "boxen": "latest",
+    "chalk": "latest",
     "commander": "latest",
     "conf": "latest",
-    "undici": "latest",
-    "chalk": "latest",
-    "ora": "latest",
-    "enquirer": "latest",
     "date-fns": "latest",
-    "boxen": "latest"
+    "enquirer": "latest",
+    "js-yaml": "^4.1.1",
+    "ora": "latest",
+    "undici": "latest"
   }
 }

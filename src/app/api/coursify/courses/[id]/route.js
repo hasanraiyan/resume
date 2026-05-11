@@ -77,6 +77,8 @@ export async function PATCH(request, { params }) {
       'outcome',
       'outline',
       'planningNotes',
+      'agentNotes',
+      'researchNotes',
       'authoringStatus',
     ];
     const patch = {};
