@@ -5,6 +5,9 @@ import chalk from 'chalk';
 import { scaffold } from '../src/scaffold.js';
 import { packageCourse } from '../src/packager.js';
 import { validateCourse } from '../src/validator.js';
+import { authLogin, authStatus, authLogout } from '../src/auth-commands.js';
+import { CoursifyApiClient } from '../src/api-client.js';
+import { publishCourse } from '../src/publisher.js';
 
 const program = new Command();
 
@@ -66,6 +69,63 @@ program
         results.errors.forEach((e) => console.log(chalk.red(`  error: ${e}`)));
         process.exit(1);
       }
+    } catch (err) {
+      console.error(chalk.red(`Error: ${err.message}`));
+      process.exit(1);
+    }
+  });
+
+const auth = program.command('auth').description('Manage authentication');
+
+auth
+  .command('login')
+  .option('--base-url <url>', 'Server base URL', 'http://localhost:3000')
+  .description('Authenticate via OAuth (opens browser)')
+  .action(async (options) => {
+    await authLogin(options);
+  });
+
+auth
+  .command('status')
+  .description('Show current auth status')
+  .action(async () => {
+    await authStatus();
+  });
+
+auth
+  .command('logout')
+  .description('Clear stored tokens')
+  .action(async () => {
+    await authLogout();
+  });
+
+program
+  .command('list')
+  .option('--base-url <url>', 'Server base URL', 'http://localhost:3000')
+  .description('List courses from server')
+  .action(async (options) => {
+    try {
+      const client = new CoursifyApiClient(options.baseUrl);
+      const courses = await client.listCourses();
+      console.log(chalk.bold(`\nCourses on ${options.baseUrl}:`));
+      courses.forEach((c) => {
+        console.log(`- ${chalk.green(c.title)} (${c.status}) [${c.authoringStatus}] ID: ${c._id}`);
+      });
+    } catch (err) {
+      console.error(chalk.red(`Error: ${err.message}`));
+      process.exit(1);
+    }
+  });
+
+program
+  .command('publish')
+  .argument('[dir]', 'Directory of the course', '.')
+  .option('--base-url <url>', 'Server base URL', 'http://localhost:3000')
+  .option('--publish', 'Set course status to published after sync', false)
+  .description('Package and push course to server')
+  .action(async (dir, options) => {
+    try {
+      await publishCourse(dir, options);
     } catch (err) {
       console.error(chalk.red(`Error: ${err.message}`));
       process.exit(1);

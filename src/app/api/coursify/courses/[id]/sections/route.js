@@ -1,12 +1,13 @@
-import { requireAdminAuth } from '@/lib/money-auth';
+import { requireCoursifyAuth } from '@/lib/coursify-auth';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
 import CoursifySection from '@/models/CoursifySection';
 import { revalidatePath } from 'next/cache';
+import { parseMarkdownToBlocks } from '@/lib/mcp/coursify/utils';
 
 export async function POST(request, { params }) {
-  const auth = await requireAdminAuth(request);
+  const auth = await requireCoursifyAuth(request);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -28,6 +29,7 @@ export async function POST(request, { params }) {
       learningGoals,
       estimatedDuration,
       blocks,
+      content,
     } = body;
     if (!title?.trim()) {
       return NextResponse.json({ success: false, error: 'Title is required' }, { status: 400 });
@@ -42,7 +44,7 @@ export async function POST(request, { params }) {
     const section = await CoursifySection.create({
       courseId: id,
       title: title.trim(),
-      blocks: blocks || [],
+      blocks: blocks || (content ? parseMarkdownToBlocks(content) : []),
       order,
       resources: Array.isArray(resources) ? resources : [],
       moduleId: moduleId || null,
