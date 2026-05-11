@@ -97,9 +97,10 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q');
+    const type = searchParams.get('type');
 
     // Call the unified search function from our library
-    const results = await performSearch(query);
+    const results = await performSearch(query, false, type);
 
     return Response.json({ results });
   } catch (error) {

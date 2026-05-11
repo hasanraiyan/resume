@@ -110,7 +110,7 @@ const FUSE_OPTIONS = {
  * }
  * ```
  */
-export async function performSearch(query, isAuthenticated = false) {
+export async function performSearch(query, isAuthenticated = false, type = null) {
   try {
     // Instantiate and check for profanity
     const filter = new Filter();
@@ -124,15 +124,38 @@ export async function performSearch(query, isAuthenticated = false) {
     const visibilityFilter = isAuthenticated
       ? { $in: ['public', 'private', 'unlisted'] }
       : 'public';
-    const [projectResults, articleResults, courseResults] = await Promise.all([
-      Project.find({}).select('slug title description category tags thumbnail').lean(),
-      Article.find({ status: 'published', visibility: visibilityFilter })
-        .select('slug title excerpt tags visibility coverImage')
-        .lean(),
-      CoursifyCourse.find({ status: 'published', deletedAt: null })
-        .select('slug title description tags difficulty thumbnail')
-        .lean(),
-    ]);
+
+    const fetchers = [];
+
+    if (!type || type === 'project') {
+      fetchers.push(
+        Project.find({}).select('slug title description category tags thumbnail').lean()
+      );
+    } else {
+      fetchers.push(Promise.resolve([]));
+    }
+
+    if (!type || type === 'article') {
+      fetchers.push(
+        Article.find({ status: 'published', visibility: visibilityFilter })
+          .select('slug title excerpt tags visibility coverImage')
+          .lean()
+      );
+    } else {
+      fetchers.push(Promise.resolve([]));
+    }
+
+    if (!type || type === 'course') {
+      fetchers.push(
+        CoursifyCourse.find({ status: 'published', deletedAt: null })
+          .select('slug title description tags difficulty thumbnail')
+          .lean()
+      );
+    } else {
+      fetchers.push(Promise.resolve([]));
+    }
+
+    const [projectResults, articleResults, courseResults] = await Promise.all(fetchers);
 
     // 2. Prepare the data for Fuse.js
     const searchableData = [

@@ -2,7 +2,6 @@
 
 import { useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Pacifico, Nunito, Lora } from 'next/font/google';
 import { BookOpen } from 'lucide-react';
 import { useTableOfContents } from '@/hooks/coursify/useTableOfContents';
 import { useCourseReader } from '@/hooks/coursify/useCourseReader';
@@ -15,27 +14,6 @@ import { QuizPlayer } from '@/components/coursify/reader/QuizPlayer';
 import { TableOfContents } from '@/components/coursify/reader/TableOfContents';
 import { ReaderNavigation } from '@/components/coursify/reader/ReaderNavigation';
 import { CoursifyBlockRenderer } from '@/components/coursify/reader/CoursifyBlockRenderer';
-
-const pacifico = Pacifico({
-  weight: '400',
-  subsets: ['latin'],
-  variable: '--font-logo',
-  display: 'swap',
-});
-
-const nunito = Nunito({
-  weight: ['400', '600', '700', '800'],
-  subsets: ['latin'],
-  variable: '--font-sans',
-  display: 'swap',
-});
-
-const lora = Lora({
-  weight: ['400', '500', '600', '700'],
-  subsets: ['latin'],
-  variable: '--font-lora',
-  display: 'swap',
-});
 
 export function CourseReaderShell({ initialData, slug, activeSectionId }) {
   const router = useRouter();
@@ -77,9 +55,7 @@ export function CourseReaderShell({ initialData, slug, activeSectionId }) {
   if (!course) return null;
 
   return (
-    <div
-      className={`h-screen bg-[#fcfbf5] font-[family-name:var(--font-sans)] text-[#1e3a34] flex flex-col ${pacifico.variable} ${nunito.variable} ${lora.variable}`}
-    >
+    <div className="h-screen flex flex-col">
       <ReaderHeader course={course} showOverview={showOverview} onToggleSidebar={toggleSidebar} />
 
       <div className="flex flex-1 min-h-0">

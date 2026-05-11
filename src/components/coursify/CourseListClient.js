@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { Search, X, BookOpen } from 'lucide-react';
+import { useState } from 'react';
+import { Search, BookOpen } from 'lucide-react';
 import { PublicCourseCard } from './PublicCourseCard';
+import SearchOverlay from '@/components/search/SearchOverlay';
 
 const DIFFICULTY_FILTERS = ['all', 'beginner', 'intermediate', 'advanced'];
 
@@ -30,12 +31,7 @@ export function CourseListClient({ initialCourses }) {
   const [courses] = useState(initialCourses);
   const [query, setQuery] = useState('');
   const [difficulty, setDifficulty] = useState('all');
-  const desktopInputRef = useRef(null);
-
-  const handleClear = () => {
-    setQuery('');
-    desktopInputRef.current?.focus();
-  };
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const handleResetAll = () => {
     setQuery('');
@@ -52,79 +48,45 @@ export function CourseListClient({ initialCourses }) {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-[#e5e3d8] bg-white">
-        <div className="px-4 sm:px-6 py-3 flex items-center gap-3">
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-[#e5e3d8]">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 shrink-0">
             <img
               src="/images/apps/coursify.png"
               alt="Coursify"
-              className="h-8 w-8 rounded-lg object-contain"
+              className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg object-contain"
             />
             <span className="font-[family-name:var(--font-logo)] text-xl sm:text-2xl text-[#1f644e]">
               Coursify
             </span>
           </div>
-          <span className="text-xs text-[#7c8e88] border-l border-[#e5e3d8] pl-3 hidden sm:block shrink-0">
-            Free courses to learn and grow
-          </span>
 
-          <div className="hidden md:flex flex-1 max-w-xs ml-auto items-center gap-2 bg-[#f8f7f0] border border-[#e5e3d8] rounded-xl px-3 py-2 focus-within:border-[#1f644e] focus-within:bg-white transition-colors">
-            <Search className="w-4 h-4 text-[#7c8e88] shrink-0" />
-            <input
-              ref={desktopInputRef}
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search courses…"
-              className="flex-1 text-sm text-[#1e3a34] bg-transparent outline-none placeholder:text-[#b0bfbb] min-w-0"
-            />
-            {query && (
-              <button
-                type="button"
-                onClick={handleClear}
-                className="p-0.5 rounded-md text-[#7c8e88] hover:text-[#1e3a34] transition-colors shrink-0"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="md:hidden px-4 pb-3">
-          <div className="flex items-center gap-2 bg-[#f8f7f0] border border-[#e5e3d8] rounded-xl px-3 py-2 focus-within:border-[#1f644e] focus-within:bg-white transition-colors">
-            <Search className="w-4 h-4 text-[#7c8e88] shrink-0" />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search courses…"
-              className="flex-1 text-sm text-[#1e3a34] bg-transparent outline-none placeholder:text-[#b0bfbb] min-w-0"
-            />
-            {query && (
-              <button
-                type="button"
-                onClick={handleClear}
-                className="p-0.5 rounded-md text-[#7c8e88] hover:text-[#1e3a34] transition-colors shrink-0"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className="p-2 text-[#7c8e88] hover:text-[#1f644e] transition-colors rounded-full hover:bg-[#f0f5f2]"
+              aria-label="Search"
+            >
+              <Search className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1e3a34] mb-2 leading-tight">
+      <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} type="course" />
+
+      <main className="max-w-4xl mx-auto px-4 py-8 sm:py-12">
+        <div className="mb-8 sm:mb-10 text-center sm:text-left">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1e3a34] mb-3 tracking-tight">
             Learn something new today
           </h1>
-          <p className="text-[#7c8e88] text-sm sm:text-base max-w-xl">
-            Explore free courses built with care. Read at your own pace, no account required.
+          <p className="text-[#7c8e88] text-sm sm:text-base max-w-lg mx-auto sm:mx-0">
+            Explore free, well-crafted courses. Read at your own pace — no account required.
           </p>
         </div>
 
         {courses.length > 0 && (
-          <div className="flex items-center gap-2 flex-wrap mb-5 sm:mb-6">
+          <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap mb-6 sm:mb-8">
             {DIFFICULTY_FILTERS.map((d) => {
               const count = d === 'all' ? courses.length : countByDifficulty[d] || 0;
               const active = difficulty === d;
@@ -132,15 +94,15 @@ export function CourseListClient({ initialCourses }) {
                 <button
                   key={d}
                   onClick={() => setDifficulty(d)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold capitalize transition-colors ${
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-bold capitalize transition-all ${
                     active
-                      ? 'bg-[#1f644e] text-white'
+                      ? 'bg-[#1f644e] text-white shadow-md shadow-[#1f644e]/20 scale-105'
                       : 'bg-white border border-[#e5e3d8] text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e]'
                   }`}
                 >
                   {d === 'all' ? 'All levels' : d}
                   <span
-                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                    className={`text-[10px] px-1.5 py-0.5 rounded-full ${
                       active ? 'bg-white/20 text-white' : 'bg-[#f0f5f2] text-[#7c8e88]'
                     }`}
                   >
@@ -152,9 +114,9 @@ export function CourseListClient({ initialCourses }) {
             {isFiltered && (
               <button
                 onClick={handleResetAll}
-                className="text-xs font-bold text-[#1f644e] hover:underline ml-1"
+                className="text-xs font-bold text-[#1f644e] hover:underline ml-2"
               >
-                Clear all
+                Reset
               </button>
             )}
           </div>
@@ -203,7 +165,7 @@ export function CourseListClient({ initialCourses }) {
       </main>
 
       <footer className="mt-auto py-10 border-t border-[#e5e3d8] bg-white/50">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div className="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-6">
           <a
             href="https://coursify-website.vercel.app/"
             target="_blank"

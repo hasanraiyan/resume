@@ -5,7 +5,7 @@ import Link from 'next/link';
 import SearchResultItem from './SearchResultItem';
 import { useAnalytics } from '@/hooks/useAnalytics';
 
-export default function SearchOverlay({ isOpen, onClose }) {
+export default function SearchOverlay({ isOpen, onClose, type = null }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [groupedResults, setGroupedResults] = useState({ projects: [], articles: [], courses: [] });
@@ -16,6 +16,14 @@ export default function SearchOverlay({ isOpen, onClose }) {
   const resultsRef = useRef(null);
   const debounceTimer = useRef(null);
   const { trackEvent } = useAnalytics();
+
+  // Reset state when overlay opens/closes
+  useEffect(() => {
+    if (!isOpen) {
+      setQuery('');
+      setResults([]);
+    }
+  }, [isOpen]);
 
   // Focus input when overlay opens
   useEffect(() => {
@@ -120,7 +128,11 @@ export default function SearchOverlay({ isOpen, onClose }) {
     // Set new timer with 300ms delay
     debounceTimer.current = setTimeout(async () => {
       try {
-        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+        let url = `/api/search?q=${encodeURIComponent(query)}`;
+        if (type) {
+          url += `&type=${type}`;
+        }
+        const response = await fetch(url);
 
         if (!response.ok) {
           throw new Error('Search failed');
@@ -133,8 +145,7 @@ export default function SearchOverlay({ isOpen, onClose }) {
         trackEvent('search_performed', {
           searchTerm: query,
           resultCount: data.results?.length || 0,
-          projectCount: data.results?.filter((r) => r.type === 'project').length || 0,
-          articleCount: data.results?.filter((r) => r.type === 'article').length || 0,
+          type: type || 'all',
         });
       } catch (err) {
         setError('Failed to search. Please try again.');
@@ -159,9 +170,15 @@ export default function SearchOverlay({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
+  const placeholderText = type ? `Search ${type}s...` : 'Search projects, articles, and courses...';
+
+  const emptyStateText = type
+    ? `Start typing to search for ${type}s...`
+    : 'Start typing to search for projects, articles, and courses...';
+
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center pt-20 px-4"
+      className="fixed inset-0 bg-black/50 z-[60] flex items-start justify-center pt-20 px-4"
       onClick={handleBackdropClick}
     >
       <div className="w-full max-w-2xl bg-white rounded-lg shadow-xl max-h-[80vh] flex flex-col">
@@ -173,7 +190,7 @@ export default function SearchOverlay({ isOpen, onClose }) {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search projects, articles, and courses..."
+              placeholder={placeholderText}
               className="w-full pl-4 pr-10 py-3 text-lg border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
@@ -195,9 +212,7 @@ export default function SearchOverlay({ isOpen, onClose }) {
         {/* Results */}
         <div className="flex-1 overflow-y-auto p-4">
           {query.length < 3 ? (
-            <div className="text-center text-gray-500 py-8">
-              Start typing to search for projects, articles, and courses...
-            </div>
+            <div className="text-center text-gray-500 py-8">{emptyStateText}</div>
           ) : isLoading ? (
             <div className="space-y-4">
               {[...Array(3)].map((_, i) => (
@@ -212,26 +227,33 @@ export default function SearchOverlay({ isOpen, onClose }) {
           ) : results.length === 0 ? (
             <div className="text-center py-8">
               <div className="text-gray-500 mb-4">No results found for "{query}"</div>
-              <Link
-                href="/projects"
-                onClick={onClose}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Browse All Projects
-                <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </Link>
+              {!type && (
+                <Link
+                  href="/projects"
+                  onClick={onClose}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Browse All Projects
+                  <svg
+                    className="ml-2 w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </Link>
+              )}
             </div>
           ) : (
             <div className="space-y-6">
               {/* Projects Section */}
-              {groupedResults.projects.length > 0 && (
+              {(!type || type === 'project') && groupedResults.projects.length > 0 && (
                 <div>
                   <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
                     <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
@@ -261,7 +283,7 @@ export default function SearchOverlay({ isOpen, onClose }) {
               )}
 
               {/* Articles Section */}
-              {groupedResults.articles.length > 0 && (
+              {(!type || type === 'article') && groupedResults.articles.length > 0 && (
                 <div>
                   <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
                     <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
@@ -291,7 +313,7 @@ export default function SearchOverlay({ isOpen, onClose }) {
               )}
 
               {/* Courses Section */}
-              {groupedResults.courses.length > 0 && (
+              {(!type || type === 'course') && groupedResults.courses.length > 0 && (
                 <div>
                   <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
                     <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>

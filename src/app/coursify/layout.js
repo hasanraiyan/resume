@@ -1,3 +1,26 @@
+import { Pacifico, Nunito, Lora } from 'next/font/google';
+
+const pacifico = Pacifico({
+  weight: '400',
+  subsets: ['latin'],
+  variable: '--font-logo',
+  display: 'swap',
+});
+
+const nunito = Nunito({
+  weight: ['400', '600', '700', '800'],
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+const lora = Lora({
+  weight: ['400', '500', '600', '700'],
+  subsets: ['latin'],
+  variable: '--font-lora',
+  display: 'swap',
+});
+
 export const metadata = {
   title: {
     default: 'Coursify — Free Courses',
@@ -22,5 +45,11 @@ export const metadata = {
 };
 
 export default function CoursifyLayout({ children }) {
-  return children;
+  return (
+    <div
+      className={`${pacifico.variable} ${nunito.variable} ${lora.variable} font-sans min-h-screen bg-[#fcfbf5] text-[#1e3a34] selection:bg-[#1f644e]/10 selection:text-[#1f644e]`}
+    >
+      <div className="flex flex-col min-h-screen relative">{children}</div>
+    </div>
+  );
 }
