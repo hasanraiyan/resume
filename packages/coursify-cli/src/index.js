@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
 import { program } from 'commander';
-import chalk from 'chalk';
 import { setupAuthCommands } from './commands/auth.js';
-import { setupContentCommands } from './commands/content.js';
+import { setupCoursesCommands } from './commands/courses.js';
+import { setupModulesCommands } from './commands/modules.js';
+import { setupSectionsCommands } from './commands/sections.js';
 import { setupUtilsCommands } from './commands/utils.js';
 
 program
@@ -12,7 +13,9 @@ program
   .version('1.0.0');
 
 setupAuthCommands(program);
-setupContentCommands(program);
+setupCoursesCommands(program);
+setupModulesCommands(program);
+setupSectionsCommands(program);
 setupUtilsCommands(program);
 
 program.parse();
