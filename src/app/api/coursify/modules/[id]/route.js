@@ -1,4 +1,4 @@
-import { requireAdminAuth } from '@/lib/money-auth';
+import { requireCoursifyAuth } from '@/lib/coursify-auth';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyModule from '@/models/CoursifyModule';
@@ -14,7 +14,7 @@ function isObjectId(str) {
 }
 
 export async function PATCH(request, { params }) {
-  const auth = await requireAdminAuth(request);
+  const auth = await requireCoursifyAuth(request);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -32,29 +32,29 @@ export async function PATCH(request, { params }) {
       if (body[key] !== undefined) patch[key] = body[key];
     }
 
-    const module = await CoursifyModule.findOneAndUpdate(
+    const mod = await CoursifyModule.findOneAndUpdate(
       { _id: id, deletedAt: null },
       { $set: patch, $inc: { syncVersion: 1 } },
       { new: true }
     ).lean();
 
-    if (!module) {
+    if (!mod) {
       return NextResponse.json({ success: false, error: 'Module not found' }, { status: 404 });
     }
 
     await CoursifyCourse.updateOne(
-      { _id: module.courseId, deletedAt: null },
+      { _id: mod.courseId, deletedAt: null },
       { $inc: { syncVersion: 1 } }
     );
 
-    const course = await CoursifyCourse.findById(module.courseId).select('slug').lean();
+    const course = await CoursifyCourse.findById(mod.courseId).select('slug').lean();
     if (course?.slug) {
       revalidatePath(`/coursify/${course.slug}`);
     }
 
     return NextResponse.json({
       success: true,
-      module: { ...module, _id: module._id.toString(), courseId: module.courseId.toString() },
+      module: { ...mod, _id: mod._id.toString(), courseId: mod.courseId.toString() },
     });
   } catch (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -62,7 +62,7 @@ export async function PATCH(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-  const auth = await requireAdminAuth(request);
+  const auth = await requireCoursifyAuth(request);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -73,12 +73,12 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ success: false, error: 'Invalid module ID' }, { status: 400 });
     }
 
-    const module = await CoursifyModule.findOneAndUpdate(
+    const mod = await CoursifyModule.findOneAndUpdate(
       { _id: id, deletedAt: null },
       { $set: { deletedAt: new Date() }, $inc: { syncVersion: 1 } }
     ).lean();
 
-    if (!module) {
+    if (!mod) {
       return NextResponse.json({ success: false, error: 'Module not found' }, { status: 404 });
     }
 
@@ -89,11 +89,11 @@ export async function DELETE(request, { params }) {
     );
 
     await CoursifyCourse.updateOne(
-      { _id: module.courseId, deletedAt: null },
+      { _id: mod.courseId, deletedAt: null },
       { $inc: { syncVersion: 1 } }
     );
 
-    const course = await CoursifyCourse.findById(module.courseId).select('slug').lean();
+    const course = await CoursifyCourse.findById(mod.courseId).select('slug').lean();
     if (course?.slug) {
       revalidatePath(`/coursify/${course.slug}`);
     }

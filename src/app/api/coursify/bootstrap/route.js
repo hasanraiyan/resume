@@ -1,11 +1,11 @@
-import { requireAdminAuth } from '@/lib/money-auth';
+import { requireCoursifyAuth } from '@/lib/coursify-auth';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
 import CoursifySection from '@/models/CoursifySection';
 
 export async function GET(request) {
-  const auth = await requireAdminAuth(request);
+  const auth = await requireCoursifyAuth(request);
   if (auth instanceof NextResponse) return auth;
 
   try {

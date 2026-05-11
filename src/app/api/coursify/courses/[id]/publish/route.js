@@ -1,4 +1,4 @@
-import { requireAdminAuth } from '@/lib/money-auth';
+import { requireCoursifyAuth } from '@/lib/coursify-auth';
 import { NextResponse } from 'next/server';
 import { dbUpdateCourse } from '@/lib/coursify/db-ops';
 import dbConnect from '@/lib/dbConnect';
@@ -6,7 +6,7 @@ import CoursifyCourse from '@/models/CoursifyCourse';
 import { revalidatePath } from 'next/cache';
 
 export async function POST(request, { params }) {
-  const auth = await requireAdminAuth(request);
+  const auth = await requireCoursifyAuth(request);
   if (auth instanceof NextResponse) return auth;
 
   try {

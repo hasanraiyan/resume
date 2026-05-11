@@ -47,7 +47,7 @@ export async function packageCourse(dir) {
     }
 
     const modMetadata = yaml.load(await fs.readFile(modInfoPath, 'utf8'));
-    const module = {
+    const mod = {
       ...modMetadata,
       sections: [],
     };
@@ -70,13 +70,13 @@ export async function packageCourse(dir) {
       const fileContent = await fs.readFile(dataPath, 'utf8');
       const { data: frontmatter, content } = matter(fileContent);
 
-      module.sections.push({
+      mod.sections.push({
         ...frontmatter,
         content: content.trim(),
       });
     }
 
-    bundle.modules.push(module);
+    bundle.modules.push(mod);
   }
 
   return bundle;
