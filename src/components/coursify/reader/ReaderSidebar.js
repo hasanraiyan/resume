@@ -1,4 +1,4 @@
-import { X, BookOpen, ChevronRight, ScrollText, Plus, Trash2, Pencil } from 'lucide-react';
+import { X, BookOpen, ChevronRight, ScrollText, Plus, Trash2, Pencil, FileUp } from 'lucide-react';
 import { QuizIcon } from './icons';
 
 /**
@@ -22,6 +22,7 @@ export function ReaderSidebar({
   onAddModule,
   onEditModule,
   onDeleteModule,
+  onImportBundle,
 }) {
   return (
     <>
@@ -224,13 +225,20 @@ export function ReaderSidebar({
 
         {/* Footer actions (e.g. Add Module) */}
         {editMode && (
-          <div className="p-3 border-t border-[#e5e3d8]">
+          <div className="p-3 border-t border-[#e5e3d8] space-y-2">
             <button
               onClick={onAddModule}
               className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed border-[#e5e3d8] text-xs font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
               Add Module
+            </button>
+            <button
+              onClick={onImportBundle}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-xs font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] transition-colors shadow-sm"
+            >
+              <FileUp className="w-3.5 h-3.5" />
+              Import Bundle
             </button>
           </div>
         )}

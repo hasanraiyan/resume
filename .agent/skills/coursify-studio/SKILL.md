@@ -43,21 +43,25 @@ Follow the **Standardized Section Flow** in [pedagogy.md](references/pedagogy.md
 - **Thumbnail Generation Failure**: If you see `Error: Agent class must extend BaseAgent`, this is a non-fatal error in the backend agent registry. The course and its content will still be created successfully.
 - **Missing Blocks**: Ensure every block starts with the `## [BlockType]` header. If a block is missing from the DB after an upsert, check the header syntax.
 
+### Local-First Authoring (Preferred)
+
+For architecting entire courses, use the **File-System-Based Workflow**:
+
+1. **Structure**: Create a directory for the course with `info.yaml`, and subdirectories for modules (`m1-.../info.yaml`) and sections (`s1-.../data.md`).
+2. **Package**: Run the packager script to generate a bundle:
+   ```bash
+   node packages/coursify-cli/bin/coursify.js package "Path/To/Course"
+   ```
+3. **Import**: Open the Coursify platform and use the "Import Bundle" button on the dashboard or in the Studio sidebar to upload the generated `course-bundle.json`.
+
 ## Scripts & Utilities
 
-### Bundled CLI Tool: `coursify.js`
+### Local Packager: `@coursify/cli`
 
-The skill includes a deterministic CLI script to manage content directly. Use it via `node` from the workspace root:
+Used to bundle a local directory into a JSON importable by the UI.
 
 ```bash
-# List all courses
-node .agent/skills/coursify-studio/scripts/coursify.js courses list
-
-# Get full course content
-node .agent/skills/coursify-studio/scripts/coursify.js courses get <id>
-
-# Upsert a section
-node .agent/skills/coursify-studio/scripts/coursify.js sections upsert --courseId="..." --title="New Lesson" --status="complete"
+node packages/coursify-cli/bin/coursify.js package <course-dir> [output-file]
 ```
 
 - **Logic Layer**: The CLI tool wraps `src/lib/coursify/db-ops.js` to ensure consistent side-effects.

@@ -258,6 +258,7 @@ export async function dbSaveCoursePlan({
   planningNotes,
   authoringStatus,
   agentNotes,
+  researchNotes,
 }) {
   await dbConnect();
   const courseId = await resolveCourseId(id);
@@ -270,6 +271,7 @@ export async function dbSaveCoursePlan({
     planningNotes,
     authoringStatus,
     agentNotes,
+    researchNotes,
   });
   const course = await CoursifyCourse.findOneAndUpdate(
     { _id: courseId, deletedAt: null },

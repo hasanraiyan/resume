@@ -7,6 +7,7 @@ import { Pacifico, Nunito, Lora } from 'next/font/google';
 import { X, Clock, Layers } from 'lucide-react';
 import EditSectionModal from '@/components/coursify/EditSectionModal';
 import EditModuleModal from '@/components/coursify/EditModuleModal';
+import ImportBundleModal from '@/components/coursify/ImportBundleModal';
 import { ReaderSidebar } from '@/components/coursify/reader/ReaderSidebar';
 import { TableOfContents } from '@/components/coursify/reader/TableOfContents';
 import { useTableOfContents } from '@/hooks/coursify/useTableOfContents';
@@ -69,6 +70,7 @@ function CourseStudioInner() {
   const mainRef = useRef(null);
   const contentRef = useRef(null);
   const [tocOpen, setTocOpen] = useState(true);
+  const [showImport, setShowImport] = useState(false);
 
   const {
     course,
@@ -99,6 +101,7 @@ function CourseStudioInner() {
     handleSaveSection,
     handleSaveModule,
     handleDeleteModule,
+    refreshCourse,
   } = useCoursifyStudio();
 
   const currentSection = sections.find((s) => s._id === activeSection);
@@ -125,6 +128,10 @@ function CourseStudioInner() {
   const handleAddSectionClick = (moduleId) => {
     setTargetModuleId(moduleId);
     setShowNewSection(true);
+  };
+
+  const handleImportBundle = () => {
+    setShowImport(true);
   };
 
   if (isLoading) {
@@ -225,6 +232,7 @@ function CourseStudioInner() {
           onAddModule={handleCreateModule}
           onEditModule={handleEditModule}
           onDeleteModule={handleDeleteModule}
+          onImportBundle={handleImportBundle}
         />
 
         <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden min-w-0">
@@ -260,6 +268,16 @@ function CourseStudioInner() {
           module={editingModule?._id ? editingModule : null}
           onSave={handleSaveModule}
           onClose={() => setEditingModule(null)}
+        />
+      )}
+
+      {showImport && (
+        <ImportBundleModal
+          onClose={() => setShowImport(false)}
+          onImported={() => {
+            setShowImport(false);
+            refreshCourse();
+          }}
         />
       )}
     </div>

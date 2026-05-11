@@ -13,10 +13,12 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  FileUp,
 } from 'lucide-react';
 import { CoursifyProvider, useCoursify } from '@/context/CoursifyContext';
 import CourseCard from '@/components/coursify/CourseCard';
 import CreateCourseModal from '@/components/coursify/CreateCourseModal';
+import ImportBundleModal from '@/components/coursify/ImportBundleModal';
 import SessionProvider from '@/components/SessionProvider';
 
 const pacifico = Pacifico({
@@ -61,6 +63,7 @@ function CoursifyApp() {
   const router = useRouter();
   const { isLoading, courses, refresh } = useCoursify();
   const [showCreate, setShowCreate] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [query, setQuery] = useState('');
   const [activeQuery, setActiveQuery] = useState('');
   const [difficulty, setDifficulty] = useState('all');
@@ -142,6 +145,13 @@ function CoursifyApp() {
             <RefreshCw className="w-4 h-4" />
           </button>
           <button
+            onClick={() => setShowImport(true)}
+            className="flex items-center gap-1.5 px-4 py-2 border border-[#e5e3d8] text-[#7c8e88] rounded-xl text-sm font-bold hover:border-[#1f644e] hover:text-[#1f644e] active:scale-95 transition-all"
+          >
+            <FileUp className="w-4 h-4" />
+            Import
+          </button>
+          <button
             onClick={() => setShowCreate(true)}
             className="flex items-center gap-1.5 px-4 py-2 bg-[#1f644e] text-white rounded-xl text-sm font-bold hover:bg-[#17503e] active:scale-95 transition-all shadow-sm"
           >
@@ -185,13 +195,22 @@ function CoursifyApp() {
             <p className="text-xs text-[#7c8e88] bg-[#f0f5f2] rounded-xl px-4 py-2 font-mono mb-6">
               MCP endpoint: /api/mcp/coursify
             </p>
-            <button
-              onClick={() => setShowCreate(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#1f644e] text-white rounded-xl text-sm font-bold hover:bg-[#17503e] transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Or create manually
-            </button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                onClick={() => setShowImport(true)}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 border border-[#e5e3d8] text-[#7c8e88] rounded-xl text-sm font-bold hover:border-[#1f644e] hover:text-[#1f644e] transition-colors"
+              >
+                <FileUp className="w-4 h-4" />
+                Import Bundle
+              </button>
+              <button
+                onClick={() => setShowCreate(true)}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#1f644e] text-white rounded-xl text-sm font-bold hover:bg-[#17503e] transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Or create manually
+              </button>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
@@ -369,6 +388,12 @@ function CoursifyApp() {
         <CreateCourseModal
           onClose={() => setShowCreate(false)}
           onCreated={(course) => router.push(`/apps/coursify/${course._id}`)}
+        />
+      )}
+      {showImport && (
+        <ImportBundleModal
+          onClose={() => setShowImport(false)}
+          onImported={(id) => router.push(`/apps/coursify/${id}`)}
         />
       )}
     </div>

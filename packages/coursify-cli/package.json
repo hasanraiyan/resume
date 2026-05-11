@@ -1,0 +1,22 @@
+{
+  "name": "@coursify/cli",
+  "version": "1.0.0",
+  "description": "Local-first authoring tool for the Coursify platform",
+  "type": "module",
+  "bin": {
+    "coursify": "./bin/coursify.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "commander": "^13.0.0",
+    "chalk": "^5.4.1",
+    "js-yaml": "^4.1.0",
+    "gray-matter": "^4.0.3",
+    "fs-extra": "^11.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
