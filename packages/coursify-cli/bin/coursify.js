@@ -8,10 +8,17 @@ import { validateCourse } from '../src/validator.js';
 import { authLogin, authStatus, authLogout } from '../src/auth-commands.js';
 import { CoursifyApiClient } from '../src/api-client.js';
 import { publishCourse } from '../src/publisher.js';
+import {
+  setupInit,
+  setupShow,
+  setupSet,
+  setupSetBaseUrl,
+  getConfiguredBaseUrl,
+} from '../src/setup.js';
 
 const program = new Command();
 
-program.name('coursify').description('Local-first authoring tool for Coursify').version('1.0.0');
+program.name('coursify').description('Local-first authoring tool for Coursify').version('1.0.1');
 
 program.option('-v, --verbose', 'Enable verbose logging', false);
 
@@ -123,17 +130,16 @@ const auth = program.command('auth').description('Manage authentication');
 
 auth
   .command('login')
-  .option('--base-url <url>', 'Server base URL')
-  .option('--dev', 'Use localhost for development', false)
   .description('Authenticate via OAuth (opens browser)')
-  .action(async (options) => {
-    if (options.dev) {
-      options.baseUrl = options.baseUrl || 'http://localhost:3000';
-    } else {
-      options.baseUrl = options.baseUrl || 'https://hasanraiyan.me';
+  .action(async () => {
+    try {
+      const baseUrl = getConfiguredBaseUrl();
+      await authLogin({ baseUrl });
+      process.exit(0);
+    } catch (err) {
+      console.error(chalk.red(`Authentication failed: ${err.message}`));
+      process.exit(1);
     }
-    await authLogin(options);
-    process.exit(0);
   });
 
 auth
@@ -150,22 +156,67 @@ auth
     await authLogout();
   });
 
-program
-  .command('list')
-  .option('--base-url <url>', 'Server base URL')
-  .option('--dev', 'Use localhost for development', false)
-  .description('List courses from server')
+const setup = program.command('setup').description('Configure Coursify CLI settings');
+
+setup
+  .command('init')
+  .option('--login', 'Automatically start authentication after setup', false)
+  .description('Initialize Coursify CLI configuration')
   .action(async (options) => {
     try {
+      await setupInit(options);
+    } catch (err) {
+      console.error(chalk.red(`Error: ${err.message}`));
+      process.exit(1);
+    }
+  });
+
+setup
+  .command('show')
+  .description('Show current configuration')
+  .action(async () => {
+    try {
+      await setupShow();
+    } catch (err) {
+      console.error(chalk.red(`Error: ${err.message}`));
+      process.exit(1);
+    }
+  });
+
+setup
+  .command('set-base-url <url>')
+  .description('Set the Coursify server URL')
+  .action(async (url) => {
+    try {
+      await setupSetBaseUrl(url);
+    } catch (err) {
+      console.error(chalk.red(`Error: ${err.message}`));
+      process.exit(1);
+    }
+  });
+
+setup
+  .command('set <key> <value>')
+  .description('Set a configuration value')
+  .action(async (key, value) => {
+    try {
+      await setupSet(key, value);
+    } catch (err) {
+      console.error(chalk.red(`Error: ${err.message}`));
+      process.exit(1);
+    }
+  });
+
+program
+  .command('list')
+  .description('List courses from server')
+  .action(async () => {
+    try {
       const globalOptions = program.opts();
-      if (options.dev) {
-        options.baseUrl = options.baseUrl || 'http://localhost:3000';
-      } else {
-        options.baseUrl = options.baseUrl || 'https://hasanraiyan.me';
-      }
-      const client = new CoursifyApiClient(options.baseUrl, { verbose: globalOptions.verbose });
+      const baseUrl = getConfiguredBaseUrl();
+      const client = new CoursifyApiClient(baseUrl, { verbose: globalOptions.verbose });
       const courses = await client.listCourses();
-      console.log(chalk.bold(`\nCourses on ${options.baseUrl}:`));
+      console.log(chalk.bold(`\nCourses on ${baseUrl}:`));
       courses.forEach((c) => {
         console.log(`- ${chalk.green(c.title)} (${c.status}) [${c.authoringStatus}] ID: ${c._id}`);
       });
@@ -178,20 +229,18 @@ program
 program
   .command('publish')
   .argument('[dir]', 'Directory of the course', '.')
-  .option('--base-url <url>', 'Server base URL')
-  .option('--dev', 'Use localhost for development', false)
   .option('--publish', 'Set course status to published after sync', false)
   .option('--dry-run', 'Preview the sync process without making server changes', false)
   .description('Package and push course to server')
   .action(async (dir, options) => {
     try {
       const globalOptions = program.opts();
-      if (options.dev) {
-        options.baseUrl = options.baseUrl || 'http://localhost:3000';
-      } else {
-        options.baseUrl = options.baseUrl || 'https://hasanraiyan.me';
-      }
-      await publishCourse(dir, { ...options, verbose: globalOptions.verbose });
+      const baseUrl = getConfiguredBaseUrl();
+      await publishCourse(dir, {
+        baseUrl,
+        ...options,
+        verbose: globalOptions.verbose,
+      });
     } catch (err) {
       console.error(chalk.red(`Error: ${err.message}`));
       process.exit(1);
