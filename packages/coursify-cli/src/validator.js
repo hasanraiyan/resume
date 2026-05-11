@@ -105,17 +105,60 @@ export async function validateCourse(dir) {
             );
           }
 
-          // Check for block headers
-          if (!content.includes('## [MdBlock]') && !content.includes('## [QuizBlock]')) {
+          // Check for TOC compatibility (no Level 1 headers inside sections)
+          const h1Matches = content.match(/^#\s+/m);
+          if (h1Matches) {
+            results.errors.push(
+              `Section contains Level 1 header (#). Use ## or ### for TOC compatibility: ${modDirEntry.name}/${secDirEntry.name}`
+            );
+          }
+
+          // Check for block headers and valid types
+          const blockHeaderRegex = /^##\s+\[(.*?)\]/gm;
+          let match;
+          const foundBlocks = [];
+          const validBlockTypes = [
+            'MdBlock',
+            'QuizBlock',
+            'StepByStepBlock',
+            'ResourceBlock',
+            'MermaidBlock',
+            'VideoBlock',
+            'CodeBlock',
+          ];
+
+          while ((match = blockHeaderRegex.exec(content)) !== null) {
+            const blockType = match[1];
+            foundBlocks.push(blockType);
+            if (!validBlockTypes.includes(blockType)) {
+              results.warnings.push(
+                `Unknown Magic Block type [${blockType}]: ${modDirEntry.name}/${secDirEntry.name}`
+              );
+            }
+          }
+
+          if (foundBlocks.length === 0) {
             results.warnings.push(
               `Section has no Magic Blocks: ${modDirEntry.name}/${secDirEntry.name}`
             );
           }
 
+          // Procedural/Lab validation
+          const isLab =
+            frontmatter.title.toLowerCase().includes('lab') ||
+            frontmatter.title.toLowerCase().includes('exercise') ||
+            frontmatter.description?.toLowerCase().includes('step');
+
+          if (isLab && !foundBlocks.includes('StepByStepBlock')) {
+            results.warnings.push(
+              `Lab/Exercise section missing StepByStepBlock: ${modDirEntry.name}/${secDirEntry.name}`
+            );
+          }
+
           // Basic Quiz Validation
-          if (content.includes('## [QuizBlock]')) {
-            const quizLines = content.split('## [QuizBlock]')[1].split('## [')[0];
-            if (!quizLines.includes('correctAnswer:')) {
+          if (foundBlocks.includes('QuizBlock')) {
+            const quizContent = content.split(/##\s+\[QuizBlock\]/)[1].split(/##\s+\[/)[0];
+            if (!quizContent.includes('correctAnswer:')) {
               results.errors.push(
                 `QuizBlock missing correctAnswer in ${modDirEntry.name}/${secDirEntry.name}`
               );

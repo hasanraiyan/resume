@@ -2,7 +2,7 @@
 
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { scaffold } from '../src/scaffold.js';
+import { scaffold, scaffoldModule, scaffoldSection } from '../src/scaffold.js';
 import { packageCourse } from '../src/packager.js';
 import { validateCourse } from '../src/validator.js';
 import { authLogin, authStatus, authLogout } from '../src/auth-commands.js';
@@ -12,6 +12,8 @@ import { publishCourse } from '../src/publisher.js';
 const program = new Command();
 
 program.name('coursify').description('Local-first authoring tool for Coursify').version('1.0.0');
+
+program.option('-v, --verbose', 'Enable verbose logging', false);
 
 program
   .command('init')
@@ -23,8 +25,44 @@ program
       console.log(chalk.green(`\nSuccessfully initialized course: ${name}`));
       console.log(chalk.cyan('Next steps:'));
       console.log(`  1. cd ${name}`);
-      console.log('  2. Edit info.yaml and content in modules/');
-      console.log('  3. Run `coursify package .` to generate a bundle');
+      console.log('  2. Run `coursify init-module "Module Title"` to add a module');
+    } catch (err) {
+      console.error(chalk.red(`Error: ${err.message}`));
+      process.exit(1);
+    }
+  });
+
+program
+  .command('init-module')
+  .argument('<title>', 'Title of the module')
+  .option('-o, --order <number>', 'Module order', '1')
+  .description('Add a new module directory to the current course')
+  .action(async (title, options) => {
+    try {
+      const modDir = await scaffoldModule(process.cwd(), title, parseInt(options.order));
+      console.log(chalk.green(`\nSuccessfully created module: ${modDir}`));
+    } catch (err) {
+      console.error(chalk.red(`Error: ${err.message}`));
+      process.exit(1);
+    }
+  });
+
+program
+  .command('init-section')
+  .argument('<title>', 'Title of the section')
+  .option('-m, --module <dir>', 'Module directory', '.')
+  .option('-o, --order <number>', 'Section order', '1')
+  .option('-t, --type <type>', 'Section type (standard, lab, procedural)', 'standard')
+  .description('Add a new section directory to a module')
+  .action(async (title, options) => {
+    try {
+      const secDir = await scaffoldSection(
+        options.module,
+        title,
+        parseInt(options.order),
+        options.type
+      );
+      console.log(chalk.green(`\nSuccessfully created section: ${secDir}`));
     } catch (err) {
       console.error(chalk.red(`Error: ${err.message}`));
       process.exit(1);
@@ -35,13 +73,19 @@ program
   .command('package')
   .argument('[dir]', 'Directory of the course', '.')
   .option('-o, --output <file>', 'Output bundle file name', 'course-bundle.json')
+  .option('--dry-run', 'Preview the bundle structure without writing to file', false)
   .description('Bundle a course directory into a JSON file for import')
   .action(async (dir, options) => {
     try {
       const bundle = await packageCourse(dir);
-      const fs = (await import('fs')).default;
-      fs.writeFileSync(options.output, JSON.stringify(bundle, null, 2));
-      console.log(chalk.green(`\nSuccessfully packaged course into ${options.output}`));
+      if (options.dryRun) {
+        console.log(chalk.bold.yellow('DRY RUN ENABLED - Bundle preview:'));
+        console.log(JSON.stringify(bundle, null, 2));
+      } else {
+        const fs = (await import('fs')).default;
+        fs.writeFileSync(options.output, JSON.stringify(bundle, null, 2));
+        console.log(chalk.green(`\nSuccessfully packaged course into ${options.output}`));
+      }
       console.log(chalk.bold(`Course: ${bundle.title}`));
       console.log(`Modules: ${bundle.modules.length}`);
       console.log(`Sections: ${bundle.modules.reduce((acc, m) => acc + m.sections.length, 0)}`);
@@ -113,12 +157,13 @@ program
   .description('List courses from server')
   .action(async (options) => {
     try {
+      const globalOptions = program.opts();
       if (options.dev) {
         options.baseUrl = options.baseUrl || 'http://localhost:3000';
       } else {
         options.baseUrl = options.baseUrl || 'https://hasanraiyan.me';
       }
-      const client = new CoursifyApiClient(options.baseUrl);
+      const client = new CoursifyApiClient(options.baseUrl, { verbose: globalOptions.verbose });
       const courses = await client.listCourses();
       console.log(chalk.bold(`\nCourses on ${options.baseUrl}:`));
       courses.forEach((c) => {
@@ -136,15 +181,17 @@ program
   .option('--base-url <url>', 'Server base URL')
   .option('--dev', 'Use localhost for development', false)
   .option('--publish', 'Set course status to published after sync', false)
+  .option('--dry-run', 'Preview the sync process without making server changes', false)
   .description('Package and push course to server')
   .action(async (dir, options) => {
     try {
+      const globalOptions = program.opts();
       if (options.dev) {
         options.baseUrl = options.baseUrl || 'http://localhost:3000';
       } else {
         options.baseUrl = options.baseUrl || 'https://hasanraiyan.me';
       }
-      await publishCourse(dir, options);
+      await publishCourse(dir, { ...options, verbose: globalOptions.verbose });
     } catch (err) {
       console.error(chalk.red(`Error: ${err.message}`));
       process.exit(1);

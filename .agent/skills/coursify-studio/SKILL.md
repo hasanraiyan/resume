@@ -1,68 +1,109 @@
 ---
 name: coursify-studio
-description: Specialized instructional design and course authoring for the Coursify platform. Use when creating, updating, or planning courses, modules, and sections, ensuring high-quality pedagogical structure and hierarchical publication logic.
+description: Specialized instructional design and course authoring for the Coursify platform. Use when creating, updating, or planning courses, modules, and sections locally using the Coursify CLI.
 ---
 
 # Coursify Studio
 
-This skill transforms ai agent into a specialized Instructional Design Agent for the Coursify platform.
+This skill transforms the agent into a specialized **Instructional Design Agent** for the Coursify platform, emphasizing a **Local-First Authoring Workflow** using the `@coursify/cli` tool.
 
-## Quick Start
+## Local-First Workflow (Recommended)
 
-1. **Understand the Domain**: Review [schemas.md](references/schemas.md) for database models and block types.
-2. **Follow Best Practices**: Use the high-quality section design outlined in [workflows.md](references/workflows.md).
-3. **Respect Publication Rules**: Always ensure the hierarchical visibility logic is maintained.
+Authoring courses locally in an IDE provides the best experience for technical content, version control, and rapid iteration.
 
-## Core Procedures
+### 1. Project Initialization
 
-### Planning & Progress Tracking
+Start by scaffolding a new course directory:
 
-- **Discovery**: Always call `courses list` first to avoid duplicates.
-- **ID Synchronization**: Before updating any existing module or section, call `courses get <id>` or a specific list command to ensure you have the most current Database IDs. Stale context is the #1 cause of "Resource not found" errors.
-- **Scratchpad**: Use the `agentNotes` field via `courses upsert` as your session scratchpad. Store current state (which module/section is next, decisions made, tasks remaining) to survive session interruptions.
+```bash
+node packages/coursify-cli/bin/coursify.js init "My Awesome Course"
+cd "my-awesome-course"
+```
 
-### Authoring Content (The Quality Bar)
+### 2. Building Structure
 
-Follow the **Standardized Section Flow** in [pedagogy.md](references/pedagogy.md).
+Add modules and sections using the scaffolding commands:
 
-- **Depth**: Lessons must be **500-1200 words**. Be thorough and technical.
-- **TOC Compatibility**: Use `##` for primary headings and `###` for secondary headings within `MdBlock`.
-- **Procedural Content**: **Mandatory usage** of `StepByStepBlock` for all setups and workflows.
-- **Architectural Clarity**: Use Mermaid `graph TD/LR` to visualize any multi-stage logic, data flows, or system architectures.
-- **Interactivity**: Always end with a `QuizBlock` (3-5 questions). Use literal text mapping for `correctAnswer`.
-- **Magic Blocks**: Start files with `## [MdBlock]`. Use `## [BlockType]` headers for all transitions.
+```bash
+# Add a module
+node ../packages/coursify-cli/bin/coursify.js init-module "Getting Started" --order 1
 
-### Managing Publication
+# Add a section to that module
+node ../packages/coursify-cli/bin/coursify.js init-section "Introduction" --module m1-getting-started --order 1 --type standard
 
-- Use `status: 'complete'` only when the content is polished.
-- Remember: A section is hidden if its parent module or course is not yet published.
-- Use `authoringStatus` on the Course model to track the internal production lifecycle.
+# Add a lab/procedural section
+node ../packages/coursify-cli/bin/coursify.js init-section "Setup Lab" --module m1-getting-started --order 2 --type lab
+```
+
+### 3. Authoring Content (Magic Blocks)
+
+Edit the `data.md` files in each section. Follow the **Standardized Section Flow**:
+
+- **MdBlock**: Technical theory, technical concepts, 500-1200 words. Use `##` and `###` headers.
+- **StepByStepBlock**: Mandatory for labs and workflows.
+- **QuizBlock**: 3-5 questions to verify learning.
+- **MermaidBlock**: Visualize architectures using Mermaid syntax.
+
+### 4. Validation & Linting
+
+Always validate your content before syncing to ensure TOC compatibility and block integrity:
+
+```bash
+node ../packages/coursify-cli/bin/coursify.js validate .
+```
+
+### 5. Deployment (Syncing to Server)
+
+Authenticate and then publish your course.
+
+**Authentication:**
+
+```bash
+# Production (hasanraiyan.me)
+node packages/coursify-cli/bin/coursify.js auth login
+
+# Development (localhost:3000)
+node packages/coursify-cli/bin/coursify.js auth login --dev
+```
+
+**Syncing:**
+
+```bash
+# Preview changes (Dry Run)
+node packages/coursify-cli/bin/coursify.js publish . --dry-run
+
+# Sync to production
+node packages/coursify-cli/bin/coursify.js publish .
+
+# Sync to development
+node packages/coursify-cli/bin/coursify.js publish . --dev
+
+# Sync and immediately mark as published on the UI
+node packages/coursify-cli/bin/coursify.js publish . --publish
+```
+
+## Core Procedures for Agents
+
+### ID & Slug Management
+
+- **Slug-based Updates**: Use a unique `slug` in your `info.yaml`. The CLI will automatically find and update the existing course on the server if the slug matches, preventing duplicate courses.
+- **ID Overrides**: If you have a specific Database ID, you can provide it in `info.yaml` as `id: "your-id"`.
+
+### Observability & Debugging
+
+If a sync fails or you see "Resource not found" errors, use the `--verbose` flag to see the raw communication:
+
+```bash
+node packages/coursify-cli/bin/coursify.js publish . --verbose
+```
+
+### Pedagogy Standards
+
+- **Depth**: Lessons must be thorough and technical.
+- **TOC Compatibility**: **NEVER** use Level 1 headers (`#`) inside a section's Markdown. Always start with `##`.
+- **Interactivity**: Every section should ideally end with a `QuizBlock`.
 
 ## Troubleshooting
 
-- **Thumbnail Generation Failure**: If you see `Error: Agent class must extend BaseAgent`, this is a non-fatal error in the backend agent registry. The course and its content will still be created successfully.
-- **Missing Blocks**: Ensure every block starts with the `## [BlockType]` header. If a block is missing from the DB after an upsert, check the header syntax.
-
-### Local-First Authoring (Preferred)
-
-For architecting entire courses, use the **File-System-Based Workflow**:
-
-1. **Structure**: Create a directory for the course with `info.yaml`, and subdirectories for modules (`m1-.../info.yaml`) and sections (`s1-.../data.md`).
-2. **Package**: Run the packager script to generate a bundle:
-   ```bash
-   node packages/coursify-cli/bin/coursify.js package "Path/To/Course"
-   ```
-3. **Import**: Open the Coursify platform and use the "Import Bundle" button on the dashboard or in the Studio sidebar to upload the generated `course-bundle.json`.
-
-## Scripts & Utilities
-
-### Local Packager: `@coursify/cli`
-
-Used to bundle a local directory into a JSON importable by the UI.
-
-```bash
-node packages/coursify-cli/bin/coursify.js package <course-dir> [output-file]
-```
-
-- **Logic Layer**: The CLI tool wraps `src/lib/coursify/db-ops.js` to ensure consistent side-effects.
-- **Transports**: This is the primary tool for Gemini CLI when performing complex database operations.
+- **Unauthorized**: Run `coursify auth login` again. Tokens expire every 60 minutes but should refresh automatically if you have a refresh token.
+- **Validation Errors**: Check for Level 1 headers or missing `correctAnswer` in Quizzes.
