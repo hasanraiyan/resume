@@ -14,61 +14,48 @@ function getSlug(text) {
 }
 
 /**
- * Robustly extracts headings from a list of blocks.
+ * Robustly extracts headings from a Markdown string.
  */
-export function useTableOfContents(blocks, contentRef, scrollContainerRef) {
+export function useTableOfContents(content, contentRef, scrollContainerRef) {
   const [activeHeading, setActiveHeading] = useState(null);
 
   const headings = useMemo(() => {
-    if (!blocks || !Array.isArray(blocks)) return [];
-
-    // 1. Sort blocks by order to ensure TOC follows document flow
-    const sortedBlocks = [...blocks].sort((a, b) => (a.order || 0) - (b.order || 0));
+    if (!content || typeof content !== 'string') return [];
 
     const extracted = [];
-    sortedBlocks.forEach((block) => {
-      if (block.type === 'MdBlock' && block.content) {
-        // Support both \n and \r\n
-        const lines = block.content.split(/\r?\n/);
-        for (const line of lines) {
-          const trimmedLine = line.trim();
-          // Regex for headings: Level 1-4
-          // Allows 1-3 spaces before hashes as per Markdown spec
-          const headingMatch = trimmedLine.match(/^(#{1,4})\s+(.+)$/);
+    const lines = content.split(/\r?\n/);
 
-          if (headingMatch) {
-            const level = headingMatch[1].length;
-            // Clean markdown formatting from heading text
-            const text = headingMatch[2].trim().replace(/[*_~`]/g, '');
-            extracted.push({ level, text, slug: getSlug(text), type: 'md' });
-          }
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+
+      // 1. Standard Markdown Headings (#)
+      const headingMatch = trimmedLine.match(/^(#{1,4})\s+(.+)$/);
+      if (headingMatch) {
+        const level = headingMatch[1].length;
+        let text = headingMatch[2].trim().replace(/[*_~`]/g, '');
+
+        // 2. Specialized Block Detection in Headings
+        // e.g. ## [QuizBlock] ->Knowledge Check
+        const blockMatch = text.match(
+          /^\[(MdBlock|QuizBlock|VideoBlock|ResourceBlock|StepByStepBlock)\]/
+        );
+
+        if (blockMatch) {
+          const type = blockMatch[1];
+          // For block headers, we look at the next lines for a title: if available
+          // But for TOC we can use a friendly name
+          if (type === 'QuizBlock') text = 'Knowledge Check';
+          else if (type === 'StepByStepBlock') text = 'Process Flow';
+          else if (type === 'VideoBlock') text = 'Video Lesson';
+          else if (type === 'ResourceBlock') text = 'Resource';
+          else continue; // Skip generic MdBlock headers in TOC
         }
-      } else if (block.type === 'StepByStepBlock' && block.title) {
-        const text = block.title.trim();
-        extracted.push({ level: 2, text, slug: getSlug(text), type: 'step' });
-      } else if (block.type === 'VideoBlock' && block.video?.title) {
-        const text = block.video.title.trim();
-        extracted.push({
-          level: 2,
-          text,
-          slug: getSlug(text),
-          type: 'video',
-        });
-      } else if (block.type === 'ResourceBlock' && block.resource?.title) {
-        const text = block.resource.title.trim();
-        extracted.push({
-          level: 3,
-          text,
-          slug: getSlug(text),
-          type: 'resource',
-        });
-      } else if (block.type === 'QuizBlock') {
-        const text = (block.title || 'Knowledge Check').trim();
-        extracted.push({ level: 2, text, slug: getSlug(text), type: 'quiz' });
+
+        extracted.push({ level, text, slug: getSlug(text), type: 'md' });
       }
-    });
+    }
     return extracted;
-  }, [blocks]);
+  }, [content]);
 
   // Update initial active heading
   useEffect(() => {

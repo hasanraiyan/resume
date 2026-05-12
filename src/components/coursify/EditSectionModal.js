@@ -1,15 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Plus,
   Trash2,
   ChevronUp,
   ChevronDown,
-  Wand2,
   CheckCircle2,
-  Zap,
   Copy,
   Type,
   PlayCircle,
@@ -18,6 +16,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import QuizEditor from './QuizEditor';
+import { parseMarkdownSection, generateFullMarkdown } from '@/utils/coursify-parser';
 
 const RESOURCE_TYPES = ['video', 'article', 'doc', 'other'];
 const STATUS_OPTIONS = ['planned', 'draft', 'needs_review', 'complete'];
@@ -30,287 +29,9 @@ const BLOCK_TYPES = [
   { type: 'ResourceBlock', label: 'Resource', icon: FileText },
 ];
 
-/**
- * Robust parser for structured Markdown deliverables.
- */
-function parseMarkdownSection(text) {
-  console.log('Magic Import: Starting robust parse...');
-  const result = {
-    title: '',
-    summary: '',
-    learningGoals: [],
-    estimatedDuration: '',
-    status: 'draft',
-    blocks: [],
-  };
-
-  // 1. Parse YAML Front-matter
-  const frontMatterMatch = text.match(/^---\s*\n([\s\S]*?)\n---\s*\n/);
-  if (frontMatterMatch) {
-    const yaml = frontMatterMatch[1];
-    const lines = yaml.split('\n');
-    let currentKey = '';
-
-    lines.forEach((line) => {
-      const trimmed = line.trim();
-      if (!trimmed) return;
-
-      if (trimmed.startsWith('-')) {
-        if (currentKey === 'learningGoals') {
-          result.learningGoals.push(
-            trimmed
-              .replace(/^-/, '')
-              .trim()
-              .replace(/^["'](.*)["']$/, '$1')
-          );
-        }
-      } else if (trimmed.includes(':')) {
-        const idx = trimmed.indexOf(':');
-        const k = trimmed.substring(0, idx).trim();
-        const v = trimmed.substring(idx + 1).trim();
-        currentKey = k;
-        const cleanV = v.replace(/^["'](.*)["']$/, '$1');
-        if (k === 'title') result.title = cleanV;
-        if (k === 'summary') result.summary = cleanV;
-        if (k === 'estimatedDuration') result.estimatedDuration = cleanV;
-        if (k === 'status') result.status = cleanV;
-      }
-    });
-    text = text.replace(frontMatterMatch[0], '');
-  }
-
-  // 2. Extract Blocks
-  const blockRegex = /##\s*\[(MdBlock|QuizBlock|VideoBlock|ResourceBlock|StepByStepBlock)\]/g;
-  const matches = [];
-  let match;
-  while ((match = blockRegex.exec(text)) !== null) {
-    matches.push({ type: match[1], index: match.index, full: match[0] });
-  }
-
-  console.log(`Magic Import: Found ${matches.length} blocks.`);
-
-  for (let i = 0; i < matches.length; i++) {
-    const m = matches[i];
-    const nextIndex = matches[i + 1] ? matches[i + 1].index : text.length;
-    let rawContent = text.substring(m.index + m.full.length, nextIndex).trim();
-
-    rawContent = rawContent.replace(/\n\s*---\s*$/, '').trim();
-    const block = { type: m.type, order: i };
-
-    if (m.type === 'MdBlock') {
-      block.content = rawContent;
-    } else if (m.type === 'VideoBlock') {
-      const urlMatch = rawContent.match(/url:\s*(.*)/);
-      const titleMatch = rawContent.match(/title:\s*(.*)/);
-      block.video = {
-        url: urlMatch?.[1].trim() || '',
-        title: titleMatch?.[1].trim() || '',
-        platform: 'youtube',
-      };
-    } else if (m.type === 'ResourceBlock') {
-      const urlMatch = rawContent.match(/url:\s*(.*)/);
-      const titleMatch = rawContent.match(/title:\s*(.*)/);
-      block.resource = {
-        url: urlMatch?.[1].trim() || '',
-        title: titleMatch?.[1].trim() || '',
-        type: 'other',
-      };
-    } else if (m.type === 'StepByStepBlock') {
-      block.steps = [];
-      // 1. Extract block-level metadata
-      const titleMatch = rawContent.match(/^title:\s*(.*)/m);
-      if (titleMatch) {
-        block.title = titleMatch[1].trim().replace(/^["'](.*)["']$/, '$1');
-        rawContent = rawContent.replace(titleMatch[0], '');
-      }
-      const numMatch = rawContent.match(/^showNumbering:\s*(.*)/m);
-      if (numMatch) {
-        block.showNumbering = numMatch[1].trim() !== 'false';
-        rawContent = rawContent.replace(numMatch[0], '');
-      } else {
-        block.showNumbering = true;
-      }
-
-      // 2. Split by step separator (start of string or newline)
-      const sParts = rawContent.split(/(?:^|\n)\s*-\s*step:\s*/).filter((p) => p.trim());
-
-      sParts.forEach((s) => {
-        const lines = s.split('\n');
-        const title = lines[0].trim().replace(/^["'](.*)["']$/, '$1');
-        let stepContent = lines.slice(1).join('\n').trim();
-        if (stepContent.startsWith('content:')) {
-          stepContent = stepContent.replace(/^content:\s*/, '').trim();
-        }
-        // Remove outer quotes and unescape \n sequences
-        stepContent = stepContent.replace(/^["']([\s\S]*)["']$/, '$1').replace(/\\n/g, '\n');
-
-        if (title) block.steps.push({ title, content: stepContent });
-      });
-    } else if (m.type === 'QuizBlock') {
-      block.quiz = { questions: [] };
-      const qRegex = /(?:^|\n)\s*-\s*question:\s*/g;
-      const qMatches = [];
-      let qMatch;
-      while ((qMatch = qRegex.exec(rawContent)) !== null) {
-        qMatches.push({ index: qMatch.index, full: qMatch[0] });
-      }
-
-      for (let j = 0; j < qMatches.length; j++) {
-        const start = qMatches[j].index + qMatches[j].full.length;
-        const end = qMatches[j + 1] ? qMatches[j + 1].index : rawContent.length;
-        const qRaw = rawContent.substring(start, end);
-
-        const qObj = {
-          type: 'multiple_choice',
-          question: '',
-          options: [],
-          correctAnswer: '',
-          explanation: '',
-          points: 1,
-          _tempId: Math.random().toString(36).slice(2),
-        };
-
-        const lines = qRaw.split('\n');
-        qObj.question = lines[0].trim().replace(/^["'](.*)["']$/, '$1');
-
-        let parsingKey = '';
-        lines.slice(1).forEach((line) => {
-          const trimmed = line.trim();
-          if (!trimmed) return;
-
-          if (trimmed.includes(':') && !trimmed.startsWith('-')) {
-            const sIdx = trimmed.indexOf(':');
-            const key = trimmed.substring(0, sIdx).trim();
-            const val = trimmed.substring(sIdx + 1).trim();
-
-            if (key === 'type') qObj.type = val.replace(/^["'](.*)["']$/, '$1');
-            else if (key === 'correctAnswer')
-              qObj.correctAnswer = val.replace(/^["'](.*)["']$/, '$1');
-            else if (key === 'explanation') qObj.explanation = val.replace(/^["'](.*)["']$/, '$1');
-            else if (key === 'points') qObj.points = parseInt(val) || 1;
-            else if (key === 'options') {
-              parsingKey = 'options';
-              const arrMatch = trimmed.match(/\[(.*?)\]/);
-              if (arrMatch) {
-                qObj.options = arrMatch[1]
-                  .split(',')
-                  .map((o) => o.trim().replace(/^["'](.*)["']$/, '$1'));
-                parsingKey = '';
-              }
-            } else {
-              parsingKey = key;
-            }
-          } else if (trimmed.startsWith('-') && parsingKey === 'options') {
-            qObj.options.push(
-              trimmed
-                .replace(/^-/, '')
-                .trim()
-                .replace(/^["'](.*)["']$/, '$1')
-            );
-          }
-        });
-
-        if (qObj.options.length > 0) {
-          const lowerCA = qObj.correctAnswer.toLowerCase();
-          if (qObj.type === 'multi_select') {
-            const answers = [];
-            qObj.options.forEach((opt, idx) => {
-              if (lowerCA.includes(opt.toLowerCase())) answers.push(String(idx));
-            });
-            if (answers.length === 0 && lowerCA.startsWith('[')) {
-              try {
-                qObj.correctAnswer = JSON.parse(qObj.correctAnswer.replace(/'/g, '"')).map(String);
-              } catch {
-                qObj.correctAnswer = [];
-              }
-            } else {
-              qObj.correctAnswer = answers;
-            }
-          } else {
-            const foundIdx = qObj.options.findIndex((o) => o.toLowerCase() === lowerCA);
-            if (foundIdx !== -1) {
-              qObj.correctAnswer = String(foundIdx);
-            }
-          }
-          if (
-            qObj.options.length === 2 &&
-            qObj.options.some((o) => o.toLowerCase() === 'true') &&
-            qObj.options.some((o) => o.toLowerCase() === 'false')
-          ) {
-            qObj.type = 'true_false';
-            qObj.correctAnswer = lowerCA.includes('true') ? 'true' : 'false';
-          }
-        }
-        if (qObj.question) block.quiz.questions.push(qObj);
-      }
-    }
-    result.blocks.push(block);
-  }
-
-  return result;
-}
-
-/**
- * Generator for structured Markdown deliverables.
- */
-function generateMarkdownExport(data) {
-  let output = '---\n';
-  output += `title: "${data.title}"\n`;
-  output += `summary: "${data.summary}"\n`;
-  output += `learningGoals:\n${(data.learningGoals || []).map((g) => `  - "${g}"`).join('\n')}\n`;
-  output += `estimatedDuration: "${data.estimatedDuration}"\n`;
-  output += `status: "${data.status}"\n`;
-  output += '---\n\n# Blocks\n\n';
-
-  data.blocks.forEach((block, i) => {
-    output += `## [${block.type}]\n`;
-    if (block.type === 'MdBlock') {
-      output += `${block.content}\n\n`;
-    } else if (block.type === 'VideoBlock') {
-      output += `url: ${block.video?.url || ''}\n`;
-      output += `title: "${block.video?.title || ''}"\n\n`;
-    } else if (block.type === 'ResourceBlock') {
-      output += `url: ${block.resource?.url || ''}\n`;
-      output += `title: "${block.resource?.title || ''}"\n`;
-      output += `type: "${block.resource?.type || 'other'}"\n\n`;
-    } else if (block.type === 'StepByStepBlock') {
-      if (block.title) output += `title: "${block.title}"\n`;
-      if (block.showNumbering === false) output += 'showNumbering: false\n';
-      (block.steps || []).forEach((s) => {
-        output += `- step: "${s.title}"\n  content: "${(s.content || '').replace(/\n/g, '\\n')}"\n`;
-      });
-      output += '\n';
-    } else if (block.type === 'QuizBlock') {
-      (block.quiz?.questions || []).forEach((q) => {
-        output += `- question: "${q.question}"\n`;
-        output += `  type: "${q.type}"\n`;
-        output += `  options:\n${(q.options || []).map((o) => `    - "${o}"`).join('\n')}\n`;
-        let answerText = q.correctAnswer;
-        if (q.type === 'multiple_choice') {
-          const idx = parseInt(q.correctAnswer);
-          if (!isNaN(idx) && q.options[idx]) answerText = q.options[idx];
-        } else if (q.type === 'multi_select' && Array.isArray(q.correctAnswer)) {
-          answerText = q.correctAnswer
-            .map((idx) => q.options[parseInt(idx)])
-            .filter(Boolean)
-            .join(', ');
-        }
-        output += `  correctAnswer: "${answerText}"\n`;
-        output += `  explanation: "${q.explanation}"\n`;
-        output += `  points: ${q.points}\n`;
-      });
-      output += '\n';
-    }
-    if (i < data.blocks.length - 1) output += '---\n\n';
-  });
-
-  return output;
-}
-
 function QuickAdder({ isOpen, onToggle, onAdd }) {
   return (
     <div className="relative h-4 group/adder z-30 flex items-center justify-center">
-      {/* Invisible backdrop to close menu on click outside */}
       {isOpen && (
         <div
           className="fixed inset-0 z-40 cursor-default"
@@ -320,8 +41,6 @@ function QuickAdder({ isOpen, onToggle, onAdd }) {
           }}
         />
       )}
-
-      {/* Hover line trigger */}
       <div
         className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${isOpen ? 'opacity-0' : 'opacity-0 group-hover/adder:opacity-100'}`}
       >
@@ -374,34 +93,22 @@ function QuickAdder({ isOpen, onToggle, onAdd }) {
 
 export default function EditSectionModal({ section, onSave, onClose }) {
   const [title, setTitle] = useState(section?.title || '');
+  const [content, setContent] = useState(section?.content || '');
   const [blocks, setBlocks] = useState(section?.blocks || []);
   const [resources, setResources] = useState(section?.resources || []);
   const [summary, setSummary] = useState(section?.summary || '');
   const [learningGoals, setLearningGoals] = useState(section?.learningGoals || []);
   const [estimatedDuration, setEstimatedDuration] = useState(section?.estimatedDuration || '');
   const [status, setStatus] = useState(section?.status || 'draft');
-  const [importText, setImportText] = useState('');
 
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState('blocks');
+  const [tab, setTab] = useState('content');
   const [activeAdderIndex, setActiveAdderIndex] = useState(null);
-
-  const exportText = useMemo(
-    () =>
-      generateMarkdownExport({
-        title,
-        summary,
-        learningGoals,
-        estimatedDuration,
-        status,
-        blocks,
-      }),
-    [title, summary, learningGoals, estimatedDuration, status, blocks]
-  );
 
   useEffect(() => {
     if (section) {
       setTitle(section.title);
+      setContent(section.content || '');
       setBlocks(section.blocks || []);
       setResources(section.resources || []);
       setSummary(section.summary || '');
@@ -410,6 +117,24 @@ export default function EditSectionModal({ section, onSave, onClose }) {
       setStatus(section.status || 'draft');
     }
   }, [section]);
+
+  const handleTabChange = (nextTab) => {
+    if (tab === 'content' && nextTab === 'visual') {
+      const parsed = parseMarkdownSection(content);
+      setBlocks(parsed.blocks);
+    } else if (tab === 'visual' && nextTab === 'content') {
+      const exported = generateFullMarkdown({
+        title,
+        summary,
+        learningGoals,
+        estimatedDuration,
+        status,
+        blocks,
+      });
+      setContent(exported);
+    }
+    setTab(nextTab);
+  };
 
   const addBlock = (type, index = blocks.length) => {
     const newBlock = { type, order: index };
@@ -456,31 +181,31 @@ export default function EditSectionModal({ section, onSave, onClose }) {
     setLearningGoals((prev) => prev.map((g, idx) => (idx === i ? val : g)));
   const removeGoal = (i) => setLearningGoals((prev) => prev.filter((_, idx) => idx !== i));
 
-  const handleMagicImport = () => {
-    if (!importText.trim()) return;
-    const parsed = parseMarkdownSection(importText);
-    setTitle(parsed.title || title);
-    setSummary(parsed.summary || summary);
-    setLearningGoals(parsed.learningGoals.length ? parsed.learningGoals : learningGoals);
-    setEstimatedDuration(parsed.estimatedDuration || estimatedDuration);
-    setStatus(parsed.status || status);
-    if (parsed.blocks.length) setBlocks(parsed.blocks);
-    setTab('blocks');
-    setImportText('');
-    toast.success('Magic Import complete!');
-  };
-
-  const handleCopyExport = () => {
-    navigator.clipboard.writeText(exportText);
-    toast.success('Export copied to clipboard!');
-  };
-
   const handleSave = async () => {
     if (!title.trim()) return;
     setLoading(true);
+
+    let finalContent = content;
+    let finalBlocks = blocks;
+
+    if (tab === 'visual') {
+      finalContent = generateFullMarkdown({
+        title,
+        summary,
+        learningGoals,
+        estimatedDuration,
+        status,
+        blocks,
+      });
+    } else if (tab === 'content') {
+      const parsed = parseMarkdownSection(content);
+      finalBlocks = parsed.blocks;
+    }
+
     await onSave({
       title: title.trim(),
-      blocks: blocks.map((b, i) => ({ ...b, order: i })),
+      content: finalContent,
+      blocks: finalBlocks.map((b, i) => ({ ...b, order: i })),
       summary: summary.trim(),
       learningGoals: learningGoals.filter((g) => g.trim()),
       estimatedDuration: estimatedDuration.trim(),
@@ -500,14 +225,13 @@ export default function EditSectionModal({ section, onSave, onClose }) {
         className="fixed right-0 top-0 bottom-0 z-[101] w-full max-w-2xl bg-white shadow-[-12px_0_40px_-4px_rgba(0,0,0,0.1)] flex flex-col animate-in slide-in-from-right duration-300 ease-out"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-[#e5e3d8] shrink-0 bg-[#fcfbf5]">
           <div className="flex flex-col">
             <h2 className="font-bold text-[#1e3a34] text-lg leading-tight">
               {section ? 'Edit Section' : 'New Section'}
             </h2>
             <p className="text-[10px] text-[#7c8e88] font-bold uppercase tracking-widest mt-0.5">
-              Studio Editor
+              Markdown-First Studio
             </p>
           </div>
           <button
@@ -518,7 +242,6 @@ export default function EditSectionModal({ section, onSave, onClose }) {
           </button>
         </div>
 
-        {/* Title Area */}
         <div className="px-5 pt-6 pb-2 shrink-0">
           <label className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88] px-1 block mb-1.5">
             Section Title
@@ -532,68 +255,63 @@ export default function EditSectionModal({ section, onSave, onClose }) {
           />
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-1 px-5 pt-4 shrink-0 border-b border-[#e5e3d8]/50">
-          {['blocks', 'planning', 'import', 'export'].map((t) => (
+          {[
+            { id: 'content', label: 'Markdown' },
+            { id: 'visual', label: 'Visual Editor' },
+            { id: 'planning', label: 'Planning' },
+          ].map((t) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
+              key={t.id}
+              onClick={() => handleTabChange(t.id)}
               className={`px-4 py-2 rounded-t-xl text-xs font-bold transition-all relative ${
-                tab === t
+                tab === t.id
                   ? 'text-[#1f644e] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[#1f644e]'
                   : 'text-[#7c8e88] hover:text-[#1e3a34] hover:bg-[#f0f5f2]/50'
               }`}
             >
-              <span className="capitalize">{t}</span>
+              <span>{t.label}</span>
             </button>
           ))}
         </div>
 
-        {/* Body */}
         <div className="flex-1 overflow-y-auto p-5 pb-8 min-h-0 bg-white">
-          {tab === 'export' && (
-            <div className="flex min-h-0 flex-col gap-4">
-              <p className="text-[11px] text-[#7c8e88] px-1">
-                Copy this structured Markdown to save your section externally.
-              </p>
+          {tab === 'content' && (
+            <div className="flex min-h-0 flex-col gap-4 h-full">
+              <div className="flex items-center justify-between px-1">
+                <p className="text-[11px] text-[#7c8e88]">
+                  Edit raw Markdown. Supports ## [BlockType] for interactive components.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      const exported = generateFullMarkdown({
+                        title,
+                        summary,
+                        learningGoals,
+                        estimatedDuration,
+                        status,
+                        blocks,
+                      });
+                      setContent(exported);
+                      toast.success('Synced from visual editor');
+                    }}
+                    className="text-[10px] font-bold text-[#1f644e] hover:underline"
+                  >
+                    Sync from Visual
+                  </button>
+                </div>
+              </div>
               <textarea
-                readOnly
-                value={exportText}
-                className="h-[60vh] w-full p-4 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-xs font-mono outline-none focus:border-[#1f644e] resize-none"
-              />
-              <button
-                onClick={handleCopyExport}
-                className="w-full py-3 bg-[#1f644e] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-[#17503e] transition-colors shadow-lg shadow-[#1f644e]/10"
-              >
-                <Copy className="w-4 h-4" />
-                Copy to Clipboard
-              </button>
-            </div>
-          )}
-
-          {tab === 'import' && (
-            <div className="flex min-h-0 flex-col gap-4">
-              <p className="text-[11px] text-[#7c8e88] px-1">
-                Paste structured Markdown here to automatically fill all blocks.
-              </p>
-              <textarea
-                value={importText}
-                onChange={(e) => setImportText(e.target.value)}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
                 placeholder="--- \ntitle: My Section...\n---"
-                className="h-[60vh] w-full p-4 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-xs font-mono outline-none focus:border-[#1f644e] resize-none"
+                className="flex-1 min-h-[500px] w-full p-4 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-xs font-mono outline-none focus:border-[#1f644e] resize-none leading-relaxed"
               />
-              <button
-                onClick={handleMagicImport}
-                disabled={!importText.trim()}
-                className="w-full py-3 bg-[#1f644e] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-[#17503e] transition-colors disabled:opacity-50 shadow-lg shadow-[#1f644e]/10"
-              >
-                <Wand2 className="w-4 h-4" />
-                Magic Import
-              </button>
             </div>
           )}
 
-          {tab === 'blocks' && (
+          {tab === 'visual' && (
             <div className="space-y-4 pb-20 pt-2">
               <QuickAdder
                 isOpen={activeAdderIndex === -1}
@@ -693,72 +411,17 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                       )}
                       {block.type === 'StepByStepBlock' && (
                         <div className="space-y-4">
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88] px-1">
-                              Process Heading
-                            </label>
-                            <input
-                              value={block.title || ''}
-                              onChange={(e) => updateBlock(i, 'title', e.target.value)}
-                              placeholder="e.g. The Deployment Lifecycle"
-                              className="w-full px-4 py-2.5 rounded-xl border border-[#e5e3d8] bg-white text-sm font-bold text-[#1e3a34] outline-none focus:border-[#1f644e] shadow-sm"
-                            />
-                          </div>
-
-                          <div className="flex items-center justify-between bg-white border border-[#e5e3d8] rounded-xl p-3.5 shadow-sm transition-all hover:shadow-md">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className={`p-1.5 rounded-lg transition-colors ${block.showNumbering !== false ? 'bg-[#1f644e]/10 text-[#1f644e]' : 'bg-[#7c8e88]/10 text-[#7c8e88]'}`}
-                              >
-                                <CheckCircle2 className="w-4 h-4" />
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="text-[11px] font-bold text-[#1e3a34] uppercase tracking-tight">
-                                  Step Numbering
-                                </span>
-                                <span className="text-[9px] text-[#7c8e88] font-medium leading-none">
-                                  Toggle visibility of step indices
-                                </span>
-                              </div>
-                            </div>
-                            <button
-                              onClick={() =>
-                                updateBlock(
-                                  i,
-                                  'showNumbering',
-                                  block.showNumbering !== false ? false : true
-                                )
-                              }
-                              className={`group relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out outline-none focus:ring-2 focus:ring-[#1f644e]/20 ${
-                                block.showNumbering !== false ? 'bg-[#1f644e]' : 'bg-[#e5e3d8]'
-                              }`}
-                            >
-                              <span
-                                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                                  block.showNumbering !== false ? 'translate-x-5' : 'translate-x-0'
-                                }`}
-                              />
-                            </button>
-                          </div>
+                          <input
+                            value={block.title || ''}
+                            onChange={(e) => updateBlock(i, 'title', e.target.value)}
+                            placeholder="Process Heading"
+                            className="w-full px-4 py-2.5 rounded-xl border border-[#e5e3d8] bg-white text-sm font-bold outline-none focus:border-[#1f644e]"
+                          />
                           {(block.steps || []).map((step, si) => (
                             <div
                               key={si}
                               className="bg-[#fcfbf5] border border-[#e5e3d8] rounded-2xl p-4 space-y-3 relative group/step shadow-sm"
                             >
-                              <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-bold text-[#1f644e] uppercase tracking-widest bg-white px-2 py-0.5 rounded-full border border-[#e5e3d8]">
-                                  STEP {si + 1}
-                                </span>
-                                <button
-                                  onClick={() => {
-                                    const nextSteps = block.steps.filter((_, idx) => idx !== si);
-                                    updateBlock(i, 'steps', nextSteps);
-                                  }}
-                                  className="p-1.5 text-[#7c8e88] hover:text-[#c94c4c] opacity-0 group-hover/step:opacity-100 transition-all hover:bg-white rounded-lg"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
                               <input
                                 value={step.title}
                                 onChange={(e) => {
@@ -778,22 +441,11 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                                   );
                                   updateBlock(i, 'steps', nextSteps);
                                 }}
-                                placeholder="Step Content (Markdown supported)"
+                                placeholder="Step Content"
                                 className="w-full h-24 px-3 py-2 rounded-xl border border-[#e5e3d8] text-xs bg-white resize-none focus:border-[#1f644e] outline-none"
                               />
                             </div>
                           ))}
-                          <button
-                            onClick={() =>
-                              updateBlock(i, 'steps', [
-                                ...(block.steps || []),
-                                { title: '', content: '' },
-                              ])
-                            }
-                            className="w-full py-3 rounded-2xl border-2 border-dashed border-[#e5e3d8] text-xs font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] hover:bg-[#f0f5f2]/50 transition-all shadow-sm"
-                          >
-                            + Add Step to Flow
-                          </button>
                         </div>
                       )}
                     </div>
@@ -805,20 +457,6 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                   />
                 </React.Fragment>
               ))}
-
-              {blocks.length === 0 && (
-                <div className="text-center py-20 bg-[#fcfbf5] rounded-3xl border-2 border-dashed border-[#e5e3d8]">
-                  <p className="text-sm text-[#7c8e88] font-medium mb-4">
-                    This section has no content yet.
-                  </p>
-                  <button
-                    onClick={() => addBlock('MdBlock')}
-                    className="px-6 py-2.5 bg-[#1f644e] text-white rounded-xl text-sm font-bold shadow-lg shadow-[#1f644e]/10"
-                  >
-                    Start with Markdown
-                  </button>
-                </div>
-              )}
             </div>
           )}
 
@@ -832,7 +470,7 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-xs font-bold text-[#1e3a34] outline-none focus:border-[#1f644e] capitalize transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-xs font-bold capitalize outline-none focus:border-[#1f644e]"
                   >
                     {STATUS_OPTIONS.map((o) => (
                       <option key={o} value={o}>
@@ -849,24 +487,22 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                     value={estimatedDuration}
                     onChange={(e) => setEstimatedDuration(e.target.value)}
                     placeholder="e.g. 15 mins"
-                    className="w-full px-4 py-3 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-xs font-bold text-[#1e3a34] outline-none focus:border-[#1f644e] transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-xs font-bold outline-none focus:border-[#1f644e]"
                   />
                 </div>
               </div>
-
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88] px-1">
-                  Section Summary
+                  Summary
                 </label>
                 <textarea
                   rows={4}
                   value={summary}
                   onChange={(e) => setSummary(e.target.value)}
-                  placeholder="Brief overview of this section..."
-                  className="w-full px-4 py-3 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-sm text-[#1e3a34] outline-none focus:border-[#1f644e] resize-none leading-relaxed transition-all"
+                  placeholder="Overview..."
+                  className="w-full px-4 py-3 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-sm outline-none focus:border-[#1f644e] resize-none"
                 />
               </div>
-
               <div className="space-y-3">
                 <div className="flex items-center justify-between px-1">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
@@ -885,42 +521,34 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                       <input
                         value={goal}
                         onChange={(e) => updateGoal(i, e.target.value)}
-                        placeholder="Learners will be able to..."
-                        className="flex-1 px-4 py-2.5 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-xs font-semibold text-[#1e3a34] outline-none focus:border-[#1f644e] transition-all shadow-sm"
+                        placeholder="Learners will..."
+                        className="flex-1 px-4 py-2.5 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-xs font-semibold outline-none focus:border-[#1f644e]"
                       />
                       <button
                         onClick={() => removeGoal(i)}
-                        className="p-2.5 text-[#7c8e88] hover:text-[#c94c4c] hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover/goal:opacity-100"
+                        className="p-2.5 text-[#7c8e88] hover:text-[#c94c4c] opacity-0 group-hover/goal:opacity-100"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   ))}
-                  {learningGoals.length === 0 && (
-                    <div className="text-center py-8 rounded-2xl border-2 border-dashed border-[#e5e3d8] bg-[#fcfbf5]">
-                      <p className="text-[11px] text-[#7c8e88] italic px-1">
-                        No learning goals defined.
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* Footer */}
         <div className="flex gap-3 p-5 border-t border-[#e5e3d8] shrink-0 bg-[#fcfbf5]">
           <button
             onClick={onClose}
-            className="flex-1 py-3 rounded-xl border border-[#e5e3d8] text-sm font-bold text-[#7c8e88] hover:bg-white hover:text-[#c94c4c] hover:border-[#c94c4c]/20 transition-all"
+            className="flex-1 py-3 rounded-xl border border-[#e5e3d8] text-sm font-bold text-[#7c8e88] hover:bg-white transition-all"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={!title.trim() || loading}
-            className="flex-1 py-3 rounded-xl bg-[#1f644e] text-white text-sm font-bold hover:bg-[#17503e] shadow-lg shadow-[#1f644e]/10 transition-all disabled:opacity-50 active:scale-[0.98]"
+            className="flex-1 py-3 rounded-xl bg-[#1f644e] text-white text-sm font-bold shadow-lg shadow-[#1f644e]/10 transition-all disabled:opacity-50 active:scale-[0.98]"
           >
             {loading ? 'Saving Changes...' : 'Save Section'}
           </button>

@@ -1,10 +1,12 @@
 'use client';
 
+import { useMemo } from 'react';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { QuizPlayer } from './QuizPlayer';
 import { VideoBlock } from './VideoBlock';
 import { StepByStepBlock } from './StepByStepBlock';
 import { PlayCircle, ExternalLink, FileText } from 'lucide-react';
+import { parseMarkdownToBlocks } from '@/utils/coursify-parser';
 
 function ResourceBlock({ block }) {
   const { url, title, type } = block.resource || {};
@@ -21,7 +23,7 @@ function ResourceBlock({ block }) {
         rel="noopener noreferrer"
         className="flex items-center gap-3 p-4 rounded-xl border border-[#e5e3d8] bg-white hover:border-[#1f644e] hover:bg-[#f0f5f2] transition-all group"
       >
-        <div className="h-10 w-10 rounded-lg bg-[#f0f5f2] text-[#1f644e] flex items-center justify-center group-hover:bg-[#1f644e] group-hover:text-white transition-colors">
+        <div className="h-10 w-10 rounded-lg bg-[#f0f5f2] text-[#1f644e] flex items-center justify-center group:hover:bg-[#1f644e] group-hover:text-white transition-colors">
           <Icon className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
@@ -46,11 +48,16 @@ function getSlug(text) {
     .replace(/^-+|-+$/g, '');
 }
 
-export function CoursifyBlockRenderer({ blocks }) {
-  if (!blocks || !Array.isArray(blocks)) return null;
+export function CoursifyBlockRenderer({ blocks, content }) {
+  const resolvedBlocks = useMemo(() => {
+    if (content) return parseMarkdownToBlocks(content);
+    return blocks || [];
+  }, [content, blocks]);
+
+  if (!resolvedBlocks.length) return null;
 
   // Sort by order if available
-  const sortedBlocks = [...blocks].sort((a, b) => (a.order || 0) - (b.order || 0));
+  const sortedBlocks = [...resolvedBlocks].sort((a, b) => (a.order || 0) - (b.order || 0));
 
   return (
     <div className="space-y-6">

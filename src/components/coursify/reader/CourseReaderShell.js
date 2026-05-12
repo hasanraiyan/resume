@@ -34,10 +34,10 @@ export function CourseReaderShell({ initialData, slug, activeSectionId }) {
   } = useCourseReader({ initialData, slug, activeSectionId });
 
   const currentSection = sections.find((s) => s._id === activeSection);
-  const isSectionLoaded = currentSection?.blocks?.length > 0;
+  const isSectionLoaded = !!(currentSection?.content || currentSection?.blocks?.length > 0);
 
   const { headings, activeHeading } = useTableOfContents(
-    currentSection?.blocks || [],
+    currentSection?.content || '',
     contentRef,
     mainRef
   );
@@ -97,6 +97,7 @@ export function CourseReaderShell({ initialData, slug, activeSectionId }) {
               ) : currentSection ? (
                 <>
                   <CoursifyBlockRenderer
+                    content={currentSection.content}
                     blocks={currentSection.blocks}
                     sectionId={currentSection._id}
                   />

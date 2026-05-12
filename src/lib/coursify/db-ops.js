@@ -12,12 +12,8 @@ import CoursifyModule from '@/models/CoursifyModule';
 import CoursifySection from '@/models/CoursifySection';
 import { generateUniqueSlug } from './slugify.js';
 import { generateCourseThumbnail } from './thumbnailGen.js';
-import {
-  normalizeCourse,
-  normalizeModule,
-  normalizeSection,
-  parseMarkdownToBlocks,
-} from '@/lib/mcp/coursify/utils.js';
+import { normalizeCourse, normalizeModule, normalizeSection } from '@/lib/mcp/coursify/utils.js';
+import { parseMarkdownToBlocks, generateMarkdownFromBlocks } from '@/utils/coursify-parser.js';
 
 function cleanPatch(patch) {
   return Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined));
