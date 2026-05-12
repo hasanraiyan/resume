@@ -300,6 +300,7 @@ export function normalizeSection(section) {
     courseId: section.courseId?.toString?.() || section.courseId,
     moduleId: section.moduleId?.toString?.() || null,
     title: section.title,
+    content: section.content || '',
     blocks: (section.blocks || []).map((b) => ({
       id: b._id?.toString?.() || b.id,
       type: b.type,

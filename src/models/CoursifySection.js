@@ -1,80 +1,15 @@
 import mongoose from 'mongoose';
 
-const ResourceSchema = new mongoose.Schema(
-  {
-    type: { type: String, enum: ['video', 'article', 'doc', 'other'], default: 'other' },
-    url: { type: String, default: '' },
-    title: { type: String, default: '' },
-  },
-  { _id: false }
-);
-
-const QuizQuestionSchema = new mongoose.Schema(
-  {
-    type: {
-      type: String,
-      enum: ['multiple_choice', 'true_false', 'short_answer', 'multi_select'],
-      required: true,
-    },
-    question: { type: String, required: true, default: '' },
-    options: { type: [String], default: [] },
-    correctAnswer: { type: mongoose.Schema.Types.Mixed, default: null },
-    explanation: { type: String, default: '' },
-    points: { type: Number, default: 1 },
-  },
-  { _id: true }
-);
-
-const StepSchema = new mongoose.Schema(
-  {
-    title: { type: String, default: '' },
-    content: { type: String, default: '' },
-  },
-  { _id: false }
-);
-
-const BlockSchema = new mongoose.Schema(
-  {
-    type: {
-      type: String,
-      enum: ['MdBlock', 'QuizBlock', 'VideoBlock', 'ResourceBlock', 'StepByStepBlock'],
-      required: true,
-    },
-    // Markdown content
-    content: { type: String, default: '' },
-    // Generic block title
-    title: { type: String, default: '' },
-    // Quiz content
-    quiz: {
-      questions: { type: [QuizQuestionSchema], default: [] },
-    },
-    // Video content
-    video: {
-      url: { type: String, default: '' },
-      title: { type: String, default: '' },
-      platform: {
-        type: String,
-        enum: ['youtube', 'gdrive', 'vimeo', 'other'],
-        default: 'youtube',
-      },
-    },
-    // Resource content
-    resource: {
-      url: { type: String, default: '' },
-      title: { type: String, default: '' },
-      type: { type: String, enum: ['video', 'article', 'doc', 'other'], default: 'other' },
-    },
-    // StepByStep content
-    steps: {
-      type: [StepSchema],
-      default: [],
-    },
-    showNumbering: { type: Boolean, default: true },
-    order: { type: Number, default: 0 },
-  },
-  { _id: true, timestamps: true, strict: false }
-);
-
+/**
+ * CoursifySection Model
+ *
+ * Architecture: Markdown-First
+ * - 'content' is the raw Markdown source of truth.
+ * - 'blocks' is a processed array of objects (MdBlock, QuizBlock, etc.)
+ *   used by the frontend for specialized rendering.
+ *
+ * Database operations (db-ops.js) ensure these two fields are kept in sync.
+ */
 const CoursifySectionSchema = new mongoose.Schema(
   {
     courseId: {
@@ -94,8 +29,15 @@ const CoursifySectionSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    // Raw Markdown Source of Truth
+    content: {
+      type: String,
+      default: '',
+    },
+    // Processed blocks for specialized rendering (Quiz, Steps, etc.)
+    // Stored as Mixed to avoid redundant schema maintenance.
     blocks: {
-      type: [BlockSchema],
+      type: [mongoose.Schema.Types.Mixed],
       default: [],
     },
     summary: {
@@ -120,8 +62,9 @@ const CoursifySectionSchema = new mongoose.Schema(
       enum: ['planned', 'draft', 'needs_review', 'complete'],
       default: 'draft',
     },
+    // External resources/links associated with this section
     resources: {
-      type: [ResourceSchema],
+      type: [mongoose.Schema.Types.Mixed],
       default: [],
     },
     deletedAt: {
@@ -134,7 +77,11 @@ const CoursifySectionSchema = new mongoose.Schema(
       default: 0,
     },
   },
-  { timestamps: true, minimize: false, strict: false }
+  {
+    timestamps: true,
+    minimize: false,
+    strict: false, // Allows flexible block structures
+  }
 );
 
 // Force model re-creation to pick up schema changes in dev

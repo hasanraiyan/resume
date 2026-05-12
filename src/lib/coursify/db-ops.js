@@ -402,10 +402,24 @@ export async function dbAddSection({
     .lean();
   const resolvedOrder = order !== undefined ? order : last ? last.order + 1 : 0;
 
+  // Sync content and blocks
+  let finalContent = content;
+  let finalBlocks = blocks;
+
+  if (content !== undefined) {
+    finalBlocks = parseMarkdownToBlocks(content);
+  } else if (blocks !== undefined) {
+    finalContent = generateMarkdownFromBlocks(blocks);
+  } else {
+    finalContent = '';
+    finalBlocks = [];
+  }
+
   const section = await CoursifySection.create({
     courseId,
     title: title.trim(),
-    blocks: blocks || (content ? parseMarkdownToBlocks(content) : []),
+    content: finalContent,
+    blocks: finalBlocks,
     order: resolvedOrder,
     resources: resources || [],
     moduleId: moduleId || null,
@@ -432,9 +446,20 @@ export async function dbUpdateSection({
   resources,
 }) {
   await dbConnect();
+
+  // Sync content and blocks if either is provided
+  let syncedPatch = {};
+  if (content !== undefined) {
+    syncedPatch.content = content;
+    syncedPatch.blocks = parseMarkdownToBlocks(content);
+  } else if (blocks !== undefined) {
+    syncedPatch.blocks = blocks;
+    syncedPatch.content = generateMarkdownFromBlocks(blocks);
+  }
+
   const clean = cleanPatch({
     title,
-    blocks: blocks || (content ? parseMarkdownToBlocks(content) : undefined),
+    ...syncedPatch,
     summary,
     learningGoals,
     estimatedDuration,
@@ -480,18 +505,33 @@ export async function dbAddSections({ courseId, sections }) {
     .lean();
   let currentOrder = last ? last.order + 1 : 0;
 
-  const docs = sections.map((s) => ({
-    courseId,
-    title: s.title.trim(),
-    blocks: s.blocks || (s.content ? parseMarkdownToBlocks(s.content) : []),
-    order: s.order !== undefined ? s.order : currentOrder++,
-    resources: s.resources || [],
-    moduleId: s.moduleId || null,
-    status: s.status || 'draft',
-    summary: s.summary || '',
-    learningGoals: s.learningGoals || [],
-    estimatedDuration: s.estimatedDuration || '',
-  }));
+  const docs = sections.map((s) => {
+    let finalContent = s.content;
+    let finalBlocks = s.blocks;
+
+    if (s.content !== undefined) {
+      finalBlocks = parseMarkdownToBlocks(s.content);
+    } else if (s.blocks !== undefined) {
+      finalContent = generateMarkdownFromBlocks(s.blocks);
+    } else {
+      finalContent = '';
+      finalBlocks = [];
+    }
+
+    return {
+      courseId,
+      title: s.title.trim(),
+      content: finalContent,
+      blocks: finalBlocks,
+      order: s.order !== undefined ? s.order : currentOrder++,
+      resources: s.resources || [],
+      moduleId: s.moduleId || null,
+      status: s.status || 'draft',
+      summary: s.summary || '',
+      learningGoals: s.learningGoals || [],
+      estimatedDuration: s.estimatedDuration || '',
+    };
+  });
 
   const created = await CoursifySection.insertMany(docs);
   await CoursifyCourse.updateOne({ _id: courseId, deletedAt: null }, { $inc: { syncVersion: 1 } });

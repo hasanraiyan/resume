@@ -1,8 +1,8 @@
 import { requireCoursifyAuth } from '@/lib/coursify-auth';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
-import CoursifySection from '@/models/CoursifySection';
 import CoursifyCourse from '@/models/CoursifyCourse';
+import { dbUpdateSection, dbGetSectionContent, dbDeleteSection } from '@/lib/coursify/db-ops';
 import mongoose from 'mongoose';
 import { revalidatePath } from 'next/cache';
 
@@ -22,20 +22,11 @@ export async function GET(request, { params }) {
       return NextResponse.json({ success: false, error: 'Invalid section ID' }, { status: 400 });
     }
 
-    const section = await CoursifySection.findOne({ _id: id, deletedAt: null }).lean();
-
-    if (!section) {
-      return NextResponse.json({ success: false, error: 'Section not found' }, { status: 404 });
-    }
+    const { section } = await dbGetSectionContent({ id });
 
     return NextResponse.json({
       success: true,
-      section: {
-        ...section,
-        _id: section._id.toString(),
-        courseId: section.courseId.toString(),
-        moduleId: section.moduleId?.toString() || null,
-      },
+      section,
     });
   } catch (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -56,31 +47,11 @@ export async function PATCH(request, { params }) {
 
     const body = await request.json();
 
-    const allowed = [
-      'title',
-      'order',
-      'resources',
-      'moduleId',
-      'status',
-      'summary',
-      'learningGoals',
-      'estimatedDuration',
-      'blocks',
-    ];
-    const patch = {};
-    for (const key of allowed) {
-      if (body[key] !== undefined) patch[key] = body[key];
-    }
-
-    const section = await CoursifySection.findOneAndUpdate(
-      { _id: id, deletedAt: null },
-      { $set: patch, $inc: { syncVersion: 1 } },
-      { new: true }
-    ).lean();
-
-    if (!section) {
-      return NextResponse.json({ success: false, error: 'Section not found' }, { status: 404 });
-    }
+    // Delegate to shared db-ops for unified logic (including Markdown-first sync)
+    const { section } = await dbUpdateSection({
+      id,
+      ...body,
+    });
 
     const course = await CoursifyCourse.findById(section.courseId).select('slug').lean();
     if (course?.slug) {
@@ -89,14 +60,10 @@ export async function PATCH(request, { params }) {
 
     return NextResponse.json({
       success: true,
-      section: {
-        ...section,
-        _id: section._id.toString(),
-        courseId: section.courseId.toString(),
-        moduleId: section.moduleId?.toString() || null,
-      },
+      section,
     });
   } catch (error) {
+    console.error('[API: Update Section Error]:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
@@ -113,21 +80,9 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ success: false, error: 'Invalid section ID' }, { status: 400 });
     }
 
-    const section = await CoursifySection.findOneAndUpdate(
-      { _id: id, deletedAt: null },
-      { $set: { deletedAt: new Date() } }
-    ).lean();
+    const { deletedId } = await dbDeleteSection({ id });
 
-    if (!section) {
-      return NextResponse.json({ success: false, error: 'Section not found' }, { status: 404 });
-    }
-
-    const course = await CoursifyCourse.findById(section.courseId).select('slug').lean();
-    if (course?.slug) {
-      revalidatePath(`/coursify/${course.slug}`);
-    }
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, deletedId });
   } catch (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }

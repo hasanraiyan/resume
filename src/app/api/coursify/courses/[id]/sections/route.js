@@ -2,9 +2,8 @@ import { requireCoursifyAuth } from '@/lib/coursify-auth';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
-import CoursifySection from '@/models/CoursifySection';
+import { dbAddSection } from '@/lib/coursify/db-ops';
 import { revalidatePath } from 'next/cache';
-import { parseMarkdownToBlocks } from '@/lib/mcp/coursify/utils';
 
 export async function POST(request, { params }) {
   const auth = await requireCoursifyAuth(request);
@@ -20,38 +19,14 @@ export async function POST(request, { params }) {
       return NextResponse.json({ success: false, error: 'Course not found' }, { status: 404 });
     }
 
-    const {
-      title,
-      resources,
-      moduleId,
-      status,
-      summary,
-      learningGoals,
-      estimatedDuration,
-      blocks,
-      content,
-    } = body;
-    if (!title?.trim()) {
+    if (!body.title?.trim()) {
       return NextResponse.json({ success: false, error: 'Title is required' }, { status: 400 });
     }
 
-    // Determine order: max existing + 1
-    const last = await CoursifySection.findOne({ courseId: id, deletedAt: null })
-      .sort({ order: -1 })
-      .lean();
-    const order = body.order !== undefined ? body.order : last ? last.order + 1 : 0;
-
-    const section = await CoursifySection.create({
+    // Delegate to shared db-ops for unified logic (including Markdown-first sync)
+    const { section } = await dbAddSection({
       courseId: id,
-      title: title.trim(),
-      blocks: blocks || (content ? parseMarkdownToBlocks(content) : []),
-      order,
-      resources: Array.isArray(resources) ? resources : [],
-      moduleId: moduleId || null,
-      status: status || 'draft',
-      summary: summary || '',
-      learningGoals: Array.isArray(learningGoals) ? learningGoals : [],
-      estimatedDuration: estimatedDuration || '',
+      ...body,
     });
 
     if (course.slug) {
@@ -60,14 +35,10 @@ export async function POST(request, { params }) {
 
     return NextResponse.json({
       success: true,
-      section: {
-        ...section.toObject(),
-        _id: section._id.toString(),
-        courseId: id,
-        moduleId: section.moduleId?.toString() || null,
-      },
+      section,
     });
   } catch (error) {
+    console.error('[API: Add Section Error]:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
