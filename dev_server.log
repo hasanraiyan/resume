@@ -1,0 +1,206 @@
+
+> resume@0.1.0 dev /app
+> next dev --turbopack
+
+   ▲ Next.js 15.5.9 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.2:3000
+   - Experiments (use with caution):
+     · serverActions
+
+ ✓ Starting...
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+ ○ Compiling middleware ...
+ ✓ Compiled middleware in 560ms
+ ✓ Ready in 1930ms
+ ○ Compiling / ...
+ ✓ Compiled / in 22.2s
+[getHeroData] Failed to fetch hero section from DB: Error: MONGODB_URI environment variable is not defined.
+    at dbConnect (src/lib/dbConnect.js:21:11)
+    at getHeroData (src/app/actions/heroActions.js:26:20)
+    at RootLayout (src/app/layout.js:118:48)
+  19 |
+  20 |   if (!uri) {
+> 21 |     throw new Error('MONGODB_URI environment variable is not defined.');
+     |           ^
+  22 |   }
+  23 |
+  24 |   if (cached.conn) {
+[getSiteConfig] Error: Error: MONGODB_URI environment variable is not defined.
+    at dbConnect (src/lib/dbConnect.js:21:11)
+    at getSiteConfig (src/app/actions/siteActions.js:9:20)
+    at RootLayout (src/app/layout.js:122:41)
+  19 |
+  20 |   if (!uri) {
+> 21 |     throw new Error('MONGODB_URI environment variable is not defined.');
+     |           ^
+  22 |   }
+  23 |
+  24 |   if (cached.conn) {
+ ⨯ Error: MONGODB_URI environment variable is not defined.
+    at dbConnect (src/lib/dbConnect.js:21:11)
+    at Home (src/app/page.js:36:18)
+  19 |
+  20 |   if (!uri) {
+> 21 |     throw new Error('MONGODB_URI environment variable is not defined.');
+     |           ^
+  22 |   }
+  23 |
+  24 |   if (cached.conn) { {
+  digest: '724028081'
+}
+[getSiteConfig] Error: Error: MONGODB_URI environment variable is not defined.
+    at dbConnect (src/lib/dbConnect.js:21:11)
+    at getSiteConfig (src/app/actions/siteActions.js:9:20)
+    at NotFound (src/app/not-found.js:8:41)
+  19 |
+  20 |   if (!uri) {
+> 21 |     throw new Error('MONGODB_URI environment variable is not defined.');
+     |           ^
+  22 |   }
+  23 |
+  24 |   if (cached.conn) {
+[getSiteConfig] Error: Error: MONGODB_URI environment variable is not defined.
+    at dbConnect (src/lib/dbConnect.js:21:11)
+    at getSiteConfig (src/app/actions/siteActions.js:9:20)
+    at Module.generateMetadata (src/app/layout.js:40:41)
+  19 |
+  20 |   if (!uri) {
+> 21 |     throw new Error('MONGODB_URI environment variable is not defined.');
+     |           ^
+  22 |   }
+  23 |
+  24 |   if (cached.conn) {
+[getSiteConfig] Error: Error: MONGODB_URI environment variable is not defined.
+    at dbConnect (src/lib/dbConnect.js:21:11)
+    at getSiteConfig (src/app/actions/siteActions.js:9:20)
+    at Module.generateMetadata (src/app/layout.js:40:41)
+  19 |
+  20 |   if (!uri) {
+> 21 |     throw new Error('MONGODB_URI environment variable is not defined.');
+     |           ^
+  22 |   }
+  23 |
+  24 |   if (cached.conn) {
+ GET / 500 in 26001ms
+ ○ Compiling /coursify ...
+ ✓ Compiled /coursify in 10s
+Api key is used with unsecure connection.
+[agents/index.js] Registering agents...
+[agents/index.js] AppBuilderAgent: function AppBuilderAgent
+[AgentRegistry] Registered agent: image_analyzer
+[AgentRegistry] Registered agent: chat_fast
+[AgentRegistry] Registered agent: chat_pro
+[AgentRegistry] Registered agent: chat_thinking
+[AgentRegistry] Registered agent: image_generator
+[AgentRegistry] Registered agent: image_editor
+[AgentRegistry] Registered agent: image_embedder
+[AgentRegistry] Registered agent: visual_search
+[AgentRegistry] Registered agent: blog_writer
+[AgentRegistry] Registered agent: telegram_assistant
+[AgentRegistry] Registered agent: whatsapp_assistant
+[AgentRegistry] Registered agent: app_builder
+[AgentRegistry] Registered agent: finance_assistant
+[AgentRegistry] Registered agent: coursify_thumbnail_generator
+[AgentRegistry] Registered agent: coursify_chat
+[agents/index.js] Agents registered successfully
+=== CLOUDINARY CONFIG DEBUG ===
+Cloudinary configured: { cloud_name: 'NOT SET', api_key: 'NOT SET', api_secret: 'NOT SET' }
+[getHeroData] Failed to fetch hero section from DB: Error: MONGODB_URI environment variable is not defined.
+    at dbConnect (src/lib/dbConnect.js:21:11)
+    at getHeroData (src/app/actions/heroActions.js:26:20)
+    at RootLayout (src/app/layout.js:118:48)
+  19 |
+  20 |   if (!uri) {
+> 21 |     throw new Error('MONGODB_URI environment variable is not defined.');
+     |           ^
+  22 |   }
+  23 |
+  24 |   if (cached.conn) {
+[getSiteConfig] Error: Error: MONGODB_URI environment variable is not defined.
+    at dbConnect (src/lib/dbConnect.js:21:11)
+    at getSiteConfig (src/app/actions/siteActions.js:9:20)
+    at RootLayout (src/app/layout.js:122:41)
+  19 |
+  20 |   if (!uri) {
+> 21 |     throw new Error('MONGODB_URI environment variable is not defined.');
+     |           ^
+  22 |   }
+  23 |
+  24 |   if (cached.conn) {
+[getSiteConfig] Error: Error: MONGODB_URI environment variable is not defined.
+    at dbConnect (src/lib/dbConnect.js:21:11)
+    at getSiteConfig (src/app/actions/siteActions.js:9:20)
+    at NotFound (src/app/not-found.js:8:41)
+  19 |
+  20 |   if (!uri) {
+> 21 |     throw new Error('MONGODB_URI environment variable is not defined.');
+     |           ^
+  22 |   }
+  23 |
+  24 |   if (cached.conn) {
+ ⨯ Error: MONGODB_URI environment variable is not defined.
+    at dbConnect (src/lib/dbConnect.js:21:11)
+    at dbListCourses (src/lib/coursify/db-ops.js:50:18)
+    at CoursifyPublicPage (src/app/coursify/page.js:5:38)
+  19 |
+  20 |   if (!uri) {
+> 21 |     throw new Error('MONGODB_URI environment variable is not defined.');
+     |           ^
+  22 |   }
+  23 |
+  24 |   if (cached.conn) { {
+  digest: '3808515995'
+}
+[getSiteConfig] Error: Error: MONGODB_URI environment variable is not defined.
+    at dbConnect (src/lib/dbConnect.js:21:11)
+    at getSiteConfig (src/app/actions/siteActions.js:9:20)
+    at Module.generateMetadata (src/app/layout.js:40:41)
+  19 |
+  20 |   if (!uri) {
+> 21 |     throw new Error('MONGODB_URI environment variable is not defined.');
+     |           ^
+  22 |   }
+  23 |
+  24 |   if (cached.conn) {
+[getSiteConfig] Error: Error: MONGODB_URI environment variable is not defined.
+    at dbConnect (src/lib/dbConnect.js:21:11)
+    at getSiteConfig (src/app/actions/siteActions.js:9:20)
+    at Module.generateMetadata (src/app/layout.js:40:41)
+  19 |
+  20 |   if (!uri) {
+> 21 |     throw new Error('MONGODB_URI environment variable is not defined.');
+     |           ^
+  22 |   }
+  23 |
+  24 |   if (cached.conn) {
+Failed to obtain server version. Unable to check client-server compatibility. Set checkCompatibility=false to skip version check.
+ GET /coursify 500 in 12342ms
+ ○ Compiling /api/analytics ...
+ ✓ Compiled /api/analytics in 1642ms
+Analytics tracking error: Error: MONGODB_URI environment variable is not defined.
+    at dbConnect (src/lib/dbConnect.js:21:11)
+    at POST (src/app/api/analytics/route.js:151:24)
+  19 |
+  20 |   if (!uri) {
+> 21 |     throw new Error('MONGODB_URI environment variable is not defined.');
+     |           ^
+  22 |   }
+  23 |
+  24 |   if (cached.conn) {
+ POST /api/analytics 500 in 2403ms
+Analytics tracking error: Error: MONGODB_URI environment variable is not defined.
+    at dbConnect (src/lib/dbConnect.js:21:11)
+    at POST (src/app/api/analytics/route.js:151:24)
+  19 |
+  20 |   if (!uri) {
+> 21 |     throw new Error('MONGODB_URI environment variable is not defined.');
+     |           ^
+  22 |   }
+  23 |
+  24 |   if (cached.conn) {
+ POST /api/analytics 500 in 2544ms
