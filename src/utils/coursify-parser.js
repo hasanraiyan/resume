@@ -99,12 +99,12 @@ export function parseMarkdownToBlocks(text) {
       const titleMatch = rawContent.match(/^title:\s*(.*)/m);
       if (titleMatch) {
         block.title = unescapeString(titleMatch[1]);
-        rawContent = rawContent.replace(titleMatch[0], '');
+        rawContent = rawContent.replace(titleMatch[0], '').trim();
       }
       const numMatch = rawContent.match(/^showNumbering:\s*(.*)/m);
       if (numMatch) {
         block.showNumbering = unescapeString(numMatch[1]) !== 'false';
-        rawContent = rawContent.replace(numMatch[0], '');
+        rawContent = rawContent.replace(numMatch[0], '').trim();
       } else {
         block.showNumbering = true;
       }
@@ -122,6 +122,12 @@ export function parseMarkdownToBlocks(text) {
       });
     } else if (m.type === 'QuizBlock') {
       block.quiz = { questions: [] };
+      const titleMatch = rawContent.match(/^title:\s*(.*)/m);
+      if (titleMatch) {
+        block.title = unescapeString(titleMatch[1]);
+        rawContent = rawContent.replace(titleMatch[0], '').trim();
+      }
+
       const qRegex = /(?:^|\n)\s*-\s*question:\s*/g;
       const qMatches = [];
       let qMatch;
@@ -234,6 +240,7 @@ export function generateMarkdownFromBlocks(blocks) {
       });
       output += '\n';
     } else if (block.type === 'QuizBlock') {
+      if (block.title) output += `title: "${block.title}"\n\n`;
       (block.quiz?.questions || []).forEach((q) => {
         output += `- question: "${q.question}"\n`;
         output += `  type: "${q.type}"\n`;
