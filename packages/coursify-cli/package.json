@@ -1,6 +1,6 @@
 {
   "name": "@coursify/cli",
-  "version": "1.0.1",
+  "version": "1.1.1",
   "description": "Local-first authoring tool for the Coursify platform",
   "author": "Raiyan Hasan <raiyanhasa2006@gmail.com>",
   "license": "MIT",
@@ -30,11 +30,11 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "commander": "^13.0.0",
     "chalk": "^5.4.1",
-    "js-yaml": "^4.1.0",
-    "gray-matter": "^4.0.3",
+    "commander": "^13.0.0",
     "fs-extra": "^11.3.0",
+    "gray-matter": "^4.0.3",
+    "js-yaml": "^4.1.0",
     "open": "^10.1.0"
   },
   "engines": {

@@ -15,7 +15,11 @@
       "mcp__coursify__publish_course",
       "Bash(git pull *)",
       "Bash(node --input-type=module --experimental-vm-modules)",
-      "Bash(npx next *)"
+      "Bash(npx next *)",
+      "Bash(coursify init *)",
+      "Bash(coursify init-module *)",
+      "Bash(coursify init-section *)",
+      "Bash(python3 *)"
     ]
   }
 }

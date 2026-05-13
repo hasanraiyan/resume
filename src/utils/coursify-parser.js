@@ -24,10 +24,24 @@ export function unescapeString(str) {
 export function parseMarkdownToBlocks(text) {
   if (!text || typeof text !== 'string') return [];
 
+  // Source of truth for valid block types and their aliases
+  const SUPPORTED_BLOCKS = [
+    'MdBlock',
+    'QuizBlock',
+    'VideoBlock',
+    'ResourceBlock',
+    'StepByStepBlock',
+  ];
+  const AUTHORING_ALIASES = {
+    MermaidBlock: { target: 'MdBlock', wrap: (c) => `\`\`\`mermaid\n${c}\n\`\`\`` },
+    CodeBlock: { target: 'MdBlock', wrap: (c) => `\`\`\`\n${c}\n\`\`\`` },
+  };
+  const ALL_VALID = [...SUPPORTED_BLOCKS, ...Object.keys(AUTHORING_ALIASES)];
+
   // Remove potential YAML frontmatter
   const cleanText = text.replace(/^---[\s\S]*?---/, '').trim();
 
-  const blockRegex = /##\s*\[(MdBlock|QuizBlock|VideoBlock|ResourceBlock|StepByStepBlock)\]/g;
+  const blockRegex = new RegExp(`##\\s*\\[(${ALL_VALID.join('|')})\\]`, 'g');
   const blocks = [];
   const matches = [];
   let match;
@@ -48,10 +62,21 @@ export function parseMarkdownToBlocks(text) {
 
     // Clean up trailing separators
     rawContent = rawContent.replace(/\n\s*---\s*$/, '').trim();
-    const block = { type: m.type, order: i };
 
-    if (m.type === 'MdBlock') {
-      block.content = rawContent;
+    // Handle Aliases (transforming them to base types)
+    let blockType = m.type;
+    let finalContent = rawContent;
+
+    if (AUTHORING_ALIASES[m.type]) {
+      const alias = AUTHORING_ALIASES[m.type];
+      blockType = alias.target;
+      finalContent = alias.wrap(rawContent);
+    }
+
+    const block = { type: blockType, order: i };
+
+    if (blockType === 'MdBlock') {
+      block.content = finalContent;
     } else if (m.type === 'VideoBlock') {
       const urlMatch = rawContent.match(/url:\s*(.*)/);
       const titleMatch = rawContent.match(/title:\s*(.*)/);

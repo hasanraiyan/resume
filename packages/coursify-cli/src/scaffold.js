@@ -3,7 +3,7 @@ import path from 'path';
 import chalk from 'chalk';
 
 export async function scaffoldModule(courseDir, moduleName, order) {
-  const modDir = path.join(courseDir, `m${order}-${moduleName.toLowerCase().replace(/\s+/g, '-')}`);
+  const modDir = path.join(courseDir, moduleName.toLowerCase().replace(/\s+/g, '-'));
   await fs.ensureDir(modDir);
   await fs.writeFile(
     path.join(modDir, 'info.yaml'),
@@ -18,10 +18,7 @@ order: ${order}
 }
 
 export async function scaffoldSection(moduleDir, sectionName, order, type = 'standard') {
-  const secDir = path.join(
-    moduleDir,
-    `s${order}-${sectionName.toLowerCase().replace(/\s+/g, '-')}`
-  );
+  const secDir = path.join(moduleDir, sectionName.toLowerCase().replace(/\s+/g, '-'));
   await fs.ensureDir(secDir);
 
   let content = `---
@@ -112,13 +109,7 @@ agentNotes: "Scaffolded using coursify init."
 `
   );
 
-  // 2. Create sample module
-  const modDir = await scaffoldModule(root, 'Introduction', 1);
-
-  // 3. Create sample section
-  await scaffoldSection(modDir, 'Welcome', 1, 'standard');
-
-  // 4. Create .gitignore
+  // 2. Create .gitignore
   await fs.writeFile(
     path.join(root, '.gitignore'),
     `course-bundle.json
