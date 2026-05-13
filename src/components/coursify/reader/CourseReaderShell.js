@@ -1,5 +1,5 @@
 'use client';
-import { generateMarkdownFromBlocks } from '@/utils/coursify-parser';
+import { generateMarkdownFromBlocks, parseMarkdownToBlocks } from '@/utils/coursify-parser';
 
 import { useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -7,7 +7,10 @@ import { BookOpen } from 'lucide-react';
 import { useTableOfContents } from '@/hooks/coursify/useTableOfContents';
 import { useCourseReader } from '@/hooks/coursify/useCourseReader';
 import { useReaderUI } from '@/hooks/coursify/useReaderUI';
+import { useSpeechGuide } from '@/hooks/coursify/useSpeechGuide';
+import { extractSpeakableSegments } from '@/utils/coursify-speech-parser';
 import { ReaderHeader } from '@/components/coursify/reader/ReaderHeader';
+import { SpeechPlayer } from '@/components/coursify/reader/SpeechPlayer';
 import { ReaderSidebar } from '@/components/coursify/reader/ReaderSidebar';
 import { CourseOverview } from '@/components/coursify/reader/CourseOverview';
 import { MarkdownRenderer } from '@/components/coursify/reader/MarkdownRenderer';
@@ -56,6 +59,20 @@ export function CourseReaderShell({ initialData, slug, activeSectionId }) {
     toggleToc,
   } = useReaderUI(modules, activeSection, sections);
 
+  const speechSegments = useMemo(() => {
+    if (showOverview) return [];
+    if (!currentSection) return [];
+
+    let blocks = currentSection.blocks || [];
+    if (!blocks.length && currentSection.content) {
+      blocks = parseMarkdownToBlocks(currentSection.content);
+    }
+
+    return extractSpeakableSegments(blocks);
+  }, [currentSection, showOverview]);
+
+  const speechGuide = useSpeechGuide(speechSegments);
+
   if (!course) return null;
 
   return (
@@ -63,6 +80,7 @@ export function CourseReaderShell({ initialData, slug, activeSectionId }) {
       <ReaderHeader course={course} showOverview={showOverview} onToggleSidebar={toggleSidebar} />
 
       <div className="flex flex-1 min-h-0">
+        <SpeechPlayer {...speechGuide} />
         <ReaderSidebar
           course={course}
           modules={modules}
