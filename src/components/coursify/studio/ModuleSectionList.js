@@ -133,7 +133,9 @@ export function ModuleSectionList() {
             )}
           </div>
 
-          {sectionLoading && (!currentSection.blocks || currentSection.blocks.length === 0) ? (
+          {sectionLoading &&
+          (!currentSection.blocks || currentSection.blocks.length === 0) &&
+          !currentSection.content ? (
             <div className="space-y-6 animate-pulse">
               <div className="h-4 bg-[#e5e3d8] rounded w-full" />
               <div className="h-4 bg-[#e5e3d8] rounded w-5/6" />
@@ -141,7 +143,11 @@ export function ModuleSectionList() {
               <div className="h-4 bg-[#e5e3d8] rounded w-4/6" />
             </div>
           ) : (
-            <CoursifyBlockRenderer blocks={currentSection.blocks} sectionId={currentSection._id} />
+            <CoursifyBlockRenderer
+              blocks={currentSection.blocks}
+              content={currentSection.content}
+              sectionId={currentSection._id}
+            />
           )}
 
           {currentSection.resources?.length > 0 && (
