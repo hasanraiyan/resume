@@ -5,6 +5,7 @@ import { MarkdownRenderer } from './MarkdownRenderer';
 import { QuizPlayer } from './QuizPlayer';
 import { VideoBlock } from './VideoBlock';
 import { StepByStepBlock } from './StepByStepBlock';
+import { AccordionBlock } from './AccordionBlock';
 import { PlayCircle, ExternalLink, FileText } from 'lucide-react';
 import { parseMarkdownToBlocks } from '@/utils/coursify-parser';
 
@@ -79,6 +80,8 @@ export function CoursifyBlockRenderer({ blocks, content }) {
             return <ResourceBlock key={block._id || idx} block={block} />;
           case 'StepByStepBlock':
             return <StepByStepBlock key={block._id || idx} block={block} />;
+          case 'AccordionBlock':
+            return <AccordionBlock key={block._id || idx} block={block} />;
           default:
             return null;
         }

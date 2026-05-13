@@ -177,6 +177,7 @@ When you create a section with `coursify init-section`, it generates a template 
 
 - `[MdBlock]` — for explanations and concepts
 - `[StepByStepBlock]` — for procedures and labs
+- `[AccordionBlock]` — for FAQs and collapsible details
 - `[QuizBlock]` — for assessment
 
 Edit the template to keep only the blocks you need for that section, and customize the content.
@@ -277,6 +278,26 @@ Server running on port 3000
 - Include code blocks where relevant
 - Show expected output
 - Provide troubleshooting for common issues
+
+#### AccordionBlock
+
+Collapsible content for FAQs or deep dives.
+
+```markdown
+## [AccordionBlock]
+
+title: "Common Questions"
+
+- item: "Question 1"
+  content: "Answer 1"
+- item: "Question 2"
+  content: "Answer 2"
+```
+
+**Best practices:**
+- Use for content that is secondary to the main narrative
+- Keep titles concise
+- Use for FAQs at the end of a module
 
 #### VideoBlock
 Embed external videos (YouTube, Vimeo, etc.)

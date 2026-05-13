@@ -329,6 +329,51 @@ showNumbering: true
 
 ---
 
+### AccordionBlock
+
+Expandable/collapsible content sections for FAQs, detailed asides, or deep dives.
+
+```markdown
+## [AccordionBlock]
+
+title: "Common Questions"
+
+- item: "Item Title"
+  content: "Detailed content with **Markdown** support."
+- item: "Another Question"
+  content: "More details here..."
+```
+
+**Schema:**
+
+```json
+{
+  "type": "AccordionBlock",
+  "title": "Common Questions",
+  "items": [
+    {
+      "title": "Item Title",
+      "content": "Detailed content"
+    }
+  ]
+}
+```
+
+**Requirements:**
+
+- Use `title:` for the overall block heading
+- Each item must have `item:` and `content:`
+- Support for `\n\n` for literal newlines within item content
+
+**When to use:**
+
+- Frequently Asked Questions (FAQs)
+- "Deep Dive" asides that shouldn't clutter the main narrative
+- Optional technical details
+- List of related terms and definitions
+
+---
+
 ### QuizBlock
 
 Interactive assessment with multiple-choice questions.

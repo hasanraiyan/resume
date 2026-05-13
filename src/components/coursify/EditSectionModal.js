@@ -13,6 +13,7 @@ import {
   PlayCircle,
   ListTree,
   FileText,
+  ChevronRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import QuizEditor from './QuizEditor';
@@ -25,6 +26,7 @@ const BLOCK_TYPES = [
   { type: 'MdBlock', label: 'Markdown', icon: Type },
   { type: 'VideoBlock', label: 'Video', icon: PlayCircle },
   { type: 'StepByStepBlock', label: 'Step-by-Step', icon: ListTree },
+  { type: 'AccordionBlock', label: 'Accordion', icon: ChevronDown },
   { type: 'QuizBlock', label: 'Quiz', icon: CheckCircle2 },
   { type: 'ResourceBlock', label: 'Resource', icon: FileText },
 ];
@@ -145,6 +147,10 @@ export default function EditSectionModal({ section, onSave, onClose }) {
     if (type === 'StepByStepBlock') {
       newBlock.steps = [{ title: '', content: '' }];
       newBlock.showNumbering = true;
+      newBlock.title = '';
+    }
+    if (type === 'AccordionBlock') {
+      newBlock.items = [{ title: '', content: '' }];
       newBlock.title = '';
     }
 
@@ -446,6 +452,70 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                               />
                             </div>
                           ))}
+                        </div>
+                      )}
+                      {block.type === 'AccordionBlock' && (
+                        <div className="space-y-4">
+                          <input
+                            value={block.title || ''}
+                            onChange={(e) => updateBlock(i, 'title', e.target.value)}
+                            placeholder="Accordion Heading"
+                            className="w-full px-4 py-2.5 rounded-xl border border-[#e5e3d8] bg-white text-sm font-bold outline-none focus:border-[#1f644e]"
+                          />
+                          <div className="space-y-3">
+                            {(block.items || []).map((item, ii) => (
+                              <div
+                                key={ii}
+                                className="bg-[#fcfbf5] border border-[#e5e3d8] rounded-2xl p-4 space-y-3 relative group/item shadow-sm"
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <input
+                                    value={item.title}
+                                    onChange={(e) => {
+                                      const nextItems = block.items.map((it, idx) =>
+                                        idx === ii ? { ...it, title: e.target.value } : it
+                                      );
+                                      updateBlock(i, 'items', nextItems);
+                                    }}
+                                    placeholder="Item Title"
+                                    className="flex-1 px-3 py-2 rounded-xl border border-[#e5e3d8] text-sm font-bold bg-white focus:border-[#1f644e] outline-none"
+                                  />
+                                  <button
+                                    onClick={() => {
+                                      const nextItems = block.items.filter((_, idx) => idx !== ii);
+                                      updateBlock(i, 'items', nextItems);
+                                    }}
+                                    className="p-2 text-[#7c8e88] hover:text-[#c94c4c] opacity-0 group-hover/item:opacity-100 transition-opacity"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                                <textarea
+                                  value={item.content}
+                                  onChange={(e) => {
+                                    const nextItems = block.items.map((it, idx) =>
+                                      idx === ii ? { ...it, content: e.target.value } : it
+                                    );
+                                    updateBlock(i, 'items', nextItems);
+                                  }}
+                                  placeholder="Item Content (Markdown support)"
+                                  className="w-full h-24 px-3 py-2 rounded-xl border border-[#e5e3d8] text-xs bg-white resize-none focus:border-[#1f644e] outline-none"
+                                />
+                              </div>
+                            ))}
+                            <button
+                              onClick={() => {
+                                const nextItems = [
+                                  ...(block.items || []),
+                                  { title: '', content: '' },
+                                ];
+                                updateBlock(i, 'items', nextItems);
+                              }}
+                              className="w-full py-2.5 rounded-xl border border-dashed border-[#e5e3d8] text-xs font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] hover:bg-[#f0f5f2] transition-all flex items-center justify-center gap-2"
+                            >
+                              <Plus className="w-3.5 h-3.5" /> Add Accordion Item
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>

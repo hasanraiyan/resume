@@ -11,6 +11,7 @@ export const SUPPORTED_BLOCKS = [
   'VideoBlock',
   'ResourceBlock',
   'StepByStepBlock',
+  'AccordionBlock',
 ];
 
 /**

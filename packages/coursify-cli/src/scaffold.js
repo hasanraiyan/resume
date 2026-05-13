@@ -44,6 +44,13 @@ title: "Implementation Steps"
 - step: "Step 3"
   content: "Third step description."
 
+## [AccordionBlock]
+title: "Common Questions"
+- item: "Question 1"
+  content: "Answer 1"
+- item: "Question 2"
+  content: "Answer 2"
+
 ## [QuizBlock]
 - question: "What is the key concept?"
   options: ["Option A", "Option B", "Option C"]

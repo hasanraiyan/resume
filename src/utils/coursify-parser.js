@@ -31,6 +31,7 @@ export function parseMarkdownToBlocks(text) {
     'VideoBlock',
     'ResourceBlock',
     'StepByStepBlock',
+    'AccordionBlock',
   ];
   const AUTHORING_ALIASES = {
     MermaidBlock: { target: 'MdBlock', wrap: (c) => `\`\`\`mermaid\n${c}\n\`\`\`` },
@@ -119,6 +120,25 @@ export function parseMarkdownToBlocks(text) {
         }
         stepContent = unescapeString(stepContent);
         if (title) block.steps.push({ title, content: stepContent });
+      });
+    } else if (m.type === 'AccordionBlock') {
+      block.items = [];
+      const titleMatch = rawContent.match(/^title:\s*(.*)/m);
+      if (titleMatch) {
+        block.title = unescapeString(titleMatch[1]);
+        rawContent = rawContent.replace(titleMatch[0], '').trim();
+      }
+
+      const iParts = rawContent.split(/(?:^|\n)\s*-\s*item:\s*/).filter((p) => p.trim());
+      iParts.forEach((i) => {
+        const lines = i.split('\n');
+        const title = unescapeString(lines[0]);
+        let itemContent = lines.slice(1).join('\n').trim();
+        if (itemContent.startsWith('content:')) {
+          itemContent = itemContent.replace(/^content:\s*/, '').trim();
+        }
+        itemContent = unescapeString(itemContent);
+        if (title) block.items.push({ title, content: itemContent });
       });
     } else if (m.type === 'QuizBlock') {
       block.quiz = { questions: [] };
@@ -237,6 +257,12 @@ export function generateMarkdownFromBlocks(blocks) {
       if (block.showNumbering === false) output += 'showNumbering: false\n';
       (block.steps || []).forEach((s) => {
         output += `- step: "${s.title}"\n  content: "${(s.content || '').replace(/\n/g, '\\n')}"\n`;
+      });
+      output += '\n';
+    } else if (block.type === 'AccordionBlock') {
+      if (block.title) output += `title: "${block.title}"\n`;
+      (block.items || []).forEach((item) => {
+        output += `- item: "${item.title}"\n  content: "${(item.content || '').replace(/\n/g, '\\n')}"\n`;
       });
       output += '\n';
     } else if (block.type === 'QuizBlock') {

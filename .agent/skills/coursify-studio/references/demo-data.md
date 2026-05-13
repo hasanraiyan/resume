@@ -104,6 +104,17 @@ showNumbering: false
 
 ---
 
+## [AccordionBlock]
+
+title: "Troubleshooting Document Ingestion"
+
+- item: "Text is garbled or messy"
+  content: "This usually happens with 'scanned' PDFs. You may need to use an OCR-powered loader like `UnstructuredPDFLoader` with Tesseract."
+- item: "Metadata is missing"
+  content: "Some loaders require specific arguments to extract metadata. Check if your loader supports `extract_images` or `mode='elements'`."
+
+---
+
 ## [ResourceBlock]
 
 url: https://python.langchain.com/docs/integrations/document_loaders/
