@@ -1,4 +1,5 @@
 'use client';
+import { generateMarkdownFromBlocks } from '@/utils/coursify-parser';
 
 import { useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -37,7 +38,8 @@ export function CourseReaderShell({ initialData, slug, activeSectionId }) {
   const isSectionLoaded = !!(currentSection?.content || currentSection?.blocks?.length > 0);
 
   const { headings, activeHeading } = useTableOfContents(
-    currentSection?.content || '',
+    currentSection?.content ||
+      (currentSection?.blocks ? generateMarkdownFromBlocks(currentSection.blocks) : ''),
     contentRef,
     mainRef
   );
