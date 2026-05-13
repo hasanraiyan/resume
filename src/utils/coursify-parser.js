@@ -34,6 +34,7 @@ export function parseMarkdownToBlocks(text) {
     'AccordionBlock',
     'TabsBlock',
     'CalloutBlock',
+    'TimelineBlock',
   ];
   const AUTHORING_ALIASES = {
     MermaidBlock: { target: 'MdBlock', wrap: (c) => `\`\`\`mermaid\n${c}\n\`\`\`` },
@@ -154,6 +155,38 @@ export function parseMarkdownToBlocks(text) {
         }
         tabContent = unescapeString(tabContent);
         if (title) block.tabs.push({ title, content: tabContent });
+      });
+    } else if (m.type === 'TimelineBlock') {
+      block.events = [];
+      const titleMatch = rawContent.match(/^title:\s*(.*)/m);
+      if (titleMatch) {
+        block.title = unescapeString(titleMatch[1]);
+        rawContent = rawContent.replace(titleMatch[0], '').trim();
+      }
+
+      const eParts = rawContent.split(/(?:^|\n)\s*-\s*event:\s*/).filter((p) => p.trim());
+      eParts.forEach((e) => {
+        const lines = e.split('\n');
+        const eventLabel = unescapeString(lines[0]);
+        let eventTitle = '';
+        let eventContent = '';
+
+        let remaining = lines.slice(1).join('\n').trim();
+        const tMatch = remaining.match(/^title:\s*(.*)/m);
+        if (tMatch) {
+          eventTitle = unescapeString(tMatch[1]);
+          remaining = remaining.replace(tMatch[0], '').trim();
+        }
+
+        if (remaining.startsWith('content:')) {
+          eventContent = remaining.replace(/^content:\s*/, '').trim();
+        } else {
+          eventContent = remaining;
+        }
+        eventContent = unescapeString(eventContent);
+
+        if (eventLabel)
+          block.events.push({ event: eventLabel, title: eventTitle, content: eventContent });
       });
     } else if (m.type === 'CalloutBlock') {
       const typeMatch = rawContent.match(/^type:\s*(.*)/m);
@@ -300,6 +333,12 @@ export function generateMarkdownFromBlocks(blocks) {
     } else if (block.type === 'TabsBlock') {
       (block.tabs || []).forEach((tab) => {
         output += `- tab: "${tab.title}"\n  content: "${(tab.content || '').replace(/\n/g, '\\n')}"\n`;
+      });
+      output += '\n';
+    } else if (block.type === 'TimelineBlock') {
+      if (block.title) output += `title: "${block.title}"\n`;
+      (block.events || []).forEach((e) => {
+        output += `- event: "${e.event}"\n  title: "${e.title || ''}"\n  content: "${(e.content || '').replace(/\n/g, '\\n')}"\n`;
       });
       output += '\n';
     } else if (block.type === 'CalloutBlock') {

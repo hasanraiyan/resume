@@ -102,6 +102,7 @@ export function normalizeSection(section) {
       showNumbering: b.showNumbering,
       items: b.items,
       tabs: b.tabs,
+      events: b.events,
       calloutType: b.calloutType,
       order: b.order ?? 0,
     })),

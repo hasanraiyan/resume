@@ -18,7 +18,7 @@ import {
 
 const program = new Command();
 
-program.name('coursify').description('Local-first authoring tool for Coursify').version('1.1.4');
+program.name('coursify').description('Local-first authoring tool for Coursify').version('1.1.5');
 
 program.option('-v, --verbose', 'Enable verbose logging', false);
 

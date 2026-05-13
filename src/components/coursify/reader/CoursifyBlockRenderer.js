@@ -8,6 +8,7 @@ import { StepByStepBlock } from './StepByStepBlock';
 import { AccordionBlock } from './AccordionBlock';
 import { TabsBlock } from './TabsBlock';
 import { CalloutBlock } from './CalloutBlock';
+import { TimelineBlock } from './TimelineBlock';
 import { PlayCircle, ExternalLink, FileText } from 'lucide-react';
 import { parseMarkdownToBlocks } from '@/utils/coursify-parser';
 
@@ -88,6 +89,8 @@ export function CoursifyBlockRenderer({ blocks, content }) {
             return <TabsBlock key={block._id || idx} block={block} />;
           case 'CalloutBlock':
             return <CalloutBlock key={block._id || idx} block={block} />;
+          case 'TimelineBlock':
+            return <TimelineBlock key={block._id || idx} block={block} />;
           default:
             return null;
         }

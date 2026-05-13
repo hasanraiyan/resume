@@ -51,6 +51,15 @@ title: "Common Questions"
 - item: "Question 2"
   content: "Answer 2"
 
+## [TimelineBlock]
+title: "Project Roadmap"
+- event: "2023-Q1"
+  title: "Conceptualization"
+  content: "Brainstorming and feasibility studies."
+- event: "2023-Q2"
+  title: "Development"
+  content: "Building the core engine."
+
 ## [QuizBlock]
 - question: "What is the key concept?"
   options: ["Option A", "Option B", "Option C"]
