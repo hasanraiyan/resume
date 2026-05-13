@@ -1,5 +1,6 @@
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ChevronRight, Clock, BookOpen, Menu } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Clock, BookOpen, Menu, Share2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const DIFFICULTY_COLORS = {
   beginner: 'bg-emerald-100 text-emerald-700',
@@ -18,6 +19,29 @@ export function ReaderHeader({ course, showOverview, onToggleSidebar, actions })
   const router = useRouter();
 
   if (!course) return null;
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    const shareData = {
+      title: course.title,
+      text: course.description || `Check out this course: ${course.title}`,
+      url: url,
+    };
+
+    try {
+      if (navigator.share && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success('Link copied to clipboard!');
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.error('Error sharing:', err);
+        toast.error('Could not share link');
+      }
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-[#e5e3d8] px-4 lg:px-6 py-3 flex items-center justify-between gap-3 shrink-0">
@@ -62,6 +86,14 @@ export function ReaderHeader({ course, showOverview, onToggleSidebar, actions })
             </span>
           )}
         </div>
+
+        <button
+          onClick={handleShare}
+          className="p-1.5 hover:bg-[#f0f5f2] rounded-full transition-colors text-[#7c8e88] hover:text-[#1f644e]"
+          title="Share Course"
+        >
+          <Share2 className="w-4 h-4" />
+        </button>
 
         {actions}
 

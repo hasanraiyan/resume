@@ -38,7 +38,7 @@ const FeaturedCourses = ({ courses = [], section = {} }) => {
               y: 50,
               duration: 1,
               scrollTrigger: {
-                trigger: '#courses-section',
+                trigger: '#courses',
                 start: 'top 80%',
                 end: 'bottom 20%',
                 toggleActions: 'play none none reverse',
@@ -56,7 +56,7 @@ const FeaturedCourses = ({ courses = [], section = {} }) => {
       clearTimeout(timer);
       try {
         ScrollTrigger.getAll().forEach((trigger) => {
-          if (trigger.trigger === '#courses-section') {
+          if (trigger.trigger === '#courses') {
             trigger.kill();
           }
         });
@@ -78,22 +78,21 @@ const FeaturedCourses = ({ courses = [], section = {} }) => {
       id="courses"
       title={section.title || 'Featured Courses'}
       description={section.description || 'Curated courses to help you level up your skills'}
-      className="p-0 m-0"
       centered={true}
     >
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto" id="featured-courses">
         <div className="relative">
           {courses.length >= 3 && (
             <>
               <button
                 onClick={handlePrev}
-                className="hidden md:block absolute -left-10 top-1/3 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all text-black hover:text-black"
+                className="hidden md:block absolute -left-12 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all text-black hover:text-black border border-gray-100"
               >
                 <ChevronLeft size={24} />
               </button>
               <button
                 onClick={handleNext}
-                className="hidden md:block absolute -right-10 top-1/3 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all text-black hover:text-black"
+                className="hidden md:block absolute -right-12 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all text-black hover:text-black border border-gray-100"
               >
                 <ChevronRight size={24} />
               </button>
@@ -104,7 +103,7 @@ const FeaturedCourses = ({ courses = [], section = {} }) => {
             modules={[Pagination, Autoplay]}
             slidesPerView={1}
             spaceBetween={30}
-            loop={courses.length > 1}
+            loop={courses.length > 3}
             watchSlidesProgress={true}
             autoplay={{
               delay: 3500,
@@ -120,7 +119,7 @@ const FeaturedCourses = ({ courses = [], section = {} }) => {
               640: { slidesPerView: 2 },
               1024: { slidesPerView: 3 },
             }}
-            className="featured-courses-swiper !h-auto"
+            className="featured-courses-swiper !h-auto pb-16"
             wrapperClass="items-stretch"
           >
             {courses.map((course) => (
@@ -132,17 +131,15 @@ const FeaturedCourses = ({ courses = [], section = {} }) => {
         </div>
       </div>
 
-      {section.viewAllLink && (
-        <div className="text-center mt-10 sm:mt-14 md:mt-10">
-          <Button
-            href={section.viewAllLink}
-            variant="primary"
-            className="px-8 sm:px-12 py-4 sm:py-5 text-base sm:text-lg"
-          >
-            {section.viewAllText || 'View All Courses'} <i className="fas fa-arrow-right ml-3"></i>
-          </Button>
-        </div>
-      )}
+      <div className="text-center mt-10 sm:mt-14 md:mt-10">
+        <Button
+          href={section.viewAllLink || '/coursify'}
+          variant="primary"
+          className="px-8 sm:px-12 py-4 sm:py-5 text-base sm:text-lg"
+        >
+          {section.viewAllText || 'View All Courses'} <i className="fas fa-arrow-right ml-3"></i>
+        </Button>
+      </div>
     </Section>
   );
 };

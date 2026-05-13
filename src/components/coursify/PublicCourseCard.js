@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { BookOpen, ChevronRight } from 'lucide-react';
+import { BookOpen, ChevronRight, Loader2, Layers } from 'lucide-react';
 
 const DIFFICULTY_COLORS = {
   beginner: 'bg-emerald-100 text-emerald-700',
@@ -12,13 +13,21 @@ const DIFFICULTY_COLORS = {
 
 export function PublicCourseCard({ course }) {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
   const count = course.sectionCount ?? 0;
+
+  const handleClick = () => {
+    setIsLoading(true);
+    router.push(`/coursify/${course.slug || course.id || course._id}`);
+  };
+
   return (
     <button
-      onClick={() => router.push(`/coursify/${course.slug || course.id || course._id}`)}
-      className="group text-left bg-white border border-[#e5e3d8] rounded-2xl overflow-hidden hover:shadow-lg hover:border-[#1f644e]/30 transition-all duration-200 flex flex-col w-full h-full"
+      onClick={handleClick}
+      disabled={isLoading}
+      className="group text-left bg-white border border-[#e5e3d8] rounded-2xl overflow-hidden hover:border-[#1f644e]/30 transition-all duration-200 flex flex-col w-full h-full cursor-pointer"
     >
-      <div className="w-full h-40 sm:h-44 bg-[#1f644e] relative overflow-hidden shrink-0">
+      <div className="w-full aspect-video bg-[#1f644e] relative overflow-hidden shrink-0">
         {course.thumbnail ? (
           <Image
             src={course.thumbnail}
@@ -26,7 +35,7 @@ export function PublicCourseCard({ course }) {
             fill
             unoptimized
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -34,11 +43,6 @@ export function PublicCourseCard({ course }) {
           </div>
         )}
         <div className="absolute top-3 right-3 z-10">
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/40 text-white backdrop-blur-sm">
-            {count} {count === 1 ? 'section' : 'sections'}
-          </span>
-        </div>
-        <div className="absolute bottom-3 left-3 z-10">
           <span
             className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize backdrop-blur-sm ${
               DIFFICULTY_COLORS[course.difficulty] || DIFFICULTY_COLORS.beginner
@@ -58,9 +62,18 @@ export function PublicCourseCard({ course }) {
             {course.description}
           </p>
         )}
-        <div className="flex items-center justify-end pt-2 mt-auto border-t border-[#f0f5f2]">
+        <div className="flex items-center justify-between pt-2 mt-auto border-t border-[#f0f5f2]">
+          <span className="flex items-center gap-1 text-[10px] font-bold text-[#7c8e88]">
+            <Layers className="w-3 h-3" />
+            {count} {count === 1 ? 'section' : 'sections'}
+          </span>
           <span className="flex items-center gap-1 text-xs font-bold text-[#1f644e] group-hover:gap-2 group-hover:underline transition-all cursor-pointer">
-            Start learning <ChevronRight className="w-3.5 h-3.5" />
+            Start learning
+            {isLoading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <ChevronRight className="w-3.5 h-3.5" />
+            )}
           </span>
         </div>
       </div>

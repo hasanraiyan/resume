@@ -9,7 +9,7 @@ This skill transforms the agent into a specialized **Instructional Design Agent*
 
 ## Setup & Configuration
 
-Before you begin authoring, ensure the CLI is installed and configured.
+Install and configure the Coursify CLI for local authoring.
 
 ```bash
 # Install the CLI globally
@@ -25,95 +25,460 @@ coursify setup set-base-url https://hasanraiyan.me
 coursify auth login
 ```
 
-## Local-First Workflow (Recommended)
+## Course Authoring Lifecycle
 
-Authoring courses locally in an IDE provides the best experience for technical content, version control, and rapid iteration.
+Coursify uses an **authoring status** lifecycle to track course development. Each phase has specific goals and deliverables.
 
-### 1. Project Initialization
+### Phase 1: Planning (Status: `idea` → `planned`)
 
-Start by scaffolding a new course directory:
+**Goal:** Define the course scope, audience, and learning outcomes.
+
+**Deliverables:**
+
+- Target audience description
+- Learning objectives (3-5 clear, measurable goals)
+- Prerequisites (what learners should know)
+- Course outcome (what learners will be able to do)
+- High-level outline (module/section structure)
+
+**How to start:**
 
 ```bash
 coursify init "My Awesome Course"
 cd "my-awesome-course"
 ```
 
-### 2. Building Structure
+This creates `info.yaml` with metadata fields. Fill in:
 
-Add modules and sections using the scaffolding commands:
+```yaml
+title: 'My Awesome Course'
+slug: 'my-awesome-course'
+description: 'Brief description'
+difficulty: 'intermediate'
+estimatedDuration: '4 hours'
+tags: ['tag1', 'tag2']
+
+# Planning workspace
+targetAudience: 'Software engineers with 2+ years experience'
+learningObjectives:
+  - 'Understand core concepts'
+  - 'Apply techniques in practice'
+  - 'Evaluate trade-offs'
+prerequisites:
+  - 'Basic programming knowledge'
+  - 'Familiarity with X'
+outcome: 'Build production-ready systems using these patterns'
+outline: |
+  Module 1: Fundamentals
+  - Section 1: Introduction
+  - Section 2: Core Concepts
+  Module 2: Advanced Topics
+  - Section 1: Patterns
+  - Section 2: Best Practices
+```
+
+### Phase 2: Research (Status: `researching`)
+
+**Goal:** Gather authoritative sources and validate approach.
+
+**Deliverables:**
+
+- Research notes with sources (web, papers, books, videos)
+- Key findings and insights
+- Validation that approach is sound
+
+**How to add research notes:**
+
+```bash
+# Via CLI (if supported) or manually in info.yaml
+researchNotes:
+  - title: "Understanding X Pattern"
+    summary: "Key insight about the pattern"
+    sourceUrl: "https://example.com/article"
+    sourceType: "web"
+    notes: "Relevant quotes and takeaways"
+    accessedAt: "2026-05-13"
+```
+
+### Phase 3: Structure (Status: `planned`)
+
+**Goal:** Create the course skeleton with modules and sections.
+
+**Deliverables:**
+
+- Modules with learning goals
+- Sections with estimated duration
+- Clear hierarchy and ordering
+
+**How to scaffold structure:**
 
 ```bash
 # Add a module
 coursify init-module "Getting Started" --order 1
 
-# Add a section to that module
-coursify init-section "Introduction" --module m1-getting-started --order 1 --type standard
-
-# Add a lab/procedural section
-coursify init-section "Setup Lab" --module m1-getting-started --order 2 --type lab
+# Add sections to that module
+coursify init-section "Introduction" --module m1-getting-started --order 1
+coursify init-section "Setup Lab" --module m1-getting-started --order 2
+coursify init-section "Quiz" --module m1-getting-started --order 3
 ```
 
-### 3. Authoring Content (Magic Blocks)
+All sections are created with a universal template that includes examples of all available block types (MdBlock, StepByStepBlock, QuizBlock). Edit the template to use only the blocks you need for that section.
 
-Edit the `data.md` files in each section. Follow the **Standardized Section Flow**:
+```
+my-awesome-course/
+├── info.yaml
+├── m1-getting-started/
+│   ├── info.yaml
+│   ├── s1-introduction/
+│   │   └── data.md
+│   ├── s2-setup-lab/
+│   │   └── data.md
+│   └── s3-quiz/
+│       └── data.md
+```
 
-- **MdBlock**: Technical theory, technical concepts, 500-1200 words. Use `##` and `###` headers.
-- **StepByStepBlock**: Mandatory for labs and workflows.
-- **QuizBlock**: 3-5 questions to verify learning.
-- **MermaidBlock**: Visualize architectures using Mermaid syntax.
+**Module info.yaml:**
 
-### 4. Validation & Linting
+```yaml
+title: 'Getting Started'
+summary: 'Overview of this module'
+learningGoals:
+  - 'Goal 1'
+  - 'Goal 2'
+order: 1
+status: 'planned'
+```
 
-Always validate your content before syncing to ensure TOC compatibility and block integrity:
+**Section info.yaml:**
 
+```yaml
+title: 'Introduction'
+summary: 'What this section covers'
+learningGoals:
+  - 'Specific learning goal'
+estimatedDuration: '15 minutes'
+order: 1
+status: 'draft'
+```
+
+### Phase 4: Authoring (Status: `drafting`)
+
+**Goal:** Write content using Magic Blocks with proper pedagogy.
+
+**Deliverables:**
+
+- Complete markdown content with blocks
+- External resources linked
+- All sections drafted
+
+**Universal Section Template:**
+
+When you create a section with `coursify init-section`, it generates a template with examples of all available block types. The template includes:
+
+- `[MdBlock]` — for explanations and concepts
+- `[StepByStepBlock]` — for procedures and labs
+- `[QuizBlock]` — for assessment
+
+Edit the template to keep only the blocks you need for that section, and customize the content.
+
+**Magic Block Types:**
+
+#### MdBlock
+
+Technical theory, concepts, and explanations. 500-1200 words.
+
+````markdown
+## Core Concept
+
+Explain the concept here with depth and clarity.
+
+### Subsection
+
+More details...
+
+### Embedding Mermaid Diagrams
+
+Include diagrams inline using markdown code fences:
+
+```mermaid
+graph TD
+  A[Client] --> B[API]
+  B --> C[Database]
+```
+````
+
+````
+
+**Best practices:**
+- Start with `##` (never `#` — that breaks TOC)
+- Use `###` for subsections
+- Include examples and analogies
+- Link to resources where relevant
+
+#### QuizBlock
+3-5 questions to verify learning. Always include at the end of a section.
+
+```markdown
+## Quiz
+
+**Question 1: What is X?**
+- Option A
+- Option B (correct)
+- Option C
+- Option D
+
+**Question 2: When would you use Y?**
+- Option A (correct)
+- Option B
+- Option C
+````
+
+**Best practices:**
+
+- One correct answer per question
+- Plausible distractors
+- Test understanding, not memorization
+- Include explanations for why answers are correct/incorrect
+
+#### StepByStepBlock
+
+Mandatory for labs, procedures, and workflows.
+
+````markdown
+## Setup Lab
+
+**Step 1: Install dependencies**
+
+```bash
+npm install
+```
+````
+
+**Step 2: Configure environment**
+Create `.env` file with:
+
+```
+API_KEY=your-key
+```
+
+**Step 3: Run the application**
+
+```bash
+npm start
+```
+
+**Expected output:**
+Server running on port 3000
+
+````
+
+**Best practices:**
+- Clear, numbered steps
+- Include code blocks where relevant
+- Show expected output
+- Provide troubleshooting for common issues
+
+#### VideoBlock
+Embed external videos (YouTube, Vimeo, etc.)
+
+```markdown
+## Video: Understanding X
+
+**Video:** https://youtube.com/watch?v=...
+**Duration:** 12 minutes
+**Key topics:** Topic 1, Topic 2
+````
+
+#### ResourceBlock
+
+External links and supplementary materials
+
+```markdown
+## Resources
+
+- [Article Title](https://example.com) — Brief description
+- [Documentation](https://docs.example.com) — What to find there
+- [GitHub Repo](https://github.com/...) — Code examples
+```
+
+**How to author a section:**
+
+Edit `data.md` in each section directory:
+
+````markdown
+## Introduction to X
+
+This section covers the fundamentals of X and why it matters.
+
+### Why X Matters
+
+Explain the problem X solves...
+
+### Key Concepts
+
+Introduce the main ideas...
+
+```mermaid
+graph LR
+  A[Problem] --> B[Solution: X]
+  B --> C[Benefits]
+```
+````
+
+### Common Patterns
+
+Describe patterns and best practices...
+
+## Quiz
+
+**Question 1: What is the primary benefit of X?**
+
+- Option A
+- Option B (correct)
+- Option C
+
+**Question 2: When should you use X?**
+
+- Option A (correct)
+- Option B
+- Option C
+
+````
+
+### Phase 5: Review (Status: `reviewing`)
+
+**Goal:** Validate content quality, pedagogy, and structure.
+
+**Checklist:**
+- [ ] All sections have learning goals
+- [ ] All sections end with a quiz
+- [ ] No Level 1 headers (`#`) in section content
+- [ ] Mermaid diagrams render correctly
+- [ ] Code examples are accurate and runnable
+- [ ] Estimated durations are realistic
+- [ ] Resources are current and accessible
+- [ ] Tone is consistent throughout
+- [ ] Technical accuracy verified
+
+**How to validate:**
 ```bash
 coursify validate .
-```
+````
 
-### 5. Deployment (Syncing to Server)
+This checks:
 
-Authenticate and then publish your course.
+- TOC compatibility (no `#` headers)
+- Block structure integrity
+- Required fields present
+- Slug uniqueness
 
-**Authentication Check:**
+### Phase 6: Publishing (Status: `ready` → `published`)
+
+**Goal:** Deploy course to production.
+
+**Steps:**
+
+1. **Preview changes (dry run):**
 
 ```bash
-coursify auth status
-```
-
-**Syncing:**
-
-```bash
-# Preview changes (Dry Run)
 coursify publish . --dry-run
+```
 
-# Sync to production
+2. **Sync to server:**
+
+```bash
 coursify publish .
+```
 
-# Sync and immediately mark as published on the UI
+3. **Mark as published on UI:**
+
+```bash
 coursify publish . --publish
+```
 
-# Verbose mode for debugging
+4. **Verbose mode for debugging:**
+
+```bash
 coursify publish . --verbose
 ```
 
-## Core Procedures for Agents
+**Important:** The CLI uses slug-based upsert. If a course with the same slug exists on the server, it will be updated (not duplicated).
 
-### ID & Slug Management
+## Local-First Workflow (Recommended)
 
-- **Slug-based Updates**: Use a unique `slug` in your `info.yaml`. The CLI will automatically find and update the existing course on the server if the slug matches, preventing duplicate courses.
-- **ID Overrides**: If you have a specific Database ID, you can provide it in `info.yaml` as `id: "your-id"`.
+Authoring courses locally in an IDE provides the best experience for technical content, version control, and rapid iteration.
 
-### Pedagogy Standards
+### Directory Structure
 
-- **Depth**: Lessons must be thorough and technical (500-1200 words).
-- **TOC Compatibility**: **NEVER** use Level 1 headers (`#`) inside a section's Markdown. Always start with `##`.
+```
+my-awesome-course/
+├── info.yaml                    # Course metadata & planning workspace
+├── agent.yaml                   # Agent configuration (optional)
+├── m1-module-name/
+│   ├── info.yaml               # Module metadata
+│   ├── s1-section-name/
+│   │   ├── info.yaml           # Section metadata
+│   │   └── data.md             # Markdown content (source of truth)
+│   ├── s2-another-section/
+│   │   ├── info.yaml
+│   │   └── data.md
+│   └── s3-quiz-section/
+│       ├── info.yaml
+│       └── data.md
+└── m2-another-module/
+    ├── info.yaml
+    └── s1-section/
+        ├── info.yaml
+        └── data.md
+```
+
+### Workflow Commands
+
+```bash
+# Initialize a new course
+coursify init "Course Title"
+
+# Add a module
+coursify init-module "Module Title" --order 1
+
+# Add a section
+coursify init-section "Section Title" --module m1-slug --order 1
+
+# Validate structure and content
+coursify validate .
+
+# Preview changes before publishing
+coursify publish . --dry-run
+
+# Publish to server
+coursify publish .
+
+# Check authentication status
+coursify auth status
+
+# Re-authenticate if needed
+coursify auth login
+```
+
+## Pedagogy Standards
+
+- **Depth**: Lessons must be thorough and technical (500-1200 words for MdBlock).
+- **TOC Compatibility**: **NEVER** use Level 1 headers (`#`) inside section Markdown. Always start with `##`.
 - **Interactivity**: Every section should ideally end with a `QuizBlock`.
+- **Clarity**: Use clear headings, examples, and analogies.
+- **Accuracy**: Verify all technical content and code examples.
+- **Consistency**: Maintain tone and style throughout the course.
 
 ## Troubleshooting
 
-- **Unauthorized**: Run `coursify auth login` again.
-- **Validation Errors**: Check for Level 1 headers or missing `correctAnswer` in Quizzes.
-- **Configuration issues**: Run `coursify setup show` to see current settings.
+| Issue                     | Solution                                                              |
+| ------------------------- | --------------------------------------------------------------------- |
+| **Unauthorized**          | Run `coursify auth login` again                                       |
+| **Validation errors**     | Check for Level 1 headers (`#`) or missing `correctAnswer` in quizzes |
+| **Configuration issues**  | Run `coursify setup show` to see current settings                     |
+| **Slug conflicts**        | Use a unique slug in `info.yaml` to avoid duplicates                  |
+| **Mermaid not rendering** | Ensure syntax is correct and diagram is inside a code fence           |
+| **Publish fails**         | Run with `--verbose` flag to see detailed error messages              |
 
 ## Skill Resources
 
@@ -122,3 +487,4 @@ For detailed guidance, refer to the following files in the `references/` directo
 - `pedagogy.md`: Standards for high-fidelity technical content.
 - `schemas.md`: Data models and Magic Block syntax.
 - `workflows.md`: Detailed authoring and publishing workflows.
+- `demo-data.md`: Example section with all block types.

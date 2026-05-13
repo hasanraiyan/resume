@@ -71,7 +71,7 @@ export default function CourseCard({ course, index = 0 }) {
       >
         {/* Thumbnail / cover */}
         <div
-          className={`h-44 bg-gradient-to-br ${gradient} flex items-center justify-center relative overflow-hidden shrink-0`}
+          className={`w-full aspect-video bg-gradient-to-br ${gradient} flex items-center justify-center relative overflow-hidden shrink-0`}
         >
           {course.thumbnailGenerating ? (
             <>
