@@ -73,9 +73,11 @@ researchNotes:
 
 ```bash
 coursify init-module "Getting Started" --order 1
-coursify init-section "Introduction" --module m1-getting-started --order 1 --type standard
-coursify init-section "Setup Lab" --module m1-getting-started --order 2 --type lab
+coursify init-section "Introduction" --module m1-getting-started --order 1
+coursify init-section "Setup Lab" --module m1-getting-started --order 2
 ```
+
+All sections are created with a universal template containing examples of all block types. Edit the template to use only the blocks needed for that section.
 
 ### Phase 4: Authoring (`drafting`)
 

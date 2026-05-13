@@ -18,7 +18,7 @@ import {
 
 const program = new Command();
 
-program.name('coursify').description('Local-first authoring tool for Coursify').version('1.1.0');
+program.name('coursify').description('Local-first authoring tool for Coursify').version('1.1.2');
 
 program.option('-v, --verbose', 'Enable verbose logging', false);
 
@@ -59,16 +59,10 @@ program
   .argument('<title>', 'Title of the section')
   .option('-m, --module <dir>', 'Module directory', '.')
   .option('-o, --order <number>', 'Section order', '1')
-  .option('-t, --type <type>', 'Section type (standard, lab, procedural)', 'standard')
   .description('Add a new section directory to a module')
   .action(async (title, options) => {
     try {
-      const secDir = await scaffoldSection(
-        options.module,
-        title,
-        parseInt(options.order),
-        options.type
-      );
+      const secDir = await scaffoldSection(options.module, title, parseInt(options.order));
       console.log(chalk.green(`\nSuccessfully created section: ${secDir}`));
     } catch (err) {
       console.error(chalk.red(`Error: ${err.message}`));

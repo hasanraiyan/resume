@@ -17,11 +17,11 @@ order: ${order}
   return modDir;
 }
 
-export async function scaffoldSection(moduleDir, sectionName, order, type = 'standard') {
+export async function scaffoldSection(moduleDir, sectionName, order) {
   const secDir = path.join(moduleDir, sectionName.toLowerCase().replace(/\s+/g, '-'));
   await fs.ensureDir(secDir);
 
-  let content = `---
+  const content = `---
 title: "${sectionName}"
 description: "Description for ${sectionName}."
 learningGoals:
@@ -31,42 +31,29 @@ status: "draft"
 order: ${order}
 ---
 
-`;
-
-  if (type === 'lab' || type === 'procedural') {
-    content += `## [MdBlock]
-### Lab Overview
-In this lab, we will...
+## [MdBlock]
+### Overview
+Add your markdown content here. This is a standard markdown block for explanations, concepts, and narrative content.
 
 ## [StepByStepBlock]
 title: "Implementation Steps"
-- step: "Setup"
-  content: "Initialize your workspace."
-- step: "Build"
-  content: "Execute the main logic."
-- step: "Verify"
-  content: "Check the results."
-
-## [MdBlock]
-### Troubleshooting
-If you encounter errors...
-`;
-  } else {
-    content += `## [MdBlock]
-### Concept Overview
-In this section, we cover...
-
-## [MdBlock]
-### Deep Dive
-Exploring the details...
+- step: "Step 1"
+  content: "First step description."
+- step: "Step 2"
+  content: "Second step description."
+- step: "Step 3"
+  content: "Third step description."
 
 ## [QuizBlock]
-- question: "What is the key takeaway?"
+- question: "What is the key concept?"
   options: ["Option A", "Option B", "Option C"]
   correctAnswer: "Option A"
-  explanation: "A is correct because..."
+  explanation: "Option A is correct because..."
+
+## [MdBlock]
+### Additional Resources
+Link to external resources, documentation, or references here.
 `;
-  }
 
   await fs.writeFile(path.join(secDir, 'data.md'), content);
   return secDir;

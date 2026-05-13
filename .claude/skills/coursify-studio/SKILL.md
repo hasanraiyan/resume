@@ -117,12 +117,12 @@ researchNotes:
 coursify init-module "Getting Started" --order 1
 
 # Add sections to that module
-coursify init-section "Introduction" --module m1-getting-started --order 1 --type standard
-coursify init-section "Setup Lab" --module m1-getting-started --order 2 --type lab
-coursify init-section "Quiz" --module m1-getting-started --order 3 --type standard
+coursify init-section "Introduction" --module m1-getting-started --order 1
+coursify init-section "Setup Lab" --module m1-getting-started --order 2
+coursify init-section "Quiz" --module m1-getting-started --order 3
 ```
 
-This creates:
+All sections are created with a universal template that includes examples of all available block types (MdBlock, StepByStepBlock, QuizBlock). Edit the template to use only the blocks you need for that section.
 
 ```
 my-awesome-course/
@@ -170,6 +170,16 @@ status: 'draft'
 - Complete markdown content with blocks
 - External resources linked
 - All sections drafted
+
+**Universal Section Template:**
+
+When you create a section with `coursify init-section`, it generates a template with examples of all available block types. The template includes:
+
+- `[MdBlock]` — for explanations and concepts
+- `[StepByStepBlock]` — for procedures and labs
+- `[QuizBlock]` — for assessment
+
+Edit the template to keep only the blocks you need for that section, and customize the content.
 
 **Magic Block Types:**
 
@@ -432,7 +442,7 @@ coursify init "Course Title"
 coursify init-module "Module Title" --order 1
 
 # Add a section
-coursify init-section "Section Title" --module m1-slug --order 1 --type standard
+coursify init-section "Section Title" --module m1-slug --order 1
 
 # Validate structure and content
 coursify validate .
