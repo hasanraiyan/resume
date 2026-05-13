@@ -8,14 +8,46 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 export default function SearchOverlay({ isOpen, onClose, type = null }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
   const [groupedResults, setGroupedResults] = useState({ projects: [], articles: [], courses: [] });
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef(null);
   const resultsRef = useRef(null);
   const debounceTimer = useRef(null);
   const { trackEvent } = useAnalytics();
+
+  // Fetch suggestions when overlay opens
+  useEffect(() => {
+    if (isOpen) {
+      const fetchSuggestions = async () => {
+        setIsSuggestionsLoading(true);
+        try {
+          const response = await fetch('/api/coursify/public/courses');
+          const data = await response.json();
+          if (data.success) {
+            // Take the 3 most recently updated courses
+            setSuggestions(
+              data.courses.slice(0, 3).map((c) => ({
+                ...c,
+                id: c._id,
+                type: 'course',
+                excerpt: c.description,
+              }))
+            );
+          }
+        } catch (err) {
+          console.error('Failed to fetch suggestions:', err);
+        } finally {
+          setIsSuggestionsLoading(false);
+        }
+      };
+
+      fetchSuggestions();
+    }
+  }, [isOpen]);
 
   // Reset state when overlay opens/closes
   useEffect(() => {
@@ -210,9 +242,50 @@ export default function SearchOverlay({ isOpen, onClose, type = null }) {
         </div>
 
         {/* Results */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
           {query.length < 3 ? (
-            <div className="text-center text-gray-500 py-8">{emptyStateText}</div>
+            <div className="space-y-6 no-scrollbar">
+              {!query.trim() && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                    <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
+                    Recently Added Courses
+                  </h4>
+                  {isSuggestionsLoading ? (
+                    <div className="space-y-3">
+                      {[...Array(3)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="animate-pulse flex gap-4 p-3 border border-gray-50 rounded-xl"
+                        >
+                          <div className="w-24 sm:w-32 aspect-video bg-gray-100 rounded-lg shrink-0"></div>
+                          <div className="flex-1 space-y-2 py-1">
+                            <div className="h-4 bg-gray-100 rounded w-3/4"></div>
+                            <div className="h-3 bg-gray-100 rounded w-1/2"></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : suggestions.length > 0 ? (
+                    <div className="space-y-3">
+                      {suggestions.map((suggestion) => (
+                        <SearchResultItem
+                          key={`suggested-${suggestion.id}`}
+                          result={suggestion}
+                          onNavigate={onClose}
+                          searchQuery=""
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-500 py-8">{emptyStateText}</div>
+                  )}
+                </div>
+              )}
+              {query.trim().length > 0 && query.trim().length < 3 && (
+                <div className="text-center text-gray-500 py-8">{emptyStateText}</div>
+              )}
+            </div>
           ) : isLoading ? (
             <div className="space-y-4">
               {[...Array(3)].map((_, i) => (

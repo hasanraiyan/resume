@@ -60,7 +60,6 @@ export function ReaderHeader({ course, showOverview, onToggleSidebar, actions })
         <span className="font-[family-name:var(--font-logo)] text-lg text-[#1f644e] shrink-0 hidden sm:block">
           Coursify
         </span>
-        <ChevronRight className="w-3.5 h-3.5 text-[#e5e3d8] shrink-0 hidden sm:block" />
         <h1 className="font-bold text-[#1e3a34] text-sm lg:text-base truncate">{course.title}</h1>
       </div>
 
