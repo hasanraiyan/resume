@@ -244,6 +244,125 @@ export async function dbDeleteCourse({ id }) {
   return { deletedId: courseId, title: course.title };
 }
 
+export async function dbListDeletedCourses() {
+  await dbConnect();
+  const courses = await CoursifyCourse.find({ deletedAt: { $ne: null } })
+    .sort({ deletedAt: -1 })
+    .lean();
+
+  const courseIds = courses.map((c) => c._id);
+  const sections = await CoursifySection.find({
+    courseId: { $in: courseIds },
+    deletedAt: { $ne: null },
+  })
+    .select('courseId')
+    .lean();
+
+  const sectionCountMap = {};
+  for (const s of sections) {
+    const id = s.courseId.toString();
+    sectionCountMap[id] = (sectionCountMap[id] || 0) + 1;
+  }
+
+  return courses.map((c) => ({
+    ...normalizeCourse(c),
+    sectionCount: sectionCountMap[c._id.toString()] || 0,
+  }));
+}
+
+export async function dbRestoreCourse({ id }) {
+  await dbConnect();
+  const courseId = await resolveCourseId(id);
+  const course = await CoursifyCourse.findOneAndUpdate(
+    { _id: courseId, deletedAt: { $ne: null } },
+    { $set: { deletedAt: null }, $inc: { syncVersion: 1 } },
+    { new: true }
+  ).lean();
+
+  if (!course) throw new Error('Deleted course not found.');
+
+  await Promise.all([
+    CoursifySection.updateMany(
+      { courseId, deletedAt: { $ne: null } },
+      { $set: { deletedAt: null }, $inc: { syncVersion: 1 } }
+    ),
+    CoursifyModule.updateMany(
+      { courseId, deletedAt: { $ne: null } },
+      { $set: { deletedAt: null }, $inc: { syncVersion: 1 } }
+    ),
+  ]);
+
+  return { course: normalizeCourse(course) };
+}
+
+export async function dbPermanentlyDeleteCourse({ id }) {
+  await dbConnect();
+  const courseId = await resolveCourseId(id);
+  const course = await CoursifyCourse.findOneAndDelete({ _id: courseId });
+
+  if (!course) throw new Error('Course not found.');
+
+  await Promise.all([
+    CoursifySection.deleteMany({ courseId }),
+    CoursifyModule.deleteMany({ courseId }),
+  ]);
+
+  return { deletedId: courseId, title: course.title };
+}
+
+export async function dbCleanupDeletedCourses(days = 30) {
+  await dbConnect();
+  const threshold = new Date();
+  threshold.setDate(threshold.getDate() - days);
+
+  const coursesToCleanup = await CoursifyCourse.find({
+    deletedAt: { $lt: threshold },
+  })
+    .select('_id')
+    .lean();
+
+  if (coursesToCleanup.length === 0) return { deletedCount: 0 };
+
+  const ids = coursesToCleanup.map((c) => c._id);
+
+  const [courseResult, sectionResult, moduleResult] = await Promise.all([
+    CoursifyCourse.deleteMany({ _id: { $in: ids } }),
+    CoursifySection.deleteMany({ courseId: { $in: ids } }),
+    CoursifyModule.deleteMany({ courseId: { $in: ids } }),
+  ]);
+
+  return {
+    deletedCount: courseResult.deletedCount,
+    sectionsDeleted: sectionResult.deletedCount,
+    modulesDeleted: moduleResult.deletedCount,
+  };
+}
+
+export async function dbEmptyTrash() {
+  await dbConnect();
+  const coursesToCleanup = await CoursifyCourse.find({
+    deletedAt: { $ne: null },
+  })
+    .select('_id')
+    .lean();
+
+  if (coursesToCleanup.length === 0) return { deletedCount: 0 };
+
+  const ids = coursesToCleanup.map((c) => c._id);
+
+  const [courseResult, sectionResult, moduleResult] = await Promise.all([
+    CoursifyCourse.deleteMany({ _id: { $in: ids } }),
+    CoursifySection.deleteMany({ courseId: { $in: ids } }),
+    CoursifyModule.deleteMany({ courseId: { $in: ids } }),
+  ]);
+
+  return {
+    deletedCount: courseResult.deletedCount,
+    sectionsDeleted: sectionResult.deletedCount,
+    modulesDeleted: moduleResult.deletedCount,
+  };
+}
+
 export async function dbSaveCoursePlan({
   courseId: id,
   targetAudience,

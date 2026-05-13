@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FileUp,
+  Trash2,
 } from 'lucide-react';
 import { CoursifyProvider, useCoursify } from '@/context/CoursifyContext';
 import CourseCard from '@/components/coursify/CourseCard';
@@ -137,6 +138,13 @@ function CoursifyApp() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => router.push('/apps/coursify/trash')}
+            title="Trash"
+            className="p-2 rounded-xl text-[#7c8e88] hover:text-[#1f644e] hover:bg-[#f0f5f2] transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
           <button
             onClick={refresh}
             title="Refresh"

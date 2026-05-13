@@ -31,6 +31,7 @@ export function toolMeta(invoking, invoked) {
 export function normalizeCourse(course) {
   return {
     id: course._id?.toString?.() || course.id,
+    _id: course._id?.toString?.() || course.id,
     slug: course.slug || null,
     title: course.title,
     description: course.description || '',
@@ -52,6 +53,7 @@ export function normalizeCourse(course) {
     agentNotes: course.agentNotes || '',
     researchNotes: (course.researchNotes || []).map((n) => ({
       id: n._id?.toString?.() || n.id,
+      _id: n._id?.toString?.() || n.id,
       title: n.title || '',
       summary: n.summary || '',
       sourceUrl: n.sourceUrl || '',
@@ -62,24 +64,28 @@ export function normalizeCourse(course) {
     authoringStatus: course.authoringStatus || 'idea',
     createdAt: course.createdAt,
     updatedAt: course.updatedAt,
+    deletedAt: course.deletedAt || null,
   };
 }
 
 export function normalizeSection(section) {
   return {
     id: section._id?.toString?.() || section.id,
+    _id: section._id?.toString?.() || section.id,
     courseId: section.courseId?.toString?.() || section.courseId,
     moduleId: section.moduleId?.toString?.() || null,
     title: section.title,
     content: section.content || '',
     blocks: (section.blocks || []).map((b) => ({
       id: b._id?.toString?.() || b.id,
+      _id: b._id?.toString?.() || b.id,
       type: b.type,
       content: b.content,
       quiz: b.quiz
         ? {
             questions: (b.quiz.questions || []).map((q) => ({
               id: q._id?.toString?.() || q.id,
+              _id: q._id?.toString?.() || q.id,
               type: q.type,
               question: q.question,
               options: q.options || [],
@@ -102,12 +108,14 @@ export function normalizeSection(section) {
     resources: section.resources || [],
     createdAt: section.createdAt,
     updatedAt: section.updatedAt,
+    deletedAt: section.deletedAt || null,
   };
 }
 
 export function normalizeModule(mod) {
   return {
     id: mod._id?.toString?.() || mod.id,
+    _id: mod._id?.toString?.() || mod.id,
     courseId: mod.courseId?.toString?.() || mod.courseId,
     title: mod.title,
     summary: mod.summary || '',
@@ -117,5 +125,6 @@ export function normalizeModule(mod) {
     sectionCount: mod.sectionCount ?? 0,
     createdAt: mod.createdAt,
     updatedAt: mod.updatedAt,
+    deletedAt: mod.deletedAt || null,
   };
 }

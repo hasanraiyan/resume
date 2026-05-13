@@ -149,6 +149,70 @@ export function CoursifyProvider({ children }) {
     }
   };
 
+  const fetchDeletedCourses = async () => {
+    try {
+      const res = await fetch('/api/coursify/courses/deleted');
+      const data = await res.json();
+      if (data.success) return data.courses;
+      return [];
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  };
+
+  const restoreCourse = async (id) => {
+    try {
+      const res = await fetch(`/api/coursify/courses/${id}/restore`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Course restored');
+        fetchBootstrap(); // Refresh main list
+        return true;
+      } else {
+        toast.error(data.error || 'Failed to restore course');
+        return false;
+      }
+    } catch (error) {
+      toast.error('Error restoring course');
+      return false;
+    }
+  };
+
+  const permanentlyDeleteCourse = async (id) => {
+    try {
+      const res = await fetch(`/api/coursify/courses/${id}/permanent`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Course permanently deleted');
+        return true;
+      } else {
+        toast.error(data.error || 'Failed to delete course');
+        return false;
+      }
+    } catch (error) {
+      toast.error('Error deleting course');
+      return false;
+    }
+  };
+
+  const emptyTrash = async () => {
+    try {
+      const res = await fetch('/api/coursify/courses/deleted', { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Trash emptied');
+        return true;
+      } else {
+        toast.error(data.error || 'Failed to empty trash');
+        return false;
+      }
+    } catch (error) {
+      toast.error('Error emptying trash');
+      return false;
+    }
+  };
+
   return (
     <CoursifyContext.Provider
       value={{
@@ -159,6 +223,10 @@ export function CoursifyProvider({ children }) {
         updateCourse,
         deleteCourse,
         togglePublish,
+        fetchDeletedCourses,
+        restoreCourse,
+        permanentlyDeleteCourse,
+        emptyTrash,
         refresh: fetchBootstrap,
       }}
     >
