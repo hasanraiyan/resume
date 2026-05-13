@@ -101,6 +101,8 @@ export function normalizeSection(section) {
       steps: b.steps,
       showNumbering: b.showNumbering,
       items: b.items,
+      tabs: b.tabs,
+      calloutType: b.calloutType,
       order: b.order ?? 0,
     })),
     summary: section.summary || '',

@@ -135,6 +135,8 @@ export async function validateCourse(dir) {
             'ResourceBlock',
             'StepByStepBlock',
             'AccordionBlock',
+            'TabsBlock',
+            'CalloutBlock',
           ];
           const AUTHORING_ALIASES = ['MermaidBlock', 'CodeBlock'];
           const VALID_BLOCKS = [...SUPPORTED_BLOCKS, ...AUTHORING_ALIASES];

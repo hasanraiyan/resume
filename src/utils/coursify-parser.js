@@ -32,6 +32,8 @@ export function parseMarkdownToBlocks(text) {
     'ResourceBlock',
     'StepByStepBlock',
     'AccordionBlock',
+    'TabsBlock',
+    'CalloutBlock',
   ];
   const AUTHORING_ALIASES = {
     MermaidBlock: { target: 'MdBlock', wrap: (c) => `\`\`\`mermaid\n${c}\n\`\`\`` },
@@ -140,6 +142,36 @@ export function parseMarkdownToBlocks(text) {
         itemContent = unescapeString(itemContent);
         if (title) block.items.push({ title, content: itemContent });
       });
+    } else if (m.type === 'TabsBlock') {
+      block.tabs = [];
+      const tParts = rawContent.split(/(?:^|\n)\s*-\s*tab:\s*/).filter((p) => p.trim());
+      tParts.forEach((t) => {
+        const lines = t.split('\n');
+        const title = unescapeString(lines[0]);
+        let tabContent = lines.slice(1).join('\n').trim();
+        if (tabContent.startsWith('content:')) {
+          tabContent = tabContent.replace(/^content:\s*/, '').trim();
+        }
+        tabContent = unescapeString(tabContent);
+        if (title) block.tabs.push({ title, content: tabContent });
+      });
+    } else if (m.type === 'CalloutBlock') {
+      const typeMatch = rawContent.match(/^type:\s*(.*)/m);
+      if (typeMatch) block.calloutType = unescapeString(typeMatch[1]);
+      else block.calloutType = 'info';
+
+      const titleMatch = rawContent.match(/^title:\s*(.*)/m);
+      if (titleMatch) block.title = unescapeString(titleMatch[1]);
+
+      const contentMatch = rawContent.match(/^content:\s*([\s\S]*)/m);
+      if (contentMatch) {
+        block.content = unescapeString(contentMatch[1]);
+      } else {
+        const lines = rawContent
+          .split('\n')
+          .filter((l) => !l.startsWith('type:') && !l.startsWith('title:'));
+        block.content = unescapeString(lines.join('\n').trim());
+      }
     } else if (m.type === 'QuizBlock') {
       block.quiz = { questions: [] };
       const titleMatch = rawContent.match(/^title:\s*(.*)/m);
@@ -265,6 +297,15 @@ export function generateMarkdownFromBlocks(blocks) {
         output += `- item: "${item.title}"\n  content: "${(item.content || '').replace(/\n/g, '\\n')}"\n`;
       });
       output += '\n';
+    } else if (block.type === 'TabsBlock') {
+      (block.tabs || []).forEach((tab) => {
+        output += `- tab: "${tab.title}"\n  content: "${(tab.content || '').replace(/\n/g, '\\n')}"\n`;
+      });
+      output += '\n';
+    } else if (block.type === 'CalloutBlock') {
+      if (block.calloutType) output += `type: "${block.calloutType}"\n`;
+      if (block.title) output += `title: "${block.title}"\n`;
+      output += `content: "${(block.content || '').replace(/\n/g, '\\n')}"\n\n`;
     } else if (block.type === 'QuizBlock') {
       if (block.title) output += `title: "${block.title}"\n\n`;
       (block.quiz?.questions || []).forEach((q) => {

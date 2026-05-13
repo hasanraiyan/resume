@@ -115,6 +115,23 @@ title: "Troubleshooting Document Ingestion"
 
 ---
 
+## [TabsBlock]
+
+- tab: "Python"
+  content: "`python\nloader = PyPDFLoader('data.pdf')\n`"
+- tab: "TypeScript"
+  content: "`typescript\nconst loader = new PDFLoader('data.pdf');\n`"
+
+---
+
+## [CalloutBlock]
+
+type: "warning"
+title: "Memory Limits"
+content: "Remember to use `lazy_load()` for files over 100MB to avoid Out-Of-Memory errors in your server!"
+
+---
+
 ## [ResourceBlock]
 
 url: https://python.langchain.com/docs/integrations/document_loaders/

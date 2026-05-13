@@ -374,6 +374,74 @@ title: "Common Questions"
 
 ---
 
+### TabsBlock
+
+Group alternative content into clickable horizontal tabs.
+
+```markdown
+## [TabsBlock]
+
+- tab: "JavaScript"
+  content: "`javascript\nconsole.log('Hello');\n`"
+- tab: "Python"
+  content: "`python\nprint('Hello')\n`"
+```
+
+**Schema:**
+
+````json
+{
+  "type": "TabsBlock",
+  "tabs": [
+    {
+      "title": "JavaScript",
+      "content": "```javascript\nconsole.log('Hello');\n```"
+    },
+    {
+      "title": "Python",
+      "content": "```python\nprint('Hello')\n```"
+    }
+  ]
+}
+````
+
+**Requirements:**
+
+- Each tab must have `tab:` and `content:`
+- Useful for multi-language code snippets
+
+---
+
+### CalloutBlock
+
+Highlight important information with an icon and colored background.
+
+```markdown
+## [CalloutBlock]
+
+type: "warning"
+title: "Common Gotcha"
+content: "Do not mutate state directly in React!"
+```
+
+**Schema:**
+
+```json
+{
+  "type": "CalloutBlock",
+  "calloutType": "warning",
+  "title": "Common Gotcha",
+  "content": "Do not mutate state directly in React!"
+}
+```
+
+**Requirements:**
+
+- `type` must be one of: `info`, `tip`, `warning`, `danger` (defaults to `info` if omitted)
+- `title` is optional
+
+---
+
 ### QuizBlock
 
 Interactive assessment with multiple-choice questions.

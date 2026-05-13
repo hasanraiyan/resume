@@ -6,6 +6,8 @@ import { QuizPlayer } from './QuizPlayer';
 import { VideoBlock } from './VideoBlock';
 import { StepByStepBlock } from './StepByStepBlock';
 import { AccordionBlock } from './AccordionBlock';
+import { TabsBlock } from './TabsBlock';
+import { CalloutBlock } from './CalloutBlock';
 import { PlayCircle, ExternalLink, FileText } from 'lucide-react';
 import { parseMarkdownToBlocks } from '@/utils/coursify-parser';
 
@@ -82,6 +84,10 @@ export function CoursifyBlockRenderer({ blocks, content }) {
             return <StepByStepBlock key={block._id || idx} block={block} />;
           case 'AccordionBlock':
             return <AccordionBlock key={block._id || idx} block={block} />;
+          case 'TabsBlock':
+            return <TabsBlock key={block._id || idx} block={block} />;
+          case 'CalloutBlock':
+            return <CalloutBlock key={block._id || idx} block={block} />;
           default:
             return null;
         }

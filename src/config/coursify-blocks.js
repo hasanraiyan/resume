@@ -12,6 +12,8 @@ export const SUPPORTED_BLOCKS = [
   'ResourceBlock',
   'StepByStepBlock',
   'AccordionBlock',
+  'TabsBlock',
+  'CalloutBlock',
 ];
 
 /**

@@ -14,6 +14,8 @@ import {
   ListTree,
   FileText,
   ChevronRight,
+  FolderOpen,
+  AlertCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import QuizEditor from './QuizEditor';
@@ -29,6 +31,8 @@ const BLOCK_TYPES = [
   { type: 'AccordionBlock', label: 'Accordion', icon: ChevronDown },
   { type: 'QuizBlock', label: 'Quiz', icon: CheckCircle2 },
   { type: 'ResourceBlock', label: 'Resource', icon: FileText },
+  { type: 'TabsBlock', label: 'Tabs', icon: FolderOpen },
+  { type: 'CalloutBlock', label: 'Callout', icon: AlertCircle },
 ];
 
 function QuickAdder({ isOpen, onToggle, onAdd }) {
@@ -152,6 +156,14 @@ export default function EditSectionModal({ section, onSave, onClose }) {
     if (type === 'AccordionBlock') {
       newBlock.items = [{ title: '', content: '' }];
       newBlock.title = '';
+    }
+    if (type === 'TabsBlock') {
+      newBlock.tabs = [{ title: '', content: '' }];
+    }
+    if (type === 'CalloutBlock') {
+      newBlock.calloutType = 'info';
+      newBlock.title = '';
+      newBlock.content = '';
     }
 
     setBlocks((prev) => {
@@ -516,6 +528,91 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                               <Plus className="w-3.5 h-3.5" /> Add Accordion Item
                             </button>
                           </div>
+                        </div>
+                      )}
+                      {block.type === 'TabsBlock' && (
+                        <div className="space-y-4">
+                          <div className="space-y-3">
+                            {(block.tabs || []).map((tab, ti) => (
+                              <div
+                                key={ti}
+                                className="bg-[#fcfbf5] border border-[#e5e3d8] rounded-2xl p-4 space-y-3 relative group/tab shadow-sm"
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <input
+                                    value={tab.title}
+                                    onChange={(e) => {
+                                      const nextTabs = block.tabs.map((t, idx) =>
+                                        idx === ti ? { ...t, title: e.target.value } : t
+                                      );
+                                      updateBlock(i, 'tabs', nextTabs);
+                                    }}
+                                    placeholder="Tab Title"
+                                    className="flex-1 px-3 py-2 rounded-xl border border-[#e5e3d8] text-sm font-bold bg-white focus:border-[#1f644e] outline-none"
+                                  />
+                                  <button
+                                    onClick={() => {
+                                      const nextTabs = block.tabs.filter((_, idx) => idx !== ti);
+                                      updateBlock(i, 'tabs', nextTabs);
+                                    }}
+                                    className="p-2 text-[#7c8e88] hover:text-[#c94c4c] opacity-0 group-hover/tab:opacity-100 transition-opacity"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                                <textarea
+                                  value={tab.content}
+                                  onChange={(e) => {
+                                    const nextTabs = block.tabs.map((t, idx) =>
+                                      idx === ti ? { ...t, content: e.target.value } : t
+                                    );
+                                    updateBlock(i, 'tabs', nextTabs);
+                                  }}
+                                  placeholder="Tab Content (Markdown support)"
+                                  className="w-full h-24 px-3 py-2 rounded-xl border border-[#e5e3d8] text-xs bg-white resize-none focus:border-[#1f644e] outline-none"
+                                />
+                              </div>
+                            ))}
+                            <button
+                              onClick={() => {
+                                const nextTabs = [
+                                  ...(block.tabs || []),
+                                  { title: '', content: '' },
+                                ];
+                                updateBlock(i, 'tabs', nextTabs);
+                              }}
+                              className="w-full py-2.5 rounded-xl border border-dashed border-[#e5e3d8] text-xs font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] hover:bg-[#f0f5f2] transition-all flex items-center justify-center gap-2"
+                            >
+                              <Plus className="w-3.5 h-3.5" /> Add Tab
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {block.type === 'CalloutBlock' && (
+                        <div className="space-y-4">
+                          <select
+                            value={block.calloutType || 'info'}
+                            onChange={(e) => updateBlock(i, 'calloutType', e.target.value)}
+                            className="w-full px-4 py-2.5 rounded-xl border border-[#e5e3d8] bg-white text-sm font-bold capitalize outline-none focus:border-[#1f644e]"
+                          >
+                            {['info', 'warning', 'tip', 'danger'].map((t) => (
+                              <option key={t} value={t}>
+                                {t}
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            value={block.title || ''}
+                            onChange={(e) => updateBlock(i, 'title', e.target.value)}
+                            placeholder="Callout Title (Optional)"
+                            className="w-full px-4 py-2.5 rounded-xl border border-[#e5e3d8] bg-white text-sm font-bold outline-none focus:border-[#1f644e]"
+                          />
+                          <textarea
+                            value={block.content || ''}
+                            onChange={(e) => updateBlock(i, 'content', e.target.value)}
+                            placeholder="Callout Content (Markdown Support)"
+                            className="w-full h-24 px-3 py-2 rounded-xl border border-[#e5e3d8] text-xs bg-[#fcfbf5] resize-y focus:border-[#1f644e] outline-none"
+                          />
                         </div>
                       )}
                     </div>

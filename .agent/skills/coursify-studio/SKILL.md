@@ -178,6 +178,8 @@ When you create a section with `coursify init-section`, it generates a template 
 - `[MdBlock]` — for explanations and concepts
 - `[StepByStepBlock]` — for procedures and labs
 - `[AccordionBlock]` — for FAQs and collapsible details
+- `[TabsBlock]` — for multi-language examples or alternative approaches
+- `[CalloutBlock]` — for warnings, tips, and important notes
 - `[QuizBlock]` — for assessment
 
 Edit the template to keep only the blocks you need for that section, and customize the content.
@@ -298,6 +300,39 @@ title: "Common Questions"
 - Use for content that is secondary to the main narrative
 - Keep titles concise
 - Use for FAQs at the end of a module
+
+#### TabsBlock
+
+Group alternative content into clickable horizontal tabs.
+
+```markdown
+## [TabsBlock]
+
+- tab: "JavaScript"
+  content: "```javascript\nconsole.log('Hello');\n```"
+- tab: "Python"
+  content: "```python\nprint('Hello')\n```"
+```
+
+**Best practices:**
+- Use for multi-language code examples
+- Keep tab titles very short
+
+#### CalloutBlock
+
+Highlight important information with an icon and colored background.
+
+```markdown
+## [CalloutBlock]
+
+type: "warning"
+title: "Common Gotcha"
+content: "Do not mutate state directly in React!"
+```
+
+**Best practices:**
+- Valid types: `info`, `tip`, `warning`, `danger`
+- Use sparingly so they maintain their impact
 
 #### VideoBlock
 Embed external videos (YouTube, Vimeo, etc.)
