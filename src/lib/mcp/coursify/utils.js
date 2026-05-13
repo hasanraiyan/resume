@@ -80,6 +80,7 @@ export function normalizeSection(section) {
       id: b._id?.toString?.() || b.id,
       _id: b._id?.toString?.() || b.id,
       type: b.type,
+      title: b.title,
       content: b.content,
       quiz: b.quiz
         ? {
@@ -98,6 +99,8 @@ export function normalizeSection(section) {
       video: b.video,
       resource: b.resource,
       steps: b.steps,
+      showNumbering: b.showNumbering,
+      items: b.items,
       order: b.order ?? 0,
     })),
     summary: section.summary || '',
