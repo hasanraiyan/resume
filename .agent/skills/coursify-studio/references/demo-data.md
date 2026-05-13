@@ -132,6 +132,22 @@ content: "Remember to use `lazy_load()` for files over 100MB to avoid Out-Of-Mem
 
 ---
 
+## [TimelineBlock]
+
+title: "Document Loading Lifecycle"
+
+- event: "Initialization"
+  title: "Setup and Configuration"
+  content: "The loader is initialized with the source file path and required parameters."
+- event: "Extraction"
+  title: "Text & Metadata Retrieval"
+  content: "The engine parses the raw file and extracts the page content and metadata."
+- event: "Object Creation"
+  title: "Standardization"
+  content: "The extracted data is wrapped in the standard LangChain Document schema."
+
+---
+
 ## [ResourceBlock]
 
 url: https://python.langchain.com/docs/integrations/document_loaders/

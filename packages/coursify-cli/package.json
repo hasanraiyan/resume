@@ -1,6 +1,6 @@
 {
   "name": "@coursify/cli",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "Local-first authoring tool for the Coursify platform",
   "author": "Raiyan Hasan <raiyanhasa2006@gmail.com>",
   "license": "MIT",

@@ -16,6 +16,7 @@ import {
   ChevronRight,
   FolderOpen,
   AlertCircle,
+  Clock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import QuizEditor from './QuizEditor';
@@ -33,6 +34,7 @@ const BLOCK_TYPES = [
   { type: 'ResourceBlock', label: 'Resource', icon: FileText },
   { type: 'TabsBlock', label: 'Tabs', icon: FolderOpen },
   { type: 'CalloutBlock', label: 'Callout', icon: AlertCircle },
+  { type: 'TimelineBlock', label: 'Timeline', icon: Clock },
 ];
 
 function QuickAdder({ isOpen, onToggle, onAdd }) {
@@ -159,6 +161,10 @@ export default function EditSectionModal({ section, onSave, onClose }) {
     }
     if (type === 'TabsBlock') {
       newBlock.tabs = [{ title: '', content: '' }];
+    }
+    if (type === 'TimelineBlock') {
+      newBlock.events = [{ event: '', title: '', content: '' }];
+      newBlock.title = '';
     }
     if (type === 'CalloutBlock') {
       newBlock.calloutType = 'info';
@@ -584,6 +590,113 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                               className="w-full py-2.5 rounded-xl border border-dashed border-[#e5e3d8] text-xs font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] hover:bg-[#f0f5f2] transition-all flex items-center justify-center gap-2"
                             >
                               <Plus className="w-3.5 h-3.5" /> Add Tab
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {block.type === 'TimelineBlock' && (
+                        <div className="space-y-4">
+                          <input
+                            value={block.title || ''}
+                            onChange={(e) => updateBlock(i, 'title', e.target.value)}
+                            placeholder="Timeline Heading"
+                            className="w-full px-4 py-2.5 rounded-xl border border-[#e5e3d8] bg-white text-sm font-bold outline-none focus:border-[#1f644e]"
+                          />
+                          <div className="space-y-3">
+                            {(block.events || []).map((event, ei) => (
+                              <div
+                                key={ei}
+                                className="bg-[#fcfbf5] border border-[#e5e3d8] rounded-2xl p-4 space-y-3 relative group/event shadow-sm"
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <input
+                                    value={event.event}
+                                    onChange={(e) => {
+                                      const nextEvents = block.events.map((ev, idx) =>
+                                        idx === ei ? { ...ev, event: e.target.value } : ev
+                                      );
+                                      updateBlock(i, 'events', nextEvents);
+                                    }}
+                                    placeholder="Event (e.g. 2023-Q1)"
+                                    className="flex-1 px-3 py-2 rounded-xl border border-[#e5e3d8] text-sm font-bold bg-white focus:border-[#1f644e] outline-none"
+                                  />
+                                  <div className="flex items-center gap-1 opacity-0 group-hover/event:opacity-100 transition-opacity">
+                                    <button
+                                      onClick={() => {
+                                        if (ei === 0) return;
+                                        const nextEvents = [...block.events];
+                                        [nextEvents[ei], nextEvents[ei - 1]] = [
+                                          nextEvents[ei - 1],
+                                          nextEvents[ei],
+                                        ];
+                                        updateBlock(i, 'events', nextEvents);
+                                      }}
+                                      className="p-1.5 hover:bg-white rounded-lg text-[#7c8e88] hover:text-[#1f644e]"
+                                    >
+                                      <ChevronUp className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        if (ei === block.events.length - 1) return;
+                                        const nextEvents = [...block.events];
+                                        [nextEvents[ei], nextEvents[ei + 1]] = [
+                                          nextEvents[ei + 1],
+                                          nextEvents[ei],
+                                        ];
+                                        updateBlock(i, 'events', nextEvents);
+                                      }}
+                                      className="p-1.5 hover:bg-white rounded-lg text-[#7c8e88] hover:text-[#1f644e]"
+                                    >
+                                      <ChevronDown className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      const nextEvents = block.events.filter(
+                                        (_, idx) => idx !== ei
+                                      );
+                                      updateBlock(i, 'events', nextEvents);
+                                    }}
+                                    className="p-2 text-[#7c8e88] hover:text-[#c94c4c] opacity-0 group-hover/event:opacity-100 transition-opacity"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                                <input
+                                  value={event.title}
+                                  onChange={(e) => {
+                                    const nextEvents = block.events.map((ev, idx) =>
+                                      idx === ei ? { ...ev, title: e.target.value } : ev
+                                    );
+                                    updateBlock(i, 'events', nextEvents);
+                                  }}
+                                  placeholder="Event Title (Optional)"
+                                  className="w-full px-3 py-2 rounded-xl border border-[#e5e3d8] text-sm font-bold bg-white focus:border-[#1f644e] outline-none"
+                                />
+                                <textarea
+                                  value={event.content}
+                                  onChange={(e) => {
+                                    const nextEvents = block.events.map((ev, idx) =>
+                                      idx === ei ? { ...ev, content: e.target.value } : ev
+                                    );
+                                    updateBlock(i, 'events', nextEvents);
+                                  }}
+                                  placeholder="Event Content (Markdown support)"
+                                  className="w-full h-24 px-3 py-2 rounded-xl border border-[#e5e3d8] text-xs bg-white resize-none focus:border-[#1f644e] outline-none"
+                                />
+                              </div>
+                            ))}
+                            <button
+                              onClick={() => {
+                                const nextEvents = [
+                                  ...(block.events || []),
+                                  { event: '', title: '', content: '' },
+                                ];
+                                updateBlock(i, 'events', nextEvents);
+                              }}
+                              className="w-full py-2.5 rounded-xl border border-dashed border-[#e5e3d8] text-xs font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] hover:bg-[#f0f5f2] transition-all flex items-center justify-center gap-2"
+                            >
+                              <Plus className="w-3.5 h-3.5" /> Add Timeline Event
                             </button>
                           </div>
                         </div>

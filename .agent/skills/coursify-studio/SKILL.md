@@ -179,6 +179,7 @@ When you create a section with `coursify init-section`, it generates a template 
 - `[StepByStepBlock]` — for procedures and labs
 - `[AccordionBlock]` — for FAQs and collapsible details
 - `[TabsBlock]` — for multi-language examples or alternative approaches
+- `[TimelineBlock]` — for sequences, lifecycles, and roadmaps
 - `[CalloutBlock]` — for warnings, tips, and important notes
 - `[QuizBlock]` — for assessment
 
@@ -317,6 +318,27 @@ Group alternative content into clickable horizontal tabs.
 **Best practices:**
 - Use for multi-language code examples
 - Keep tab titles very short
+
+#### TimelineBlock
+
+A vertical timeline for mapping out a sequence of events.
+
+```markdown
+## [TimelineBlock]
+
+title: "Project Roadmap"
+
+- event: "2023-Q1"
+  title: "Conceptualization"
+  content: "Brainstorming and feasibility studies."
+- event: "2023-Q2"
+  title: "Development"
+  content: "Building the core engine."
+```
+
+**Best practices:**
+- Use for lifecycles, roadmaps, and chronologies
+- Keep the event label concise (e.g., dates or phase names)
 
 #### CalloutBlock
 

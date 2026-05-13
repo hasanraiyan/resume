@@ -493,6 +493,47 @@ Interactive assessment with multiple-choice questions.
 
 ---
 
+### TimelineBlock
+
+A vertical timeline with nodes mapping out a sequence of events.
+
+```markdown
+## [TimelineBlock]
+
+title: "Project Roadmap"
+
+- event: "2023-Q1"
+  title: "Conceptualization"
+  content: "Brainstorming and feasibility studies."
+- event: "2023-Q2"
+  title: "Development"
+  content: "Building the core engine."
+```
+
+**Schema:**
+
+```json
+{
+  "type": "TimelineBlock",
+  "title": "Project Roadmap",
+  "events": [
+    {
+      "event": "2023-Q1",
+      "title": "Conceptualization",
+      "content": "Brainstorming and feasibility studies."
+    }
+  ]
+}
+```
+
+**Requirements:**
+
+- Use `title:` for the overall block heading
+- Each event must have `event:`, `title:` (optional), and `content:`
+- Use for sequences, lifecycles, and roadmaps
+
+---
+
 ### VideoBlock
 
 Embedded external videos (YouTube, Vimeo, etc.)
