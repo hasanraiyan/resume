@@ -1,7 +1,7 @@
 'use client';
 import { generateMarkdownFromBlocks } from '@/utils/coursify-parser';
 
-import { useRef } from 'react';
+import { useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { BookOpen } from 'lucide-react';
 import { useTableOfContents } from '@/hooks/coursify/useTableOfContents';
@@ -37,12 +37,14 @@ export function CourseReaderShell({ initialData, slug, activeSectionId }) {
   const currentSection = sections.find((s) => s._id === activeSection);
   const isSectionLoaded = !!(currentSection?.content || currentSection?.blocks?.length > 0);
 
-  const { headings, activeHeading } = useTableOfContents(
-    currentSection?.content ||
-      (currentSection?.blocks ? generateMarkdownFromBlocks(currentSection.blocks) : ''),
-    contentRef,
-    mainRef
-  );
+  const tocMarkdown = useMemo(() => {
+    if (currentSection?.content) return currentSection.content;
+    if (currentSection?.blocks?.length > 0)
+      return generateMarkdownFromBlocks(currentSection.blocks);
+    return '';
+  }, [currentSection?.content, currentSection?.blocks]);
+
+  const { headings, activeHeading } = useTableOfContents(tocMarkdown, contentRef, mainRef);
 
   const {
     sidebarOpen,
