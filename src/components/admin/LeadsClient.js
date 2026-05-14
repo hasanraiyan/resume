@@ -4,17 +4,17 @@ import { useState } from 'react';
 import { Button, Card } from '@/components/custom-ui';
 import {
   faSearch,
-  faFilter,
   faTrash,
   faUsers,
   faCheckCircle,
   faClock,
   faEye,
-  faEdit,
-  faSave,
+  faFilter,
+  faArrowRight,
+  faEnvelope,
+  faCalendarAlt,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import CustomDropdownMinimal from '../CustomDropdown';
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/custom-ui/Dialog';
+import { cn } from '@/utils/classNames';
 
 export default function LeadsClient({ initialLeads, stats }) {
   const [leads, setLeads] = useState(initialLeads);
@@ -39,7 +40,6 @@ export default function LeadsClient({ initialLeads, stats }) {
     { value: 'qualified', label: 'Qualified' },
     { value: 'converted', label: 'Converted' },
     { value: 'rejected', label: 'Rejected' },
-    { value: 'archived', label: 'Archived' },
   ];
 
   const uniqueTypes = [...new Set(initialLeads.map((l) => l.type))];
@@ -81,7 +81,7 @@ export default function LeadsClient({ initialLeads, stats }) {
   };
 
   const handleDeleteLead = async (id) => {
-    if (!confirm('Are you sure you want to delete this lead?')) return;
+    if (!confirm('Are you sure you want to delete this record?')) return;
     setLoading(true);
     try {
       const response = await fetch(`/api/admin/leads?id=${id}`, { method: 'DELETE' });
@@ -100,313 +100,285 @@ export default function LeadsClient({ initialLeads, stats }) {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
     });
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'new':
-        return 'bg-blue-100 text-blue-800';
-      case 'contacted':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'qualified':
-        return 'bg-green-100 text-green-800';
-      case 'converted':
-        return 'bg-emerald-100 text-emerald-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const getStatusBadge = (status) => {
+    const styles = {
+      new: 'bg-black text-white',
+      contacted: 'bg-neutral-100 text-neutral-600 border border-neutral-200',
+      qualified: 'bg-neutral-900 text-white',
+      converted: 'bg-neutral-800 text-white',
+      rejected: 'bg-red-50 text-red-600 border border-red-100',
+    };
+    return (
+      <span
+        className={cn(
+          'text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-widest',
+          styles[status] || 'bg-neutral-50 text-neutral-400'
+        )}
+      >
+        {status}
+      </span>
+    );
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-6">
-        <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Lead Management</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Review and manage waitlist entries and form responses.
+    <div className="max-w-6xl mx-auto space-y-12 py-10 px-4 sm:px-6">
+      {/* Premium Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-neutral-200 pb-10">
+        <div className="space-y-2">
+          <h1 className="text-5xl font-bold tracking-tighter font-['Playfair_Display']">
+            Leads <span className="text-neutral-300 italic">&</span> Responses
+          </h1>
+          <p className="text-neutral-500 font-['Space_Grotesk'] text-sm tracking-wide">
+            MANAGING {stats.total} SUBMISSIONS ACROSS {uniqueTypes.length} CHANNELS
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right hidden sm:block">
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
-              Total Records
+
+        <div className="flex items-center gap-10">
+          <div className="text-center md:text-right">
+            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-[0.2em] mb-1">
+              New Hits
             </p>
-            <p className="text-2xl font-black text-gray-900">{stats.total}</p>
+            <p className="text-3xl font-bold tracking-tighter">{stats.byStatus['new'] || 0}</p>
+          </div>
+          <div className="w-[1px] h-10 bg-neutral-200 hidden md:block" />
+          <div className="text-center md:text-right">
+            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-[0.2em] mb-1">
+              Weekly Growth
+            </p>
+            <p className="text-3xl font-bold tracking-tighter">+{stats.recent}</p>
           </div>
         </div>
       </div>
 
-      {/* Stats Summary */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-4 flex items-center justify-between">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-              New Leads
-            </p>
-            <p className="text-xl font-bold">{stats.byStatus['new'] || 0}</p>
-          </div>
-          <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
-            <FontAwesomeIcon icon={faClock} />
-          </div>
-        </Card>
-        <Card className="p-4 flex items-center justify-between">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-              Past 7 Days
-            </p>
-            <p className="text-xl font-bold">{stats.recent}</p>
-          </div>
-          <div className="w-10 h-10 bg-purple-50 rounded-full flex items-center justify-center text-purple-600">
-            <FontAwesomeIcon icon={faUsers} />
-          </div>
-        </Card>
-        <Card className="p-4 flex items-center justify-between">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-              Qualified
-            </p>
-            <p className="text-xl font-bold">{stats.byStatus['qualified'] || 0}</p>
-          </div>
-          <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center text-green-600">
-            <FontAwesomeIcon icon={faCheckCircle} />
-          </div>
-        </Card>
-        <Card className="p-4 flex items-center justify-between">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-              Creators
-            </p>
-            <p className="text-xl font-bold">{stats.byType['coursify-creator'] || 0}</p>
-          </div>
-          <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600">
-            <FontAwesomeIcon icon={faCheckCircle} />
-          </div>
-        </Card>
+      {/* Sophisticated Filter Bar */}
+      <div className="flex flex-col lg:flex-row items-center gap-4 bg-white p-2 rounded-2xl border border-neutral-100 shadow-sm">
+        <div className="relative flex-1 w-full">
+          <FontAwesomeIcon
+            icon={faSearch}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-300 w-3 h-3"
+          />
+          <input
+            type="text"
+            placeholder="Search by identity or email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-transparent text-sm focus:outline-none placeholder:text-neutral-300 font-['Space_Grotesk']"
+          />
+        </div>
+        <div className="h-6 w-[1px] bg-neutral-100 hidden lg:block" />
+        <div className="flex items-center gap-2 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0 px-2">
+          <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mr-2 flex items-center gap-1 shrink-0">
+            <FontAwesomeIcon icon={faFilter} className="w-2.5 h-2.5" /> Filter:
+          </span>
+          {statusOptions.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setStatusFilter(opt.value)}
+              className={cn(
+                'px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border whitespace-nowrap',
+                statusFilter === opt.value
+                  ? 'bg-black border-black text-white'
+                  : 'bg-transparent border-transparent text-neutral-400 hover:text-black'
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Filters */}
-      <Card className="p-4 bg-gray-50/50">
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex-1 relative">
-            <FontAwesomeIcon
-              icon={faSearch}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4"
-            />
-            <input
-              type="text"
-              placeholder="Search by name or email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/5 focus:border-gray-900 transition-all"
-            />
-          </div>
-          <div className="w-full lg:w-48">
-            <CustomDropdownMinimal
-              label="Status"
-              value={statusFilter}
-              options={statusOptions}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            />
-          </div>
-          <div className="w-full lg:w-48">
-            <CustomDropdownMinimal
-              label="Type"
-              value={typeFilter}
-              options={typeOptions}
-              onChange={(e) => setTypeFilter(e.target.value)}
-            />
-          </div>
-        </div>
-      </Card>
-
-      {/* Table */}
-      <div className="overflow-x-auto border rounded-xl bg-white shadow-sm">
-        <table className="w-full text-sm text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-50 border-b text-gray-500 text-[10px] font-bold uppercase tracking-widest">
-              <th className="px-6 py-4 font-bold">User</th>
-              <th className="px-6 py-4 font-bold">Type</th>
-              <th className="px-6 py-4 font-bold">Status</th>
-              <th className="px-6 py-4 font-bold">Date</th>
-              <th className="px-6 py-4 font-bold text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredLeads.map((lead) => (
-              <tr
-                key={lead.id}
-                className="border-b last:border-0 hover:bg-gray-50/50 transition-colors"
-              >
-                <td className="px-6 py-4">
-                  <div className="font-bold text-gray-900">{lead.name || 'Anonymous'}</div>
-                  <div className="text-xs text-gray-500">{lead.email}</div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="text-[10px] font-mono px-2 py-0.5 bg-gray-100 rounded-md text-gray-600">
+      {/* Modern Card List */}
+      <div className="space-y-4">
+        {filteredLeads.map((lead) => (
+          <div
+            key={lead.id}
+            onClick={() => {
+              setSelectedLead(lead);
+              setIsModalOpen(true);
+            }}
+            className="group relative bg-white border border-neutral-100 rounded-2xl p-5 transition-all duration-300 hover:border-black hover:shadow-xl hover:-translate-y-0.5 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4"
+          >
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-neutral-50 rounded-xl flex items-center justify-center text-neutral-300 group-hover:bg-black group-hover:text-white transition-colors">
+                <FontAwesomeIcon icon={faEnvelope} className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-3">
+                  <h3 className="font-bold text-lg tracking-tight">
+                    {lead.name || 'Anonymous Submission'}
+                  </h3>
+                  {getStatusBadge(lead.status)}
+                </div>
+                <div className="flex items-center gap-4 text-xs text-neutral-400 font-medium">
+                  <span className="flex items-center gap-1.5 italic">{lead.email}</span>
+                  <span className="w-1 h-1 bg-neutral-200 rounded-full" />
+                  <span className="flex items-center gap-1.5 uppercase tracking-widest text-[9px] font-bold">
                     {lead.type}
                   </span>
-                </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-tighter ${getStatusColor(lead.status)}`}
-                  >
-                    {lead.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-xs text-gray-500">{formatDate(lead.createdAt)}</td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <button
-                      onClick={() => {
-                        setSelectedLead(lead);
-                        setIsModalOpen(true);
-                      }}
-                      className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
-                    >
-                      <FontAwesomeIcon icon={faEye} className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteLead(lead.id)}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                    >
-                      <FontAwesomeIcon icon={faTrash} className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {filteredLeads.length === 0 && (
-              <tr>
-                <td colSpan="5" className="px-6 py-20 text-center text-gray-400 italic">
-                  No leads found matching your criteria.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between md:justify-end gap-8 border-t md:border-0 pt-4 md:pt-0">
+              <div className="flex flex-col md:items-end">
+                <p className="text-[9px] font-bold text-neutral-300 uppercase tracking-widest mb-0.5">
+                  Logged At
+                </p>
+                <p className="text-xs font-bold text-neutral-600 flex items-center gap-1.5">
+                  <FontAwesomeIcon icon={faCalendarAlt} className="w-3 h-3 text-neutral-300" />
+                  {formatDate(lead.createdAt)}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button className="p-2.5 text-neutral-200 hover:text-black transition-colors rounded-full hover:bg-neutral-50">
+                  <FontAwesomeIcon icon={faEye} className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteLead(lead.id);
+                  }}
+                  className="p-2.5 text-neutral-200 hover:text-red-500 transition-colors rounded-full hover:bg-red-50"
+                >
+                  <FontAwesomeIcon icon={faTrash} className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {filteredLeads.length === 0 && (
+          <div className="py-32 text-center space-y-4 bg-neutral-50 rounded-3xl border-2 border-dashed border-neutral-200">
+            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm">
+              <FontAwesomeIcon icon={faSearch} className="w-6 h-6 text-neutral-200" />
+            </div>
+            <p className="text-neutral-400 font-bold uppercase tracking-widest text-[10px]">
+              No matches in the vault
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Details Modal */}
+      {/* Premium Side-Panel Style Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden">
+        <DialogContent className="sm:max-w-[550px] p-0 border-none shadow-3xl overflow-hidden rounded-[2rem]">
           {selectedLead && (
-            <div className="flex flex-col">
-              <div className="bg-gray-50 p-6 border-b">
-                <DialogHeader>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter ${getStatusColor(selectedLead.status)}`}
-                    >
-                      {selectedLead.status}
-                    </span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 bg-white border rounded-md text-gray-500">
-                      {selectedLead.type}
-                    </span>
+            <div className="flex flex-col h-full bg-white">
+              {/* Modal Header */}
+              <div className="bg-black text-white p-10 space-y-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
+                <div className="relative z-10 flex flex-col items-center text-center">
+                  <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 border border-white/10">
+                    <FontAwesomeIcon icon={faEnvelope} className="w-6 h-6" />
                   </div>
-                  <DialogTitle className="text-2xl font-black">
+                  <DialogTitle className="text-4xl font-bold font-['Playfair_Display'] tracking-tight mb-2">
                     {selectedLead.name || 'Anonymous User'}
                   </DialogTitle>
-                  <DialogDescription className="text-gray-500">
+                  <p className="text-neutral-400 font-medium text-sm italic">
                     {selectedLead.email}
-                  </DialogDescription>
-                </DialogHeader>
+                  </p>
+                </div>
               </div>
 
-              <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
-                {/* Form Data */}
-                <div>
-                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">
-                    Submitted Data
+              <div className="p-8 space-y-10 overflow-y-auto max-h-[60vh] font-['Space_Grotesk']">
+                {/* Custom Fields */}
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-bold text-neutral-300 uppercase tracking-[0.2em]">
+                    Transmission Data
                   </h4>
-                  <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                  <div className="grid grid-cols-1 gap-3">
                     {Object.entries(selectedLead.data || {}).length > 0 ? (
                       Object.entries(selectedLead.data).map(([key, value]) => (
-                        <div key={key} className="flex flex-col gap-1">
-                          <span className="text-[10px] font-bold uppercase text-gray-500">
+                        <div
+                          key={key}
+                          className="p-4 bg-neutral-50 rounded-2xl border border-neutral-100 flex flex-col gap-1"
+                        >
+                          <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">
                             {key.replace(/_/g, ' ')}
                           </span>
-                          <span className="text-sm text-gray-900">{String(value)}</span>
+                          <span className="text-sm font-bold text-neutral-900">
+                            {String(value)}
+                          </span>
                         </div>
                       ))
                     ) : (
-                      <p className="text-xs text-gray-400 italic">No extra data submitted.</p>
+                      <p className="text-xs text-neutral-300 italic">
+                        No supplemental telemetry data available.
+                      </p>
                     )}
                   </div>
                 </div>
 
-                {/* Status & Notes */}
+                {/* Status Command */}
                 <div className="space-y-4">
-                  <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2 block">
-                      Action Status
-                    </label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {statusOptions
-                        .filter((o) => o.value !== 'all')
-                        .map((opt) => (
-                          <button
-                            key={opt.value}
-                            onClick={() => handleUpdateLead(selectedLead.id, { status: opt.value })}
-                            className={`px-3 py-2 rounded-lg text-xs font-bold transition-all border ${
-                              selectedLead.status === opt.value
-                                ? 'bg-gray-900 border-gray-900 text-white shadow-lg'
-                                : 'bg-white border-gray-200 text-gray-600 hover:border-gray-900'
-                            }`}
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2 block">
-                      Admin Notes
-                    </label>
-                    <textarea
-                      placeholder="Add internal notes about this lead..."
-                      className="w-full min-h-[100px] p-4 bg-gray-50 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/5 focus:border-gray-900 transition-all"
-                      value={selectedLead.notes || ''}
-                      onChange={(e) => handleUpdateLead(selectedLead.id, { notes: e.target.value })}
-                    />
+                  <h4 className="text-[10px] font-bold text-neutral-300 uppercase tracking-[0.2em]">
+                    Deployment Status
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {statusOptions
+                      .filter((o) => o.value !== 'all')
+                      .map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => handleUpdateLead(selectedLead.id, { status: opt.value })}
+                          className={cn(
+                            'px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border',
+                            selectedLead.status === opt.value
+                              ? 'bg-black border-black text-white shadow-xl shadow-black/20 scale-105'
+                              : 'bg-white border-neutral-100 text-neutral-400 hover:border-black hover:text-black'
+                          )}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
                   </div>
                 </div>
 
-                {/* Metadata */}
-                <div className="pt-6 border-t">
-                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">
-                    System Metadata
+                {/* Intelligence Notes */}
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-bold text-neutral-300 uppercase tracking-[0.2em]">
+                    Internal Intelligence
                   </h4>
-                  <div className="grid grid-cols-2 gap-4 text-[10px]">
-                    <div>
-                      <p className="font-bold text-gray-500">IP Address</p>
-                      <p className="text-gray-900">{selectedLead.metadata?.ipAddress || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-500">Source Path</p>
-                      <p className="text-gray-900">{selectedLead.metadata?.path || 'N/A'}</p>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="font-bold text-gray-500">User Agent</p>
-                      <p
-                        className="text-gray-900 truncate"
-                        title={selectedLead.metadata?.userAgent}
-                      >
-                        {selectedLead.metadata?.userAgent || 'N/A'}
-                      </p>
-                    </div>
+                  <textarea
+                    placeholder="Document findings or follow-up status..."
+                    className="w-full min-h-[120px] p-5 bg-neutral-50 border border-neutral-100 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-black/5 focus:border-black transition-all placeholder:text-neutral-300"
+                    value={selectedLead.notes || ''}
+                    onChange={(e) => handleUpdateLead(selectedLead.id, { notes: e.target.value })}
+                  />
+                </div>
+
+                {/* Metadata Fingerprint */}
+                <div className="pt-8 border-t border-neutral-100 grid grid-cols-2 gap-6 text-[9px] font-bold uppercase tracking-widest">
+                  <div>
+                    <p className="text-neutral-300 mb-1">IP Fingerprint</p>
+                    <p className="text-neutral-900">
+                      {selectedLead.metadata?.ipAddress || 'UNKNOWN'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-neutral-300 mb-1">Acquisition Path</p>
+                    <p className="text-neutral-900">{selectedLead.metadata?.path || 'DIRECT'}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-neutral-300 mb-1">Environmental Profile</p>
+                    <p className="text-neutral-900 truncate leading-relaxed">
+                      {selectedLead.metadata?.userAgent || 'SECURE AGENT'}
+                    </p>
                   </div>
                 </div>
               </div>
 
-              <div className="p-6 bg-gray-50 border-t flex justify-end">
-                <Button onClick={() => setIsModalOpen(false)}>Done</Button>
+              {/* Close Button */}
+              <div className="p-8 border-t border-neutral-100 bg-white">
+                <Button
+                  onClick={() => setIsModalOpen(false)}
+                  className="w-full bg-black hover:bg-neutral-800 text-white py-6 rounded-2xl font-bold uppercase tracking-widest text-xs"
+                >
+                  Dismiss Intel <FontAwesomeIcon icon={faArrowRight} className="w-3 h-3 ml-2" />
+                </Button>
               </div>
             </div>
           )}

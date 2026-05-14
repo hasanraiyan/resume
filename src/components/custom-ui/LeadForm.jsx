@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Loader2, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/custom-ui';
+import { cn } from '@/utils/classNames';
 
 /**
  * @fileoverview Generic, config-driven lead capture form.
@@ -24,6 +25,7 @@ export function LeadForm({
   buttonText = 'Join Waitlist',
   onSuccess,
   minimal = false,
+  dark = false,
 }) {
   const [formData, setFormData] = useState({
     name: '',
@@ -81,7 +83,9 @@ export function LeadForm({
         <div className="h-12 w-12 bg-[#f0f5f2] rounded-full flex items-center justify-center mb-4">
           <CheckCircle2 className="w-6 h-6 text-[#1f644e]" />
         </div>
-        <h3 className="text-lg font-bold text-[#1e3a34] mb-1">You're on the list!</h3>
+        <h3 className={cn('text-lg font-bold mb-1', dark ? 'text-white' : 'text-[#1e3a34]')}>
+          You're on the list!
+        </h3>
         <p className="text-[#7c8e88] text-xs max-w-xs mx-auto">
           We'll reach out to you as soon as we have updates.
         </p>
@@ -92,30 +96,78 @@ export function LeadForm({
   if (minimal) {
     return (
       <div className="w-full">
-        <form onSubmit={handleSubmit} className="relative flex items-center">
-          <input
-            id="email"
-            type="email"
-            required
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full px-5 py-3.5 bg-white/50 border border-[#e5e3d8] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1f644e]/10 focus:border-[#1f644e] transition-all placeholder:text-[#7c8e88]/50 text-[#1e3a34] pr-36"
-            placeholder="Enter your email"
-          />
-          <button
-            type="submit"
-            disabled={status === 'loading'}
-            className="absolute right-1.5 px-5 py-2 rounded-xl bg-[#1f644e] hover:bg-[#184d3c] text-white text-[11px] font-bold transition-all shadow-lg shadow-[#1f644e]/10 active:scale-95 disabled:opacity-70 flex items-center gap-2"
-          >
-            {status === 'loading' ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <>
-                Join Waitlist
-                <ArrowRight className="w-3.5 h-3.5" />
-              </>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="relative flex items-center">
+            <input
+              id="email"
+              type="email"
+              required
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className={cn(
+                'w-full px-5 py-3.5 border rounded-2xl text-sm focus:outline-none focus:ring-2 transition-all',
+                dark
+                  ? 'bg-white/10 border-white/10 text-white focus:ring-white/20 focus:border-white/40 placeholder:text-white/30'
+                  : 'bg-white/50 border-[#e5e3d8] text-[#1e3a34] focus:ring-[#1f644e]/10 focus:border-[#1f644e] placeholder:text-[#7c8e88]/50'
+              )}
+              placeholder="Enter your email"
+            />
+            {fields.length === 0 && (
+              <button
+                type="submit"
+                disabled={status === 'loading'}
+                className={cn(
+                  'absolute right-1.5 px-5 py-2 rounded-xl text-[11px] font-bold transition-all shadow-lg active:scale-95 disabled:opacity-70 flex items-center gap-2',
+                  dark
+                    ? 'bg-white text-[#1f644e] hover:bg-white/90 shadow-white/5'
+                    : 'bg-[#1f644e] text-white hover:bg-[#184d3c] shadow-[#1f644e]/10'
+                )}
+              >
+                {status === 'loading' ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  'Join Waitlist'
+                )}
+              </button>
             )}
-          </button>
+          </div>
+
+          {fields.map((field) => (
+            <div key={field.id}>
+              <input
+                id={field.id}
+                type={field.type || 'text'}
+                required={field.required}
+                value={formData.data[field.id]}
+                onChange={(e) => handleExtraFieldChange(field.id, e.target.value)}
+                className={cn(
+                  'w-full px-5 py-3.5 border rounded-2xl text-sm focus:outline-none focus:ring-2 transition-all',
+                  dark
+                    ? 'bg-white/10 border-white/10 text-white focus:ring-white/20 focus:border-white/40 placeholder:text-white/30'
+                    : 'bg-white/50 border-[#e5e3d8] text-[#1e3a34] focus:ring-[#1f644e]/10 focus:border-[#1f644e] placeholder:text-[#7c8e88]/50'
+                )}
+                placeholder={field.placeholder}
+              />
+            </div>
+          ))}
+
+          {fields.length > 0 && (
+            <Button
+              type="submit"
+              variant="brand"
+              disabled={status === 'loading'}
+              className="w-full py-4 rounded-2xl font-bold transition-all shadow-lg active:scale-95 disabled:opacity-70 flex items-center justify-center gap-2"
+            >
+              {status === 'loading' ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  {buttonText}
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </>
+              )}
+            </Button>
+          )}
         </form>
         {error && (
           <p className="mt-2 text-[10px] text-red-500 font-medium ml-4 animate-in slide-in-from-top-1">
@@ -129,7 +181,14 @@ export function LeadForm({
   return (
     <div className="w-full">
       <div className="mb-8 text-center sm:text-left">
-        <h2 className="text-2xl font-extrabold text-[#1e3a34] mb-2 tracking-tight">{title}</h2>
+        <h2
+          className={cn(
+            'text-2xl font-extrabold mb-2 tracking-tight',
+            dark ? 'text-white' : 'text-[#1e3a34]'
+          )}
+        >
+          {title}
+        </h2>
         <p className="text-[#7c8e88] text-sm leading-relaxed">{description}</p>
       </div>
 
@@ -148,7 +207,12 @@ export function LeadForm({
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-3 bg-[#f8faf9] border border-[#e5e3d8] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1f644e]/10 focus:border-[#1f644e] transition-all placeholder:text-[#b0bfbb]"
+              className={cn(
+                'w-full px-4 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all',
+                dark
+                  ? 'bg-white/10 border-white/10 text-white focus:ring-white/20 focus:border-white/40'
+                  : 'bg-[#f8faf9] border-[#e5e3d8] text-sm focus:outline-none focus:ring-2 focus:ring-[#1f644e]/10 focus:border-[#1f644e] placeholder:text-[#b0bfbb]'
+              )}
               placeholder="John Doe"
             />
           </div>
@@ -166,7 +230,12 @@ export function LeadForm({
               required
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-3 bg-[#f8faf9] border border-[#e5e3d8] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1f644e]/10 focus:border-[#1f644e] transition-all placeholder:text-[#b0bfbb]"
+              className={cn(
+                'w-full px-4 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all',
+                dark
+                  ? 'bg-white/10 border-white/10 text-white focus:ring-white/20 focus:border-white/40'
+                  : 'bg-[#f8faf9] border-[#e5e3d8] text-sm focus:outline-none focus:ring-2 focus:ring-[#1f644e]/10 focus:border-[#1f644e] placeholder:text-[#b0bfbb]'
+              )}
               placeholder="john@example.com"
             />
           </div>
@@ -185,7 +254,12 @@ export function LeadForm({
                   required={field.required}
                   value={formData.data[field.id]}
                   onChange={(e) => handleExtraFieldChange(field.id, e.target.value)}
-                  className="w-full px-4 py-3 bg-[#f8faf9] border border-[#e5e3d8] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1f644e]/10 focus:border-[#1f644e] transition-all placeholder:text-[#b0bfbb] min-h-[100px]"
+                  className={cn(
+                    'w-full px-4 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all min-h-[100px]',
+                    dark
+                      ? 'bg-white/10 border-white/10 text-white focus:ring-white/20 focus:border-white/40'
+                      : 'bg-[#f8faf9] border-[#e5e3d8] text-sm focus:outline-none focus:ring-2 focus:ring-[#1f644e]/10 focus:border-[#1f644e] placeholder:text-[#b0bfbb]'
+                  )}
                   placeholder={field.placeholder}
                 />
               ) : (
@@ -195,7 +269,12 @@ export function LeadForm({
                   required={field.required}
                   value={formData.data[field.id]}
                   onChange={(e) => handleExtraFieldChange(field.id, e.target.value)}
-                  className="w-full px-4 py-3 bg-[#f8faf9] border border-[#e5e3d8] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1f644e]/10 focus:border-[#1f644e] transition-all placeholder:text-[#b0bfbb]"
+                  className={cn(
+                    'w-full px-4 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all',
+                    dark
+                      ? 'bg-white/10 border-white/10 text-white focus:ring-white/20 focus:border-white/40'
+                      : 'bg-[#f8faf9] border-[#e5e3d8] text-sm focus:outline-none focus:ring-2 focus:ring-[#1f644e]/10 focus:border-[#1f644e] placeholder:text-[#b0bfbb]'
+                  )}
                   placeholder={field.placeholder}
                 />
               )}
@@ -212,8 +291,9 @@ export function LeadForm({
 
         <Button
           type="submit"
+          variant="brand"
           disabled={status === 'loading'}
-          className="w-full py-6 rounded-xl bg-[#1f644e] hover:bg-[#184d3c] text-white font-bold transition-all shadow-lg shadow-[#1f644e]/20 active:scale-[0.98] disabled:opacity-70"
+          className="w-full py-6 rounded-xl font-bold transition-all shadow-lg shadow-[#1f644e]/20 active:scale-[0.98] disabled:opacity-70"
         >
           {status === 'loading' ? (
             <Loader2 className="w-5 h-5 animate-spin" />

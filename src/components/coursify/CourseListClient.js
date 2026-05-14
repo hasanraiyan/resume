@@ -80,19 +80,56 @@ export function CourseListClient({ initialCourses }) {
                   Join Waitlist
                 </button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px] p-0 border-none shadow-2xl overflow-hidden bg-transparent">
-                <div className="bg-white/90 backdrop-blur-xl p-6 sm:p-8 rounded-3xl relative overflow-hidden">
-                  <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-[#1f644e]/5 rounded-full blur-3xl pointer-events-none" />
-                  <div className="relative z-10">
-                    <div className="mb-6">
-                      <h2 className="text-xl font-extrabold text-[#1e3a34] tracking-tight">
-                        Become a Creator
-                      </h2>
-                      <p className="text-[#7c8e88] text-xs mt-1">
-                        Join the waitlist for early studio access.
+              <DialogContent className="sm:max-w-[500px] p-0 border-none shadow-3xl overflow-hidden rounded-[2.5rem] bg-white">
+                <div className="relative p-8 sm:p-12">
+                  {/* Background Accents */}
+                  <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-[#1f644e]/5 rounded-full blur-3xl pointer-events-none" />
+                  <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-64 h-64 bg-[#f0f5f2]/50 rounded-full blur-3xl pointer-events-none" />
+
+                  <div className="relative z-10 text-center">
+                    <div className="w-16 h-16 bg-[#f0f5f2] rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-sm">
+                      <Sparkles className="w-8 h-8 text-[#1f644e]" />
+                    </div>
+
+                    <h2 className="text-4xl font-bold font-['Playfair_Display'] leading-tight mb-4 tracking-tight text-[#1e3a34]">
+                      Master <span className="italic text-[#1f644e]">Anything</span> <br />{' '}
+                      Instantly.
+                    </h2>
+
+                    <p className="text-[#7c8e88] text-sm leading-relaxed mb-10 max-w-[280px] mx-auto">
+                      Join the waitlist for the AI-powered engine that builds courses on demand.
+                    </p>
+
+                    <LeadForm
+                      minimal
+                      type="coursify-waitlist"
+                      buttonText="Get Early Access"
+                      fields={[
+                        {
+                          id: 'learning_goal',
+                          label: 'Learning Goal',
+                          type: 'text',
+                          placeholder: "What's the first course you will generate?",
+                          required: true,
+                        },
+                      ]}
+                    />
+
+                    <div className="mt-12 pt-8 border-t border-[#f0f5f2] flex flex-col items-center gap-4">
+                      <div className="flex -space-x-3">
+                        {[1, 2, 3, 4].map((i) => (
+                          <div
+                            key={i}
+                            className="w-9 h-9 rounded-full border-4 border-white bg-[#f0f5f2] flex items-center justify-center text-xs font-bold text-[#1f644e] shadow-sm"
+                          >
+                            {String.fromCharCode(64 + i)}
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-[0.25em]">
+                        4,200+ waiting for access
                       </p>
                     </div>
-                    <LeadForm minimal type="coursify-creator" />
                   </div>
                 </div>
               </DialogContent>
@@ -106,10 +143,11 @@ export function CourseListClient({ initialCourses }) {
       <main className="max-w-4xl mx-auto px-4 py-8 sm:py-12">
         <div className="mb-8 sm:mb-10 text-center sm:text-left">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1e3a34] mb-3 tracking-tight">
-            Learn something new today
+            Master anything in <span className="text-[#1f644e] italic">seconds</span>
           </h1>
-          <p className="text-[#7c8e88] text-sm sm:text-base max-w-lg mx-auto sm:mx-0">
-            Explore free, well-crafted courses. Read at your own pace — no account required.
+          <p className="text-[#7c8e88] text-sm sm:text-base max-w-lg mx-auto sm:mx-0 leading-relaxed">
+            Exam tomorrow? New skill to master? Tell Coursify AI what you need to learn, and get a
+            structured, professional-grade course instantly.
           </p>
         </div>
 
@@ -201,15 +239,27 @@ export function CourseListClient({ initialCourses }) {
               For Educators
             </div>
             <h2 className="text-3xl sm:text-4xl font-extrabold mb-4 tracking-tight leading-tight">
-              Share your knowledge <br /> with the world.
+              Build your first course <br /> with AI.
             </h2>
             <p className="text-[#a8c9bf] mb-10 text-sm sm:text-base leading-relaxed">
-              Coursify is more than just a reader. Join our creator waitlist to get early access to
-              our powerful authoring tools.
+              Experience the future of authoring. Join our creator waitlist to be among the first to
+              use our AI-powered studio to generate entire curriculums in seconds.
             </p>
 
             <div className="max-w-md">
-              <LeadForm minimal type="coursify-creator" />
+              <LeadForm
+                minimal
+                type="coursify-waitlist"
+                fields={[
+                  {
+                    id: 'learning_goal',
+                    label: 'Learning Goal',
+                    type: 'text',
+                    placeholder: "What's the first course you will generate?",
+                    required: true,
+                  },
+                ]}
+              />
             </div>
           </div>
         </div>
