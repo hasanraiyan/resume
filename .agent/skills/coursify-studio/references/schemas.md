@@ -560,6 +560,72 @@ type: "doc"
 
 ---
 
+### ChartBlock
+
+Interactive data visualization using Chart.js.
+
+```markdown
+## [ChartBlock]
+
+type: "bar"
+title: "Chart Title"
+description: "Optional description"
+
+data:
+  labels: ["Jan", "Feb", "Mar"]
+  datasets:
+    - label: "Series A"
+      data: [10, 20, 30]
+      color: "#1f644e"
+    - label: "Series B"
+      data: [15, 25, 35]
+
+options:
+  showLegend: true
+  showGrid: true
+  stacked: false
+  beginAtZero: true
+```
+
+**Schema:**
+
+```json
+{
+  "type": "ChartBlock",
+  "chart": {
+    "type": "bar",
+    "title": "Chart Title",
+    "description": "Optional description",
+    "data": {
+      "labels": ["Jan", "Feb", "Mar"],
+      "datasets": [
+        {
+          "label": "Series A",
+          "data": [10, 20, 30],
+          "color": "#1f644e"
+        }
+      ]
+    },
+    "options": {
+      "showLegend": true,
+      "showGrid": true,
+      "stacked": false,
+      "beginAtZero": true
+    }
+  }
+}
+```
+
+**Supported Types:**
+- `bar`, `line`, `pie`, `doughnut`, `polarArea`, `radar`, `scatter`, `bubble`
+
+**Requirements:**
+- `labels` must match the length of `data` arrays in datasets
+- `color` is optional (auto-assigned if omitted)
+- `options` are passed through to Chart.js
+
+---
+
 ## ResearchNote Schema
 
 Tracks sources and findings during the research phase.

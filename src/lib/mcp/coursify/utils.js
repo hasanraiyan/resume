@@ -103,6 +103,7 @@ export function normalizeSection(section) {
       items: b.items,
       tabs: b.tabs,
       calloutType: b.calloutType,
+      chart: b.chart,
       order: b.order ?? 0,
     })),
     summary: section.summary || '',

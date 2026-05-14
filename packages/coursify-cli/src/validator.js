@@ -137,6 +137,7 @@ export async function validateCourse(dir) {
             'AccordionBlock',
             'TabsBlock',
             'CalloutBlock',
+            'ChartBlock',
           ];
           const AUTHORING_ALIASES = ['MermaidBlock', 'CodeBlock'];
           const VALID_BLOCKS = [...SUPPORTED_BLOCKS, ...AUTHORING_ALIASES];
@@ -214,6 +215,24 @@ export async function validateCourse(dir) {
                 `MermaidBlock might have invalid syntax (no recognized diagram type): ${modDirEntry.name}/${secDirEntry.name}`
               );
             }
+          }
+
+          // ChartBlock Validation
+          if (foundBlocks.includes('ChartBlock')) {
+            const chartParts = content.split(/##\s+\[ChartBlock\]/).slice(1);
+            chartParts.forEach((part) => {
+              const chartContent = part.split(/##\s+\[/)[0];
+              if (!chartContent.includes('labels:')) {
+              results.errors.push(
+                `ChartBlock missing labels in ${modDirEntry.name}/${secDirEntry.name}`
+              );
+            }
+            if (!chartContent.includes('datasets:')) {
+              results.errors.push(
+                `ChartBlock missing datasets in ${modDirEntry.name}/${secDirEntry.name}`
+              );
+            }
+            });
           }
         } catch (e) {
           results.errors.push(

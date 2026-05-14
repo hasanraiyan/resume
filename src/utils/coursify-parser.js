@@ -34,6 +34,7 @@ export function parseMarkdownToBlocks(text) {
     'AccordionBlock',
     'TabsBlock',
     'CalloutBlock',
+    'ChartBlock',
   ];
   const AUTHORING_ALIASES = {
     MermaidBlock: { target: 'MdBlock', wrap: (c) => `\`\`\`mermaid\n${c}\n\`\`\`` },
@@ -259,6 +260,81 @@ export function parseMarkdownToBlocks(text) {
         }
         if (qObj.question) block.quiz.questions.push(qObj);
       }
+    } else if (m.type === 'ChartBlock') {
+      block.chart = {
+        type: 'bar',
+        title: '',
+        description: '',
+        data: { labels: [], datasets: [] },
+        options: {},
+      };
+
+      const typeMatch = rawContent.match(/^type:\s*["']?(.*?)["']?$/m);
+      if (typeMatch) block.chart.type = unescapeString(typeMatch[1]);
+
+      const titleMatch = rawContent.match(/^title:\s*["']?(.*?)["']?$/m);
+      if (titleMatch) block.chart.title = unescapeString(titleMatch[1]);
+
+      const descMatch = rawContent.match(/^description:\s*["']?(.*?)["']?$/m);
+      if (descMatch) block.chart.description = unescapeString(descMatch[1]);
+
+      // Extract data section
+      const dataSectionMatch = rawContent.match(/data:\s*\n([\s\S]*?)(?:\n\w+:|$)/);
+      if (dataSectionMatch) {
+        const dataContent = dataSectionMatch[1];
+        const labelsMatch = dataContent.match(/labels:\s*\[(.*?)\]/);
+        if (labelsMatch) {
+          block.chart.data.labels = labelsMatch[1].split(',').map((l) => unescapeString(l.trim()));
+        }
+
+        const datasetsContentMatch = dataContent.match(/datasets:\s*\n([\s\S]*)$/);
+        const datasetsContent = datasetsContentMatch ? datasetsContentMatch[1] : dataContent;
+
+        const datasetsParts = datasetsContent
+          .split(/(?:^|\n)\s*-\s*label:\s*/)
+          .filter((p) => p.trim());
+        datasetsParts.forEach((part) => {
+          const lines = part.split('\n');
+          const label = unescapeString(lines[0].trim());
+          const dataset = { label, data: [], color: '' };
+
+          const dataMatch = part.match(/data:\s*\[(.*?)\]/);
+          if (dataMatch) {
+            dataset.data = dataMatch[1]
+              .split(',')
+              .map((d) => parseFloat(d.trim()))
+              .filter((d) => !isNaN(d));
+          }
+
+          const colorMatch = part.match(/color:\s*["']?(.*?)["']?$/m);
+          if (colorMatch) {
+            dataset.color = unescapeString(colorMatch[1]);
+          }
+
+          block.chart.data.datasets.push(dataset);
+        });
+      }
+
+      // Extract options section
+      const optionsSectionMatch = rawContent.match(/options:\s*\n([\s\S]*?)(?:\n\w+:|$)/);
+      if (optionsSectionMatch) {
+        const optionsContent = optionsSectionMatch[1];
+        const optionLines = optionsContent.split('\n');
+        optionLines.forEach((line) => {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('-')) return;
+          const [key, ...valParts] = trimmed.split(':');
+          if (key && valParts.length > 0) {
+            const val = valParts.join(':').trim();
+            const cleanVal = unescapeString(val);
+            if (cleanVal === 'true') block.chart.options[key.trim()] = true;
+            else if (cleanVal === 'false') block.chart.options[key.trim()] = false;
+            else if (!isNaN(cleanVal) && cleanVal !== '')
+              block.chart.options[key.trim()] = parseFloat(cleanVal);
+            else block.chart.options[key.trim()] = cleanVal;
+          }
+        });
+      }
     }
     blocks.push(block);
   }
@@ -326,6 +402,28 @@ export function generateMarkdownFromBlocks(blocks) {
         output += `  explanation: "${q.explanation}"\n`;
         output += `  points: ${q.points}\n`;
       });
+      output += '\n';
+    } else if (block.type === 'ChartBlock' && block.chart) {
+      const c = block.chart;
+      output += `type: "${c.type || 'bar'}"\n`;
+      if (c.title) output += `title: "${c.title}"\n`;
+      if (c.description) output += `description: "${c.description}"\n`;
+
+      output += `data:\n`;
+      output += `  labels: [${(c.data?.labels || []).map((l) => `"${l}"`).join(', ')}]\n`;
+      output += `  datasets:\n`;
+      (c.data?.datasets || []).forEach((ds) => {
+        output += `    - label: "${ds.label}"\n`;
+        output += `      data: [${(ds.data || []).join(', ')}]\n`;
+        if (ds.color) output += `      color: "${ds.color}"\n`;
+      });
+
+      if (c.options && Object.keys(c.options).length > 0) {
+        output += `options:\n`;
+        Object.entries(c.options).forEach(([k, v]) => {
+          output += `  ${k}: ${typeof v === 'string' ? `"${v}"` : v}\n`;
+        });
+      }
       output += '\n';
     }
     if (i < blocks.length - 1) output += '---\n\n';

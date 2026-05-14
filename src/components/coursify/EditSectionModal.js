@@ -16,6 +16,8 @@ import {
   ChevronRight,
   FolderOpen,
   AlertCircle,
+  BarChart3,
+  Settings,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import QuizEditor from './QuizEditor';
@@ -33,6 +35,7 @@ const BLOCK_TYPES = [
   { type: 'ResourceBlock', label: 'Resource', icon: FileText },
   { type: 'TabsBlock', label: 'Tabs', icon: FolderOpen },
   { type: 'CalloutBlock', label: 'Callout', icon: AlertCircle },
+  { type: 'ChartBlock', label: 'Chart', icon: BarChart3 },
 ];
 
 function QuickAdder({ isOpen, onToggle, onAdd }) {
@@ -164,6 +167,18 @@ export default function EditSectionModal({ section, onSave, onClose }) {
       newBlock.calloutType = 'info';
       newBlock.title = '';
       newBlock.content = '';
+    }
+    if (type === 'ChartBlock') {
+      newBlock.chart = {
+        type: 'bar',
+        title: '',
+        description: '',
+        data: {
+          labels: ['Jan', 'Feb', 'Mar'],
+          datasets: [{ label: 'Series 1', data: [10, 20, 15] }],
+        },
+        options: { showLegend: true, showGrid: true },
+      };
     }
 
     setBlocks((prev) => {
@@ -613,6 +628,224 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                             placeholder="Callout Content (Markdown Support)"
                             className="w-full h-24 px-3 py-2 rounded-xl border border-[#e5e3d8] text-xs bg-[#fcfbf5] resize-y focus:border-[#1f644e] outline-none"
                           />
+                        </div>
+                      )}
+                      {block.type === 'ChartBlock' && (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-bold uppercase text-[#7c8e88] px-1">
+                                Chart Type
+                              </label>
+                              <select
+                                value={block.chart?.type || 'bar'}
+                                onChange={(e) =>
+                                  updateBlock(i, 'chart', { ...block.chart, type: e.target.value })
+                                }
+                                className="w-full px-4 py-2.5 rounded-xl border border-[#e5e3d8] bg-white text-sm font-bold capitalize outline-none focus:border-[#1f644e]"
+                              >
+                                {[
+                                  'bar',
+                                  'line',
+                                  'pie',
+                                  'doughnut',
+                                  'polarArea',
+                                  'radar',
+                                  'scatter',
+                                  'bubble',
+                                ].map((t) => (
+                                  <option key={t} value={t}>
+                                    {t}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-bold uppercase text-[#7c8e88] px-1">
+                                Title
+                              </label>
+                              <input
+                                value={block.chart?.title || ''}
+                                onChange={(e) =>
+                                  updateBlock(i, 'chart', { ...block.chart, title: e.target.value })
+                                }
+                                placeholder="Chart Title"
+                                className="w-full px-4 py-2.5 rounded-xl border border-[#e5e3d8] bg-white text-sm font-bold outline-none focus:border-[#1f644e]"
+                              />
+                            </div>
+                          </div>
+
+                          <input
+                            value={block.chart?.description || ''}
+                            onChange={(e) =>
+                              updateBlock(i, 'chart', {
+                                ...block.chart,
+                                description: e.target.value,
+                              })
+                            }
+                            placeholder="Description"
+                            className="w-full px-4 py-2.5 rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] text-sm outline-none focus:border-[#1f644e]"
+                          />
+
+                          <div className="p-4 rounded-2xl bg-[#fcfbf5] border border-[#e5e3d8] space-y-4">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-bold uppercase text-[#7c8e88] tracking-wider">
+                                Data & Labels
+                              </span>
+                              <div className="text-[10px] text-[#7c8e88]">
+                                Labels (comma separated)
+                              </div>
+                            </div>
+                            <input
+                              value={(block.chart?.data?.labels || []).join(', ')}
+                              onChange={(e) => {
+                                const labels = e.target.value.split(',').map((l) => l.trim());
+                                updateBlock(i, 'chart', {
+                                  ...block.chart,
+                                  data: { ...block.chart.data, labels },
+                                });
+                              }}
+                              placeholder="e.g. Jan, Feb, Mar"
+                              className="w-full px-4 py-2.5 rounded-xl border border-[#e5e3d8] bg-white text-sm outline-none focus:border-[#1f644e]"
+                            />
+
+                            <div className="space-y-3">
+                              {(block.chart?.data?.datasets || []).map((ds, dsi) => (
+                                <div
+                                  key={dsi}
+                                  className="p-3 rounded-xl bg-white border border-[#e5e3d8] space-y-3"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      value={ds.label}
+                                      onChange={(e) => {
+                                        const datasets = block.chart.data.datasets.map((d, idx) =>
+                                          idx === dsi ? { ...d, label: e.target.value } : d
+                                        );
+                                        updateBlock(i, 'chart', {
+                                          ...block.chart,
+                                          data: { ...block.chart.data, datasets },
+                                        });
+                                      }}
+                                      placeholder="Dataset Label"
+                                      className="flex-1 px-3 py-1.5 rounded-lg border border-[#e5e3d8] text-xs font-bold outline-none focus:border-[#1f644e]"
+                                    />
+                                    <input
+                                      type="color"
+                                      value={ds.color || '#1f644e'}
+                                      onChange={(e) => {
+                                        const datasets = block.chart.data.datasets.map((d, idx) =>
+                                          idx === dsi ? { ...d, color: e.target.value } : d
+                                        );
+                                        updateBlock(i, 'chart', {
+                                          ...block.chart,
+                                          data: { ...block.chart.data, datasets },
+                                        });
+                                      }}
+                                      className="w-8 h-8 rounded-lg overflow-hidden border-none"
+                                    />
+                                    <button
+                                      onClick={() => {
+                                        const datasets = block.chart.data.datasets.filter(
+                                          (_, idx) => idx !== dsi
+                                        );
+                                        updateBlock(i, 'chart', {
+                                          ...block.chart,
+                                          data: { ...block.chart.data, datasets },
+                                        });
+                                      }}
+                                      className="p-1.5 text-[#7c8e88] hover:text-[#c94c4c]"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                  <input
+                                    value={(ds.data || []).join(', ')}
+                                    onChange={(e) => {
+                                      const data = e.target.value
+                                        .split(',')
+                                        .map((v) => parseFloat(v.trim()))
+                                        .filter((v) => !isNaN(v));
+                                      const datasets = block.chart.data.datasets.map((d, idx) =>
+                                        idx === dsi ? { ...d, data } : d
+                                      );
+                                      updateBlock(i, 'chart', {
+                                        ...block.chart,
+                                        data: { ...block.chart.data, datasets },
+                                      });
+                                    }}
+                                    placeholder="Data points (e.g. 10, 20, 30)"
+                                    className="w-full px-3 py-1.5 rounded-lg border border-[#e5e3d8] text-xs outline-none focus:border-[#1f644e]"
+                                  />
+                                </div>
+                              ))}
+                              <button
+                                onClick={() => {
+                                  const datasets = [
+                                    ...(block.chart.data.datasets || []),
+                                    { label: '', data: [], color: '' },
+                                  ];
+                                  updateBlock(i, 'chart', {
+                                    ...block.chart,
+                                    data: { ...block.chart.data, datasets },
+                                  });
+                                }}
+                                className="w-full py-2 rounded-lg border border-dashed border-[#e5e3d8] text-[10px] font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] transition-colors"
+                              >
+                                + Add Dataset
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-4 px-1">
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={block.chart?.options?.showLegend !== false}
+                                onChange={(e) =>
+                                  updateBlock(i, 'chart', {
+                                    ...block.chart,
+                                    options: {
+                                      ...block.chart.options,
+                                      showLegend: e.target.checked,
+                                    },
+                                  })
+                                }
+                                className="w-4 h-4 rounded border-[#e5e3d8] text-[#1f644e] focus:ring-[#1f644e]"
+                              />
+                              <span className="text-xs font-medium text-[#1e3a34]">
+                                Show Legend
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={block.chart?.options?.showGrid !== false}
+                                onChange={(e) =>
+                                  updateBlock(i, 'chart', {
+                                    ...block.chart,
+                                    options: { ...block.chart.options, showGrid: e.target.checked },
+                                  })
+                                }
+                                className="w-4 h-4 rounded border-[#e5e3d8] text-[#1f644e] focus:ring-[#1f644e]"
+                              />
+                              <span className="text-xs font-medium text-[#1e3a34]">Show Grid</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={block.chart?.options?.stacked === true}
+                                onChange={(e) =>
+                                  updateBlock(i, 'chart', {
+                                    ...block.chart,
+                                    options: { ...block.chart.options, stacked: e.target.checked },
+                                  })
+                                }
+                                className="w-4 h-4 rounded border-[#e5e3d8] text-[#1f644e] focus:ring-[#1f644e]"
+                              />
+                              <span className="text-xs font-medium text-[#1e3a34]">Stacked</span>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>

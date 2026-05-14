@@ -180,6 +180,7 @@ When you create a section with `coursify init-section`, it generates a template 
 - `[AccordionBlock]` — for FAQs and collapsible details
 - `[TabsBlock]` — for multi-language examples or alternative approaches
 - `[CalloutBlock]` — for warnings, tips, and important notes
+- `[ChartBlock]` — for interactive data visualizations
 - `[QuizBlock]` — for assessment
 
 Edit the template to keep only the blocks you need for that section, and customize the content.
@@ -333,6 +334,28 @@ content: "Do not mutate state directly in React!"
 **Best practices:**
 - Valid types: `info`, `tip`, `warning`, `danger`
 - Use sparingly so they maintain their impact
+
+#### ChartBlock
+
+Interactive data visualization using Chart.js.
+
+```markdown
+## [ChartBlock]
+
+type: "bar"
+title: "Performance Comparison"
+data:
+  labels: ["A", "B", "C"]
+  datasets:
+    - label: "Speed"
+      data: [100, 200, 150]
+      color: "#1f644e"
+```
+
+**Best practices:**
+- Supported types: `bar`, `line`, `pie`, `doughnut`, `polarArea`, `radar`, `scatter`, `bubble`
+- Labels count must match data points count
+- Use colors that are high-contrast and accessible
 
 #### VideoBlock
 Embed external videos (YouTube, Vimeo, etc.)
