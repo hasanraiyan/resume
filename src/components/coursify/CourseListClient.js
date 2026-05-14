@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Search, BookOpen, Plus, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, BookOpen, Plus, Sparkles, X } from 'lucide-react';
 import { PublicCourseCard } from './PublicCourseCard';
 import SearchOverlay from '@/components/search/SearchOverlay';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/custom-ui/Dialog';
@@ -36,6 +36,16 @@ export function CourseListClient({ initialCourses, waitlistCount = 0 }) {
   const [query, setQuery] = useState('');
   const [difficulty, setDifficulty] = useState('all');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
+
+  // Deep-link to waitlist via #waitlist hash
+  useEffect(() => {
+    if (window.location.hash === '#waitlist') {
+      setIsWaitlistOpen(true);
+      // Clean up hash to prevent re-opening on manual refresh if desired,
+      // but keeping it is usually better for "sharing" intent.
+    }
+  }, []);
 
   const handleResetAll = () => {
     setQuery('');
@@ -74,30 +84,30 @@ export function CourseListClient({ initialCourses, waitlistCount = 0 }) {
               <Search className="w-5 h-5" />
             </button>
 
-            <Dialog>
+            <Dialog open={isWaitlistOpen} onOpenChange={setIsWaitlistOpen}>
               <DialogTrigger asChild>
                 <button className="hidden sm:flex items-center gap-2 px-4 py-2 bg-[#1f644e] text-white rounded-full text-xs font-bold hover:bg-[#184d3c] transition-all shadow-md shadow-[#1f644e]/10">
                   <Plus className="w-4 h-4" />
                   Join Waitlist
                 </button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px] p-0 border-none shadow-3xl overflow-hidden rounded-[2.5rem] bg-white">
-                <div className="relative p-8 sm:p-12">
+              <DialogContent className="sm:max-w-[440px] p-0 border-none shadow-3xl overflow-hidden rounded-[2rem] bg-white">
+                <div className="relative p-6 sm:p-10">
                   {/* Background Accents */}
                   <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-[#1f644e]/5 rounded-full blur-3xl pointer-events-none" />
                   <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-64 h-64 bg-[#f0f5f2]/50 rounded-full blur-3xl pointer-events-none" />
 
                   <div className="relative z-10 text-center">
-                    <div className="w-16 h-16 bg-[#f0f5f2] rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-sm">
-                      <Sparkles className="w-8 h-8 text-[#1f644e]" />
+                    <div className="w-14 h-14 bg-[#f0f5f2] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+                      <Sparkles className="w-7 h-7 text-[#1f644e]" />
                     </div>
 
-                    <h2 className="text-4xl font-bold font-['Playfair_Display'] leading-tight mb-4 tracking-tight text-[#1e3a34]">
+                    <h2 className="text-3xl font-bold font-['Playfair_Display'] leading-tight mb-3 tracking-tight text-[#1e3a34]">
                       Master <span className="italic text-[#1f644e]">Anything</span> <br />{' '}
                       Instantly.
                     </h2>
 
-                    <p className="text-[#7c8e88] text-sm leading-relaxed mb-10 max-w-[280px] mx-auto">
+                    <p className="text-[#7c8e88] text-xs leading-relaxed mb-8 max-w-[260px] mx-auto">
                       Join the waitlist for the AI-powered engine that builds courses on demand.
                     </p>
 
@@ -117,7 +127,7 @@ export function CourseListClient({ initialCourses, waitlistCount = 0 }) {
                     />
 
                     {waitlistCount > 0 && (
-                      <div className="mt-12 pt-8 border-t border-[#f0f5f2] flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
+                      <div className="mt-10 pt-6 border-t border-[#f0f5f2] flex flex-col items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-700">
                         {waitlistCount >= 4 && (
                           <div className="flex -space-x-3">
                             {[
