@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Pacifico, Nunito } from 'next/font/google';
@@ -118,7 +118,9 @@ function CoursifyApp() {
 
   if (status === 'loading') return null;
   if (status === 'unauthenticated' || session?.user?.role !== 'admin') {
-    router.push('/login');
+    useEffect(() => {
+      router.push('/login');
+    }, [router]);
     return null;
   }
 
