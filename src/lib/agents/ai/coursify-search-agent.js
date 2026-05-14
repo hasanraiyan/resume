@@ -144,100 +144,109 @@ class CoursifySearchAgent extends BaseAgent {
       }),
     ];
 
-    // ─── Run title and content in parallel ──────────────────────────────
+    // ─── Create parallel execution chain ──────────────────────────────────
     this.logger.info('📡 Starting parallel execution: title + content...');
 
-    // Title generation (simple, completes fast)
-    this.logger.info('📋 Generating title...');
+    const parallelChain = RunnableParallel.from({
+      title: titleChain,
+      content: contentAgent.withConfig({ runName: 'contentAgent' }),
+    });
+
+    // ─── Run title and content truly in parallel ───────────────────────────
     try {
-      const titleStream = await titleChain.stream({ topic });
-      let titleText = '';
-      for await (const chunk of titleStream) {
-        if (chunk.content) {
-          titleText += chunk.content;
+      const parallelStream = await parallelChain.streamEvents(
+        {
+          title: { topic },
+          content: { messages: contentMessages },
+        },
+        { version: 'v2' }
+      );
+
+      let eventCount = 0;
+      for await (const event of parallelStream) {
+        eventCount++;
+        const { event: type, data, name } = event;
+
+        this.logger.debug(`📊 Event #${eventCount}: type="${type}", name="${name}"`);
+
+        // ─── Title chain events ────────────────────────────────────────────
+        if (name === 'ChatPromptTemplate' && type === 'on_chain_stream') {
+          if (data.chunk?.content) {
+            this.logger.debug(`📋 Title chunk: "${data.chunk.content.substring(0, 50)}..."`);
+            yield { type: 'title', text: data.chunk.content };
+          }
+        }
+
+        // ─── Content chain events ──────────────────────────────────────────
+        if (
+          type === 'on_chat_model_stream' &&
+          data.chunk?.content &&
+          name !== 'ChatPromptTemplate'
+        ) {
+          this.logger.debug(`📝 Streaming content: "${data.chunk.content.substring(0, 50)}..."`);
+          yield { type: 'content', message: data.chunk.content };
+        } else if (type === 'on_tool_start' && name !== 'agent') {
+          this.logger.info(`🔧 Tool starting: "${name}"`);
+          if (data.input) {
+            this.logger.debug(`   Input: ${JSON.stringify(data.input).substring(0, 100)}`);
+          }
+          yield {
+            type: 'tool_call',
+            tool: name,
+            status: 'started',
+            input: data.input,
+          };
+        } else if (type === 'on_tool_end' && name !== 'agent') {
+          this.logger.info(`✅ Tool completed: "${name}"`);
+          if (data.output) {
+            this.logger.debug(`   Output: ${JSON.stringify(data.output).substring(0, 100)}`);
+          }
+          yield {
+            type: 'tool_call',
+            tool: name,
+            status: 'completed',
+            output: data.output,
+          };
+        } else if (type === 'on_chat_model_start') {
+          this.logger.debug(`🤖 Chat model starting (${name})`);
+          yield { type: 'status', message: '' };
+        } else if (type === 'on_chat_model_end') {
+          this.logger.debug(`🤖 Chat model ended (${name})`);
+          if (data.output) {
+            this.logger.debug(`   Generated: ${JSON.stringify(data.output).substring(0, 100)}`);
+          }
+        } else if (type === 'on_chain_start') {
+          this.logger.info(`⛓️  Chain starting: "${name}"`);
+          if (data.input) {
+            const inputStr =
+              typeof data.input === 'string' ? data.input : JSON.stringify(data.input);
+            this.logger.debug(`   Input: ${inputStr.substring(0, 100)}`);
+          }
+        } else if (type === 'on_chain_end') {
+          this.logger.info(`⛓️  Chain completed: "${name}"`);
+          if (data.output) {
+            const outputStr =
+              typeof data.output === 'string' ? data.output : JSON.stringify(data.output);
+            this.logger.debug(`   Output: ${outputStr.substring(0, 100)}`);
+          }
+        } else if (type === 'on_chain_stream') {
+          this.logger.debug(
+            `📡 Chain streaming (${name}): ${JSON.stringify(data).substring(0, 100)}`
+          );
+        } else if (type === 'on_agent_action') {
+          this.logger.info(`⚙️  Agent action: ${JSON.stringify(data).substring(0, 150)}`);
+        } else if (type === 'on_agent_finish') {
+          this.logger.info(`🏁 Agent finished: ${JSON.stringify(data).substring(0, 150)}`);
+        } else {
+          this.logger.debug(`❓ Unhandled event type: "${type}"`);
         }
       }
-      const cleanTitle = titleText.trim();
-      this.logger.info(`✅ Title generated: "${cleanTitle}"`);
-      yield { type: 'title', text: cleanTitle };
+
+      this.logger.info(`✨ Event stream completed after ${eventCount} events`);
     } catch (err) {
-      this.logger.warn(`⚠️  Title generation failed: ${err.message}`);
+      this.logger.error(`❌ Parallel execution failed: ${err.message}`);
+      throw err;
     }
-
-    // Content generation (agent with search)
-    this.logger.info('📖 Starting content generation (with search)...');
-    const contentEventStream = await contentAgent.streamEvents(
-      { messages: contentMessages },
-      { version: 'v2' }
-    );
-
-    let eventCount = 0;
-    for await (const event of contentEventStream) {
-      eventCount++;
-      const { event: type, data, name } = event;
-
-      this.logger.debug(`📊 Event #${eventCount}: type="${type}", name="${name}"`);
-
-      if (type === 'on_chat_model_stream' && data.chunk?.content) {
-        this.logger.debug(`📝 Streaming content: "${data.chunk.content.substring(0, 50)}..."`);
-        yield { type: 'content', message: data.chunk.content };
-      } else if (type === 'on_tool_start' && name !== 'agent') {
-        this.logger.info(`🔧 Tool starting: "${name}"`);
-        if (data.input) {
-          this.logger.debug(`   Input: ${JSON.stringify(data.input).substring(0, 100)}`);
-        }
-        yield {
-          type: 'tool_call',
-          tool: name,
-          status: 'started',
-          input: data.input,
-        };
-      } else if (type === 'on_tool_end' && name !== 'agent') {
-        this.logger.info(`✅ Tool completed: "${name}"`);
-        if (data.output) {
-          this.logger.debug(`   Output: ${JSON.stringify(data.output).substring(0, 100)}`);
-        }
-        yield {
-          type: 'tool_call',
-          tool: name,
-          status: 'completed',
-          output: data.output,
-        };
-      } else if (type === 'on_chat_model_start') {
-        this.logger.debug(`🤖 Chat model starting (${name})`);
-        yield { type: 'status', message: '' };
-      } else if (type === 'on_chat_model_end') {
-        this.logger.debug(`🤖 Chat model ended (${name})`);
-        if (data.output) {
-          this.logger.debug(`   Generated: ${JSON.stringify(data.output).substring(0, 100)}`);
-        }
-      } else if (type === 'on_chain_start') {
-        this.logger.info(`⛓️  Chain starting: "${name}"`);
-        if (data.input) {
-          const inputStr = typeof data.input === 'string' ? data.input : JSON.stringify(data.input);
-          this.logger.debug(`   Input: ${inputStr.substring(0, 100)}`);
-        }
-      } else if (type === 'on_chain_end') {
-        this.logger.info(`⛓️  Chain completed: "${name}"`);
-        if (data.output) {
-          const outputStr =
-            typeof data.output === 'string' ? data.output : JSON.stringify(data.output);
-          this.logger.debug(`   Output: ${outputStr.substring(0, 100)}`);
-        }
-      } else if (type === 'on_chain_stream') {
-        this.logger.debug(
-          `📡 Chain streaming (${name}): ${JSON.stringify(data).substring(0, 100)}`
-        );
-      } else if (type === 'on_agent_action') {
-        this.logger.info(`⚙️  Agent action: ${JSON.stringify(data).substring(0, 150)}`);
-      } else if (type === 'on_agent_finish') {
-        this.logger.info(`🏁 Agent finished: ${JSON.stringify(data).substring(0, 150)}`);
-      } else {
-        this.logger.debug(`❓ Unhandled event type: "${type}"`);
-      }
-    }
-
-    this.logger.info(`✨ Event stream completed after ${eventCount} events`);
   }
 
   async _onExecute() {
