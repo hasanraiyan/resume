@@ -10,8 +10,13 @@ import {
   BookOpen,
   RotateCcw,
   ChevronRight,
+  Copy,
+  Check,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { CoursifyBlockRenderer } from '@/components/coursify/reader/CoursifyBlockRenderer';
+import { BlockSkeleton } from '@/components/coursify/BlockSkeleton';
+import { SafeBlockRenderer } from '@/components/coursify/SafeBlockRenderer';
 
 const SUGGESTED_TOPICS = [
   "Dijkstra's Algorithm",
@@ -39,6 +44,11 @@ export function AISearchEngine() {
   const [statusMessage, setStatusMessage] = useState('');
   const [content, setContent] = useState('');
   const [error, setError] = useState('');
+  const [activeTools, setActiveTools] = useState({});
+  const [completedBlocks, setCompletedBlocks] = useState([]);
+  const [inProgressBlock, setInProgressBlock] = useState('');
+  const [copiedFull, setCopiedFull] = useState(false);
+  const [generatedTitle, setGeneratedTitle] = useState('');
 
   const inputRef = useRef(null);
   const contentRef = useRef('');
@@ -56,14 +66,33 @@ export function AISearchEngine() {
     }
   }, [phase]);
 
+  // Parse blocks progressively as content streams in
+  useEffect(() => {
+    if (phase !== PHASE.GENERATING) return;
+
+    // Split by --- to find block boundaries
+    const parts = content.split(/---\s*\n/);
+
+    // Last part is in-progress (incomplete block)
+    const inProgress = parts[parts.length - 1];
+    setInProgressBlock(inProgress);
+
+    // All complete blocks (everything except the last part)
+    if (parts.length > 1) {
+      const completed = parts.slice(0, -1).join('---\n');
+      setCompletedBlocks(completed);
+    }
+  }, [content, phase]);
+
   const generate = useCallback(async (topic) => {
     if (!topic.trim()) return;
 
     setQuery(topic.trim());
     setPhase(PHASE.GENERATING);
     setContent('');
-    setStatusMessage('🚀 Starting research...');
+    setStatusMessage(`🔍 Searching for "${topic}"`);
     setError('');
+    setActiveTools({});
     contentRef.current = '';
 
     try {
@@ -97,8 +126,42 @@ export function AISearchEngine() {
             if (event.type === 'content') {
               contentRef.current += event.message;
               setContent(contentRef.current);
+            } else if (event.type === 'title') {
+              setGeneratedTitle(event.text);
             } else if (event.type === 'status') {
               setStatusMessage(event.message);
+            } else if (event.type === 'tool_call') {
+              const { tool, status, input } = event;
+              if (status === 'started') {
+                // Extract the actual search query from tool input
+                let searchQuery = topic;
+                if (input?.input) {
+                  try {
+                    const parsed = JSON.parse(input.input);
+                    searchQuery = parsed.query || topic;
+                  } catch {
+                    searchQuery = topic;
+                  }
+                }
+                setStatusMessage(
+                  `🔍 Searching for "${searchQuery.substring(0, 60)}${searchQuery.length > 60 ? '...' : ''}"`
+                );
+              } else if (status === 'completed') {
+                setStatusMessage(`📖 Reading search results...`);
+              }
+              setActiveTools((prev) => ({
+                ...prev,
+                [tool]: status,
+              }));
+              if (status === 'completed') {
+                setTimeout(() => {
+                  setActiveTools((prev) => {
+                    const updated = { ...prev };
+                    delete updated[tool];
+                    return updated;
+                  });
+                }, 800);
+              }
             } else if (event.type === 'done') {
               setPhase(PHASE.DONE);
               setStatusMessage('');
@@ -131,6 +194,22 @@ export function AISearchEngine() {
     setError('');
     setStatusMessage('');
     contentRef.current = '';
+    setCompletedBlocks([]);
+    setInProgressBlock('');
+    setCopiedFull(false);
+    setGeneratedTitle('');
+  };
+
+  const handleCopyFull = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedFull(true);
+      toast.success('Full content copied to clipboard!');
+      setTimeout(() => setCopiedFull(false), 2000);
+    } catch (err) {
+      toast.error('Failed to copy');
+      console.error(err);
+    }
   };
 
   // ─── IDLE: Search input ───────────────────────────────────────────────────
@@ -138,7 +217,7 @@ export function AISearchEngine() {
     return (
       <div className="w-full">
         <form onSubmit={handleSubmit} className="relative">
-          <div className="flex items-center gap-3 px-5 py-4 rounded-2xl border-2 border-[#e5e3d8] bg-white shadow-lg shadow-black/5 focus-within:border-[#1f644e] focus-within:shadow-[#1f644e]/10 transition-all">
+          <div className="flex items-center gap-1 px-5 py-4 rounded-full border-2 border-[#e5e3d8] bg-white focus-within:border-[#1f644e] focus-within:shadow-none transition-all">
             <Sparkles className="w-5 h-5 text-[#1f644e] shrink-0" />
             <input
               ref={inputRef}
@@ -146,28 +225,26 @@ export function AISearchEngine() {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="What do you want to learn? e.g. Dijkstra's Algorithm..."
-              className="flex-1 bg-transparent text-[#1e3a34] placeholder:text-[#b5c4be] text-sm sm:text-base outline-none"
+              className="flex-1 bg-transparent text-[#1e3a34] placeholder:text-[#b5c4be] text-sm sm:text-base outline-none pl-2"
             />
             <button
               type="submit"
               disabled={!inputValue.trim()}
-              className="flex items-center gap-2 px-4 py-2 bg-[#1f644e] text-white text-xs font-bold rounded-xl hover:bg-[#184d3c] disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0"
+              className="flex items-center gap-1 px-3 py-2 bg-[#1f644e] text-white text-xs font-bold rounded-full hover:bg-[#184d3c] disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0"
             >
-              <Search className="w-3.5 h-3.5" />
+              <Search className="w-4 h-4" />
               <span className="hidden sm:inline">Generate</span>
             </button>
           </div>
         </form>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-4 flex gap-2 overflow-x-auto flex-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {SUGGESTED_TOPICS.map((t) => (
             <button
               key={t}
-              onClick={() => {
-                setInputValue(t);
-                generate(t);
-              }}
-              className="px-3 py-1.5 text-xs font-medium text-[#1f644e] bg-[#f0f5f2] border border-[#d4e6de] rounded-full hover:bg-[#1f644e] hover:text-white transition-all"
+              type="button"
+              onClick={() => generate(t)}
+              className="px-3 py-1.5 text-xs font-medium text-[#1f644e] bg-[#f0f5f2] border border-[#d4e6de] rounded-full hover:bg-[#1f644e] hover:text-white hover:cursor-pointer transition-all shrink-0"
             >
               {t}
             </button>
@@ -179,47 +256,47 @@ export function AISearchEngine() {
 
   // ─── GENERATING: streaming progress ──────────────────────────────────────
   if (phase === PHASE.GENERATING) {
-    const wordCount = contentRef.current.split(/\s+/).filter(Boolean).length;
-    const blockCount = (contentRef.current.match(/##\s*\[/g) || []).length;
+    const showDots = statusMessage.includes('Generating');
 
     return (
-      <div className="w-full rounded-2xl border border-[#e5e3d8] bg-white shadow-lg overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-[#e5e3d8] bg-[#fafaf8]">
-          <div className="relative">
-            <div className="w-8 h-8 rounded-lg bg-[#1f644e]/10 flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-[#1f644e]" />
-            </div>
-            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#1f644e] animate-pulse" />
+      <div className="w-full">
+        {/* Generated Title */}
+        {generatedTitle && (
+          <div className="mb-6 pb-6 border-b border-[#e5e3d8]">
+            <h2 className="text-2xl font-bold text-[#1e3a34]">{generatedTitle}</h2>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-[#1e3a34] truncate">{query}</p>
-            <p className="text-[10px] text-[#7c8e88] mt-0.5">{statusMessage}</p>
+        )}
+
+        {/* Status line with conditional dots */}
+        <div className="flex items-center gap-2 mb-6">
+          <div className="flex gap-1">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#1f644e] animate-pulse" />
+            <div
+              className="w-1.5 h-1.5 rounded-full bg-[#1f644e] animate-pulse"
+              style={{ animationDelay: '0.2s' }}
+            />
+            <div
+              className="w-1.5 h-1.5 rounded-full bg-[#1f644e] animate-pulse"
+              style={{ animationDelay: '0.4s' }}
+            />
           </div>
-          <div className="flex items-center gap-3 text-[10px] text-[#7c8e88] shrink-0">
-            {blockCount > 0 && (
-              <span className="flex items-center gap-1">
-                <BookOpen className="w-3 h-3" />
-                {blockCount} blocks
-              </span>
-            )}
-            <Globe className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '3s' }} />
-          </div>
+          {statusMessage && <p className="text-sm text-[#7c8e88] font-medium">{statusMessage}</p>}
         </div>
 
-        {/* Streaming preview */}
-        <div className="relative h-64 overflow-hidden">
-          <pre className="p-5 text-[11px] leading-relaxed text-[#4a6660] font-mono whitespace-pre-wrap h-full overflow-hidden">
-            {contentRef.current || ' '}
-          </pre>
-          {/* Fade gradient at bottom */}
-          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white to-transparent pointer-events-none" />
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 text-xs text-[#7c8e88]">
-            <Loader2 className="w-3 h-3 animate-spin" />
-            <span>
-              {wordCount > 0 ? `${wordCount.toLocaleString()} words generated...` : 'Thinking...'}
-            </span>
-          </div>
+        {/* Rendered Blocks */}
+        <div className="space-y-6">
+          {completedBlocks && (
+            <div>
+              <SafeBlockRenderer content={completedBlocks} isComplete={true} />
+            </div>
+          )}
+
+          {/* In-Progress Block - Rendered but Faded */}
+          {inProgressBlock && (
+            <div className="opacity-50 animate-pulse">
+              <SafeBlockRenderer content={inProgressBlock} isComplete={false} />
+            </div>
+          )}
         </div>
       </div>
     );
@@ -260,6 +337,27 @@ export function AISearchEngine() {
           <span className="text-xs font-bold text-[#1e3a34] truncate">{query}</span>
         </div>
         <button
+          onClick={handleCopyFull}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold rounded-full transition-all shrink-0 ${
+            copiedFull
+              ? 'bg-green-100 text-green-700 border border-green-200'
+              : 'text-[#1f644e] border border-[#d4e6de] hover:bg-[#f0f5f2]'
+          }`}
+          title="Copy all content"
+        >
+          {copiedFull ? (
+            <>
+              <Check className="w-3 h-3" />
+              Copied
+            </>
+          ) : (
+            <>
+              <Copy className="w-3 h-3" />
+              Copy
+            </>
+          )}
+        </button>
+        <button
           onClick={() => generate(query)}
           className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-[#1f644e] border border-[#d4e6de] rounded-full hover:bg-[#f0f5f2] transition-all shrink-0"
         >
@@ -267,6 +365,13 @@ export function AISearchEngine() {
           Regenerate
         </button>
       </div>
+
+      {/* Generated Title */}
+      {generatedTitle && (
+        <div className="mb-8 pb-6 border-b border-[#e5e3d8]">
+          <h2 className="text-2xl font-bold text-[#1e3a34]">{generatedTitle}</h2>
+        </div>
+      )}
 
       {/* Rendered blocks */}
       <div ref={resultRef}>

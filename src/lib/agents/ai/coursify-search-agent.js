@@ -3,19 +3,23 @@ import BaseAgent from '../BaseAgent';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { TavilySearch } from '@langchain/tavily';
 import { SystemMessage, HumanMessage } from '@langchain/core/messages';
+import { RunnableParallel, RunnableLambda } from '@langchain/core/runnables';
+import { ChatPromptTemplate } from '@langchain/core/prompts';
 
-const SYSTEM_PROMPT = `You are a Coursify AI Course Content Generator. Your job is to research a topic using web search and then generate a single, comprehensive, university-level course section in the Coursify markdown format.
+const SYSTEM_PROMPT = `
+You are a Coursify AI Course Content Generator. Your job is to research a topic using web search and then generate a reponse to user query in the Coursify markdown format.
 
-## Your Process (MANDATORY)
+## Response Generation Process (MANDATORY)
 1. SEARCH the web 2-4 times using different specific queries to gather comprehensive, accurate information about the topic.
 2. After searching, OUTPUT the full Coursify markdown content. Do NOT ask questions — just generate immediately.
 
 ## Coursify Markdown Format
-All content must use \`## [BlockType]\` headers. Generate 10-15 blocks minimum.
+All content must use \`## [BlockType]\` headers. Generate blocks as required.
 
 ### Available Block Types:
 
 **## [MdBlock]**
+** Heading **
 Primary narrative text. Supports LaTeX math ($O(n \\log n)$), markdown tables, Mermaid diagrams.
 \`\`\`mermaid
 graph TD
@@ -86,8 +90,8 @@ options:
 - Use Mermaid diagrams in [MdBlock]s for visual concepts
 - Cover the topic deeply and comprehensively
 - Professional, academic tone — no fluff
-- Never write raw exam tags like [2024 Q3 PYQ]
-- Separate each block with ---`;
+- Separate each block with ---
+- Use only block tht i nceeasayr for the use case okay`;
 
 const TOOL_STATUS = {
   tavily_search: '🔍 Searching the web...',
@@ -109,38 +113,131 @@ class CoursifySearchAgent extends BaseAgent {
   async *_onStreamExecute(input) {
     const { topic } = input;
 
-    const llm = await this.createChatModel();
+    this.logger.info(`🚀 Starting CoursifySearchAgent for topic: "${topic}"`);
 
+    const llm = await this.createChatModel();
+    this.logger.debug('✅ Chat model created');
+
+    // ─── Title Generator (fast, runs in parallel) ───────────────────────
+    const titlePrompt = ChatPromptTemplate.fromTemplate(
+      `Generate a concise, academic course section title (4-8 words) for: "{topic}"\n\nRespond with ONLY the title, nothing else.`
+    );
+    const titleChain = titlePrompt.pipe(llm);
+
+    // ─── Content Generator (ReAct agent with search) ───────────────────
     const searchTool = new TavilySearch({
       maxResults: 6,
       apiKey: process.env.TAVILY_API_KEY,
     });
+    this.logger.debug('✅ TavilySearch tool initialized');
 
-    const agent = createReactAgent({
+    const contentAgent = createReactAgent({
       llm,
       tools: [searchTool],
     });
+    this.logger.debug('✅ ReAct agent created');
 
-    const messages = [
+    const contentMessages = [
       new SystemMessage({ content: SYSTEM_PROMPT }),
       new HumanMessage({
         content: `Research and generate a comprehensive Coursify course section on: "${topic}"\n\nSearch for detailed information first, then write the full Coursify markdown content.`,
       }),
     ];
 
-    const eventStream = await agent.streamEvents({ messages }, { version: 'v2' });
+    // ─── Run title and content in parallel ──────────────────────────────
+    this.logger.info('📡 Starting parallel execution: title + content...');
 
-    for await (const event of eventStream) {
+    // Title generation (simple, completes fast)
+    this.logger.info('📋 Generating title...');
+    try {
+      const titleStream = await titleChain.stream({ topic });
+      let titleText = '';
+      for await (const chunk of titleStream) {
+        if (chunk.content) {
+          titleText += chunk.content;
+        }
+      }
+      const cleanTitle = titleText.trim();
+      this.logger.info(`✅ Title generated: "${cleanTitle}"`);
+      yield { type: 'title', text: cleanTitle };
+    } catch (err) {
+      this.logger.warn(`⚠️  Title generation failed: ${err.message}`);
+    }
+
+    // Content generation (agent with search)
+    this.logger.info('📖 Starting content generation (with search)...');
+    const contentEventStream = await contentAgent.streamEvents(
+      { messages: contentMessages },
+      { version: 'v2' }
+    );
+
+    let eventCount = 0;
+    for await (const event of contentEventStream) {
+      eventCount++;
       const { event: type, data, name } = event;
 
+      this.logger.debug(`📊 Event #${eventCount}: type="${type}", name="${name}"`);
+
       if (type === 'on_chat_model_stream' && data.chunk?.content) {
+        this.logger.debug(`📝 Streaming content: "${data.chunk.content.substring(0, 50)}..."`);
         yield { type: 'content', message: data.chunk.content };
       } else if (type === 'on_tool_start' && name !== 'agent') {
-        yield { type: 'status', message: TOOL_STATUS[name] || `🔍 Searching...` };
+        this.logger.info(`🔧 Tool starting: "${name}"`);
+        if (data.input) {
+          this.logger.debug(`   Input: ${JSON.stringify(data.input).substring(0, 100)}`);
+        }
+        yield {
+          type: 'tool_call',
+          tool: name,
+          status: 'started',
+          input: data.input,
+        };
       } else if (type === 'on_tool_end' && name !== 'agent') {
-        yield { type: 'status', message: '✅ Found relevant information, generating content...' };
+        this.logger.info(`✅ Tool completed: "${name}"`);
+        if (data.output) {
+          this.logger.debug(`   Output: ${JSON.stringify(data.output).substring(0, 100)}`);
+        }
+        yield {
+          type: 'tool_call',
+          tool: name,
+          status: 'completed',
+          output: data.output,
+        };
+      } else if (type === 'on_chat_model_start') {
+        this.logger.debug(`🤖 Chat model starting (${name})`);
+        yield { type: 'status', message: '' };
+      } else if (type === 'on_chat_model_end') {
+        this.logger.debug(`🤖 Chat model ended (${name})`);
+        if (data.output) {
+          this.logger.debug(`   Generated: ${JSON.stringify(data.output).substring(0, 100)}`);
+        }
+      } else if (type === 'on_chain_start') {
+        this.logger.info(`⛓️  Chain starting: "${name}"`);
+        if (data.input) {
+          const inputStr = typeof data.input === 'string' ? data.input : JSON.stringify(data.input);
+          this.logger.debug(`   Input: ${inputStr.substring(0, 100)}`);
+        }
+      } else if (type === 'on_chain_end') {
+        this.logger.info(`⛓️  Chain completed: "${name}"`);
+        if (data.output) {
+          const outputStr =
+            typeof data.output === 'string' ? data.output : JSON.stringify(data.output);
+          this.logger.debug(`   Output: ${outputStr.substring(0, 100)}`);
+        }
+      } else if (type === 'on_chain_stream') {
+        this.logger.debug(
+          `📡 Chain streaming (${name}): ${JSON.stringify(data).substring(0, 100)}`
+        );
+      } else if (type === 'on_agent_action') {
+        this.logger.info(`⚙️  Agent action: ${JSON.stringify(data).substring(0, 150)}`);
+      } else if (type === 'on_agent_finish') {
+        this.logger.info(`🏁 Agent finished: ${JSON.stringify(data).substring(0, 150)}`);
+      } else {
+        this.logger.debug(`❓ Unhandled event type: "${type}"`);
       }
     }
+
+    this.logger.info(`✨ Event stream completed after ${eventCount} events`);
   }
 
   async _onExecute() {
