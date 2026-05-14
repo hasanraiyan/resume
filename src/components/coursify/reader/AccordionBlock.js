@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { MarkdownRenderer } from './MarkdownRenderer';
 
 /**
@@ -19,21 +19,25 @@ function getSlug(text) {
 
 function AccordionItem({ item, isOpen, onToggle }) {
   return (
-    <div className="border-b border-[#e5e3d8] last:border-0">
+    <div className="border-b border-[#e5e3d8]/60 last:border-0">
       <button
         onClick={onToggle}
-        className="flex w-full items-center gap-4 py-5 text-left transition-colors hover:text-[#1f644e]"
+        className="group flex w-full items-center justify-between gap-4 px-6 py-5 text-left transition-all hover:bg-[#fcfbf5]/50"
       >
-        <div
-          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-[#e5e3d8] bg-white transition-all ${isOpen ? 'bg-[#f0f5f2] border-[#1f644e]/30 text-[#1f644e]' : 'text-[#7c8e88]'}`}
-        >
-          {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-        </div>
         <span
-          className={`font-serif text-lg font-bold leading-tight ${isOpen ? 'text-[#1f644e]' : 'text-[#1e3a34]'}`}
+          className={`font-serif text-lg font-bold leading-tight transition-colors ${
+            isOpen ? 'text-[#1f644e]' : 'text-[#1e3a34] group-hover:text-[#1f644e]'
+          }`}
         >
           {item.title}
         </span>
+        <motion.div
+          animate={{ rotate: isOpen ? 90 : 0 }}
+          transition={{ duration: 0.2, ease: 'easeInOut' }}
+          className={`shrink-0 transition-colors ${isOpen ? 'text-[#1f644e]' : 'text-[#b0bfbb] group-hover:text-[#1f644e]'}`}
+        >
+          <ChevronRight className="h-5 w-5" />
+        </motion.div>
       </button>
 
       <AnimatePresence initial={false}>
@@ -45,7 +49,7 @@ function AccordionItem({ item, isOpen, onToggle }) {
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="overflow-hidden"
           >
-            <div className="pb-6 pl-10 pr-4">
+            <div className="pb-6 pl-6 pr-6">
               <div className="prose prose-sm max-w-none text-[#536b64] selection:bg-[#1f644e]/10">
                 <MarkdownRenderer content={item.content || ''} />
               </div>
@@ -78,7 +82,7 @@ export function AccordionBlock({ block }) {
         </div>
       )}
 
-      <div className="rounded-2xl border border-[#e5e3d8] bg-white shadow-[0_2px_12px_-6px_rgba(0,0,0,0.05)] overflow-hidden">
+      <div className="rounded-2xl border border-[#e5e3d8]/60 bg-[#fcfbf5]/50 backdrop-blur-sm overflow-hidden">
         {items.map((item, idx) => (
           <AccordionItem
             key={idx}

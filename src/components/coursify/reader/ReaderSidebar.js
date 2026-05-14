@@ -1,3 +1,4 @@
+import React from 'react';
 import { X, BookOpen, ChevronRight, ScrollText, Plus, Trash2, Pencil, FileUp } from 'lucide-react';
 import { QuizIcon } from './icons';
 
@@ -247,7 +248,7 @@ export function ReaderSidebar({
   );
 }
 
-function SidebarSectionBtn({ section, active, done, onClick }) {
+const SidebarSectionBtn = React.memo(({ section, active, done, onClick }) => {
   const hasQuiz = section.blocks?.some((b) => b.type === 'QuizBlock');
   const onlyQuiz = section.blocks?.length === 1 && section.blocks[0].type === 'QuizBlock';
 
@@ -277,4 +278,6 @@ function SidebarSectionBtn({ section, active, done, onClick }) {
       )}
     </button>
   );
-}
+});
+
+SidebarSectionBtn.displayName = 'SidebarSectionBtn';
