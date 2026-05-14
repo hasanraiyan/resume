@@ -1,7 +1,17 @@
 'use client';
 
 import { memo, useState, useCallback } from 'react';
-import { CheckCircle, XCircle, RotateCcw, Trophy, ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  CheckCircle,
+  XCircle,
+  RotateCcw,
+  Trophy,
+  ChevronLeft,
+  ChevronRight,
+  HelpCircle,
+} from 'lucide-react';
+import { MarkdownRenderer } from './MarkdownRenderer';
 
 function isCorrect(question, answer) {
   if (answer === undefined || answer === null || answer === '') return false;
@@ -26,101 +36,91 @@ function hasAnswer(question, answer) {
 
 function QuestionView({ index, total, question, answer, submitted, onChange }) {
   const { type, question: text, options, correctAnswer, explanation, points } = question;
-  const result = submitted ? isCorrect(question, answer) : null;
   const displayOptions =
     type === 'true_false' ? ['True', 'False'] : Array.isArray(options) ? options : [];
 
   return (
-    <div className="space-y-5">
-      {/* Question text */}
-      <div className="space-y-1">
-        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
-          <span>Question {index + 1}</span>
-          {points > 1 && <span className="text-[#b5c4be]">· {points} pts</span>}
-          <span className="ml-auto">
+    <div className="space-y-4">
+      {/* Question Header */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#7c8e88]">
+          <span className="px-2 py-0.5 rounded-full bg-[#1f644e]/10 text-[#1f644e]">
+            Q{index + 1}
+          </span>
+          {points > 1 && <span className="text-[#b5c4be]">• {points} pts</span>}
+          <span className="ml-auto text-[#b0bfbb]">
             {type === 'multiple_choice' && 'Single choice'}
             {type === 'true_false' && 'True / False'}
-            {type === 'multi_select' && 'Select all that apply'}
+            {type === 'multi_select' && 'Select multiple'}
             {type === 'short_answer' && 'Short answer'}
           </span>
         </div>
-        <p className="text-[#1e3a34] font-semibold leading-snug text-base">{text}</p>
+        <div className="text-[#1e3a34] font-serif text-lg font-bold leading-snug">
+          <MarkdownRenderer content={text || ''} isInline />
+        </div>
       </div>
 
       {/* Options */}
-      {(type === 'multiple_choice' || type === 'true_false') && (
-        <div className="space-y-2">
+      {(type === 'multiple_choice' || type === 'true_false' || type === 'multi_select') && (
+        <div className="space-y-2.5">
           {displayOptions.map((opt, i) => {
             const optKey = String(i);
-            const selected = String(answer) === optKey;
-            const isCorrectOpt = submitted && String(correctAnswer) === optKey;
-            const isWrongSel = submitted && selected && !isCorrectOpt;
-            return (
-              <label
-                key={i}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer text-sm transition-all ${
-                  isCorrectOpt
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-semibold'
-                    : isWrongSel
-                      ? 'bg-red-50 border-red-300 text-red-700'
-                      : selected
-                        ? 'bg-[#f0f5f2] border-[#1f644e] text-[#1e3a34] font-semibold'
-                        : 'bg-white border-[#e5e3d8] text-[#1e3a34] hover:border-[#a8c4b9] hover:bg-[#f7faf8]'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name={`q-${index}`}
-                  value={optKey}
-                  checked={selected}
-                  disabled={submitted}
-                  onChange={() => onChange(optKey)}
-                  className="accent-[#1f644e] shrink-0"
-                />
-                {opt}
-                {isCorrectOpt && <CheckCircle className="w-4 h-4 ml-auto text-emerald-500" />}
-                {isWrongSel && <XCircle className="w-4 h-4 ml-auto text-red-400" />}
-              </label>
-            );
-          })}
-        </div>
-      )}
+            const selected =
+              type === 'multi_select'
+                ? Array.isArray(answer) && answer.includes(optKey)
+                : String(answer) === optKey;
 
-      {type === 'multi_select' && (
-        <div className="space-y-2">
-          {displayOptions.map((opt, i) => {
-            const optKey = String(i);
-            const selected = Array.isArray(answer) && answer.includes(optKey);
-            const isCorrectOpt = submitted && (correctAnswer || []).map(String).includes(optKey);
+            const isCorrectOpt =
+              submitted &&
+              (type === 'multi_select'
+                ? (correctAnswer || []).map(String).includes(optKey)
+                : String(correctAnswer) === optKey);
+
             const isWrongSel = submitted && selected && !isCorrectOpt;
+
             return (
               <label
                 key={i}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer text-sm transition-all ${
+                className={`group relative flex items-center gap-3 px-4 py-0 rounded-2xl border transition-all duration-200 cursor-pointer text-sm font-medium ${
                   isCorrectOpt
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-semibold'
+                    ? 'bg-[#f0f5f2] border-[#1f644e]/40 text-[#1f644e] shadow-[0_2px_12_px_-4px_rgba(31,100,78,0.15)]'
                     : isWrongSel
-                      ? 'bg-red-50 border-red-300 text-red-700'
+                      ? 'bg-[#fef2f2] border-[#dc2626]/30 text-[#991b1b]'
                       : selected
-                        ? 'bg-[#f0f5f2] border-[#1f644e] text-[#1e3a34] font-semibold'
-                        : 'bg-white border-[#e5e3d8] text-[#1e3a34] hover:border-[#a8c4b9] hover:bg-[#f7faf8]'
-                }`}
+                        ? 'bg-[#1f644e]/5 border-[#1f644e] text-[#1e3a34] ring-1 ring-[#1f644e]/10 shadow-sm'
+                        : 'bg-white/50 border-[#e5e3d8]/60 text-[#1e3a34] hover:bg-white hover:border-[#1f644e]/40'
+                } ${submitted && !selected && !isCorrectOpt ? 'opacity-60 grayscale-[0.2]' : ''}`}
               >
+                <div
+                  className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${
+                    selected
+                      ? 'border-[#1f644e] bg-[#1f644e]'
+                      : 'border-[#e5e3d8] group-hover:border-[#1f644e]/40'
+                  } ${submitted ? 'hidden' : ''}`}
+                >
+                  {selected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                </div>
                 <input
-                  type="checkbox"
+                  type={type === 'multi_select' ? 'checkbox' : 'radio'}
                   checked={selected}
                   disabled={submitted}
                   onChange={() => {
-                    const cur = Array.isArray(answer) ? answer : [];
-                    onChange(
-                      cur.includes(optKey) ? cur.filter((v) => v !== optKey) : [...cur, optKey]
-                    );
+                    if (type === 'multi_select') {
+                      const cur = Array.isArray(answer) ? answer : [];
+                      onChange(
+                        cur.includes(optKey) ? cur.filter((v) => v !== optKey) : [...cur, optKey]
+                      );
+                    } else {
+                      onChange(optKey);
+                    }
                   }}
-                  className="accent-[#1f644e] shrink-0"
+                  className="sr-only"
                 />
-                {opt}
-                {isCorrectOpt && <CheckCircle className="w-4 h-4 ml-auto text-emerald-500" />}
-                {isWrongSel && <XCircle className="w-4 h-4 ml-auto text-red-400" />}
+                <span className="flex-1">
+                  <MarkdownRenderer content={opt || ''} isInline />
+                </span>
+                {isCorrectOpt && <CheckCircle className="w-4 h-4 text-[#1f644e]" />}
+                {isWrongSel && <XCircle className="w-4 h-4 text-[#dc2626]" />}
               </label>
             );
           })}
@@ -128,37 +128,48 @@ function QuestionView({ index, total, question, answer, submitted, onChange }) {
       )}
 
       {type === 'short_answer' && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <textarea
-            rows={3}
+            rows={4}
             value={answer || ''}
             onChange={(e) => onChange(e.target.value)}
             disabled={submitted}
-            placeholder="Type your answer…"
-            className="w-full text-sm text-[#1e3a34] bg-white border border-[#e5e3d8] rounded-xl px-4 py-3 resize-none focus:outline-none focus:border-[#1f644e] leading-relaxed disabled:opacity-70 transition-colors"
+            placeholder="Type your response here..."
+            className="w-full text-sm text-[#1e3a34] bg-white/60 backdrop-blur-sm border border-[#e5e3d8]/60 rounded-2xl px-4 py-3 resize-none focus:outline-none focus:border-[#1f644e] focus:bg-white leading-relaxed disabled:opacity-70 transition-all shadow-inner"
           />
           {submitted && correctAnswer && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
-              <span className="font-bold block mb-0.5">Reference answer</span>
-              {correctAnswer}
+            <div className="bg-[#f0f4f8]/60 backdrop-blur-sm border border-[#d1dce5]/60 rounded-2xl px-5 py-4 text-sm text-[#2d3748]">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#4a5568]" />
+                <span className="font-bold uppercase tracking-wider text-[10px] opacity-70">
+                  Reference Answer
+                </span>
+              </div>
+              <p className="leading-relaxed">{correctAnswer}</p>
             </div>
           )}
         </div>
       )}
 
       {submitted && explanation && (
-        <div className="bg-[#f7faf8] border border-[#d4e6db] rounded-xl px-4 py-3 text-sm text-[#1e3a34] leading-relaxed">
-          <span className="font-bold text-[#1f644e]">Explanation · </span>
-          {explanation}
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-[#f0f5f2]/80 backdrop-blur-sm border border-[#1f644e]/10 rounded-2xl px-5 py-4 text-sm text-[#1e3a34]"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <HelpCircle className="w-3.5 h-3.5 text-[#1f644e]" />
+            <span className="font-bold text-[#1f644e] uppercase tracking-wider text-[10px]">
+              Explanation
+            </span>
+          </div>
+          <p className="leading-relaxed opacity-90">{explanation}</p>
+        </motion.div>
       )}
     </div>
   );
 }
 
-/**
- * Standardizes slug generation for TOC anchors.
- */
 function getSlug(text) {
   return String(text || '')
     .toLowerCase()
@@ -213,154 +224,141 @@ export const QuizPlayer = memo(function QuizPlayer({ questions, title }) {
   const displayTitle = title || 'Knowledge Check';
 
   return (
-    <div className="mt-10 border-t border-[#e5e3d8] pt-8">
-      {/* Header */}
-      <div className="mb-6 pl-1">
-        <h3
-          id={getSlug(displayTitle)}
-          data-heading={displayTitle}
-          className="text-xl font-bold text-[#1e3a34] tracking-tight sm:text-2xl scroll-mt-24 mb-2"
-        >
-          {displayTitle}
-        </h3>
-        <div className="h-1 w-12 rounded-full bg-[#1f644e]/20" />
-      </div>
-
-      <div className="flex items-center justify-between mb-5">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
-          Assessment · {questions.length} question{questions.length !== 1 ? 's' : ''}
-        </h4>
-        ...
-        {submitted && (
-          <button
-            onClick={handleReset}
-            className="flex items-center gap-1.5 text-xs font-bold text-[#7c8e88] hover:text-[#1f644e] transition-colors"
+    <section className="mt-0 mb-6 overflow-visible px-0.5">
+      {/* Block Header */}
+      <div className="mb-8 pl-1 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div className="space-y-3">
+          <h3
+            id={getSlug(displayTitle)}
+            data-heading={displayTitle}
+            className="text-xl font-bold text-[#1e3a34] tracking-tight sm:text-2xl scroll-mt-24"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
-            Try Again
-          </button>
-        )}
-      </div>
-
-      {/* Score banner */}
-      {submitted && score && (
-        <div
-          className={`flex items-center gap-3 px-5 py-4 rounded-xl border mb-6 ${
-            passed
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-              : 'bg-amber-50 border-amber-200 text-amber-800'
-          }`}
-        >
-          <Trophy className="w-5 h-5 shrink-0" />
-          <div>
-            <p className="font-bold text-sm">
-              {score.earned} / {score.total} points · {percentage}%
-            </p>
-            <p className="text-xs opacity-80 mt-0.5">
-              {passed ? 'Great work! You passed.' : 'Review the explanations and try again.'}
-            </p>
+            {displayTitle}
+          </h3>
+          <div className="flex gap-1.5">
+            {questions.map((q, i) => {
+              const done = hasAnswer(q, answers[i]);
+              return (
+                <button
+                  key={i}
+                  onClick={() => setCurrent(i)}
+                  className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                    i === current
+                      ? 'bg-[#1f644e] w-8'
+                      : done
+                        ? 'bg-[#1f644e]/30 w-4'
+                        : 'bg-[#e5e3d8] w-4'
+                  }`}
+                />
+              );
+            })}
           </div>
         </div>
-      )}
+        {!submitted && (
+          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7c8e88] pb-1">
+            Question {current + 1} of {questions.length}
+          </div>
+        )}
+      </div>
 
-      {/* Dot navigator */}
-      <div className="mb-6">
-        <div className="flex gap-1.5 flex-wrap">
-          {questions.map((q, i) => {
-            const ans = answers[i];
-            const done = hasAnswer(q, ans);
-            const res = submitted ? isCorrect(q, ans) : null;
-            return (
-              <button
-                key={i}
-                onClick={() => setCurrent(i)}
-                title={`Question ${i + 1}`}
-                className={`w-6 h-6 rounded-full text-[10px] font-bold transition-all ${
-                  i === current ? 'ring-2 ring-offset-1 ring-[#1f644e] scale-110' : ''
-                } ${
-                  res === true
-                    ? 'bg-emerald-400 text-white'
-                    : res === false
-                      ? 'bg-red-400 text-white'
-                      : res === null && submitted && done
-                        ? 'bg-blue-300 text-white'
-                        : done
-                          ? 'bg-[#1f644e] text-white'
-                          : 'bg-[#e5e3d8] text-[#7c8e88]'
-                }`}
+      <div className="rounded-3xl border border-[#e5e3d8]/60 bg-[#fcfbf5]/50 backdrop-blur-sm p-1 overflow-hidden">
+        <div className="bg-white/40 rounded-[1.4rem] p-4 sm:p-5">
+          {/* Main Question View */}
+          <div className="min-h-[300px]">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={current}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
               >
-                {i + 1}
-              </button>
-            );
-          })}
+                <QuestionView
+                  index={current}
+                  total={questions.length}
+                  question={currentQ}
+                  answer={currentAns}
+                  submitted={submitted}
+                  onChange={(val) => handleAnswer(current, val)}
+                />
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
-      {/* Question */}
-      <div className="bg-white border border-[#e5e3d8] rounded-2xl p-6 mb-5 min-h-[240px]">
-        <QuestionView
-          key={current}
-          index={current}
-          total={questions.length}
-          question={currentQ}
-          answer={currentAns}
-          submitted={submitted}
-          onChange={(val) => handleAnswer(current, val)}
-        />
+      {/* Results & Actions (Outside the box) */}
+      <div className="mt-6 space-y-4">
+        {/* Score banner */}
+        <AnimatePresence mode="wait">
+          {submitted && score && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className={`flex items-center gap-4 px-6 py-5 rounded-2xl border overflow-hidden backdrop-blur-sm ${
+                passed
+                  ? 'bg-[#f0f5f2]/80 border-[#1f644e]/10 text-[#1e3a34]'
+                  : 'bg-[#fffbeb]/80 border-[#fef3c7]/60 text-[#92400e]'
+              }`}
+            >
+              <div className={`p-3 rounded-xl ${passed ? 'bg-[#1f644e]/10' : 'bg-[#d97706]/10'}`}>
+                <Trophy className={`w-6 h-6 ${passed ? 'text-[#1f644e]' : 'text-[#d97706]'}`} />
+              </div>
+              <div className="flex-1">
+                <p className="font-serif text-xl font-bold">
+                  {score.earned} / {score.total}{' '}
+                  <span className="text-sm font-sans opacity-60">Points ({percentage}%)</span>
+                </p>
+                <p className="text-xs font-medium opacity-80 mt-0.5">
+                  {passed
+                    ? 'Exceptional! You have a solid grasp of this material.'
+                    : 'A quick review would help—feel free to try again.'}
+                </p>
+              </div>
+              <button
+                onClick={handleReset}
+                title="Retake Quiz"
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-white/40 hover:bg-white/80 text-[#1f644e] border border-[#1f644e]/10 transition-all cursor-pointer group active:scale-95"
+              >
+                <RotateCcw className="w-4 h-4 group-hover:rotate-[-60deg] transition-transform duration-500" />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Navigation Buttons */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setCurrent((c) => c - 1)}
+            disabled={isFirst}
+            className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl border border-[#e5e3d8]/60 text-[#7c8e88] hover:bg-white hover:text-[#1f644e] disabled:opacity-20 disabled:cursor-not-allowed transition-all cursor-pointer text-sm font-bold bg-[#fcfbf5]/40 backdrop-blur-sm"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back
+          </button>
+
+          {!submitted && (
+            <button
+              onClick={isLast ? handleSubmit : () => setCurrent((c) => c + 1)}
+              disabled={isLast ? !allAnswered : !answered}
+              className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#1f644e] text-white text-sm font-bold hover:bg-[#17503e] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-sm"
+            >
+              {isLast ? 'Finish' : 'Next'}
+              {!isLast && <ChevronRight className="w-4 h-4" />}
+            </button>
+          )}
+
+          {submitted && (
+            <button
+              onClick={isLast ? handleReset : () => setCurrent((c) => c + 1)}
+              className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#1f644e] text-white text-sm font-bold hover:bg-[#17503e] transition-all cursor-pointer shadow-sm"
+            >
+              {isLast ? 'Retake Assessment' : 'Next'}
+              {!isLast && <ChevronRight className="w-4 h-4" />}
+            </button>
+          )}
+        </div>
       </div>
-
-      {/* Navigation */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => setCurrent((c) => c - 1)}
-          disabled={isFirst}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-[#e5e3d8] text-sm font-semibold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          Prev
-        </button>
-
-        {!submitted && !isLast && (
-          <button
-            onClick={() => setCurrent((c) => c + 1)}
-            disabled={!answered}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#1f644e] text-white text-sm font-bold hover:bg-[#17503e] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-          >
-            Next
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        )}
-
-        {!submitted && isLast && (
-          <button
-            onClick={handleSubmit}
-            disabled={!allAnswered}
-            className="flex-1 py-2.5 rounded-xl bg-[#1f644e] text-white text-sm font-bold hover:bg-[#17503e] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-          >
-            Submit Quiz
-          </button>
-        )}
-
-        {submitted && !isLast && (
-          <button
-            onClick={() => setCurrent((c) => c + 1)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#1f644e] text-white text-sm font-bold hover:bg-[#17503e] transition-all"
-          >
-            Next
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        )}
-
-        {submitted && isLast && (
-          <button
-            onClick={handleReset}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-[#e5e3d8] text-sm font-bold text-[#1f644e] hover:bg-[#f0f5f2] transition-all"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Try Again
-          </button>
-        )}
-      </div>
-    </div>
+    </section>
   );
 });

@@ -22,14 +22,14 @@ function AccordionItem({ item, isOpen, onToggle }) {
     <div className="border-b border-[#e5e3d8]/60 last:border-0">
       <button
         onClick={onToggle}
-        className="group flex w-full cursor-pointer items-center justify-between gap-4 px-6 py-5 text-left transition-all hover:bg-[#fcfbf5]/50"
+        className="group flex w-full cursor-pointer items-center justify-between gap-4 px-6 py-0 text-left transition-all hover:bg-[#fcfbf5]/50"
       >
         <span
-          className={`font-serif text-lg font-bold leading-tight transition-colors ${
+          className={`font-serif text-lg font-bold leading-tight transition-colors inline-block ${
             isOpen ? 'text-[#1f644e]' : 'text-[#1e3a34] group-hover:text-[#1f644e]'
           }`}
         >
-          {item.title}
+          <MarkdownRenderer content={item.title || ''} isInline />
         </span>
         <motion.div
           animate={{ rotate: isOpen ? 90 : 0 }}
@@ -68,9 +68,9 @@ export function AccordionBlock({ block }) {
   if (!items.length) return null;
 
   return (
-    <section className="my-10 overflow-visible px-0.5">
+    <section className="mt-0 mb-6 overflow-visible px-0.5">
       {block.title && (
-        <div className="mb-6 pl-1">
+        <div className="mb-5 pl-1">
           <h3
             id={getSlug(block.title)}
             data-heading={block.title}
@@ -78,7 +78,7 @@ export function AccordionBlock({ block }) {
           >
             {block.title}
           </h3>
-          <div className="mt-2 h-1 w-12 rounded-full bg-[#1f644e]/20" />
+          <div className="mt-1.5 h-1 w-12 rounded-full bg-[#1f644e]/20" />
         </div>
       )}
 
