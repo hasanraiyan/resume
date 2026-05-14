@@ -1,6 +1,6 @@
 'use client';
 
-import { Pencil, Trash2, ImagePlus, BookOpen, ExternalLink } from 'lucide-react';
+import { Pencil, Trash2, ImagePlus, BookOpen, ExternalLink, Eye, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useRef } from 'react';
 import { CourseOverview } from '@/components/coursify/reader/CourseOverview';
 import { CoursifyBlockRenderer } from '@/components/coursify/reader/CoursifyBlockRenderer';
@@ -32,6 +32,7 @@ export function ModuleSectionList() {
     handleUpdateMeta,
     setEditingSection,
     handleDeleteSection,
+    stats,
   } = useCoursifyStudio();
 
   const thumbnailInputRef = useRef(null);
@@ -112,9 +113,27 @@ export function ModuleSectionList() {
       ) : (
         <>
           <div className="flex items-start justify-between gap-4 mb-6">
-            <h2 className="text-xl lg:text-2xl font-bold text-[#1e3a34] leading-snug min-w-0">
-              {currentSection.title}
-            </h2>
+            <div className="min-w-0">
+              <h2 className="text-xl lg:text-2xl font-bold text-[#1e3a34] leading-snug mb-2">
+                {currentSection.title}
+              </h2>
+              {stats?.sections?.[currentSection._id] && (
+                <div className="flex items-center gap-4 text-[#7c8e88]">
+                  <div className="flex items-center gap-1.5" title="Views">
+                    <Eye className="w-3.5 h-3.5" />
+                    <span className="text-xs font-bold">{stats.sections[currentSection._id].views || 0}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-emerald-600" title="Likes">
+                    <ThumbsUp className="w-3.5 h-3.5" />
+                    <span className="text-xs font-bold">{stats.sections[currentSection._id].likes || 0}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-red-500" title="Dislikes">
+                    <ThumbsDown className="w-3.5 h-3.5" />
+                    <span className="text-xs font-bold">{stats.sections[currentSection._id].dislikes || 0}</span>
+                  </div>
+                </div>
+              )}
+            </div>
             {editMode && (
               <div className="flex items-center gap-1 shrink-0">
                 <button
