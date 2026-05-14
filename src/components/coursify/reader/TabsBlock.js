@@ -12,16 +12,16 @@ export function TabsBlock({ block }) {
 
   return (
     <section className="my-10 overflow-visible">
-      <div className="rounded-2xl border border-[#e5e3d8] bg-[#fcfbf5] shadow-sm overflow-hidden flex flex-col">
+      <div className="rounded-2xl border border-[#e5e3d8]/60 bg-[#fcfbf5]/50 backdrop-blur-sm overflow-hidden flex flex-col">
         {/* Tab Headers */}
-        <div className="flex border-b border-[#e5e3d8] bg-white overflow-x-auto no-scrollbar shrink-0">
+        <div className="flex border-b border-[#e5e3d8]/60 bg-transparent overflow-x-auto no-scrollbar shrink-0">
           {tabs.map((tab, idx) => {
             const isActive = activeTab === idx;
             return (
               <button
                 key={idx}
                 onClick={() => setActiveTab(idx)}
-                className={`relative px-6 py-4 text-sm font-bold transition-colors whitespace-nowrap outline-none ${
+                className={`relative cursor-pointer px-6 py-4 text-sm font-bold transition-colors whitespace-nowrap outline-none ${
                   isActive
                     ? 'text-[#1f644e]'
                     : 'text-[#7c8e88] hover:bg-[#f0f5f2]/50 hover:text-[#1e3a34]'
@@ -42,7 +42,7 @@ export function TabsBlock({ block }) {
         </div>
 
         {/* Tab Content */}
-        <div className="p-6 bg-[#fcfbf5] min-h-[150px]">
+        <div className="p-6 min-h-[150px]">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
