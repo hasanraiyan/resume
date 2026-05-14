@@ -57,6 +57,17 @@ title: "Common Questions"
   correctAnswer: "Option A"
   explanation: "Option A is correct because..."
 
+## [ChartBlock]
+type: "bar"
+title: "Sample Data"
+description: "Visualization of growth"
+data:
+  labels: ["Q1", "Q2", "Q3", "Q4"]
+  datasets:
+    - label: "Revenue"
+      data: [450, 520, 610, 800]
+      color: "#1f644e"
+
 ## [MdBlock]
 ### Additional Resources
 Link to external resources, documentation, or references here.
