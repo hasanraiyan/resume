@@ -28,7 +28,6 @@ const ChartComponent = dynamic(
       Title,
       Tooltip,
       Legend,
-      Filler,
     } = await import('chart.js');
     const { Bar, Line, Pie, Doughnut, PolarArea, Radar, Scatter, Bubble } = await import(
       'react-chartjs-2'
@@ -52,8 +51,7 @@ const ChartComponent = dynamic(
       BubbleController,
       Title,
       Tooltip,
-      Legend,
-      Filler
+      Legend
     );
 
     // Return a wrapper that can handle all chart types
@@ -66,8 +64,30 @@ const ChartComponent = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-64 flex items-center justify-center bg-[#fcfbf5] rounded-2xl animate-pulse text-[#7c8e88] text-sm font-bold">
-        Loading Visualization...
+      <div className="h-[350px] bg-[#fcfbf5] rounded-2xl overflow-hidden">
+        <div className="h-full flex flex-col justify-between p-6">
+          {/* Y-axis skeleton bars */}
+          <div className="flex items-end justify-between gap-3 h-4/5">
+            {[0.8, 0.6, 0.9, 0.5, 0.7, 0.85].map((height, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                <div
+                  className="w-full bg-gradient-to-b from-[#e5e3d8] to-[#d9d7cc] rounded-t-lg animate-pulse"
+                  style={{ height: `${height * 100}%` }}
+                />
+              </div>
+            ))}
+          </div>
+          {/* X-axis skeleton labels */}
+          <div className="flex justify-between gap-3 mt-4">
+            {[0.4, 0.35, 0.45, 0.3, 0.5, 0.38].map((width, i) => (
+              <div
+                key={i}
+                className="h-3 bg-[#e5e3d8] rounded animate-pulse"
+                style={{ width: `${width * 100}%` }}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     ),
   }
@@ -110,10 +130,9 @@ export function ChartBlock({ block }) {
         borderColor: ds.color || CHART_COLORS[idx % CHART_COLORS.length],
         borderWidth: type === 'line' || type === 'radar' ? 2 : 1,
         tension: 0.3,
-        fill: options.fill ?? false,
       })),
     };
-  }, [data, type, options.fill]);
+  }, [data, type]);
 
   const chartOptions = useMemo(
     () => ({
@@ -166,7 +185,7 @@ export function ChartBlock({ block }) {
   if (!chartData || !data || !data.datasets || data.datasets.length === 0) {
     return (
       <div className="my-6 p-8 rounded-3xl border-2 border-dashed border-[#e5e3d8] bg-[#fcfbf5] flex flex-col items-center justify-center text-center">
-        <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm mb-4">
+        <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center mb-4">
           <AlertCircle className="w-6 h-6 text-[#c94c4c]" />
         </div>
         <p className="text-[#1e3a34] font-bold">Invalid Chart Configuration</p>
@@ -182,7 +201,7 @@ export function ChartBlock({ block }) {
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      className="my-8 overflow-hidden rounded-3xl border border-[#e5e3d8] bg-white shadow-sm"
+      className="my-8 overflow-hidden rounded-3xl border border-[#e5e3d8] bg-white"
     >
       {(title || description) && (
         <div className="p-6 border-b border-[#fcfbf5] bg-[#fcfbf5]/50">
