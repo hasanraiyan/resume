@@ -7,6 +7,7 @@ import SearchOverlay from '@/components/search/SearchOverlay';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/custom-ui/Dialog';
 import { LeadForm } from '@/components/custom-ui/LeadForm';
 import { Button } from '@/components/custom-ui';
+import { cn } from '@/components/custom-ui';
 
 const DIFFICULTY_FILTERS = ['all', 'beginner', 'intermediate', 'advanced'];
 
@@ -30,7 +31,7 @@ function filterCourses(courses, query, difficulty) {
   return result;
 }
 
-export function CourseListClient({ initialCourses }) {
+export function CourseListClient({ initialCourses, waitlistCount = 0 }) {
   const [courses] = useState(initialCourses);
   const [query, setQuery] = useState('');
   const [difficulty, setDifficulty] = useState('all');
@@ -115,21 +116,33 @@ export function CourseListClient({ initialCourses }) {
                       ]}
                     />
 
-                    <div className="mt-12 pt-8 border-t border-[#f0f5f2] flex flex-col items-center gap-4">
-                      <div className="flex -space-x-3">
-                        {[1, 2, 3, 4].map((i) => (
-                          <div
-                            key={i}
-                            className="w-9 h-9 rounded-full border-4 border-white bg-[#f0f5f2] flex items-center justify-center text-xs font-bold text-[#1f644e] shadow-sm"
-                          >
-                            {String.fromCharCode(64 + i)}
+                    {waitlistCount > 0 && (
+                      <div className="mt-12 pt-8 border-t border-[#f0f5f2] flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
+                        {waitlistCount >= 4 && (
+                          <div className="flex -space-x-3">
+                            {[
+                              { l: 'RH', b: 'bg-gradient-to-br from-[#1f644e] to-[#0a1a16]' },
+                              { l: 'SH', b: 'bg-gradient-to-br from-[#a8c9bf] to-[#1f644e]' },
+                              { l: 'AV', b: 'bg-gradient-to-br from-[#164235] to-[#1f644e]' },
+                              { l: 'AH', b: 'bg-gradient-to-br from-[#1f644e] to-[#50c878]' },
+                            ].map((avatar, i) => (
+                              <div
+                                key={i}
+                                className={cn(
+                                  'w-10 h-10 rounded-full border-4 border-white flex items-center justify-center text-[10px] font-black text-white shadow-sm shadow-black/5',
+                                  avatar.b
+                                )}
+                              >
+                                {avatar.l}
+                              </div>
+                            ))}
                           </div>
-                        ))}
+                        )}
+                        <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-[0.25em]">
+                          {waitlistCount.toLocaleString()}+ waiting for access
+                        </p>
                       </div>
-                      <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-[0.25em]">
-                        4,200+ waiting for access
-                      </p>
-                    </div>
+                    )}
                   </div>
                 </div>
               </DialogContent>
@@ -228,41 +241,6 @@ export function CourseListClient({ initialCourses }) {
             </div>
           </>
         )}
-
-        <div className="mt-20 sm:mt-32 p-8 sm:p-12 rounded-[2.5rem] bg-gradient-to-br from-[#1f644e] to-[#164235] text-white relative overflow-hidden shadow-2xl shadow-[#1f644e]/20">
-          <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-black/10 rounded-full blur-3xl" />
-
-          <div className="relative z-10 max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-[10px] font-bold uppercase tracking-widest mb-6">
-              <Sparkles className="w-3 h-3 text-[#50c878]" />
-              For Educators
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold mb-4 tracking-tight leading-tight">
-              Build your first course <br /> with AI.
-            </h2>
-            <p className="text-[#a8c9bf] mb-10 text-sm sm:text-base leading-relaxed">
-              Experience the future of authoring. Join our creator waitlist to be among the first to
-              use our AI-powered studio to generate entire curriculums in seconds.
-            </p>
-
-            <div className="max-w-md">
-              <LeadForm
-                minimal
-                type="coursify-waitlist"
-                fields={[
-                  {
-                    id: 'learning_goal',
-                    label: 'Learning Goal',
-                    type: 'text',
-                    placeholder: "What's the first course you will generate?",
-                    required: true,
-                  },
-                ]}
-              />
-            </div>
-          </div>
-        </div>
       </main>
 
       <footer className="mt-auto py-10 border-t border-[#e5e3d8] bg-white/50">
