@@ -13,7 +13,10 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   FileUp,
+  Settings,
+  Cpu,
   Trash2,
 } from 'lucide-react';
 import { CoursifyProvider, useCoursify } from '@/context/CoursifyContext';
@@ -129,46 +132,97 @@ function CoursifyApp() {
       className={`min-h-screen bg-[#fcfbf5] font-[family-name:var(--font-sans)] text-[#1e3a34] ${pacifico.variable} ${nunito.variable}`}
     >
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-[#fcfbf5]/80 backdrop-blur-md border-b border-[#e5e3d8] px-4 lg:px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 bg-[#1f644e] rounded-lg flex items-center justify-center">
-              <GraduationCap className="text-white w-5 h-5" />
+      <header className="sticky top-0 z-40 bg-[#fcfbf5]/80 backdrop-blur-md border-b border-[#e5e3d8] px-4 lg:px-8 py-2 flex items-center justify-between gap-8">
+        <div className="flex items-center gap-8 shrink-0">
+          <div className="flex items-center gap-2 pr-4 border-r border-[#e5e3d8]">
+            <div className="h-8 w-8 bg-[#1f644e] rounded-lg flex items-center justify-center shadow-sm">
+              <GraduationCap className="text-white w-4.5 h-4.5" />
             </div>
-            <span className="font-[family-name:var(--font-logo)] text-2xl">Coursify</span>
+            <span className="font-[family-name:var(--font-logo)] text-xl hidden lg:block">
+              Coursify
+            </span>
           </div>
+
+          {/* Desktop App Style Menu Bar */}
+          <nav className="hidden md:flex items-center gap-1">
+            <div className="relative group">
+              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[#7c8e88] hover:bg-[#f0f5f2] hover:text-[#1f644e] transition-colors cursor-default group-hover:bg-[#f0f5f2] group-hover:text-[#1f644e]">
+                <Settings className="w-3 h-3" />
+                Manage
+                <ChevronDown className="w-3 h-3 opacity-50 group-hover:rotate-180 transition-transform duration-200" />
+              </button>
+              <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-[#e5e3d8] rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 p-1">
+                <button
+                  onClick={() => setShowCreate(true)}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-[#1e3a34] hover:bg-[#f0f5f2] rounded-lg transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  New Course
+                </button>
+                <button
+                  onClick={() => setShowImport(true)}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-[#1e3a34] hover:bg-[#f0f5f2] rounded-lg transition-colors"
+                >
+                  <FileUp className="w-3.5 h-3.5" />
+                  Import Bundle
+                </button>
+              </div>
+            </div>
+
+            <div className="relative group">
+              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[#7c8e88] hover:bg-[#f0f5f2] hover:text-[#1f644e] transition-colors cursor-default group-hover:bg-[#f0f5f2] group-hover:text-[#1f644e]">
+                <Cpu className="w-3 h-3" />
+                System
+                <ChevronDown className="w-3 h-3 opacity-50 group-hover:rotate-180 transition-transform duration-200" />
+              </button>
+              <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-[#e5e3d8] rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 p-1">
+                <button
+                  onClick={refresh}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-[#1e3a34] hover:bg-[#f0f5f2] rounded-lg transition-colors"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Refresh Dashboard
+                </button>
+                <button
+                  onClick={() => router.push('/apps/coursify/trash')}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-[#1e3a34] hover:bg-red-50 hover:text-[#c94c4c] rounded-lg transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  View Trash
+                </button>
+              </div>
+            </div>
+          </nav>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => router.push('/apps/coursify/trash')}
-            title="Trash"
-            className="p-2 rounded-xl text-[#7c8e88] hover:text-[#1f644e] hover:bg-[#f0f5f2] transition-colors"
+        {/* Search & Profile area */}
+        <div className="flex-1 max-w-lg hidden md:block">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSearch();
+            }}
+            className="relative"
           >
-            <Trash2 className="w-4 h-4" />
-          </button>
-          <button
-            onClick={refresh}
-            title="Refresh"
-            className="p-2 rounded-xl text-[#7c8e88] hover:text-[#1f644e] hover:bg-[#f0f5f2] transition-colors"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setShowImport(true)}
-            className="flex items-center gap-1.5 px-4 py-2 border border-[#e5e3d8] text-[#7c8e88] rounded-xl text-sm font-bold hover:border-[#1f644e] hover:text-[#1f644e] active:scale-95 transition-all"
-          >
-            <FileUp className="w-4 h-4" />
-            Import
-          </button>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#1f644e] text-white rounded-xl text-sm font-bold hover:bg-[#17503e] active:scale-95 transition-all shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            New Course
-          </button>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7c8e88]" />
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search in Coursify…"
+              className="w-full bg-white border border-[#e5e3d8] rounded-xl py-1.5 pl-10 pr-4 text-xs outline-none focus:border-[#1f644e] focus:ring-4 focus:ring-[#1f644e]/5 transition-all"
+            />
+          </form>
         </div>
+
+        <button
+          onClick={() => setShowCreate(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-[#1f644e] text-white rounded-xl text-xs font-bold hover:bg-[#17503e] active:scale-95 transition-all shadow-sm"
+        >
+          <Plus className="w-4 h-4" />
+          <span className="hidden sm:inline">Create</span>
+        </button>
       </header>
 
       <main className="p-4 lg:p-8 max-w-5xl mx-auto">
@@ -224,13 +278,13 @@ function CoursifyApp() {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Search bar */}
+            {/* Mobile search (only visible when not in desktop header) */}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleSearch();
               }}
-              className="flex flex-col sm:flex-row gap-2 max-w-xl"
+              className="flex md:hidden flex-col sm:flex-row gap-2 max-w-xl"
             >
               <div className="flex-1 flex items-center gap-2 bg-white border border-[#e5e3d8] rounded-xl px-3 py-2.5 focus-within:border-[#1f644e] transition-colors">
                 <Search className="w-4 h-4 text-[#7c8e88] shrink-0" />
@@ -239,26 +293,10 @@ function CoursifyApp() {
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search by title, topic, or tag…"
+                  placeholder="Search courses…"
                   className="flex-1 text-sm text-[#1e3a34] bg-transparent outline-none placeholder:text-[#b0bfbb]"
                 />
-                {query && (
-                  <button
-                    type="button"
-                    onClick={handleClear}
-                    className="p-0.5 rounded-md text-[#7c8e88] hover:text-[#1e3a34] transition-colors"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
               </div>
-              <button
-                type="submit"
-                className="flex items-center gap-1.5 px-4 py-2.5 bg-[#1f644e] text-white text-sm font-bold rounded-xl hover:bg-[#17503e] transition-colors shrink-0"
-              >
-                <Search className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Search</span>
-              </button>
             </form>
 
             {/* Filter chips: status + difficulty */}
