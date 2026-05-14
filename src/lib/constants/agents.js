@@ -44,6 +44,7 @@ export const AGENT_IDS = {
   // Coursify
   COURSIFY_THUMBNAIL_GENERATOR: 'coursify_thumbnail_generator',
   COURSIFY_CHAT: 'coursify_chat',
+  COURSIFY_SEARCH: 'coursify_search',
 
   // Integrations
 };
@@ -274,6 +275,17 @@ export const DEFAULT_AGENT_CONFIGS = {
     defaultProvider: 'openai',
     isActive: true,
   },
+  [AGENT_IDS.COURSIFY_SEARCH]: {
+    name: 'Coursify Search Engine',
+    description:
+      'Researches topics via internet search and generates structured Coursify course content',
+    type: AGENT_TYPES.CONTENT,
+    category: AGENT_CATEGORIES.WRITING,
+    icon: 'Search',
+    defaultModel: 'gpt-4o',
+    defaultProvider: 'openai',
+    isActive: true,
+  },
   [AGENT_IDS.COURSIFY_THUMBNAIL_GENERATOR]: {
     name: 'Coursify Thumbnail Generator',
     description: 'Generates course thumbnail images via Pollinations AI (gptimage-large)',
@@ -358,6 +370,7 @@ export const RATE_LIMIT_DEFAULTS = {
   [AGENT_IDS.FINANCE_ASSISTANT]: { requests: 10, window: 60 },
   [AGENT_IDS.COURSIFY_THUMBNAIL_GENERATOR]: { requests: 10, window: 60 },
   [AGENT_IDS.COURSIFY_CHAT]: { requests: 20, window: 60 },
+  [AGENT_IDS.COURSIFY_SEARCH]: { requests: 5, window: 60 },
 };
 
 /**

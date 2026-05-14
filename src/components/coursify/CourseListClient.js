@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/custom-ui/Dia
 import { LeadForm } from '@/components/custom-ui/LeadForm';
 import { Button } from '@/components/custom-ui';
 import { cn } from '@/components/custom-ui';
+import { AISearchEngine } from './AISearchEngine';
 
 const DIFFICULTY_FILTERS = ['all', 'beginner', 'intermediate', 'advanced'];
 
@@ -164,14 +165,25 @@ export function CourseListClient({ initialCourses, waitlistCount = 0 }) {
       <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} type="course" />
 
       <main className="max-w-4xl mx-auto px-4 py-8 sm:py-12">
-        <div className="mb-8 sm:mb-10 text-center sm:text-left">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1e3a34] mb-3 tracking-tight">
-            Master anything in <span className="text-[#1f644e] italic">seconds</span>
-          </h1>
-          <p className="text-[#7c8e88] text-sm sm:text-base max-w-lg mx-auto sm:mx-0 leading-relaxed">
-            Exam tomorrow? New skill to master? Tell Coursify AI what you need to learn, and get a
-            structured, professional-grade course instantly.
+        <div className="mb-8 sm:mb-10">
+          <div className="text-center sm:text-left mb-6">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1e3a34] mb-3 tracking-tight">
+              Master anything in <span className="text-[#1f644e] italic">seconds</span>
+            </h1>
+            <p className="text-[#7c8e88] text-sm sm:text-base max-w-lg mx-auto sm:mx-0 leading-relaxed">
+              Search any topic. Our AI researches the web and generates a structured,
+              university-level course page instantly.
+            </p>
+          </div>
+          <AISearchEngine />
+        </div>
+
+        <div className="flex items-center gap-3 mb-6 sm:mb-8">
+          <div className="h-px flex-1 bg-[#e5e3d8]" />
+          <p className="text-[10px] font-bold text-[#b5c4be] uppercase tracking-widest shrink-0">
+            or browse courses
           </p>
+          <div className="h-px flex-1 bg-[#e5e3d8]" />
         </div>
 
         {courses.length > 0 && (
