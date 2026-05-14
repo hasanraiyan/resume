@@ -1,6 +1,8 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
 import { MarkdownRenderer } from './MarkdownRenderer';
 
 const containerVariants = {
@@ -45,9 +47,20 @@ function getSlug(text) {
 
 export function StepByStepBlock({ block }) {
   const steps = block.steps || [];
-  const showNumbering = block.showNumbering !== false; // Default to true
+  const showNumbering = block.showNumbering !== false;
+  const [expandedSteps, setExpandedSteps] = useState(new Set([0])); // First step open by default
 
   if (!steps.length) return null;
+
+  const toggleStep = (index) => {
+    const newExpanded = new Set(expandedSteps);
+    if (newExpanded.has(index)) {
+      newExpanded.delete(index);
+    } else {
+      newExpanded.add(index);
+    }
+    setExpandedSteps(newExpanded);
+  };
 
   return (
     <section className="mt-0 mb-8 overflow-visible px-0.5">
@@ -73,7 +86,8 @@ export function StepByStepBlock({ block }) {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="absolute left-[15px] top-8 bottom-8 w-[1.5px] origin-top bg-[#1f644e]/30 sm:left-[19px]"
+          className="absolute left-[15px] top-4 w-[1.5px] origin-top bg-[#1f644e]/30 sm:left-[19px]"
+          style={{ height: `calc(100% - 2rem)` }}
           aria-hidden="true"
         />
 
@@ -115,18 +129,44 @@ export function StepByStepBlock({ block }) {
                   </div>
                 )}
 
-                <div className="rounded-2xl border border-[#e5e3d8]/60 bg-white/40 backdrop-blur-sm p-4 sm:p-5 transition-all hover:border-[#1f644e]/20">
-                  <div className="font-serif text-lg font-bold leading-tight text-[#1e3a34] transition-colors group-hover:text-[#1f644e] sm:text-xl">
-                    <MarkdownRenderer
-                      content={step.title || (showNumbering ? `Step ${i + 1}` : '')}
-                      isInline
-                    />
+                {/* Clickable Header */}
+                <button
+                  onClick={() => toggleStep(i)}
+                  className="w-full text-left rounded-2xl border border-[#e5e3d8]/60 bg-white/40 backdrop-blur-sm px-3 py-2 sm:px-4 sm:py-3 transition-all hover:border-[#1f644e]/20 cursor-pointer"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="font-serif text-lg font-bold leading-tight text-[#1e3a34] transition-colors group-hover:text-[#1f644e] sm:text-xl flex-1">
+                      <MarkdownRenderer
+                        content={step.title || (showNumbering ? `Step ${i + 1}` : '')}
+                        isInline
+                      />
+                    </div>
+                    <motion.div
+                      animate={{ rotate: expandedSteps.has(i) ? 180 : 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="flex-shrink-0"
+                    >
+                      <ChevronDown className="w-5 h-5 text-[#1f644e]" />
+                    </motion.div>
                   </div>
+                </button>
 
-                  <div className="mt-2 text-[#536b64] selection:bg-[#1f644e]/10">
-                    <MarkdownRenderer content={step.content || ''} />
-                  </div>
-                </div>
+                {/* Collapsible Content */}
+                <AnimatePresence>
+                  {expandedSteps.has(i) && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-3 text-[#536b64] selection:bg-[#1f644e]/10 px-4 sm:px-5 pb-4 sm:pb-5">
+                        <MarkdownRenderer content={step.content || ''} />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </motion.li>
           ))}
