@@ -100,8 +100,8 @@ function AdminLayoutContent({ children }) {
     {
       title: 'Management',
       items: [
-        { name: 'Contributors', href: '/admin/contributors', icon: Users },
-        { name: 'Messages', href: '/admin/contacts', icon: Mail },
+        { name: 'Contacts', href: '/admin/contacts', icon: Mail },
+        { name: 'Leads', href: '/admin/leads', icon: Users },
         { name: 'Subscribers', href: '/admin/subscribers', icon: Users },
       ],
     },

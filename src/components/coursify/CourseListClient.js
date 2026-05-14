@@ -1,9 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, BookOpen } from 'lucide-react';
+import { Search, BookOpen, Plus, Sparkles } from 'lucide-react';
 import { PublicCourseCard } from './PublicCourseCard';
 import SearchOverlay from '@/components/search/SearchOverlay';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/custom-ui/Dialog';
+import { LeadForm } from '@/components/custom-ui/LeadForm';
+import { Button } from '@/components/custom-ui';
 
 const DIFFICULTY_FILTERS = ['all', 'beginner', 'intermediate', 'advanced'];
 
@@ -69,6 +72,31 @@ export function CourseListClient({ initialCourses }) {
             >
               <Search className="w-5 h-5" />
             </button>
+
+            <Dialog>
+              <DialogTrigger asChild>
+                <button className="hidden sm:flex items-center gap-2 px-4 py-2 bg-[#1f644e] text-white rounded-full text-xs font-bold hover:bg-[#184d3c] transition-all shadow-md shadow-[#1f644e]/10">
+                  <Plus className="w-4 h-4" />
+                  Join Waitlist
+                </button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px] p-0 border-none shadow-2xl overflow-hidden bg-transparent">
+                <div className="bg-white/90 backdrop-blur-xl p-6 sm:p-8 rounded-3xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-[#1f644e]/5 rounded-full blur-3xl pointer-events-none" />
+                  <div className="relative z-10">
+                    <div className="mb-6">
+                      <h2 className="text-xl font-extrabold text-[#1e3a34] tracking-tight">
+                        Become a Creator
+                      </h2>
+                      <p className="text-[#7c8e88] text-xs mt-1">
+                        Join the waitlist for early studio access.
+                      </p>
+                    </div>
+                    <LeadForm minimal type="coursify-creator" />
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </header>
@@ -162,6 +190,29 @@ export function CourseListClient({ initialCourses }) {
             </div>
           </>
         )}
+
+        <div className="mt-20 sm:mt-32 p-8 sm:p-12 rounded-[2.5rem] bg-gradient-to-br from-[#1f644e] to-[#164235] text-white relative overflow-hidden shadow-2xl shadow-[#1f644e]/20">
+          <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-black/10 rounded-full blur-3xl" />
+
+          <div className="relative z-10 max-w-xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-[10px] font-bold uppercase tracking-widest mb-6">
+              <Sparkles className="w-3 h-3 text-[#50c878]" />
+              For Educators
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold mb-4 tracking-tight leading-tight">
+              Share your knowledge <br /> with the world.
+            </h2>
+            <p className="text-[#a8c9bf] mb-10 text-sm sm:text-base leading-relaxed">
+              Coursify is more than just a reader. Join our creator waitlist to get early access to
+              our powerful authoring tools.
+            </p>
+
+            <div className="max-w-md">
+              <LeadForm minimal type="coursify-creator" />
+            </div>
+          </div>
+        </div>
       </main>
 
       <footer className="mt-auto py-10 border-t border-[#e5e3d8] bg-white/50">

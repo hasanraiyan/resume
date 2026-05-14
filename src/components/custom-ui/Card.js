@@ -12,7 +12,7 @@ import { componentStyles } from '@/styles/components';
  * @param {React.ReactNode} props.children
  */
 export default function Card({
-  variant = 'elevated',
+  variant = 'flat',
   interactive = false,
   className = '',
   children,
