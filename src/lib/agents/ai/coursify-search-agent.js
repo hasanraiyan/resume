@@ -19,7 +19,7 @@ All content must use \`## [BlockType]\` headers. Generate blocks as required.
 ### Available Block Types:
 
 **## [MdBlock]**
-** Heading **
+### Heading
 Primary narrative text. Supports LaTeX math ($O(n \\log n)$), markdown tables, Mermaid diagrams.
 \`\`\`mermaid
 graph TD
@@ -147,9 +147,18 @@ class CoursifySearchAgent extends BaseAgent {
     // ─── Create parallel execution chain ──────────────────────────────────
     this.logger.info('📡 Starting parallel execution: title + content...');
 
+    // Adapters to extract the right input for each chain from parallel input
+    const titleAdapter = new RunnableLambda({
+      func: (input) => ({ topic: input.title.topic }),
+    });
+
+    const contentAdapter = new RunnableLambda({
+      func: (input) => ({ messages: input.content.messages }),
+    });
+
     const parallelChain = RunnableParallel.from({
-      title: titleChain,
-      content: contentAgent.withConfig({ runName: 'contentAgent' }),
+      title: titleAdapter.pipe(titleChain),
+      content: contentAdapter.pipe(contentAgent.withConfig({ runName: 'contentAgent' })),
     });
 
     // ─── Run title and content truly in parallel ───────────────────────────
