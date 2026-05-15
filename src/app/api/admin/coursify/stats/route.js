@@ -37,6 +37,7 @@ export async function GET(request) {
           usage.completionTokens || 0
         );
         acc.estimatedCostUSD += costUSD;
+        acc.estimatedCostINR += costUSD * 85; // ~85 INR per USD
 
         if (log.status === 'success') acc.successCount++;
         else acc.errorCount++;
@@ -48,6 +49,7 @@ export async function GET(request) {
         promptTokens: 0,
         completionTokens: 0,
         estimatedCostUSD: 0,
+        estimatedCostINR: 0,
         successCount: 0,
         errorCount: 0,
       }
@@ -57,7 +59,8 @@ export async function GET(request) {
     const dailyUsageMap = {};
     logs.forEach((log) => {
       const date = new Date(log.createdAt).toISOString().split('T')[0];
-      if (!dailyUsageMap[date]) dailyUsageMap[date] = { date, tokens: 0, cost: 0, count: 0 };
+      if (!dailyUsageMap[date])
+        dailyUsageMap[date] = { date, tokens: 0, costUSD: 0, costINR: 0, count: 0 };
 
       const usage = log.usage || {};
       const tokens = usage.totalTokens || 0;
@@ -68,6 +71,7 @@ export async function GET(request) {
 
       dailyUsageMap[date].tokens += tokens;
       dailyUsageMap[date].costUSD += costUSD;
+      dailyUsageMap[date].costINR += costUSD * 85;
       dailyUsageMap[date].count += 1;
     });
 
@@ -87,16 +91,20 @@ export async function GET(request) {
         topic = log.input.q;
       }
 
-      if (!topicCounts[topic]) topicCounts[topic] = { title: topic, count: 0, tokens: 0, cost: 0 };
+      if (!topicCounts[topic])
+        topicCounts[topic] = { title: topic, count: 0, tokens: 0, costUSD: 0, costINR: 0 };
 
       const usage = log.usage || {};
       const tokens = usage.totalTokens || 0;
-      topicCounts[topic].count += 1;
-      topicCounts[topic].tokens += tokens;
-      topicCounts[topic].costUSD += calculateEstimatedCostUSD(
+      const costUSD = calculateEstimatedCostUSD(
         usage.promptTokens || 0,
         usage.completionTokens || 0
       );
+
+      topicCounts[topic].count += 1;
+      topicCounts[topic].tokens += tokens;
+      topicCounts[topic].costUSD += costUSD;
+      topicCounts[topic].costINR += costUSD * 85;
     });
 
     const topTopics = Object.values(topicCounts)
