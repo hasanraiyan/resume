@@ -21,6 +21,14 @@ export async function POST(request) {
   if (rateLimitResponse) return rateLimitResponse;
 
   try {
+    let body = {};
+    try {
+      body = await request.json();
+    } catch (e) {
+      console.error('[CoursifyChat] Body parse failed:', e.message);
+      return NextResponse.json({ error: 'Invalid or empty JSON body' }, { status: 400 });
+    }
+
     const {
       userMessage,
       chatHistory = [],
@@ -28,7 +36,7 @@ export async function POST(request) {
       currentSectionId = '',
       currentSectionTitle = '',
       currentSectionSummary = '',
-    } = await request.json();
+    } = body;
 
     if (!userMessage)
       return NextResponse.json({ error: 'userMessage is required' }, { status: 400 });

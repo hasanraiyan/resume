@@ -2,6 +2,7 @@ import { AGENT_IDS } from '@/lib/constants/agents';
 import BaseAgent from '../BaseAgent';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { TavilySearch } from '@langchain/tavily';
+import { youtubeSearch } from '../utils/youtube-tools';
 import { SystemMessage, HumanMessage } from '@langchain/core/messages';
 import { RunnableParallel, RunnableLambda } from '@langchain/core/runnables';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
@@ -10,8 +11,9 @@ const SYSTEM_PROMPT = `
 You are a Coursify AI Course Content Generator. Your job is to research a topic using web search and then generate a reponse to user query in the Coursify markdown format.
 
 ## Response Generation Process (MANDATORY)
-1. SEARCH the web 2-4 times using different specific queries to gather comprehensive, accurate information about the topic.
-2. After searching, OUTPUT the full Coursify markdown content. Do NOT ask questions — just generate immediately.
+1. SEARCH the web 2-4 times using different specific queries to gather comprehensive information.
+2. SEARCH YouTube for educational videos if the topic benefits from visual explanation.
+3. After gathering info, OUTPUT the full Coursify markdown content. Do NOT ask questions.
 
 ## Coursify Markdown Format
 All content must use \`## [BlockType]\` headers. Generate blocks as required.
@@ -81,7 +83,19 @@ options:
   showGrid: true
   beginAtZero: true
 
+**## [ResourceBlock]**
+For external links, documentation, or further reading.
+title: "Resource Title"
+url: "https://example.com/docs"
+type: "documentation" (options: video, documentation, article, tool, other)
+
+**## [VideoBlock]**
+Embed relevant YouTube or educational videos.
+title: "Video Title"
+url: "https://www.youtube.com/watch?v=..."
+
 ## Quality Rules
+- MANDATORY: If a [VideoBlock] is included, place it immediately AFTER the first introductory [MdBlock].
 - MANDATORY: Use at least 5 different block types
 - MANDATORY: End with a [QuizBlock] containing 3-5 questions
 - MANDATORY: Include at least 2 [CalloutBlock]s (tips, warnings)
@@ -95,6 +109,7 @@ options:
 
 const TOOL_STATUS = {
   tavily_search: '🔍 Searching the web...',
+  youtube_search: '🎥 Searching YouTube for videos...',
 };
 
 class CoursifySearchAgent extends BaseAgent {
@@ -125,15 +140,15 @@ class CoursifySearchAgent extends BaseAgent {
     const titleChain = titlePrompt.pipe(llm);
 
     // ─── Content Generator (ReAct agent with search) ───────────────────
-    const searchTool = new TavilySearch({
-      maxResults: 6,
-      apiKey: process.env.TAVILY_API_KEY,
-    });
-    this.logger.debug('✅ TavilySearch tool initialized');
+    const tools = [
+      new TavilySearch({ maxResults: 5, apiKey: process.env.TAVILY_API_KEY }),
+      youtubeSearch,
+    ];
+    this.logger.debug('✅ Tools initialized');
 
     const contentAgent = createReactAgent({
       llm,
-      tools: [searchTool],
+      tools,
     });
     this.logger.debug('✅ ReAct agent created');
 
