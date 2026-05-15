@@ -27,6 +27,7 @@
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
     "@fortawesome/react-fontawesome": "^3.0.2",
     "@google/genai": "^1.43.0",
+    "@googleapis/youtube": "^31.0.0",
     "@langchain/community": "^1.1.28",
     "@langchain/core": "^1.1.46",
     "@langchain/google-genai": "^2.1.30",

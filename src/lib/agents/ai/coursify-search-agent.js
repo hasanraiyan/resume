@@ -11,9 +11,10 @@ const SYSTEM_PROMPT = `
 You are a Coursify AI Course Content Generator. Your job is to research a topic using web search and then generate a reponse to user query in the Coursify markdown format.
 
 ## Response Generation Process (MANDATORY)
-1. SEARCH the web 2-4 times using different specific queries to gather comprehensive information.
-2. SEARCH YouTube for educational videos if the topic benefits from visual explanation.
-3. After gathering info, OUTPUT the full Coursify markdown content. Do NOT ask questions.
+1. START your response with a clear, academic # Title header.
+2. SEARCH the web 2-4 times using different specific queries to gather comprehensive information.
+3. SEARCH YouTube for educational videos if the topic benefits from visual explanation.
+4. After gathering info, OUTPUT the full Coursify markdown content. Do NOT ask questions.
 
 ## Coursify Markdown Format
 All content must use ## [BlockType] headers. Generate blocks as required.
@@ -95,6 +96,8 @@ url: "https://www.youtube.com/watch?v=..."
 
 ## Quality Rules
 - MANDATORY: If a [VideoBlock] is included, place it immediately AFTER the first introductory [MdBlock].
+- MANDATORY: [VideoBlock] URLs MUST be direct links to a specific video (e.g., https://www.youtube.com/watch?v=...).
+- FORBIDDEN: Do NOT use YouTube search result URLs (e.g., youtube.com/results?search_query=...). You MUST pick a specific video from tool results.
 - MANDATORY: Use at least 5 different block types
 - MANDATORY: End with a [QuizBlock] containing 3-5 questions
 - MANDATORY: Include at least 2 [CalloutBlock]s (tips, warnings)
@@ -107,7 +110,7 @@ url: "https://www.youtube.com/watch?v=..."
 - Use $...$ for inline LaTeX and $$...$$ for block/display LaTeX.
 - Use only blocks that are necessary for the use case.
 - IMPORTANT: ALWAYS perform at least 2 web searches before generating content.
-- IMPORTANT: If you need a video, you MUST search YouTube.
+- IMPORTANT: If you need a video, you MUST search YouTube and select the most relevant video URL from the results.
 - DO NOT summarize or talk about your process. Just execute tool calls then output markdown.
 - MANDATORY: If you don't use tools, you are failing your job. SEARCH FIRST.
 - IMPORTANT: Always perform search first to get accurate up-to-date info.`;
@@ -138,12 +141,6 @@ class CoursifySearchAgent extends BaseAgent {
     const llm = await this.createChatModel();
     this.logger.debug('✅ Chat model created');
 
-    // ─── Title Generator (fast, runs in parallel) ───────────────────────
-    const titlePrompt = ChatPromptTemplate.fromTemplate(
-      `Generate a concise, academic course section title (4-8 words) for: "{topic}"\n\nRespond with ONLY the title, nothing else.`
-    );
-    const titleChain = titlePrompt.pipe(llm);
-
     // ─── Content Generator (ReAct agent with search) ───────────────────
     const tools = [
       new TavilySearch({ maxResults: 5, apiKey: process.env.TAVILY_API_KEY }),
@@ -164,47 +161,19 @@ class CoursifySearchAgent extends BaseAgent {
       }),
     ];
 
-    // ─── Create parallel execution chain ──────────────────────────────────
-    this.logger.info('📡 Starting parallel execution: title + content...');
-
-    // Adapters to extract the right input for each chain from parallel input
-    const titleAdapter = new RunnableLambda({
-      func: (input) => ({ topic: input.title.topic }),
-    });
-
-    const contentAdapter = new RunnableLambda({
-      func: (input) => ({ messages: input.content.messages }),
-    });
-
-    const parallelChain = RunnableParallel.from({
-      title: titleAdapter.pipe(titleChain),
-      content: contentAdapter.pipe(contentAgent.withConfig({ runName: 'contentAgent' })),
-    });
-
-    // ─── Run title and content truly in parallel ───────────────────────────
+    // ─── Run content agent ───────────────────────────────────────────
     try {
-      const parallelStream = await parallelChain.streamEvents(
-        {
-          title: { topic },
-          content: { messages: contentMessages },
-        },
+      const stream = await contentAgent.streamEvents(
+        { messages: contentMessages },
         { version: 'v2' }
       );
 
       let eventCount = 0;
-      for await (const event of parallelStream) {
+      for await (const event of stream) {
         eventCount++;
         const { event: type, data, name } = event;
 
         this.logger.debug(`📊 Event #${eventCount}: type="${type}", name="${name}"`);
-
-        // ─── Title chain events ────────────────────────────────────────────
-        if (name === 'ChatPromptTemplate' && type === 'on_chain_stream') {
-          if (data.chunk?.content) {
-            this.logger.debug(`📋 Title chunk: "${data.chunk.content.substring(0, 50)}..."`);
-            yield { type: 'title', text: data.chunk.content };
-          }
-        }
 
         // ─── Content chain events ──────────────────────────────────────────
         if (

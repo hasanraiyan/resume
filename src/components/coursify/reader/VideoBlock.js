@@ -19,11 +19,20 @@ export function VideoBlock({ block }) {
   if (!url.startsWith('http://') && !url.startsWith('https://')) return null;
 
   let embedUrl = url;
-  if (platform === 'youtube') {
+  if (platform === 'youtube' || url.includes('youtube.com') || url.includes('youtu.be')) {
+    // 1. Explicitly reject search result URLs
+    if (url.includes('/results') || url.includes('/search') || url.includes('search_query=')) {
+      console.warn('[VideoBlock] Rejected a search result URL:', url);
+      return null;
+    }
+
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
     if (match && match[2].length === 11) {
       embedUrl = `https://www.youtube.com/embed/${match[2]}`;
+    } else {
+      // If we can't extract a valid 11-char video ID, don't try to render
+      return null;
     }
   }
 

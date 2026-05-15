@@ -323,9 +323,14 @@ class BaseAgent {
       );
 
       // Asynchronously log success
-      this._logExecutionToDatabase({ status: 'success', durationMs, usage, input }).catch((err) =>
-        this.logger.error('Failed to log execution stream to DB:', err)
-      );
+      this._logExecutionToDatabase({
+        status: 'success',
+        durationMs,
+        usage,
+        input,
+        outputSlug: input.outputSlug,
+        outputId: input.outputId,
+      }).catch((err) => this.logger.error('Failed to log execution stream to DB:', err));
     } catch (error) {
       this.logger.error('Agent stream execution failed:', error);
 
@@ -353,7 +358,15 @@ class BaseAgent {
    * Asynchronously log the execution to the database
    * @private
    */
-  async _logExecutionToDatabase({ status, durationMs, errorMessage, usage, input }) {
+  async _logExecutionToDatabase({
+    status,
+    durationMs,
+    errorMessage,
+    usage,
+    input,
+    outputSlug,
+    outputId,
+  }) {
     try {
       await dbConnect();
       await AgentExecutionLog.create({
@@ -364,6 +377,8 @@ class BaseAgent {
         errorMessage,
         usage,
         input,
+        outputSlug,
+        outputId,
       });
     } catch (error) {
       this.logger.error('Database execution logging failed:', error);

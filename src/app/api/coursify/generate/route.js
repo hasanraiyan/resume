@@ -70,7 +70,13 @@ export async function POST(request) {
               totalUsage.completionTokens
             );
 
-            const baseTitle = finalTitle || topic.trim();
+            // Extract title from content (first # header) or fallback to topic
+            let baseTitle = topic.trim();
+            const titleMatch = finalContent.match(/^#\s+(.+)$/m);
+            if (titleMatch && titleMatch[1]) {
+              baseTitle = titleMatch[1].trim();
+            }
+
             let slug = slugify(baseTitle);
             let isUnique = false;
             let attempts = 0;
@@ -102,6 +108,27 @@ export async function POST(request) {
 
             // Emit the slug so the client can redirect/show link
             controller.enqueue(encodeEvent({ type: 'persist', slug, id: research._id }));
+
+            // Update the execution log to link to this artifact
+            try {
+              const AgentExecutionLog = (await import('@/models/AgentExecutionLog')).default;
+              const { AGENT_IDS } = await import('@/lib/constants/agents');
+
+              // Find the most recent log for this agent created in the last minute
+              const recentLog = await AgentExecutionLog.findOne({
+                agentId: AGENT_IDS.COURSIFY_SEARCH,
+                createdAt: { $gt: new Date(Date.now() - 60000) },
+                outputSlug: { $exists: false },
+              }).sort({ createdAt: -1 });
+
+              if (recentLog) {
+                recentLog.outputSlug = slug;
+                recentLog.outputId = research._id;
+                await recentLog.save();
+              }
+            } catch (logErr) {
+              console.error('[CoursifyGenerate] Failed to link execution log:', logErr);
+            }
           }
 
           controller.enqueue(encodeEvent({ type: 'done' }));

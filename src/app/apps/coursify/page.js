@@ -27,6 +27,8 @@ import ImportBundleModal from '@/components/coursify/ImportBundleModal';
 import { CoursifyAnalytics } from '@/components/coursify/analytics/CoursifyAnalytics';
 import SessionProvider from '@/components/SessionProvider';
 import { cn } from '@/utils/classNames';
+import { ResearchHistory } from '@/components/coursify/analytics/ResearchHistory';
+import { History } from 'lucide-react';
 
 const pacifico = Pacifico({
   weight: '400',
@@ -210,6 +212,18 @@ function CoursifyApp() {
                   <TrendingUp className="w-3.5 h-3.5" />
                   Intelligence
                 </button>
+                <button
+                  onClick={() => setActiveTab('history')}
+                  className={cn(
+                    'w-full flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg transition-colors',
+                    activeTab === 'history'
+                      ? 'bg-[#f0f5f2] text-[#1f644e]'
+                      : 'text-[#1e3a34] hover:bg-[#f0f5f2]'
+                  )}
+                >
+                  <History className="w-3.5 h-3.5" />
+                  Research History
+                </button>
                 <div className="h-px bg-[#e5e3d8] my-1 mx-2" />
                 <button
                   onClick={refresh}
@@ -267,6 +281,8 @@ function CoursifyApp() {
       <main className="p-4 lg:p-8 max-w-5xl mx-auto">
         {activeTab === 'analytics' ? (
           <CoursifyAnalytics />
+        ) : activeTab === 'history' ? (
+          <ResearchHistory />
         ) : isLoading ? (
           <div className="space-y-8">
             <section>
@@ -301,6 +317,13 @@ function CoursifyApp() {
               MCP endpoint: /api/mcp/coursify
             </p>
             <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                onClick={() => setActiveTab('history')}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#f0f5f2] text-[#1f644e] rounded-xl text-sm font-bold hover:bg-[#e2ede7] transition-colors"
+              >
+                <History className="w-4 h-4" />
+                View Research Artifacts
+              </button>
               <button
                 onClick={() => setShowImport(true)}
                 className="flex items-center justify-center gap-2 px-5 py-2.5 border border-[#e5e3d8] text-[#7c8e88] rounded-xl text-sm font-bold hover:border-[#1f644e] hover:text-[#1f644e] transition-colors"

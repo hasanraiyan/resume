@@ -83,7 +83,7 @@ export default async function SharedResearchPage({ params }) {
               <ChevronRight className="w-3.5 h-3.5 text-[#b5c4be]" />
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <Sparkles className="w-3.5 h-3.5 text-[#1f644e] shrink-0" />
-                <span className="text-xs font-bold text-[#1e3a34] truncate">{research.topic}</span>
+                <span className="text-xs font-bold text-[#1e3a34] truncate">{research.title}</span>
               </div>
               <ResearchActions research={JSON.parse(JSON.stringify(research))} />
             </div>

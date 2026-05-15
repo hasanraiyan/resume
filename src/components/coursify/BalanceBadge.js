@@ -39,7 +39,7 @@ export function BalanceBadge({ balance, loading, className = '' }) {
         }`}
       />
       {isDepleted ? (
-        <span>Zero Balance • Resets in {balance.resetIn}</span>
+        <span>Zero Balance Resets in {balance.resetIn}</span>
       ) : (
         <div className="flex flex-col">
           <span>
@@ -50,8 +50,8 @@ export function BalanceBadge({ balance, loading, className = '' }) {
           </span>
           {balance.dailyStats && (
             <span className="text-[8px] text-[#7c8e88] -mt-0.5">
-              Today: {(balance.dailyStats.totalTokens / 1000).toFixed(1)}k tokens ($
-              {(balance.dailyStats.totalCostUSD || 0).toFixed(3)})
+              Today: {(balance.dailyStats.totalTokens / 1000).toFixed(1)}k tokens (₹
+              {(balance.dailyStats.totalCostINR || 0).toFixed(2)})
             </span>
           )}
         </div>

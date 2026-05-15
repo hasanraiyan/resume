@@ -33,6 +33,14 @@ const agentExecutionLogSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       required: false,
     },
+    outputSlug: {
+      type: String,
+      required: false,
+    },
+    outputId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: false,
+    },
   },
   { timestamps: true } // Auto-manages createdAt (which will act as our timestamp) and updatedAt
 );

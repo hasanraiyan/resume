@@ -135,6 +135,7 @@ export async function getPollinationsBalance() {
       },
       { totalTokens: 0, totalCostUSD: 0, count: 0 }
     );
+    dailyStats.totalCostINR = dailyStats.totalCostUSD * exchangeRate;
 
     if (balance <= 0) {
       return {
