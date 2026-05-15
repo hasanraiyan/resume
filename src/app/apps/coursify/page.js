@@ -19,6 +19,7 @@ import {
   Cpu,
   Trash2,
   TrendingUp,
+  FileText,
 } from 'lucide-react';
 import { CoursifyProvider, useCoursify } from '@/context/CoursifyContext';
 import CourseCard from '@/components/coursify/CourseCard';
@@ -28,7 +29,6 @@ import { CoursifyAnalytics } from '@/components/coursify/analytics/CoursifyAnaly
 import SessionProvider from '@/components/SessionProvider';
 import { cn } from '@/utils/classNames';
 import { ResearchHistory } from '@/components/coursify/analytics/ResearchHistory';
-import { History } from 'lucide-react';
 
 const pacifico = Pacifico({
   weight: '400',
@@ -221,8 +221,8 @@ function CoursifyApp() {
                       : 'text-[#1e3a34] hover:bg-[#f0f5f2]'
                   )}
                 >
-                  <History className="w-3.5 h-3.5" />
-                  Research History
+                  <FileText className="w-3.5 h-3.5" />
+                  All Artifacts
                 </button>
                 <div className="h-px bg-[#e5e3d8] my-1 mx-2" />
                 <button

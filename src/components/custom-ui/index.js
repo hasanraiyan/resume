@@ -77,6 +77,22 @@ export { default as Skeleton } from './Skeleton';
  */
 export { InputOTP, InputOTPGroup } from './InputOTP';
 
+/**
+ * Dialog components for modals and overlays.
+ */
+export {
+  Dialog,
+  DialogPortal,
+  DialogOverlay,
+  DialogClose,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from './Dialog';
+
 // ========================================
 // 🎨 DESIGN TOKENS & UTILITIES
 // ========================================

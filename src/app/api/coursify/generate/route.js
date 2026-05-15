@@ -82,7 +82,7 @@ export async function POST(request) {
             let attempts = 0;
 
             while (!isUnique && attempts < 5) {
-              const existing = await CoursifyResearch.findOne({ slug });
+              const existing = await CoursifyResearch.findOne({ slug, deletedAt: null });
               if (existing) {
                 const suffix = Math.random().toString(36).substring(2, 6);
                 slug = `${slugify(baseTitle)}-${suffix}`;

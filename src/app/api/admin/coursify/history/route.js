@@ -11,6 +11,16 @@ export async function GET(request) {
     await dbConnect();
 
     const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (id) {
+      const item = await CoursifyResearch.findOne({ _id: id, deletedAt: null }).lean();
+      if (!item) {
+        return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
+      }
+      return NextResponse.json({ success: true, artifact: item });
+    }
+
     const page = parseInt(searchParams.get('page')) || 1;
     const limit = parseInt(searchParams.get('limit')) || 10;
     const skip = (page - 1) * limit;
@@ -60,6 +70,45 @@ export async function GET(request) {
     });
   } catch (error) {
     console.error('[CoursifyHistory] Error:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request) {
+  try {
+    const authResult = await requireAdminAuth(request);
+    if (authResult instanceof NextResponse) return authResult;
+
+    await dbConnect();
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'ID is required' }, { status: 400 });
+    }
+
+    // Soft delete: set deletedAt timestamp
+    const result = await CoursifyResearch.findByIdAndUpdate(
+      id,
+      {
+        deletedAt: new Date(),
+        syncVersion: { $inc: 1 },
+      },
+      { new: true }
+    );
+
+    if (!result) {
+      return NextResponse.json({ success: false, error: 'Artifact not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Artifact deleted successfully',
+      artifact: result,
+    });
+  } catch (error) {
+    console.error('[CoursifyHistory DELETE] Error:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

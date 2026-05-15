@@ -5,3 +5,5 @@ coverage
 .env
 package-lock.json
 public/mcp/*.js
+pnpm-lock.yaml
+
