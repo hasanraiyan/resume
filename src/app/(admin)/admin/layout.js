@@ -18,6 +18,7 @@ import {
   Users,
   Mail,
   Cloud,
+  TrendingUp,
   TerminalSquare,
 } from 'lucide-react';
 
@@ -52,6 +53,7 @@ function AdminLayoutContent({ children }) {
       items: [
         { name: 'Dashboard', href: '/admin/dashboard', icon: Gauge },
         { name: 'Analytics', href: '/admin/analytics', icon: BarChart2 },
+        { name: 'Coursify Stats', href: '/admin/coursify/analytics', icon: TrendingUp },
         { name: 'Chat Logs', href: '/admin/chatbot/logs', icon: MessageSquare },
       ],
     },

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { rateLimit } from '@/lib/rateLimit';
 import agentRegistry from '@/lib/agents';
 import { AGENT_IDS } from '@/lib/constants/agents';
+import dbConnect from '@/lib/dbConnect';
+import CoursifyCourse from '@/models/CoursifyCourse';
 
 import '@/lib/agents';
 
@@ -37,9 +39,11 @@ export async function POST(request) {
           const events = agentRegistry.streamExecute(AGENT_IDS.COURSIFY_SEARCH, {
             topic: topic.trim(),
           });
+
           for await (const event of events) {
             controller.enqueue(encodeEvent(event));
           }
+
           controller.enqueue(encodeEvent({ type: 'done' }));
           controller.close();
         } catch (error) {

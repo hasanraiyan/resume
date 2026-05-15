@@ -293,6 +293,8 @@ class BaseAgent {
 
       let toolCallCount = 0;
       const toolNames = [];
+      let usage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+
       for await (const chunk of this._onStreamExecute(input)) {
         // Track tool usage - support both 'tool_result' and 'tool_call' (completed) types
         const isToolResult = chunk.type === 'tool_result';
@@ -304,16 +306,24 @@ class BaseAgent {
           toolNames.push(toolName);
           this.logger.debug(`Tool #${toolCallCount}: ${toolName}`);
         }
+
+        // Track token usage if emitted by subclass
+        if (chunk.type === 'usage' && chunk.data) {
+          usage.promptTokens += chunk.data.promptTokens || 0;
+          usage.completionTokens += chunk.data.completionTokens || 0;
+          usage.totalTokens += chunk.data.totalTokens || 0;
+        }
+
         yield chunk;
       }
 
       const durationMs = Date.now() - startTime;
       this.logger.info(
-        `Stream completed — Tools used: ${toolCallCount}, Names: [${toolNames.join(', ')}], Duration: ${durationMs}ms`
+        `Stream completed — Tools used: ${toolCallCount}, Tokens: ${usage.totalTokens}, Duration: ${durationMs}ms`
       );
 
       // Asynchronously log success
-      this._logExecutionToDatabase({ status: 'success', durationMs }).catch((err) =>
+      this._logExecutionToDatabase({ status: 'success', durationMs, usage, input }).catch((err) =>
         this.logger.error('Failed to log execution stream to DB:', err)
       );
     } catch (error) {
@@ -324,6 +334,7 @@ class BaseAgent {
         status: 'error',
         durationMs: Date.now() - startTime,
         errorMessage: error?.message || 'Unknown error',
+        input,
       }).catch((err) => this.logger.error('Failed to log stream execution error to DB:', err));
 
       throw error;
@@ -342,7 +353,7 @@ class BaseAgent {
    * Asynchronously log the execution to the database
    * @private
    */
-  async _logExecutionToDatabase({ status, durationMs, errorMessage }) {
+  async _logExecutionToDatabase({ status, durationMs, errorMessage, usage, input }) {
     try {
       await dbConnect();
       await AgentExecutionLog.create({
@@ -351,6 +362,8 @@ class BaseAgent {
         status,
         durationMs,
         errorMessage,
+        usage,
+        input,
       });
     } catch (error) {
       this.logger.error('Database execution logging failed:', error);
@@ -544,6 +557,7 @@ class BaseAgent {
       temperature,
       timeout: 45000, // 45 seconds timeout to prevent hanging
       maxRetries: 2,
+      streamUsage: true, // MANDATORY for usage tracking in streams
     });
   }
 

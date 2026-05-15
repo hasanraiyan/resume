@@ -110,6 +110,28 @@ export async function getPollinationsBalance() {
     const balance = data.balance ?? 0;
     const balanceINR = balance * exchangeRate;
 
+    // ─── Fetch Today's Consumption ───
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const AgentExecutionLog = (await import('@/models/AgentExecutionLog')).default;
+    const dailyLogs = await AgentExecutionLog.find({
+      agentId: AGENT_IDS.COURSIFY_SEARCH,
+      status: 'success',
+      createdAt: { $gte: startOfDay },
+    }).lean();
+
+    const dailyStats = dailyLogs.reduce(
+      (acc, log) => {
+        const tokens = log.usage?.totalTokens || 0;
+        acc.totalTokens += tokens;
+        acc.totalCostINR += (tokens / 1000) * 0.002 * exchangeRate;
+        acc.count += 1;
+        return acc;
+      },
+      { totalTokens: 0, totalCostINR: 0, count: 0 }
+    );
+
     if (balance <= 0) {
       return {
         balance: 0,
@@ -117,6 +139,7 @@ export async function getPollinationsBalance() {
         status: 'depleted',
         message: 'Balance depleted. It will reset after 1 hour.',
         resetIn: '1h',
+        dailyStats,
       };
     }
 
@@ -125,6 +148,7 @@ export async function getPollinationsBalance() {
       balanceINR,
       status: 'active',
       message: `Balance: $${balance.toFixed(4)} (₹${balanceINR.toFixed(2)})`,
+      dailyStats,
     };
   } catch (error) {
     console.error('[PollinationsBalance] Error fetching balance:', error);

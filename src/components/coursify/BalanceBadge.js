@@ -41,7 +41,15 @@ export function BalanceBadge({ balance, loading, className = '' }) {
       {isDepleted ? (
         <span>Zero Balance • Resets in {balance.resetIn}</span>
       ) : (
-        <span>AI Credits: ₹{Number(balance.balanceINR).toFixed(2)}</span>
+        <div className="flex flex-col">
+          <span>AI Credits: ₹{Number(balance.balanceINR).toFixed(2)}</span>
+          {balance.dailyStats && balance.dailyStats.totalTokens > 0 && (
+            <span className="text-[8px] text-[#7c8e88] -mt-0.5">
+              Today: {(balance.dailyStats.totalTokens / 1000).toFixed(1)}k tokens (₹
+              {balance.dailyStats.totalCostINR.toFixed(2)})
+            </span>
+          )}
+        </div>
       )}
     </div>
   );

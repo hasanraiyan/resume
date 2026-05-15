@@ -74,6 +74,13 @@ const CoursifyCourseSchema = new mongoose.Schema(
       enum: ['idea', 'researching', 'planned', 'drafting', 'reviewing', 'ready', 'published'],
       default: 'idea',
     },
+    usageStats: {
+      promptTokens: { type: Number, default: 0 },
+      completionTokens: { type: Number, default: 0 },
+      totalTokens: { type: Number, default: 0 },
+      estimatedCostINR: { type: Number, default: 0 },
+      toolCalls: { type: Number, default: 0 },
+    },
     // ────────────────────────────────────────────────────────────
     deletedAt: {
       type: Date,

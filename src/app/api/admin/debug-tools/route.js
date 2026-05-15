@@ -1,4 +1,4 @@
-import { youtubeSearch } from '@/lib/agents/utils/youtube-tools';
+import { youtubeSearch } from '@/lib/agents/utils/youtube-tools'; // trigger rebuild
 import { TavilySearch } from '@langchain/tavily';
 import { NextResponse } from 'next/server';
 

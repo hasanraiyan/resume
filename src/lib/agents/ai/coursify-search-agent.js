@@ -1,4 +1,4 @@
-import { AGENT_IDS } from '@/lib/constants/agents';
+import { AGENT_IDS } from '@/lib/constants/agents'; // trigger rebuild
 import BaseAgent from '../BaseAgent';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { TavilySearch } from '@langchain/tavily';
@@ -247,6 +247,51 @@ class CoursifySearchAgent extends BaseAgent {
           yield { type: 'status', message: '' };
         } else if (type === 'on_chat_model_end') {
           this.logger.debug(`🤖 Chat model ended (${name})`);
+          // DEBUG: Log the full output to find usage structure
+          this.logger.debug(`   Output Structure: ${Object.keys(data.output || {}).join(', ')}`);
+          if (data.output?.response_metadata) {
+            this.logger.debug(
+              `   Metadata: ${Object.keys(data.output.response_metadata).join(', ')}`
+            );
+          }
+
+          let usage =
+            data.output?.usage ||
+            data.output?.response_metadata?.tokenUsage ||
+            data.output?.response_metadata?.usage;
+
+          // ─── Token Estimation Fallback ───
+          if (!usage && data.output?.content) {
+            const charCount =
+              typeof data.output.content === 'string' ? data.output.content.length : 0;
+            // Rough estimate: 1 token ≈ 4 chars
+            const estimatedTokens = Math.ceil(charCount / 4);
+            if (estimatedTokens > 0) {
+              this.logger.debug(
+                `⚠️ No usage from provider. Estimating ${estimatedTokens} tokens from content.`
+              );
+              usage = {
+                prompt_tokens: Math.ceil(estimatedTokens * 0.2), // Assume 20% prompt
+                completion_tokens: Math.ceil(estimatedTokens * 0.8),
+                total_tokens: estimatedTokens,
+              };
+            }
+          }
+
+          if (usage) {
+            const p = usage.prompt_tokens || usage.promptTokens || 0;
+            const c = usage.completion_tokens || usage.completionTokens || 0;
+            const t = usage.total_tokens || usage.totalTokens || p + c;
+
+            yield {
+              type: 'usage',
+              data: {
+                promptTokens: p,
+                completionTokens: c,
+                totalTokens: t,
+              },
+            };
+          }
           if (data.output) {
             this.logger.debug(`   Generated: ${JSON.stringify(data.output).substring(0, 100)}`);
           }

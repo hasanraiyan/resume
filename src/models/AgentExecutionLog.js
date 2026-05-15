@@ -24,6 +24,15 @@ const agentExecutionLogSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
+    usage: {
+      promptTokens: { type: Number, default: 0 },
+      completionTokens: { type: Number, default: 0 },
+      totalTokens: { type: Number, default: 0 },
+    },
+    input: {
+      type: mongoose.Schema.Types.Mixed,
+      required: false,
+    },
   },
   { timestamps: true } // Auto-manages createdAt (which will act as our timestamp) and updatedAt
 );
