@@ -32,6 +32,7 @@ class BaseAgent {
     this.config = this._mergeConfig(config);
     this.isActive = this.config.isActive ?? true;
     this.isInitialized = false;
+    this.lastInitialized = 0;
     this.lastExecutedAt = null;
     this.executionCount = 0;
     this.logger = this._createLogger();
@@ -93,9 +94,10 @@ class BaseAgent {
    * Override _onInitialize in subclasses instead of this method
    * @returns {Promise<boolean>} Success status
    */
-  async initialize() {
-    if (this.isInitialized) return true;
-    if (this._initPromise) return this._initPromise;
+  async initialize(force = false) {
+    const CACHE_TTL = 30000; // 30 seconds cache for DB configs
+    if (this.isInitialized && !force && Date.now() - this.lastInitialized < CACHE_TTL) return true;
+    if (this._initPromise && !force) return this._initPromise;
 
     this._initPromise = (async () => {
       this.logger.info('Initializing agent configurations from DB...');
@@ -119,6 +121,7 @@ class BaseAgent {
 
         await this._onInitialize();
         this.isInitialized = true;
+        this.lastInitialized = Date.now();
         this.logger.info('Agent initialized successfully');
         return true;
       } catch (error) {
@@ -467,15 +470,14 @@ class BaseAgent {
    * @private
    */
   async _resolveChatProvider(providerId = '') {
+    // Ensure we have basic config first, but initialize handles its own TTL now
     if (!this.isInitialized) await this.initialize();
 
-    const requestedProviderId = providerId || '';
-    const currentProviderId = this.config.providerId || this.config.defaultProvider || '';
+    const requestedProviderId =
+      providerId || this.config.providerId || this.config.defaultProvider || '';
 
-    if (!requestedProviderId || requestedProviderId === currentProviderId) {
-      return this.config.provider;
-    }
-
+    // ALWAYS resolve fresh from DB to pick up runtime changes to ProviderSettings (URL, API Key, etc)
+    // The resolveProvider method hits the DB directly.
     return await this.resolveProvider(requestedProviderId);
   }
 
