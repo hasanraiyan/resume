@@ -6,16 +6,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import {
-  ArrowLeft,
-  ChevronRight,
-  Copy,
-  Check,
-  RotateCcw,
-  Search,
-  Sparkles,
-  Globe,
-} from 'lucide-react';
+import { ArrowLeft, ChevronRight, RotateCcw, Search, Sparkles, Globe } from 'lucide-react';
 
 import { toast } from 'sonner';
 
@@ -62,8 +53,6 @@ export function AISearchEngine({ onGenerated }) {
   const [completedBlocks, setCompletedBlocks] = useState([]);
 
   const [inProgressBlock, setInProgressBlock] = useState('');
-
-  const [copiedFull, setCopiedFull] = useState(false);
 
   const [generatedTitle, setGeneratedTitle] = useState('');
 
@@ -268,27 +257,9 @@ export function AISearchEngine({ onGenerated }) {
 
     setInProgressBlock('');
 
-    setCopiedFull(false);
-
     setGeneratedTitle('');
 
     setToolSteps([]);
-  };
-
-  const handleCopyFull = async () => {
-    try {
-      await navigator.clipboard.writeText(content);
-
-      setCopiedFull(true);
-
-      toast.success('Copied to clipboard!');
-
-      setTimeout(() => {
-        setCopiedFull(false);
-      }, 2000);
-    } catch (err) {
-      console.error(err);
-    }
   };
 
   // =====================================================
@@ -441,27 +412,6 @@ export function AISearchEngine({ onGenerated }) {
             {generatedTitle || query}
           </span>
         </div>
-
-        <button
-          onClick={handleCopyFull}
-          className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[10px] font-bold transition-all ${
-            copiedFull
-              ? 'border border-green-200 bg-green-100 text-green-700'
-              : 'border border-[#d4e6de] text-[#1f644e] hover:bg-[#f0f5f2]'
-          }`}
-        >
-          {copiedFull ? (
-            <>
-              <Check className="h-3 w-3" />
-              Copied
-            </>
-          ) : (
-            <>
-              <Copy className="h-3 w-3" />
-              Copy
-            </>
-          )}
-        </button>
 
         <Link
           href={`/coursify/r/${generatedSlug}`}
