@@ -15,6 +15,9 @@ import { QuizPlayer } from '@/components/coursify/reader/QuizPlayer';
 import { TableOfContents } from '@/components/coursify/reader/TableOfContents';
 import { ReaderNavigation } from '@/components/coursify/reader/ReaderNavigation';
 import { CoursifyBlockRenderer } from '@/components/coursify/reader/CoursifyBlockRenderer';
+import { SectionFeedback } from '@/components/coursify/reader/SectionFeedback';
+import { useEffect } from 'react';
+import getAnalytics from '@/lib/analytics';
 
 export function CourseReaderShell({ initialData, slug, activeSectionId }) {
   const router = useRouter();
@@ -55,6 +58,19 @@ export function CourseReaderShell({ initialData, slug, activeSectionId }) {
     closeSidebar,
     toggleToc,
   } = useReaderUI(modules, activeSection, sections);
+
+  useEffect(() => {
+    const analytics = getAnalytics();
+    if (showOverview) {
+      analytics.trackPageView(`/coursify/${slug}`);
+    } else if (activeSection) {
+      analytics.trackEvent('pageview', `/coursify/${slug}/${activeSection}`, {
+        courseSlug: slug,
+        sectionId: activeSection,
+        immediate: true,
+      });
+    }
+  }, [showOverview, activeSection, slug]);
 
   if (!course) return null;
 
@@ -105,6 +121,9 @@ export function CourseReaderShell({ initialData, slug, activeSectionId }) {
                     blocks={currentSection.blocks}
                     sectionId={currentSection._id}
                   />
+
+                  <SectionFeedback courseSlug={slug} sectionId={currentSection._id} />
+
                   <ReaderNavigation
                     sections={orderedSections}
                     activeSection={activeSection}

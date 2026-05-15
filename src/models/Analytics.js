@@ -363,6 +363,94 @@ AnalyticsSchema.statics.getSessionStats = async function (startDate, endDate) {
   ]);
 };
 
+/**
+ * Aggregates engagement statistics for a specific course.
+ * Tracks views and learner feedback (likes/dislikes) at both course
+ * and individual section levels.
+ *
+ * @static
+ * @async
+ * @function getCourseEngagementStats
+ * @param {string} courseSlug - The unique slug of the course
+ * @returns {Promise<Object>} Engagement stats keyed by sectionId and 'course' for overall
+ */
+AnalyticsSchema.statics.getCourseEngagementStats = async function (courseSlug) {
+  const stats = await this.aggregate([
+    {
+      $match: {
+        $or: [
+          { 'properties.courseSlug': courseSlug },
+          { path: { $regex: new RegExp(`^/coursify/${courseSlug}`) } },
+        ],
+      },
+    },
+    {
+      $facet: {
+        views: [
+          { $match: { eventType: 'pageview' } },
+          {
+            $group: {
+              _id: {
+                sectionId: '$properties.sectionId',
+                isOverview: {
+                  $cond: [{ $eq: ['$path', `/coursify/${courseSlug}`] }, true, false],
+                },
+              },
+              count: { $sum: 1 },
+            },
+          },
+        ],
+        feedback: [
+          { $match: { eventName: 'section_feedback' } },
+          {
+            $group: {
+              _id: {
+                sectionId: '$properties.sectionId',
+                type: '$properties.type',
+              },
+              count: { $sum: 1 },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  const result = {
+    overview: { views: 0, likes: 0, dislikes: 0 },
+    sections: {},
+  };
+
+  const facet = stats[0];
+
+  facet.views.forEach((v) => {
+    if (v._id.isOverview || !v._id.sectionId) {
+      result.overview.views += v.count;
+    } else {
+      if (!result.sections[v._id.sectionId]) {
+        result.sections[v._id.sectionId] = { views: 0, likes: 0, dislikes: 0 };
+      }
+      result.sections[v._id.sectionId].views += v.count;
+    }
+  });
+
+  facet.feedback.forEach((f) => {
+    const target = f._id.sectionId ? result.sections[f._id.sectionId] : result.overview;
+    if (target) {
+      if (f._id.type === 'like') target.likes = f.count;
+      if (f._id.type === 'dislike') target.dislikes = f.count;
+    } else if (f._id.sectionId) {
+      result.sections[f._id.sectionId] = {
+        views: 0,
+        likes: f._id.type === 'like' ? f.count : 0,
+        dislikes: f._id.type === 'dislike' ? f.count : 0,
+      };
+    }
+  });
+
+  return result;
+};
+
 // src/models/Analytics.js
 if (process.env.NODE_ENV === 'development' && mongoose.models.Analytics) {
   delete mongoose.models.Analytics;

@@ -61,16 +61,38 @@ export function CoursifyStudioProvider({ id, children }) {
     notes: '',
   });
   const [noteSaving, setNoteSaving] = useState(false);
+  const [stats, setStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(false);
 
   // Manual refresh
+  const fetchStats = useCallback(async () => {
+    if (!id) return;
+    setStatsLoading(true);
+    try {
+      const res = await fetch(`/api/coursify/stats/${id}`);
+      const data = await res.json();
+      if (data.success) {
+        setStats(data.stats);
+      }
+    } catch (err) {
+      console.error('Failed to fetch stats:', err);
+    } finally {
+      setStatsLoading(false);
+    }
+  }, [id]);
+
   const refreshCourse = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      await refresh();
+      await Promise.all([refresh(), fetchStats()]);
     } finally {
       setIsRefreshing(false);
     }
-  }, [refresh]);
+  }, [refresh, fetchStats]);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   useEffect(() => {
     if (editMode && course) {
@@ -349,6 +371,8 @@ export function CoursifyStudioProvider({ id, children }) {
     showNoteForm,
     noteForm,
     noteSaving,
+    stats,
+    statsLoading,
     setActiveTab,
     setEditingSection,
     setEditingModule,

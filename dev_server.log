@@ -1,0 +1,7 @@
+
+> resume@0.1.0 dev /app
+> next dev --turbopack
+
+sh: 1: next: not found
+ ELIFECYCLE  Command failed.
+ WARN   Local package.json exists, but node_modules missing, did you mean to install?
