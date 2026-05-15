@@ -3,6 +3,7 @@ import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
 import AgentExecutionLog from '@/models/AgentExecutionLog';
 import { AGENT_IDS } from '@/lib/constants/agents';
+import { calculateEstimatedCostUSD } from '@/lib/agents/utils/pricing';
 
 export async function GET(request) {
   try {
@@ -30,9 +31,12 @@ export async function GET(request) {
         acc.promptTokens += usage.promptTokens || 0;
         acc.completionTokens += usage.completionTokens || 0;
 
-        // Calculate cost: $0.002 per 1k tokens * 83.5 INR/USD
-        const costINR = ((usage.totalTokens || 0) / 1000) * 0.002 * 83.5;
-        acc.estimatedCostINR += costINR;
+        // Calculate cost in USD
+        const costUSD = calculateEstimatedCostUSD(
+          usage.promptTokens || 0,
+          usage.completionTokens || 0
+        );
+        acc.estimatedCostUSD += costUSD;
 
         if (log.status === 'success') acc.successCount++;
         else acc.errorCount++;
@@ -43,7 +47,7 @@ export async function GET(request) {
         totalTokens: 0,
         promptTokens: 0,
         completionTokens: 0,
-        estimatedCostINR: 0,
+        estimatedCostUSD: 0,
         successCount: 0,
         errorCount: 0,
       }
@@ -55,11 +59,15 @@ export async function GET(request) {
       const date = new Date(log.createdAt).toISOString().split('T')[0];
       if (!dailyUsageMap[date]) dailyUsageMap[date] = { date, tokens: 0, cost: 0, count: 0 };
 
-      const tokens = log.usage?.totalTokens || 0;
-      const cost = (tokens / 1000) * 0.002 * 83.5;
+      const usage = log.usage || {};
+      const tokens = usage.totalTokens || 0;
+      const costUSD = calculateEstimatedCostUSD(
+        usage.promptTokens || 0,
+        usage.completionTokens || 0
+      );
 
       dailyUsageMap[date].tokens += tokens;
-      dailyUsageMap[date].cost += cost;
+      dailyUsageMap[date].costUSD += costUSD;
       dailyUsageMap[date].count += 1;
     });
 
@@ -81,10 +89,14 @@ export async function GET(request) {
 
       if (!topicCounts[topic]) topicCounts[topic] = { title: topic, count: 0, tokens: 0, cost: 0 };
 
-      const tokens = log.usage?.totalTokens || 0;
+      const usage = log.usage || {};
+      const tokens = usage.totalTokens || 0;
       topicCounts[topic].count += 1;
       topicCounts[topic].tokens += tokens;
-      topicCounts[topic].cost += (tokens / 1000) * 0.002 * 83.5;
+      topicCounts[topic].costUSD += calculateEstimatedCostUSD(
+        usage.promptTokens || 0,
+        usage.completionTokens || 0
+      );
     });
 
     const topTopics = Object.values(topicCounts)

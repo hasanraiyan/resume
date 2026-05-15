@@ -15,6 +15,36 @@ const BALANCE_URL = 'https://gen.pollinations.ai/account/balance';
 const EXCHANGE_RATE_URL = 'https://api.frankfurter.app/latest?from=USD&to=INR';
 
 /**
+ * Fetch the latest USD to INR exchange rate with in-memory caching (1 hour)
+ * @returns {Promise<number>}
+ */
+let cachedRate = null;
+let lastFetchTime = 0;
+const CACHE_DURATION = 3600000; // 1 hour
+
+async function getExchangeRate() {
+  const now = Date.now();
+  if (cachedRate && now - lastFetchTime < CACHE_DURATION) {
+    return cachedRate;
+  }
+
+  try {
+    const res = await fetch(EXCHANGE_RATE_URL);
+    if (!res.ok) throw new Error('Failed to fetch exchange rate');
+    const data = await res.json();
+    cachedRate = data.rates.INR || 83.5;
+    lastFetchTime = now;
+    return cachedRate;
+  } catch (error) {
+    console.warn(
+      '[PollinationsBalance] Exchange rate fetch failed, using fallback:',
+      error.message
+    );
+    return cachedRate || 83.5; // Return cached rate even if expired, or fallback
+  }
+}
+
+/**
  * Resolve the Pollinations configuration from the Search Agent
  * @returns {Promise<{apiKey: string, baseUrl: string}>}
  */
@@ -48,36 +78,6 @@ export async function getPollinationsConfig() {
   };
 }
 
-/**
- * Fetch the latest USD to INR exchange rate with in-memory caching (1 hour)
- * @returns {Promise<number>}
- */
-let cachedRate = null;
-let lastFetchTime = 0;
-const CACHE_DURATION = 3600000; // 1 hour
-
-async function getExchangeRate() {
-  const now = Date.now();
-  if (cachedRate && now - lastFetchTime < CACHE_DURATION) {
-    return cachedRate;
-  }
-
-  try {
-    const res = await fetch(EXCHANGE_RATE_URL);
-    if (!res.ok) throw new Error('Failed to fetch exchange rate');
-    const data = await res.json();
-    cachedRate = data.rates.INR || 83.5;
-    lastFetchTime = now;
-    return cachedRate;
-  } catch (error) {
-    console.warn(
-      '[PollinationsBalance] Exchange rate fetch failed, using fallback:',
-      error.message
-    );
-    return cachedRate || 83.5; // Return cached rate even if expired, or fallback
-  }
-}
-
 export async function getPollinationsBalance() {
   try {
     const config = await getPollinationsConfig();
@@ -85,7 +85,6 @@ export async function getPollinationsBalance() {
     if (!config || !config.apiKey) {
       return {
         balance: 0,
-        balanceINR: 0,
         status: 'no_api_key',
         message: 'Pollinations configuration (from Search Agent) is missing',
       };
@@ -93,7 +92,7 @@ export async function getPollinationsBalance() {
 
     const { apiKey } = config;
 
-    // Fetch balance and exchange rate in parallel
+    // Fetch balance and exchange rate
     const [balanceRes, exchangeRate] = await Promise.all([
       fetch(BALANCE_URL, { headers: { Authorization: `Bearer ${apiKey}` } }),
       getExchangeRate(),
@@ -121,21 +120,25 @@ export async function getPollinationsBalance() {
       createdAt: { $gte: startOfDay },
     }).lean();
 
+    const { calculateEstimatedCostUSD } = await import('@/lib/agents/utils/pricing');
     const dailyStats = dailyLogs.reduce(
       (acc, log) => {
-        const tokens = log.usage?.totalTokens || 0;
+        const usage = log.usage || {};
+        const tokens = usage.totalTokens || 0;
         acc.totalTokens += tokens;
-        acc.totalCostINR += (tokens / 1000) * 0.002 * exchangeRate;
+        acc.totalCostUSD += calculateEstimatedCostUSD(
+          usage.promptTokens || 0,
+          usage.completionTokens || 0
+        );
         acc.count += 1;
         return acc;
       },
-      { totalTokens: 0, totalCostINR: 0, count: 0 }
+      { totalTokens: 0, totalCostUSD: 0, count: 0 }
     );
 
     if (balance <= 0) {
       return {
         balance: 0,
-        balanceINR: 0,
         status: 'depleted',
         message: 'Balance depleted. It will reset after 1 hour.',
         resetIn: '1h',
@@ -154,7 +157,6 @@ export async function getPollinationsBalance() {
     console.error('[PollinationsBalance] Error fetching balance:', error);
     return {
       balance: 0,
-      balanceINR: 0,
       status: 'error',
       message: error.message || 'Failed to fetch balance',
     };

@@ -18,12 +18,15 @@ import {
   Settings,
   Cpu,
   Trash2,
+  TrendingUp,
 } from 'lucide-react';
 import { CoursifyProvider, useCoursify } from '@/context/CoursifyContext';
 import CourseCard from '@/components/coursify/CourseCard';
 import CreateCourseModal from '@/components/coursify/CreateCourseModal';
 import ImportBundleModal from '@/components/coursify/ImportBundleModal';
+import { CoursifyAnalytics } from '@/components/coursify/analytics/CoursifyAnalytics';
 import SessionProvider from '@/components/SessionProvider';
+import { cn } from '@/utils/classNames';
 
 const pacifico = Pacifico({
   weight: '400',
@@ -66,6 +69,7 @@ function CoursifyApp() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { isLoading, courses, refresh } = useCoursify();
+  const [activeTab, setActiveTab] = useState('courses'); // 'courses' or 'analytics'
   const [showCreate, setShowCreate] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [query, setQuery] = useState('');
@@ -153,14 +157,20 @@ function CoursifyApp() {
               </button>
               <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-[#e5e3d8] rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 p-1">
                 <button
-                  onClick={() => setShowCreate(true)}
+                  onClick={() => {
+                    setActiveTab('courses');
+                    setShowCreate(true);
+                  }}
                   className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-[#1e3a34] hover:bg-[#f0f5f2] rounded-lg transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   New Course
                 </button>
                 <button
-                  onClick={() => setShowImport(true)}
+                  onClick={() => {
+                    setActiveTab('courses');
+                    setShowImport(true);
+                  }}
                   className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-[#1e3a34] hover:bg-[#f0f5f2] rounded-lg transition-colors"
                 >
                   <FileUp className="w-3.5 h-3.5" />
@@ -177,11 +187,36 @@ function CoursifyApp() {
               </button>
               <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-[#e5e3d8] rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 p-1">
                 <button
+                  onClick={() => setActiveTab('courses')}
+                  className={cn(
+                    'w-full flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg transition-colors',
+                    activeTab === 'courses'
+                      ? 'bg-[#f0f5f2] text-[#1f644e]'
+                      : 'text-[#1e3a34] hover:bg-[#f0f5f2]'
+                  )}
+                >
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  Course Library
+                </button>
+                <button
+                  onClick={() => setActiveTab('analytics')}
+                  className={cn(
+                    'w-full flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg transition-colors',
+                    activeTab === 'analytics'
+                      ? 'bg-[#f0f5f2] text-[#1f644e]'
+                      : 'text-[#1e3a34] hover:bg-[#f0f5f2]'
+                  )}
+                >
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  Intelligence
+                </button>
+                <div className="h-px bg-[#e5e3d8] my-1 mx-2" />
+                <button
                   onClick={refresh}
                   className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-[#1e3a34] hover:bg-[#f0f5f2] rounded-lg transition-colors"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
-                  Refresh Dashboard
+                  Refresh Engine
                 </button>
                 <button
                   onClick={() => router.push('/apps/coursify/trash')}
@@ -196,37 +231,43 @@ function CoursifyApp() {
         </div>
 
         {/* Search & Profile area */}
-        <div className="flex-1 max-w-lg hidden md:block">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSearch();
-            }}
-            className="relative"
-          >
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7c8e88]" />
-            <input
-              ref={inputRef}
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search in Coursify…"
-              className="w-full bg-white border border-[#e5e3d8] rounded-xl py-1.5 pl-10 pr-4 text-xs outline-none focus:border-[#1f644e] focus:ring-4 focus:ring-[#1f644e]/5 transition-all"
-            />
-          </form>
-        </div>
+        <div className="flex items-center gap-3">
+          <div className="max-w-xs hidden lg:block">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSearch();
+              }}
+              className="relative"
+            >
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7c8e88]" />
+              <input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={
+                  activeTab === 'analytics' ? 'Filter analytics...' : 'Search courses...'
+                }
+                className="w-48 bg-white border border-[#e5e3d8] rounded-xl py-1.5 pl-10 pr-4 text-xs outline-none focus:border-[#1f644e] focus:w-64 transition-all"
+              />
+            </form>
+          </div>
 
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-[#1f644e] text-white rounded-xl text-xs font-bold hover:bg-[#17503e] active:scale-95 transition-all shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Create</span>
-        </button>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-[#1f644e] text-white rounded-xl text-xs font-bold hover:bg-[#17503e] active:scale-95 transition-all shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Create</span>
+          </button>
+        </div>
       </header>
 
       <main className="p-4 lg:p-8 max-w-5xl mx-auto">
-        {isLoading ? (
+        {activeTab === 'analytics' ? (
+          <CoursifyAnalytics />
+        ) : isLoading ? (
           <div className="space-y-8">
             <section>
               <div className="h-3 w-20 bg-[#e5e3d8] rounded animate-pulse mb-4" />

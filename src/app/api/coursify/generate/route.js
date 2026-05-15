@@ -62,12 +62,13 @@ export async function POST(request) {
           if (finalContent) {
             await dbConnect();
             const { slugify } = await import('@/utils/string');
-            const { getPollinationsBalance } = await import('@/lib/pollinations-balance');
+            const { calculateEstimatedCostUSD } = await import('@/lib/agents/utils/pricing');
             const CoursifyResearch = (await import('@/models/CoursifyResearch')).default;
 
-            const balanceData = await getPollinationsBalance();
-            const exchangeRate = balanceData.balanceINR / (balanceData.balance || 1) || 83.5;
-            const estimatedCostINR = (totalUsage.totalTokens / 1000) * 0.002 * exchangeRate;
+            const estimatedCostUSD = calculateEstimatedCostUSD(
+              totalUsage.promptTokens,
+              totalUsage.completionTokens
+            );
 
             const baseTitle = finalTitle || topic.trim();
             let slug = slugify(baseTitle);
@@ -92,7 +93,7 @@ export async function POST(request) {
               slug,
               usage: {
                 ...totalUsage,
-                estimatedCostINR,
+                estimatedCostUSD,
               },
               metadata: {
                 durationMs: Date.now() - startTime,

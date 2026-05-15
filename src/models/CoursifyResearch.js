@@ -26,7 +26,7 @@ const CoursifyResearchSchema = new mongoose.Schema(
       promptTokens: { type: Number, default: 0 },
       completionTokens: { type: Number, default: 0 },
       totalTokens: { type: Number, default: 0 },
-      estimatedCostINR: { type: Number, default: 0 },
+      estimatedCostUSD: { type: Number, default: 0 },
     },
     metadata: {
       durationMs: { type: Number, default: 0 },
