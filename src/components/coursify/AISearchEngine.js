@@ -33,6 +33,10 @@ const FALLBACK_TOPICS = [
   'React Hooks in depth',
   'SQL Window Functions',
   'Machine Learning Basics',
+  'TCP/IP Networking',
+  'Dynamic Programming',
+  'System Design',
+  'Quantum Computing',
 ];
 
 const PHASE = {
@@ -315,8 +319,8 @@ export function AISearchEngine({ onGenerated }) {
         </form>
 
         {/* Suggestions */}
-        <div className="mt-5 w-full overflow-x-auto">
-          <div className="flex gap-2 pb-2 min-w-max">
+        <div className="mt-5 w-full overflow-x-auto no-scrollbar">
+          <div className="flex gap-2 min-w-max">
             {isSuggestionsLoading && suggestions.length === 0
               ? Array(3)
                   .fill(0)
@@ -326,7 +330,7 @@ export function AISearchEngine({ onGenerated }) {
                       className="h-8 w-24 shrink-0 animate-pulse rounded-full bg-[#f0f5f2]"
                     />
                   ))
-              : suggestions.slice(0, 4).map((t, idx) => (
+              : suggestions.map((t, idx) => (
                   <button
                     key={`${t}-${idx}`}
                     type="button"
