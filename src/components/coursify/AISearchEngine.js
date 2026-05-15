@@ -74,7 +74,7 @@ function BalanceBadge({ balance, loading }) {
       ) : isDepleted ? (
         <span>Zero Balance • Resets in {balance.resetIn}</span>
       ) : (
-        <span>AI Credits: ${Number(balance.balance).toFixed(4)}</span>
+        <span>AI Credits: ₹{Number(balance.balanceINR).toFixed(2)}</span>
       )}
     </div>
   );
@@ -186,55 +186,58 @@ export function AISearchEngine() {
 
         for (const line of lines) {
           if (!line.trim()) continue;
+          let event;
           try {
-            const event = JSON.parse(line);
-            if (event.type === 'content') {
-              contentRef.current += event.message;
-              setContent(contentRef.current);
-            } else if (event.type === 'title') {
-              setGeneratedTitle(event.text);
-            } else if (event.type === 'status') {
-              setStatusMessage(event.message);
-            } else if (event.type === 'tool_call') {
-              const { tool, status, input } = event;
-              if (status === 'started') {
-                // Extract the actual search query from tool input
-                let searchQuery = topic;
-                if (input?.input) {
-                  try {
-                    const parsed = JSON.parse(input.input);
-                    searchQuery = parsed.query || topic;
-                  } catch {
-                    searchQuery = topic;
-                  }
+            event = JSON.parse(line);
+          } catch (e) {
+            // skip truly malformed JSON
+            continue;
+          }
+
+          if (event.type === 'content') {
+            contentRef.current += event.message;
+            setContent(contentRef.current);
+          } else if (event.type === 'title') {
+            setGeneratedTitle(event.text);
+          } else if (event.type === 'status') {
+            setStatusMessage(event.message);
+          } else if (event.type === 'tool_call') {
+            const { tool, status, input } = event;
+            if (status === 'started') {
+              // Extract the actual search query from tool input
+              let searchQuery = topic;
+              if (input?.input) {
+                try {
+                  const parsed = JSON.parse(input.input);
+                  searchQuery = parsed.query || topic;
+                } catch {
+                  searchQuery = topic;
                 }
-                setStatusMessage(
-                  `🔍 Searching for "${searchQuery.substring(0, 60)}${searchQuery.length > 60 ? '...' : ''}"`
-                );
-              } else if (status === 'completed') {
-                setStatusMessage(`📖 Reading search results...`);
               }
-              setActiveTools((prev) => ({
-                ...prev,
-                [tool]: status,
-              }));
-              if (status === 'completed') {
-                setTimeout(() => {
-                  setActiveTools((prev) => {
-                    const updated = { ...prev };
-                    delete updated[tool];
-                    return updated;
-                  });
-                }, 800);
-              }
-            } else if (event.type === 'done') {
-              setPhase(PHASE.DONE);
-              setStatusMessage('');
-            } else if (event.type === 'error') {
-              throw new Error(event.message);
+              setStatusMessage(
+                `🔍 Searching for "${searchQuery.substring(0, 60)}${searchQuery.length > 60 ? '...' : ''}"`
+              );
+            } else if (status === 'completed') {
+              setStatusMessage(`📖 Reading search results...`);
             }
-          } catch {
-            // skip malformed lines
+            setActiveTools((prev) => ({
+              ...prev,
+              [tool]: status,
+            }));
+            if (status === 'completed') {
+              setTimeout(() => {
+                setActiveTools((prev) => {
+                  const updated = { ...prev };
+                  delete updated[tool];
+                  return updated;
+                });
+              }, 800);
+            }
+          } else if (event.type === 'done') {
+            setPhase(PHASE.DONE);
+            setStatusMessage('');
+          } else if (event.type === 'error') {
+            throw new Error(event.message);
           }
         }
       }
@@ -378,16 +381,34 @@ export function AISearchEngine() {
 
   // ─── ERROR ────────────────────────────────────────────────────────────────
   if (phase === PHASE.ERROR) {
+    const isBalanceError =
+      error.toLowerCase().includes('balance') || error.toLowerCase().includes('insufficient');
+
     return (
       <div className="w-full rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
-        <p className="text-sm font-bold text-red-700 mb-1">Generation failed</p>
-        <p className="text-xs text-red-500 mb-4">{error}</p>
+        <p className="text-sm font-bold text-red-700 mb-1">
+          {isBalanceError ? 'Credits Depleted' : 'Generation failed'}
+        </p>
+        <p className="text-xs text-red-500 mb-4">
+          {isBalanceError
+            ? 'Your AI credit balance is currently zero. Please wait for the hourly reset.'
+            : 'An unexpected error occurred while generating content. Please try again later.'}
+        </p>
         <button
           onClick={handleReset}
           className="flex items-center gap-2 mx-auto px-4 py-2 bg-[#1f644e] text-white text-xs font-bold rounded-xl hover:bg-[#184d3c] transition-all"
         >
-          <RotateCcw className="w-3.5 h-3.5" />
-          Try again
+          {isBalanceError ? (
+            <>
+              <RotateCcw className="w-3.5 h-3.5" />
+              Try after 1hr
+            </>
+          ) : (
+            <>
+              <RotateCcw className="w-3.5 h-3.5" />
+              Try again
+            </>
+          )}
         </button>
       </div>
     );
