@@ -66,34 +66,60 @@ export function CoursifyBlockRenderer({ blocks, content }) {
   return (
     <div className="space-y-6">
       {sortedBlocks.map((block, idx) => {
-        switch (block.type) {
-          case 'MdBlock':
-            return <MarkdownRenderer key={block._id || idx} content={block.content} />;
-          case 'QuizBlock':
-            return (
-              <QuizPlayer
-                key={block._id || idx}
-                questions={block.quiz?.questions || []}
-                title={block.title}
-              />
-            );
-          case 'VideoBlock':
-            return <VideoBlock key={block._id || idx} block={block} />;
-          case 'ResourceBlock':
-            return <ResourceBlock key={block._id || idx} block={block} />;
-          case 'StepByStepBlock':
-            return <StepByStepBlock key={block._id || idx} block={block} />;
-          case 'AccordionBlock':
-            return <AccordionBlock key={block._id || idx} block={block} />;
-          case 'TabsBlock':
-            return <TabsBlock key={block._id || idx} block={block} />;
-          case 'CalloutBlock':
-            return <CalloutBlock key={block._id || idx} block={block} />;
-          case 'ChartBlock':
-            return <ChartBlock key={block._id || idx} block={block} />;
-          default:
-            return null;
-        }
+        let blockTitle = null;
+        if (block.type === 'QuizBlock') blockTitle = 'Knowledge Check';
+        else if (block.type === 'StepByStepBlock') blockTitle = 'Process Flow';
+        else if (block.type === 'AccordionBlock') blockTitle = 'Details & FAQ';
+        else if (block.type === 'VideoBlock') blockTitle = 'Video Lesson';
+        else if (block.type === 'ResourceBlock') blockTitle = block.resource?.title || 'Resource';
+        else if (block.type === 'TabsBlock') blockTitle = 'Interactive Example';
+        else if (block.type === 'CalloutBlock') blockTitle = 'Important Note';
+        else if (block.type === 'ChartBlock') blockTitle = 'Data Visualization';
+
+        const wrapperProps = blockTitle
+          ? {
+              id: getSlug(blockTitle),
+              'data-heading': blockTitle,
+              className: 'scroll-mt-24',
+            }
+          : {};
+
+        const renderBlock = () => {
+          switch (block.type) {
+            case 'MdBlock':
+              return <MarkdownRenderer key={block._id || idx} content={block.content} />;
+            case 'QuizBlock':
+              return (
+                <QuizPlayer
+                  key={block._id || idx}
+                  questions={block.quiz?.questions || []}
+                  title={block.title}
+                />
+              );
+            case 'VideoBlock':
+              return <VideoBlock key={block._id || idx} block={block} />;
+            case 'ResourceBlock':
+              return <ResourceBlock key={block._id || idx} block={block} />;
+            case 'StepByStepBlock':
+              return <StepByStepBlock key={block._id || idx} block={block} />;
+            case 'AccordionBlock':
+              return <AccordionBlock key={block._id || idx} block={block} />;
+            case 'TabsBlock':
+              return <TabsBlock key={block._id || idx} block={block} />;
+            case 'CalloutBlock':
+              return <CalloutBlock key={block._id || idx} block={block} />;
+            case 'ChartBlock':
+              return <ChartBlock key={block._id || idx} block={block} />;
+            default:
+              return null;
+          }
+        };
+
+        return (
+          <div key={block._id || idx} {...wrapperProps}>
+            {renderBlock()}
+          </div>
+        );
       })}
     </div>
   );

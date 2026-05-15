@@ -79,7 +79,8 @@ export function useTableOfContents(content, contentRef, scrollContainerRef) {
       const headingEls = contentRef.current?.querySelectorAll('[data-heading]');
       if (!headingEls?.length) return;
 
-      const containerTop = scrollEl.getBoundingClientRect().top;
+      const scrollEl = scrollContainerRef.current;
+      const containerTop = scrollEl === window ? 0 : scrollEl.getBoundingClientRect().top;
       const threshold = containerTop + 120; // 120px offset for active detection
 
       let active = null;

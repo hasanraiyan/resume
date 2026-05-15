@@ -35,13 +35,72 @@ export async function POST(request) {
 
     const stream = new ReadableStream({
       async start(controller) {
+        const startTime = Date.now();
+        let totalUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+        let finalContent = '';
+        let finalTitle = '';
+
         try {
           const events = agentRegistry.streamExecute(AGENT_IDS.COURSIFY_SEARCH, {
             topic: topic.trim(),
           });
 
           for await (const event of events) {
+            if (event.type === 'usage' && event.data) {
+              totalUsage.promptTokens += event.data.promptTokens || 0;
+              totalUsage.completionTokens += event.data.completionTokens || 0;
+              totalUsage.totalTokens += event.data.totalTokens || 0;
+            } else if (event.type === 'content') {
+              finalContent += event.message || '';
+            } else if (event.type === 'title') {
+              finalTitle = event.text;
+            }
             controller.enqueue(encodeEvent(event));
+          }
+
+          // ─── Persistence Logic ───
+          if (finalContent) {
+            await dbConnect();
+            const { slugify } = await import('@/utils/string');
+            const { getPollinationsBalance } = await import('@/lib/pollinations-balance');
+            const CoursifyResearch = (await import('@/models/CoursifyResearch')).default;
+
+            const balanceData = await getPollinationsBalance();
+            const exchangeRate = balanceData.balanceINR / (balanceData.balance || 1) || 83.5;
+            const estimatedCostINR = (totalUsage.totalTokens / 1000) * 0.002 * exchangeRate;
+
+            const baseTitle = finalTitle || topic.trim();
+            let slug = slugify(baseTitle);
+            let isUnique = false;
+            let attempts = 0;
+
+            while (!isUnique && attempts < 5) {
+              const existing = await CoursifyResearch.findOne({ slug });
+              if (existing) {
+                const suffix = Math.random().toString(36).substring(2, 6);
+                slug = `${slugify(baseTitle)}-${suffix}`;
+                attempts++;
+              } else {
+                isUnique = true;
+              }
+            }
+
+            const research = await CoursifyResearch.create({
+              topic: topic.trim(),
+              title: baseTitle,
+              content: finalContent,
+              slug,
+              usage: {
+                ...totalUsage,
+                estimatedCostINR,
+              },
+              metadata: {
+                durationMs: Date.now() - startTime,
+              },
+            });
+
+            // Emit the slug so the client can redirect/show link
+            controller.enqueue(encodeEvent({ type: 'persist', slug, id: research._id }));
           }
 
           controller.enqueue(encodeEvent({ type: 'done' }));

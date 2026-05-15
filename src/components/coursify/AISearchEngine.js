@@ -10,6 +10,7 @@ import {
   Search,
   Sparkles,
   Download,
+  Share2,
   Loader2,
   Globe,
   BookOpen,
@@ -61,6 +62,7 @@ export function AISearchEngine({ onGenerated }) {
   const [suggestions, setSuggestions] = useState(FALLBACK_TOPICS);
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
   const [toolSteps, setToolSteps] = useState([]);
+  const [generatedSlug, setGeneratedSlug] = useState('');
 
   const inputRef = useRef(null);
   const contentRef = useRef('');
@@ -236,6 +238,8 @@ export function AISearchEngine({ onGenerated }) {
                 });
               }, 800);
             }
+          } else if (event.type === 'persist') {
+            setGeneratedSlug(event.slug);
           } else if (event.type === 'done') {
             setPhase(PHASE.DONE);
             setStatusMessage('');
@@ -445,6 +449,36 @@ export function AISearchEngine({ onGenerated }) {
     );
   }
 
+  const handleShare = async () => {
+    if (!generatedSlug) {
+      toast.error('Sharing link not ready yet.');
+      return;
+    }
+
+    const shareUrl = `${window.location.origin}/coursify/r/${generatedSlug}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Research: ${query}`,
+          text: `Check out this AI-generated research on ${query}`,
+          url: shareUrl,
+        });
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          toast.error('Failed to share.');
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success('Link copied to clipboard!');
+      } catch (err) {
+        toast.error('Failed to copy link.');
+      }
+    }
+  };
+
   // ─── DONE: full rendered content ──────────────────────────────────────────
   return (
     <div className="w-full">
@@ -486,17 +520,13 @@ export function AISearchEngine({ onGenerated }) {
           )}
         </button>
         <button
-          onClick={handleDownloadPdf}
-          disabled={isExporting}
+          onClick={handleShare}
+          disabled={!generatedSlug}
           className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-[#1f644e] border border-[#d4e6de] rounded-full hover:bg-[#f0f5f2] transition-all shrink-0 disabled:opacity-50"
-          title="Download as PDF"
+          title="Share research link"
         >
-          {isExporting ? (
-            <Loader2 className="w-3 h-3 animate-spin" />
-          ) : (
-            <Download className="w-3 h-3" />
-          )}
-          PDF
+          <Share2 className="w-3 h-3" />
+          Share
         </button>
         <button
           onClick={() => generate(query)}
