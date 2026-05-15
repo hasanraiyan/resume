@@ -5,6 +5,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   ChevronRight,
@@ -79,6 +80,17 @@ export function AISearchEngine({ onGenerated }) {
   const contentRef = useRef('');
 
   const resultRef = useRef(null);
+  const hasAutoFilled = useRef(false);
+  const searchParams = useSearchParams();
+
+  // Handle auto-fill from query param
+  useEffect(() => {
+    const autoTopic = searchParams.get('search_ai');
+    if (autoTopic && !hasAutoFilled.current) {
+      hasAutoFilled.current = true;
+      setInputValue(autoTopic);
+    }
+  }, [searchParams]);
 
   // Fetch suggestions
   const fetchSuggestions = useCallback(async () => {

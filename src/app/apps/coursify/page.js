@@ -20,6 +20,8 @@ import {
   Trash2,
   TrendingUp,
   FileText,
+  Users,
+  History,
 } from 'lucide-react';
 import { CoursifyProvider, useCoursify } from '@/context/CoursifyContext';
 import CourseCard from '@/components/coursify/CourseCard';
@@ -29,6 +31,7 @@ import { CoursifyAnalytics } from '@/components/coursify/analytics/CoursifyAnaly
 import SessionProvider from '@/components/SessionProvider';
 import { cn } from '@/utils/classNames';
 import { ResearchHistory } from '@/components/coursify/analytics/ResearchHistory';
+import { CoursifyLeads } from '@/components/coursify/analytics/CoursifyLeads';
 
 const pacifico = Pacifico({
   weight: '400',
@@ -224,6 +227,18 @@ function CoursifyApp() {
                   <FileText className="w-3.5 h-3.5" />
                   All Artifacts
                 </button>
+                <button
+                  onClick={() => setActiveTab('leads')}
+                  className={cn(
+                    'w-full flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg transition-colors',
+                    activeTab === 'leads'
+                      ? 'bg-[#f0f5f2] text-[#1f644e]'
+                      : 'text-[#1e3a34] hover:bg-[#f0f5f2]'
+                  )}
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  Waitlist
+                </button>
                 <div className="h-px bg-[#e5e3d8] my-1 mx-2" />
                 <button
                   onClick={refresh}
@@ -283,6 +298,8 @@ function CoursifyApp() {
           <CoursifyAnalytics />
         ) : activeTab === 'history' ? (
           <ResearchHistory />
+        ) : activeTab === 'leads' ? (
+          <CoursifyLeads />
         ) : isLoading ? (
           <div className="space-y-8">
             <section>
