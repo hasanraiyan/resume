@@ -19,7 +19,9 @@
       "Bash(coursify init *)",
       "Bash(coursify init-module *)",
       "Bash(coursify init-section *)",
-      "Bash(python3 *)"
+      "Bash(python3 *)",
+      "Bash(grep -E \"\\\\.\\(js|jsx\\)$\")",
+      "Bash(grep -E \"page\\\\.\\(js|jsx\\)$\")"
     ]
   }
 }
