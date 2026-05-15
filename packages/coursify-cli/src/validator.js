@@ -223,15 +223,15 @@ export async function validateCourse(dir) {
             chartParts.forEach((part) => {
               const chartContent = part.split(/##\s+\[/)[0];
               if (!chartContent.includes('labels:')) {
-              results.errors.push(
-                `ChartBlock missing labels in ${modDirEntry.name}/${secDirEntry.name}`
-              );
-            }
-            if (!chartContent.includes('datasets:')) {
-              results.errors.push(
-                `ChartBlock missing datasets in ${modDirEntry.name}/${secDirEntry.name}`
-              );
-            }
+                results.errors.push(
+                  `ChartBlock missing labels in ${modDirEntry.name}/${secDirEntry.name}`
+                );
+              }
+              if (!chartContent.includes('datasets:')) {
+                results.errors.push(
+                  `ChartBlock missing datasets in ${modDirEntry.name}/${secDirEntry.name}`
+                );
+              }
             });
           }
         } catch (e) {

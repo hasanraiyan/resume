@@ -29,9 +29,8 @@ const ChartComponent = dynamic(
       Tooltip,
       Legend,
     } = await import('chart.js');
-    const { Bar, Line, Pie, Doughnut, PolarArea, Radar, Scatter, Bubble } = await import(
-      'react-chartjs-2'
-    );
+    const { Bar, Line, Pie, Doughnut, PolarArea, Radar, Scatter, Bubble } =
+      await import('react-chartjs-2');
 
     ChartJS.register(
       CategoryScale,

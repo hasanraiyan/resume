@@ -139,15 +139,14 @@ title: "Loader Market Share"
 description: "Usage frequency of standard document loaders in RAG pipelines"
 
 data:
-  labels: ["PDF", "Notion", "GitHub", "Postgres", "Web Search"]
-  datasets:
-    - label: "Production Usage"
-      data: [85, 42, 38, 25, 60]
-      color: "#1f644e"
+labels: ["PDF", "Notion", "GitHub", "Postgres", "Web Search"]
+datasets: - label: "Production Usage"
+data: [85, 42, 38, 25, 60]
+color: "#1f644e"
 
 options:
-  showLegend: true
-  beginAtZero: true
+showLegend: true
+beginAtZero: true
 
 ---
 
