@@ -9,6 +9,7 @@ import { LeadForm } from '@/components/custom-ui/LeadForm';
 import { Button } from '@/components/custom-ui';
 import { cn } from '@/components/custom-ui';
 import { AISearchEngine } from './AISearchEngine';
+import { BalanceBadge, useBalance } from './BalanceBadge';
 
 const DIFFICULTY_FILTERS = ['all', 'beginner', 'intermediate', 'advanced'];
 
@@ -38,6 +39,7 @@ export function CourseListClient({ initialCourses, waitlistCount = 0 }) {
   const [difficulty, setDifficulty] = useState('all');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
+  const { balance, isLoading, refresh: refreshBalance } = useBalance();
 
   // Deep-link to waitlist via #waitlist hash
   useEffect(() => {
@@ -85,79 +87,98 @@ export function CourseListClient({ initialCourses, waitlistCount = 0 }) {
               <Search className="w-5 h-5" />
             </button>
 
-            <Dialog open={isWaitlistOpen} onOpenChange={setIsWaitlistOpen}>
-              <DialogTrigger asChild>
-                <button className="hidden sm:flex items-center gap-2 px-4 py-2 bg-[#1f644e] text-white rounded-full text-xs font-bold hover:bg-[#184d3c] transition-all shadow-md shadow-[#1f644e]/10">
-                  <Plus className="w-4 h-4" />
-                  Join Waitlist
-                </button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[440px] p-0 border-none shadow-3xl overflow-hidden rounded-[2rem] bg-white">
-                <div className="relative p-6 sm:p-10">
-                  {/* Background Accents */}
-                  <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-[#1f644e]/5 rounded-full blur-3xl pointer-events-none" />
-                  <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-64 h-64 bg-[#f0f5f2]/50 rounded-full blur-3xl pointer-events-none" />
+            {/* Desktop Balance + Waitlist */}
+            <div className="hidden sm:flex items-center gap-2">
+              <BalanceBadge balance={balance} loading={isLoading} />
+              <Dialog open={isWaitlistOpen} onOpenChange={setIsWaitlistOpen}>
+                <DialogTrigger asChild>
+                  <button className="flex items-center gap-2 px-4 py-2 bg-[#1f644e] text-white rounded-full text-xs font-bold hover:bg-[#184d3c] transition-all shadow-md shadow-[#1f644e]/10">
+                    <Plus className="w-4 h-4" />
+                    Join Waitlist
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[440px] p-0 border-none shadow-3xl overflow-hidden rounded-[2rem] bg-white">
+                  <div className="relative p-6 sm:p-10">
+                    {/* Background Accents */}
+                    <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-[#1f644e]/5 rounded-full blur-3xl pointer-events-none" />
+                    <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-64 h-64 bg-[#f0f5f2]/50 rounded-full blur-3xl pointer-events-none" />
 
-                  <div className="relative z-10 text-center">
-                    <div className="w-14 h-14 bg-[#f0f5f2] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
-                      <Sparkles className="w-7 h-7 text-[#1f644e]" />
-                    </div>
-
-                    <h2 className="text-3xl font-bold font-['Playfair_Display'] leading-tight mb-3 tracking-tight text-[#1e3a34]">
-                      Master <span className="italic text-[#1f644e]">Anything</span> <br />{' '}
-                      Instantly.
-                    </h2>
-
-                    <p className="text-[#7c8e88] text-xs leading-relaxed mb-8 max-w-[260px] mx-auto">
-                      Join the waitlist for the AI-powered engine that builds courses on demand.
-                    </p>
-
-                    <LeadForm
-                      minimal
-                      type="coursify-waitlist"
-                      buttonText="Get Early Access"
-                      fields={[
-                        {
-                          id: 'learning_goal',
-                          label: 'Learning Goal',
-                          type: 'text',
-                          placeholder: "What's the first course you will generate?",
-                          required: true,
-                        },
-                      ]}
-                    />
-
-                    {waitlistCount > 0 && (
-                      <div className="mt-10 pt-6 border-t border-[#f0f5f2] flex flex-col items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-700">
-                        {waitlistCount >= 4 && (
-                          <div className="flex -space-x-3">
-                            {[
-                              { l: 'RH', b: 'bg-gradient-to-br from-[#1f644e] to-[#0a1a16]' },
-                              { l: 'SH', b: 'bg-gradient-to-br from-[#a8c9bf] to-[#1f644e]' },
-                              { l: 'AV', b: 'bg-gradient-to-br from-[#164235] to-[#1f644e]' },
-                              { l: 'AH', b: 'bg-gradient-to-br from-[#1f644e] to-[#50c878]' },
-                            ].map((avatar, i) => (
-                              <div
-                                key={i}
-                                className={cn(
-                                  'w-10 h-10 rounded-full border-4 border-white flex items-center justify-center text-[10px] font-black text-white shadow-sm shadow-black/5',
-                                  avatar.b
-                                )}
-                              >
-                                {avatar.l}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-[0.25em]">
-                          {waitlistCount.toLocaleString()}+ waiting for access
-                        </p>
+                    <div className="relative z-10 text-center">
+                      <div className="w-14 h-14 bg-[#f0f5f2] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+                        <Sparkles className="w-7 h-7 text-[#1f644e]" />
                       </div>
-                    )}
+
+                      <h2 className="text-3xl font-bold font-['Playfair_Display'] leading-tight mb-3 tracking-tight text-[#1e3a34]">
+                        Master <span className="italic text-[#1f644e]">Anything</span> <br />{' '}
+                        Instantly.
+                      </h2>
+
+                      <p className="text-[#7c8e88] text-xs leading-relaxed mb-8 max-w-[260px] mx-auto">
+                        Join the waitlist for the AI-powered engine that builds courses on demand.
+                      </p>
+
+                      <LeadForm
+                        minimal
+                        type="coursify-waitlist"
+                        buttonText="Get Early Access"
+                        fields={[
+                          {
+                            id: 'learning_goal',
+                            label: 'Learning Goal',
+                            type: 'text',
+                            placeholder: "What's the first course you will generate?",
+                            required: true,
+                          },
+                        ]}
+                      />
+
+                      {waitlistCount > 0 && (
+                        <div className="mt-10 pt-6 border-t border-[#f0f5f2] flex flex-col items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-700">
+                          {waitlistCount >= 4 && (
+                            <div className="flex -space-x-3">
+                              {[
+                                { l: 'RH', b: 'bg-gradient-to-br from-[#1f644e] to-[#0a1a16]' },
+                                { l: 'SH', b: 'bg-gradient-to-br from-[#a8c9bf] to-[#1f644e]' },
+                                { l: 'AV', b: 'bg-gradient-to-br from-[#164235] to-[#1f644e]' },
+                                { l: 'AH', b: 'bg-gradient-to-br from-[#1f644e] to-[#50c878]' },
+                              ].map((avatar, i) => (
+                                <div
+                                  key={i}
+                                  className={cn(
+                                    'w-10 h-10 rounded-full border-4 border-white flex items-center justify-center text-[10px] font-black text-white shadow-sm shadow-black/5',
+                                    avatar.b
+                                  )}
+                                >
+                                  {avatar.l}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-[0.25em]">
+                            {waitlistCount.toLocaleString()}+ waiting for access
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {/* Mobile Balance + Waitlist */}
+            <div className="sm:hidden flex items-center gap-2">
+              <BalanceBadge
+                balance={balance}
+                loading={isLoading}
+                className="px-2 py-1 text-[9px]"
+              />
+              <button
+                onClick={() => setIsWaitlistOpen(true)}
+                className="p-2 bg-[#1f644e] text-white rounded-full shadow-lg shadow-[#1f644e]/20 active:scale-95 transition-all"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -175,7 +196,7 @@ export function CourseListClient({ initialCourses, waitlistCount = 0 }) {
               university-level course page instantly.
             </p>
           </div>
-          <AISearchEngine />
+          <AISearchEngine onGenerated={refreshBalance} />
         </div>
 
         <div className="flex items-center gap-3 mb-6 sm:mb-8">

@@ -294,9 +294,13 @@ class BaseAgent {
       let toolCallCount = 0;
       const toolNames = [];
       for await (const chunk of this._onStreamExecute(input)) {
-        if (chunk.type === 'tool_result') {
+        // Track tool usage - support both 'tool_result' and 'tool_call' (completed) types
+        const isToolResult = chunk.type === 'tool_result';
+        const isCompletedToolCall = chunk.type === 'tool_call' && chunk.status === 'completed';
+
+        if (isToolResult || isCompletedToolCall) {
           toolCallCount++;
-          const toolName = chunk.name || chunk.toolName || 'unknown';
+          const toolName = chunk.name || chunk.tool || chunk.toolName || 'unknown';
           toolNames.push(toolName);
           this.logger.debug(`Tool #${toolCallCount}: ${toolName}`);
         }
@@ -521,7 +525,8 @@ class BaseAgent {
         model: normalizedModelName,
         maxOutputTokens: maxTokens,
         temperature,
-        thinking: { type: 'disabled' },
+        timeout: 45000,
+        maxRetries: 2,
       });
     }
 
@@ -530,9 +535,15 @@ class BaseAgent {
       modelName: normalizedModelName,
       configuration: {
         baseURL: provider.baseUrl,
+        defaultHeaders: {
+          'HTTP-Referer': process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000',
+          'X-Title': 'Coursify AI',
+        },
       },
       maxTokens,
       temperature,
+      timeout: 45000, // 45 seconds timeout to prevent hanging
+      maxRetries: 2,
     });
   }
 

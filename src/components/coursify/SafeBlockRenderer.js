@@ -8,12 +8,18 @@ import { RotateCcw } from 'lucide-react';
 const MAX_AUTO_RETRIES = 3;
 const RETRY_DELAY = 400;
 
-export function SafeBlockRenderer({ content, isComplete = false }) {
+export function SafeBlockRenderer({ content, blocks, isComplete = false }) {
   const [error, setError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [showManualRetry, setShowManualRetry] = useState(false);
 
-  // Auto-retry when content changes or completes
+  // Reset error state when content/blocks change (important for streaming)
+  useEffect(() => {
+    setError(false);
+    setShowManualRetry(false);
+  }, [content, blocks]);
+
+  // Auto-retry logic
   useEffect(() => {
     if (isComplete && error && retryCount < MAX_AUTO_RETRIES) {
       const timer = setTimeout(() => {
@@ -55,7 +61,7 @@ export function SafeBlockRenderer({ content, isComplete = false }) {
 
   return (
     <div onError={() => setError(true)}>
-      <CoursifyBlockRenderer content={content} />
+      <CoursifyBlockRenderer content={content} blocks={blocks} />
     </div>
   );
 }

@@ -2,31 +2,35 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  Search,
-  Sparkles,
   ArrowLeft,
-  Loader2,
-  Globe,
-  BookOpen,
-  RotateCcw,
   ChevronRight,
   Copy,
   Check,
+  RotateCcw,
+  Search,
+  Sparkles,
+  Download,
+  Loader2,
+  Globe,
+  BookOpen,
+  Info,
+  Wand2,
+  Youtube,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { generateCoursifyPdf } from '@/utils/coursifyPdfGenerator';
 import { CoursifyBlockRenderer } from '@/components/coursify/reader/CoursifyBlockRenderer';
 import { BlockSkeleton } from '@/components/coursify/BlockSkeleton';
 import { SafeBlockRenderer } from '@/components/coursify/SafeBlockRenderer';
+import CoursifyStepHistory from '@/components/coursify/CoursifyStepHistory';
+import { parseMarkdownToBlocks } from '@/utils/coursify-parser';
 
-const SUGGESTED_TOPICS = [
+// Static fallbacks in case API fails
+const FALLBACK_TOPICS = [
   "Dijkstra's Algorithm",
   'React Hooks in depth',
   'SQL Window Functions',
   'Machine Learning Basics',
-  'TCP/IP Networking',
-  'Dynamic Programming',
-  'System Design: URL Shortener',
-  'Async/Await in JavaScript',
 ];
 
 // Phase constants
@@ -37,50 +41,9 @@ const PHASE = {
   ERROR: 'error',
 };
 
-function BalanceBadge({ balance, loading }) {
-  if (loading && !balance) {
-    return (
-      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f0f5f2] border border-[#d4e6de] animate-pulse">
-        <div className="w-1.5 h-1.5 rounded-full bg-[#b5c4be]" />
-        <div className="w-12 h-2 bg-[#b5c4be] rounded-full" />
-      </div>
-    );
-  }
+import { BalanceBadge } from './BalanceBadge';
 
-  if (!balance) return null;
-
-  const isDepleted = balance.status === 'depleted';
-  const isError =
-    balance.status === 'error' ||
-    balance.status === 'no_api_key' ||
-    balance.status === 'invalid_api_key';
-
-  return (
-    <div
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all ${
-        isDepleted || isError
-          ? 'bg-red-50 text-red-600 border border-red-100'
-          : 'bg-[#f0f5f2] text-[#1f644e] border border-[#d4e6de]'
-      }`}
-      title={balance.message}
-    >
-      <div
-        className={`w-1.5 h-1.5 rounded-full ${
-          isDepleted || isError ? 'bg-red-500 animate-pulse' : 'bg-[#1f644e]'
-        }`}
-      />
-      {isError ? (
-        <span>API Error</span>
-      ) : isDepleted ? (
-        <span>Zero Balance • Resets in {balance.resetIn}</span>
-      ) : (
-        <span>AI Credits: ₹{Number(balance.balanceINR).toFixed(2)}</span>
-      )}
-    </div>
-  );
-}
-
-export function AISearchEngine() {
+export function AISearchEngine({ onGenerated }) {
   const [phase, setPhase] = useState(PHASE.IDLE);
   const [query, setQuery] = useState('');
   const [inputValue, setInputValue] = useState('');
@@ -94,6 +57,10 @@ export function AISearchEngine() {
   const [generatedTitle, setGeneratedTitle] = useState('');
   const [balance, setBalance] = useState(null);
   const [isBalanceLoading, setIsBalanceLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [suggestions, setSuggestions] = useState(FALLBACK_TOPICS);
+  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
+  const [toolSteps, setToolSteps] = useState([]);
 
   const inputRef = useRef(null);
   const contentRef = useRef('');
@@ -114,10 +81,27 @@ export function AISearchEngine() {
     }
   }, []);
 
-  // Fetch balance on mount
+  // Fetch suggestions
+  const fetchSuggestions = useCallback(async () => {
+    setIsSuggestionsLoading(true);
+    try {
+      const res = await fetch('/api/coursify/suggestions');
+      const data = await res.json();
+      if (data.success && data.suggestions) {
+        setSuggestions(data.suggestions);
+      }
+    } catch (err) {
+      console.error('Failed to fetch suggestions:', err);
+    } finally {
+      setIsSuggestionsLoading(false);
+    }
+  }, []);
+
+  // Fetch data on mount
   useEffect(() => {
     fetchBalance();
-  }, [fetchBalance]);
+    fetchSuggestions();
+  }, [fetchBalance, fetchSuggestions]);
 
   // Focus input on mount
   useEffect(() => {
@@ -135,18 +119,25 @@ export function AISearchEngine() {
   useEffect(() => {
     if (phase !== PHASE.GENERATING) return;
 
-    // Split by --- to find block boundaries
-    const parts = content.split(/---\s*\n/);
-
-    // Last part is in-progress (incomplete block)
-    const inProgress = parts[parts.length - 1];
-    setInProgressBlock(inProgress);
-
-    // All complete blocks (everything except the last part)
-    if (parts.length > 1) {
-      const completed = parts.slice(0, -1).join('---\n');
-      setCompletedBlocks(completed);
+    const allBlocks = parseMarkdownToBlocks(content);
+    if (allBlocks.length === 0) {
+      setCompletedBlocks([]);
+      setInProgressBlock(content);
+      return;
     }
+
+    // If the content ends with a block separator (---) or we've reached a new block header,
+    // the previous blocks are definitely complete.
+    // However, for streaming UX, we'll treat all blocks except the last one as "complete".
+    const completed = allBlocks.slice(0, -1);
+    const inProgress = allBlocks[allBlocks.length - 1];
+
+    setCompletedBlocks(completed);
+
+    // Convert the in-progress block back to a pseudo-markdown string for the renderer
+    // or just pass the block object if SafeBlockRenderer is updated.
+    // For now, we'll use the last block's raw content or structure.
+    setInProgressBlock(inProgress);
   }, [content, phase]);
 
   const generate = useCallback(async (topic) => {
@@ -158,6 +149,7 @@ export function AISearchEngine() {
     setStatusMessage(`🔍 Searching for "${topic}"`);
     setError('');
     setActiveTools({});
+    setToolSteps([{ tool: 'agent', status: 'started', input: { query: topic } }]);
     contentRef.current = '';
 
     try {
@@ -220,6 +212,17 @@ export function AISearchEngine() {
             } else if (status === 'completed') {
               setStatusMessage(`📖 Reading search results...`);
             }
+
+            setToolSteps((prev) => {
+              const existingIdx = prev.findIndex((s) => s.tool === tool && s.status === 'started');
+              if (existingIdx !== -1) {
+                const updated = [...prev];
+                updated[existingIdx] = { ...updated[existingIdx], status, output: event.output };
+                return updated;
+              }
+              return [...prev, { tool, status, input }];
+            });
+
             setActiveTools((prev) => ({
               ...prev,
               [tool]: status,
@@ -243,7 +246,8 @@ export function AISearchEngine() {
       }
 
       if (contentRef.current) setPhase(PHASE.DONE);
-      // Refetch balance after generation
+      // Refetch balance after generation via callback
+      if (onGenerated) onGenerated();
       fetchBalance();
     } catch (err) {
       console.error('[AISearchEngine]', err);
@@ -257,6 +261,35 @@ export function AISearchEngine() {
     generate(inputValue);
   };
 
+  const handleDownloadPdf = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    toast.loading('Preparing your PDF...', { id: 'pdf-export' });
+
+    try {
+      // Create a pseudo-course structure for the single generated section
+      const doc = await generateCoursifyPdf({
+        course: {
+          title: generatedTitle || query,
+          difficulty: 'intermediate',
+        },
+        sections: [
+          {
+            title: generatedTitle || query,
+            content: content,
+          },
+        ],
+      });
+      doc.save(`${(generatedTitle || query).replace(/\s+/g, '_')}_Research.pdf`);
+      toast.success('Research exported successfully!', { id: 'pdf-export' });
+    } catch (err) {
+      console.error('PDF Export Error:', err);
+      toast.error('Failed to generate PDF.', { id: 'pdf-export' });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleReset = () => {
     setPhase(PHASE.IDLE);
     setInputValue('');
@@ -268,6 +301,7 @@ export function AISearchEngine() {
     setInProgressBlock('');
     setCopiedFull(false);
     setGeneratedTitle('');
+    setToolSteps([]);
   };
 
   const handleCopyFull = async () => {
@@ -286,12 +320,9 @@ export function AISearchEngine() {
   if (phase === PHASE.IDLE) {
     return (
       <div className="w-full">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider">
-            AI Research Engine
-          </h2>
-          <BalanceBadge balance={balance} loading={isBalanceLoading} />
-        </div>
+        <h2 className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider mb-4">
+          AI Research Engine
+        </h2>
 
         <form onSubmit={handleSubmit} className="relative">
           <div className="flex items-center gap-1 px-5 py-4 rounded-full border-2 border-[#e5e3d8] bg-white focus-within:border-[#1f644e] focus-within:shadow-none transition-all">
@@ -315,17 +346,26 @@ export function AISearchEngine() {
           </div>
         </form>
 
-        <div className="mt-4 flex gap-2 overflow-x-auto flex-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {SUGGESTED_TOPICS.map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => generate(t)}
-              className="px-3 py-1.5 text-xs font-medium text-[#1f644e] bg-[#f0f5f2] border border-[#d4e6de] rounded-full hover:bg-[#1f644e] hover:text-white hover:cursor-pointer transition-all shrink-0"
-            >
-              {t}
-            </button>
-          ))}
+        <div className="mt-5 flex gap-2 overflow-x-auto flex-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-2">
+          {isSuggestionsLoading && suggestions.length === 0
+            ? Array(5)
+                .fill(0)
+                .map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-8 w-24 bg-[#f0f5f2] rounded-full animate-pulse shrink-0"
+                  />
+                ))
+            : suggestions.map((t, idx) => (
+                <button
+                  key={`${t}-${idx}`}
+                  type="button"
+                  onClick={() => generate(t)}
+                  className="px-4 py-2 text-xs font-bold text-[#1f644e] bg-white border border-[#e5e3d8] rounded-full hover:bg-[#f0f5f2] hover:border-[#1f644e] hover:cursor-pointer transition-all shrink-0 whitespace-nowrap active:scale-95"
+                >
+                  {t}
+                </button>
+              ))}
         </div>
       </div>
     );
@@ -344,34 +384,25 @@ export function AISearchEngine() {
           </div>
         )}
 
-        {/* Status line with conditional dots */}
-        <div className="flex items-center gap-2 mb-6">
-          <div className="flex gap-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#1f644e] animate-pulse" />
-            <div
-              className="w-1.5 h-1.5 rounded-full bg-[#1f644e] animate-pulse"
-              style={{ animationDelay: '0.2s' }}
-            />
-            <div
-              className="w-1.5 h-1.5 rounded-full bg-[#1f644e] animate-pulse"
-              style={{ animationDelay: '0.4s' }}
-            />
-          </div>
-          {statusMessage && <p className="text-sm text-[#7c8e88] font-medium">{statusMessage}</p>}
-        </div>
+        {/* Research History */}
+        <CoursifyStepHistory steps={toolSteps} />
 
         {/* Rendered Blocks */}
         <div className="space-y-6">
-          {completedBlocks && (
-            <div>
-              <SafeBlockRenderer content={completedBlocks} isComplete={true} />
+          {completedBlocks.map((block, idx) => (
+            <div key={`completed-${idx}`}>
+              <SafeBlockRenderer blocks={[block]} isComplete={true} />
             </div>
-          )}
+          ))}
 
           {/* In-Progress Block - Rendered but Faded */}
           {inProgressBlock && (
             <div className="opacity-50 animate-pulse">
-              <SafeBlockRenderer content={inProgressBlock} isComplete={false} />
+              <SafeBlockRenderer
+                blocks={typeof inProgressBlock === 'string' ? null : [inProgressBlock]}
+                content={typeof inProgressBlock === 'string' ? inProgressBlock : null}
+                isComplete={false}
+              />
             </div>
           )}
         </div>
@@ -417,9 +448,7 @@ export function AISearchEngine() {
   // ─── DONE: full rendered content ──────────────────────────────────────────
   return (
     <div className="w-full">
-      <div className="flex items-center justify-end mb-4">
-        <BalanceBadge balance={balance} loading={isBalanceLoading} />
-      </div>
+      <div className="flex items-center justify-end mb-4"></div>
 
       {/* Result header */}
       <div className="flex items-center gap-3 mb-6">
@@ -455,6 +484,19 @@ export function AISearchEngine() {
               Copy
             </>
           )}
+        </button>
+        <button
+          onClick={handleDownloadPdf}
+          disabled={isExporting}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-[#1f644e] border border-[#d4e6de] rounded-full hover:bg-[#f0f5f2] transition-all shrink-0 disabled:opacity-50"
+          title="Download as PDF"
+        >
+          {isExporting ? (
+            <Loader2 className="w-3 h-3 animate-spin" />
+          ) : (
+            <Download className="w-3 h-3" />
+          )}
+          PDF
         </button>
         <button
           onClick={() => generate(query)}

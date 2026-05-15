@@ -1,25 +1,26 @@
 'use client';
 import { generateMarkdownFromBlocks } from '@/utils/coursify-parser';
 
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Download, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useTableOfContents } from '@/hooks/coursify/useTableOfContents';
 import { useCourseReader } from '@/hooks/coursify/useCourseReader';
 import { useReaderUI } from '@/hooks/coursify/useReaderUI';
 import { ReaderHeader } from '@/components/coursify/reader/ReaderHeader';
 import { ReaderSidebar } from '@/components/coursify/reader/ReaderSidebar';
 import { CourseOverview } from '@/components/coursify/reader/CourseOverview';
-import { MarkdownRenderer } from '@/components/coursify/reader/MarkdownRenderer';
-import { QuizPlayer } from '@/components/coursify/reader/QuizPlayer';
 import { TableOfContents } from '@/components/coursify/reader/TableOfContents';
 import { ReaderNavigation } from '@/components/coursify/reader/ReaderNavigation';
 import { CoursifyBlockRenderer } from '@/components/coursify/reader/CoursifyBlockRenderer';
+import { generateCoursifyPdf } from '@/utils/coursifyPdfGenerator';
 
 export function CourseReaderShell({ initialData, slug, activeSectionId }) {
   const router = useRouter();
   const contentRef = useRef(null);
   const mainRef = useRef(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const {
     course,
@@ -56,11 +57,46 @@ export function CourseReaderShell({ initialData, slug, activeSectionId }) {
     toggleToc,
   } = useReaderUI(modules, activeSection, sections);
 
+  const handleDownloadPdf = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    toast.loading('Preparing your PDF...', { id: 'pdf-export' });
+
+    try {
+      const doc = await generateCoursifyPdf({ course, sections });
+      doc.save(`${course.title.replace(/\s+/g, '_')}_Study_Guide.pdf`);
+      toast.success('Course exported successfully!', { id: 'pdf-export' });
+    } catch (err) {
+      console.error('PDF Export Error:', err);
+      toast.error('Failed to generate PDF.', { id: 'pdf-export' });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (!course) return null;
 
   return (
     <div className="h-screen flex flex-col">
-      <ReaderHeader course={course} showOverview={showOverview} onToggleSidebar={toggleSidebar} />
+      <ReaderHeader
+        course={course}
+        showOverview={showOverview}
+        onToggleSidebar={toggleSidebar}
+        actions={
+          <button
+            onClick={handleDownloadPdf}
+            disabled={isExporting}
+            className="p-1.5 hover:bg-[#f0f5f2] rounded-full transition-colors text-[#7c8e88] hover:text-[#1f644e] disabled:opacity-50"
+            title="Download PDF"
+          >
+            {isExporting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+          </button>
+        }
+      />
 
       <div className="flex flex-1 min-h-0">
         <ReaderSidebar

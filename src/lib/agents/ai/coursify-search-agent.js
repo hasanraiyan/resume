@@ -16,13 +16,12 @@ You are a Coursify AI Course Content Generator. Your job is to research a topic 
 3. After gathering info, OUTPUT the full Coursify markdown content. Do NOT ask questions.
 
 ## Coursify Markdown Format
-All content must use \`## [BlockType]\` headers. Generate blocks as required.
+All content must use ## [BlockType] headers. Generate blocks as required.
 
 ### Available Block Types:
 
 **## [MdBlock]**
-### Heading
-Primary narrative text. Supports LaTeX math ($O(n \\log n)$), markdown tables, Mermaid diagrams.
+Primary narrative text. Supports LaTeX math ($O(n \log n)$), markdown tables, and Mermaid diagrams.
 \`\`\`mermaid
 graph TD
   A --> B
@@ -33,7 +32,7 @@ For processes, algorithms, sequential walkthroughs.
 title: "Step Title"
 showNumbering: true
 - step: "Step Name"
-  content: "Step details here. Can include mermaid: \\n\`\`\`mermaid\\ngraph LR\\n  A---B\\n\`\`\`"
+  content: "Step details here. Can include mermaid: \n\`\`\`mermaid\\ngraph LR\\n  A---B\\n\`\`\`"
 
 **## [AccordionBlock]**
 For FAQs, edge cases, supplementary info.
@@ -105,7 +104,13 @@ url: "https://www.youtube.com/watch?v=..."
 - Cover the topic deeply and comprehensively
 - Professional, academic tone — no fluff
 - Separate each block with ---
-- Use only block tht i nceeasayr for the use case okay`;
+- Use $...$ for inline LaTeX and $$...$$ for block/display LaTeX.
+- Use only blocks that are necessary for the use case.
+- IMPORTANT: ALWAYS perform at least 2 web searches before generating content.
+- IMPORTANT: If you need a video, you MUST search YouTube.
+- DO NOT summarize or talk about your process. Just execute tool calls then output markdown.
+- MANDATORY: If you don't use tools, you are failing your job. SEARCH FIRST.
+- IMPORTANT: Always perform search first to get accurate up-to-date info.`;
 
 const TOOL_STATUS = {
   tavily_search: '🔍 Searching the web...',
@@ -209,7 +214,7 @@ class CoursifySearchAgent extends BaseAgent {
         ) {
           this.logger.debug(`📝 Streaming content: "${data.chunk.content.substring(0, 50)}..."`);
           yield { type: 'content', message: data.chunk.content };
-        } else if (type === 'on_tool_start' && name !== 'agent') {
+        } else if (type === 'on_tool_start') {
           this.logger.info(`🔧 Tool starting: "${name}"`);
           if (data.input) {
             this.logger.debug(`   Input: ${JSON.stringify(data.input).substring(0, 100)}`);
@@ -220,7 +225,7 @@ class CoursifySearchAgent extends BaseAgent {
             status: 'started',
             input: data.input,
           };
-        } else if (type === 'on_tool_end' && name !== 'agent') {
+        } else if (type === 'on_tool_end') {
           this.logger.info(`✅ Tool completed: "${name}"`);
           if (data.output) {
             this.logger.debug(`   Output: ${JSON.stringify(data.output).substring(0, 100)}`);
@@ -229,6 +234,12 @@ class CoursifySearchAgent extends BaseAgent {
             type: 'tool_call',
             tool: name,
             status: 'completed',
+            output: data.output,
+          };
+          // Also yield tool_result for BaseAgent to track stats explicitly
+          yield {
+            type: 'tool_result',
+            name: name,
             output: data.output,
           };
         } else if (type === 'on_chat_model_start') {

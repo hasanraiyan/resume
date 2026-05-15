@@ -14,7 +14,18 @@ export async function POST(request) {
   if (rateLimitResponse) return rateLimitResponse;
 
   try {
-    const { topic } = await request.json();
+    const text = await request.text();
+    if (!text) {
+      return NextResponse.json({ error: 'Request body is empty' }, { status: 400 });
+    }
+
+    let topic;
+    try {
+      const body = JSON.parse(text);
+      topic = body.topic;
+    } catch (e) {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
 
     if (!topic?.trim()) {
       return NextResponse.json({ error: 'topic is required' }, { status: 400 });
