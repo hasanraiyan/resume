@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Search, BookOpen, Plus, Sparkles } from 'lucide-react';
 import { PublicCourseCard } from './PublicCourseCard';
 import SearchOverlay from '@/components/search/SearchOverlay';
@@ -187,7 +187,11 @@ export function CourseListClient({ initialCourses, waitlistCount = 0 }) {
 
           {/* AI SEARCH */}
           <div className="w-full overflow-x-hidden">
-            <AISearchEngine onGenerated={refreshBalance} />
+            <Suspense
+              fallback={<div className="h-16 w-full animate-pulse rounded-full bg-[#f0f5f2]" />}
+            >
+              <AISearchEngine onGenerated={refreshBalance} />
+            </Suspense>
           </div>
         </section>
 
