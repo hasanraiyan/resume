@@ -37,6 +37,49 @@ const PHASE = {
   ERROR: 'error',
 };
 
+function BalanceBadge({ balance, loading }) {
+  if (loading && !balance) {
+    return (
+      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f0f5f2] border border-[#d4e6de] animate-pulse">
+        <div className="w-1.5 h-1.5 rounded-full bg-[#b5c4be]" />
+        <div className="w-12 h-2 bg-[#b5c4be] rounded-full" />
+      </div>
+    );
+  }
+
+  if (!balance) return null;
+
+  const isDepleted = balance.status === 'depleted';
+  const isError =
+    balance.status === 'error' ||
+    balance.status === 'no_api_key' ||
+    balance.status === 'invalid_api_key';
+
+  return (
+    <div
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all ${
+        isDepleted || isError
+          ? 'bg-red-50 text-red-600 border border-red-100'
+          : 'bg-[#f0f5f2] text-[#1f644e] border border-[#d4e6de]'
+      }`}
+      title={balance.message}
+    >
+      <div
+        className={`w-1.5 h-1.5 rounded-full ${
+          isDepleted || isError ? 'bg-red-500 animate-pulse' : 'bg-[#1f644e]'
+        }`}
+      />
+      {isError ? (
+        <span>API Error</span>
+      ) : isDepleted ? (
+        <span>Zero Balance • Resets in {balance.resetIn}</span>
+      ) : (
+        <span>AI Credits: ${Number(balance.balance).toFixed(4)}</span>
+      )}
+    </div>
+  );
+}
+
 export function AISearchEngine() {
   const [phase, setPhase] = useState(PHASE.IDLE);
   const [query, setQuery] = useState('');
@@ -49,10 +92,32 @@ export function AISearchEngine() {
   const [inProgressBlock, setInProgressBlock] = useState('');
   const [copiedFull, setCopiedFull] = useState(false);
   const [generatedTitle, setGeneratedTitle] = useState('');
+  const [balance, setBalance] = useState(null);
+  const [isBalanceLoading, setIsBalanceLoading] = useState(false);
 
   const inputRef = useRef(null);
   const contentRef = useRef('');
   const resultRef = useRef(null);
+
+  // Fetch balance
+  const fetchBalance = useCallback(async () => {
+    setIsBalanceLoading(true);
+    try {
+      const res = await fetch('/api/coursify/balance');
+      const data = await res.json();
+      setBalance(data);
+    } catch (err) {
+      console.error('Failed to fetch balance:', err);
+      setBalance({ status: 'error', message: 'Network or server error' });
+    } finally {
+      setIsBalanceLoading(false);
+    }
+  }, []);
+
+  // Fetch balance on mount
+  useEffect(() => {
+    fetchBalance();
+  }, [fetchBalance]);
 
   // Focus input on mount
   useEffect(() => {
@@ -175,6 +240,8 @@ export function AISearchEngine() {
       }
 
       if (contentRef.current) setPhase(PHASE.DONE);
+      // Refetch balance after generation
+      fetchBalance();
     } catch (err) {
       console.error('[AISearchEngine]', err);
       setError(err.message || 'Something went wrong. Please try again.');
@@ -216,6 +283,13 @@ export function AISearchEngine() {
   if (phase === PHASE.IDLE) {
     return (
       <div className="w-full">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xs font-bold text-[#7c8e88] uppercase tracking-wider">
+            AI Research Engine
+          </h2>
+          <BalanceBadge balance={balance} loading={isBalanceLoading} />
+        </div>
+
         <form onSubmit={handleSubmit} className="relative">
           <div className="flex items-center gap-1 px-5 py-4 rounded-full border-2 border-[#e5e3d8] bg-white focus-within:border-[#1f644e] focus-within:shadow-none transition-all">
             <Sparkles className="w-5 h-5 text-[#1f644e] shrink-0" />
@@ -322,6 +396,10 @@ export function AISearchEngine() {
   // ─── DONE: full rendered content ──────────────────────────────────────────
   return (
     <div className="w-full">
+      <div className="flex items-center justify-end mb-4">
+        <BalanceBadge balance={balance} loading={isBalanceLoading} />
+      </div>
+
       {/* Result header */}
       <div className="flex items-center gap-3 mb-6">
         <button

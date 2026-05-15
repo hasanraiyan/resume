@@ -19,19 +19,54 @@ class CoursifyThumbnailAgent extends BaseAgent {
     }
   }
 
-  _buildClient() {
+  async _buildClient() {
     const provider = this.config.provider;
-    const apiKey = provider?.apiKey || process.env.POLLINATIONS_API_KEY || 'placeholder';
-    const baseURL = provider?.baseUrl || POLLINATIONS_BASE_URL;
-    return { client: new OpenAI({ baseURL, apiKey }), baseURL };
+    let apiKey = provider?.apiKey || process.env.POLLINATIONS_API_KEY;
+    let baseURL = provider?.baseUrl || POLLINATIONS_BASE_URL;
+
+    // Sync with Search Agent if primary config is missing or incomplete
+    if (!apiKey || !baseURL || baseURL === POLLINATIONS_BASE_URL) {
+      try {
+        const { getPollinationsConfig } = await import('@/lib/pollinations-balance');
+        const syncConfig = await getPollinationsConfig();
+        if (syncConfig) {
+          apiKey = syncConfig.apiKey || apiKey;
+          baseURL = syncConfig.baseUrl || baseURL;
+          this.logger.info('Synced configuration with Coursify Search Agent');
+        }
+      } catch (err) {
+        this.logger.warn('Failed to sync config with Search Agent:', err.message);
+      }
+    }
+
+    return {
+      client: new OpenAI({
+        baseURL: baseURL || 'https://gen.pollinations.ai/v1',
+        apiKey: apiKey || 'placeholder',
+      }),
+      baseURL,
+    };
   }
 
   async _onExecute(input) {
     const { prompt, size = '1792x1024' } = input;
     const model = input.model || this.config.model || this.config.defaultModel || 'gptimage-large';
-    const { client, baseURL } = this._buildClient();
+    const { client, baseURL } = await this._buildClient();
     const t0 = Date.now();
     const elapsed = () => `+${Date.now() - t0}ms`;
+
+    // Balance Check (Synchronized with Search Agent Config)
+    try {
+      const { getPollinationsBalance } = await import('@/lib/pollinations-balance');
+      const balanceData = await getPollinationsBalance();
+      if (balanceData.status === 'depleted') {
+        throw new Error('Pollinations AI balance is 0. It will reset after 1 hour.');
+      }
+      this.logger.info(`Balance check passed: ${balanceData.balance} credits`);
+    } catch (err) {
+      if (err.message.includes('balance is 0')) throw err;
+      this.logger.warn('Failed to check balance, proceeding anyway:', err.message);
+    }
 
     this.logger.info(`Calling images.generate — model=${model} size=${size} baseURL=${baseURL}`);
 
