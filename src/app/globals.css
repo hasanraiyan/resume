@@ -1,6 +1,10 @@
 @import 'tailwindcss';
 
 * {
+  box-sizing: border-box;
+}
+
+* {
   font-family: 'Space Grotesk', sans-serif;
 }
 

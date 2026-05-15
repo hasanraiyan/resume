@@ -165,7 +165,7 @@ class CoursifySearchAgent extends BaseAgent {
     try {
       const stream = await contentAgent.streamEvents(
         { messages: contentMessages },
-        { version: 'v2' }
+        { version: 'v2', runName: `Research: ${topic}` }
       );
 
       let eventCount = 0;
