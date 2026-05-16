@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   MessageCircle,
   Plus,
@@ -11,16 +11,45 @@ import {
   Check,
   RotateCcw,
   X,
+  Loader2,
 } from 'lucide-react';
 import { Card } from '@/components/custom-ui';
 import { useSmallClaw } from '@/context/SmallClawContext';
 
 export default function ChannelsTab() {
-  const { integrations, agents, refreshIntegrations, searchQuery } = useSmallClaw();
+  const { integrations, agents, refreshIntegrations, refreshAgents, searchQuery } = useSmallClaw();
 
   const [savingIntegration, setSavingIntegration] = useState(false);
   const [editingIntegration, setEditingIntegration] = useState(null);
   const [copiedAccessCodeKey, setCopiedAccessCodeKey] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const needsIntegrations = integrations.length === 0;
+      const needsAgents = agents.length === 0;
+
+      if (needsIntegrations || needsAgents) {
+        setIsLoading(true);
+        const promises = [];
+        if (needsIntegrations) promises.push(refreshIntegrations());
+        if (needsAgents) promises.push(refreshAgents());
+        await Promise.all(promises);
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, [integrations.length, agents.length, refreshIntegrations, refreshAgents]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh]">
+        <Loader2 className="w-10 h-10 text-[#1f644e] animate-spin" />
+        <p className="mt-4 text-neutral-500 font-medium">Loading Channels...</p>
+      </div>
+    );
+  }
 
   const filteredIntegrations = integrations.filter(
     (i) =>

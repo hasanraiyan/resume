@@ -1,44 +1,18 @@
 'use client';
 
-import { SmallClawProvider } from '@/context/SmallClawContext';
-import SmallClawApp from '@/components/apps/smallclaw/SmallClawApp';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-function SmallClawPageContent() {
-  const { data: session, status } = useSession();
+export default function SmallClawPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (status === 'loading') return;
-    if (!session || session.user.role !== 'admin') {
-      router.push('/admin/login?callbackUrl=/apps/smallclaw');
-    }
-  }, [session, status, router]);
+    router.replace('/apps/smallclaw/agents');
+  }, [router]);
 
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#fcfbf5]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-2 border-black border-t-transparent mx-auto"></div>
-          <p className="mt-4 text-neutral-500 font-medium">Loading SmallClaw...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!session || session.user.role !== 'admin') {
-    return null;
-  }
-
-  return <SmallClawApp />;
-}
-
-export default function SmallClawPage() {
   return (
-    <SmallClawProvider>
-      <SmallClawPageContent />
-    </SmallClawProvider>
+    <div className="flex flex-col items-center justify-center min-h-[50vh]">
+      <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#1f644e] border-t-transparent"></div>
+    </div>
   );
 }

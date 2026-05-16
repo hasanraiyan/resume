@@ -1,17 +1,45 @@
 'use client';
 
-import { useState } from 'react';
-import { Bot, Activity, Network, Power } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Bot, Activity, Network, Power, Loader2 } from 'lucide-react';
 import { Card } from '@/components/custom-ui';
 import { useSmallClaw } from '@/context/SmallClawContext';
 import AgentConfigurationModal from '@/components/admin/AgentConfigurationModal';
 import { formatDistanceToNow } from 'date-fns';
 
 export default function AgentsTab() {
-  const { agents, providers, refreshAgents, searchQuery } = useSmallClaw();
+  const { agents, providers, refreshAgents, refreshProviders, searchQuery } = useSmallClaw();
 
   const [selectedAgent, setSelectedAgent] = useState(null);
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const needsAgents = agents.length === 0;
+      const needsProviders = providers.length === 0;
+
+      if (needsAgents || needsProviders) {
+        setIsLoading(true);
+        const promises = [];
+        if (needsAgents) promises.push(refreshAgents());
+        if (needsProviders) promises.push(refreshProviders());
+        await Promise.all(promises);
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, [agents.length, providers.length, refreshAgents, refreshProviders]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh]">
+        <Loader2 className="w-10 h-10 text-[#1f644e] animate-spin" />
+        <p className="mt-4 text-neutral-500 font-medium">Loading Agents...</p>
+      </div>
+    );
+  }
 
   const filteredAgents = agents.filter(
     (a) =>

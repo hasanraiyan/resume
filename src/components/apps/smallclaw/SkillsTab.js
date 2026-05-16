@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { BookOpen, Plus, Edit2, Trash2, Wrench, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { BookOpen, Plus, Edit2, Trash2, Wrench, X, Loader2 } from 'lucide-react';
 import { Card } from '@/components/custom-ui';
 import { useSmallClaw } from '@/context/SmallClawContext';
 
@@ -10,6 +10,23 @@ export default function SkillsTab() {
 
   const [savingSkill, setSavingSkill] = useState(false);
   const [editingSkill, setEditingSkill] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (skills.length === 0) {
+      setIsLoading(true);
+      refreshSkills().finally(() => setIsLoading(false));
+    }
+  }, [skills.length, refreshSkills]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh]">
+        <Loader2 className="w-10 h-10 text-[#1f644e] animate-spin" />
+        <p className="mt-4 text-neutral-500 font-medium">Loading Skills...</p>
+      </div>
+    );
+  }
 
   const filteredSkills = skills.filter(
     (s) =>

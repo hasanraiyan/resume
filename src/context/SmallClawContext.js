@@ -6,10 +6,6 @@ import { useSession } from 'next-auth/react';
 const SmallClawContext = createContext(null);
 
 export function SmallClawProvider({ children }) {
-  const { data: session, status } = useSession();
-
-  const [activeTab, setActiveTab] = useState('providers');
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Data State
@@ -97,36 +93,7 @@ export function SmallClawProvider({ children }) {
     }
   }, []);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    await Promise.all([
-      fetchProviders(),
-      fetchAgents(),
-      fetchIntegrations(),
-      fetchMcpServers(),
-      fetchSkills(),
-      fetchChatbotSettings(),
-    ]);
-    setLoading(false);
-  }, [
-    fetchProviders,
-    fetchAgents,
-    fetchIntegrations,
-    fetchMcpServers,
-    fetchSkills,
-    fetchChatbotSettings,
-  ]);
-
-  useEffect(() => {
-    if (status === 'authenticated' && session?.user?.role === 'admin') {
-      fetchData();
-    }
-  }, [status, session, fetchData]);
-
   const value = {
-    activeTab,
-    setActiveTab,
-    loading,
     searchQuery,
     setSearchQuery,
     providers,
@@ -141,7 +108,6 @@ export function SmallClawProvider({ children }) {
     refreshMcpServers: fetchMcpServers,
     refreshSkills: fetchSkills,
     refreshChatbotSettings: fetchChatbotSettings,
-    refreshAll: fetchData,
   };
 
   return <SmallClawContext.Provider value={value}>{children}</SmallClawContext.Provider>;

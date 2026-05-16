@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Server, Plus, Globe2, Edit2, Trash2, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Server, Plus, Globe2, Edit2, Trash2, X, Loader2 } from 'lucide-react';
 import { Card } from '@/components/custom-ui';
 import { useSmallClaw } from '@/context/SmallClawContext';
 
@@ -11,6 +11,23 @@ export default function ProvidersTab() {
   const [savingProvider, setSavingProvider] = useState(false);
   const [editingProvider, setEditingProvider] = useState(null);
   const [appendMode, setAppendMode] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (providers.length === 0) {
+      setIsLoading(true);
+      refreshProviders().finally(() => setIsLoading(false));
+    }
+  }, [providers.length, refreshProviders]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh]">
+        <Loader2 className="w-10 h-10 text-[#1f644e] animate-spin" />
+        <p className="mt-4 text-neutral-500 font-medium">Loading Providers...</p>
+      </div>
+    );
+  }
 
   const filteredProviders = providers.filter(
     (p) =>

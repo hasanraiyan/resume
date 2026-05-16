@@ -8,22 +8,11 @@ import {
   BookOpen,
   Bot,
   Search,
-  Plus,
   Settings,
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useSmallClaw } from '@/context/SmallClawContext';
-import dynamic from 'next/dynamic';
-import { useState } from 'react';
-
-// Dynamically import tab components to keep initial bundle small
-const ProvidersTab = dynamic(() => import('./ProvidersTab'));
-const AgentsTab = dynamic(() => import('./AgentsTab'));
-const ChannelsTab = dynamic(() => import('./ChannelsTab'));
-const McpTab = dynamic(() => import('./McpTab'));
-const SkillsTab = dynamic(() => import('./SkillsTab'));
-const AssistantTab = dynamic(() => import('./AssistantTab'));
-const SettingsTab = dynamic(() => import('./SettingsTab'));
+import { usePathname, useRouter } from 'next/navigation';
 
 const tabs = [
   { id: 'agents', label: 'Agents', icon: Network },
@@ -45,28 +34,19 @@ const tabTitles = {
   settings: 'System Configuration',
 };
 
-export default function SmallClawApp() {
-  const { activeTab, setActiveTab, loading, searchQuery, setSearchQuery } = useSmallClaw();
+export default function SmallClawAppLayout({ children }) {
+  const { searchQuery, setSearchQuery } = useSmallClaw();
+  const pathname = usePathname();
+  const router = useRouter();
 
-  const renderTab = () => {
-    switch (activeTab) {
-      case 'agents':
-        return <AgentsTab />;
-      case 'providers':
-        return <ProvidersTab />;
-      case 'channels':
-        return <ChannelsTab />;
-      case 'mcp':
-        return <McpTab />;
-      case 'skills':
-        return <SkillsTab />;
-      case 'assistant':
-        return <AssistantTab />;
-      case 'settings':
-        return <SettingsTab />;
-      default:
-        return <ProvidersTab />;
-    }
+  // Determine active tab based on pathname
+  // e.g. /apps/smallclaw/agents -> agents
+  const pathParts = pathname.split('/').filter(Boolean);
+  const lastPart = pathParts[pathParts.length - 1];
+  const activeTab = lastPart === 'smallclaw' ? 'agents' : lastPart || 'agents';
+
+  const setActiveTab = (tabId) => {
+    router.push(`/apps/smallclaw/${tabId}`);
   };
 
   const headerActions = (
@@ -94,16 +74,7 @@ export default function SmallClawApp() {
       tabTitles={tabTitles}
       headerActions={headerActions}
     >
-      <div className="p-4 lg:p-8">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center min-h-[50vh]">
-            <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#1f644e] border-t-transparent"></div>
-            <p className="mt-4 text-neutral-500 font-medium">Bootstrapping SmallClaw...</p>
-          </div>
-        ) : (
-          renderTab()
-        )}
-      </div>
+      <div className="p-4 lg:p-8">{children}</div>
     </AppLayout>
   );
 }

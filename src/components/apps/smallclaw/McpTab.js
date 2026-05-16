@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Server, Plus, Edit2, Trash2, Globe2, X, Activity } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Server, Plus, Edit2, Trash2, Globe2, X, Activity, Loader2 } from 'lucide-react';
 import { Card } from '@/components/custom-ui';
 import { useSmallClaw } from '@/context/SmallClawContext';
 import Switch from '@/components/admin/Switch';
@@ -11,6 +11,23 @@ export default function McpTab() {
 
   const [savingMcp, setSavingMcp] = useState(false);
   const [editingMcp, setEditingMcp] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (mcpServers.length === 0) {
+      setIsLoading(true);
+      refreshMcpServers().finally(() => setIsLoading(false));
+    }
+  }, [mcpServers.length, refreshMcpServers]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh]">
+        <Loader2 className="w-10 h-10 text-[#1f644e] animate-spin" />
+        <p className="mt-4 text-neutral-500 font-medium">Loading MCP Infrastructure...</p>
+      </div>
+    );
+  }
 
   const filteredMcpServers = mcpServers.filter(
     (s) =>

@@ -1,4 +1,7 @@
 import { Playfair_Display, Inter } from 'next/font/google';
+import { SmallClawProvider } from '@/context/SmallClawContext';
+import SmallClawAppLayout from '@/components/apps/smallclaw/SmallClawAppLayout';
+import SmallClawAuthWrapper from '@/components/apps/smallclaw/SmallClawAuthWrapper';
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -18,5 +21,13 @@ export const metadata = {
 };
 
 export default function SmallClawLayout({ children }) {
-  return <div className={`${playfair.variable} ${inter.variable}`}>{children}</div>;
+  return (
+    <div className={`${playfair.variable} ${inter.variable}`}>
+      <SmallClawProvider>
+        <SmallClawAuthWrapper>
+          <SmallClawAppLayout>{children}</SmallClawAppLayout>
+        </SmallClawAuthWrapper>
+      </SmallClawProvider>
+    </div>
+  );
 }

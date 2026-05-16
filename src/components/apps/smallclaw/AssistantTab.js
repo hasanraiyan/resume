@@ -1,7 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bot, Save, PlusCircle, X, Sparkles, ShieldCheck, MessageSquare } from 'lucide-react';
+import {
+  Bot,
+  Save,
+  PlusCircle,
+  X,
+  Sparkles,
+  ShieldCheck,
+  MessageSquare,
+  Loader2,
+} from 'lucide-react';
 import { Card } from '@/components/custom-ui';
 import { useSmallClaw } from '@/context/SmallClawContext';
 
@@ -10,11 +19,31 @@ export default function AssistantTab() {
 
   const [localSettings, setLocalSettings] = useState(chatbotSettings);
   const [saving, setSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Synchronize local state with context when data is loaded
   useEffect(() => {
     setLocalSettings(chatbotSettings);
   }, [chatbotSettings]);
+
+  useEffect(() => {
+    // Check if settings are effectively empty (using default aiName as indicator if it hasn't been fetched)
+    // Actually, it's better to check if we have a persona or rules if those are usually populated.
+    // Or just check if chatbotSettings is the initial default.
+    if (!chatbotSettings.persona && !chatbotSettings.welcomeMessage) {
+      setIsLoading(true);
+      refreshChatbotSettings().finally(() => setIsLoading(false));
+    }
+  }, [chatbotSettings.persona, chatbotSettings.welcomeMessage, refreshChatbotSettings]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh]">
+        <Loader2 className="w-10 h-10 text-[#1f644e] animate-spin" />
+        <p className="mt-4 text-neutral-500 font-medium">Loading Assistant Settings...</p>
+      </div>
+    );
+  }
 
   const handleSave = async () => {
     setSaving(true);
