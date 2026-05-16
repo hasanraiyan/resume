@@ -33,4 +33,13 @@ export const MINI_APPS = [
     category: 'Learning',
     iconSrc: '/images/apps/coursify.png',
   },
+  {
+    id: 'smallclaw',
+    name: 'SmallClaw',
+    tagline: 'Lobster-speed AI agent management & studio.',
+    href: '/apps/smallclaw',
+    category: 'AI & Agents',
+    iconSrc:
+      'https://res.cloudinary.com/djkpavwmp/image/upload/v1762069094/portfolio_assets/ckfre3frqkzgatpgmzu1.jpg', // Placeholder for now
+  },
 ];

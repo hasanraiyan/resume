@@ -239,7 +239,30 @@ export function AISearchEngine({ onGenerated }) {
     } catch (err) {
       console.error(err);
 
-      setError(err.message || 'Something went wrong.');
+      // Clean up technical error messages for display
+      let displayError = err.message || 'Something went wrong.';
+
+      // Hide quota/rate limit details
+      if (
+        displayError.includes('quota') ||
+        displayError.includes('rate limit') ||
+        displayError.includes('429')
+      ) {
+        displayError = 'API quota exceeded. Please try again in a few moments.';
+      }
+      // Hide technical API errors
+      else if (
+        displayError.includes('GoogleGenerativeAI') ||
+        displayError.includes('generativelanguage')
+      ) {
+        displayError = 'Service temporarily unavailable. Please try again.';
+      }
+      // Hide fetch errors
+      else if (displayError.includes('fetch') || displayError.includes('network')) {
+        displayError = 'Connection error. Please check your internet and try again.';
+      }
+
+      setError(displayError);
 
       setPhase(PHASE.ERROR);
     }

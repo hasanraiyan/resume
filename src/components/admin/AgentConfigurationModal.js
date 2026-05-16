@@ -352,7 +352,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                 <div
                   className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-300 border-2 ${
                     settings.isActive
-                      ? 'bg-black text-white border-black'
+                      ? 'bg-[#1f644e] text-white border-[#1f644e]'
                       : 'bg-neutral-100 text-neutral-400 border-neutral-100'
                   }`}
                 >
@@ -379,7 +379,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                     checked={settings.isActive}
                     onChange={(e) => setSettings({ ...settings, isActive: e.target.checked })}
                   />
-                  <div className="w-10 h-5.5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-black"></div>
+                  <div className="w-10 h-5.5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-[#1f644e]"></div>
                 </label>
                 <span
                   className={`text-[10px] font-black uppercase tracking-[0.2em] ${settings.isActive ? 'text-green-600' : 'text-neutral-400'}`}
@@ -401,13 +401,15 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-1.5 px-1 py-4 text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer relative mr-6 last:mr-0 whitespace-nowrap shrink-0 ${
-                  isActive ? 'text-black' : 'text-neutral-400 hover:text-neutral-600'
+                  isActive ? 'text-[#1e3a34]' : 'text-neutral-400 hover:text-neutral-600'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-black' : 'text-neutral-400'}`} />
+                <Icon
+                  className={`w-3.5 h-3.5 ${isActive ? 'text-[#1e3a34]' : 'text-neutral-400'}`}
+                />
                 {tab.label}
                 {isActive && (
-                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-black rounded-full"></span>
+                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#1f644e] rounded-full"></span>
                 )}
               </button>
             );
@@ -538,7 +540,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                               updateLongTermMemorySettings({ enabled: e.target.checked })
                             }
                           />
-                          <div className="w-10 h-5.5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-black"></div>
+                          <div className="w-10 h-5.5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-[#1f644e]"></div>
                         </label>
                       </div>
 
@@ -559,7 +561,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                                 retrievalLimit: Number(e.target.value),
                               })
                             }
-                            className="w-full h-11 px-4 bg-white border-2 border-neutral-100 rounded-2xl focus:ring-0 focus:border-black outline-none transition-all text-sm text-neutral-800 disabled:bg-neutral-50 disabled:text-neutral-400"
+                            className="w-full h-11 px-4 bg-white border-2 border-neutral-100 rounded-2xl focus:ring-0 focus:border-[#1f644e] outline-none transition-all text-sm text-neutral-800 disabled:bg-neutral-50 disabled:text-neutral-400"
                           />
                           <p className="text-[11px] text-neutral-400 leading-tight">
                             How many saved memories to inject per reply.
@@ -582,7 +584,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                                 maxEntriesPerUser: Number(e.target.value),
                               })
                             }
-                            className="w-full h-11 px-4 bg-white border-2 border-neutral-100 rounded-2xl focus:ring-0 focus:border-black outline-none transition-all text-sm text-neutral-800 disabled:bg-neutral-50 disabled:text-neutral-400"
+                            className="w-full h-11 px-4 bg-white border-2 border-neutral-100 rounded-2xl focus:ring-0 focus:border-[#1f644e] outline-none transition-all text-sm text-neutral-800 disabled:bg-neutral-50 disabled:text-neutral-400"
                           />
                           <p className="text-[11px] text-neutral-400 leading-tight">
                             Older low-value memories are pruned above this cap.
@@ -605,7 +607,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                                 minSalienceToStore: Number(e.target.value),
                               })
                             }
-                            className="w-full h-11 px-4 bg-white border-2 border-neutral-100 rounded-2xl focus:ring-0 focus:border-black outline-none transition-all text-sm text-neutral-800 disabled:bg-neutral-50 disabled:text-neutral-400"
+                            className="w-full h-11 px-4 bg-white border-2 border-neutral-100 rounded-2xl focus:ring-0 focus:border-[#1f644e] outline-none transition-all text-sm text-neutral-800 disabled:bg-neutral-50 disabled:text-neutral-400"
                           />
                           <p className="text-[11px] text-neutral-400 leading-tight">
                             Ignore extracted memories below this score.
@@ -674,15 +676,15 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
               ) : (
                 <>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-neutral-50 p-6 rounded-2xl border border-neutral-100 flex flex-col items-center justify-center group hover:bg-white hover:border-black transition-all duration-300">
+                    <div className="bg-neutral-50 p-6 rounded-2xl border border-neutral-100 flex flex-col items-center justify-center group hover:bg-white hover:border-[#1f644e] transition-all duration-300">
                       <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest mb-2 group-hover:text-neutral-500 transition-colors">
                         Total Executions
                       </p>
-                      <p className="text-4xl font-black text-black tracking-tighter">
+                      <p className="text-4xl font-black text-[#1e3a34] tracking-tighter">
                         {metricsData.summary.totalExecutions}
                       </p>
                     </div>
-                    <div className="bg-neutral-50 p-6 rounded-2xl border border-neutral-100 flex flex-col items-center justify-center group hover:bg-white hover:border-black transition-all duration-300">
+                    <div className="bg-neutral-50 p-6 rounded-2xl border border-neutral-100 flex flex-col items-center justify-center group hover:bg-white hover:border-[#1f644e] transition-all duration-300">
                       <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest mb-2 group-hover:text-neutral-500 transition-colors">
                         Success Rate
                       </p>
@@ -828,7 +830,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                         onClick={() => toggleTool(tool)}
                         className={`flex items-center justify-between px-5 py-4 rounded-2xl border-2 transition-all cursor-pointer text-left group ${
                           isEnabled
-                            ? 'bg-neutral-900 border-neutral-900 text-white shadow-xl shadow-black/10'
+                            ? 'bg-[#1e3a34] border-[#1e3a34] text-white shadow-xl shadow-[#1e3a34]/10'
                             : 'bg-white border-neutral-100 text-neutral-700 hover:border-neutral-200 hover:bg-neutral-50/50'
                         }`}
                       >
@@ -870,8 +872,8 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                     No MCP servers available.
                   </p>
                   <a
-                    href="/admin/chatbot"
-                    className="text-xs font-bold text-black underline underline-offset-4 hover:text-neutral-500 uppercase tracking-widest transition-colors"
+                    href="/apps/smallclaw"
+                    className="text-xs font-bold text-[#1e3a34] underline underline-offset-4 hover:text-neutral-500 uppercase tracking-widest transition-colors"
                   >
                     Configure in Settings
                   </a>
@@ -887,7 +889,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                         onClick={() => toggleMCP(mcp._id)}
                         className={`w-full flex items-center gap-4 px-5 py-4.5 rounded-2xl text-left border-2 cursor-pointer transition-all ${
                           isAssigned
-                            ? 'bg-neutral-900 border-neutral-900 text-white shadow-xl shadow-black/10'
+                            ? 'bg-[#1e3a34] border-[#1e3a34] text-white shadow-xl shadow-[#1e3a34]/10'
                             : 'bg-white border-neutral-100 hover:border-neutral-200 hover:bg-neutral-50/50'
                         }`}
                       >
@@ -898,7 +900,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                               : 'border-2 border-neutral-200 bg-white'
                           }`}
                         >
-                          {isAssigned && <CheckCircle2 className="w-3.5 h-3.5" />}
+                          {isAssigned && <CheckCircle2 className="w-3.5 h-3.5 text-[#1e3a34]" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
@@ -940,8 +942,8 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                   </div>
                   <p className="text-sm font-medium text-neutral-600 mb-2">No skills available.</p>
                   <a
-                    href="/admin/chatbot?tab=skills"
-                    className="text-xs font-bold text-black underline underline-offset-4 hover:text-neutral-500 uppercase tracking-widest transition-colors"
+                    href="/apps/smallclaw"
+                    className="text-xs font-bold text-[#1e3a34] underline underline-offset-4 hover:text-neutral-500 uppercase tracking-widest transition-colors"
                   >
                     Create in Settings
                   </a>
@@ -957,7 +959,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                         onClick={() => toggleSkill(skill._id)}
                         className={`w-full flex items-center gap-4 px-5 py-4.5 rounded-2xl text-left border-2 cursor-pointer transition-all ${
                           isAssigned
-                            ? 'bg-neutral-900 border-neutral-900 text-white shadow-xl shadow-black/10'
+                            ? 'bg-[#1e3a34] border-[#1e3a34] text-white shadow-xl shadow-[#1e3a34]/10'
                             : 'bg-white border-neutral-100 hover:border-neutral-200 hover:bg-neutral-50/50'
                         }`}
                       >
@@ -968,7 +970,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                               : 'border-2 border-neutral-200 bg-white'
                           }`}
                         >
-                          {isAssigned && <CheckCircle2 className="w-3.5 h-3.5" />}
+                          {isAssigned && <CheckCircle2 className="w-3.5 h-3.5 text-[#1e3a34]" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
@@ -1010,7 +1012,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
               <textarea
                 value={settings.persona}
                 onChange={(e) => setSettings((prev) => ({ ...prev, persona: e.target.value }))}
-                className="flex-1 min-h-[200px] w-full p-5 bg-white border-2 border-neutral-100 rounded-2xl focus:ring-0 focus:border-black outline-none transition-all text-sm leading-relaxed text-neutral-800 resize-none shadow-sm"
+                className="flex-1 min-h-[200px] w-full p-5 bg-white border-2 border-neutral-100 rounded-2xl focus:ring-0 focus:border-[#1f644e] outline-none transition-all text-sm leading-relaxed text-neutral-800 resize-none shadow-sm"
                 placeholder="e.g., 'You are a critical code auditor. Focus on security patterns and performance bottlenecks...'"
               />
             </div>
@@ -1031,7 +1033,8 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
             <Button
               onClick={handleSave}
               isLoading={saving}
-              className="rounded-2xl bg-black hover:bg-neutral-800 text-white flex-1 justify-center font-bold uppercase tracking-widest text-[10px] h-12"
+              variant="brand"
+              className="rounded-2xl hover:bg-[#164d3c] text-white flex-1 justify-center font-bold uppercase tracking-widest text-[10px] h-12"
             >
               <Save className="w-3.5 h-3.5 mr-2" /> Save Configuration
             </Button>

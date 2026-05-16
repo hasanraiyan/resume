@@ -79,7 +79,7 @@ function AdminLayoutContent({ children }) {
         },
         {
           name: 'SmallClaw',
-          href: '/admin/agents',
+          href: '/apps/smallclaw',
           icon: ({ className }) => (
             <span className={`flex items-center justify-center ${className}`}>🦞</span>
           ),

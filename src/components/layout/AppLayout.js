@@ -58,7 +58,7 @@ export default function AppLayout({
             priority
           />
           <h1
-            className={`font-[family-name:var(--font-logo)] text-${isMobileHeader ? 'xl lg:text-2xl' : '2xl'} ${appName === 'SnapLinks' ? 'text-[#1f644e]' : 'text-black'}`}
+            className={`font-[family-name:var(--font-logo)] text-${isMobileHeader ? 'xl lg:text-2xl' : '2xl'} ${appName === 'SnapLinks' ? 'text-[#1f644e]' : 'text-[#1e3a34]'}`}
           >
             {appName}
           </h1>

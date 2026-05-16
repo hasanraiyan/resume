@@ -17,6 +17,9 @@ export default withAuth(
     // Add any additional middleware logic here if needed
   },
   {
+    pages: {
+      signIn: '/login',
+    },
     callbacks: {
       /**
        * Authorization callback to determine if a user can access a route.
