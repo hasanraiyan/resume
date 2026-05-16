@@ -55,6 +55,7 @@ export async function POST(request) {
             } else if (event.type === 'title') {
               finalTitle = event.text;
             }
+            // Forward all events including tool calls to client
             controller.enqueue(encodeEvent(event));
           }
 

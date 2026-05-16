@@ -532,7 +532,7 @@ export async function dbAddSection({
 
   const section = await CoursifySection.create({
     courseId,
-    title: title.trim(),
+    title: (title || 'Untitled Section').trim(),
     content: finalContent,
     blocks: finalBlocks,
     order: resolvedOrder,

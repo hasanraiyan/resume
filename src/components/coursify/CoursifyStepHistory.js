@@ -12,7 +12,11 @@ const TOOL_CONFIG = {
 
 export default function CoursifyStepHistory({ steps }) {
   const [expanded, setExpanded] = useState(true);
-  if (!steps || steps.length === 0) return null;
+
+  // Filter out agent/planning steps - only show actual tool calls
+  const visibleSteps = steps.filter((step) => step.tool !== 'agent');
+
+  if (!visibleSteps || visibleSteps.length === 0) return null;
 
   return (
     <div className="flex flex-col w-full mb-6 group/history">
@@ -21,7 +25,7 @@ export default function CoursifyStepHistory({ steps }) {
         className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f0f5f2] hover:bg-[#d4e6de] transition-all w-fit cursor-pointer border border-[#d4e6de] group"
       >
         <span className="text-[11px] font-bold text-[#1f644e] uppercase tracking-wider">
-          {steps.length} Research Action{steps.length > 1 ? 's' : ''}
+          {visibleSteps.length} Research Action{visibleSteps.length > 1 ? 's' : ''}
         </span>
         <ChevronDown
           className={`w-3.5 h-3.5 transition-transform duration-300 flex-shrink-0 text-[#1f644e] ${
@@ -32,10 +36,72 @@ export default function CoursifyStepHistory({ steps }) {
 
       {expanded && (
         <div className="mt-4 ml-2.5 pl-5 border-l border-dashed border-[#d4e6de] space-y-3 animate-in fade-in slide-in-from-left-2 duration-300">
-          {steps.map((step, idx) => {
+          {visibleSteps.map((step, idx) => {
             const config = TOOL_CONFIG[step.tool] || { label: step.tool, icon: Search };
             const Icon = config.icon;
             const isDone = step.status === 'completed';
+
+            // Extract search query from input
+            let query = '';
+            let inputObj = step.input;
+
+            // Recursive or iterative helper to find the first string value in a nested object
+            const findQueryValue = (obj) => {
+              if (typeof obj === 'string') {
+                // If it's a string that looks like JSON, try parsing it again
+                if (obj.trim().startsWith('{') || obj.trim().startsWith('[')) {
+                  try {
+                    const parsed = JSON.parse(obj);
+                    return findQueryValue(parsed);
+                  } catch (e) {
+                    return obj;
+                  }
+                }
+                return obj;
+              }
+
+              if (typeof obj === 'object' && obj !== null) {
+                // Priority keys
+                const keys = ['query', 'input', 'q', 'topic', 'search_query', 'text'];
+                for (const key of keys) {
+                  if (obj[key] && typeof obj[key] === 'string') return obj[key];
+                  if (obj[key] && typeof obj[key] === 'object') {
+                    const found = findQueryValue(obj[key]);
+                    if (found) return found;
+                  }
+                }
+
+                // Fallback: search all keys
+                for (const key in obj) {
+                  const found = findQueryValue(obj[key]);
+                  if (found) return found;
+                }
+              }
+              return null;
+            };
+
+            query = findQueryValue(inputObj);
+
+            // Fallback to original input if still empty
+            if (!query && step.input) {
+              query = typeof step.input === 'string' ? step.input : JSON.stringify(step.input);
+            }
+
+            // Final cleanup: if it's still JSON (e.g. stringified fallback), strip it
+            if (query && (query.startsWith('{') || query.includes('":"'))) {
+              try {
+                const finalTry = JSON.parse(query);
+                const deepValue = findQueryValue(finalTry);
+                if (deepValue) query = deepValue;
+              } catch (e) {}
+            }
+
+            // Only render if we have a valid query
+            if (!query || query === '{}' || query === 'undefined' || query === 'null') return null;
+
+            // Ensure we don't have double quotes if we're wrapping it in quotes
+            const cleanQuery = query.toString().replace(/^"|"$/g, '').trim();
+            const displayQuery = `Searching for "${cleanQuery}"`;
 
             return (
               <div
@@ -59,18 +125,17 @@ export default function CoursifyStepHistory({ steps }) {
                       className={`text-sm font-bold truncate ${
                         isDone ? 'text-[#1e3a34]' : 'text-[#7c8e88]'
                       }`}
+                      title={cleanQuery}
                     >
-                      {step.input?.query || config.label}
+                      {displayQuery}
                     </p>
-                    {step.input?.query && (
-                      <p
-                        className={`text-[10px] font-bold uppercase tracking-wider ${
-                          isDone ? 'text-[#b5c4be]' : 'text-[#1f644e]/50'
-                        }`}
-                      >
-                        {config.label}
-                      </p>
-                    )}
+                    <p
+                      className={`text-[10px] font-bold uppercase tracking-wider ${
+                        isDone ? 'text-[#b5c4be]' : 'text-[#1f644e]/50'
+                      }`}
+                    >
+                      {config.label}
+                    </p>
                   </div>
                 </div>
 

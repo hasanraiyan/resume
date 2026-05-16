@@ -139,17 +139,9 @@ export function AISearchEngine({ onGenerated }) {
 
     setContent('');
 
-    setStatusMessage(`🔍 Searching for "${topic}"`);
-
     setError('');
 
-    setToolSteps([
-      {
-        tool: 'agent',
-        status: 'started',
-        input: { query: topic },
-      },
-    ]);
+    setToolSteps([]);
 
     contentRef.current = '';
 
@@ -208,7 +200,24 @@ export function AISearchEngine({ onGenerated }) {
             setGeneratedTitle(event.text);
           } else if (event.type === 'status') {
             setStatusMessage(event.message);
-          } else if (event.type === 'persist') {
+          } else if (event.type === 'tool_call') {
+            if (event.status === 'started') {
+              setToolSteps((prev) => [
+                ...prev,
+                {
+                  tool: event.tool,
+                  status: 'running',
+                  input: event.input,
+                },
+              ]);
+            } else if (event.status === 'completed') {
+              setToolSteps((prev) =>
+                prev.map((step, idx) =>
+                  idx === prev.length - 1 ? { ...step, status: 'completed' } : step
+                )
+              );
+            }
+          } else if (event.type === 'tool_result') {
             setGeneratedSlug(event.slug);
           } else if (event.type === 'done') {
             setPhase(PHASE.DONE);
@@ -339,6 +348,17 @@ export function AISearchEngine({ onGenerated }) {
         {generatedTitle && (
           <div className="mb-6 border-b border-[#e5e3d8] pb-6">
             <h2 className="break-words text-2xl font-bold text-[#1e3a34]">{generatedTitle}</h2>
+          </div>
+        )}
+
+        {statusMessage && (
+          <div className="mb-4 text-sm font-bold text-[#7c8e88]">{statusMessage}</div>
+        )}
+
+        {toolSteps.length === 0 && !generatedTitle && (
+          <div className="mb-6 flex items-center gap-3">
+            <div className="w-6 h-6 border-3 border-[#f0f5f2] border-t-[#1f644e] rounded-full animate-spin" />
+            <p className="text-sm font-bold text-[#7c8e88]">Researching...</p>
           </div>
         )}
 
