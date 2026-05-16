@@ -27,6 +27,7 @@ Primary narrative text. Supports LaTeX math ($O(n \log n)$), markdown tables, an
 graph TD
   A --> B
 \`\`\`
+IMPORTANT: For Mermaid diagrams, use only standard types (graph, sequenceDiagram, classDiagram, stateDiagram-v2, erDiagram, gantt, pie, journey, gitGraph, mindmap). DO NOT hallucinate custom types like 'grid-layout'. Use markdown tables for grid structures.
 
 **## [StepByStepBlock]**
 For processes, algorithms, sequential walkthroughs.

@@ -397,12 +397,10 @@ class BaseAgent {
       let usage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
       let attempts = 0;
       const maxRetries = 5;
+      let hasYielded = false;
 
       while (attempts < maxRetries) {
         try {
-          // Track if we have yielded any chunks to prevent dirty retries
-          let hasYielded = false;
-
           for await (const chunk of this._onStreamExecute(input)) {
             hasYielded = true;
             // Track tool usage - support both 'tool_result' and 'tool_call' (completed) types

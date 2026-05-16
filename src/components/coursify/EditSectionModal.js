@@ -456,11 +456,16 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                 { tool: event.tool, status: 'running', input: event.input },
               ]);
             } else if (event.status === 'completed') {
-              setToolSteps((prev) =>
-                prev.map((step, idx) =>
-                  idx === prev.length - 1 ? { ...step, status: 'completed' } : step
-                )
-              );
+              setToolSteps((prev) => {
+                const next = [...prev];
+                for (let i = next.length - 1; i >= 0; i--) {
+                  if (next[i].tool === event.tool && next[i].status === 'running') {
+                    next[i] = { ...next[i], status: 'completed' };
+                    break;
+                  }
+                }
+                return next;
+              });
             }
           } else if (event.type === 'done') {
             setStatusMessage('Generation complete!');
