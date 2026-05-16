@@ -11,7 +11,7 @@ import 'katex/dist/katex.min.css';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { MermaidDiagram } from './MermaidDiagram';
-import { ExternalLink, Quote, Globe, Link2 } from 'lucide-react';
+import { ExternalLink, Quote, Globe, Link2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // ==============================
 // ASCII Detection
@@ -63,52 +63,124 @@ function createHeading(Level) {
 // FOOTNOTE POPOVER
 // ==============================
 
-function FootnotePopover({ href, children, ...props }) {
+// Rehype plugin to group adjacent footnotes
+const rehypeGroupFootnotes = () => (tree) => {
+  const isFootnoteSup = (node) => {
+    if (node.tagName !== 'sup') return false;
+    const link = node.children?.find((c) => c.tagName === 'a');
+    return link?.properties?.dataFootnoteRef !== undefined;
+  };
+
+  const getFootnoteId = (node) => {
+    const link = node.children?.find((c) => c.tagName === 'a');
+    return link?.properties?.href?.replace('#', '');
+  };
+
+  const traverse = (node) => {
+    if (!node.children) return;
+
+    const newChildren = [];
+    for (let i = 0; i < node.children.length; i++) {
+      const child = node.children[i];
+
+      if (isFootnoteSup(child)) {
+        const group = [child];
+        let j = i + 1;
+        while (j < node.children.length) {
+          const next = node.children[j];
+          if (isFootnoteSup(next)) {
+            group.push(next);
+            j++;
+          } else if (next.type === 'text' && /^\s+$/.test(next.value)) {
+            j++;
+          } else {
+            break;
+          }
+        }
+
+        if (group.length > 1) {
+          const ids = group.map(getFootnoteId);
+          newChildren.push({
+            type: 'element',
+            tagName: 'grouped-footnote',
+            properties: {
+              identifiers: ids.join(','),
+            },
+            children: [],
+          });
+          i = j - 1;
+        } else {
+          newChildren.push(child);
+        }
+      } else {
+        if (child.children) traverse(child);
+        newChildren.push(child);
+      }
+    }
+    node.children = newChildren;
+  };
+
+  traverse(tree);
+};
+
+function FootnotePopover({ href, identifiers, children, ...props }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [content, setContent] = useState('');
-  const [sourceUrl, setSourceUrl] = useState('');
+  const [sources, setSources] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [popoverStyle, setPopoverStyle] = useState({});
   const [arrowStyle, setArrowStyle] = useState({});
-  const [favicon, setFavicon] = useState(null);
 
   const triggerRef = useRef(null);
   const timeoutRef = useRef(null);
 
-  const isFootnote = props['data-footnote-ref'] !== undefined;
+  const isGrouped = !!identifiers;
+  const isFootnote = isGrouped || props['data-footnote-ref'] !== undefined;
+
+  const targetIds = isGrouped ? identifiers.split(',') : [href?.replace('#', '')];
 
   // ------------------------------
   // Content Extraction
   // ------------------------------
   useEffect(() => {
     if (!isFootnote) return;
-    const targetId = href?.replace('#', '');
-    if (!targetId) return;
 
     const attemptExtraction = () => {
-      const element = document.getElementById(targetId);
-      if (element) {
-        const link = element.querySelector('a');
-        if (link) {
-          try {
-            setSourceUrl(link.href);
-            const domain = new URL(link.href).hostname;
-            setFavicon(`https://www.google.com/s2/favicons?domain=${domain}&sz=64`);
-          } catch (e) {}
+      const fetchedSources = [];
+      targetIds.forEach((id) => {
+        const element = document.getElementById(id);
+        if (element) {
+          const link = element.querySelector('a');
+          let sourceUrl = '';
+          let favicon = null;
+          if (link) {
+            try {
+              sourceUrl = link.href;
+              const domain = new URL(sourceUrl).hostname;
+              favicon = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+            } catch (e) {}
+          }
+
+          // Pre-cache content
+          const clone = element.cloneNode(true);
+
+          // Remove ALL backlink icons (handles multiple citations: ↩1, ↩2, etc.)
+          const backlinks = clone.querySelectorAll('[data-footnote-backref]');
+          backlinks.forEach((b) => b.remove());
+
+          // Regex cleanup to strip any lingering return symbols or superscript numbers
+          let cleanText = clone.textContent.trim();
+          cleanText = cleanText.replace(/[↩\u21a9]\d*/g, '').trim();
+
+          fetchedSources.push({
+            content: cleanText,
+            url: sourceUrl,
+            favicon,
+          });
         }
+      });
 
-        // Pre-cache content
-        const clone = element.cloneNode(true);
-
-        // Remove ALL backlink icons (handles multiple citations: ↩1, ↩2, etc.)
-        const backlinks = clone.querySelectorAll('[data-footnote-backref]');
-        backlinks.forEach((b) => b.remove());
-
-        // Regex cleanup to strip any lingering return symbols or superscript numbers
-        // generated by certain markdown flavors/plugins.
-        let cleanText = clone.textContent.trim();
-        cleanText = cleanText.replace(/[↩\u21a9]\d*/g, '').trim();
-
-        setContent(cleanText);
+      if (fetchedSources.length > 0) {
+        setSources(fetchedSources);
         return true;
       }
       return false;
@@ -121,7 +193,7 @@ function FootnotePopover({ href, children, ...props }) {
     }, 100);
 
     return () => clearInterval(interval);
-  }, [href, isFootnote]);
+  }, [identifiers, href, isFootnote]);
 
   // ------------------------------
   // Calculate Position (Portal)
@@ -178,24 +250,33 @@ function FootnotePopover({ href, children, ...props }) {
     };
   }, [isOpen]);
 
+  const currentSource = sources[currentIndex] || sources[0];
+
   if (isFootnote) {
     return (
       <span className="relative inline-block">
         <a
           ref={triggerRef}
-          href={href}
+          href={isGrouped ? undefined : href}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          className={`mx-0.5 inline-flex h-4 w-4 items-center justify-center rounded-sm transition-all ${
+          className={`mx-0.5 inline-flex h-4 items-center justify-center rounded-sm transition-all px-1 gap-1 ${
             isOpen ? 'bg-[#1f644e] shadow-md scale-110' : 'bg-[#f0f5f2] hover:bg-[#e8f0ed]'
-          }`}
+          } ${isGrouped ? 'w-auto min-w-[1rem]' : 'w-4'}`}
           {...props}
         >
           <Quote className={`w-2 h-2 ${isOpen ? 'text-white' : 'text-[#1f644e]'}`} />
+          {isGrouped && (
+            <span
+              className={`text-[8px] font-bold leading-none ${isOpen ? 'text-white' : 'text-[#1f644e]'}`}
+            >
+              {targetIds.length}
+            </span>
+          )}
         </a>
 
         {isOpen &&
-          content &&
+          currentSource &&
           typeof document !== 'undefined' &&
           ReactDOM.createPortal(
             <div
@@ -209,38 +290,69 @@ function FootnotePopover({ href, children, ...props }) {
             >
               <div className="overflow-hidden rounded-xl border border-[#e5e3d8] bg-white p-3 shadow-2xl">
                 <div className="flex flex-col gap-2.5">
-                  <div className="flex items-center gap-1.5 opacity-50">
-                    <Quote className="h-2.5 w-2.5 text-[#1f644e]" />
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-[#7c8e88]">
-                      Source Details
-                    </span>
+                  <div className="flex items-center justify-between opacity-50">
+                    <div className="flex items-center gap-1.5">
+                      <Quote className="h-2.5 w-2.5 text-[#1f644e]" />
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-[#7c8e88]">
+                        Source Details
+                      </span>
+                    </div>
+
+                    {sources.length > 1 && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-bold text-[#7c8e88]">
+                          {currentIndex + 1} / {sources.length}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCurrentIndex((prev) => (prev > 0 ? prev - 1 : sources.length - 1));
+                            }}
+                            className="rounded p-0.5 transition-colors hover:bg-[#f0f5f2]"
+                          >
+                            <ChevronLeft className="h-2.5 w-2.5 text-[#1f644e]" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCurrentIndex((prev) => (prev < sources.length - 1 ? prev + 1 : 0));
+                            }}
+                            className="rounded p-0.5 transition-colors hover:bg-[#f0f5f2]"
+                          >
+                            <ChevronRight className="h-2.5 w-2.5 text-[#1f644e]" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <p className="text-[11px] leading-relaxed text-[#1e3a34] line-clamp-4 italic">
-                    "{content}"
+                    "{currentSource.content}"
                   </p>
 
-                  {sourceUrl && (
+                  {currentSource.url && (
                     <div className="mt-1 flex items-center justify-between border-t border-[#f0f5f2] pt-2">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <div className="h-4 w-4 rounded bg-[#f0f5f2] flex items-center justify-center overflow-hidden">
-                          {favicon ? (
+                        <div className="flex h-4 w-4 items-center justify-center overflow-hidden rounded bg-[#f0f5f2]">
+                          {currentSource.favicon ? (
                             <img
-                              src={favicon}
-                              className="w-2.5 h-2.5 object-contain"
+                              src={currentSource.favicon}
+                              className="h-2.5 w-2.5 object-contain"
                               alt=""
-                              onError={() => setFavicon(null)}
                             />
                           ) : (
                             <Globe className="h-2.5 w-2.5 text-[#1f644e]" />
                           )}
                         </div>
                         <span className="truncate text-[10px] font-medium text-[#1f644e]">
-                          {new URL(sourceUrl).hostname.replace('www.', '')}
+                          {new URL(currentSource.url).hostname.replace('www.', '')}
                         </span>
                       </div>
                       <a
-                        href={sourceUrl}
+                        href={currentSource.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-[10px] font-bold text-[#1f644e] hover:underline"
@@ -289,13 +401,14 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({ content, isInli
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[rehypeRaw, rehypeKatex]}
+        rehypePlugins={[rehypeRaw, rehypeKatex, rehypeGroupFootnotes]}
         components={{
           h1: createHeading('h1'),
           h2: createHeading('h2'),
           h3: createHeading('h3'),
           h4: createHeading('h4'),
           a: FootnotePopover,
+          'grouped-footnote': FootnotePopover,
           table({ children }) {
             return (
               <div className="coursify-table-scroll overflow-x-auto my-7 rounded-xl border border-[#e5e3d8]">
