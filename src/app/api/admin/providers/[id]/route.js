@@ -19,10 +19,27 @@ export async function PUT(request, { params }) {
     await dbConnect();
 
     if (updates.apiKey && updates.apiKey !== '***************') {
-      updates.apiKey = encrypt(updates.apiKey);
+      const newEncrypted = encrypt(updates.apiKey);
+
+      if (updates.appendKeys) {
+        const existing = await ProviderSettings.findOne({ providerId: id });
+        if (existing && existing.apiKey) {
+          const oldKeys = Array.isArray(existing.apiKey) ? existing.apiKey : [existing.apiKey];
+          const addedKeys = Array.isArray(newEncrypted) ? newEncrypted : [newEncrypted];
+          // Merge old (already encrypted) with new (now encrypted)
+          updates.apiKey = [...oldKeys, ...addedKeys];
+        } else {
+          updates.apiKey = newEncrypted;
+        }
+      } else {
+        updates.apiKey = newEncrypted;
+      }
     } else {
       delete updates.apiKey;
     }
+
+    // Clean up internal flags before saving to DB
+    delete updates.appendKeys;
 
     const updatedProvider = await ProviderSettings.findOneAndUpdate(
       { providerId: id },
@@ -37,7 +54,11 @@ export async function PUT(request, { params }) {
     invalidateProviderModelCache(id);
 
     const sanitized = updatedProvider.toObject();
-    sanitized.apiKey = sanitized.apiKey ? '***************' : '';
+    if (Array.isArray(sanitized.apiKey)) {
+      sanitized.apiKey = `${sanitized.apiKey.length} Keys (Pooled)`;
+    } else {
+      sanitized.apiKey = sanitized.apiKey ? '***************' : '';
+    }
 
     return NextResponse.json({ provider: sanitized });
   } catch (error) {

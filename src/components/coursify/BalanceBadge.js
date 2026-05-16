@@ -20,6 +20,7 @@ export function BalanceBadge({ balance, loading, className = '' }) {
   const isError =
     balance.status === 'error' ||
     balance.status === 'no_api_key' ||
+    balance.status === 'not_supported' ||
     balance.status === 'invalid_api_key';
 
   if (isError) return null;

@@ -63,10 +63,15 @@ export async function GET(request) {
       });
     }
 
-    const decryptedKey = decrypt(provider.apiKey);
+    let decryptedKey = decrypt(provider.apiKey);
     if (!decryptedKey) {
       console.error('[Media Models API] Failed to decrypt API key');
       return Response.json({ error: 'Failed to decrypt API key' }, { status: 500 });
+    }
+
+    // If multiple keys (array), pick the first one for fetching the model list
+    if (Array.isArray(decryptedKey)) {
+      decryptedKey = decryptedKey[0];
     }
 
     try {

@@ -121,6 +121,11 @@ const ENCRYPTION_KEY = deriveKey(process.env.ENCRYPTION_SECRET);
 export function encrypt(text) {
   if (!text) return null;
 
+  // Handle arrays
+  if (Array.isArray(text)) {
+    return text.map((t) => encrypt(t));
+  }
+
   try {
     const iv = crypto.randomBytes(IV_LENGTH);
     const cipher = crypto.createCipheriv(ALGORITHM, ENCRYPTION_KEY, iv);
@@ -164,6 +169,11 @@ export function encrypt(text) {
  */
 export function decrypt(text) {
   if (!text) return null;
+
+  // Handle arrays
+  if (Array.isArray(text)) {
+    return text.map((t) => decrypt(t));
+  }
 
   try {
     const textParts = text.split(':');

@@ -63,6 +63,15 @@ export async function getPollinationsConfig() {
 
   if (!provider) return null;
 
+  // ONLY return config if it's actually a Pollinations provider
+  const isPollinations =
+    provider.baseUrl?.includes('pollinations.ai') ||
+    provider.name?.toLowerCase().includes('pollinations');
+
+  if (!isPollinations) {
+    return null;
+  }
+
   let apiKey = provider.apiKey;
   if (apiKey) {
     try {
@@ -85,28 +94,35 @@ export async function getPollinationsBalance() {
     if (!config || !config.apiKey) {
       return {
         balance: 0,
-        status: 'no_api_key',
-        message: 'Pollinations configuration (from Search Agent) is missing',
+        status: 'not_supported',
+        message: 'Balance tracking not supported for this provider',
       };
     }
 
     const { apiKey } = config;
+    const keys = Array.isArray(apiKey) ? apiKey : [apiKey];
 
-    // Fetch balance and exchange rate
-    const [balanceRes, exchangeRate] = await Promise.all([
-      fetch(BALANCE_URL, { headers: { Authorization: `Bearer ${apiKey}` } }),
-      getExchangeRate(),
-    ]);
+    // Fetch exchange rate first
+    const exchangeRate = await getExchangeRate();
 
-    if (!balanceRes.ok) {
-      if (balanceRes.status === 401) {
-        return { balance: 0, balanceINR: 0, status: 'invalid_api_key', message: 'Invalid API Key' };
+    // Fetch all balances concurrently
+    const balancePromises = keys.map(async (key) => {
+      try {
+        const res = await fetch(BALANCE_URL, {
+          headers: { Authorization: `Bearer ${key}` },
+          signal: AbortSignal.timeout(5000), // 5s timeout per request
+        });
+        if (!res.ok) return 0;
+        const data = await res.json();
+        return data.balance ?? 0;
+      } catch (err) {
+        console.warn('[PollinationsBalance] Failed to fetch balance for one key:', err.message);
+        return 0;
       }
-      throw new Error(`Pollinations API error: ${balanceRes.status}`);
-    }
+    });
 
-    const data = await balanceRes.json();
-    const balance = data.balance ?? 0;
+    const balances = await Promise.all(balancePromises);
+    const balance = balances.reduce((sum, b) => sum + b, 0);
     const balanceINR = balance * exchangeRate;
 
     // ─── Fetch Today's Consumption ───

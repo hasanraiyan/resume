@@ -20,7 +20,11 @@ export async function GET(request) {
     // Send dummy API keys to the frontend for security, or keep them empty
     const sanitizedProviders = providers.map((p) => {
       const pObj = p.toObject();
-      pObj.apiKey = pObj.apiKey ? '***************' : '';
+      if (Array.isArray(pObj.apiKey)) {
+        pObj.apiKey = `${pObj.apiKey.length} Keys (Pooled)`;
+      } else {
+        pObj.apiKey = pObj.apiKey ? '***************' : '';
+      }
       return pObj;
     });
 

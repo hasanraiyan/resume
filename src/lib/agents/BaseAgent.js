@@ -14,6 +14,7 @@ import { decrypt } from '@/lib/crypto';
 import { ChatOpenAI, OpenAIEmbeddings } from '@langchain/openai';
 import { ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 import { GoogleGenAI } from '@google/genai';
+import keyRotationManager from '@/lib/providers/KeyRotationManager';
 
 class BaseAgent {
   static isAgent = true;
@@ -144,6 +145,54 @@ class BaseAgent {
     if (!providerId) return null;
     await dbConnect();
 
+    // 1. Check if this is a POOLED request (e.g. "google-pool" or "openai-pool")
+    if (providerId.toLowerCase().includes('-pool')) {
+      const baseName = providerId.split('-pool')[0].toLowerCase();
+
+      // Fetch all active providers that match this base name in their ID or name
+      const pooledProviders = await ProviderSettings.find({
+        isActive: true,
+        $or: [
+          { providerId: { $regex: baseName, $options: 'i' } },
+          { name: { $regex: baseName, $options: 'i' } },
+        ],
+      }).lean();
+
+      if (pooledProviders.length > 0) {
+        this.logger.info(
+          `Resolved pooled provider "${providerId}" with ${pooledProviders.length} keys.`
+        );
+
+        // Register each in the rotation manager
+        for (const p of pooledProviders) {
+          if (p.apiKey) {
+            try {
+              p.apiKey = decrypt(p.apiKey);
+              keyRotationManager.registerProvider(providerId, {
+                ...p,
+                defaultRPM: p.defaultRPM,
+                defaultTPM: p.defaultTPM,
+                defaultRPD: p.defaultRPD,
+              });
+            } catch (e) {
+              this.logger.error(`Failed to decrypt API key for pooled provider ${p.providerId}`, e);
+            }
+          }
+        }
+
+        // Get the next available key from the pool
+        const next = keyRotationManager.getNextProvider(providerId);
+        if (next) {
+          return {
+            ...next,
+            poolId: providerId, // Store this for rotation logic later
+            isPooled: true,
+          };
+        }
+      }
+    }
+
+    // 2. Standard single provider resolution
     // Try the specific providerId field first (standard for our system)
     let provider = await ProviderSettings.findOne({ providerId }).lean();
 
@@ -182,7 +231,29 @@ class BaseAgent {
     if (provider && provider.apiKey) {
       try {
         const encryptedKey = provider.apiKey;
-        provider.apiKey = decrypt(provider.apiKey);
+
+        // Handle both single key string and array of keys
+        if (Array.isArray(provider.apiKey)) {
+          provider.apiKey = provider.apiKey.map((k) => decrypt(k));
+
+          // AUTO-ENABLE POOLING: If there are multiple keys, register as a pool automatically
+          if (provider.apiKey.length > 1) {
+            keyRotationManager.registerProvider(provider.providerId, provider);
+            const next = keyRotationManager.getNextProvider(provider.providerId);
+            if (next) {
+              return {
+                ...next,
+                poolId: provider.providerId,
+                isPooled: true,
+              };
+            }
+          } else if (provider.apiKey.length === 1) {
+            // Just one key, make it a string for standard compatibility
+            provider.apiKey = provider.apiKey[0];
+          }
+        } else {
+          provider.apiKey = decrypt(provider.apiKey);
+        }
 
         console.log(
           `[BaseAgent:resolveProvider] Resolved provider: ${provider.name} (${provider.providerId})`
@@ -238,8 +309,38 @@ class BaseAgent {
 
     try {
       await this._validateInput(input);
-      const result = await this._onExecute(input);
+
+      let result;
+      let attempts = 0;
+      const maxRetries = 5;
+
+      while (attempts < maxRetries) {
+        try {
+          result = await this._onExecute(input);
+          break; // Success!
+        } catch (error) {
+          if (this._isRetryableError(error) && this.config.provider?.isPooled) {
+            this.logger.warn(
+              `Retryable error hit on attempt ${attempts + 1}. Rotating key and retrying...`
+            );
+            await this._rotateProvider();
+            attempts++;
+            continue;
+          }
+          throw error; // Rethrow if not a retryable error or no pool available
+        }
+      }
+
       this.logger.info('Agent execution completed successfully');
+
+      // ─── NEW: Report Capacity Usage ───
+      if (this.config.provider?.isPooled && result?.usage) {
+        keyRotationManager.reportUsage(
+          this.config.provider.poolId,
+          this.config.provider.internalId,
+          result.usage.totalTokens || 0
+        );
+      }
 
       // Asynchronously log success
       this._logExecutionToDatabase({ status: 'success', durationMs: Date.now() - startTime }).catch(
@@ -294,33 +395,72 @@ class BaseAgent {
       let toolCallCount = 0;
       const toolNames = [];
       let usage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+      let attempts = 0;
+      const maxRetries = 5;
 
-      for await (const chunk of this._onStreamExecute(input)) {
-        // Track tool usage - support both 'tool_result' and 'tool_call' (completed) types
-        const isToolResult = chunk.type === 'tool_result';
-        const isCompletedToolCall = chunk.type === 'tool_call' && chunk.status === 'completed';
+      while (attempts < maxRetries) {
+        try {
+          // Track if we have yielded any chunks to prevent dirty retries
+          let hasYielded = false;
 
-        if (isToolResult || isCompletedToolCall) {
-          toolCallCount++;
-          const toolName = chunk.name || chunk.tool || chunk.toolName || 'unknown';
-          toolNames.push(toolName);
-          this.logger.debug(`Tool #${toolCallCount}: ${toolName}`);
+          for await (const chunk of this._onStreamExecute(input)) {
+            hasYielded = true;
+            // Track tool usage - support both 'tool_result' and 'tool_call' (completed) types
+            const isToolResult = chunk.type === 'tool_result';
+            const isCompletedToolCall = chunk.type === 'tool_call' && chunk.status === 'completed';
+
+            if (isToolResult || isCompletedToolCall) {
+              toolCallCount++;
+              const toolName = chunk.name || chunk.tool || chunk.toolName || 'unknown';
+              toolNames.push(toolName);
+              this.logger.debug(`Tool #${toolCallCount}: ${toolName}`);
+            }
+
+            // Track token usage if emitted by subclass
+            if (chunk.type === 'usage' && chunk.data) {
+              usage.promptTokens += chunk.data.promptTokens || 0;
+              usage.completionTokens += chunk.data.completionTokens || 0;
+              usage.totalTokens += chunk.data.totalTokens || 0;
+            }
+
+            yield chunk;
+          }
+          break; // Success!
+        } catch (error) {
+          if (this._isRetryableError(error) && this.config.provider?.isPooled) {
+            if (hasYielded) {
+              this.logger.error(
+                `Retryable error hit mid-stream on attempt ${attempts + 1}. Cannot safely retry after yielding data.`
+              );
+              throw error; // Cannot safely retry if client already received partial data
+            }
+
+            this.logger.warn(
+              `Retryable error hit on stream attempt ${attempts + 1} before yielding. Rotating key and retrying...`
+            );
+            await this._rotateProvider();
+            attempts++;
+            // Re-initialize subclass if necessary before retry
+            await this._onInitialize();
+            continue;
+          }
+          throw error;
         }
-
-        // Track token usage if emitted by subclass
-        if (chunk.type === 'usage' && chunk.data) {
-          usage.promptTokens += chunk.data.promptTokens || 0;
-          usage.completionTokens += chunk.data.completionTokens || 0;
-          usage.totalTokens += chunk.data.totalTokens || 0;
-        }
-
-        yield chunk;
       }
 
       const durationMs = Date.now() - startTime;
       this.logger.info(
         `Stream completed — Tools used: ${toolCallCount}, Tokens: ${usage.totalTokens}, Duration: ${durationMs}ms`
       );
+
+      // ─── NEW: Report Capacity Usage ───
+      if (this.config.provider?.isPooled && usage.totalTokens > 0) {
+        keyRotationManager.reportUsage(
+          this.config.provider.poolId,
+          this.config.provider.internalId,
+          usage.totalTokens
+        );
+      }
 
       // Asynchronously log success
       this._logExecutionToDatabase({
@@ -696,6 +836,84 @@ class BaseAgent {
 
     const client = new GoogleGenAI({ apiKey: provider.apiKey });
     return { client, modelName };
+  }
+
+  /**
+   * Check if an error is a rate limit error (429)
+   * @private
+   */
+  _isRateLimitError(error) {
+    if (!error) return false;
+    const msg = error.message?.toLowerCase() || '';
+    const code = error.status || error.statusCode || error.lc_error_code || '';
+
+    return (
+      code === 429 ||
+      msg.includes('rate limit') ||
+      msg.includes('quota exceeded') ||
+      msg.includes('429') ||
+      msg.includes('too many requests')
+    );
+  }
+
+  /**
+   * Rotate to the next provider in the pool
+   * @private
+   */
+  async _rotateProvider(error) {
+    const provider = this.config.provider;
+    if (!provider || !provider.isPooled || !provider.poolId) return;
+
+    // 1. Determine cooldown based on error
+    let cooldown = 60 * 1000; // Default 1m
+    const msg = error?.message?.toLowerCase() || '';
+    if (msg.includes('quota exceeded') || msg.includes('daily')) {
+      cooldown = 24 * 60 * 60 * 1000; // 24h for daily quota
+      this.logger.warn(`Daily quota exceeded for key ${provider.internalId}. Throttling for 24h.`);
+    }
+
+    // 2. Mark specific key as throttled (using internalId now!)
+    keyRotationManager.markThrottled(provider.poolId, provider.internalId, cooldown);
+
+    // 3. Get next available
+    const next = keyRotationManager.getNextProvider(provider.poolId);
+    if (next) {
+      this.logger.info(
+        `Rotated from ${provider.internalId} to ${next.internalId} in pool ${provider.poolId}`
+      );
+      this.config.provider = {
+        ...next,
+        poolId: provider.poolId,
+        isPooled: true,
+      };
+    } else {
+      this.logger.error(`No more providers available in pool ${provider.poolId}`);
+      throw new Error(`All API keys in pool ${provider.poolId} are currently rate-limited.`);
+    }
+  }
+
+  /**
+   * Check if an error should trigger a rotation/retry
+   * Includes Rate Limits (429) and Network/Fetch failures
+   * @private
+   */
+  _isRetryableError(error) {
+    if (!error) return false;
+    const msg = error.message?.toLowerCase() || '';
+    const code = error.status || error.statusCode || error.lc_error_code || '';
+
+    return (
+      code === 429 ||
+      msg.includes('rate limit') ||
+      msg.includes('quota exceeded') ||
+      msg.includes('429') ||
+      msg.includes('too many requests') ||
+      msg.includes('fetch failed') ||
+      msg.includes('econnreset') ||
+      msg.includes('etimedout') ||
+      msg.includes('enotfound') ||
+      msg.includes('network error')
+    );
   }
 }
 

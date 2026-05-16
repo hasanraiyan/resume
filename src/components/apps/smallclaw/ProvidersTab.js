@@ -10,6 +10,7 @@ export default function ProvidersTab() {
 
   const [savingProvider, setSavingProvider] = useState(false);
   const [editingProvider, setEditingProvider] = useState(null);
+  const [appendMode, setAppendMode] = useState(false);
 
   const filteredProviders = providers.filter(
     (p) =>
@@ -23,11 +24,23 @@ export default function ProvidersTab() {
       name: '',
       baseUrl: '',
       apiKey: '',
+      defaultRPM: 4,
+      defaultTPM: 250000,
+      defaultRPD: 2000,
+      enableLimits: false,
     });
   };
 
   const handleEditProvider = (provider) => {
-    setEditingProvider({ ...provider, id: provider.providerId, apiKey: '' });
+    setEditingProvider({
+      ...provider,
+      id: provider.providerId,
+      apiKey: '',
+      defaultRPM: provider.defaultRPM || 4,
+      defaultTPM: provider.defaultTPM || 250000,
+      defaultRPD: provider.defaultRPD || 2000,
+      enableLimits: provider.enableLimits ?? false,
+    });
   };
 
   const handleSaveProvider = async () => {
@@ -41,8 +54,23 @@ export default function ProvidersTab() {
         : `/api/admin/providers/${editingProvider.providerId}`;
       const method = isNew ? 'POST' : 'PUT';
 
-      const payload = { ...editingProvider };
-      if (!isNew && !payload.apiKey) {
+      const payload = { ...editingProvider, appendKeys: appendMode };
+
+      // Support multiple keys: split by comma or newline
+      if (payload.apiKey && typeof payload.apiKey === 'string') {
+        const keys = payload.apiKey
+          .split(/[\n,]/)
+          .map((k) => k.trim())
+          .filter((k) => k.length > 0);
+
+        if (keys.length > 1) {
+          payload.apiKey = keys;
+        } else if (keys.length === 1) {
+          payload.apiKey = keys[0];
+        }
+      }
+
+      if (!isNew && (!payload.apiKey || payload.apiKey === '***************')) {
         delete payload.apiKey;
       }
 
@@ -54,6 +82,7 @@ export default function ProvidersTab() {
 
       if (res.ok) {
         setEditingProvider(null);
+        setAppendMode(false);
         refreshProviders();
       } else {
         alert('Failed to save provider.');
@@ -143,12 +172,39 @@ export default function ProvidersTab() {
               </div>
             </div>
 
-            <div className="mt-auto pt-4 border-t border-neutral-100">
-              <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold mb-1.5">
-                API Key
-              </p>
-              <div className="text-xs bg-neutral-50 text-neutral-600 px-3 py-2 rounded-lg font-mono tracking-wider border border-neutral-100 truncate">
-                {p.apiKey}
+            <div className="mt-auto pt-4 border-t border-neutral-100 flex flex-col gap-3">
+              {p.enableLimits && (
+                <div className="flex justify-between items-center gap-2">
+                  <div className="flex flex-col">
+                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold">
+                      RPM
+                    </p>
+                    <p className="text-xs font-bold text-neutral-700">{p.defaultRPM || 4}</p>
+                  </div>
+                  <div className="flex flex-col">
+                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold">
+                      TPM
+                    </p>
+                    <p className="text-xs font-bold text-neutral-700">
+                      {(p.defaultTPM / 1000).toFixed(0)}k
+                    </p>
+                  </div>
+                  <div className="flex flex-col">
+                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold">
+                      RPD
+                    </p>
+                    <p className="text-xs font-bold text-neutral-700">{p.defaultRPD || 2000}</p>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold mb-1.5">
+                  API Key
+                </p>
+                <div className="text-xs bg-neutral-50 text-neutral-600 px-3 py-2 rounded-lg font-mono tracking-wider border border-neutral-100 truncate">
+                  {p.apiKey}
+                </div>
               </div>
             </div>
           </Card>
@@ -219,23 +275,113 @@ export default function ProvidersTab() {
               </div>
               <div>
                 <label className="text-xs font-bold text-neutral-500 uppercase tracking-widest block mb-1.5">
-                  API Key
+                  API Key(s)
                 </label>
-                <input
-                  className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 focus:border-[#1f644e] rounded-xl transition-all outline-none text-sm font-mono"
-                  type="password"
+                <textarea
+                  className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 focus:border-[#1f644e] rounded-xl transition-all outline-none text-sm font-mono min-h-[100px] resize-none"
                   value={editingProvider.apiKey}
                   onChange={(e) =>
                     setEditingProvider({ ...editingProvider, apiKey: e.target.value })
                   }
-                  placeholder="sk-..."
+                  placeholder="Paste one or more keys (newline or comma separated)"
                 />
-                {editingProvider.id !== 'new' && (
-                  <p className="text-[10px] text-neutral-400 mt-2 italic">
-                    Leave blank to keep existing key unchanged.
-                  </p>
-                )}
+                <p className="text-[10px] text-neutral-400 mt-2 italic">
+                  {editingProvider.id !== 'new' ? 'Leave blank to keep existing keys. ' : ''}
+                  Separate multiple keys with a comma or new line for automatic pooling.
+                </p>
               </div>
+
+              <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl border border-neutral-100">
+                <input
+                  id="enableLimits"
+                  type="checkbox"
+                  className="w-4 h-4 text-[#1f644e] rounded border-neutral-300 focus:ring-[#1f644e] cursor-pointer"
+                  checked={editingProvider.enableLimits}
+                  onChange={(e) =>
+                    setEditingProvider({ ...editingProvider, enableLimits: e.target.checked })
+                  }
+                />
+                <label
+                  htmlFor="enableLimits"
+                  className="text-xs font-medium text-neutral-700 cursor-pointer select-none"
+                >
+                  Enable Capacity Limits (RPM/TPM/RPD)
+                </label>
+              </div>
+
+              {editingProvider.enableLimits && (
+                <div className="grid grid-cols-3 gap-3 animate-in slide-in-from-top-1 duration-200">
+                  <div>
+                    <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest block mb-1">
+                      RPM
+                    </label>
+                    <input
+                      type="number"
+                      className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 focus:border-[#1f644e] rounded-lg outline-none text-xs"
+                      value={editingProvider.defaultRPM}
+                      onChange={(e) =>
+                        setEditingProvider({
+                          ...editingProvider,
+                          defaultRPM: parseInt(e.target.value),
+                        })
+                      }
+                      placeholder="4"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest block mb-1">
+                      TPM
+                    </label>
+                    <input
+                      type="number"
+                      className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 focus:border-[#1f644e] rounded-lg outline-none text-xs"
+                      value={editingProvider.defaultTPM}
+                      onChange={(e) =>
+                        setEditingProvider({
+                          ...editingProvider,
+                          defaultTPM: parseInt(e.target.value),
+                        })
+                      }
+                      placeholder="250k"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest block mb-1">
+                      RPD
+                    </label>
+                    <input
+                      type="number"
+                      className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 focus:border-[#1f644e] rounded-lg outline-none text-xs"
+                      value={editingProvider.defaultRPD}
+                      onChange={(e) =>
+                        setEditingProvider({
+                          ...editingProvider,
+                          defaultRPD: parseInt(e.target.value),
+                        })
+                      }
+                      placeholder="2000"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {editingProvider.id !== 'new' && (
+                <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl border border-neutral-100">
+                  <input
+                    id="appendKeys"
+                    type="checkbox"
+                    className="w-4 h-4 text-[#1f644e] rounded border-neutral-300 focus:ring-[#1f644e] cursor-pointer"
+                    checked={appendMode}
+                    onChange={(e) => setAppendMode(e.target.checked)}
+                  />
+                  <label
+                    htmlFor="appendKeys"
+                    className="text-xs font-medium text-neutral-700 cursor-pointer select-none"
+                  >
+                    Append to existing keys
+                  </label>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 pt-4">
