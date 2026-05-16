@@ -113,6 +113,14 @@ export function parseMarkdownToBlocks(text) {
         block.showNumbering = true;
       }
 
+      // Extract block-level footnotes
+      const footnoteIdx = rawContent.search(/^\[\^/m);
+      let blockFootnotes = '';
+      if (footnoteIdx !== -1) {
+        blockFootnotes = rawContent.substring(footnoteIdx).trim();
+        rawContent = rawContent.substring(0, footnoteIdx).trim();
+      }
+
       const sParts = rawContent.split(/(?:^|\n)\s*-\s*step:\s*/).filter((p) => p.trim());
       sParts.forEach((s) => {
         const lines = s.split('\n');
@@ -122,7 +130,19 @@ export function parseMarkdownToBlocks(text) {
           stepContent = stepContent.replace(/^content:\s*/, '').trim();
         }
         stepContent = unescapeString(stepContent);
-        if (title) block.steps.push({ title, content: stepContent });
+
+        // Repetition fix: if content starts with the title, strip it
+        if (title && stepContent.toLowerCase().startsWith(title.toLowerCase())) {
+          stepContent = stepContent.substring(title.length).trim();
+          stepContent = stepContent.replace(/^[:\s-]+/, '');
+        }
+
+        if (title) {
+          block.steps.push({
+            title: blockFootnotes ? title + '\n\n' + blockFootnotes : title,
+            content: blockFootnotes ? stepContent + '\n\n' + blockFootnotes : stepContent,
+          });
+        }
       });
     } else if (m.type === 'AccordionBlock') {
       block.items = [];
@@ -130,6 +150,14 @@ export function parseMarkdownToBlocks(text) {
       if (titleMatch) {
         block.title = unescapeString(titleMatch[1]);
         rawContent = rawContent.replace(titleMatch[0], '').trim();
+      }
+
+      // Extract block-level footnotes
+      const footnoteIdx = rawContent.search(/^\[\^/m);
+      let blockFootnotes = '';
+      if (footnoteIdx !== -1) {
+        blockFootnotes = rawContent.substring(footnoteIdx).trim();
+        rawContent = rawContent.substring(0, footnoteIdx).trim();
       }
 
       const iParts = rawContent.split(/(?:^|\n)\s*-\s*item:\s*/).filter((p) => p.trim());
@@ -141,10 +169,30 @@ export function parseMarkdownToBlocks(text) {
           itemContent = itemContent.replace(/^content:\s*/, '').trim();
         }
         itemContent = unescapeString(itemContent);
-        if (title) block.items.push({ title, content: itemContent });
+
+        // Repetition fix: if content starts with the title, strip it
+        if (title && itemContent.toLowerCase().startsWith(title.toLowerCase())) {
+          itemContent = itemContent.substring(title.length).trim();
+          itemContent = itemContent.replace(/^[:\s-]+/, '');
+        }
+
+        if (title) {
+          block.items.push({
+            title: blockFootnotes ? title + '\n\n' + blockFootnotes : title,
+            content: blockFootnotes ? itemContent + '\n\n' + blockFootnotes : itemContent,
+          });
+        }
       });
     } else if (m.type === 'TabsBlock') {
       block.tabs = [];
+      // Extract block-level footnotes
+      const footnoteIdx = rawContent.search(/^\[\^/m);
+      let blockFootnotes = '';
+      if (footnoteIdx !== -1) {
+        blockFootnotes = rawContent.substring(footnoteIdx).trim();
+        rawContent = rawContent.substring(0, footnoteIdx).trim();
+      }
+
       const tParts = rawContent.split(/(?:^|\n)\s*-\s*tab:\s*/).filter((p) => p.trim());
       tParts.forEach((t) => {
         const lines = t.split('\n');
@@ -154,7 +202,13 @@ export function parseMarkdownToBlocks(text) {
           tabContent = tabContent.replace(/^content:\s*/, '').trim();
         }
         tabContent = unescapeString(tabContent);
-        if (title) block.tabs.push({ title, content: tabContent });
+
+        if (title) {
+          block.tabs.push({
+            title: blockFootnotes ? title + '\n\n' + blockFootnotes : title,
+            content: blockFootnotes ? tabContent + '\n\n' + blockFootnotes : tabContent,
+          });
+        }
       });
     } else if (m.type === 'CalloutBlock') {
       const typeMatch = rawContent.match(/^type:\s*(.*)/m);
@@ -179,6 +233,14 @@ export function parseMarkdownToBlocks(text) {
       if (titleMatch) {
         block.title = unescapeString(titleMatch[1]);
         rawContent = rawContent.replace(titleMatch[0], '').trim();
+      }
+
+      // Extract block-level footnotes
+      const footnoteIdx = rawContent.search(/^\[\^/m);
+      let blockFootnotes = '';
+      if (footnoteIdx !== -1) {
+        blockFootnotes = rawContent.substring(footnoteIdx).trim();
+        rawContent = rawContent.substring(0, footnoteIdx).trim();
       }
 
       const qRegex = /(?:^|\n)\s*-\s*question:\s*/g;
@@ -258,6 +320,15 @@ export function parseMarkdownToBlocks(text) {
             qObj.type = 'true_false';
           }
         }
+
+        // Apply footnotes to question and explanation
+        if (blockFootnotes) {
+          qObj.question = qObj.question + '\n\n' + blockFootnotes;
+          if (qObj.explanation) qObj.explanation = qObj.explanation + '\n\n' + blockFootnotes;
+          // Also apply to options as they use MarkdownRenderer
+          qObj.options = qObj.options.map((opt) => opt + '\n\n' + blockFootnotes);
+        }
+
         if (qObj.question) block.quiz.questions.push(qObj);
       }
     } else if (m.type === 'ChartBlock') {

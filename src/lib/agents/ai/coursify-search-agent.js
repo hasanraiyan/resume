@@ -33,13 +33,13 @@ For processes, algorithms, sequential walkthroughs.
 title: "Step Title"
 showNumbering: true
 - step: "Step Name"
-  content: "Step details here. Can include mermaid: \n\`\`\`mermaid\\ngraph LR\\n  A---B\\n\`\`\`"
+  content: "Step details here. IMPORTANT: Do NOT repeat the 'Step Name' inside this content field. Can include mermaid: \n\`\`\`mermaid\\ngraph LR\\n  A---B\\n\`\`\`"
 
 **## [AccordionBlock]**
 For FAQs, edge cases, supplementary info.
 title: "Section Title"
 - item: "Question or topic"
-  content: "Detailed answer..."
+  content: "Detailed answer... IMPORTANT: Do NOT repeat the 'Question or topic' inside this content field."
 
 **## [QuizBlock]**
 Multiple choice questions (ALWAYS include at end).
@@ -155,12 +155,27 @@ class CoursifySearchAgent extends BaseAgent {
     if (isReferenceEnabled) {
       dynamicSystemPrompt += `
 
-## Reference System (Wikipedia-style)
-- Use inline citations like [^1], [^2] within the text (MdBlock).
-- At the end of EACH MdBlock that contains citations, provide the corresponding footnote definitions:
+## Reference System (Wikipedia-style) - MANDATORY
+- Use inline citations like [^1], [^2] within the text of ANY block (MdBlock, StepByStepBlock, AccordionBlock, etc.).
+- MANDATORY: Every major claim, statistic, or technical detail must be backed by a search result citation.
+- At the end of EACH individual block that contains citations, you MUST provide the corresponding footnote definitions:
   [^1]: [Source Title](Source URL) - Brief description of source.
 - This ensures the content is verifiable and authoritative.
-- MANDATORY: Every major claim must be backed by a search result citation.`;
+
+### Example of Citation Placement:
+## [MdBlock]
+The primary algorithm used is Dijkstra's [^1]. It has a time complexity of $O(V^2)$ [^2].
+
+[^1]: [Dijkstra's Algorithm](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm) - Official overview.
+[^2]: [Complexity Analysis](https://geeksforgeeks.org/dijkstra-complexity) - Detailed performance breakdown.
+
+---
+## [StepByStepBlock]
+title: "Implementation"
+- step: "Initialization"
+  content: "Initialize the priority queue with starting nodes [^3]."
+
+[^3]: [Queue Implementation](https://docs.python.org/3/library/heapq.html) - Documentation for priority queues.`;
     }
 
     const contentMessages = [
@@ -214,7 +229,6 @@ class CoursifySearchAgent extends BaseAgent {
             status: 'completed',
             output: data.output,
           };
-          // Also yield tool_result for BaseAgent to track stats explicitly
           yield {
             type: 'tool_result',
             name: name,
