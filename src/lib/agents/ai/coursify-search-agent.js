@@ -4,8 +4,6 @@ import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { TavilySearch } from '@langchain/tavily';
 import { youtubeSearch } from '../utils/youtube-tools';
 import { SystemMessage, HumanMessage } from '@langchain/core/messages';
-import { RunnableParallel, RunnableLambda } from '@langchain/core/runnables';
-import { ChatPromptTemplate } from '@langchain/core/prompts';
 
 const SYSTEM_PROMPT = `
 You are a Coursify AI Course Content Generator. Your job is to research a topic using web search and then generate a reponse to user query in the Coursify markdown format.
@@ -113,7 +111,7 @@ url: "https://www.youtube.com/watch?v=..."
 - IMPORTANT: ALWAYS perform at least 2 web searches before generating content.
 - IMPORTANT: If you need a video, you MUST search YouTube and select the most relevant video URL from the results.
 - DO NOT summarize or talk about your process. Just execute tool calls then output markdown.
-- MANDATORY: If you don't use tools, you are failing your job. SEARCH FIRST.
+- MANDATORY: If a tool is needed, you are failing your job if you don't use it. SEARCH FIRST.
 - IMPORTANT: Always perform search first to get accurate up-to-date info.`;
 
 class CoursifySearchAgent extends BaseAgent {
@@ -132,19 +130,15 @@ class CoursifySearchAgent extends BaseAgent {
   async *_onStreamExecute(input) {
     const { topic, isReferenceEnabled } = input;
 
-    this.logger.info(
-      `🚀 Starting CoursifySearchAgent for topic: "${topic}" (References: ${!!isReferenceEnabled})`
-    );
+    this.logger.info(`🚀 Starting CoursifySearchAgent for topic: "${topic.substring(0, 50)}..."`);
 
     const llm = await this.createChatModel();
     this.logger.debug('✅ Chat model created');
 
-    // ─── Content Generator (ReAct agent with search) ───────────────────
     const tools = [
       new TavilySearch({ maxResults: 5, apiKey: process.env.TAVILY_API_KEY }),
       youtubeSearch,
     ];
-    this.logger.debug('✅ Tools initialized');
 
     const contentAgent = createReactAgent({
       llm,
@@ -157,27 +151,10 @@ class CoursifySearchAgent extends BaseAgent {
       dynamicSystemPrompt += `
 
 ## Reference System (Wikipedia-style) - MANDATORY
-- Use inline citations like [^1], [^2] within the text of ANY block (MdBlock, StepByStepBlock, AccordionBlock, etc.).
+- Use inline citations like [^1], [^2] within the text of ANY block.
 - MANDATORY: Every major claim, statistic, or technical detail must be backed by a search result citation.
-- MANDATORY: Provide the corresponding footnote definitions ONLY ONCE at the VERY END of your entire response:
-  [^1]: [Source Title](Source URL) - Brief description of source.
-- This ensures the content is verifiable and authoritative.
-
-### Example of Citation Placement:
-## [MdBlock]
-The primary algorithm used is Dijkstra's [^1]. It has a time complexity of $O(V^2)$ [^2].
-
----
-## [StepByStepBlock]
-title: "Implementation"
-- step: "Initialization"
-  content: "Initialize the priority queue with starting nodes [^3]."
-
----
-  
-[^1]: [Dijkstra's Algorithm](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm) - Official overview.
-[^2]: [Complexity Analysis](https://geeksforgeeks.org/dijkstra-complexity) - Detailed performance breakdown.
-[^3]: [Queue Implementation](https://docs.python.org/3/library/heapq.html) - Documentation for priority queues.`;
+- MANDATORY: Provide the corresponding footnote definitions ONLY ONCE at the VERY END.
+  [^1]: [Source Title](Source URL) - Brief description.`;
     }
 
     const contentMessages = [
@@ -187,33 +164,22 @@ title: "Implementation"
       }),
     ];
 
-    // ─── Run content agent ───────────────────────────────────────────
     try {
       const stream = await contentAgent.streamEvents(
         { messages: contentMessages },
-        { version: 'v2', runName: `Research: ${topic}` }
+        { version: 'v2', runName: `Research: ${topic.substring(0, 30)}` }
       );
 
-      let eventCount = 0;
       for await (const event of stream) {
-        eventCount++;
         const { event: type, data, name } = event;
 
-        this.logger.debug(`📊 Event #${eventCount}: type="${type}", name="${name}"`);
-
-        // ─── Content chain events ──────────────────────────────────────────
         if (
           type === 'on_chat_model_stream' &&
           data.chunk?.content &&
           name !== 'ChatPromptTemplate'
         ) {
-          this.logger.debug(`📝 Streaming content: "${data.chunk.content.substring(0, 50)}..."`);
           yield { type: 'content', message: data.chunk.content };
         } else if (type === 'on_tool_start') {
-          this.logger.info(`🔧 Tool starting: "${name}"`);
-          if (data.input) {
-            this.logger.debug(`   Input: ${JSON.stringify(data.input).substring(0, 100)}`);
-          }
           yield {
             type: 'tool_call',
             tool: name,
@@ -221,10 +187,6 @@ title: "Implementation"
             input: data.input,
           };
         } else if (type === 'on_tool_end') {
-          this.logger.info(`✅ Tool completed: "${name}"`);
-          if (data.output) {
-            this.logger.debug(`   Output: ${JSON.stringify(data.output).substring(0, 100)}`);
-          }
           yield {
             type: 'tool_call',
             tool: name,
@@ -234,91 +196,30 @@ title: "Implementation"
           yield {
             type: 'tool_result',
             name: name,
+            input: data.input,
             output: data.output,
           };
         } else if (type === 'on_chat_model_start') {
-          this.logger.debug(`🤖 Chat model starting (${name})`);
           yield { type: 'status', message: '' };
         } else if (type === 'on_chat_model_end') {
-          this.logger.debug(`🤖 Chat model ended (${name})`);
-          // DEBUG: Log the full output to find usage structure
-          this.logger.debug(`   Output Structure: ${Object.keys(data.output || {}).join(', ')}`);
-          if (data.output?.response_metadata) {
-            this.logger.debug(
-              `   Metadata: ${Object.keys(data.output.response_metadata).join(', ')}`
-            );
-          }
-
-          let usage =
+          const usage =
             data.output?.usage ||
             data.output?.response_metadata?.tokenUsage ||
             data.output?.response_metadata?.usage;
-
-          // ─── Token Estimation Fallback ───
-          if (!usage && data.output?.content) {
-            const charCount =
-              typeof data.output.content === 'string' ? data.output.content.length : 0;
-            // Rough estimate: 1 token ≈ 4 chars
-            const estimatedTokens = Math.ceil(charCount / 4);
-            if (estimatedTokens > 0) {
-              this.logger.debug(
-                `⚠️ No usage from provider. Estimating ${estimatedTokens} tokens from content.`
-              );
-              usage = {
-                prompt_tokens: Math.ceil(estimatedTokens * 0.2), // Assume 20% prompt
-                completion_tokens: Math.ceil(estimatedTokens * 0.8),
-                total_tokens: estimatedTokens,
-              };
-            }
-          }
-
           if (usage) {
-            const p = usage.prompt_tokens || usage.promptTokens || 0;
-            const c = usage.completion_tokens || usage.completionTokens || 0;
-            const t = usage.total_tokens || usage.totalTokens || p + c;
-
             yield {
               type: 'usage',
               data: {
-                promptTokens: p,
-                completionTokens: c,
-                totalTokens: t,
+                promptTokens: usage.prompt_tokens || usage.promptTokens || 0,
+                completionTokens: usage.completion_tokens || usage.completionTokens || 0,
+                totalTokens: usage.total_tokens || usage.totalTokens || 0,
               },
             };
           }
-          if (data.output) {
-            this.logger.debug(`   Generated: ${JSON.stringify(data.output).substring(0, 100)}`);
-          }
-        } else if (type === 'on_chain_start') {
-          this.logger.info(`⛓️  Chain starting: "${name}"`);
-          if (data.input) {
-            const inputStr =
-              typeof data.input === 'string' ? data.input : JSON.stringify(data.input);
-            this.logger.debug(`   Input: ${inputStr.substring(0, 100)}`);
-          }
-        } else if (type === 'on_chain_end') {
-          this.logger.info(`⛓️  Chain completed: "${name}"`);
-          if (data.output) {
-            const outputStr =
-              typeof data.output === 'string' ? data.output : JSON.stringify(data.output);
-            this.logger.debug(`   Output: ${outputStr.substring(0, 100)}`);
-          }
-        } else if (type === 'on_chain_stream') {
-          this.logger.debug(
-            `📡 Chain streaming (${name}): ${JSON.stringify(data).substring(0, 100)}`
-          );
-        } else if (type === 'on_agent_action') {
-          this.logger.info(`⚙️  Agent action: ${JSON.stringify(data).substring(0, 150)}`);
-        } else if (type === 'on_agent_finish') {
-          this.logger.info(`🏁 Agent finished: ${JSON.stringify(data).substring(0, 150)}`);
-        } else {
-          this.logger.debug(`❓ Unhandled event type: "${type}"`);
         }
       }
-
-      this.logger.info(`✨ Event stream completed after ${eventCount} events`);
     } catch (err) {
-      this.logger.error(`❌ Parallel execution failed: ${err.message}`);
+      this.logger.error(`❌ Agent execution failed: ${err.message}`);
       throw err;
     }
   }

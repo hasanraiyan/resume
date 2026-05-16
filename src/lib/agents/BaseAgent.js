@@ -402,7 +402,16 @@ class BaseAgent {
       while (attempts < maxRetries) {
         try {
           for await (const chunk of this._onStreamExecute(input)) {
-            hasYielded = true;
+            // Only consider the stream "dirty" if we yielded material data (content or results)
+            // status and tool_call (started) are considered transient/retryable.
+            if (
+              chunk.type === 'content' ||
+              chunk.type === 'tool_result' ||
+              chunk.type === 'usage'
+            ) {
+              hasYielded = true;
+            }
+
             // Track tool usage - support both 'tool_result' and 'tool_call' (completed) types
             const isToolResult = chunk.type === 'tool_result';
             const isCompletedToolCall = chunk.type === 'tool_call' && chunk.status === 'completed';
