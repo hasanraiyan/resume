@@ -310,7 +310,7 @@ export function ResearchHistory() {
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent
           size="3xl"
-          className="p-0 border-none overflow-hidden max-w-[95vw] lg:max-w-7xl flex flex-col h-[90vh]"
+          className="p-0 border-none overflow-hidden max-w-[95vw] lg:max-w-7xl flex flex-col h-[90vh] bg-white"
         >
           {isDetailLoading ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-4">
@@ -322,50 +322,50 @@ export function ResearchHistory() {
           ) : selectedArtifact ? (
             <>
               {/* Header */}
-              <div className="bg-white border-b border-[#e5e3d8] p-6 flex items-center justify-between shrink-0">
-                <div>
-                  <h3 className="text-xl font-bold text-[#1e3a34] line-clamp-1 mb-1">
+              <div className="bg-white border-b border-[#e5e3d8] p-6 flex flex-wrap items-center justify-between gap-4 shrink-0 relative z-20">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-xl font-bold text-[#1e3a34] truncate mb-1">
                     {selectedArtifact.title}
                   </h3>
-                  <p className="text-[11px] text-[#7c8e88] uppercase font-bold tracking-wider">
+                  <p className="text-[11px] text-[#7c8e88] uppercase font-bold tracking-wider truncate">
                     Topic: {selectedArtifact.topic}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 ml-auto">
+                <div className="flex items-center gap-2 sm:mr-10">
                   <button
                     onClick={() => window.open(`/coursify/r/${selectedArtifact.slug}`, '_blank')}
-                    className="flex items-center gap-2 px-4 py-2 bg-white border border-[#d4e6de] text-[#1f644e] rounded-lg text-xs font-bold hover:bg-[#f0f5f2] transition-all"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[#d4e6de] text-[#1f644e] rounded-lg text-[10px] font-bold hover:bg-[#f0f5f2] transition-all"
                   >
-                    <Eye size={14} /> View Live
+                    <Eye size={12} /> <span className="hidden sm:inline">View Live</span>
                   </button>
                   <button
                     onClick={handleCopyLink}
                     className={cn(
-                      'flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all mr-12',
+                      'flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all',
                       copied
                         ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
                         : 'bg-[#1f644e] text-white border border-[#1f644e] hover:bg-[#184d3c]'
                     )}
                   >
-                    {copied ? <CheckCircle2 size={14} /> : <Share2 size={14} />}
-                    {copied ? 'Copied!' : 'Copy Link'}
+                    {copied ? <CheckCircle2 size={12} /> : <Share2 size={12} />}
+                    <span>{copied ? 'Copied!' : 'Copy Link'}</span>
                   </button>
                 </div>
               </div>
 
               {/* Content Grid */}
-              <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
+              <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-[1fr_320px] relative">
                 {/* Left: Artifact Rendering */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-8 bg-[#fcfbf5]">
-                  <div className="max-w-3xl mx-auto">
-                    <div className="artifact-renderer">
+                <div className="min-w-0 overflow-y-auto overflow-x-auto custom-scrollbar p-6 sm:p-10 bg-[#fcfbf5] flex justify-center">
+                  <div className="w-full max-w-3xl">
+                    <div className="artifact-renderer w-full overflow-hidden">
                       <CoursifyBlockRenderer content={selectedArtifact.content} />
                     </div>
                   </div>
                 </div>
 
                 {/* Right: Metadata Panel */}
-                <div className="w-full lg:w-[360px] bg-white border-l border-[#e5e3d8] p-6 space-y-6 overflow-y-auto custom-scrollbar">
+                <div className="w-full h-full bg-white border-t lg:border-t-0 lg:border-l border-[#e5e3d8] p-6 space-y-6 overflow-y-auto custom-scrollbar shrink-0 z-10">
                   {/* System Info */}
                   <section>
                     <h4 className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-widest mb-4 flex items-center gap-2">

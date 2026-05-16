@@ -115,11 +115,6 @@ url: "https://www.youtube.com/watch?v=..."
 - MANDATORY: If you don't use tools, you are failing your job. SEARCH FIRST.
 - IMPORTANT: Always perform search first to get accurate up-to-date info.`;
 
-const TOOL_STATUS = {
-  tavily_search: '🔍 Searching the web...',
-  youtube_search: '🎥 Searching YouTube for videos...',
-};
-
 class CoursifySearchAgent extends BaseAgent {
   constructor(agentId = AGENT_IDS.COURSIFY_SEARCH, config = {}) {
     super(agentId, config);
@@ -134,9 +129,11 @@ class CoursifySearchAgent extends BaseAgent {
   }
 
   async *_onStreamExecute(input) {
-    const { topic } = input;
+    const { topic, isReferenceEnabled } = input;
 
-    this.logger.info(`🚀 Starting CoursifySearchAgent for topic: "${topic}"`);
+    this.logger.info(
+      `🚀 Starting CoursifySearchAgent for topic: "${topic}" (References: ${!!isReferenceEnabled})`
+    );
 
     const llm = await this.createChatModel();
     this.logger.debug('✅ Chat model created');
@@ -154,8 +151,20 @@ class CoursifySearchAgent extends BaseAgent {
     });
     this.logger.debug('✅ ReAct agent created');
 
+    let dynamicSystemPrompt = SYSTEM_PROMPT;
+    if (isReferenceEnabled) {
+      dynamicSystemPrompt += `
+
+## Reference System (Wikipedia-style)
+- Use inline citations like [^1], [^2] within the text (MdBlock).
+- At the end of EACH MdBlock that contains citations, provide the corresponding footnote definitions:
+  [^1]: [Source Title](Source URL) - Brief description of source.
+- This ensures the content is verifiable and authoritative.
+- MANDATORY: Every major claim must be backed by a search result citation.`;
+    }
+
     const contentMessages = [
-      new SystemMessage({ content: SYSTEM_PROMPT }),
+      new SystemMessage({ content: dynamicSystemPrompt }),
       new HumanMessage({
         content: `Research and generate a comprehensive Coursify course section on: "${topic}"\n\nSearch for detailed information first, then write the full Coursify markdown content.`,
       }),

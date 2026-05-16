@@ -22,9 +22,11 @@ export async function POST(request) {
     }
 
     let topic;
+    let isReferenceEnabled = false;
     try {
       const body = JSON.parse(text);
       topic = body.topic;
+      isReferenceEnabled = body.isReferenceEnabled;
     } catch (e) {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
@@ -43,6 +45,7 @@ export async function POST(request) {
         try {
           const events = agentRegistry.streamExecute(AGENT_IDS.COURSIFY_SEARCH, {
             topic: topic.trim(),
+            isReferenceEnabled: !!isReferenceEnabled,
           });
 
           for await (const event of events) {

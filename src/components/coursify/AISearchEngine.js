@@ -6,7 +6,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ArrowLeft, ChevronRight, RotateCcw, Search, Sparkles, Globe } from 'lucide-react';
+import { ArrowLeft, ChevronRight, RotateCcw, Search, Sparkles, Globe, Quote } from 'lucide-react';
 
 import { toast } from 'sonner';
 
@@ -130,143 +130,147 @@ export function AISearchEngine({ onGenerated }) {
     setInProgressBlock(inProgress);
   }, [content, phase]);
 
-  const generate = useCallback(async (topic) => {
-    if (!topic.trim()) return;
+  const generate = useCallback(
+    async (topic) => {
+      if (!topic.trim()) return;
 
-    setQuery(topic.trim());
+      setQuery(topic.trim());
 
-    setPhase(PHASE.GENERATING);
+      setPhase(PHASE.GENERATING);
 
-    setContent('');
+      setContent('');
 
-    setError('');
+      setError('');
 
-    setToolSteps([]);
+      setToolSteps([]);
 
-    contentRef.current = '';
+      contentRef.current = '';
 
-    try {
-      const res = await fetch('/api/coursify/generate', {
-        method: 'POST',
+      try {
+        const res = await fetch('/api/coursify/generate', {
+          method: 'POST',
 
-        headers: {
-          'Content-Type': 'application/json',
-        },
+          headers: {
+            'Content-Type': 'application/json',
+          },
 
-        body: JSON.stringify({
-          topic: topic.trim(),
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to generate');
-      }
-
-      const reader = res.body.getReader();
-
-      const decoder = new TextDecoder();
-
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-
-        if (done) break;
-
-        buffer += decoder.decode(value, {
-          stream: true,
+          body: JSON.stringify({
+            topic: topic.trim(),
+            isReferenceEnabled: true,
+          }),
         });
 
-        const lines = buffer.split('\n');
+        if (!res.ok) {
+          throw new Error('Failed to generate');
+        }
 
-        buffer = lines.pop();
+        const reader = res.body.getReader();
 
-        for (const line of lines) {
-          if (!line.trim()) continue;
+        const decoder = new TextDecoder();
 
-          let event;
+        let buffer = '';
 
-          try {
-            event = JSON.parse(line);
-          } catch {
-            continue;
-          }
+        while (true) {
+          const { done, value } = await reader.read();
 
-          if (event.type === 'content') {
-            contentRef.current += event.message;
+          if (done) break;
 
-            setContent(contentRef.current);
-          } else if (event.type === 'title') {
-            setGeneratedTitle(event.text);
-          } else if (event.type === 'status') {
-            setStatusMessage(event.message);
-          } else if (event.type === 'tool_call') {
-            if (event.status === 'started') {
-              setToolSteps((prev) => [
-                ...prev,
-                {
-                  tool: event.tool,
-                  status: 'running',
-                  input: event.input,
-                },
-              ]);
-            } else if (event.status === 'completed') {
-              setToolSteps((prev) =>
-                prev.map((step, idx) =>
-                  idx === prev.length - 1 ? { ...step, status: 'completed' } : step
-                )
-              );
+          buffer += decoder.decode(value, {
+            stream: true,
+          });
+
+          const lines = buffer.split('\n');
+
+          buffer = lines.pop();
+
+          for (const line of lines) {
+            if (!line.trim()) continue;
+
+            let event;
+
+            try {
+              event = JSON.parse(line);
+            } catch {
+              continue;
             }
-          } else if (event.type === 'tool_result') {
-            setGeneratedSlug(event.slug);
-          } else if (event.type === 'done') {
-            setPhase(PHASE.DONE);
 
-            setStatusMessage('');
-          } else if (event.type === 'error') {
-            throw new Error(event.message);
+            if (event.type === 'content') {
+              contentRef.current += event.message;
+
+              setContent(contentRef.current);
+            } else if (event.type === 'title') {
+              setGeneratedTitle(event.text);
+            } else if (event.type === 'status') {
+              setStatusMessage(event.message);
+            } else if (event.type === 'tool_call') {
+              if (event.status === 'started') {
+                setToolSteps((prev) => [
+                  ...prev,
+                  {
+                    tool: event.tool,
+                    status: 'running',
+                    input: event.input,
+                  },
+                ]);
+              } else if (event.status === 'completed') {
+                setToolSteps((prev) =>
+                  prev.map((step, idx) =>
+                    idx === prev.length - 1 ? { ...step, status: 'completed' } : step
+                  )
+                );
+              }
+            } else if (event.type === 'persist') {
+              setGeneratedSlug(event.slug);
+            } else if (event.type === 'done') {
+              setPhase(PHASE.DONE);
+
+              setStatusMessage('');
+            } else if (event.type === 'error') {
+              throw new Error(event.message);
+            }
           }
         }
-      }
 
-      if (contentRef.current) {
-        setPhase(PHASE.DONE);
-      }
+        if (contentRef.current) {
+          setPhase(PHASE.DONE);
+        }
 
-      if (onGenerated) {
-        onGenerated();
-      }
-    } catch (err) {
-      console.error(err);
+        if (onGenerated) {
+          onGenerated();
+        }
+      } catch (err) {
+        console.error(err);
 
-      // Clean up technical error messages for display
-      let displayError = err.message || 'Something went wrong.';
+        // Clean up technical error messages for display
+        let displayError = err.message || 'Something went wrong.';
 
-      // Hide quota/rate limit details
-      if (
-        displayError.includes('quota') ||
-        displayError.includes('rate limit') ||
-        displayError.includes('429')
-      ) {
-        displayError = 'API quota exceeded. Please try again in a few moments.';
-      }
-      // Hide technical API errors
-      else if (
-        displayError.includes('GoogleGenerativeAI') ||
-        displayError.includes('generativelanguage')
-      ) {
-        displayError = 'Service temporarily unavailable. Please try again.';
-      }
-      // Hide fetch errors
-      else if (displayError.includes('fetch') || displayError.includes('network')) {
-        displayError = 'Connection error. Please check your internet and try again.';
-      }
+        // Hide quota/rate limit details
+        if (
+          displayError.includes('quota') ||
+          displayError.includes('rate limit') ||
+          displayError.includes('429')
+        ) {
+          displayError = 'API quota exceeded. Please try again in a few moments.';
+        }
+        // Hide technical API errors
+        else if (
+          displayError.includes('GoogleGenerativeAI') ||
+          displayError.includes('generativelanguage')
+        ) {
+          displayError = 'Service temporarily unavailable. Please try again.';
+        }
+        // Hide fetch errors
+        else if (displayError.includes('fetch') || displayError.includes('network')) {
+          displayError = 'Connection error. Please check your internet and try again.';
+        }
 
-      setError(displayError);
+        setError(displayError);
 
-      setPhase(PHASE.ERROR);
-    }
-  }, []);
+        setPhase(PHASE.ERROR);
+      }
+    },
+    [onGenerated]
+  );
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -437,34 +441,37 @@ export function AISearchEngine({ onGenerated }) {
   return (
     <div className="w-full max-w-full overflow-x-hidden">
       {/* Header */}
-      <div className="mb-6 flex flex-wrap items-center gap-2">
-        <button
-          onClick={handleReset}
-          className="flex items-center gap-1.5 whitespace-nowrap text-xs font-bold text-[#7c8e88] transition-colors hover:text-[#1f644e]"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          New search
-        </button>
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <button
+            onClick={handleReset}
+            className="flex items-center gap-1.5 whitespace-nowrap text-xs font-bold text-[#7c8e88] transition-colors hover:text-[#1f644e]"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">New search</span>
+          </button>
 
-        <ChevronRight className="h-3.5 w-3.5 text-[#b5c4be]" />
+          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[#b5c4be]" />
 
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <Sparkles className="h-3.5 w-3.5 shrink-0 text-[#1f644e]" />
-
-          <span className="truncate text-xs font-bold text-[#1e3a34]">
-            {generatedTitle || query}
-          </span>
+          <div className="flex min-w-0 items-center gap-2">
+            <Sparkles className="h-3.5 w-3.5 shrink-0 text-[#1f644e]" />
+            <span className="truncate text-xs font-bold text-[#1e3a34]">
+              {generatedTitle || query}
+            </span>
+          </div>
         </div>
 
-        <Link
-          href={`/coursify/r/${generatedSlug}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[#d4e6de] px-3 py-1.5 text-[10px] font-bold text-[#1f644e] transition-all hover:bg-[#f0f5f2]"
-        >
-          <Globe className="h-3 w-3" />
-          Open
-        </Link>
+        {generatedSlug && (
+          <Link
+            href={`/coursify/r/${generatedSlug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[#1f644e] px-3 py-1.5 text-[10px] font-bold text-white transition-all hover:bg-[#184d3c] shadow-sm shadow-[#1f644e]/20"
+          >
+            <Globe className="h-3 w-3" />
+            Open
+          </Link>
+        )}
       </div>
 
       {/* Title */}
