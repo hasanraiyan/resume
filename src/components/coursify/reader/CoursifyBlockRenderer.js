@@ -9,7 +9,7 @@ import { AccordionBlock } from './AccordionBlock';
 import { TabsBlock } from './TabsBlock';
 import { CalloutBlock } from './CalloutBlock';
 import { ChartBlock } from './ChartBlock';
-import { PlayCircle, ExternalLink, FileText } from 'lucide-react';
+import { PlayCircle, ExternalLink, FileText, Pencil } from 'lucide-react';
 import { parseMarkdownToBlocks } from '@/utils/coursify-parser';
 
 function ResourceBlock({ block }) {
@@ -52,7 +52,7 @@ function getSlug(text) {
     .replace(/^-+|-+$/g, '');
 }
 
-export function CoursifyBlockRenderer({ blocks, content }) {
+export function CoursifyBlockRenderer({ blocks, content, onEditBlock }) {
   const resolvedBlocks = useMemo(() => {
     if (content) return parseMarkdownToBlocks(content);
     return blocks || [];
@@ -116,7 +116,20 @@ export function CoursifyBlockRenderer({ blocks, content }) {
         };
 
         return (
-          <div key={block._id || idx} {...wrapperProps}>
+          <div
+            key={block._id || idx}
+            {...wrapperProps}
+            className={`${wrapperProps.className || ''} relative group`}
+          >
+            {onEditBlock && (
+              <button
+                onClick={() => onEditBlock(block, idx)}
+                className="absolute -right-2 -top-2 z-20 p-2 bg-white rounded-xl border border-[#e5e3d8] text-[#7c8e88] hover:text-[#1f644e] hover:border-[#1f644e] shadow-sm opacity-0 group-hover:opacity-100 transition-all active:scale-90"
+                title="Edit block"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            )}
             {renderBlock()}
           </div>
         );

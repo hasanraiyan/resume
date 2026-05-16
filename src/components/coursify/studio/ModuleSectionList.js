@@ -1,11 +1,12 @@
 'use client';
 
 import { Pencil, Trash2, ImagePlus, BookOpen, ExternalLink } from 'lucide-react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { CourseOverview } from '@/components/coursify/reader/CourseOverview';
 import { CoursifyBlockRenderer } from '@/components/coursify/reader/CoursifyBlockRenderer';
 import { ReaderNavigation } from '@/components/coursify/reader/ReaderNavigation';
 import { useCoursifyStudio } from '@/context/CoursifyStudioContext';
+import EditBlockModal from './EditBlockModal';
 
 const RESOURCE_ICONS = {
   video: '▶',
@@ -32,13 +33,44 @@ export function ModuleSectionList() {
     handleUpdateMeta,
     setEditingSection,
     handleDeleteSection,
+    handleSaveSection,
   } = useCoursifyStudio();
 
   const thumbnailInputRef = useRef(null);
+  const [editingBlock, setEditingBlock] = useState(null);
+  const [editingBlockIndex, setEditingBlockIndex] = useState(null);
 
   if (!course) return null;
 
   const currentSection = sections.find((s) => s._id === activeSection);
+
+  const handleEditBlock = (block, index) => {
+    setEditingBlock(block);
+    setEditingBlockIndex(index);
+  };
+
+  const handleSaveBlock = async (updatedBlock) => {
+    if (!currentSection) return;
+    const nextBlocks = [...(currentSection.blocks || [])];
+    nextBlocks[editingBlockIndex] = updatedBlock;
+
+    await handleSaveSection({
+      ...currentSection,
+      blocks: nextBlocks,
+    });
+    setEditingBlock(null);
+  };
+
+  const handleDeleteBlock = async () => {
+    if (!currentSection) return;
+    const nextBlocks = (currentSection.blocks || []).filter((_, i) => i !== editingBlockIndex);
+
+    await handleSaveSection({
+      ...currentSection,
+      blocks: nextBlocks,
+    });
+    setEditingBlock(null);
+  };
 
   return (
     <article className="max-w-3xl mx-auto px-4 lg:px-10 py-8">
@@ -147,6 +179,7 @@ export function ModuleSectionList() {
               blocks={currentSection.blocks}
               content={currentSection.content}
               sectionId={currentSection._id}
+              onEditBlock={editMode ? handleEditBlock : null}
             />
           )}
 
@@ -184,6 +217,15 @@ export function ModuleSectionList() {
             onNavigate={navigateTo}
           />
         </>
+      )}
+
+      {editingBlock && (
+        <EditBlockModal
+          block={editingBlock}
+          onSave={handleSaveBlock}
+          onDelete={handleDeleteBlock}
+          onClose={() => setEditingBlock(null)}
+        />
       )}
     </article>
   );
