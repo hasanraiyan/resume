@@ -43,35 +43,28 @@ export default function AppLayout({
   };
 
   const renderLogo = (isMobileHeader = false) => {
-    if (React.isValidElement(appLogo)) {
-      return appLogo;
-    }
-    if (typeof appLogo === 'string') {
-      return (
-        <div className={`flex items-center gap-2 ${isMobileHeader ? 'lg:hidden' : ''}`}>
-          <Image
-            src={appLogo}
-            alt={`${appName} logo`}
-            width={isMobileHeader ? 24 : 28}
-            height={isMobileHeader ? 24 : 28}
-            className={isMobileHeader ? 'rounded-lg shadow-sm' : 'rounded-xl shadow-sm h-8 w-auto'}
-            priority
-          />
-          <h1
-            className={`font-[family-name:var(--font-logo)] text-${isMobileHeader ? 'xl lg:text-2xl' : '2xl'} ${appName === 'SnapLinks' ? 'text-[#1f644e]' : 'text-[#1e3a34]'}`}
-          >
-            {appName}
-          </h1>
-        </div>
-      );
-    }
-    // Fallback if no logo provided
+    const logoElement = React.isValidElement(appLogo) ? (
+      appLogo
+    ) : typeof appLogo === 'string' && appLogo.length > 0 ? (
+      <Image
+        src={appLogo}
+        alt={`${appName} logo`}
+        width={isMobileHeader ? 24 : 28}
+        height={isMobileHeader ? 24 : 28}
+        className={isMobileHeader ? 'rounded-lg shadow-sm' : 'rounded-xl shadow-sm h-8 w-auto'}
+        priority
+      />
+    ) : null;
+
     return (
-      <h1
-        className={`font-[family-name:var(--font-logo)] text-${isMobileHeader ? 'xl lg:text-2xl' : '2xl'} text-[#1f644e] ${isMobileHeader ? 'lg:hidden' : ''}`}
-      >
-        {appName}
-      </h1>
+      <div className={`flex items-center gap-2 ${isMobileHeader ? 'lg:hidden' : ''}`}>
+        {logoElement}
+        <h1
+          className={`font-[family-name:var(--font-logo)] text-${isMobileHeader ? 'xl lg:text-2xl' : '2xl'} ${appName === 'SnapLinks' ? 'text-[#1f644e]' : 'text-[#1e3a34]'}`}
+        >
+          {appName}
+        </h1>
+      </div>
     );
   };
 
