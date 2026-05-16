@@ -1,6 +1,7 @@
 import { AGENT_IDS } from '@/lib/constants/agents';
 import BaseAgent from '../BaseAgent';
 import OpenAI from 'openai';
+import dynamicSettingsManager from '@/lib/DynamicSettingsManager';
 
 const POLLINATIONS_BASE_URL = 'https://gen.pollinations.ai';
 
@@ -21,8 +22,13 @@ class CoursifyThumbnailAgent extends BaseAgent {
 
   async _buildClient() {
     const provider = this.config.provider;
-    let apiKey = provider?.apiKey || process.env.POLLINATIONS_API_KEY;
-    let baseURL = provider?.baseUrl || POLLINATIONS_BASE_URL;
+    let apiKey = provider?.apiKey || (await dynamicSettingsManager.get('POLLINATIONS_API_KEY'));
+    let baseURL =
+      provider?.baseUrl ||
+      (await dynamicSettingsManager.get('POLLINATIONS_BASE_URL', POLLINATIONS_BASE_URL));
+
+    // Fallback to process.env if still not found
+    if (!apiKey) apiKey = process.env.POLLINATIONS_API_KEY;
 
     // Sync with Search Agent if primary config is missing or incomplete
     if (!apiKey || !baseURL || baseURL === POLLINATIONS_BASE_URL) {

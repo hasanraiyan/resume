@@ -1,6 +1,6 @@
 import { requireCoursifyAuth } from '@/lib/coursify-auth';
 import { NextResponse } from 'next/server';
-import cloudinary from '@/lib/cloudinary';
+import { getCloudinary } from '@/lib/cloudinary';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
 import DrivelyFile from '@/models/DrivelyFile';
@@ -22,6 +22,7 @@ export async function POST(request, { params }) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
+    const cloudinary = await getCloudinary();
     const uploadResult = await new Promise((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(

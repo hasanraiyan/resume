@@ -2,7 +2,7 @@ import { requireAdminAuth } from '@/lib/money-auth';
 import { ensureDb, getDrivelySettings } from '@/lib/apps/drively/service/service';
 import DrivelyFile from '@/models/DrivelyFile';
 import DrivelyFolder from '@/models/DrivelyFolder';
-import { v2 as cloudinary } from 'cloudinary';
+import { getCloudinary } from '@/lib/cloudinary';
 import { NextResponse } from 'next/server';
 
 export async function DELETE(request) {
@@ -32,6 +32,7 @@ export async function DELETE(request) {
     });
 
     // Delete files from Cloudinary
+    const cloudinary = await getCloudinary();
     for (const file of expiredFiles) {
       try {
         await cloudinary.uploader.destroy(file.cloudinaryPublicId, {

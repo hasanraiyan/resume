@@ -23,6 +23,7 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { OTP } from 'otplib';
+import dynamicSettingsManager from '@/lib/DynamicSettingsManager';
 // No adapter needed for simple credential login without a database session
 
 export const authOptions = {
@@ -36,8 +37,15 @@ export const authOptions = {
       },
       async authorize(credentials) {
         try {
-          const adminUsername = process.env.ADMIN_USERNAME;
-          const adminPassword = process.env.ADMIN_PASSWORD;
+          // Fetch credentials from DB with ENV fallbacks
+          const adminUsername = await dynamicSettingsManager.get(
+            'ADMIN_USERNAME',
+            process.env.ADMIN_USERNAME
+          );
+          const adminPassword = await dynamicSettingsManager.get(
+            'ADMIN_PASSWORD',
+            process.env.ADMIN_PASSWORD
+          );
 
           if (
             credentials?.username &&
@@ -45,12 +53,17 @@ export const authOptions = {
             credentials.username === adminUsername &&
             credentials.password === adminPassword
           ) {
-            // TOTP verification
-            if (process.env.TOTP_SECRET) {
+            // TOTP verification - check DB first, then ENV
+            const totpSecret = await dynamicSettingsManager.get(
+              'TOTP_SECRET',
+              process.env.TOTP_SECRET
+            );
+
+            if (totpSecret) {
               const otp = new OTP();
               const isValid = otp.verifySync({
                 token: credentials.token,
-                secret: process.env.TOTP_SECRET,
+                secret: totpSecret,
               });
               if (!isValid.valid) {
                 throw new Error('INVALID_OTP');

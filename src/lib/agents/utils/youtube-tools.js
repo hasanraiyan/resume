@@ -9,11 +9,10 @@ import dynamicSettingsManager from '@/lib/DynamicSettingsManager';
  */
 export const youtubeSearch = tool(
   async ({ query, maxResults = 5 }) => {
-    // Try to get from DynamicSettings first, fallback to process.env
-    let apiKey = await dynamicSettingsManager.get('GOOGLE_API_KEY');
-
+    // Get from DynamicSettings (Manager handles encryption and caching)
+    const apiKey = await dynamicSettingsManager.get('GOOGLE_API_KEY');
     if (!apiKey) {
-      console.warn('[YouTubeTool] Missing GOOGLE_API_KEY in environment or database.');
+      console.warn('[YouTubeTool] Missing GOOGLE_API_KEY in database settings.');
       return 'YouTube search is currently unavailable (missing API key).';
     }
 

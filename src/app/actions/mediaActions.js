@@ -1,6 +1,6 @@
 'use server';
 
-import cloudinary from '@/lib/cloudinary';
+import { getCloudinary } from '@/lib/cloudinary';
 import dbConnect from '@/lib/dbConnect';
 import MediaAsset from '@/models/MediaAsset';
 import MediaAgentSettings from '@/models/MediaAgentSettings';
@@ -11,13 +11,6 @@ import agentRegistry from '@/lib/agents';
 import { AGENT_IDS } from '@/lib/constants/agents';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-
-console.log('=== CLOUDINARY CONFIG DEBUG ===');
-console.log('Cloudinary configured:', {
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME ? 'SET' : 'NOT SET',
-  api_key: process.env.CLOUDINARY_API_KEY ? 'SET' : 'NOT SET',
-  api_secret: process.env.CLOUDINARY_API_SECRET ? 'SET' : 'NOT SET',
-});
 
 // --- ACTION 1: UPLOAD AN ASSET ---
 export async function uploadAsset(formData) {
@@ -73,6 +66,7 @@ export async function uploadAsset(formData) {
   console.log('File converted to buffer, size:', buffer.length);
 
   try {
+    const cloudinary = await getCloudinary();
     const uploadResult = await new Promise((resolve, reject) => {
       console.log('Starting Cloudinary upload...');
       cloudinary.uploader
@@ -188,6 +182,7 @@ export async function generateMedia({
     console.log('Agent image generated, uploading to Cloudinary...');
 
     // Upload the generated image buffer to Cloudinary
+    const cloudinary = await getCloudinary();
     const uploadResult = await new Promise((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(
@@ -274,6 +269,7 @@ export async function uploadGeneratedImage({
     const extension = mimeType.split('/')[1] || 'png';
 
     // Upload the generated image buffer to Cloudinary
+    const cloudinary = await getCloudinary();
     const uploadResult = await new Promise((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(
@@ -394,6 +390,7 @@ export async function editMedia({
     console.log('Agent image edited, uploading to Cloudinary...');
 
     // Upload the edited image buffer to Cloudinary
+    const cloudinary = await getCloudinary();
     const uploadResult = await new Promise((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(
@@ -491,18 +488,7 @@ export async function deleteAsset(assetId) {
       // Only attempt Cloudinary deletion for uploaded images
       console.log('Attempting to delete from Cloudinary with public_id:', asset.public_id);
 
-      // Test Cloudinary configuration
-      try {
-        console.log('Testing Cloudinary configuration...');
-        const config = cloudinary.config();
-        console.log('Cloudinary config test:', {
-          cloud_name: config.cloud_name ? 'SET' : 'NOT SET',
-          api_key: config.api_key ? 'SET' : 'NOT SET',
-          api_secret: config.api_secret ? 'SET' : 'NOT SET',
-        });
-      } catch (configError) {
-        console.error('Cloudinary configuration test failed:', configError);
-      }
+      const cloudinary = await getCloudinary();
 
       // 1. Try to delete from Cloudinary first
       try {

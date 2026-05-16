@@ -1,4 +1,4 @@
-import cloudinary from '@/lib/cloudinary';
+import { getCloudinary } from '@/lib/cloudinary';
 import dbConnect from '@/lib/dbConnect';
 import MediaAsset from '@/models/MediaAsset';
 import { processAndIndexAsset } from '@/app/actions/mediaActions';
@@ -64,6 +64,7 @@ export async function POST(request) {
     const buffer = Buffer.from(bytes);
 
     // Upload to Cloudinary
+    const cloudinary = await getCloudinary();
     const uploadResult = await new Promise((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(

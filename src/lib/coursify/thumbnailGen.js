@@ -1,4 +1,4 @@
-import cloudinary from '@/lib/cloudinary';
+import { getCloudinary } from '@/lib/cloudinary';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
 import DrivelyFile from '@/models/DrivelyFile';
@@ -57,6 +57,7 @@ export async function generateCourseThumbnail(courseId, title, description) {
 
     const publicId = `coursify/thumbnail_${courseId}`;
     console.log(`${t} [4/5] Uploading to Cloudinary — publicId=drively/${publicId} (${elapsed()})`);
+    const cloudinary = await getCloudinary();
     const uploadResult = await new Promise((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(

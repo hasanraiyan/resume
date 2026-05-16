@@ -5,7 +5,7 @@ import DrivelyActivity from '@/models/DrivelyActivity';
 import DrivelyShare from '@/models/DrivelyShare';
 import DrivelySettings from '@/models/DrivelySettings';
 import crypto from 'crypto';
-import cloudinary from '@/lib/cloudinary';
+import { getCloudinary } from '@/lib/cloudinary';
 import { CreateFolderSchema, UpdateFolderSchema, UpdateFileSchema } from './validators';
 
 export async function ensureDb() {
@@ -191,6 +191,7 @@ export async function uploadFile(file, folderId = null) {
   const buffer = Buffer.from(bytes);
 
   // Upload to Cloudinary with explicit resource_type so PDFs/docs are served as raw bytes
+  const cloudinary = await getCloudinary();
   const uploadResult = await new Promise((resolve, reject) => {
     cloudinary.uploader
       .upload_stream(
@@ -345,6 +346,7 @@ export async function permanentDeleteFile(id) {
   const file = await DrivelyFile.findById(id);
   if (!file) throw new Error('File not found');
 
+  const cloudinary = await getCloudinary();
   await cloudinary.uploader.destroy(file.cloudinaryPublicId, {
     resource_type: file.resourceType || getCloudinaryResourceType(file.mimeType),
   });
@@ -366,6 +368,7 @@ export async function permanentDeleteFolder(id) {
 
   const filesToDelete = await DrivelyFile.find({ folderId: { $in: folderIds } });
 
+  const cloudinary = await getCloudinary();
   // Delete all files from Cloudinary
   for (const file of filesToDelete) {
     try {
@@ -400,6 +403,7 @@ export async function emptyTrash() {
 
   await logActivity('empty_trash', 'bulk', 'Trash');
 
+  const cloudinary = await getCloudinary();
   // Delete all trashed files from Cloudinary
   for (const file of filesToDelete) {
     try {
@@ -430,6 +434,7 @@ export async function duplicateFile(id) {
   const newFilename = `${baseName} (copy)${extension ? '.' + extension : ''}`;
 
   // Cloudinary re-upload from URL
+  const cloudinary = await getCloudinary();
   const uploadResult = await new Promise((resolve, reject) => {
     cloudinary.uploader.upload(
       file.secureUrl,
