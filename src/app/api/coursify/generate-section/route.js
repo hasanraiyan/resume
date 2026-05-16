@@ -16,7 +16,7 @@ export async function POST(request) {
 
   try {
     const body = await request.json();
-    const { courseName, moduleName, sectionName, learningGoals } = body;
+    const { courseName, moduleName, sectionName, learningGoals, isReferenceEnabled } = body;
 
     if (!sectionName?.trim()) {
       return NextResponse.json({ error: 'sectionName is required' }, { status: 400 });
@@ -37,6 +37,7 @@ export async function POST(request) {
         try {
           const events = agentRegistry.streamExecute(AGENT_IDS.COURSIFY_SEARCH, {
             topic: richTopic,
+            isReferenceEnabled,
           });
 
           for await (const event of events) {

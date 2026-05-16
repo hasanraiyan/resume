@@ -373,6 +373,7 @@ export default function EditSectionModal({ section, onSave, onClose }) {
   const [learningGoals, setLearningGoals] = useState(section?.learningGoals || []);
   const [estimatedDuration, setEstimatedDuration] = useState(section?.estimatedDuration || '');
   const [status, setStatus] = useState(section?.status || 'draft');
+  const [isReferenceEnabled, setIsReferenceEnabled] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState('content');
@@ -418,6 +419,7 @@ export default function EditSectionModal({ section, onSave, onClose }) {
           moduleName: currentModule?.title,
           sectionName: title.trim(),
           learningGoals: learningGoals.filter((g) => g.trim()),
+          isReferenceEnabled,
         }),
       });
       if (!res.ok) throw new Error('Generation failed');
@@ -766,6 +768,26 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                     : 'Supports ## [BlockType] headers for interactive blocks.'}
                 </p>
                 <div className="flex items-center gap-2.5">
+                  {/* Reference Toggle */}
+                  <label className="flex items-center gap-1.5 cursor-pointer group/ref">
+                    <input
+                      type="checkbox"
+                      checked={isReferenceEnabled}
+                      onChange={(e) => setIsReferenceEnabled(e.target.checked)}
+                      disabled={isGenerating}
+                      className="w-3 h-3 rounded border opacity-70 group-hover/ref:opacity-100 transition-opacity"
+                      style={{ accentColor: 'var(--esm-forest)' }}
+                    />
+                    <span
+                      className="text-[10px] font-semibold select-none opacity-70 group-hover/ref:opacity-100 transition-opacity"
+                      style={{ color: 'var(--esm-forest)', fontFamily: 'Outfit, sans-serif' }}
+                    >
+                      References
+                    </span>
+                  </label>
+
+                  <div className="w-px h-3" style={{ background: 'var(--esm-border)' }} />
+
                   {/* AI Generate */}
                   <button
                     onClick={handleAIGenerate}
