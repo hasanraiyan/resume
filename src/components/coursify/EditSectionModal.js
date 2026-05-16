@@ -373,7 +373,7 @@ export default function EditSectionModal({ section, onSave, onClose }) {
   const [learningGoals, setLearningGoals] = useState(section?.learningGoals || []);
   const [estimatedDuration, setEstimatedDuration] = useState(section?.estimatedDuration || '');
   const [status, setStatus] = useState(section?.status || 'draft');
-  const [isReferenceEnabled, setIsReferenceEnabled] = useState(false);
+  const [isReferenceEnabled, setIsReferenceEnabled] = useState(true);
 
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState('content');
