@@ -9,6 +9,7 @@ import {
   Bot,
   Search,
   Plus,
+  Settings,
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useSmallClaw } from '@/context/SmallClawContext';
@@ -22,6 +23,7 @@ const ChannelsTab = dynamic(() => import('./ChannelsTab'));
 const McpTab = dynamic(() => import('./McpTab'));
 const SkillsTab = dynamic(() => import('./SkillsTab'));
 const AssistantTab = dynamic(() => import('./AssistantTab'));
+const SettingsTab = dynamic(() => import('./SettingsTab'));
 
 const tabs = [
   { id: 'agents', label: 'Agents', icon: Network },
@@ -30,6 +32,7 @@ const tabs = [
   { id: 'mcp', label: 'MCP', icon: Activity },
   { id: 'skills', label: 'Skills', icon: BookOpen },
   { id: 'assistant', label: 'Assistant', icon: Bot },
+  { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
 const tabTitles = {
@@ -39,6 +42,7 @@ const tabTitles = {
   mcp: 'MCP Infrastructure',
   skills: 'Agent Skills',
   assistant: 'Kiro Assistant',
+  settings: 'System Configuration',
 };
 
 export default function SmallClawApp() {
@@ -58,6 +62,8 @@ export default function SmallClawApp() {
         return <SkillsTab />;
       case 'assistant':
         return <AssistantTab />;
+      case 'settings':
+        return <SettingsTab />;
       default:
         return <ProvidersTab />;
     }

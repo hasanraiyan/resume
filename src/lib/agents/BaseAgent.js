@@ -181,7 +181,7 @@ class BaseAgent {
         }
 
         // Get the next available key from the pool
-        const next = keyRotationManager.getNextProvider(providerId);
+        const next = await keyRotationManager.getNextProvider(providerId);
         if (next) {
           return {
             ...next,
@@ -239,7 +239,7 @@ class BaseAgent {
           // AUTO-ENABLE POOLING: If there are multiple keys, register as a pool automatically
           if (provider.apiKey.length > 1) {
             keyRotationManager.registerProvider(provider.providerId, provider);
-            const next = keyRotationManager.getNextProvider(provider.providerId);
+            const next = await keyRotationManager.getNextProvider(provider.providerId);
             if (next) {
               return {
                 ...next,
@@ -335,7 +335,7 @@ class BaseAgent {
 
       // ─── NEW: Report Capacity Usage ───
       if (this.config.provider?.isPooled && result?.usage) {
-        keyRotationManager.reportUsage(
+        await keyRotationManager.reportUsage(
           this.config.provider.poolId,
           this.config.provider.internalId,
           result.usage.totalTokens || 0
@@ -455,7 +455,7 @@ class BaseAgent {
 
       // ─── NEW: Report Capacity Usage ───
       if (this.config.provider?.isPooled && usage.totalTokens > 0) {
-        keyRotationManager.reportUsage(
+        await keyRotationManager.reportUsage(
           this.config.provider.poolId,
           this.config.provider.internalId,
           usage.totalTokens
@@ -873,10 +873,10 @@ class BaseAgent {
     }
 
     // 2. Mark specific key as throttled (using internalId now!)
-    keyRotationManager.markThrottled(provider.poolId, provider.internalId, cooldown);
+    await keyRotationManager.markThrottled(provider.poolId, provider.internalId, cooldown);
 
     // 3. Get next available
-    const next = keyRotationManager.getNextProvider(provider.poolId);
+    const next = await keyRotationManager.getNextProvider(provider.poolId);
     if (next) {
       this.logger.info(
         `Rotated from ${provider.internalId} to ${next.internalId} in pool ${provider.poolId}`

@@ -1,15 +1,15 @@
-/**
- * KeyRotationManager
- *
- * Manages pools of API keys for different providers.
- * Tracks health, rate limits (429s), and rotations.
- */
+import { getRedisClient } from '@/lib/redis';
 
+/**
+ * KeyRotationManager (Redis Edition)
+ *
+ * Manages pools of API keys globally using Redis.
+ * Tracks RPM, TPM, RPD, and Throttling across all Vercel instances.
+ */
 class KeyRotationManager {
   constructor() {
-    // Structure: { [poolId]: [{ providerId, lastUsed, throttledUntil, errorCount }] }
     this.pools = new Map();
-    this.cooldownMs = 60 * 1000; // 1 minute default cooldown for 429s
+    this.cooldownMs = 60 * 1000; // 1 minute default cooldown
   }
 
   /**
@@ -21,8 +21,6 @@ class KeyRotationManager {
     }
 
     const pool = this.pools.get(poolId);
-
-    // If apiKey is an array, register each key as a separate rotation target
     const keys = Array.isArray(provider.apiKey) ? provider.apiKey : [provider.apiKey];
 
     keys.forEach((key, index) => {
@@ -30,35 +28,19 @@ class KeyRotationManager {
       const existing = pool.find((p) => p.internalId === internalId);
 
       const keyData = {
-        providerId: provider.providerId, // Original DB ID
-        internalId, // Unique ID for this specific key
+        providerId: provider.providerId,
+        internalId,
         apiKey: key,
         name: `${provider.name} (Key ${index + 1})`,
         baseUrl: provider.baseUrl,
-        lastUsed: 0,
-        throttledUntil: 0,
-        errorCount: 0,
         enableLimits: provider.enableLimits ?? false,
-        // Capacity Limits
         rpm: provider.defaultRPM || 4,
         tpm: provider.defaultTPM || 250000,
         rpd: provider.defaultRPD || 2000,
-        // Counters
-        counters: {
-          minuteRequests: 0,
-          minuteTokens: 0,
-          dailyRequests: 0,
-          lastMinuteReset: Date.now(),
-          lastDailyReset: Date.now(),
-        },
       };
 
       if (existing) {
-        // Update key and limits, keep counters
-        existing.apiKey = keyData.apiKey;
-        existing.rpm = keyData.rpm;
-        existing.tpm = keyData.tpm;
-        existing.rpd = keyData.rpd;
+        Object.assign(existing, keyData);
       } else {
         pool.push(keyData);
       }
@@ -68,114 +50,123 @@ class KeyRotationManager {
   /**
    * Get the next available provider from a pool
    */
-  getNextProvider(poolId) {
+  async getNextProvider(poolId) {
     const pool = this.pools.get(poolId);
     if (!pool || pool.length === 0) return null;
 
-    const now = Date.now();
+    // 1. Shuffle to spread load
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
 
-    // 1. Filter out throttled keys and those at capacity
-    const available = pool.filter((p) => {
-      // Check hard throttles (429s) - ALWAYS check this regardless of enableLimits
-      if (p.throttledUntil > now) return false;
-
-      // Only check precise capacity if enabled for this provider
-      if (p.enableLimits) {
-        // Reset counters if time window passed
-        this._resetCountersIfNeeded(p, now);
-
-        // Check RPM (Requests Per Minute)
-        if (p.counters.minuteRequests >= p.rpm) return false;
-
-        // Check TPM (Tokens Per Minute) - we use a buffer of 90%
-        if (p.counters.minuteTokens >= p.tpm * 0.9) return false;
-
-        // Check RPD (Requests Per Day)
-        if (p.counters.dailyRequests >= p.rpd) return false;
+    for (const p of shuffled) {
+      // 2. Check Global Throttling and Capacity in Redis
+      const isAvailable = await this._isKeyAvailable(poolId, p);
+      if (isAvailable) {
+        // Increment global counters
+        await this._incrementGlobalCounters(poolId, p);
+        return { ...p, isPooled: true, poolId };
       }
-
-      return true;
-    });
-
-    if (available.length === 0) {
-      // If all are throttled/at capacity, return the one used longest ago
-      // but mark it as "over capacity" so the agent knows to wait
-      const best = pool.sort((a, b) => a.lastUsed - b.lastUsed)[0];
-      return best;
     }
 
-    // 2. Pick the one used longest ago (Least Recently Used) among available
-    const next = available.sort((a, b) => a.lastUsed - b.lastUsed)[0];
-
-    next.lastUsed = now;
-    // Pre-increment request counters
-    next.counters.minuteRequests++;
-    next.counters.dailyRequests++;
-
-    return next;
+    // 3. Emergency: If all are busy, pick the one used longest ago locally
+    return pool[0];
   }
 
   /**
    * Report actual usage (tokens) back to the manager
    */
-  reportUsage(poolId, internalId, tokens) {
-    const pool = this.pools.get(poolId);
-    if (!pool) return;
+  async reportUsage(poolId, internalId, tokens) {
+    const redis = await getRedisClient();
+    if (!redis) return;
 
-    const key = pool.find((p) => p.internalId === internalId);
-    if (key) {
-      this._resetCountersIfNeeded(key, Date.now());
-      key.counters.minuteTokens += tokens;
+    const key = `usage:${poolId}:${internalId}:tpm`;
+    try {
+      await redis.incrby(key, tokens);
+      // Ensure TTL exists
+      const ttl = await redis.ttl(key);
+      if (ttl < 0) await redis.expire(key, 60);
+    } catch (e) {
+      console.warn('[KeyRotationManager] Redis reportUsage failed:', e.message);
     }
   }
 
   /**
-   * Reset minute/daily counters if time has passed
+   * Mark a provider key as throttled (429) globally
+   */
+  async markThrottled(poolId, internalId, customCooldownMs) {
+    const redis = await getRedisClient();
+    if (!redis) return;
+
+    const key = `throttled:${poolId}:${internalId}`;
+    const expirySeconds = Math.round((customCooldownMs || this.cooldownMs) / 1000);
+    try {
+      await redis.set(key, 'true', { ex: expirySeconds });
+      console.log(
+        `[KeyRotationManager] Key ${internalId} throttled globally for ${expirySeconds}s`
+      );
+    } catch (e) {
+      console.warn('[KeyRotationManager] Redis markThrottled failed:', e.message);
+    }
+  }
+
+  /**
+   * Check Redis if a key is globally available
    * @private
    */
-  _resetCountersIfNeeded(key, now) {
-    // Reset Minute (60s)
-    if (now - key.counters.lastMinuteReset > 60000) {
-      key.counters.minuteRequests = 0;
-      key.counters.minuteTokens = 0;
-      key.counters.lastMinuteReset = now;
-    }
+  async _isKeyAvailable(poolId, p) {
+    try {
+      const redis = await getRedisClient();
+      if (!redis) return true; // Fallback to local if no redis
 
-    // Reset Daily (24h)
-    if (now - key.counters.lastDailyReset > 24 * 60 * 60 * 1000) {
-      key.counters.dailyRequests = 0;
-      key.counters.lastDailyReset = now;
-    }
-  }
+      // 1. Check Hard Throttle
+      const isThrottled = await redis.get(`throttled:${poolId}:${p.internalId}`);
+      if (isThrottled) return false;
 
-  /**
-   * Mark a provider key as throttled (429)
-   */
-  markThrottled(poolId, internalId, customCooldownMs) {
-    const pool = this.pools.get(poolId);
-    if (!pool) return;
+      if (!p.enableLimits) return true;
 
-    const provider = pool.find((p) => p.internalId === internalId);
-    if (provider) {
-      const cooldown = customCooldownMs || this.cooldownMs;
-      provider.throttledUntil = Date.now() + cooldown;
-      console.log(
-        `[KeyRotationManager] Key ${internalId} in pool ${poolId} throttled for ${Math.round(cooldown / 1000)}s`
-      );
+      // 2. Check RPM (Requests Per Minute)
+      const rpmCount = (await redis.get(`usage:${poolId}:${p.internalId}:rpm`)) || 0;
+      if (parseInt(rpmCount) >= p.rpm) return false;
+
+      // 3. Check TPM (Tokens Per Minute)
+      const tpmCount = (await redis.get(`usage:${poolId}:${p.internalId}:tpm`)) || 0;
+      if (parseInt(tpmCount) >= p.tpm * 0.9) return false;
+
+      // 4. Check RPD (Requests Per Day)
+      const rpdCount = (await redis.get(`usage:${poolId}:${p.internalId}:rpd`)) || 0;
+      if (parseInt(rpdCount) >= p.rpd) return false;
+
+      return true;
+    } catch (e) {
+      console.warn('[KeyRotationManager] Redis check failed, falling back to local:', e.message);
+      return true; // Fallback to local if Redis is down
     }
   }
 
   /**
-   * Mark a provider key as successful (clear errors)
+   * Increment global usage counters in Redis
+   * @private
    */
-  markSuccess(poolId, internalId) {
-    const pool = this.pools.get(poolId);
-    if (!pool) return;
+  async _incrementGlobalCounters(poolId, p) {
+    try {
+      const redis = await getRedisClient();
+      if (!redis) return;
 
-    const provider = pool.find((p) => p.internalId === internalId);
-    if (provider) {
-      provider.errorCount = 0;
-      provider.throttledUntil = 0;
+      const p1 = redis.incr(`usage:${poolId}:${p.internalId}:rpm`);
+      const p2 = redis.incr(`usage:${poolId}:${p.internalId}:rpd`);
+
+      // Execute increments
+      await Promise.all([p1, p2]);
+
+      // Ensure TTLs are set (only if fresh keys)
+      const [ttlRpm, ttlRpd] = await Promise.all([
+        redis.ttl(`usage:${poolId}:${p.internalId}:rpm`),
+        redis.ttl(`usage:${poolId}:${p.internalId}:rpd`),
+      ]);
+
+      if (ttlRpm < 0) await redis.expire(`usage:${poolId}:${p.internalId}:rpm`, 60);
+      if (ttlRpd < 0) await redis.expire(`usage:${poolId}:${p.internalId}:rpd`, 86400); // 24h
+    } catch (e) {
+      console.warn('[KeyRotationManager] Redis increment failed:', e.message);
     }
   }
 
@@ -184,6 +175,5 @@ class KeyRotationManager {
   }
 }
 
-// Global singleton
 const keyRotationManager = new KeyRotationManager();
 export default keyRotationManager;

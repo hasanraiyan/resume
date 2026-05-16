@@ -43,6 +43,7 @@
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-switch": "^1.2.6",
     "@uploadthing/react": "^7.3.3",
+    "@upstash/redis": "^1.38.0",
     "@vercel/analytics": "^1.6.1",
     "archiver": "^7.0.1",
     "bad-words": "^4.0.0",

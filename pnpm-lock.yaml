@@ -37,7 +37,7 @@ importers:
         version: 31.0.0
       '@langchain/community':
         specifier: ^1.1.28
-        version: 1.1.28(@browserbasehq/sdk@2.11.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.60.0)(deepmerge@4.3.1)(dotenv@17.4.2)(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(zod@4.4.3))(@ibm-cloud/watsonx-ai@1.7.12)(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))(@qdrant/js-client-rest@1.18.0(typescript@6.0.3))(cheerio@1.2.0)(d3-dsv@3.0.1)(google-auth-library@10.6.2)(ibm-cloud-sdk-core@5.4.19)(ignore@7.0.5)(jsonwebtoken@9.0.3)(lodash@4.18.1)(mongodb@6.21.0)(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(playwright@1.60.0)(ws@8.20.1)
+        version: 1.1.28(@browserbasehq/sdk@2.11.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.60.0)(deepmerge@4.3.1)(dotenv@17.4.2)(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(zod@4.4.3))(@ibm-cloud/watsonx-ai@1.7.12)(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))(@qdrant/js-client-rest@1.18.0(typescript@6.0.3))(@upstash/redis@1.38.0)(cheerio@1.2.0)(d3-dsv@3.0.1)(google-auth-library@10.6.2)(ibm-cloud-sdk-core@5.4.19)(ignore@7.0.5)(jsonwebtoken@9.0.3)(lodash@4.18.1)(mongodb@6.21.0)(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(playwright@1.60.0)(ws@8.20.1)
       '@langchain/core':
         specifier: ^1.1.46
         version: 1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1)
@@ -77,6 +77,9 @@ importers:
       '@uploadthing/react':
         specifier: ^7.3.3
         version: 7.3.3(next@15.5.9(@playwright/test@1.60.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)(uploadthing@7.7.4(express@5.2.1)(next@15.5.9(@playwright/test@1.60.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(tailwindcss@4.3.0))
+      '@upstash/redis':
+        specifier: ^1.38.0
+        version: 1.38.0
       '@vercel/analytics':
         specifier: ^1.6.1
         version: 1.6.1(next@15.5.9(@playwright/test@1.60.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
@@ -2200,6 +2203,9 @@ packages:
 
   '@upsetjs/venn.js@2.0.0':
     resolution: {integrity: sha512-WbBhLrooyePuQ1VZxrJjtLvTc4NVfpOyKx0sKqioq9bX1C1m7Jgykkn8gLrtwumBioXIqam8DLxp88Adbue6Hw==}
+
+  '@upstash/redis@1.38.0':
+    resolution: {integrity: sha512-wu+dZBptlLy0+MCUEoHmzrY/TnmgDey3+c7EbIGwrLqAvkP8yi5MWZHYGIFtAygmL4Bkz2TdFu+eU0vFPncIcg==}
 
   '@vercel/analytics@1.6.1':
     resolution: {integrity: sha512-oH9He/bEM+6oKlv3chWuOOcp8Y6fo6/PSro8hEkgCW3pu9/OiCXiUpRUogDh3Fs3LH2sosDrx8CxeOLBEE+afg==}
@@ -5700,6 +5706,9 @@ packages:
     resolution: {integrity: sha512-nWJ91DjeOkej/TA8pXQ3myruKpKEYgqvpw9lz4OPHj/NWFNluYrjbz9j01CJ8yKQd2g4jFoOkINCTW2I5LEEyw==}
     engines: {node: '>= 0.4'}
 
+  uncrypto@0.1.3:
+    resolution: {integrity: sha512-Ql87qFHB3s/De2ClA9e0gsnS6zXG27SkTiSJwjCc9MebbfapQfuPzumMIUMi38ezPZVNFcHI9sUIepeQfw8J8Q==}
+
   undici-types@5.26.5:
     resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
 
@@ -6447,7 +6456,7 @@ snapshots:
       - openai
       - ws
 
-  '@langchain/community@1.1.28(@browserbasehq/sdk@2.11.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.60.0)(deepmerge@4.3.1)(dotenv@17.4.2)(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(zod@4.4.3))(@ibm-cloud/watsonx-ai@1.7.12)(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))(@qdrant/js-client-rest@1.18.0(typescript@6.0.3))(cheerio@1.2.0)(d3-dsv@3.0.1)(google-auth-library@10.6.2)(ibm-cloud-sdk-core@5.4.19)(ignore@7.0.5)(jsonwebtoken@9.0.3)(lodash@4.18.1)(mongodb@6.21.0)(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(playwright@1.60.0)(ws@8.20.1)':
+  '@langchain/community@1.1.28(@browserbasehq/sdk@2.11.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.60.0)(deepmerge@4.3.1)(dotenv@17.4.2)(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(zod@4.4.3))(@ibm-cloud/watsonx-ai@1.7.12)(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))(@qdrant/js-client-rest@1.18.0(typescript@6.0.3))(@upstash/redis@1.38.0)(cheerio@1.2.0)(d3-dsv@3.0.1)(google-auth-library@10.6.2)(ibm-cloud-sdk-core@5.4.19)(ignore@7.0.5)(jsonwebtoken@9.0.3)(lodash@4.18.1)(mongodb@6.21.0)(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(playwright@1.60.0)(ws@8.20.1)':
     dependencies:
       '@browserbasehq/stagehand': 1.14.0(@playwright/test@1.60.0)(deepmerge@4.3.1)(dotenv@17.4.2)(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(zod@4.4.3)
       '@ibm-cloud/watsonx-ai': 1.7.12
@@ -6466,6 +6475,7 @@ snapshots:
     optionalDependencies:
       '@browserbasehq/sdk': 2.11.0
       '@qdrant/js-client-rest': 1.18.0(typescript@6.0.3)
+      '@upstash/redis': 1.38.0
       cheerio: 1.2.0
       d3-dsv: 3.0.1
       google-auth-library: 10.6.2
@@ -7432,6 +7442,10 @@ snapshots:
       d3-selection: 3.0.0
       d3-transition: 3.0.1(d3-selection@3.0.0)
 
+  '@upstash/redis@1.38.0':
+    dependencies:
+      uncrypto: 0.1.3
+
   '@vercel/analytics@1.6.1(next@15.5.9(@playwright/test@1.60.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)':
     optionalDependencies:
       next: 15.5.9(@playwright/test@1.60.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -7613,17 +7627,9 @@ snapshots:
 
   axe-core@4.11.4: {}
 
-  axios@1.15.2:
-    dependencies:
-      follow-redirects: 1.16.0(debug@4.4.3)
-      form-data: 4.0.5
-      proxy-from-env: 2.1.0
-    transitivePeerDependencies:
-      - debug
-
   axios@1.15.2(debug@4.3.4):
     dependencies:
-      follow-redirects: 1.16.0(debug@4.3.4)
+      follow-redirects: 1.16.0(debug@4.4.3)
       form-data: 4.0.5
       proxy-from-env: 2.1.0
     transitivePeerDependencies:
@@ -8851,10 +8857,6 @@ snapshots:
 
   flatted@3.4.2: {}
 
-  follow-redirects@1.16.0(debug@4.3.4):
-    optionalDependencies:
-      debug: 4.3.4
-
   follow-redirects@1.16.0(debug@4.4.3):
     optionalDependencies:
       debug: 4.4.3
@@ -9261,7 +9263,7 @@ snapshots:
       jsonwebtoken: 9.0.3
       load-esm: 1.0.3
       mime-types: 2.1.35
-      retry-axios: 2.6.0(axios@1.15.2)
+      retry-axios: 2.6.0(axios@1.15.2(debug@4.3.4))
       tough-cookie: 4.1.3
     transitivePeerDependencies:
       - supports-color
@@ -11051,9 +11053,9 @@ snapshots:
       onetime: 7.0.0
       signal-exit: 4.1.0
 
-  retry-axios@2.6.0(axios@1.15.2):
+  retry-axios@2.6.0(axios@1.15.2(debug@4.3.4)):
     dependencies:
-      axios: 1.15.2
+      axios: 1.15.2(debug@4.3.4)
 
   retry@0.13.1: {}
 
@@ -11598,6 +11600,8 @@ snapshots:
       has-bigints: 1.1.0
       has-symbols: 1.1.0
       which-boxed-primitive: 1.1.1
+
+  uncrypto@0.1.3: {}
 
   undici-types@5.26.5: {}
 
