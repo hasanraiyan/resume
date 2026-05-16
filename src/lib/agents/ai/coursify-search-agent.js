@@ -158,7 +158,7 @@ class CoursifySearchAgent extends BaseAgent {
 ## Reference System (Wikipedia-style) - MANDATORY
 - Use inline citations like [^1], [^2] within the text of ANY block (MdBlock, StepByStepBlock, AccordionBlock, etc.).
 - MANDATORY: Every major claim, statistic, or technical detail must be backed by a search result citation.
-- At the end of EACH individual block that contains citations, you MUST provide the corresponding footnote definitions:
+- MANDATORY: Provide the corresponding footnote definitions ONLY ONCE at the VERY END of your entire response:
   [^1]: [Source Title](Source URL) - Brief description of source.
 - This ensures the content is verifiable and authoritative.
 
@@ -166,15 +166,16 @@ class CoursifySearchAgent extends BaseAgent {
 ## [MdBlock]
 The primary algorithm used is Dijkstra's [^1]. It has a time complexity of $O(V^2)$ [^2].
 
-[^1]: [Dijkstra's Algorithm](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm) - Official overview.
-[^2]: [Complexity Analysis](https://geeksforgeeks.org/dijkstra-complexity) - Detailed performance breakdown.
-
 ---
 ## [StepByStepBlock]
 title: "Implementation"
 - step: "Initialization"
   content: "Initialize the priority queue with starting nodes [^3]."
 
+---
+  
+[^1]: [Dijkstra's Algorithm](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm) - Official overview.
+[^2]: [Complexity Analysis](https://geeksforgeeks.org/dijkstra-complexity) - Detailed performance breakdown.
 [^3]: [Queue Implementation](https://docs.python.org/3/library/heapq.html) - Documentation for priority queues.`;
     }
 

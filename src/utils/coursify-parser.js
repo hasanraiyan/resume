@@ -19,6 +19,34 @@ export function unescapeString(str) {
 }
 
 /**
+ * Strips any footnote references [^n] that do not have a corresponding completed definition.
+ */
+function cleanUnresolvedFootnotes(content, footnoteDefs) {
+  if (!content || typeof content !== 'string') return content;
+
+  // If no definitions yet, strip all markers
+  if (!footnoteDefs || footnoteDefs.trim() === '') {
+    return content.replace(/\[\^[^\]]+\]/g, '').trim();
+  }
+
+  // Extract completed footnote numbers (e.g. "1", "2")
+  // A definition is completed if it has content after the colon
+  const definedNumbers = new Set();
+  const defRegex = /^\[\^([^\]]+)\]:\s*.+$/gm;
+  let m;
+  while ((m = defRegex.exec(footnoteDefs)) !== null) {
+    definedNumbers.add(m[1].trim());
+  }
+
+  // Replace [^n] if "n" is not in definedNumbers
+  return content
+    .replace(/\[\^([^\]]+)\]/g, (match, num) => {
+      return definedNumbers.has(num.trim()) ? match : '';
+    })
+    .trim();
+}
+
+/**
  * Parses a Markdown string with ## [BlockType] headers into structured Coursify blocks.
  */
 export function parseMarkdownToBlocks(text) {
@@ -43,7 +71,16 @@ export function parseMarkdownToBlocks(text) {
   const ALL_VALID = [...SUPPORTED_BLOCKS, ...Object.keys(AUTHORING_ALIASES)];
 
   // Remove potential YAML frontmatter
-  const cleanText = text.replace(/^---[\s\S]*?---/, '').trim();
+  let cleanText = text.replace(/^---[\s\S]*?---/, '').trim();
+
+  // Extract Global Footnotes
+  let globalFootnotes = '';
+  const footnoteMatches = cleanText.match(/^\[\^\d+\]:.*$/gm);
+  if (footnoteMatches) {
+    globalFootnotes = footnoteMatches.join('\n\n');
+    // Remove footnotes from the main text to avoid them being parsed as stray text
+    cleanText = cleanText.replace(/^\[\^\d+\]:.*$/gm, '').trim();
+  }
 
   const blockRegex = new RegExp(`##\\s*\\[(${ALL_VALID.join('|')})\\]`, 'g');
   const blocks = [];
@@ -56,7 +93,9 @@ export function parseMarkdownToBlocks(text) {
 
   // If no block headers found, treat entire text as a single MdBlock
   if (matches.length === 0) {
-    return [{ type: 'MdBlock', content: cleanText, order: 0 }];
+    let finalContent = cleanUnresolvedFootnotes(cleanText, globalFootnotes);
+    if (globalFootnotes) finalContent += '\n\n' + globalFootnotes;
+    return [{ type: 'MdBlock', content: finalContent, order: 0 }];
   }
 
   for (let i = 0; i < matches.length; i++) {
@@ -80,7 +119,8 @@ export function parseMarkdownToBlocks(text) {
     const block = { type: blockType, order: i };
 
     if (blockType === 'MdBlock') {
-      block.content = finalContent;
+      let content = cleanUnresolvedFootnotes(finalContent, globalFootnotes);
+      block.content = globalFootnotes ? content + '\n\n' + globalFootnotes : content;
     } else if (m.type === 'VideoBlock') {
       const urlMatch = rawContent.match(/url:\s*(.*)/);
       const titleMatch = rawContent.match(/title:\s*(.*)/);
@@ -113,34 +153,37 @@ export function parseMarkdownToBlocks(text) {
         block.showNumbering = true;
       }
 
-      // Extract block-level footnotes
-      const footnoteIdx = rawContent.search(/^\[\^/m);
-      let blockFootnotes = '';
-      if (footnoteIdx !== -1) {
-        blockFootnotes = rawContent.substring(footnoteIdx).trim();
-        rawContent = rawContent.substring(0, footnoteIdx).trim();
-      }
-
       const sParts = rawContent.split(/(?:^|\n)\s*-\s*step:\s*/).filter((p) => p.trim());
       sParts.forEach((s) => {
         const lines = s.split('\n');
-        const title = unescapeString(lines[0]);
+        const title = cleanUnresolvedFootnotes(unescapeString(lines[0]), globalFootnotes);
         let stepContent = lines.slice(1).join('\n').trim();
         if (stepContent.startsWith('content:')) {
           stepContent = stepContent.replace(/^content:\s*/, '').trim();
         }
         stepContent = unescapeString(stepContent);
 
-        // Repetition fix: if content starts with the title, strip it
-        if (title && stepContent.toLowerCase().startsWith(title.toLowerCase())) {
+        // Repetition fix: more aggressive stripping
+        const cleanTitle = title
+          .replace(/[^\w\s]/g, '')
+          .toLowerCase()
+          .trim();
+        const startOfContent = stepContent
+          .replace(/[^\w\s]/g, '')
+          .toLowerCase()
+          .trim();
+        if (cleanTitle && startOfContent.startsWith(cleanTitle)) {
+          // Find where the title ends in the actual content
           stepContent = stepContent.substring(title.length).trim();
           stepContent = stepContent.replace(/^[:\s-]+/, '');
         }
 
         if (title) {
           block.steps.push({
-            title: blockFootnotes ? title + '\n\n' + blockFootnotes : title,
-            content: blockFootnotes ? stepContent + '\n\n' + blockFootnotes : stepContent,
+            title: title, // No footnotes in titles for cleaner UI
+            content: globalFootnotes
+              ? cleanUnresolvedFootnotes(stepContent, globalFootnotes) + '\n\n' + globalFootnotes
+              : cleanUnresolvedFootnotes(stepContent, globalFootnotes),
           });
         }
       });
@@ -152,51 +195,46 @@ export function parseMarkdownToBlocks(text) {
         rawContent = rawContent.replace(titleMatch[0], '').trim();
       }
 
-      // Extract block-level footnotes
-      const footnoteIdx = rawContent.search(/^\[\^/m);
-      let blockFootnotes = '';
-      if (footnoteIdx !== -1) {
-        blockFootnotes = rawContent.substring(footnoteIdx).trim();
-        rawContent = rawContent.substring(0, footnoteIdx).trim();
-      }
-
       const iParts = rawContent.split(/(?:^|\n)\s*-\s*item:\s*/).filter((p) => p.trim());
       iParts.forEach((i) => {
         const lines = i.split('\n');
-        const title = unescapeString(lines[0]);
+        const title = cleanUnresolvedFootnotes(unescapeString(lines[0]), globalFootnotes);
         let itemContent = lines.slice(1).join('\n').trim();
         if (itemContent.startsWith('content:')) {
           itemContent = itemContent.replace(/^content:\s*/, '').trim();
         }
         itemContent = unescapeString(itemContent);
 
-        // Repetition fix: if content starts with the title, strip it
-        if (title && itemContent.toLowerCase().startsWith(title.toLowerCase())) {
+        // Repetition fix: more aggressive stripping
+        const cleanTitle = title
+          .replace(/[^\w\s]/g, '')
+          .toLowerCase()
+          .trim();
+        const startOfContent = itemContent
+          .replace(/[^\w\s]/g, '')
+          .toLowerCase()
+          .trim();
+        if (cleanTitle && startOfContent.startsWith(cleanTitle)) {
           itemContent = itemContent.substring(title.length).trim();
           itemContent = itemContent.replace(/^[:\s-]+/, '');
         }
 
         if (title) {
           block.items.push({
-            title: blockFootnotes ? title + '\n\n' + blockFootnotes : title,
-            content: blockFootnotes ? itemContent + '\n\n' + blockFootnotes : itemContent,
+            title: title,
+            content: globalFootnotes
+              ? cleanUnresolvedFootnotes(itemContent, globalFootnotes) + '\n\n' + globalFootnotes
+              : cleanUnresolvedFootnotes(itemContent, globalFootnotes),
           });
         }
       });
     } else if (m.type === 'TabsBlock') {
       block.tabs = [];
-      // Extract block-level footnotes
-      const footnoteIdx = rawContent.search(/^\[\^/m);
-      let blockFootnotes = '';
-      if (footnoteIdx !== -1) {
-        blockFootnotes = rawContent.substring(footnoteIdx).trim();
-        rawContent = rawContent.substring(0, footnoteIdx).trim();
-      }
 
       const tParts = rawContent.split(/(?:^|\n)\s*-\s*tab:\s*/).filter((p) => p.trim());
       tParts.forEach((t) => {
         const lines = t.split('\n');
-        const title = unescapeString(lines[0]);
+        const title = cleanUnresolvedFootnotes(unescapeString(lines[0]), globalFootnotes);
         let tabContent = lines.slice(1).join('\n').trim();
         if (tabContent.startsWith('content:')) {
           tabContent = tabContent.replace(/^content:\s*/, '').trim();
@@ -205,8 +243,10 @@ export function parseMarkdownToBlocks(text) {
 
         if (title) {
           block.tabs.push({
-            title: blockFootnotes ? title + '\n\n' + blockFootnotes : title,
-            content: blockFootnotes ? tabContent + '\n\n' + blockFootnotes : tabContent,
+            title: title,
+            content: globalFootnotes
+              ? cleanUnresolvedFootnotes(tabContent, globalFootnotes) + '\n\n' + globalFootnotes
+              : cleanUnresolvedFootnotes(tabContent, globalFootnotes),
           });
         }
       });
@@ -216,16 +256,22 @@ export function parseMarkdownToBlocks(text) {
       else block.calloutType = 'info';
 
       const titleMatch = rawContent.match(/^title:\s*(.*)/m);
-      if (titleMatch) block.title = unescapeString(titleMatch[1]);
+      if (titleMatch)
+        block.title = cleanUnresolvedFootnotes(unescapeString(titleMatch[1]), globalFootnotes);
 
       const contentMatch = rawContent.match(/^content:\s*([\s\S]*)/m);
       if (contentMatch) {
-        block.content = unescapeString(contentMatch[1]);
+        let content = cleanUnresolvedFootnotes(unescapeString(contentMatch[1]), globalFootnotes);
+        block.content = globalFootnotes ? content + '\n\n' + globalFootnotes : content;
       } else {
         const lines = rawContent
           .split('\n')
           .filter((l) => !l.startsWith('type:') && !l.startsWith('title:'));
-        block.content = unescapeString(lines.join('\n').trim());
+        let content = cleanUnresolvedFootnotes(
+          unescapeString(lines.join('\n').trim()),
+          globalFootnotes
+        );
+        block.content = globalFootnotes ? content + '\n\n' + globalFootnotes : content;
       }
     } else if (m.type === 'QuizBlock') {
       block.quiz = { questions: [] };
@@ -233,14 +279,6 @@ export function parseMarkdownToBlocks(text) {
       if (titleMatch) {
         block.title = unescapeString(titleMatch[1]);
         rawContent = rawContent.replace(titleMatch[0], '').trim();
-      }
-
-      // Extract block-level footnotes
-      const footnoteIdx = rawContent.search(/^\[\^/m);
-      let blockFootnotes = '';
-      if (footnoteIdx !== -1) {
-        blockFootnotes = rawContent.substring(footnoteIdx).trim();
-        rawContent = rawContent.substring(0, footnoteIdx).trim();
       }
 
       const qRegex = /(?:^|\n)\s*-\s*question:\s*/g;
@@ -322,11 +360,23 @@ export function parseMarkdownToBlocks(text) {
         }
 
         // Apply footnotes to question and explanation
-        if (blockFootnotes) {
-          qObj.question = qObj.question + '\n\n' + blockFootnotes;
-          if (qObj.explanation) qObj.explanation = qObj.explanation + '\n\n' + blockFootnotes;
+        if (globalFootnotes) {
+          qObj.question =
+            cleanUnresolvedFootnotes(qObj.question, globalFootnotes) + '\n\n' + globalFootnotes;
+          if (qObj.explanation)
+            qObj.explanation =
+              cleanUnresolvedFootnotes(qObj.explanation, globalFootnotes) +
+              '\n\n' +
+              globalFootnotes;
           // Also apply to options as they use MarkdownRenderer
-          qObj.options = qObj.options.map((opt) => opt + '\n\n' + blockFootnotes);
+          qObj.options = qObj.options.map(
+            (opt) => cleanUnresolvedFootnotes(opt, globalFootnotes) + '\n\n' + globalFootnotes
+          );
+        } else {
+          qObj.question = cleanUnresolvedFootnotes(qObj.question, globalFootnotes);
+          if (qObj.explanation)
+            qObj.explanation = cleanUnresolvedFootnotes(qObj.explanation, globalFootnotes);
+          qObj.options = qObj.options.map((opt) => cleanUnresolvedFootnotes(opt, globalFootnotes));
         }
 
         if (qObj.question) block.quiz.questions.push(qObj);
