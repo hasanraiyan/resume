@@ -200,7 +200,62 @@ const styles = `
     border-color: var(--esm-forest);
     color: var(--esm-forest);
   }
+
+  /* Skeleton shimmer */
+  @keyframes esm-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .esm-skeleton {
+    background: linear-gradient(90deg, #f0f3f1 25%, #e6ebe8 50%, #f0f3f1 75%);
+    background-size: 200% 100%;
+    animation: esm-shimmer 2s infinite linear;
+    border-radius: 8px;
+  }
 `;
+
+// ─── Skeleton Component ───────────────────────────────────────────────────────
+function GenerationSkeleton() {
+  return (
+    <div className="flex flex-col gap-6 animate-in fade-in duration-500">
+      <div className="space-y-3">
+        <div className="esm-skeleton h-8 w-3/4 rounded-lg" />
+        <div className="esm-skeleton h-4 w-full" />
+        <div className="esm-skeleton h-4 w-5/6" />
+        <div className="esm-skeleton h-4 w-4/6" />
+      </div>
+
+      <div
+        className="p-5 rounded-2xl border border-[#e5e3d8] space-y-4"
+        style={{ background: 'var(--esm-parchment)' }}
+      >
+        <div className="flex items-center gap-3">
+          <div className="esm-skeleton h-6 w-6 rounded-full" />
+          <div className="esm-skeleton h-4 w-32" />
+        </div>
+        <div className="space-y-2 pl-9">
+          <div className="esm-skeleton h-3 w-full" />
+          <div className="esm-skeleton h-3 w-full" />
+          <div className="esm-skeleton h-3 w-3/4" />
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="esm-skeleton h-5 w-40" />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="esm-skeleton h-24 rounded-xl" />
+          <div className="esm-skeleton h-24 rounded-xl" />
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="esm-skeleton h-4 w-full" />
+        <div className="esm-skeleton h-4 w-full" />
+        <div className="esm-skeleton h-4 w-2/3" />
+      </div>
+    </div>
+  );
+}
 
 // ─── Tiny helpers ─────────────────────────────────────────────────────────────
 function Label({ children, className = '' }) {

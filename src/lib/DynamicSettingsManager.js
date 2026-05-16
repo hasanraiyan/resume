@@ -17,11 +17,22 @@ class DynamicSettingsManager {
 
   /**
    * Get a decrypted setting value by key
+   * Priority: Database -> Environment Variables -> Default Value
    */
   async get(key, defaultValue = null) {
     await this._refreshCacheIfNeeded();
     const entry = this.cache.get(key);
-    return entry !== undefined ? entry : defaultValue;
+
+    if (entry !== undefined) {
+      return entry;
+    }
+
+    // Fallback to process.env if not in DB
+    if (process.env[key] !== undefined) {
+      return process.env[key];
+    }
+
+    return defaultValue;
   }
 
   /**
@@ -52,6 +63,45 @@ class DynamicSettingsManager {
   }
 
   /**
+   * Debug helper: List all settings keys (doesn't expose values)
+   */
+  async listSettingKeys() {
+    await this._refreshCacheIfNeeded(true); // Force refresh
+    return Array.from(this.cache.keys());
+  }
+
+  /**
+   * Debug helper: Check if a key exists and whether it can be decrypted
+   */
+  async debugKey(key) {
+    await dbConnect();
+    const doc = await DynamicSettings.findOne({ key }).lean();
+
+    if (!doc) {
+      return { exists: false, key };
+    }
+
+    try {
+      const decrypted = doc.isEncrypted ? decrypt(doc.value) : doc.value;
+      return {
+        exists: true,
+        key,
+        isEncrypted: doc.isEncrypted,
+        decryptionSuccess: decrypted !== null,
+        valuePreview: decrypted ? decrypted.substring(0, 10) + '...' : '[null]',
+      };
+    } catch (error) {
+      return {
+        exists: true,
+        key,
+        isEncrypted: doc.isEncrypted,
+        decryptionSuccess: false,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
    * Internal: Fetch all settings from DB and populate cache
    * @private
    */
@@ -70,11 +120,17 @@ class DynamicSettingsManager {
         try {
           // Explicitly check the flag from the database document
           const decryptedValue = s.isEncrypted ? decrypt(s.value) : s.value;
+
+          // Log if decryption failed (null returned)
+          if (s.isEncrypted && !decryptedValue) {
+            console.warn(
+              `[DynamicSettings] Decryption returned null for key: ${s.key}. Encryption key mismatch?`
+            );
+          }
+
           this.cache.set(s.key, decryptedValue);
         } catch (e) {
-          console.error(
-            `[DynamicSettings] Failed to decrypt key: ${s.key}. Defaulting to raw value.`
-          );
+          console.error(`[DynamicSettings] Failed to decrypt key: ${s.key}. Error: ${e.message}`);
           this.cache.set(s.key, s.value); // Fallback to raw value if decryption fails but flag was set
         }
       }

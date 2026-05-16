@@ -137,8 +137,20 @@ class CoursifySearchAgent extends BaseAgent {
     this.logger.debug('✅ Chat model created');
 
     const tavilyApiKey = await dynamicSettingsManager.get('TAVILY_API_KEY');
+    this.logger.info(
+      `[DEBUG] Tavily API Key retrieved: ${tavilyApiKey ? 'present' : 'missing/null'}`
+    );
 
-    const tools = [new TavilySearch({ maxResults: 5, apiKey: tavilyApiKey }), youtubeSearch];
+    const tools = [];
+
+    if (tavilyApiKey) {
+      tools.push(new TavilySearch({ maxResults: 5, tavilyApiKey }));
+      this.logger.info('✅ Tavily Web Search tool initialized');
+    } else {
+      this.logger.warn('⚠️ Tavily API key missing from database. Web search will be skipped.');
+    }
+
+    tools.push(youtubeSearch);
 
     const contentAgent = createReactAgent({
       llm,
