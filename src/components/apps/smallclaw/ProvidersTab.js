@@ -136,9 +136,20 @@ export default function ProvidersTab() {
                   <Globe2 className="w-5 h-5 text-neutral-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-base text-neutral-900 leading-tight">
-                    {p.name}
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-base text-neutral-900 leading-tight">
+                      {p.name}
+                    </h3>
+                    <div
+                      className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-tighter border ${
+                        p.enableLimits
+                          ? 'bg-emerald-50 text-[#1f644e] border-emerald-100'
+                          : 'bg-neutral-50 text-neutral-400 border-neutral-100'
+                      }`}
+                    >
+                      {p.enableLimits ? 'Limits ON' : 'Limits OFF'}
+                    </div>
+                  </div>
                   <p
                     className="text-xs text-neutral-500 font-mono mt-1 truncate max-w-[150px]"
                     title={p.baseUrl}
@@ -174,27 +185,65 @@ export default function ProvidersTab() {
 
             <div className="mt-auto pt-4 border-t border-neutral-100 flex flex-col gap-3">
               {p.enableLimits && (
-                <div className="flex justify-between items-center gap-2">
-                  <div className="flex flex-col">
-                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold">
-                      RPM
-                    </p>
-                    <p className="text-xs font-bold text-neutral-700">{p.defaultRPM || 4}</p>
+                <div className="space-y-3">
+                  {/* Per-Key Limits */}
+                  <div className="flex justify-between items-center gap-2">
+                    <div className="flex flex-col">
+                      <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold">
+                        RPM / Key
+                      </p>
+                      <p className="text-xs font-bold text-neutral-700">{p.defaultRPM || 4}</p>
+                    </div>
+                    <div className="flex flex-col">
+                      <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold">
+                        TPM / Key
+                      </p>
+                      <p className="text-xs font-bold text-neutral-700">
+                        {(p.defaultTPM / 1000).toFixed(0)}k
+                      </p>
+                    </div>
+                    <div className="flex flex-col">
+                      <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold">
+                        RPD / Key
+                      </p>
+                      <p className="text-xs font-bold text-neutral-700">{p.defaultRPD || 2000}</p>
+                    </div>
                   </div>
-                  <div className="flex flex-col">
-                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold">
-                      TPM
-                    </p>
-                    <p className="text-xs font-bold text-neutral-700">
-                      {(p.defaultTPM / 1000).toFixed(0)}k
-                    </p>
-                  </div>
-                  <div className="flex flex-col">
-                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold">
-                      RPD
-                    </p>
-                    <p className="text-xs font-bold text-neutral-700">{p.defaultRPD || 2000}</p>
-                  </div>
+
+                  {/* Total Pool Capacity (Visible only if multiple keys) */}
+                  {typeof p.apiKey === 'string' && p.apiKey.includes('Keys (Pooled)') && (
+                    <div className="p-2.5 bg-[#1f644e]/5 rounded-xl border border-[#1f644e]/10">
+                      <p className="text-[9px] text-[#1f644e] uppercase tracking-widest font-bold mb-1.5 opacity-80">
+                        Total Pool Capacity ({parseInt(p.apiKey.split(' ')[0])} Keys)
+                      </p>
+                      <div className="flex justify-between items-center">
+                        <div className="text-center flex-1">
+                          <p className="text-[10px] text-neutral-500 font-medium">RPM</p>
+                          <p className="text-xs font-bold text-[#1f644e]">
+                            {(p.defaultRPM || 4) * parseInt(p.apiKey.split(' ')[0])}
+                          </p>
+                        </div>
+                        <div className="w-px h-4 bg-[#1f644e]/10" />
+                        <div className="text-center flex-1">
+                          <p className="text-[10px] text-neutral-500 font-medium">TPM</p>
+                          <p className="text-xs font-bold text-[#1f644e]">
+                            {(
+                              ((p.defaultTPM || 250000) * parseInt(p.apiKey.split(' ')[0])) /
+                              1000000
+                            ).toFixed(1)}
+                            M
+                          </p>
+                        </div>
+                        <div className="w-px h-4 bg-[#1f644e]/10" />
+                        <div className="text-center flex-1">
+                          <p className="text-[10px] text-neutral-500 font-medium">RPD</p>
+                          <p className="text-xs font-bold text-[#1f644e]">
+                            {(p.defaultRPD || 2000) * parseInt(p.apiKey.split(' ')[0])}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
