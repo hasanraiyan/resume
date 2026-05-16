@@ -47,6 +47,7 @@ export function serializeTransaction(transaction) {
         }
       : null,
     date: transaction.date ? new Date(transaction.date).toISOString() : null,
+    recurringId: transaction.recurringId ? transaction.recurringId.toString() : null,
     deletedAt: transaction.deletedAt ? new Date(transaction.deletedAt).toISOString() : null,
     updatedAt: transaction.updatedAt ? new Date(transaction.updatedAt).toISOString() : null,
     createdAt: transaction.createdAt ? new Date(transaction.createdAt).toISOString() : null,

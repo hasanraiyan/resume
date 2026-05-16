@@ -25,45 +25,66 @@ export default function ExportModal({ isOpen, onClose }) {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [exportFormat, setExportFormat] = useState('pdf');
+  const [includeTransfers, setIncludeTransfers] = useState(true);
 
   if (!isOpen) return null;
 
-  const handleGeneratePdf = async () => {
+  const getDateRange = () => {
+    const now = new Date();
+    let start, end;
+
+    if (dateRange === 'this-month') {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    } else if (dateRange === 'last-month') {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      end = new Date(now.getFullYear(), now.getMonth(), 0);
+    } else if (dateRange === 'last-7-days') {
+      start = new Date(now);
+      start.setDate(now.getDate() - 7);
+      end = new Date(now);
+    } else if (dateRange === 'all-time') {
+      start = new Date(2000, 0, 1);
+      end = new Date(2100, 0, 1);
+    } else if (dateRange === 'custom') {
+      start = fromDate ? new Date(fromDate) : new Date(2000, 0, 1);
+      end = toDate ? new Date(toDate) : new Date(2100, 0, 1);
+    }
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
+  };
+
+  const handleExport = async () => {
     setIsGenerating(true);
     try {
-      const now = new Date();
-      let start, end;
+      const { start, end } = getDateRange();
 
-      if (dateRange === 'this-month') {
-        start = new Date(now.getFullYear(), now.getMonth(), 1);
-        end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      } else if (dateRange === 'last-month') {
-        start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        end = new Date(now.getFullYear(), now.getMonth(), 0);
-      } else if (dateRange === 'last-7-days') {
-        start = new Date(now);
-        start.setDate(now.getDate() - 7);
-        end = new Date(now);
-      } else if (dateRange === 'all-time') {
-        start = new Date(2000, 0, 1);
-        end = new Date(2100, 0, 1);
-      } else if (dateRange === 'custom') {
-        start = fromDate ? new Date(fromDate) : new Date(2000, 0, 1);
-        end = toDate ? new Date(toDate) : new Date(2100, 0, 1);
+      if (exportFormat === 'csv') {
+        const params = new URLSearchParams({
+          startDate: start.toISOString(),
+          endDate: end.toISOString(),
+          includeTransfers: String(includeTransfers),
+        });
+        window.location.href = `/api/money/export?${params}`;
+        onClose();
+        return;
       }
-
-      end.setHours(23, 59, 59, 999);
 
       const fetchedTransactions = await fetchTransactionsForPeriod(
         start.toISOString(),
         end.toISOString()
       );
 
+      const filtered = includeTransfers
+        ? fetchedTransactions
+        : fetchedTransactions.filter((t) => t.type !== 'transfer');
+
       const doc = await generatePocketlyPdf({
         start,
         end,
         dateRange,
-        transactions: fetchedTransactions,
+        transactions: filtered,
         totalBalance,
         accountsWithBalance,
         accounts,
@@ -72,8 +93,8 @@ export default function ExportModal({ isOpen, onClose }) {
       doc.save(`pocketly-export-${new Date().toISOString().split('T')[0]}.pdf`);
       onClose();
     } catch (err) {
-      console.error('Error generating PDF:', err);
-      alert('Failed to generate PDF. Please try again.');
+      console.error('Error exporting data:', err);
+      alert('Failed to export data. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -382,24 +403,54 @@ export default function ExportModal({ isOpen, onClose }) {
           </div>
 
           {/* Footer */}
+          <div className="modal-body" style={{ paddingTop: 0 }}>
+            <div className="range-label">Export Format</div>
+            <div className="range-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+              <button
+                className={`range-btn${exportFormat === 'pdf' ? ' active' : ''}`}
+                onClick={() => setExportFormat('pdf')}
+              >
+                PDF Report
+              </button>
+              <button
+                className={`range-btn${exportFormat === 'csv' ? ' active' : ''}`}
+                onClick={() => setExportFormat('csv')}
+              >
+                CSV Spreadsheet
+              </button>
+            </div>
+
+            <div style={{ marginTop: '12px' }}>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={includeTransfers}
+                  onChange={(e) => setIncludeTransfers(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-[#1f644e] focus:ring-[#1f644e]"
+                />
+                <span className="text-xs font-bold text-[#5a7a6e]">Include Transfers</span>
+              </label>
+            </div>
+          </div>
+
           <div className="modal-footer">
             <span className="footer-hint">
-              Format: <strong>PDF</strong>
+              Format: <strong>{exportFormat.toUpperCase()}</strong>
             </span>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <button className="btn-cancel" onClick={onClose} disabled={isGenerating}>
                 Cancel
               </button>
-              <button className="btn-generate" onClick={handleGeneratePdf} disabled={isGenerating}>
+              <button className="btn-generate" onClick={handleExport} disabled={isGenerating}>
                 {isGenerating ? (
                   <>
                     <div className="spinner" />
-                    Generating…
+                    Preparing…
                   </>
                 ) : (
                   <>
                     <ArrowDownToLine size={14} />
-                    Export PDF
+                    Export {exportFormat.toUpperCase()}
                   </>
                 )}
               </button>

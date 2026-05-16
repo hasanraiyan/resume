@@ -16,6 +16,7 @@ const initialState = {
     categoryCount: 0,
   },
   analysis: null,
+  comparison: null,
   isAnalysisLoading: false,
   analysisError: null,
   isLoading: false,
@@ -75,7 +76,7 @@ function moneyReducer(state, action) {
     case 'SET_STATS':
       return { ...state, stats: { ...state.stats, ...action.payload } };
     case 'SET_ANALYSIS':
-      return { ...state, analysis: action.payload };
+      return { ...state, analysis: action.payload.analysis, comparison: action.payload.comparison };
     case 'SET_ANALYSIS_LOADING':
       return { ...state, isAnalysisLoading: action.payload };
     case 'SET_ANALYSIS_ERROR':
@@ -248,22 +249,30 @@ export function MoneyProvider({ children }) {
     }
   }, [state.periodEnd, state.periodStart, cacheTransactions, prefetchAdjacentPeriods]);
 
-  const fetchAnalysis = useCallback(async (startDate, endDate) => {
-    const key = getCacheKey(startDate, endDate);
+  const fetchAnalysis = useCallback(async (startDate, endDate, comparisonOptions = null) => {
+    const key =
+      getCacheKey(startDate, endDate) +
+      (comparisonOptions ? `|${comparisonOptions.start}|${comparisonOptions.end}` : '');
     const cached = analysisCacheRef.current.get(key);
 
     if (cached) {
       dispatch({ type: 'SET_ANALYSIS', payload: cached });
       dispatch({ type: 'SET_ANALYSIS_LOADING', payload: true });
-      fetch(`/api/money/analysis?${new URLSearchParams({ startDate, endDate })}`)
+      const params = new URLSearchParams({ startDate, endDate });
+      if (comparisonOptions) {
+        params.set('comparisonStartDate', comparisonOptions.start);
+        params.set('comparisonEndDate', comparisonOptions.end);
+      }
+      fetch(`/api/money/analysis?${params}`)
         .then(readJson)
         .then((data) => {
-          analysisCacheRef.current.set(key, data.analysis);
+          const result = { analysis: data.analysis, comparison: data.comparison };
+          analysisCacheRef.current.set(key, result);
           if (
             currentPeriodRef.current.start === startDate &&
             currentPeriodRef.current.end === endDate
           ) {
-            dispatch({ type: 'SET_ANALYSIS', payload: data.analysis });
+            dispatch({ type: 'SET_ANALYSIS', payload: result });
           }
         })
         .catch(() => {})
@@ -277,9 +286,14 @@ export function MoneyProvider({ children }) {
       const params = new URLSearchParams();
       if (startDate) params.set('startDate', startDate);
       if (endDate) params.set('endDate', endDate);
+      if (comparisonOptions) {
+        params.set('comparisonStartDate', comparisonOptions.start);
+        params.set('comparisonEndDate', comparisonOptions.end);
+      }
       const data = await fetch(`/api/money/analysis?${params}`).then(readJson);
-      analysisCacheRef.current.set(key, data.analysis);
-      dispatch({ type: 'SET_ANALYSIS', payload: data.analysis });
+      const result = { analysis: data.analysis, comparison: data.comparison };
+      analysisCacheRef.current.set(key, result);
+      dispatch({ type: 'SET_ANALYSIS', payload: result });
     } catch (error) {
       console.error('Failed to fetch analysis:', error);
       dispatch({
@@ -332,6 +346,27 @@ export function MoneyProvider({ children }) {
   const addTransaction = async (transaction, options = {}) => {
     const { switchTab = true } = options;
 
+    // Optimistic Update
+    const tempId = `temp-${Date.now()}`;
+    const optimisticTransaction = {
+      ...transaction,
+      id: tempId,
+      _id: tempId,
+      date: transaction.date || new Date().toISOString(),
+      syncing: true,
+    };
+
+    // Only add to list if it's within current period
+    const txDate = new Date(optimisticTransaction.date);
+    const isInPeriod = txDate >= new Date(state.periodStart) && txDate <= new Date(state.periodEnd);
+
+    if (isInPeriod) {
+      dispatch({
+        type: 'SET_TRANSACTIONS',
+        payload: [optimisticTransaction, ...state.transactions],
+      });
+    }
+
     try {
       const data = await fetch('/api/money/transactions', {
         method: 'POST',
@@ -373,6 +408,12 @@ export function MoneyProvider({ children }) {
   };
 
   const deleteTransaction = async (id) => {
+    const previousTransactions = [...state.transactions];
+    dispatch({
+      type: 'SET_TRANSACTIONS',
+      payload: state.transactions.filter((t) => t.id !== id),
+    });
+
     try {
       await fetch(`/api/money/transactions/${id}`, { method: 'DELETE' }).then(readJson);
       transactionCacheRef.current.clear();
@@ -383,12 +424,19 @@ export function MoneyProvider({ children }) {
         state.analysis ? fetchAnalysis(state.periodStart, state.periodEnd) : Promise.resolve(),
       ]);
     } catch (error) {
+      dispatch({ type: 'SET_TRANSACTIONS', payload: previousTransactions });
       console.error('Failed to delete transaction:', error);
       throw error;
     }
   };
 
   const updateTransaction = async (id, transaction) => {
+    const previousTransactions = [...state.transactions];
+    dispatch({
+      type: 'SET_TRANSACTIONS',
+      payload: state.transactions.map((t) => (t.id === id ? { ...t, ...transaction } : t)),
+    });
+
     try {
       const data = await fetch(`/api/money/transactions/${id}`, {
         method: 'PUT',
@@ -404,6 +452,7 @@ export function MoneyProvider({ children }) {
       ]);
       return data.transaction;
     } catch (error) {
+      dispatch({ type: 'SET_TRANSACTIONS', payload: previousTransactions });
       console.error('Failed to update transaction:', error);
       throw error;
     }

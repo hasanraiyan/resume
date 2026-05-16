@@ -12,6 +12,7 @@ import {
   serializeBudget,
 } from '@/lib/money-serializers';
 import { computeAccountSummaries } from '@/lib/money-account-summary';
+import { processDueRecurringTransactions } from '@/lib/apps/pocketly/service/service';
 
 export async function GET(request) {
   const session = await requireAdminAuth(request);
@@ -19,6 +20,7 @@ export async function GET(request) {
 
   try {
     await dbConnect();
+    await processDueRecurringTransactions();
 
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate');

@@ -1,6 +1,11 @@
 import React from 'react';
 import Image from 'next/image';
-import { Menu } from 'lucide-react';
+import { Menu, MoreHorizontal } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const BottomSheet = dynamic(() => import('@/components/pocketly-tracker/BottomSheet'), {
+  ssr: false,
+});
 
 /**
  * AppLayout Component
@@ -33,6 +38,7 @@ export default function AppLayout({
   tabTitles = null,
 }) {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = React.useState(false);
 
   const getTabTitle = () => {
     if (tabTitles && tabTitles[activeTab]) {
@@ -146,32 +152,106 @@ export default function AppLayout({
 
       {/* Mobile Bottom Nav */}
       {!useHamburgerMenu && (
-        <nav
-          className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#fcfbf5] border-t border-[#e5e3d8] z-30 flex"
-          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-        >
-          {tabs
-            .filter((tab) => !hideSettingsFromMobileNav || tab.id !== 'settings')
-            .map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex flex-col items-center justify-center py-2 min-h-[60px] ${
-                  activeTab === tab.id ? 'text-[#1f644e]' : 'text-[#7c8e88] hover:text-[#1e3a34]'
-                }`}
-              >
-                <tab.icon
-                  className="w-[22px] h-[22px] mb-0.5"
-                  strokeWidth={activeTab === tab.id ? 2 : 1.5}
-                />
-                <span
-                  className={`text-[10px] ${activeTab === tab.id ? 'font-extrabold' : 'font-bold'}`}
-                >
-                  {tab.label}
-                </span>
-              </button>
-            ))}
-        </nav>
+        <>
+          <nav
+            className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#fcfbf5] border-t border-[#e5e3d8] z-30 flex"
+            style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+          >
+            {(() => {
+              const filteredTabs = tabs.filter(
+                (tab) => !hideSettingsFromMobileNav || tab.id !== 'settings'
+              );
+              const limit = 5;
+              const showMore = filteredTabs.length > limit;
+              const displayTabs = showMore ? filteredTabs.slice(0, limit - 1) : filteredTabs;
+              const overflowTabs = showMore ? filteredTabs.slice(limit - 1) : [];
+              const isMoreActive = overflowTabs.some((t) => t.id === activeTab);
+
+              return (
+                <>
+                  {displayTabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setActiveTab(tab.id);
+                        setMoreMenuOpen(false);
+                      }}
+                      className={`flex-1 flex flex-col items-center justify-center py-2 min-h-[60px] ${
+                        activeTab === tab.id
+                          ? 'text-[#1f644e]'
+                          : 'text-[#7c8e88] hover:text-[#1e3a34]'
+                      }`}
+                    >
+                      <tab.icon
+                        className="w-[22px] h-[22px] mb-0.5"
+                        strokeWidth={activeTab === tab.id ? 2 : 1.5}
+                      />
+                      <span
+                        className={`text-[10px] ${activeTab === tab.id ? 'font-extrabold' : 'font-bold'}`}
+                      >
+                        {tab.label}
+                      </span>
+                    </button>
+                  ))}
+
+                  {showMore && (
+                    <button
+                      onClick={() => setMoreMenuOpen(true)}
+                      className={`flex-1 flex flex-col items-center justify-center py-2 min-h-[60px] ${
+                        isMoreActive ? 'text-[#1f644e]' : 'text-[#7c8e88] hover:text-[#1e3a34]'
+                      }`}
+                    >
+                      <MoreHorizontal
+                        className="w-[22px] h-[22px] mb-0.5"
+                        strokeWidth={isMoreActive ? 2 : 1.5}
+                      />
+                      <span className={`text-[10px] ${isMoreActive ? 'font-extrabold' : 'font-bold'}`}>
+                        More
+                      </span>
+                    </button>
+                  )}
+                </>
+              );
+            })()}
+          </nav>
+
+          <BottomSheet
+            open={moreMenuOpen}
+            onClose={() => setMoreMenuOpen(false)}
+            className="max-h-[60vh] overflow-y-auto"
+          >
+            <p className="mb-4 text-xs font-bold uppercase tracking-wider text-[#7c8e88] px-2">
+              More Options
+            </p>
+            <div className="grid grid-cols-1 gap-2">
+              {(() => {
+                const filteredTabs = tabs.filter(
+                  (tab) => !hideSettingsFromMobileNav || tab.id !== 'settings'
+                );
+                const limit = 5;
+                const overflowTabs = filteredTabs.length > limit ? filteredTabs.slice(limit - 1) : [];
+
+                return overflowTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      setMoreMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${
+                      activeTab === tab.id
+                        ? 'bg-[#1f644e] text-white shadow-md'
+                        : 'text-[#1e3a34] bg-neutral-50 hover:bg-neutral-100'
+                    }`}
+                  >
+                    <tab.icon className="w-5 h-5" strokeWidth={activeTab === tab.id ? 2 : 1.5} />
+                    <span className="text-sm font-bold">{tab.label}</span>
+                  </button>
+                ));
+              })()}
+            </div>
+          </BottomSheet>
+        </>
       )}
 
       {/* Floating Action Button */}

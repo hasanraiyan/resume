@@ -65,6 +65,17 @@ function FinanceContent() {
   const [showDelayedBootstrapSkeleton, setShowDelayedBootstrapSkeleton] = useState(false);
   const handleAddModalClose = useCallback(() => setRequestAddAccountModal(false), []);
 
+  // Keyboard shortcut for N
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key.toLowerCase() === 'n' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) {
+        openEditTransaction({});
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [openEditTransaction]);
+
   useEffect(() => {
     if (!isBootstrapLoading) {
       setShowDelayedBootstrapSkeleton(false);
@@ -168,7 +179,7 @@ function FinanceContent() {
       activeTab={activeTab}
       setActiveTab={setActiveTab}
       tabTitles={tabTitles}
-      hideSettingsFromMobileNav={true}
+      hideSettingsFromMobileNav={false}
       headerActions={
         <>
           {activeTab === 'chat' && (
@@ -197,12 +208,7 @@ function FinanceContent() {
           </button>
         </>
       }
-      fab={
-        (accounts.length > 0 && activeTab !== 'settings' && activeTab !== 'chat') ||
-        editTransactionData ? (
-          <AddTransactionModal />
-        ) : null
-      }
+      fab={activeTab !== 'settings' && activeTab !== 'chat' ? <AddTransactionModal /> : null}
     >
       {!hasBootstrappedData && isBootstrapLoading && !showDelayedBootstrapSkeleton ? (
         <div className="min-h-[60vh]" />

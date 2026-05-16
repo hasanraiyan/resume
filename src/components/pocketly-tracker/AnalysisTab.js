@@ -40,20 +40,54 @@ const compactNumberFormatter = new Intl.NumberFormat('en-IN', {
 export default function AnalysisTab() {
   const {
     analysis,
+    comparison,
     fetchAnalysis,
     periodStart,
     periodEnd,
+    periodType,
     setPeriod,
     isAnalysisLoading,
     analysisError,
+    budgets,
   } = useMoney();
   const [viewMode, setViewMode] = useState('expense');
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('Weekly');
+  const [isBudgetView, setIsBudgetView] = useState(false);
+  const [isCompareEnabled, setIsCompareEnabled] = useState(false);
 
   useEffect(() => {
-    fetchAnalysis(periodStart, periodEnd).catch(() => {});
-  }, [fetchAnalysis, periodEnd, periodStart]);
+    if (isCompareEnabled) {
+      const start = new Date(periodStart);
+      const end = new Date(periodEnd);
+      let compStart, compEnd;
+
+      if (periodType === 'day') {
+        compStart = new Date(start);
+        compStart.setDate(start.getDate() - 1);
+        compEnd = new Date(end);
+        compEnd.setDate(end.getDate() - 1);
+      } else if (periodType === 'month') {
+        compStart = new Date(start);
+        compStart.setMonth(start.getMonth() - 1);
+        compEnd = new Date(start);
+        compEnd.setDate(0);
+      } else {
+        compStart = new Date(start);
+        compStart.setDate(start.getDate() - 7);
+        compEnd = new Date(start);
+        compEnd.setDate(start.getDate() - 1);
+      }
+      compEnd.setHours(23, 59, 59, 999);
+
+      fetchAnalysis(periodStart, periodEnd, {
+        start: compStart.toISOString(),
+        end: compEnd.toISOString(),
+      }).catch(() => {});
+    } else {
+      fetchAnalysis(periodStart, periodEnd).catch(() => {});
+    }
+  }, [fetchAnalysis, periodEnd, periodStart, isCompareEnabled, periodType]);
 
   const handlePeriodChange = (period) => {
     const now = new Date();
@@ -208,6 +242,86 @@ export default function AnalysisTab() {
     );
     const topPercentage = total ? (topCategory.total / total) * 100 : 0;
 
+    if (viewMode === 'expense' && isBudgetView) {
+      const budgetedCategories = expenseCategories.map((cat) => {
+        const budget = budgets.find(
+          (b) => (b.category?.id || b.category?._id || b.category) === cat.categoryId
+        );
+        return { ...cat, budget: budget?.amount || 0 };
+      });
+
+      return (
+        <div className="rounded-xl border border-[#e5e3d8] bg-white p-6">
+          <h3 className="mb-6 text-sm font-bold text-[#1e3a34] flex items-center justify-between">
+            Budget vs Actual
+            <span className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider">
+              {selectedPeriod}
+            </span>
+          </h3>
+          <div className="space-y-6">
+            {budgetedCategories.map((cat, index) => {
+              const hasLimit = cat.budget > 0;
+              const percent = hasLimit ? (cat.total / cat.budget) * 100 : 0;
+              const isOver = hasLimit && cat.total > cat.budget;
+
+              return (
+                <div key={cat.categoryId || index}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-white"
+                        style={{ backgroundColor: chartColors[index % chartColors.length] }}
+                      >
+                        <IconRenderer name={cat.icon} className="h-4 w-4" />
+                      </div>
+                      <span className="text-sm font-bold text-[#1e3a34]">{cat.name}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-black text-[#1e3a34]">
+                        {formatCurrencyWithCompact(cat.total)}
+                      </span>
+                      <span className="text-[10px] font-bold text-[#7c8e88] ml-1">
+                        / {hasLimit ? formatCurrencyWithCompact(cat.budget) : 'No limit'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="relative h-3 w-full bg-[#f0f5f2] rounded-full overflow-hidden border border-[#e5e3d8]/30">
+                    {/* Actual Bar */}
+                    <div
+                      className={`absolute inset-y-0 left-0 rounded-full transition-all duration-1000 ${isOver ? 'bg-[#c94c4c]' : 'bg-[#1f644e]'}`}
+                      style={{ width: `${Math.min(percent, 100)}%` }}
+                    />
+                    {/* Excess Bar */}
+                    {isOver && (
+                      <div
+                        className="absolute inset-y-0 bg-[#c94c4c]/30 animate-pulse"
+                        style={{ left: '100%', width: '10%' }}
+                      />
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between mt-1.5">
+                    <span
+                      className={`text-[10px] font-bold ${isOver ? 'text-[#c94c4c]' : 'text-[#7c8e88]'}`}
+                    >
+                      {hasLimit ? `${percent.toFixed(0)}% of budget` : 'No limit set'}
+                    </span>
+                    {isOver && (
+                      <span className="flex items-center gap-1 text-[10px] font-black text-[#c94c4c] uppercase tracking-tighter">
+                        <AlertTriangle className="w-3 h-3" />
+                        Over Budget
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-6">
         <div className="rounded-xl border border-[#e5e3d8] bg-white p-6">
@@ -292,14 +406,36 @@ export default function AnalysisTab() {
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#f0f5f2]">
-                      <div
-                        className="h-full rounded-full transition-all duration-700"
-                        style={{
-                          width: `${percentage}%`,
-                          backgroundColor: chartColors[index % chartColors.length],
-                        }}
-                      />
+                    <div className="flex-1 space-y-1">
+                      <div className="h-2 overflow-hidden rounded-full bg-[#f0f5f2]">
+                        <div
+                          className="h-full rounded-full transition-all duration-700"
+                          style={{
+                            width: `${percentage}%`,
+                            backgroundColor: chartColors[index % chartColors.length],
+                          }}
+                        />
+                      </div>
+                      {isCompareEnabled && comparison && (
+                        <div className="h-1 overflow-hidden rounded-full bg-[#f0f5f2]/50">
+                          {(() => {
+                            const compCat = comparison.categoryBreakdown.find(
+                              (c) => c.categoryId === category.categoryId
+                            );
+                            const compTotal = comparison.totalExpense || 1;
+                            const compPercent = compCat ? (compCat.total / compTotal) * 100 : 0;
+                            return (
+                              <div
+                                className="h-full rounded-full opacity-30 transition-all duration-700"
+                                style={{
+                                  width: `${compPercent}%`,
+                                  backgroundColor: chartColors[index % chartColors.length],
+                                }}
+                              />
+                            );
+                          })()}
+                        </div>
+                      )}
                     </div>
                     <span className="w-10 text-right text-xs font-bold text-[#7c8e88]">
                       {percentage.toFixed(1)}%
@@ -321,13 +457,27 @@ export default function AnalysisTab() {
       );
     }
 
+    const comparisonEntries = useMemo(() => {
+      if (!comparison?.dailyFlow) return [];
+      const map = comparison.dailyFlow.reduce((acc, entry) => {
+        if (!acc[entry.date]) acc[entry.date] = { expense: 0, income: 0 };
+        acc[entry.date][entry.type] = entry.total;
+        return acc;
+      }, {});
+      return Object.entries(map);
+    }, [comparison]);
+
     return (
       <div className="rounded-xl border border-[#e5e3d8] bg-white p-6">
         <h3 className="mb-4 text-sm font-bold text-[#1e3a34]">Daily Flow</h3>
         <div className="mb-4 flex h-48 items-end gap-1.5">
-          {dailyEntries.map(([date, data]) => {
+          {dailyEntries.map(([date, data], index) => {
             const expenseHeight = (data.expense / maxDaily) * 100;
             const incomeHeight = (data.income / maxDaily) * 100;
+
+            const compData = comparisonEntries[index]?.[1];
+            const compExpenseHeight = compData ? (compData.expense / maxDaily) * 100 : 0;
+            const compIncomeHeight = compData ? (compData.income / maxDaily) * 100 : 0;
 
             return (
               <div
@@ -338,6 +488,19 @@ export default function AnalysisTab() {
                   {formatCurrencyWithCompact(data.expense)}
                 </div>
                 <div className="flex h-full w-full items-end gap-0.5">
+                {isCompareEnabled && comparison && compData && (
+                  <div className="flex h-full w-full items-end gap-0.5 absolute inset-0 opacity-20 pointer-events-none px-1">
+                    <div
+                      className="flex-1 bg-[#c94c4c]"
+                      style={{ height: `${compExpenseHeight}%` }}
+                    />
+                    <div
+                      className="flex-1 bg-[#1f644e]"
+                      style={{ height: `${compIncomeHeight}%` }}
+                    />
+                  </div>
+                )}
+                <div className="flex h-full w-full items-end gap-0.5 z-10">
                   <div
                     className="flex-1 rounded-t-sm bg-[#c94c4c]/70 transition-all hover:bg-[#c94c4c]"
                     style={{ height: `${Math.max(expenseHeight, 2)}%` }}
@@ -346,6 +509,7 @@ export default function AnalysisTab() {
                     className="flex-1 rounded-t-sm bg-[#1f644e]/70 transition-all hover:bg-[#1f644e]"
                     style={{ height: `${Math.max(incomeHeight, 2)}%` }}
                   />
+                </div>
                 </div>
               </div>
             );
@@ -451,10 +615,43 @@ export default function AnalysisTab() {
     );
   };
 
+  const summaryComparison = useMemo(() => {
+    if (!comparison) return null;
+    const diff = analysis.totalExpense - comparison.totalExpense;
+    const percent = comparison.totalExpense > 0 ? (diff / comparison.totalExpense) * 100 : 0;
+    return { diff, percent };
+  }, [analysis, comparison]);
+
   return (
     <div className="mb-6 pb-4 pt-6">
       <div className="w-full px-4 lg:px-6">
         <div className="w-full max-w-6xl mx-auto">
+          {isCompareEnabled && summaryComparison && (
+            <div className="mb-6 bg-white border border-[#e5e3d8] rounded-xl p-4 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider">
+                  Total Expenses vs Prev. Period
+                </p>
+                <p className="text-sm font-black text-[#1e3a34]">
+                  {formatCurrencyWithCompact(analysis.totalExpense)}{' '}
+                  <span
+                    className={`ml-1 ${summaryComparison.percent > 0 ? 'text-[#c94c4c]' : 'text-[#1f644e]'}`}
+                  >
+                    ({summaryComparison.percent > 0 ? '▲' : '▼'}{' '}
+                    {Math.abs(summaryComparison.percent).toFixed(1)}%)
+                  </span>
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider">
+                  Previous Period
+                </p>
+                <p className="text-sm font-bold text-[#7c8e88]">
+                  {formatCurrencyWithCompact(comparison.totalExpense)}
+                </p>
+              </div>
+            </div>
+          )}
           {/* Summary */}
           <div className="mb-6">
             {/* Mobile: simple 2-column cards, no icons (match RecordsTab style) */}
@@ -529,12 +726,46 @@ export default function AnalysisTab() {
 
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             {/* Integrated TopTabs Component */}
-            <TopTabs
-              options={viewOptions}
-              activeId={viewMode}
-              onChange={(id) => setViewMode(id)}
-              theme="green"
-            />
+            <div className="flex items-center gap-3">
+              <TopTabs
+                options={viewOptions}
+                activeId={viewMode}
+                onChange={(id) => setViewMode(id)}
+                theme="green"
+              />
+              {viewMode === 'expense' && (
+                <>
+                  <button
+                    onClick={() => {
+                      setIsBudgetView(!isBudgetView);
+                      setIsCompareEnabled(false);
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                      isBudgetView
+                        ? 'bg-[#1f644e] text-white border-[#1f644e]'
+                        : 'bg-white text-[#7c8e88] border-[#e5e3d8] hover:text-[#1e3a34]'
+                    }`}
+                  >
+                    <Target className="w-3.5 h-3.5" />
+                    Budget View
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsCompareEnabled(!isCompareEnabled);
+                      setIsBudgetView(false);
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                      isCompareEnabled
+                        ? 'bg-[#4a86e8] text-white border-[#4a86e8]'
+                        : 'bg-white text-[#7c8e88] border-[#e5e3d8] hover:text-[#1e3a34]'
+                    }`}
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isAnalysisLoading ? 'animate-spin' : ''}`} />
+                    Compare
+                  </button>
+                </>
+              )}
+            </div>
 
             <div className="flex flex-wrap items-center gap-3">
               <div className="relative">
