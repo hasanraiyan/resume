@@ -1,6 +1,7 @@
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { youtube } from '@googleapis/youtube';
+import dynamicSettingsManager from '@/lib/DynamicSettingsManager';
 
 /**
  * YouTube Search Tool
@@ -8,10 +9,11 @@ import { youtube } from '@googleapis/youtube';
  */
 export const youtubeSearch = tool(
   async ({ query, maxResults = 5 }) => {
-    const apiKey = process.env.GOOGLE_API_KEY || process.env.YOUTUBE_API_KEY;
+    // Try to get from DynamicSettings first, fallback to process.env
+    let apiKey = await dynamicSettingsManager.get('GOOGLE_API_KEY');
 
     if (!apiKey) {
-      console.warn('[YouTubeTool] Missing GOOGLE_API_KEY or YOUTUBE_API_KEY in environment.');
+      console.warn('[YouTubeTool] Missing GOOGLE_API_KEY in environment or database.');
       return 'YouTube search is currently unavailable (missing API key).';
     }
 

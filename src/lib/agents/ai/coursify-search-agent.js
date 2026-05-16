@@ -4,6 +4,7 @@ import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { TavilySearch } from '@langchain/tavily';
 import { youtubeSearch } from '../utils/youtube-tools';
 import { SystemMessage, HumanMessage } from '@langchain/core/messages';
+import dynamicSettingsManager from '@/lib/DynamicSettingsManager';
 
 const SYSTEM_PROMPT = `
 You are a Coursify AI Course Content Generator. Your job is to research a topic using web search and then generate a reponse to user query in the Coursify markdown format.
@@ -135,10 +136,9 @@ class CoursifySearchAgent extends BaseAgent {
     const llm = await this.createChatModel();
     this.logger.debug('✅ Chat model created');
 
-    const tools = [
-      new TavilySearch({ maxResults: 5, apiKey: process.env.TAVILY_API_KEY }),
-      youtubeSearch,
-    ];
+    const tavilyApiKey = await dynamicSettingsManager.get('TAVILY_API_KEY');
+
+    const tools = [new TavilySearch({ maxResults: 5, apiKey: tavilyApiKey }), youtubeSearch];
 
     const contentAgent = createReactAgent({
       llm,

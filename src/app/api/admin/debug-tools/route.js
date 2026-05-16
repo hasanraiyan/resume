@@ -1,6 +1,7 @@
 import { youtubeSearch } from '@/lib/agents/utils/youtube-tools'; // trigger rebuild
 import { TavilySearch } from '@langchain/tavily';
 import { NextResponse } from 'next/server';
+import dynamicSettingsManager from '@/lib/DynamicSettingsManager';
 
 export async function POST(request) {
   try {
@@ -18,7 +19,8 @@ export async function POST(request) {
         result = await youtubeSearch.invoke({ query, ...params });
         break;
       case 'tavily_search':
-        const tavily = new TavilySearch({ maxResults: 5, apiKey: process.env.TAVILY_API_KEY });
+        const apiKey = await dynamicSettingsManager.get('TAVILY_API_KEY');
+        const tavily = new TavilySearch({ maxResults: 5, apiKey });
         result = await tavily.invoke({ query });
         break;
       default:
