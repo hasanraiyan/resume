@@ -64,6 +64,8 @@ export function AISearchEngine({ onGenerated }) {
 
   const [generatedSlug, setGeneratedSlug] = useState('');
 
+  const [isFromCache, setIsFromCache] = useState(false);
+
   const inputRef = useRef(null);
 
   const contentRef = useRef('');
@@ -202,6 +204,8 @@ export function AISearchEngine({ onGenerated }) {
               setGeneratedTitle(event.text);
             } else if (event.type === 'status') {
               setStatusMessage(event.message);
+            } else if (event.type === 'cache_hit') {
+              setIsFromCache(true);
             } else if (event.type === 'tool_call') {
               if (event.status === 'started') {
                 setToolSteps((prev) => [
@@ -296,6 +300,8 @@ export function AISearchEngine({ onGenerated }) {
     setGeneratedTitle('');
 
     setToolSteps([]);
+
+    setIsFromCache(false);
   };
 
   // =====================================================
@@ -456,6 +462,11 @@ export function AISearchEngine({ onGenerated }) {
             <span className="truncate text-xs font-bold text-[#1e3a34]">
               {generatedTitle || query}
             </span>
+            {isFromCache && (
+              <span className="whitespace-nowrap rounded-full bg-blue-100 px-2 py-1 text-[10px] font-bold text-blue-700 ml-2">
+                ⚡ From cache
+              </span>
+            )}
           </div>
         </div>
 

@@ -43,6 +43,37 @@ export async function POST(request) {
         let finalTitle = '';
 
         try {
+          // ─── Check Cache First ───
+          await dbConnect();
+          const { hashPrompt } = await import('@/lib/coursify/promptHasher');
+          const CoursifyResearch = (await import('@/models/CoursifyResearch')).default;
+
+          const promptHash = hashPrompt(topic.trim(), isReferenceEnabled);
+          const cachedResearch = await CoursifyResearch.findOne({
+            promptHash,
+            deletedAt: null,
+          });
+
+          if (cachedResearch) {
+            // ─── Cache Hit: Return Immediately ───
+            controller.enqueue(encodeEvent({ type: 'cache_hit', slug: cachedResearch.slug }));
+            controller.enqueue(encodeEvent({ type: 'title', text: cachedResearch.title }));
+            controller.enqueue(encodeEvent({ type: 'content', message: cachedResearch.content }));
+            controller.enqueue(
+              encodeEvent({
+                type: 'usage',
+                data: cachedResearch.usage,
+              })
+            );
+            controller.enqueue(
+              encodeEvent({ type: 'persist', slug: cachedResearch.slug, id: cachedResearch._id })
+            );
+            controller.enqueue(encodeEvent({ type: 'done' }));
+            controller.close();
+            return;
+          }
+
+          // ─── Cache Miss: Generate New Content ───
           const events = agentRegistry.streamExecute(AGENT_IDS.COURSIFY_SEARCH, {
             topic: topic.trim(),
             isReferenceEnabled: !!isReferenceEnabled,
@@ -64,10 +95,8 @@ export async function POST(request) {
 
           // ─── Persistence Logic ───
           if (finalContent) {
-            await dbConnect();
             const { slugify } = await import('@/utils/string');
             const { calculateEstimatedCostUSD } = await import('@/lib/agents/utils/pricing');
-            const CoursifyResearch = (await import('@/models/CoursifyResearch')).default;
 
             const estimatedCostUSD = calculateEstimatedCostUSD(
               totalUsage.promptTokens,
@@ -101,6 +130,7 @@ export async function POST(request) {
               title: baseTitle,
               content: finalContent,
               slug,
+              promptHash,
               usage: {
                 ...totalUsage,
                 estimatedCostUSD,

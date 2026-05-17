@@ -22,6 +22,10 @@ const CoursifyResearchSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    promptHash: {
+      type: String,
+      index: true,
+    },
     usage: {
       promptTokens: { type: Number, default: 0 },
       completionTokens: { type: Number, default: 0 },
@@ -32,6 +36,7 @@ const CoursifyResearchSchema = new mongoose.Schema(
       durationMs: { type: Number, default: 0 },
       agentId: { type: String, default: 'coursify_search' },
       provider: { type: String, default: 'pollinations' },
+      fromCache: { type: Boolean, default: false },
     },
     isPublic: {
       type: Boolean,
