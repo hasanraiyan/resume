@@ -11,6 +11,7 @@ import 'katex/dist/katex.min.css';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { MermaidDiagram } from './MermaidDiagram';
+import { KeywordTooltip } from '../KeywordTooltip';
 import { ExternalLink, Quote, Globe, Link2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // ==============================
@@ -121,6 +122,69 @@ const rehypeGroupFootnotes = () => (tree) => {
   };
 
   traverse(tree);
+};
+
+// ==============================
+// KEYWORD TOOLTIP PROCESSOR
+// ==============================
+
+const rehypeProcessKeywords = () => (tree) => {
+  const KEYWORD_PATTERN = /\[([^\]]+)\]\{def="([^"]+)"\}/;
+
+  const processNode = (node) => {
+    if (node.type === 'text') {
+      const matches = [...node.value.matchAll(new RegExp(KEYWORD_PATTERN, 'g'))];
+      if (matches.length === 0) return;
+
+      const newNodes = [];
+      let lastIndex = 0;
+
+      matches.forEach((match) => {
+        if (match.index > lastIndex) {
+          newNodes.push({
+            type: 'text',
+            value: node.value.substring(lastIndex, match.index),
+          });
+        }
+
+        newNodes.push({
+          type: 'element',
+          tagName: 'keyword',
+          properties: {
+            keyword: match[1],
+            definition: match[2],
+          },
+          children: [{ type: 'text', value: match[1] }],
+        });
+
+        lastIndex = match.index + match[0].length;
+      });
+
+      if (lastIndex < node.value.length) {
+        newNodes.push({
+          type: 'text',
+          value: node.value.substring(lastIndex),
+        });
+      }
+
+      return newNodes;
+    }
+
+    if (node.children && Array.isArray(node.children)) {
+      const newChildren = [];
+      node.children.forEach((child) => {
+        const processed = processNode(child);
+        if (Array.isArray(processed)) {
+          newChildren.push(...processed);
+        } else {
+          newChildren.push(child);
+        }
+      });
+      node.children = newChildren;
+    }
+  };
+
+  processNode(tree);
 };
 
 function FootnotePopover({ href, identifiers, children, ...props }) {
@@ -401,7 +465,7 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({ content, isInli
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[rehypeRaw, rehypeKatex, rehypeGroupFootnotes]}
+        rehypePlugins={[rehypeRaw, rehypeKatex, rehypeGroupFootnotes, rehypeProcessKeywords]}
         components={{
           h1: createHeading('h1'),
           h2: createHeading('h2'),
@@ -409,6 +473,9 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({ content, isInli
           h4: createHeading('h4'),
           a: FootnotePopover,
           'grouped-footnote': FootnotePopover,
+          keyword({ keyword, definition }) {
+            return <KeywordTooltip keyword={keyword} definition={definition} />;
+          },
           table({ children }) {
             return (
               <div className="coursify-table-scroll overflow-x-auto my-7 rounded-xl border border-[#e5e3d8]">

@@ -1,0 +1,100 @@
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import ReactDOM from 'react-dom';
+
+export function KeywordTooltip({ keyword, definition }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [popoverStyle, setPopoverStyle] = useState({});
+  const [arrowStyle, setArrowStyle] = useState({});
+
+  const triggerRef = useRef(null);
+  const timeoutRef = useRef(null);
+
+  const updatePosition = () => {
+    if (!triggerRef.current) return;
+
+    const rect = triggerRef.current.getBoundingClientRect();
+    const popoverWidth = 280;
+    const padding = 16;
+    const viewportWidth = window.innerWidth;
+
+    let left = rect.left + rect.width / 2 - popoverWidth / 2;
+
+    if (left + popoverWidth > viewportWidth - padding) {
+      left = viewportWidth - popoverWidth - padding;
+    }
+    if (left < padding) {
+      left = padding;
+    }
+
+    setPopoverStyle({
+      top: rect.top + window.scrollY - 8,
+      left: left + window.scrollX,
+      width: popoverWidth,
+    });
+
+    const triggerCenterRelative = rect.left + rect.width / 2 - left;
+    setArrowStyle({
+      left: triggerCenterRelative,
+    });
+  };
+
+  const handleMouseEnter = () => {
+    clearTimeout(timeoutRef.current);
+    updatePosition();
+    setIsOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    timeoutRef.current = setTimeout(() => {
+      setIsOpen(false);
+    }, 200);
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [isOpen]);
+
+  return (
+    <span
+      className="relative inline-block"
+      ref={triggerRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <span className="border-b-2 border-dotted border-[#1f644e] text-[#1f644e] font-medium cursor-help transition-all px-0.5 rounded">
+        {keyword}
+      </span>
+
+      {isOpen &&
+        typeof document !== 'undefined' &&
+        ReactDOM.createPortal(
+          <div
+            className="absolute z-[999999] -translate-y-full pb-2 animate-in fade-in zoom-in-95 duration-200"
+            style={popoverStyle}
+            onMouseEnter={() => {
+              clearTimeout(timeoutRef.current);
+              setIsOpen(true);
+            }}
+            onMouseLeave={handleMouseLeave}
+          >
+            <div className="overflow-hidden rounded-xl border border-[#e5e3d8] bg-white p-3 shadow-2xl">
+              <p className="text-xs leading-relaxed text-[#1e3a34]">{definition}</p>
+              <div
+                className="absolute top-full border-4 border-transparent border-t-white"
+                style={arrowStyle}
+              />
+            </div>
+          </div>,
+          document.body
+        )}
+    </span>
+  );
+}

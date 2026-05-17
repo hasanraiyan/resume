@@ -113,7 +113,16 @@ url: "https://www.youtube.com/watch?v=..."
 - IMPORTANT: If you need a video, you MUST use the youtube_search tool and select the most relevant video URL from the results.
 - DO NOT summarize or talk about your process. Just execute tool calls then output markdown.
 - MANDATORY: If a tool is needed, you are failing your job if you don't use it. SEARCH FIRST.
-- IMPORTANT: Always perform search first to get accurate up-to-date info.`;
+- IMPORTANT: Always perform search first to get accurate up-to-date info.
+
+## Keyword Definitions (Interactive Learning)
+- Use [keyword]{def="clear, concise definition"} syntax for important technical terms throughout content
+- Keep definitions under 150 characters, plain text only (no markdown formatting)
+- Add 3-5 key terms per major section for better learning
+- Example: [Algorithm]{def="A step-by-step procedure for solving a problem or performing a computation"}
+- Place keywords naturally in sentences where they're first introduced
+- DO NOT define common words; focus on domain-specific or technical terms
+`;
 
 class CoursifySearchAgent extends BaseAgent {
   constructor(agentId = AGENT_IDS.COURSIFY_SEARCH, config = {}) {
@@ -131,10 +140,11 @@ class CoursifySearchAgent extends BaseAgent {
   async *_onStreamExecute(input) {
     const { topic, isReferenceEnabled } = input;
 
-    this.logger.info(`🚀 Starting CoursifySearchAgent for topic: "${topic.substring(0, 50)}..."`);
+    const topicPreview = topic.substring(0, 50);
+    this.logger.info(`Starting CoursifySearchAgent for topic: "${topicPreview}..."`);
 
     const llm = await this.createChatModel();
-    this.logger.debug('✅ Chat model created');
+    this.logger.debug('Chat model created');
 
     // Load self-healing, load-balanced tools from the Managed Provider
     // FALLBACK: Use AGENT_TOOLS constant if DB config has no tools enabled
@@ -150,7 +160,7 @@ class CoursifySearchAgent extends BaseAgent {
       llm,
       tools,
     });
-    this.logger.debug(`✅ ReAct agent created with ${tools.length} tools`);
+    this.logger.debug(`ReAct agent created with ${tools.length} tools`);
     tools.forEach((tool, idx) => {
       const toolName = tool.name || tool.lc_id?.[tool.lc_id.length - 1] || 'unknown';
       this.logger.debug(`  Tool ${idx + 1}: ${toolName}`);
@@ -238,7 +248,7 @@ class CoursifySearchAgent extends BaseAgent {
         }
       }
     } catch (err) {
-      this.logger.error(`❌ Agent execution failed: ${err.message}`);
+      this.logger.error(`Agent execution failed: ${err.message}`);
       throw err;
     }
   }
