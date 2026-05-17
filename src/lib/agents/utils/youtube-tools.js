@@ -54,6 +54,34 @@ export const youtubeSearch = tool(
 
       return JSON.stringify(videos);
     } catch (error) {
+      if (error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT') {
+        console.warn(`[YouTubeTool] Network error (${error.code}), retrying...`);
+        // Single retry for transient errors
+        const res = await yt.search.list({
+          part: ['snippet'],
+          q: `${query} educational`,
+          type: ['video'],
+          maxResults,
+          safeSearch: 'moderate',
+          relevanceLanguage: 'en',
+        });
+
+        if (!res.data.items || res.data.items.length === 0) {
+          return 'No relevant videos found for this topic.';
+        }
+
+        const videos = res.data.items.map((item) => ({
+          title: item.snippet?.title,
+          description: item.snippet?.description,
+          videoId: item.id?.videoId,
+          url: `https://www.youtube.com/watch?v=${item.id?.videoId}`,
+          thumbnail:
+            item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url,
+          channelTitle: item.snippet?.channelTitle,
+        }));
+
+        return JSON.stringify(videos);
+      }
       console.error('[YouTubeTool] Search failed:', error);
       return `YouTube API error: ${error.message}`;
     }

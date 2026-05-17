@@ -1,18 +1,17 @@
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
-import { HumanMessage, SystemMessage } from '@langchain/core/messages';
+import { HumanMessage } from '@langchain/core/messages';
+import { PromptTemplate } from '@langchain/core/prompts';
 import BaseAgent from '../BaseAgent';
 import { AGENT_IDS, getAgentTools } from '@/lib/constants/agents';
 import managedToolProvider from '../utils/ManagedToolProvider';
 
-const SYSTEM_PROMPT = `
+const SYSTEM_PROMPT_TEMPLATE = `
 You are a Coursify AI Course Content Generator. Your job is to research a topic using web search and then generate a reponse to user query in the Coursify markdown format.
 
 ## Response Generation Process (MANDATORY)
 1. START your response with a clear, academic # Title header.
-2. SEARCH the web 2-4 times using different specific queries with **tavily_search**.
-3. If search results contain highly relevant technical documentation or long articles, use **firecrawl_scrape** to read those pages deeply.
-4. MANDATORY: For any [VideoBlock] you plan to generate, you MUST use **youtube_search** tool to find actual video links. DO NOT try to find YouTube videos via tavily_search. Always use the youtube_search tool directly.
-5. After gathering info, OUTPUT the full Coursify markdown content. Do NOT ask questions.
+2. SEARCH the web 2-4 times using different specific queries with the **{SEARCH_TOOL}** tool. Use different queries each time for broad coverage.
+3. After gathering info, OUTPUT the full Coursify markdown content. Do NOT ask questions.
 
 ## Coursify Markdown Format
 All content must use ## [BlockType] headers. Generate blocks as required.
@@ -96,7 +95,7 @@ url: "https://www.youtube.com/watch?v=..."
 ## Quality Rules
 - MANDATORY: If a [VideoBlock] is included, place it immediately AFTER the first introductory [MdBlock].
 - MANDATORY: [VideoBlock] URLs MUST be direct links to a specific video (e.g., https://www.youtube.com/watch?v=...).
-- MANDATORY: To find video URLs, you MUST call the **youtube_search** tool. Do NOT try to find videos via tavily_search web search.
+- MANDATORY: To find video URLs, you MUST call the **youtube_search** tool. Do NOT try to find videos via {SEARCH_TOOL}.
 - FORBIDDEN: Do NOT use YouTube search result URLs (e.g., youtube.com/results?search_query=...). You MUST pick a specific video from tool results.
 - MANDATORY: Use at least 5 different block types
 - MANDATORY: End with a [QuizBlock] containing 3-5 questions
@@ -124,6 +123,19 @@ url: "https://www.youtube.com/watch?v=..."
 - DO NOT define common words; focus on domain-specific or technical terms
 `;
 
+const REFERENCE_ADDENDUM = `
+
+## Reference System (Wikipedia-style) - MANDATORY
+- Use inline citations like [^1], [^2] within the text of ANY block.
+- MANDATORY: Every major claim, statistic, or technical detail must be backed by a search result citation.
+- MANDATORY: Provide the corresponding footnote definitions ONLY ONCE at the VERY END.
+  [^1]: [Source Title](Source URL) - Brief description.`;
+
+const SEARCH_ENGINES = [
+  { toolName: 'tavily_search', filterName: 'firecrawl_scrape' },
+  { toolName: 'firecrawl_scrape', filterName: 'tavily_search' },
+];
+
 class CoursifySearchAgent extends BaseAgent {
   constructor(agentId = AGENT_IDS.COURSIFY_SEARCH, config = {}) {
     super(agentId, config);
@@ -143,46 +155,50 @@ class CoursifySearchAgent extends BaseAgent {
     const topicPreview = topic.substring(0, 50);
     this.logger.info(`Starting CoursifySearchAgent for topic: "${topicPreview}..."`);
 
+    // Randomly pick search engine
+    const chosen = SEARCH_ENGINES[Math.floor(Math.random() * SEARCH_ENGINES.length)];
+    this.logger.info(`Selected search engine: ${chosen.toolName}`);
+
     const llm = await this.createChatModel();
     this.logger.debug('Chat model created');
 
-    // Load self-healing, load-balanced tools from the Managed Provider
-    // FALLBACK: Use AGENT_TOOLS constant if DB config has no tools enabled
+    // Load tools, exclude the non-chosen search engine
     let enabledToolIds = this.config.tools || [];
     if (enabledToolIds.length === 0) {
       enabledToolIds = getAgentTools(this.agentId);
       this.logger.debug(`Using default tools from constants: ${enabledToolIds.join(', ')}`);
     }
 
-    const tools = await managedToolProvider.getTools(enabledToolIds, this.logger);
+    const allTools = await managedToolProvider.getTools(enabledToolIds, this.logger);
+    const tools = allTools.filter((t) => t.name !== chosen.filterName);
 
-    const contentAgent = createReactAgent({
-      llm,
-      tools,
-    });
-    this.logger.debug(`ReAct agent created with ${tools.length} tools`);
+    this.logger.debug(
+      `ReAct agent created with ${tools.length} tools (filtered out: ${chosen.filterName})`
+    );
     tools.forEach((tool, idx) => {
       const toolName = tool.name || tool.lc_id?.[tool.lc_id.length - 1] || 'unknown';
       this.logger.debug(`  Tool ${idx + 1}: ${toolName}`);
     });
 
-    let dynamicSystemPrompt = SYSTEM_PROMPT;
-    if (isReferenceEnabled) {
-      dynamicSystemPrompt += `
+    // Build prompt from template
+    const promptTemplate = PromptTemplate.fromTemplate(SYSTEM_PROMPT_TEMPLATE);
+    let systemPrompt = await promptTemplate.format({ SEARCH_TOOL: chosen.toolName });
 
-## Reference System (Wikipedia-style) - MANDATORY
-- Use inline citations like [^1], [^2] within the text of ANY block.
-- MANDATORY: Every major claim, statistic, or technical detail must be backed by a search result citation.
-- MANDATORY: Provide the corresponding footnote definitions ONLY ONCE at the VERY END.
-  [^1]: [Source Title](Source URL) - Brief description.`;
+    if (isReferenceEnabled) {
+      systemPrompt += REFERENCE_ADDENDUM;
     }
 
     const contentMessages = [
-      new SystemMessage({ content: dynamicSystemPrompt }),
+      new HumanMessage({ role: 'system', content: systemPrompt }),
       new HumanMessage({
         content: `Research and generate a comprehensive Coursify course section on: "${topic}"\n\nSearch for detailed information first, then write the full Coursify markdown content.`,
       }),
     ];
+
+    const contentAgent = createReactAgent({
+      llm,
+      tools,
+    });
 
     try {
       const stream = await contentAgent.streamEvents(
@@ -193,11 +209,9 @@ class CoursifySearchAgent extends BaseAgent {
       for await (const event of stream) {
         const { event: type, data, name } = event;
 
-        // Support both OpenAI and Gemini stream formats
         const content = data.chunk?.content || data.chunk?.text || '';
 
         if (type === 'on_chat_model_stream' && content && name !== 'ChatPromptTemplate') {
-          // Normalize content if it's an array (sometimes happens with certain models)
           const message = typeof content === 'string' ? content : JSON.stringify(content);
           yield { type: 'content', message };
         } else if (type === 'on_tool_start') {
@@ -223,9 +237,8 @@ class CoursifySearchAgent extends BaseAgent {
         } else if (type === 'on_chat_model_start') {
           yield { type: 'status', message: '' };
         } else if (type === 'on_chat_model_end') {
-          // Robust usage extraction for OpenAI and Gemini
           const usage =
-            data.output?.usage_metadata || // Gemini format
+            data.output?.usage_metadata ||
             data.output?.usage ||
             data.output?.response_metadata?.tokenUsage ||
             data.output?.response_metadata?.usage;

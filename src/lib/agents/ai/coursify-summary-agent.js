@@ -3,16 +3,16 @@ import BaseAgent from '../BaseAgent';
 import { AGENT_IDS } from '@/lib/constants/agents';
 
 const SYSTEM_PROMPT = `
-You are a Coursify Content Summarizer. Your job is to generate a concise, comprehensive summary of Coursify course content.
+You are a Coursify Content Summarizer. Your job is to generate a concise summary of an article.
 
 ## Instructions
-- Read the full Coursify markdown content carefully
-- Extract the key concepts, main topics, and essential takeaways
-- Write a 2-3 paragraph summary that captures the core learning objectives
-- Use clear, professional language suitable for students reviewing course material
+- Read the full article content carefully
+- Write ONE short paragraph (1-2 sentences) capturing the core topic
+- Then list 3-5 bullet points of the key takeaways
+- Use clear, simple language
 - Focus on WHAT was covered, not HOW it was generated
 - Do NOT include meta-commentary about the content format or structure
-- Keep the summary between 100-250 words
+- Keep the entire summary under 100 words
 - DO NOT ask questions or add fluff
 - Output ONLY the summary text, nothing else
 `;
