@@ -37,7 +37,7 @@ importers:
         version: 31.0.0
       '@langchain/community':
         specifier: ^1.1.28
-        version: 1.1.28(@browserbasehq/sdk@2.11.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.60.0)(deepmerge@4.3.1)(dotenv@17.4.2)(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(zod@4.4.3))(@ibm-cloud/watsonx-ai@1.7.12)(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))(@qdrant/js-client-rest@1.18.0(typescript@6.0.3))(@upstash/redis@1.38.0)(cheerio@1.2.0)(d3-dsv@3.0.1)(google-auth-library@10.6.2)(ibm-cloud-sdk-core@5.4.19)(ignore@7.0.5)(jsonwebtoken@9.0.3)(lodash@4.18.1)(mongodb@6.21.0)(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(playwright@1.60.0)(ws@8.20.1)
+        version: 1.1.28(@browserbasehq/sdk@2.11.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.60.0)(deepmerge@4.3.1)(dotenv@17.4.2)(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(zod@4.4.3))(@ibm-cloud/watsonx-ai@1.7.12)(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))(@mendable/firecrawl-js@0.0.36)(@qdrant/js-client-rest@1.18.0(typescript@6.0.3))(@upstash/redis@1.38.0)(cheerio@1.2.0)(d3-dsv@3.0.1)(google-auth-library@10.6.2)(ibm-cloud-sdk-core@5.4.19)(ignore@7.0.5)(jsonwebtoken@9.0.3)(lodash@4.18.1)(mongodb@6.21.0)(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(playwright@1.60.0)(ws@8.20.1)
       '@langchain/core':
         specifier: ^1.1.46
         version: 1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1)
@@ -59,6 +59,9 @@ importers:
       '@langchain/tavily':
         specifier: ^1.2.0
         version: 1.2.0(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))
+      '@mendable/firecrawl-js':
+        specifier: 0.0.36
+        version: 0.0.36
       '@modelcontextprotocol/sdk':
         specifier: ^1.27.1
         version: 1.29.0(@cfworker/json-schema@4.1.1)(zod@4.4.3)
@@ -1291,6 +1294,9 @@ packages:
     engines: {node: '>=20'}
     peerDependencies:
       '@langchain/core': ^1.0.0
+
+  '@mendable/firecrawl-js@0.0.36':
+    resolution: {integrity: sha512-5zQMWUD49r6Q7cxj+QBthQ964Bm9fMooW4E8E4nIca3BMXCeEuQFVf5C3OEWwZf0SjJvR+5Yx2wUbXJWd1wCOA==}
 
   '@mermaid-js/parser@1.1.1':
     resolution: {integrity: sha512-VuHdsYMK1bT6X2JbcAaWAhugTRvRBRyuZgd+c22swUeI9g/ntaxF7CY7dYarhZovofCbUNO0G7JesfmNtjYOCw==}
@@ -5836,6 +5842,11 @@ packages:
     deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
+  uuid@9.0.1:
+    resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+    hasBin: true
+
   uzip@0.20201231.0:
     resolution: {integrity: sha512-OZeJfZP+R0z9D6TmBgLq2LHzSSptGMGDGigGiEe0pr8UBe/7fdflgHlHBNDASTXB5jnFuxHpNaJywSg8YFeGng==}
 
@@ -5991,6 +6002,9 @@ packages:
     resolution: {integrity: sha512-O/PgfnpT1xKSDeQYSCfRI5Gy3hPf91mKVDuYLUHZJMiDFptvP41MSnWofm8dnCm0256ZNfZIM7DSzuSMAFnjHA==}
     peerDependencies:
       zod: ^3.25.28 || ^4
+
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
   zod@4.4.3:
     resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
@@ -6456,7 +6470,7 @@ snapshots:
       - openai
       - ws
 
-  '@langchain/community@1.1.28(@browserbasehq/sdk@2.11.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.60.0)(deepmerge@4.3.1)(dotenv@17.4.2)(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(zod@4.4.3))(@ibm-cloud/watsonx-ai@1.7.12)(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))(@qdrant/js-client-rest@1.18.0(typescript@6.0.3))(@upstash/redis@1.38.0)(cheerio@1.2.0)(d3-dsv@3.0.1)(google-auth-library@10.6.2)(ibm-cloud-sdk-core@5.4.19)(ignore@7.0.5)(jsonwebtoken@9.0.3)(lodash@4.18.1)(mongodb@6.21.0)(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(playwright@1.60.0)(ws@8.20.1)':
+  '@langchain/community@1.1.28(@browserbasehq/sdk@2.11.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.60.0)(deepmerge@4.3.1)(dotenv@17.4.2)(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(zod@4.4.3))(@ibm-cloud/watsonx-ai@1.7.12)(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))(@mendable/firecrawl-js@0.0.36)(@qdrant/js-client-rest@1.18.0(typescript@6.0.3))(@upstash/redis@1.38.0)(cheerio@1.2.0)(d3-dsv@3.0.1)(google-auth-library@10.6.2)(ibm-cloud-sdk-core@5.4.19)(ignore@7.0.5)(jsonwebtoken@9.0.3)(lodash@4.18.1)(mongodb@6.21.0)(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(playwright@1.60.0)(ws@8.20.1)':
     dependencies:
       '@browserbasehq/stagehand': 1.14.0(@playwright/test@1.60.0)(deepmerge@4.3.1)(dotenv@17.4.2)(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(zod@4.4.3)
       '@ibm-cloud/watsonx-ai': 1.7.12
@@ -6474,6 +6488,7 @@ snapshots:
       zod: 4.4.3
     optionalDependencies:
       '@browserbasehq/sdk': 2.11.0
+      '@mendable/firecrawl-js': 0.0.36
       '@qdrant/js-client-rest': 1.18.0(typescript@6.0.3)
       '@upstash/redis': 1.38.0
       cheerio: 1.2.0
@@ -6604,6 +6619,16 @@ snapshots:
     dependencies:
       '@langchain/core': 1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1)
       js-tiktoken: 1.0.21
+
+  '@mendable/firecrawl-js@0.0.36':
+    dependencies:
+      axios: 1.15.2
+      dotenv: 16.4.5
+      uuid: 9.0.1
+      zod: 3.25.76
+      zod-to-json-schema: 3.25.2(zod@3.25.76)
+    transitivePeerDependencies:
+      - debug
 
   '@mermaid-js/parser@1.1.1':
     dependencies:
@@ -7627,7 +7652,7 @@ snapshots:
 
   axe-core@4.11.4: {}
 
-  axios@1.15.2(debug@4.3.4):
+  axios@1.15.2:
     dependencies:
       follow-redirects: 1.16.0(debug@4.4.3)
       form-data: 4.0.5
@@ -9252,7 +9277,7 @@ snapshots:
       '@types/debug': 4.1.12
       '@types/node': 18.19.80
       '@types/tough-cookie': 4.0.0
-      axios: 1.15.2(debug@4.3.4)
+      axios: 1.15.2
       camelcase: 6.3.0
       debug: 4.3.4
       dotenv: 16.4.5
@@ -11055,7 +11080,7 @@ snapshots:
 
   retry-axios@2.6.0(axios@1.15.2(debug@4.3.4)):
     dependencies:
-      axios: 1.15.2(debug@4.3.4)
+      axios: 1.15.2
 
   retry@0.13.1: {}
 
@@ -11737,6 +11762,8 @@ snapshots:
 
   uuid@8.3.2: {}
 
+  uuid@9.0.1: {}
+
   uzip@0.20201231.0: {}
 
   vary@1.1.2: {}
@@ -11905,9 +11932,15 @@ snapshots:
       compress-commons: 6.0.2
       readable-stream: 4.7.0
 
+  zod-to-json-schema@3.25.2(zod@3.25.76):
+    dependencies:
+      zod: 3.25.76
+
   zod-to-json-schema@3.25.2(zod@4.4.3):
     dependencies:
       zod: 4.4.3
+
+  zod@3.25.76: {}
 
   zod@4.4.3: {}
 

@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Loader2,
   Save,
+  Copy,
 } from 'lucide-react';
 import { Card } from '@/components/custom-ui';
 import { toast } from 'sonner';
@@ -33,6 +34,15 @@ const TOOLS_LIST = [
     placeholder: 'AIza...',
     docsUrl: 'https://console.cloud.google.com/apis/library/youtube.googleapis.com',
   },
+  {
+    id: 'firecrawl',
+    name: 'Firecrawl',
+    description: 'Deep website reader. Converts any URL into clean Markdown for LLMs.',
+    icon: Globe,
+    keyName: 'FIRECRAWL_API_KEY',
+    placeholder: 'fc-...',
+    docsUrl: 'https://firecrawl.dev',
+  },
 ];
 
 export default function ToolsTab() {
@@ -40,6 +50,9 @@ export default function ToolsTab() {
   const [loading, setLoading] = useState(true);
   const [savingKey, setSavingKey] = useState(null); // stores keyName being saved
   const [formValues, setFormValues] = useState({});
+  const [usageStats, setUsageStats] = useState({});
+
+  const [showPoolDetails, setShowPoolDetails] = useState({});
 
   const fetchSettings = async () => {
     try {
@@ -69,10 +82,12 @@ export default function ToolsTab() {
             initialForm[`${tool.keyName}_rpm`] = config.rpm || 4;
             initialForm[`${tool.keyName}_rpd`] = config.rpd || 1000;
             initialForm[`${tool.keyName}_rpmnt`] = config.rpmnt || 1000;
+            initialForm[`${tool.keyName}_isActive`] = config.isActive !== false;
           } else {
             initialForm[`${tool.keyName}_rpm`] = 4;
             initialForm[`${tool.keyName}_rpd`] = 1000;
             initialForm[`${tool.keyName}_rpmnt`] = 1000;
+            initialForm[`${tool.keyName}_isActive`] = true;
           }
         });
         setFormValues((prev) => ({ ...prev, ...initialForm }));
@@ -84,15 +99,71 @@ export default function ToolsTab() {
     }
   };
 
+  const fetchUsage = async (toolId, keyName) => {
+    try {
+      const res = await fetch(`/api/admin/tools/usage?toolId=${toolId}&keyName=${keyName}`);
+      if (res.ok) {
+        const { results } = await res.json();
+
+        // SMART AGGREGATION: Detect shared quotas but be careful with fresh (0 usage) accounts
+        const seenAccounts = [];
+        const aggregated = results.reduce(
+          (acc, curr) => {
+            if (curr.error) return acc;
+
+            // Fingerprint: usage-limit-plan
+            const fingerprint = `${curr.used}-${curr.total}-${curr.plan}`;
+
+            // If usage is 0, we can't reliably detect shared accounts, so assume unique
+            // If usage > 0, check if we've seen this exact fingerprint before
+            const isDuplicate = curr.used > 0 && seenAccounts.includes(fingerprint);
+
+            if (isDuplicate) {
+              return acc;
+            }
+
+            seenAccounts.push(fingerprint);
+
+            return {
+              used: acc.used + (curr.used || 0),
+              total: acc.total + (curr.total || 0),
+              remaining: acc.remaining + (curr.remaining || 0),
+              resetDate: curr.resetDate || acc.resetDate,
+            };
+          },
+          { used: 0, total: 0, remaining: 0, resetDate: null }
+        );
+
+        setUsageStats((prev) => ({
+          ...prev,
+          [toolId]: { ...aggregated, details: results, accountCount: seenAccounts.length },
+        }));
+      }
+    } catch (err) {
+      console.error(`Failed to fetch usage for ${toolId}:`, err);
+    }
+  };
+
   useEffect(() => {
     fetchSettings();
   }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      TOOLS_LIST.forEach((tool) => {
+        if (settings[tool.keyName]) {
+          fetchUsage(tool.id, tool.keyName);
+        }
+      });
+    }
+  }, [loading, settings]);
 
   const handleSave = async (tool) => {
     const keysValue = formValues[tool.keyName];
     const rpm = parseInt(formValues[`${tool.keyName}_rpm`]);
     const rpd = parseInt(formValues[`${tool.keyName}_rpd`]);
     const rpmnt = parseInt(formValues[`${tool.keyName}_rpmnt`]);
+    const isActive = formValues[`${tool.keyName}_isActive`];
 
     if (!keysValue?.trim()) return;
 
@@ -104,6 +175,7 @@ export default function ToolsTab() {
         rpm: isNaN(rpm) ? 4 : rpm,
         rpd: isNaN(rpd) ? 1000 : rpd,
         rpmnt: isNaN(rpmnt) ? 1000 : rpmnt,
+        isActive: isActive !== false,
       };
 
       const res = await fetch('/api/admin/settings', {
@@ -164,7 +236,11 @@ export default function ToolsTab() {
           return (
             <Card
               key={tool.id}
-              className="p-6 border-2 border-neutral-100 bg-white rounded-2xl flex flex-col h-full overflow-hidden"
+              className={`p-6 border-2 rounded-2xl flex flex-col h-full overflow-hidden transition-all ${
+                formValues[`${tool.keyName}_isActive`]
+                  ? 'border-neutral-100 bg-white'
+                  : 'border-neutral-200 bg-neutral-50/50 grayscale-[0.5] opacity-80'
+              }`}
             >
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-4">
@@ -178,9 +254,32 @@ export default function ToolsTab() {
                     <Icon size={24} />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg text-neutral-900">{tool.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-lg text-neutral-900">{tool.name}</h3>
+                      <button
+                        onClick={() =>
+                          setFormValues({
+                            ...formValues,
+                            [`${tool.keyName}_isActive`]: !formValues[`${tool.keyName}_isActive`],
+                          })
+                        }
+                        className={`w-8 h-4 rounded-full relative transition-colors duration-200 ${
+                          formValues[`${tool.keyName}_isActive`] ? 'bg-[#1f644e]' : 'bg-neutral-300'
+                        }`}
+                      >
+                        <div
+                          className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-transform duration-200 ${
+                            formValues[`${tool.keyName}_isActive`] ? 'left-4.5' : 'left-0.5'
+                          }`}
+                        />
+                      </button>
+                    </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      {isConfigured ? (
+                      {!formValues[`${tool.keyName}_isActive`] ? (
+                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-tight">
+                          Globally Disabled
+                        </span>
+                      ) : isConfigured ? (
                         <>
                           <CheckCircle2 size={12} className="text-emerald-600" />
                           <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-tight">
@@ -209,6 +308,76 @@ export default function ToolsTab() {
               </div>
 
               <p className="text-sm text-neutral-600 mb-6 flex-1">{tool.description}</p>
+
+              {/* Live Usage Stats */}
+              {usageStats[tool.id] && !usageStats[tool.id].error && (
+                <div className="mb-6 space-y-2">
+                  <div className="grid grid-cols-2 gap-4 p-3 bg-neutral-50 rounded-xl border border-neutral-100">
+                    <div>
+                      <span className="block text-[9px] font-bold text-neutral-400 uppercase tracking-tighter mb-0.5">
+                        Total Pool Usage
+                      </span>
+                      <div className="flex items-end gap-1">
+                        <span className="text-sm font-bold text-neutral-800">
+                          {usageStats[tool.id].used.toLocaleString()}
+                        </span>
+                        <span className="text-[10px] text-neutral-400 mb-0.5">
+                          / {usageStats[tool.id].total.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-neutral-400 uppercase tracking-tighter mb-0.5">
+                        Pool Refresh
+                      </span>
+                      <span className="text-xs font-semibold text-neutral-700">
+                        {usageStats[tool.id].resetDate
+                          ? new Date(usageStats[tool.id].resetDate).toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                            })
+                          : 'Monthly'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {usageStats[tool.id].details?.length > 1 && (
+                    <button
+                      onClick={() =>
+                        setShowPoolDetails((prev) => ({ ...prev, [tool.id]: !prev[tool.id] }))
+                      }
+                      className="text-[10px] font-bold text-[#1f644e] uppercase px-1 hover:underline"
+                    >
+                      {showPoolDetails[tool.id] ? 'Hide Pool Details' : 'View Pool Details'}
+                    </button>
+                  )}
+
+                  {showPoolDetails[tool.id] && (
+                    <div className="mt-2 space-y-1.5 p-3 bg-neutral-50/50 rounded-xl border border-neutral-100 animate-in slide-in-from-top-1 duration-200">
+                      {usageStats[tool.id].details.map((detail, idx) => (
+                        <div key={idx} className="flex items-center justify-between text-[11px]">
+                          <div className="flex items-center gap-2">
+                            <div className="w-1 h-1 rounded-full bg-[#1f644e]" />
+                            <span className="font-mono text-neutral-500">{detail.keyId}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-neutral-400">
+                              {detail.error ? (
+                                <span className="text-red-500">Failed: {detail.error}</span>
+                              ) : (
+                                <>
+                                  <strong className="text-neutral-700">{detail.used}</strong> /{' '}
+                                  {detail.total}
+                                </>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="space-y-4 pt-4 border-t border-neutral-50">
                 <div className="grid grid-cols-3 gap-3">

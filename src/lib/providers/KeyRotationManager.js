@@ -130,15 +130,30 @@ class KeyRotationManager {
     if (!redis) return;
 
     const key = `throttled:${poolId}:${internalId}`;
-    // If credit related, default to end of month
-    const expirySeconds = customCooldownMs
-      ? Math.round(customCooldownMs / 1000)
-      : this._getSecondsToNextMonth();
+
+    let expirySeconds = 0;
+
+    if (customCooldownMs) {
+      expirySeconds = Math.round(customCooldownMs / 1000);
+    } else {
+      // 1. Check if we have a real reset date synced from the provider for this key
+      const resetDateKey = `reset_date:${poolId}:${internalId}`;
+      const savedResetDate = await redis.get(resetDateKey);
+
+      if (savedResetDate) {
+        expirySeconds = Math.floor((new Date(savedResetDate) - new Date()) / 1000);
+      }
+
+      // 2. Fallback to generic next-month calculation if no real date exists
+      if (expirySeconds <= 0) {
+        expirySeconds = this._getSecondsToNextMonth();
+      }
+    }
 
     try {
       await redis.set(key, 'true', { ex: expirySeconds });
       console.log(
-        `[KeyRotationManager] Key ${internalId} throttled globally for ${expirySeconds}s`
+        `[KeyRotationManager] Key ${internalId} throttled globally for ${expirySeconds}s (until reset)`
       );
     } catch (e) {
       console.warn('[KeyRotationManager] Redis markThrottled failed:', e.message);

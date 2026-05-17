@@ -344,7 +344,7 @@ export const AGENT_TOOLS = {
   [AGENT_IDS.ENGAGEMENT_ANALYZER]: ['pattern_recognition', 'insights_generation'],
   [AGENT_IDS.APP_BUILDER]: ['planning', 'html_generation', 'code_review'],
   [AGENT_IDS.FINANCE_ASSISTANT]: ['conversation'],
-  [AGENT_IDS.COURSIFY_SEARCH]: ['tavily_search', 'youtube_search'],
+  [AGENT_IDS.COURSIFY_SEARCH]: ['tavily_search', 'youtube_search', 'firecrawl_scrape'],
 };
 
 /**

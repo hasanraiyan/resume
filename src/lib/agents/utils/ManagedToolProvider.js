@@ -1,5 +1,6 @@
 import { TavilySearch } from '@langchain/tavily';
 import { youtubeSearch } from './youtube-tools';
+import { firecrawlScrape } from './firecrawl-tool';
 import dynamicSettingsManager from '@/lib/DynamicSettingsManager';
 import keyRotationManager from '@/lib/providers/KeyRotationManager';
 
@@ -40,9 +41,76 @@ class ManagedToolProvider {
         return await this._getTavilySearch(logger);
       case 'youtube_search':
         return await this._getYoutubeSearch(logger);
+      case 'firecrawl_scrape':
+        return await this._getFirecrawlScrape(logger);
       default:
         return null;
     }
+  }
+
+  /**
+   * Configure Firecrawl with Rotation and Monthly Credit Discovery
+   * @private
+   */
+  async _getFirecrawlScrape(logger) {
+    const config = await dynamicSettingsManager.get('FIRECRAWL_API_KEY');
+    if (!config) {
+      logger.warn('⚠️ FIRECRAWL_API_KEY missing from database.');
+      return null;
+    }
+
+    // 1. Check Global Active State
+    const isObject = typeof config === 'object' && !Array.isArray(config);
+    if (isObject && config.isActive === false) {
+      logger.warn('🚫 Firecrawl is globally disabled in Tools Settings.');
+      return null;
+    }
+
+    // 2. Extract Keys & Limits
+    const keys = isObject ? config.keys : config;
+    const limits = isObject ? { rpm: config.rpm, rpd: config.rpd, rpmnt: config.rpmnt } : {};
+
+    // 3. Register with Global Rotation Manager
+    keyRotationManager.registerToolPool('FIRECRAWL_SCRAPE', keys, 'Firecrawl', limits);
+
+    // 4. Pick Next Available Key Globally
+    const pooled = await keyRotationManager.getNextProvider('FIRECRAWL_SCRAPE');
+    if (!pooled?.apiKey) {
+      logger.warn('⚠️ No available Firecrawl keys in pool (limits reached).');
+      return null;
+    }
+
+    // 5. Injected key into configurable field of the tool
+    const tool = firecrawlScrape;
+
+    // 6. Wrap with "Limit Discovery" Logic
+    const originalInvoke = tool.invoke.bind(tool);
+    tool.invoke = async (input, callConfig) => {
+      const configWithKey = {
+        ...callConfig,
+        configurable: { ...callConfig?.configurable, apiKey: pooled.apiKey },
+      };
+
+      try {
+        return await originalInvoke(input, configWithKey);
+      } catch (err) {
+        const msg = err.message?.toLowerCase() || '';
+        // 402 = Payment Required / Credits Empty
+        if (
+          err.status === 429 ||
+          err.status === 402 ||
+          msg.includes('limit') ||
+          msg.includes('credit')
+        ) {
+          logger.warn(`🛑 Firecrawl key ${pooled.internalId} hit a limit! Throttling globally.`);
+          await keyRotationManager.markThrottled('FIRECRAWL_SCRAPE', pooled.internalId);
+        }
+        throw err;
+      }
+    };
+
+    logger.info(`✅ Firecrawl Tool ready (using ${pooled.internalId})`);
+    return tool;
   }
 
   /**
@@ -56,15 +124,21 @@ class ManagedToolProvider {
       return null;
     }
 
-    // 1. Extract Keys & Limits
+    // 1. Check Global Active State
     const isObject = typeof config === 'object' && !Array.isArray(config);
+    if (isObject && config.isActive === false) {
+      logger.warn('🚫 Tavily Search is globally disabled in Tools Settings.');
+      return null;
+    }
+
+    // 2. Extract Keys & Limits
     const keys = isObject ? config.keys : config;
     const limits = isObject ? { rpm: config.rpm, rpd: config.rpd, rpmnt: config.rpmnt } : {};
 
-    // 2. Register with Global Rotation Manager
+    // 3. Register with Global Rotation Manager
     keyRotationManager.registerToolPool('TAVILY_SEARCH', keys, 'Tavily', limits);
 
-    // 3. Pick Next Available Key Globally
+    // 4. Pick Next Available Key Globally
     const pooled = await keyRotationManager.getNextProvider('TAVILY_SEARCH');
     if (!pooled?.apiKey) {
       logger.warn('⚠️ No available Tavily keys in pool (limits reached).');
@@ -73,7 +147,7 @@ class ManagedToolProvider {
 
     const tool = new TavilySearch({ maxResults: 5, tavilyApiKey: pooled.apiKey });
 
-    // 4. Wrap with "Limit Discovery" Logic
+    // 5. Wrap with "Limit Discovery" Logic
     const originalInvoke = tool.invoke.bind(tool);
     tool.invoke = async (input, callConfig) => {
       try {
@@ -105,25 +179,31 @@ class ManagedToolProvider {
       return null;
     }
 
-    // 1. Extract Keys & Limits
+    // 1. Check Global Active State
     const isObject = typeof config === 'object' && !Array.isArray(config);
+    if (isObject && config.isActive === false) {
+      logger.warn('🚫 YouTube Search is globally disabled in Tools Settings.');
+      return null;
+    }
+
+    // 2. Extract Keys & Limits
     const keys = isObject ? config.keys : config;
     const limits = isObject ? { rpm: config.rpm, rpd: config.rpd, rpmnt: config.rpmnt } : {};
 
-    // 2. Register with Global Rotation Manager
+    // 3. Register with Global Rotation Manager
     keyRotationManager.registerToolPool('YOUTUBE_SEARCH', keys, 'YouTube', limits);
 
-    // 3. Pick Next Available Key Globally
+    // 4. Pick Next Available Key Globally
     const pooled = await keyRotationManager.getNextProvider('YOUTUBE_SEARCH');
     if (!pooled?.apiKey) {
       logger.warn('⚠️ No available YouTube keys in pool (limits reached).');
       return null;
     }
 
-    // 4. Injected key into configurable field of the tool
+    // 5. Injected key into configurable field of the tool
     const tool = youtubeSearch;
 
-    // 5. Wrap with "Limit Discovery" Logic
+    // 6. Wrap with "Limit Discovery" Logic
     const originalInvoke = tool.invoke.bind(tool);
     tool.invoke = async (input, callConfig) => {
       // Inject the rotated key into the tool's execution context
