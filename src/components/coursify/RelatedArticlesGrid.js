@@ -77,7 +77,7 @@ export function RelatedArticlesGrid({ articles, variant = 'grid' }) {
             {/* Content */}
             <div className="space-y-2">
               <div className="flex items-start justify-between gap-2">
-                <h4 className="font-semibold text-sm text-[#1e3a34] group-hover:text-[#1f644e] transition-colors line-clamp-2 flex-1">
+                <h4 className="font-semibold text-sm text-[#1e3a34] group-hover:text-[#1f644e] transition-colors line-clamp-1 flex-1">
                   {article.title}
                 </h4>
                 <div className="flex-shrink-0 pt-0.5">

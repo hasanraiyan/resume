@@ -16,6 +16,8 @@ import { CoursifyBlockRenderer } from '@/components/coursify/reader/CoursifyBloc
 
 import { SafeBlockRenderer } from '@/components/coursify/SafeBlockRenderer';
 
+import { RelatedArticlesGrid } from '@/components/coursify/RelatedArticlesGrid';
+
 import CoursifyStepHistory from '@/components/coursify/CoursifyStepHistory';
 
 import { parseMarkdownToBlocks } from '@/utils/coursify-parser';
@@ -517,25 +519,8 @@ export function AISearchEngine({ onGenerated }) {
 
       {/* Related Articles */}
       {relatedArticles.length > 0 && (
-        <div className="mt-12 border-t border-[#e5e3d8] pt-8">
-          <h3 className="mb-4 text-sm font-bold text-[#1e3a34] flex items-center gap-2">
-            <span className="text-[#1f644e]">🔗</span>
-            Related Articles
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {relatedArticles.map((article) => (
-              <Link
-                key={article.slug}
-                href={`/coursify/r/${article.slug}`}
-                className="group p-4 border border-[#e5e3d8] rounded-lg hover:border-[#1f644e] hover:bg-[#f0f5f2] transition-all"
-              >
-                <p className="font-medium text-sm text-[#1e3a34] group-hover:text-[#1f644e]">
-                  {article.title}
-                </p>
-                <p className="text-xs text-[#7c8e88] mt-1">{article.topic}</p>
-              </Link>
-            ))}
-          </div>
+        <div className="mt-12">
+          <RelatedArticlesGrid articles={relatedArticles} variant="grid" />
         </div>
       )}
 
