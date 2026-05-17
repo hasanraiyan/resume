@@ -11,6 +11,7 @@ import { getSiteConfig } from '@/app/actions/siteActions';
 import { getBaseUrl } from '@/lib/mcp/oauth';
 import { getInitials } from '@/utils/string';
 import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 // (Font definitions remain the same)
 
@@ -163,6 +164,7 @@ export default async function RootLayout({ children }) {
               <ChatbotWidget />
               <PWAManager />
               <Analytics />
+              <SpeedInsights />
             </SiteProvider>
           </AnalyticsProvider>
         </SessionProvider>
