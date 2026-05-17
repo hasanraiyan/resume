@@ -448,7 +448,7 @@ export function AISearchEngine({ onGenerated }) {
             className="flex items-center gap-1.5 whitespace-nowrap text-xs font-bold text-[#7c8e88] transition-colors hover:text-[#1f644e]"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">New search</span>
+            <span className="hidden sm:inline"></span>
           </button>
 
           <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[#b5c4be]" />

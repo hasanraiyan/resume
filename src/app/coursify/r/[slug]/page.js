@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyResearch from '@/models/CoursifyResearch';
 import { CoursifyBlockRenderer } from '@/components/coursify/reader/CoursifyBlockRenderer';
-import { Search, Plus, Sparkles, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Search, Plus, Sparkles, ArrowLeft } from 'lucide-react';
 import { BalanceBadgeServer } from './BalanceBadgeServer';
 import Link from 'next/link';
 import ResearchActions from './ResearchActions';
@@ -78,9 +78,7 @@ export default async function SharedResearchPage({ params }) {
                 className="flex items-center gap-1.5 text-xs font-bold text-[#7c8e88] hover:text-[#1f644e] transition-colors"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                New search
               </Link>
-              <ChevronRight className="w-3.5 h-3.5 text-[#b5c4be]" />
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <Sparkles className="w-3.5 h-3.5 text-[#1f644e] shrink-0" />
                 <span className="text-xs font-bold text-[#1e3a34] truncate">{research.title}</span>

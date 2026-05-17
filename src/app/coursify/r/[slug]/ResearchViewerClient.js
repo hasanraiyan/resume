@@ -157,7 +157,6 @@ export default function ResearchViewerClient({ research }) {
                 className="flex items-center gap-1.5 text-xs font-bold text-[#7c8e88] hover:text-[#1f644e] transition-colors"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                New search
               </Link>
               <ChevronRight className="w-3.5 h-3.5 text-[#b5c4be]" />
               <div className="flex items-center gap-2 flex-1 min-w-0">

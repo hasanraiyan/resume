@@ -41,7 +41,7 @@ export default function ArticlesPage() {
 
   const handleSearch = (searchTerm) => {
     setSearchQuery(searchTerm);
-    setCurrentPage(1); // Reset to first page on new search
+    setCurrentPage(1); // Reset to first page on
   };
 
   const handlePageChange = (newPage) => {

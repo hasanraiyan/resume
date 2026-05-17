@@ -1,4 +1,4 @@
-# 🌟 Project Features: Portfolio Resume Website
+![alt text](image-1.png)# 🌟 Project Features: Portfolio Resume Website
 
 This document serves as a comprehensive overview of all features implemented across the Portfolio application.
 
