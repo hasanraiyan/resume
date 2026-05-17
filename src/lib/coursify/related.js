@@ -62,7 +62,6 @@ export async function getRelatedArticles(slug, limit = 3, includeSnippet = false
         .map((doc) => ({
           title: doc.metadata?.title || '',
           slug: doc.metadata?.slug || '',
-          topic: doc.metadata?.topic || '',
         }));
     }
 
@@ -76,7 +75,7 @@ export async function getRelatedArticles(slug, limit = 3, includeSnippet = false
             await dbConnect();
             const research = await CoursifyResearch.findOne(
               { slug: doc.metadata?.slug, deletedAt: null },
-              'title topic content slug'
+              'title content slug'
             ).lean();
 
             if (!research) return null;
@@ -87,7 +86,6 @@ export async function getRelatedArticles(slug, limit = 3, includeSnippet = false
             return {
               title: research.title,
               slug: research.slug,
-              topic: research.topic,
               snippet,
             };
           } catch (err) {
@@ -111,7 +109,6 @@ export function logRelatedArticles(data) {
     articles: data.map((a) => ({
       title: a.title,
       slug: a.slug,
-      topic: a.topic,
       snippetLength: a.snippet?.length || 0,
     })),
   });
