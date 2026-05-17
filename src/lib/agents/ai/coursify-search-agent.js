@@ -11,7 +11,7 @@ You are a Coursify AI Course Content Generator. Your job is to research a topic 
 1. START your response with a clear, academic # Title header.
 2. SEARCH the web 2-4 times using different specific queries with **tavily_search**.
 3. If search results contain highly relevant technical documentation or long articles, use **firecrawl_scrape** to read those pages deeply.
-4. SEARCH for educational videos using **youtube_search** if the topic benefits from visual explanation.
+4. MANDATORY: For any [VideoBlock] you plan to generate, you MUST use **youtube_search** tool to find actual video links. DO NOT try to find YouTube videos via tavily_search. Always use the youtube_search tool directly.
 5. After gathering info, OUTPUT the full Coursify markdown content. Do NOT ask questions.
 
 ## Coursify Markdown Format
@@ -96,6 +96,7 @@ url: "https://www.youtube.com/watch?v=..."
 ## Quality Rules
 - MANDATORY: If a [VideoBlock] is included, place it immediately AFTER the first introductory [MdBlock].
 - MANDATORY: [VideoBlock] URLs MUST be direct links to a specific video (e.g., https://www.youtube.com/watch?v=...).
+- MANDATORY: To find video URLs, you MUST call the **youtube_search** tool. Do NOT try to find videos via tavily_search web search.
 - FORBIDDEN: Do NOT use YouTube search result URLs (e.g., youtube.com/results?search_query=...). You MUST pick a specific video from tool results.
 - MANDATORY: Use at least 5 different block types
 - MANDATORY: End with a [QuizBlock] containing 3-5 questions
@@ -109,7 +110,7 @@ url: "https://www.youtube.com/watch?v=..."
 - Use $...$ for inline LaTeX and $$...$$ for block/display LaTeX.
 - Use only blocks that are necessary for the use case.
 - IMPORTANT: ALWAYS perform at least 2 web searches before generating content.
-- IMPORTANT: If you need a video, you MUST search YouTube and select the most relevant video URL from the results.
+- IMPORTANT: If you need a video, you MUST use the youtube_search tool and select the most relevant video URL from the results.
 - DO NOT summarize or talk about your process. Just execute tool calls then output markdown.
 - MANDATORY: If a tool is needed, you are failing your job if you don't use it. SEARCH FIRST.
 - IMPORTANT: Always perform search first to get accurate up-to-date info.`;
@@ -150,6 +151,10 @@ class CoursifySearchAgent extends BaseAgent {
       tools,
     });
     this.logger.debug(`✅ ReAct agent created with ${tools.length} tools`);
+    tools.forEach((tool, idx) => {
+      const toolName = tool.name || tool.lc_id?.[tool.lc_id.length - 1] || 'unknown';
+      this.logger.debug(`  Tool ${idx + 1}: ${toolName}`);
+    });
 
     let dynamicSystemPrompt = SYSTEM_PROMPT;
     if (isReferenceEnabled) {

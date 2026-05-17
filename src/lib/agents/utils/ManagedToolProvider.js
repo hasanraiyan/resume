@@ -220,39 +220,34 @@ class ManagedToolProvider {
       return null;
     }
 
-    // 4. Create a clean wrapper to avoid mutating the shared youtubeSearch singleton
-    const tool = {
-      name: youtubeSearch.name,
-      description: youtubeSearch.description,
-      schema: youtubeSearch.schema,
-      invoke: async (input, callConfig) => {
-        // Inject the rotated key into the tool's execution context
-        const configWithKey = {
-          ...callConfig,
-          configurable: { ...callConfig?.configurable, apiKey: pooled.apiKey },
-        };
+    // 4. Wrap with "Limit Discovery" Logic - use youtubeSearch directly
+    const ytSearchTool = youtubeSearch;
+    const originalInvoke = ytSearchTool.invoke.bind(ytSearchTool);
+    ytSearchTool.invoke = async (input, callConfig) => {
+      const configWithKey = {
+        ...callConfig,
+        configurable: { ...callConfig?.configurable, apiKey: pooled.apiKey },
+      };
 
-        try {
-          return await youtubeSearch.invoke(input, configWithKey);
-        } catch (err) {
-          const msg = err.message?.toLowerCase() || '';
-          // YouTube usually returns 403 for quota errors
-          if (
-            err.status === 429 ||
-            err.status === 403 ||
-            msg.includes('quota') ||
-            msg.includes('limit')
-          ) {
-            logger.warn(`🛑 YouTube key ${pooled.internalId} hit a limit! Throttling globally.`);
-            await keyRotationManager.markThrottled('YOUTUBE_SEARCH', pooled.internalId);
-          }
-          throw err;
+      try {
+        return await originalInvoke(input, configWithKey);
+      } catch (err) {
+        const msg = err.message?.toLowerCase() || '';
+        if (
+          err.status === 429 ||
+          err.status === 403 ||
+          msg.includes('quota') ||
+          msg.includes('limit')
+        ) {
+          logger.warn(`🛑 YouTube key ${pooled.internalId} hit a limit! Throttling globally.`);
+          await keyRotationManager.markThrottled('YOUTUBE_SEARCH', pooled.internalId);
         }
-      },
+        throw err;
+      }
     };
 
     logger.info(`✅ YouTube Tool ready (using ${pooled.internalId})`);
-    return tool;
+    return ytSearchTool;
   }
 }
 
