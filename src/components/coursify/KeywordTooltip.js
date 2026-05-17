@@ -2,11 +2,13 @@
 
 import { useState, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
+import { ArrowRight } from 'lucide-react';
 
 export function KeywordTooltip({ keyword, definition }) {
   const [isOpen, setIsOpen] = useState(false);
   const [popoverStyle, setPopoverStyle] = useState({});
   const [arrowStyle, setArrowStyle] = useState({});
+  const [isPulsing, setIsPulsing] = useState(false);
 
   const triggerRef = useRef(null);
   const timeoutRef = useRef(null);
@@ -15,7 +17,7 @@ export function KeywordTooltip({ keyword, definition }) {
     if (!triggerRef.current) return;
 
     const rect = triggerRef.current.getBoundingClientRect();
-    const popoverWidth = 280;
+    const popoverWidth = 320;
     const padding = 16;
     const viewportWidth = window.innerWidth;
 
@@ -52,6 +54,17 @@ export function KeywordTooltip({ keyword, definition }) {
     }, 200);
   };
 
+  const handleClick = () => {
+    setIsPulsing(true);
+    const url = `/coursify?search_ai=${encodeURIComponent(keyword)}&send=true`;
+    window.open(url, '_blank');
+  };
+
+  const handleExploreClick = (e) => {
+    e.stopPropagation();
+    handleClick();
+  };
+
   useEffect(() => {
     if (!isOpen) return;
     window.addEventListener('scroll', updatePosition, true);
@@ -69,7 +82,12 @@ export function KeywordTooltip({ keyword, definition }) {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <span className="border-b-2 border-dotted border-[#1f644e] text-[#1f644e] font-medium cursor-help transition-all px-0.5 rounded">
+      <span
+        onClick={handleClick}
+        className={`border-b-2 border-dotted border-[#1f644e] text-[#1f644e] font-medium cursor-pointer transition-all px-0.5 rounded hover:bg-[#f0f5f2] ${
+          isPulsing ? 'animate-pulse scale-105' : ''
+        }`}
+      >
         {keyword}
       </span>
 
@@ -87,6 +105,13 @@ export function KeywordTooltip({ keyword, definition }) {
           >
             <div className="overflow-hidden rounded-xl border border-[#e5e3d8] bg-white p-3 shadow-2xl">
               <p className="text-xs leading-relaxed text-[#1e3a34]">{definition}</p>
+              <button
+                onClick={handleExploreClick}
+                className="mt-2.5 flex items-center gap-1.5 text-[11px] font-bold text-[#1f644e] hover:text-[#184d3c] transition-colors pt-2 border-t border-[#f0f5f2]"
+              >
+                Explore
+                <ArrowRight className="w-3 h-3" />
+              </button>
               <div
                 className="absolute top-full border-4 border-transparent border-t-white"
                 style={arrowStyle}

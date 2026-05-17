@@ -75,14 +75,15 @@ export function AISearchEngine({ onGenerated }) {
   const contentRef = useRef('');
 
   const resultRef = useRef(null);
-  const hasAutoFilled = useRef(false);
+  const previousSearchRef = useRef(null);
   const searchParams = useSearchParams();
 
   // Handle auto-fill from query param
   useEffect(() => {
     const autoTopic = searchParams.get('search_ai');
-    if (autoTopic && !hasAutoFilled.current) {
-      hasAutoFilled.current = true;
+
+    // Only update input if the search_ai parameter changed
+    if (autoTopic && autoTopic !== previousSearchRef.current) {
       setInputValue(autoTopic);
     }
   }, [searchParams]);
@@ -295,6 +296,18 @@ export function AISearchEngine({ onGenerated }) {
     },
     [onGenerated]
   );
+
+  // Handle auto-generate when send=true parameter is present
+  useEffect(() => {
+    const autoTopic = searchParams.get('search_ai');
+    const autoSend = searchParams.get('send');
+
+    // Check if this is a new search_ai value (different from what we just processed)
+    if (autoTopic && autoSend === 'true' && autoTopic !== previousSearchRef.current) {
+      previousSearchRef.current = autoTopic;
+      generate(autoTopic);
+    }
+  }, [searchParams, generate]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
