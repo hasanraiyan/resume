@@ -260,7 +260,7 @@ function FootnotePopover({ href, identifiers, children, ...props }) {
           href={isGrouped ? undefined : href}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          className={`mx-0.5 inline-flex h-4 items-center justify-center rounded-sm transition-all px-1 gap-1 ${
+          className={`mx-0.5 inline-flex h-4 items-center justify-center rounded-sm transition-all px-1 gap-1 cursor-pointer ${
             isOpen ? 'bg-[#1f644e] shadow-md scale-110' : 'bg-[#f0f5f2] hover:bg-[#e8f0ed]'
           } ${isGrouped ? 'w-auto min-w-[1rem]' : 'w-4'}`}
           {...props}
