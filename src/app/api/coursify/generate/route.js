@@ -11,6 +11,43 @@ function encodeEvent(obj) {
   return new TextEncoder().encode(JSON.stringify(obj) + '\n');
 }
 
+// Upload research to Qdrant for vector search
+async function uploadToQdrant(research) {
+  try {
+    const { QdrantVectorStore } = await import('@langchain/qdrant');
+    const { PollinationsEmbeddings } = await import('@/lib/coursify/PollinationsEmbeddings');
+    const { Document } = await import('@langchain/core/documents');
+
+    const qdrantUrl = process.env.QDRANT_URL;
+    if (!qdrantUrl) {
+      console.log('[CoursifyGenerate] QDRANT_URL not set, skipping Qdrant upload');
+      return;
+    }
+
+    const embeddings = new PollinationsEmbeddings();
+    const document = new Document({
+      pageContent: `${research.title}\n${research.topic}`,
+      metadata: {
+        slug: research.slug,
+        title: research.title,
+        topic: research.topic,
+        createdAt: research.createdAt?.toISOString(),
+      },
+    });
+
+    // Add to Qdrant (generates embedding via PollinationsEmbeddings)
+    await QdrantVectorStore.fromDocuments([document], embeddings, {
+      url: qdrantUrl,
+      apiKey: process.env.QDRANT_API_KEY,
+      collectionName: 'coursify_research',
+    });
+
+    console.log(`[CoursifyGenerate] Uploaded "${research.slug}" to Qdrant`);
+  } catch (err) {
+    console.error('[CoursifyGenerate] Qdrant upload error:', err.message);
+  }
+}
+
 export async function POST(request) {
   const rateLimitResponse = rateLimit(request, 5, 60000);
   if (rateLimitResponse) return rateLimitResponse;
@@ -154,6 +191,11 @@ export async function POST(request) {
 
             // Emit the slug so the client can redirect/show link
             controller.enqueue(encodeEvent({ type: 'persist', slug, id: research._id }));
+
+            // Upload to Qdrant for vector search
+            uploadToQdrant(research).catch((err) => {
+              console.error('[CoursifyGenerate] Failed to upload to Qdrant:', err);
+            });
 
             // Update the execution log to link to this artifact
             try {

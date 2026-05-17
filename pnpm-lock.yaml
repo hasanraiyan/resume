@@ -59,6 +59,9 @@ importers:
       '@langchain/openai':
         specifier: ^1.2.11
         version: 1.4.5(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))(ws@8.20.1)
+      '@langchain/qdrant':
+        specifier: ^1.0.2
+        version: 1.0.2(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))(typescript@6.0.3)
       '@langchain/tavily':
         specifier: ^1.2.0
         version: 1.2.0(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))
@@ -176,6 +179,9 @@ importers:
       next-auth:
         specifier: ^4.24.11
         version: 4.24.14(next@15.5.9(@playwright/test@1.60.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      node-fetch:
+        specifier: ^3.3.2
+        version: 3.3.2
       openai:
         specifier: ^6.1.0
         version: 6.37.0(ws@8.20.1)(zod@4.4.3)
@@ -1297,6 +1303,12 @@ packages:
 
   '@langchain/protocol@0.0.15':
     resolution: {integrity: sha512-MllvbpMjqHevUm+v94M422mH7XKN+wGCvJRBVROTWBotEDOATYB4Ktk2UheYP859y9o2LlhtPek5t1T9eyfAbQ==}
+
+  '@langchain/qdrant@1.0.2':
+    resolution: {integrity: sha512-iQoUa4DgrJId5q8x/V6jhAtmrNI4cPid/mk/+hE8rTFnKf8Dd22ombzoH8aGjKZFS2INTWAFV0eQx8I2O/KsZg==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@langchain/core': ^1.0.0
 
   '@langchain/tavily@1.2.0':
     resolution: {integrity: sha512-aPLPgtw8+b/Rnr3H+X8H8z98T/Y7JuCE4B5eqRDHoEWgZvMDUFF7divqwQqCTMq2deQttlVrm5bN5JbKaAR7/w==}
@@ -6683,6 +6695,13 @@ snapshots:
       - ws
 
   '@langchain/protocol@0.0.15': {}
+
+  '@langchain/qdrant@1.0.2(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))(typescript@6.0.3)':
+    dependencies:
+      '@langchain/core': 1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1)
+      '@qdrant/js-client-rest': 1.18.0(typescript@6.0.3)
+    transitivePeerDependencies:
+      - typescript
 
   '@langchain/tavily@1.2.0(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))':
     dependencies:

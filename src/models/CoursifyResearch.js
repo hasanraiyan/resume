@@ -30,6 +30,11 @@ const CoursifyResearchSchema = new mongoose.Schema(
       type: String,
       index: true,
     },
+    qdrantId: {
+      type: Number,
+      index: true,
+      sparse: true,
+    },
     usage: {
       promptTokens: { type: Number, default: 0 },
       completionTokens: { type: Number, default: 0 },

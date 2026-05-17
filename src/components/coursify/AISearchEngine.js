@@ -66,6 +66,8 @@ export function AISearchEngine({ onGenerated }) {
 
   const [isFromCache, setIsFromCache] = useState(false);
 
+  const [relatedArticles, setRelatedArticles] = useState([]);
+
   const inputRef = useRef(null);
 
   const contentRef = useRef('');
@@ -131,6 +133,22 @@ export function AISearchEngine({ onGenerated }) {
 
     setInProgressBlock(inProgress);
   }, [content, phase]);
+
+  useEffect(() => {
+    if (phase === PHASE.DONE && generatedSlug) {
+      const fetchRelated = async () => {
+        try {
+          const res = await fetch(`/api/coursify/related?slug=${generatedSlug}`);
+          const data = await res.json();
+          setRelatedArticles(data.related || []);
+        } catch (err) {
+          console.error('Failed to fetch related articles:', err);
+        }
+      };
+
+      fetchRelated();
+    }
+  }, [phase, generatedSlug]);
 
   const generate = useCallback(
     async (topic) => {
@@ -302,6 +320,8 @@ export function AISearchEngine({ onGenerated }) {
     setToolSteps([]);
 
     setIsFromCache(false);
+
+    setRelatedArticles([]);
   };
 
   // =====================================================
@@ -494,6 +514,30 @@ export function AISearchEngine({ onGenerated }) {
       <div ref={resultRef} className="w-full max-w-full overflow-x-hidden">
         <CoursifyBlockRenderer content={content} />
       </div>
+
+      {/* Related Articles */}
+      {relatedArticles.length > 0 && (
+        <div className="mt-12 border-t border-[#e5e3d8] pt-8">
+          <h3 className="mb-4 text-sm font-bold text-[#1e3a34] flex items-center gap-2">
+            <span className="text-[#1f644e]">🔗</span>
+            Related Articles
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {relatedArticles.map((article) => (
+              <Link
+                key={article.slug}
+                href={`/coursify/r/${article.slug}`}
+                className="group p-4 border border-[#e5e3d8] rounded-lg hover:border-[#1f644e] hover:bg-[#f0f5f2] transition-all"
+              >
+                <p className="font-medium text-sm text-[#1e3a34] group-hover:text-[#1f644e]">
+                  {article.title}
+                </p>
+                <p className="text-xs text-[#7c8e88] mt-1">{article.topic}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <div className="mt-10 flex flex-col gap-3 border-t border-[#e5e3d8] pt-6 sm:flex-row sm:items-center sm:justify-between">

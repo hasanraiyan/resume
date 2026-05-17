@@ -88,6 +88,12 @@ export async function DELETE(request) {
       return NextResponse.json({ success: false, error: 'ID is required' }, { status: 400 });
     }
 
+    // Find the document first to get qdrantId
+    const doc = await CoursifyResearch.findById(id);
+    if (!doc) {
+      return NextResponse.json({ success: false, error: 'Artifact not found' }, { status: 404 });
+    }
+
     // Soft delete: set deletedAt timestamp
     const result = await CoursifyResearch.findByIdAndUpdate(
       id,
@@ -98,8 +104,29 @@ export async function DELETE(request) {
       { new: true }
     );
 
-    if (!result) {
-      return NextResponse.json({ success: false, error: 'Artifact not found' }, { status: 404 });
+    // Delete from Qdrant if qdrantId exists
+    if (doc.qdrantId && process.env.QDRANT_URL) {
+      try {
+        const qdrantUrl = process.env.QDRANT_URL;
+        const response = await fetch(`${qdrantUrl}/collections/coursify_research/points/delete`, {
+          method: 'POST',
+          headers: {
+            'api-key': process.env.QDRANT_API_KEY || '',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            points_selector: {
+              points: [doc.qdrantId],
+            },
+          }),
+        });
+
+        if (!response.ok) {
+          console.warn(`[CoursifyHistory] Failed to delete from Qdrant: ${response.status}`);
+        }
+      } catch (err) {
+        console.warn(`[CoursifyHistory] Error deleting from Qdrant: ${err.message}`);
+      }
     }
 
     return NextResponse.json({
