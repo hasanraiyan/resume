@@ -18,9 +18,22 @@ class ManagedToolProvider {
    * @param {Object} logger - The agent's logger instance
    */
   async getTools(toolIds = [], logger = console) {
+    let finalIds = [...toolIds];
+
+    // OPTIMIZATION: Tool Balancing (Search Engines)
+    // If both Tavily and Exa are enabled, pick one randomly per session
+    // This saves context space and balances credit usage across providers.
+    if (finalIds.includes('tavily_search') && finalIds.includes('exa_search')) {
+      const pick = Math.random() > 0.5 ? 'tavily_search' : 'exa_search';
+      const skip = pick === 'tavily_search' ? 'exa_search' : 'tavily_search';
+
+      finalIds = finalIds.filter((id) => id !== skip);
+      logger.info(`⚖️ [ToolBalancer] Selected ${pick} (skipping ${skip}) to optimize context.`);
+    }
+
     const tools = [];
 
-    for (const id of toolIds) {
+    for (const id of finalIds) {
       try {
         const tool = await this._initializeTool(id, logger);
         if (tool) tools.push(tool);

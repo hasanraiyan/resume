@@ -42,17 +42,32 @@ export const firecrawlScrape = tool(
       const { markdown, html, metadata } = scrapeResult.data;
       console.log(`[FirecrawlTool] SDK Success! Metadata:`, JSON.stringify(metadata, null, 2));
 
+      // Robust content extraction with truncation
+      const rawContent = markdown || html || '';
+      let content = rawContent;
+      let wasTruncated = false;
+
+      if (rawContent.length > maxCharacters) {
+        content = rawContent.substring(0, maxCharacters);
+        wasTruncated = true;
+      }
+
       const result = {
-        content: markdown || '',
+        content: wasTruncated
+          ? `${content}\n\n... [Content Truncated for Context Efficiency]`
+          : content,
         title: metadata?.title || metadata?.ogTitle || 'Unknown Title',
         description: metadata?.description || metadata?.ogDescription || '',
         url: metadata?.sourceURL || url,
         statusCode: metadata?.statusCode || 200,
+        truncated: wasTruncated,
       };
 
-      if (result.content.length === 0 && html) {
-        console.warn('[FirecrawlTool] Markdown empty, falling back to HTML snippet.');
-        result.content = `[HTML Content - Markdown conversion failed]\n\n${html.substring(0, 5000)}`;
+      if (!markdown && html) {
+        console.warn('[FirecrawlTool] Markdown empty, using HTML snippet.');
+        if (!wasTruncated) {
+          result.content = `[HTML Content - Markdown conversion failed]\n\n${result.content}`;
+        }
       }
 
       console.log(
