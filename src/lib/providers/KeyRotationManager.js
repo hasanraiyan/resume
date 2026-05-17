@@ -48,6 +48,39 @@ class KeyRotationManager {
   }
 
   /**
+   * Register a simple pool of keys for tools (Tavily, Google, etc)
+   */
+  registerToolPool(poolId, keys, name = 'Tool', config = {}) {
+    if (!keys || keys.length === 0) return;
+    if (!this.pools.has(poolId)) this.pools.set(poolId, []);
+
+    const pool = this.pools.get(poolId);
+    const keyArray = Array.isArray(keys) ? keys : [keys];
+
+    keyArray.forEach((key, index) => {
+      const internalId = `${poolId}-key-${index}`;
+      const existing = pool.find((p) => p.internalId === internalId);
+
+      const keyData = {
+        providerId: poolId,
+        internalId,
+        apiKey: key,
+        name: `${name} (Key ${index + 1})`,
+        enableLimits: true,
+        rpm: config.rpm || 4, // Requests per minute
+        rpd: config.rpd || 1000, // Requests per day
+        rpmnt: config.rpmnt || 1000, // Requests per month
+      };
+
+      if (existing) {
+        Object.assign(existing, keyData);
+      } else {
+        pool.push(keyData);
+      }
+    });
+  }
+
+  /**
    * Get the next available provider from a pool
    */
   async getNextProvider(poolId) {
@@ -97,7 +130,11 @@ class KeyRotationManager {
     if (!redis) return;
 
     const key = `throttled:${poolId}:${internalId}`;
-    const expirySeconds = Math.round((customCooldownMs || this.cooldownMs) / 1000);
+    // If credit related, default to end of month
+    const expirySeconds = customCooldownMs
+      ? Math.round(customCooldownMs / 1000)
+      : this._getSecondsToNextMonth();
+
     try {
       await redis.set(key, 'true', { ex: expirySeconds });
       console.log(
@@ -106,6 +143,16 @@ class KeyRotationManager {
     } catch (e) {
       console.warn('[KeyRotationManager] Redis markThrottled failed:', e.message);
     }
+  }
+
+  /**
+   * Helper to get seconds until the end of the current month
+   * @private
+   */
+  _getSecondsToNextMonth() {
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    return Math.floor((nextMonth - now) / 1000);
   }
 
   /**
@@ -135,6 +182,10 @@ class KeyRotationManager {
       const rpdCount = (await redis.get(`usage:${poolId}:${p.internalId}:rpd`)) || 0;
       if (parseInt(rpdCount) >= p.rpd) return false;
 
+      // 5. Check RPMnt (Requests Per Month)
+      const monthCount = (await redis.get(`usage:${poolId}:${p.internalId}:rpmnt`)) || 0;
+      if (parseInt(monthCount) >= p.rpmnt) return false;
+
       return true;
     } catch (e) {
       console.warn('[KeyRotationManager] Redis check failed, falling back to local:', e.message);
@@ -153,18 +204,22 @@ class KeyRotationManager {
 
       const p1 = redis.incr(`usage:${poolId}:${p.internalId}:rpm`);
       const p2 = redis.incr(`usage:${poolId}:${p.internalId}:rpd`);
+      const p3 = redis.incr(`usage:${poolId}:${p.internalId}:rpmnt`);
 
       // Execute increments
-      await Promise.all([p1, p2]);
+      await Promise.all([p1, p2, p3]);
 
       // Ensure TTLs are set (only if fresh keys)
-      const [ttlRpm, ttlRpd] = await Promise.all([
+      const [ttlRpm, ttlRpd, ttlRpMnt] = await Promise.all([
         redis.ttl(`usage:${poolId}:${p.internalId}:rpm`),
         redis.ttl(`usage:${poolId}:${p.internalId}:rpd`),
+        redis.ttl(`usage:${poolId}:${p.internalId}:rpmnt`),
       ]);
 
       if (ttlRpm < 0) await redis.expire(`usage:${poolId}:${p.internalId}:rpm`, 60);
       if (ttlRpd < 0) await redis.expire(`usage:${poolId}:${p.internalId}:rpd`, 86400); // 24h
+      if (ttlRpMnt < 0)
+        await redis.expire(`usage:${poolId}:${p.internalId}:rpmnt`, this._getSecondsToNextMonth());
     } catch (e) {
       console.warn('[KeyRotationManager] Redis increment failed:', e.message);
     }

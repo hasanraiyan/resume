@@ -18,21 +18,32 @@ class DynamicSettingsManager {
   /**
    * Get a decrypted setting value by key
    * Priority: Database -> Environment Variables -> Default Value
+   * Handles multi-key strings (comma or newline separated) by returning an array.
    */
   async get(key, defaultValue = null) {
     await this._refreshCacheIfNeeded();
     const entry = this.cache.get(key);
 
-    if (entry !== undefined) {
-      return entry;
+    let rawValue = entry !== undefined ? entry : process.env[key];
+
+    if (rawValue === undefined || rawValue === null) {
+      return defaultValue;
     }
 
-    // Fallback to process.env if not in DB
-    if (process.env[key] !== undefined) {
-      return process.env[key];
+    // Handle string values that might contain multiple keys
+    if (typeof rawValue === 'string') {
+      const parts = rawValue
+        .split(/[\n,]/)
+        .map((p) => p.trim())
+        .filter((p) => p.length > 0);
+
+      if (parts.length > 1) {
+        return parts;
+      }
+      return parts[0] || defaultValue;
     }
 
-    return defaultValue;
+    return rawValue;
   }
 
   /**

@@ -284,6 +284,7 @@ export const DEFAULT_AGENT_CONFIGS = {
     icon: 'Search',
     defaultModel: 'gpt-4o',
     defaultProvider: 'openai',
+    tools: ['tavily_search', 'youtube_search'],
     isActive: true,
   },
   [AGENT_IDS.COURSIFY_THUMBNAIL_GENERATOR]: {
@@ -343,6 +344,7 @@ export const AGENT_TOOLS = {
   [AGENT_IDS.ENGAGEMENT_ANALYZER]: ['pattern_recognition', 'insights_generation'],
   [AGENT_IDS.APP_BUILDER]: ['planning', 'html_generation', 'code_review'],
   [AGENT_IDS.FINANCE_ASSISTANT]: ['conversation'],
+  [AGENT_IDS.COURSIFY_SEARCH]: ['tavily_search', 'youtube_search'],
 };
 
 /**

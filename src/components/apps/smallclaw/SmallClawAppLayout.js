@@ -9,6 +9,7 @@ import {
   Bot,
   Search,
   Settings,
+  Wrench,
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useSmallClaw } from '@/context/SmallClawContext';
@@ -17,6 +18,7 @@ import { usePathname, useRouter } from 'next/navigation';
 const tabs = [
   { id: 'agents', label: 'Agents', icon: Network },
   { id: 'providers', label: 'Providers', icon: Server },
+  { id: 'tools', label: 'Tools', icon: Wrench },
   { id: 'channels', label: 'Channels', icon: MessageCircle },
   { id: 'mcp', label: 'MCP', icon: Activity },
   { id: 'skills', label: 'Skills', icon: BookOpen },
@@ -27,6 +29,7 @@ const tabs = [
 const tabTitles = {
   agents: 'SmallClaw',
   providers: 'API Providers',
+  tools: 'External Tools',
   channels: 'Communication Channels',
   mcp: 'MCP Infrastructure',
   skills: 'Agent Skills',

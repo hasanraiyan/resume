@@ -8,16 +8,26 @@ import dynamicSettingsManager from '@/lib/DynamicSettingsManager';
  * Uses official Google YouTube Data API v3 client to find educational videos.
  */
 export const youtubeSearch = tool(
-  async ({ query, maxResults = 5 }) => {
-    // Get from DynamicSettings (Manager handles encryption and caching)
-    const apiKey = await dynamicSettingsManager.get('GOOGLE_API_KEY');
+  async ({ query, maxResults = 5 }, { configurable } = {}) => {
+    // 1. Priority: Injected key from rotation pool (via ManagedToolProvider)
+    // 2. Secondary: Explicit GOOGLE_API_KEY in database
+    // 3. Fallback: process.env
+    let apiKey = configurable?.apiKey;
+
+    if (!apiKey) {
+      apiKey = await dynamicSettingsManager.get('GOOGLE_API_KEY');
+    }
+
     if (!apiKey) {
       console.warn('[YouTubeTool] Missing GOOGLE_API_KEY in database settings.');
       return 'YouTube search is currently unavailable (missing API key).';
     }
 
+    // Handle array from dynamicSettingsManager
+    const activeKey = Array.isArray(apiKey) ? apiKey[0] : apiKey;
+
     // Initialize official client
-    const yt = youtube({ version: 'v3', auth: apiKey });
+    const yt = youtube({ version: 'v3', auth: activeKey });
 
     try {
       const res = await yt.search.list({

@@ -1,10 +1,8 @@
-import { AGENT_IDS } from '@/lib/constants/agents'; // trigger rebuild
-import BaseAgent from '../BaseAgent';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
-import { TavilySearch } from '@langchain/tavily';
-import { youtubeSearch } from '../utils/youtube-tools';
-import { SystemMessage, HumanMessage } from '@langchain/core/messages';
-import dynamicSettingsManager from '@/lib/DynamicSettingsManager';
+import { HumanMessage, SystemMessage } from '@langchain/core/messages';
+import BaseAgent from '../BaseAgent';
+import { AGENT_IDS } from '@/lib/constants/agents';
+import managedToolProvider from '../utils/ManagedToolProvider';
 
 const SYSTEM_PROMPT = `
 You are a Coursify AI Course Content Generator. Your job is to research a topic using web search and then generate a reponse to user query in the Coursify markdown format.
@@ -136,21 +134,9 @@ class CoursifySearchAgent extends BaseAgent {
     const llm = await this.createChatModel();
     this.logger.debug('✅ Chat model created');
 
-    const tavilyApiKey = await dynamicSettingsManager.get('TAVILY_API_KEY');
-    this.logger.info(
-      `[DEBUG] Tavily API Key retrieved: ${tavilyApiKey ? 'present' : 'missing/null'}`
-    );
-
-    const tools = [];
-
-    if (tavilyApiKey) {
-      tools.push(new TavilySearch({ maxResults: 5, tavilyApiKey }));
-      this.logger.info('✅ Tavily Web Search tool initialized');
-    } else {
-      this.logger.warn('⚠️ Tavily API key missing from database. Web search will be skipped.');
-    }
-
-    tools.push(youtubeSearch);
+    // Load self-healing, load-balanced tools from the Managed Provider
+    const enabledToolIds = this.config.tools || [];
+    const tools = await managedToolProvider.getTools(enabledToolIds, this.logger);
 
     const contentAgent = createReactAgent({
       llm,
