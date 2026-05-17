@@ -359,25 +359,11 @@ export function parseMarkdownToBlocks(text) {
           }
         }
 
-        // Apply footnotes to question and explanation
-        if (globalFootnotes) {
-          qObj.question =
-            cleanUnresolvedFootnotes(qObj.question, globalFootnotes) + '\n\n' + globalFootnotes;
-          if (qObj.explanation)
-            qObj.explanation =
-              cleanUnresolvedFootnotes(qObj.explanation, globalFootnotes) +
-              '\n\n' +
-              globalFootnotes;
-          // Also apply to options as they use MarkdownRenderer
-          qObj.options = qObj.options.map(
-            (opt) => cleanUnresolvedFootnotes(opt, globalFootnotes) + '\n\n' + globalFootnotes
-          );
-        } else {
-          qObj.question = cleanUnresolvedFootnotes(qObj.question, globalFootnotes);
-          if (qObj.explanation)
-            qObj.explanation = cleanUnresolvedFootnotes(qObj.explanation, globalFootnotes);
-          qObj.options = qObj.options.map((opt) => cleanUnresolvedFootnotes(opt, globalFootnotes));
-        }
+        // Apply footnote cleaning only (keep references, remove definitions from inline)
+        qObj.question = cleanUnresolvedFootnotes(qObj.question, globalFootnotes);
+        if (qObj.explanation)
+          qObj.explanation = cleanUnresolvedFootnotes(qObj.explanation, globalFootnotes);
+        qObj.options = qObj.options.map((opt) => cleanUnresolvedFootnotes(opt, globalFootnotes));
 
         if (qObj.question) block.quiz.questions.push(qObj);
       }
