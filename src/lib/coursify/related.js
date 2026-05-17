@@ -75,18 +75,15 @@ export async function getRelatedArticles(slug, limit = 3, includeSnippet = false
             await dbConnect();
             const research = await CoursifyResearch.findOne(
               { slug: doc.metadata?.slug, deletedAt: null },
-              'title content slug'
+              'title summary slug'
             ).lean();
 
             if (!research) return null;
 
-            // Extract clean snippet
-            const snippet = extractCleanSnippet(research.content, 150);
-
             return {
               title: research.title,
               slug: research.slug,
-              snippet,
+              snippet: research.summary || null,
             };
           } catch (err) {
             console.error('[CoursifyRelated] Error fetching content:', err);

@@ -45,6 +45,7 @@ export const AGENT_IDS = {
   COURSIFY_THUMBNAIL_GENERATOR: 'coursify_thumbnail_generator',
   COURSIFY_CHAT: 'coursify_chat',
   COURSIFY_SEARCH: 'coursify_search',
+  COURSIFY_SUMMARY: 'coursify_summary',
 
   // Integrations
 };
@@ -285,6 +286,16 @@ export const DEFAULT_AGENT_CONFIGS = {
     defaultModel: 'gpt-4o',
     defaultProvider: 'openai',
     tools: ['tavily_search', 'youtube_search'],
+    isActive: true,
+  },
+  [AGENT_IDS.COURSIFY_SUMMARY]: {
+    name: 'Coursify Summary Engine',
+    description: 'Generates concise summaries of Coursify course content',
+    type: AGENT_TYPES.CONTENT,
+    category: AGENT_CATEGORIES.WRITING,
+    icon: 'FileText',
+    defaultModel: 'openai/gpt-oss-120b',
+    defaultProvider: 'groq',
     isActive: true,
   },
   [AGENT_IDS.COURSIFY_THUMBNAIL_GENERATOR]: {

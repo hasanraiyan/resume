@@ -6,6 +6,7 @@ import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
 
 import '@/lib/agents';
+import '@/lib/agents/ai/coursify-summary-agent';
 
 function encodeEvent(obj) {
   return new TextEncoder().encode(JSON.stringify(obj) + '\n');
@@ -173,10 +174,26 @@ export async function POST(request) {
               }
             }
 
+            // Generate summary
+            let summary = null;
+            try {
+              const summaryAgent = agentRegistry.get(AGENT_IDS.COURSIFY_SUMMARY);
+              if (summaryAgent) {
+                await summaryAgent.initialize();
+                const summaryResult = await summaryAgent.execute({ content: finalContent });
+                summary = summaryResult.summary;
+                console.log('[CoursifyGenerate] Summary generated successfully');
+              }
+            } catch (summaryErr) {
+              console.error('[CoursifyGenerate] Summary generation failed:', summaryErr.message);
+              // Continue without summary if generation fails
+            }
+
             const research = await CoursifyResearch.create({
               topic: topic.trim(),
               title: baseTitle,
               content: finalContent,
+              summary,
               slug,
               promptHash,
               titleHash: hashPrompt(baseTitle, isReferenceEnabled),
