@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useMoney } from '@/context/MoneyContext';
 import {
   Plus,
@@ -48,6 +48,7 @@ export default function AddTransactionModal() {
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const amountDisplayRef = useRef(null);
 
   const isEditMode = !!editTransactionData;
   const modalOpen = open || isEditMode;
@@ -57,6 +58,89 @@ export default function AddTransactionModal() {
     : null;
 
   const filteredCategories = categories.filter((c) => c.type === type);
+
+  // Auto-scroll to the end of the amount display when input changes
+  useEffect(() => {
+    if (amountDisplayRef.current) {
+      amountDisplayRef.current.scrollLeft = amountDisplayRef.current.scrollWidth;
+    }
+  }, [currentInput]);
+
+  const resetForm = useCallback(() => {
+    setCurrentInput('0');
+    setDescription('');
+    setCategoryId('');
+    setToAccountId('');
+    setType('expense');
+    setValidationError('');
+    if (accounts.length > 0) {
+      setAccountId(accounts[0].id);
+    }
+  }, [accounts]);
+
+  const handleClose = useCallback(() => {
+    resetForm();
+    if (isEditMode) {
+      cancelEditTransaction();
+    }
+    setOpen(false);
+  }, [resetForm, isEditMode, cancelEditTransaction]);
+
+  const handleKeypad = useCallback(
+    (val) => {
+      if (val === 'backspace') {
+        setCurrentInput((prev) => (prev.length > 1 ? prev.slice(0, -1) : '0'));
+      } else if (['+', '-', 'x', '/'].includes(val)) {
+        setCurrentInput((prev) => prev + val);
+      } else if (val === '=') {
+        try {
+          const expr = currentInput.replace(/x/g, '*');
+          const result = evaluateMath(expr);
+          setCurrentInput(String(Math.round(result * 100) / 100));
+        } catch {
+          setCurrentInput('Error');
+        }
+      } else {
+        setCurrentInput((prev) => (prev === '0' ? val : prev + val));
+      }
+    },
+    [currentInput]
+  );
+
+  // Keyboard support for calculator
+  useEffect(() => {
+    if (!modalOpen) return undefined;
+
+    const handleKeyDown = (e) => {
+      // Don't trigger if user is typing in a text field
+      if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+
+      const key = e.key;
+
+      if (/[0-9]/.test(key)) {
+        e.preventDefault();
+        handleKeypad(key);
+      } else if (['+', '-', '/', '.'].includes(key)) {
+        e.preventDefault();
+        handleKeypad(key);
+      } else if (key === '*') {
+        e.preventDefault();
+        handleKeypad('x');
+      } else if (key === 'Enter' || key === '=') {
+        e.preventDefault();
+        handleKeypad('=');
+      } else if (key === 'Backspace') {
+        e.preventDefault();
+        handleKeypad('backspace');
+      } else if (key === 'Escape') {
+        e.preventDefault();
+        handleClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [modalOpen, handleKeypad, handleClose]);
 
   // Pre-fill form when modal opens with data
   useEffect(() => {
@@ -75,44 +159,6 @@ export default function AddTransactionModal() {
       setAccountId(accounts[0].id);
     }
   }, [accounts, accountId]);
-
-  const resetForm = () => {
-    setCurrentInput('0');
-    setDescription('');
-    setCategoryId('');
-    setToAccountId('');
-    setType('expense');
-    setValidationError('');
-    if (accounts.length > 0) {
-      setAccountId(accounts[0].id);
-    }
-  };
-
-  const handleClose = () => {
-    resetForm();
-    if (isEditMode) {
-      cancelEditTransaction();
-    }
-    setOpen(false);
-  };
-
-  const handleKeypad = (val) => {
-    if (val === 'backspace') {
-      setCurrentInput((prev) => (prev.length > 1 ? prev.slice(0, -1) : '0'));
-    } else if (['+', '-', 'x', '/'].includes(val)) {
-      setCurrentInput((prev) => prev + val);
-    } else if (val === '=') {
-      try {
-        const expr = currentInput.replace(/x/g, '*');
-        const result = evaluateMath(expr);
-        setCurrentInput(String(Math.round(result * 100) / 100));
-      } catch {
-        setCurrentInput('Error');
-      }
-    } else {
-      setCurrentInput((prev) => (prev === '0' ? val : prev + val));
-    }
-  };
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
@@ -252,239 +298,323 @@ export default function AddTransactionModal() {
 
   return (
     <>
-      <div className="fixed inset-0 bg-[#fcfbf5] z-50 flex flex-col">
-        {/* Top Bar */}
-        <div className="flex justify-between items-center px-4 py-3 bg-white border-b border-[#e5e3d8]">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleClose}
-              className="flex items-center gap-1.5 text-sm font-bold text-[#7c8e88] hover:text-[#1e3a34] transition cursor-pointer"
-            >
-              <X className="w-4 h-4" /> Cancel
-            </button>
-          </div>
-          <span className="text-sm font-bold text-[#1e3a34]">
-            {editingDbTransaction
-              ? 'Edit Transaction'
-              : type === 'expense'
-                ? 'Expense'
-                : type === 'income'
-                  ? 'Income'
-                  : 'Transfer'}
-          </span>
-          <div className="w-10" />
-        </div>
-
-        {/* Type Selector */}
-        <div className="bg-white border-b border-[#e5e3d8] px-4 py-3">
-          <div className="relative flex bg-[#f0f5f2] rounded-xl p-1 gap-1 overflow-hidden">
-            {/* Sliding background pill */}
-            <div
-              className="absolute inset-y-1 left-1 w-1/3 rounded-lg bg-white shadow-sm transition-transform duration-150"
-              style={{ transform: `translateX(${activeTypeIndex * 100}%)` }}
-              aria-hidden="true"
-            />
-
-            {typeOptions.map((t) => (
+      <div className="fixed inset-0 z-50 flex flex-col bg-[#fcfbf5] lg:bg-black/40 lg:backdrop-blur-sm lg:items-center lg:justify-center lg:p-4">
+        <div className="flex flex-col w-full h-full lg:h-auto lg:max-w-4xl lg:bg-[#fcfbf5] lg:rounded-[32px] lg:shadow-2xl overflow-hidden">
+          {/* Top Bar */}
+          <div className="flex justify-between items-center px-4 py-3 lg:px-8 lg:py-5 bg-white border-b border-[#e5e3d8]">
+            <div className="flex items-center gap-3">
               <button
-                key={t.id}
-                onClick={() => {
-                  setType(t.id);
-                  setCategoryId('');
-                  setToAccountId('');
+                onClick={handleClose}
+                className="flex items-center gap-1.5 text-sm font-bold text-[#7c8e88] hover:text-[#1e3a34] transition cursor-pointer"
+              >
+                <X className="w-4 h-4" /> Cancel
+              </button>
+            </div>
+            <span className="text-sm font-bold text-[#1e3a34] lg:text-base">
+              {editingDbTransaction
+                ? 'Edit Transaction'
+                : type === 'expense'
+                  ? 'Expense'
+                  : type === 'income'
+                    ? 'Income'
+                    : 'Transfer'}
+            </span>
+            <div className="flex items-center gap-2">
+              {editingDbTransaction && (
+                <button
+                  onClick={handleDelete}
+                  className="p-2 text-[#c94c4c] hover:bg-red-50 rounded-full transition cursor-pointer"
+                  title="Delete transaction"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+              <div className="lg:w-10" />
+            </div>
+          </div>
+
+          {/* Type Selector */}
+          <div className="bg-white border-b border-[#e5e3d8] px-4 py-3 lg:px-8 lg:py-4">
+            <div className="relative flex bg-[#1f644e] rounded-xl overflow-hidden lg:max-w-md lg:mx-auto">
+              {/* Sliding background pill container */}
+              <div
+                className="absolute inset-y-0 transition-all duration-200 ease-out p-1"
+                style={{
+                  left: `${(activeTypeIndex * 100) / 3}%`,
+                  width: '33.3333%',
                 }}
-                className={`relative z-10 flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-                  type === t.id ? 'text-[#1f644e]' : 'text-[#7c8e88] hover:text-[#1e3a34]'
-                }`}
               >
-                <t.icon className="w-3.5 h-3.5" />
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
+                <div className="w-full h-full bg-white rounded-lg shadow-md" />
+              </div>
 
-        {/* Validation Error */}
-        {validationError && (
-          <div className="px-4 py-2 bg-[#fef2f2] border-b border-[#fecaca]">
-            <div className="flex items-center gap-2 text-sm text-[#c94c4c]">
-              <AlertTriangle className="w-4 h-4" />
-              <span>{validationError}</span>
+              {typeOptions.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => {
+                    setType(t.id);
+                    setCategoryId('');
+                    setToAccountId('');
+                  }}
+                  className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-3 text-[11px] lg:text-xs font-bold transition-colors cursor-pointer ${
+                    type === t.id ? 'text-[#1f644e]' : 'text-white/80 hover:text-white'
+                  }`}
+                >
+                  <t.icon className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{t.label}</span>
+                </button>
+              ))}
             </div>
           </div>
-        )}
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Account / Category Selectors */}
-          <div className="px-4 py-3 bg-[#fcfbf5]">
-            {type === 'transfer' ? (
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <div className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider mb-1.5">
-                    From
-                  </div>
-                  <button
-                    onClick={() => setShowAccountSelector('from')}
-                    className="w-full border border-[#e5e3d8] bg-white py-2.5 px-3 rounded-xl text-sm font-bold text-[#1e3a34] flex items-center gap-2 hover:bg-[#f8f9f4] transition cursor-pointer"
-                  >
-                    {selectedAccount?.icon ? (
-                      <IconRenderer
-                        name={selectedAccount.icon}
-                        className="w-4 h-4 text-[#7c8e88]"
-                      />
-                    ) : (
-                      <PurseSVG className="w-4 h-4 text-[#7c8e88]" />
-                    )}
-                    {selectedAccount?.name || 'Select account'}
-                  </button>
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider mb-1.5">
-                    To
-                  </div>
-                  <button
-                    onClick={() => setShowAccountSelector('to')}
-                    className="w-full border border-[#e5e3d8] bg-white py-2.5 px-3 rounded-xl text-sm font-bold text-[#1e3a34] flex items-center gap-2 hover:bg-[#f8f9f4] transition cursor-pointer"
-                  >
-                    {selectedToAccount?.icon ? (
-                      <IconRenderer
-                        name={selectedToAccount.icon}
-                        className="w-4 h-4 text-[#7c8e88]"
-                      />
-                    ) : (
-                      <PurseSVG className="w-4 h-4 text-[#7c8e88]" />
-                    )}
-                    {selectedToAccount?.name || 'Select account'}
-                  </button>
-                </div>
+          {/* Validation Error */}
+          {validationError && (
+            <div className="px-4 py-2 bg-[#fef2f2] border-b border-[#fecaca] lg:px-8">
+              <div className="flex items-center gap-2 text-sm text-[#c94c4c]">
+                <AlertTriangle className="w-4 h-4" />
+                <span>{validationError}</span>
               </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <div className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider mb-1.5">
-                    Account
-                  </div>
-                  <button
-                    onClick={() => setShowAccountSelector('main')}
-                    className="w-full border border-[#e5e3d8] bg-white py-2.5 px-3 rounded-xl text-sm font-bold text-[#1e3a34] flex items-center gap-2 hover:bg-[#f8f9f4] transition cursor-pointer"
-                  >
-                    {selectedAccount?.icon ? (
-                      <IconRenderer
-                        name={selectedAccount.icon}
-                        className="w-4 h-4 text-[#7c8e88]"
-                      />
-                    ) : (
-                      <PurseSVG className="w-4 h-4 text-[#7c8e88]" />
-                    )}
-                    {selectedAccount?.name || 'Select'}
-                  </button>
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider mb-1.5">
-                    Category
-                  </div>
-                  <button
-                    onClick={() => setShowCategorySelector(true)}
-                    className="w-full border border-[#e5e3d8] bg-white py-2.5 px-3 rounded-xl text-sm font-bold text-[#1e3a34] flex items-center gap-2 hover:bg-[#f8f9f4] transition cursor-pointer"
-                  >
-                    {selectedCategory ? (
-                      <>
-                        <div
-                          className={`w-5 h-5 rounded-full ${selectedCategoryColor.className} flex items-center justify-center`}
-                          style={selectedCategoryColor.style}
+            </div>
+          )}
+
+          {/* Main Content Body */}
+          <div className="flex-1 flex flex-col overflow-hidden lg:flex-row">
+            {/* Left Panel: Transaction Details */}
+            <div className="flex-1 flex flex-col overflow-y-auto border-b lg:border-b-0 lg:border-r border-[#e5e3d8]">
+              <div className="p-4 lg:p-8 space-y-6">
+                {/* Account / Category Selectors */}
+                <div className="space-y-4">
+                  {type === 'transfer' ? (
+                    <div className="grid grid-cols-2 gap-3 lg:gap-6">
+                      <div className="space-y-1.5">
+                        <div className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider">
+                          From
+                        </div>
+                        <button
+                          onClick={() => setShowAccountSelector('from')}
+                          className="w-full border border-[#e5e3d8] bg-white py-3 px-4 rounded-2xl text-sm font-bold text-[#1e3a34] flex items-center gap-2 hover:bg-[#f8f9f4] transition cursor-pointer"
                         >
-                          <IconRenderer
-                            name={selectedCategory.icon}
-                            className="w-3 h-3 text-white"
-                          />
+                          {selectedAccount?.icon ? (
+                            <IconRenderer
+                              name={selectedAccount.icon}
+                              className="w-4 h-4 text-[#7c8e88]"
+                            />
+                          ) : (
+                            <PurseSVG className="w-4 h-4 text-[#7c8e88]" />
+                          )}
+                          <span className="truncate">{selectedAccount?.name || 'Select'}</span>
+                        </button>
+                      </div>
+                      <div className="space-y-1.5">
+                        <div className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider">
+                          To
                         </div>
-                        {selectedCategory.name}
-                      </>
+                        <button
+                          onClick={() => setShowAccountSelector('to')}
+                          className="w-full border border-[#e5e3d8] bg-white py-3 px-4 rounded-2xl text-sm font-bold text-[#1e3a34] flex items-center gap-2 hover:bg-[#f8f9f4] transition cursor-pointer"
+                        >
+                          {selectedToAccount?.icon ? (
+                            <IconRenderer
+                              name={selectedToAccount.icon}
+                              className="w-4 h-4 text-[#7c8e88]"
+                            />
+                          ) : (
+                            <PurseSVG className="w-4 h-4 text-[#7c8e88]" />
+                          )}
+                          <span className="truncate">{selectedToAccount?.name || 'Select'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3 lg:gap-6">
+                      <div className="space-y-1.5">
+                        <div className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider">
+                          Account
+                        </div>
+                        <button
+                          onClick={() => setShowAccountSelector('main')}
+                          className="w-full border border-[#e5e3d8] bg-white py-3 px-4 rounded-2xl text-sm font-bold text-[#1e3a34] flex items-center gap-2 hover:bg-[#f8f9f4] transition cursor-pointer"
+                        >
+                          {selectedAccount?.icon ? (
+                            <IconRenderer
+                              name={selectedAccount.icon}
+                              className="w-4 h-4 text-[#7c8e88]"
+                            />
+                          ) : (
+                            <PurseSVG className="w-4 h-4 text-[#7c8e88]" />
+                          )}
+                          <span className="truncate">{selectedAccount?.name || 'Select'}</span>
+                        </button>
+                      </div>
+                      <div className="space-y-1.5">
+                        <div className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider">
+                          Category
+                        </div>
+                        <button
+                          onClick={() => setShowCategorySelector(true)}
+                          className="w-full border border-[#e5e3d8] bg-white py-3 px-4 rounded-2xl text-sm font-bold text-[#1e3a34] flex items-center gap-2 hover:bg-[#f8f9f4] transition cursor-pointer"
+                        >
+                          {selectedCategory ? (
+                            <>
+                              <div
+                                className={`w-5 h-5 rounded-full ${selectedCategoryColor.className} flex items-center justify-center flex-shrink-0`}
+                                style={selectedCategoryColor.style}
+                              >
+                                <IconRenderer
+                                  name={selectedCategory.icon}
+                                  className="w-3 h-3 text-white"
+                                />
+                              </div>
+                              <span className="truncate">{selectedCategory.name}</span>
+                            </>
+                          ) : (
+                            <>
+                              <div className="w-5 h-5 rounded-full bg-[#f0f5f2] flex items-center justify-center flex-shrink-0">
+                                <IconRenderer name="tag" className="w-3 h-3 text-[#7c8e88]" />
+                              </div>
+                              <span className="truncate text-[#7c8e88]">Select</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Notes */}
+                <div className="space-y-2">
+                  <div className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider">
+                    Notes
+                  </div>
+                  <div className="border border-[#e5e3d8] rounded-2xl bg-white px-4 py-3 focus-within:border-[#1f644e] transition-colors">
+                    <textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      className="w-full bg-transparent outline-none resize-none text-sm lg:text-base placeholder:text-[#7c8e88] placeholder:font-medium min-h-[80px]"
+                      placeholder="What was this for?"
+                      rows={2}
+                    />
+                  </div>
+                </div>
+
+                {/* Transaction Date (Desktop only) */}
+                <div className="hidden lg:block pt-6 border-t border-[#e5e3d8]">
+                  <div className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider mb-2.5">
+                    Transaction Date
+                  </div>
+                  <div className="flex items-center gap-3 text-sm font-bold text-[#1e3a34]">
+                    <div className="bg-[#f0f5f2] px-4 py-2 rounded-xl flex items-center gap-2">
+                      <span className="text-[#7c8e88]">
+                        {effectiveDate.toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </span>
+                    </div>
+                    <div className="bg-[#f0f5f2] px-4 py-2 rounded-xl flex items-center gap-2">
+                      <span className="text-[#7c8e88]">
+                        {effectiveDate.toLocaleTimeString('en-US', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Panel: Amount & Keypad */}
+            <div className="flex flex-col bg-white lg:bg-[#fcfbf5] lg:w-[420px] overflow-y-auto">
+              <div className="p-4 lg:p-8 flex flex-col h-full">
+                {/* Amount Display */}
+                <div className="mb-6 lg:mb-8">
+                  <div className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider mb-2 lg:hidden">
+                    Amount
+                  </div>
+                  <div className="bg-white border border-[#e5e3d8] rounded-[24px] p-5 lg:p-8 flex justify-between items-center shadow-sm overflow-hidden">
+                    <div
+                      ref={amountDisplayRef}
+                      className="flex items-baseline gap-1 flex-1 min-w-0 overflow-x-auto no-scrollbar scroll-smooth"
+                    >
+                      <span className="text-2xl font-bold text-[#7c8e88] shrink-0">
+                        {displayCurrency}
+                      </span>
+                      <span
+                        className={`text-4xl lg:text-5xl font-bold tracking-wide tabular-nums whitespace-nowrap ${currentInput === '0' ? 'text-[#7c8e88]' : 'text-[#1e3a34]'}`}
+                      >
+                        {displayAmount}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleKeypad('backspace')}
+                      className="text-[#7c8e88] hover:text-[#1e3a34] active:scale-90 transition p-2 cursor-pointer shrink-0 ml-2"
+                    >
+                      <svg
+                        className="w-6 h-6"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <path d="M21 4H8l-7 8 7 8h13a2 2 0 002-2V6a2 2 0 00-2-2z" />
+                        <line x1="18" y1="9" x2="12" y2="15" />
+                        <line x1="12" y1="9" x2="18" y2="15" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Calculator Keypad */}
+                <div className="grid grid-cols-4 gap-2 lg:gap-3">
+                  <KeyBtn value="7" />
+                  <KeyBtn value="8" />
+                  <KeyBtn value="9" />
+                  <KeyBtn value="/" label="÷" operator />
+
+                  <KeyBtn value="4" />
+                  <KeyBtn value="5" />
+                  <KeyBtn value="6" />
+                  <KeyBtn value="x" label="×" operator />
+
+                  <KeyBtn value="1" />
+                  <KeyBtn value="2" />
+                  <KeyBtn value="3" />
+                  <KeyBtn value="-" operator />
+
+                  <KeyBtn value="." />
+                  <KeyBtn value="0" />
+                  <KeyBtn value="+" operator />
+                  <KeyBtn value="=" primary />
+                </div>
+
+                {/* Save Button (Desktop only) */}
+                <div className="hidden lg:block mt-8">
+                  <button
+                    onClick={handleSubmit}
+                    disabled={parseFloat(currentInput) <= 0 || isSubmitting}
+                    className="w-full flex items-center justify-center gap-2 rounded-[20px] bg-[#1f644e] py-4 text-base font-bold text-white shadow-lg transition hover:bg-[#17503e] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {isSubmitting ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     ) : (
-                      <>
-                        <div className="w-5 h-5 rounded-full bg-[#f0f5f2] flex items-center justify-center">
-                          <IconRenderer name="tag" className="w-3 h-3 text-[#7c8e88]" />
-                        </div>
-                        Select category
-                      </>
+                      <Check className="w-5 h-5" />
                     )}
+                    {isSubmitting
+                      ? editingDbTransaction
+                        ? 'Updating...'
+                        : 'Saving...'
+                      : editingDbTransaction
+                        ? 'Update Transaction'
+                        : 'Save Transaction'}
                   </button>
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Notes */}
-          <div className="px-4 pb-2">
-            <div className="border border-[#e5e3d8] rounded-xl bg-white px-3 py-2">
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full bg-transparent outline-none resize-none text-sm placeholder:text-[#7c8e88] placeholder:font-medium"
-                placeholder="Add a note..."
-                rows={1}
-              />
             </div>
           </div>
 
-          {/* Amount Display */}
-          <div className="px-4 py-4">
-            <div className="bg-white border border-[#e5e3d8] rounded-2xl p-4 flex justify-between items-center">
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-[#7c8e88]">{displayCurrency}</span>
-                <span
-                  className={`text-4xl font-bold tracking-wide tabular-nums ${currentInput === '0' ? 'text-[#7c8e88]' : 'text-[#1e3a34]'}`}
-                >
-                  {displayAmount}
-                </span>
-              </div>
-              <button
-                onClick={() => handleKeypad('backspace')}
-                className="text-[#7c8e88] hover:text-[#1e3a34] active:scale-90 transition p-2 cursor-pointer"
-              >
-                <svg
-                  className="w-5 h-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M21 4H8l-7 8 7 8h13a2 2 0 002-2V6a2 2 0 00-2-2z" />
-                  <line x1="18" y1="9" x2="12" y2="15" />
-                  <line x1="12" y1="9" x2="18" y2="15" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Calculator Keypad */}
-          <div className="px-4 pb-4 mt-auto">
-            <div className="grid grid-cols-4 gap-2">
-              <KeyBtn value="7" />
-              <KeyBtn value="8" />
-              <KeyBtn value="9" />
-              <KeyBtn value="/" label="÷" operator />
-
-              <KeyBtn value="4" />
-              <KeyBtn value="5" />
-              <KeyBtn value="6" />
-              <KeyBtn value="x" label="×" operator />
-
-              <KeyBtn value="1" />
-              <KeyBtn value="2" />
-              <KeyBtn value="3" />
-              <KeyBtn value="-" operator />
-
-              <KeyBtn value="." />
-              <KeyBtn value="0" />
-              <KeyBtn value="+" operator />
-              <KeyBtn value="=" primary />
-            </div>
-          </div>
-
-          {/* Date/Time + Bottom Save */}
-          <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-[#e5e3d8] bg-white">
+          {/* Mobile Footer */}
+          <div className="lg:hidden flex items-center justify-between gap-3 px-4 py-3 border-t border-[#e5e3d8] bg-white">
             <div className="text-xs font-bold text-[#7c8e88]">
               <div>
                 {effectiveDate.toLocaleDateString('en-US', {
@@ -500,7 +630,7 @@ export default function AddTransactionModal() {
             <button
               onClick={handleSubmit}
               disabled={parseFloat(currentInput) <= 0 || isSubmitting}
-              className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-[#1f644e] px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#17503e] disabled:cursor-not-allowed disabled:opacity-40"
+              className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-[#1f644e] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#17503e] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Check className="w-4 h-4" />
               {isSubmitting

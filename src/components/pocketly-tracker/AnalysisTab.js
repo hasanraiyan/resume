@@ -527,13 +527,14 @@ export default function AnalysisTab() {
             </div>
           </div>
 
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div className="mb-6 flex items-center justify-between gap-3">
             {/* Integrated TopTabs Component */}
             <TopTabs
               options={viewOptions}
               activeId={viewMode}
               onChange={(id) => setViewMode(id)}
               theme="green"
+              scrollable={true}
             />
 
             <div className="flex flex-wrap items-center gap-3">

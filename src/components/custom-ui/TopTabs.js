@@ -9,6 +9,7 @@ export default function TopTabs({
   onChange = () => {},
   theme = 'green',
   showLabelsOnMobile = false,
+  scrollable = false,
 }) {
   const safeOptions = Array.isArray(options) ? options : [];
 
@@ -37,14 +38,21 @@ export default function TopTabs({
 
   const colors = themeColors[theme] || themeColors.green;
 
+  const containerClasses = scrollable
+    ? 'relative flex items-center overflow-x-auto no-scrollbar gap-1'
+    : 'relative flex items-center rounded-2xl border p-1.5';
+
   return (
     <div
-      // Removed shadow-sm here
-      className="relative flex items-center rounded-2xl border p-1.5"
-      style={{
-        borderColor: colors.border,
-        backgroundColor: colors.background,
-      }}
+      className={containerClasses}
+      style={
+        !scrollable
+          ? {
+              borderColor: colors.border,
+              backgroundColor: colors.background,
+            }
+          : {}
+      }
     >
       {safeOptions.map((option) => {
         const Icon = option.icon;
@@ -55,10 +63,10 @@ export default function TopTabs({
             key={option.id}
             type="button"
             onClick={() => onChange(option.id)}
-            // Added cursor-pointer here
-            className="relative flex min-w-0 cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            className={`relative flex min-w-0 cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2 shrink-0 ${scrollable && !isActive ? 'border border-[#e5e3d8] bg-white' : ''}`}
             style={{
               color: isActive ? colors.textActive : colors.inactive,
+              ...(scrollable && isActive ? { backgroundColor: colors.pill } : {}),
             }}
             onMouseEnter={(e) => {
               if (!isActive) e.currentTarget.style.color = colors.hover;
@@ -67,11 +75,10 @@ export default function TopTabs({
               if (!isActive) e.currentTarget.style.color = colors.inactive;
             }}
           >
-            {/* The Animated Background Pill */}
-            {isActive && (
+            {/* The Animated Background Pill (Desktop/Non-scrollable) */}
+            {!scrollable && isActive && (
               <motion.div
                 layoutId={`active-pill-${uniqueTabGroupId}`}
-                // Removed shadow-sm here
                 className="absolute inset-0 rounded-xl"
                 style={{ backgroundColor: colors.pill }}
                 initial={false}
@@ -87,7 +94,9 @@ export default function TopTabs({
             <span className="relative z-10 flex items-center gap-2">
               {Icon && <Icon className="h-4 w-4 shrink-0" />}
               {option.label && (
-                <span className={`${showLabelsOnMobile ? 'inline' : 'hidden sm:inline'} truncate`}>
+                <span
+                  className={`${showLabelsOnMobile || scrollable ? 'inline' : 'hidden sm:inline'} truncate`}
+                >
                   {option.label}
                 </span>
               )}
