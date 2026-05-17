@@ -49,10 +49,21 @@ export async function POST(request) {
           const CoursifyResearch = (await import('@/models/CoursifyResearch')).default;
 
           const promptHash = hashPrompt(topic.trim(), isReferenceEnabled);
-          const cachedResearch = await CoursifyResearch.findOne({
+
+          // Try exact prompt match first
+          let cachedResearch = await CoursifyResearch.findOne({
             promptHash,
             deletedAt: null,
           });
+
+          // If no prompt match, try matching input against existing titles (title as input)
+          if (!cachedResearch) {
+            const inputHash = hashPrompt(topic.trim(), isReferenceEnabled);
+            cachedResearch = await CoursifyResearch.findOne({
+              titleHash: inputHash,
+              deletedAt: null,
+            });
+          }
 
           if (cachedResearch) {
             // ─── Cache Hit: Return Immediately ───
@@ -131,6 +142,7 @@ export async function POST(request) {
               content: finalContent,
               slug,
               promptHash,
+              titleHash: hashPrompt(baseTitle, isReferenceEnabled),
               usage: {
                 ...totalUsage,
                 estimatedCostUSD,

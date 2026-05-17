@@ -26,6 +26,10 @@ const CoursifyResearchSchema = new mongoose.Schema(
       type: String,
       index: true,
     },
+    titleHash: {
+      type: String,
+      index: true,
+    },
     usage: {
       promptTokens: { type: Number, default: 0 },
       completionTokens: { type: Number, default: 0 },
