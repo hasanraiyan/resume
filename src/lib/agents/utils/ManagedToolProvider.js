@@ -49,6 +49,19 @@ class ManagedToolProvider {
   }
 
   /**
+   * Helper to split keys string into array
+   * @private
+   */
+  _splitKeys(keys) {
+    if (!keys) return [];
+    if (Array.isArray(keys)) return keys;
+    return String(keys)
+      .split(/[\n,]/)
+      .map((k) => k.trim())
+      .filter((k) => k.length > 0);
+  }
+
+  /**
    * Configure Firecrawl with Rotation and Monthly Credit Discovery
    * @private
    */
@@ -67,7 +80,7 @@ class ManagedToolProvider {
     }
 
     // 2. Extract Keys & Limits
-    const keys = isObject ? config.keys : config;
+    const keys = this._splitKeys(isObject ? config.keys : config);
     const limits = isObject ? { rpm: config.rpm, rpd: config.rpd, rpmnt: config.rpmnt } : {};
 
     // 3. Register with Global Rotation Manager
@@ -132,7 +145,7 @@ class ManagedToolProvider {
     }
 
     // 2. Extract Keys & Limits
-    const keys = isObject ? config.keys : config;
+    const keys = this._splitKeys(isObject ? config.keys : config);
     const limits = isObject ? { rpm: config.rpm, rpd: config.rpd, rpmnt: config.rpmnt } : {};
 
     // 3. Register with Global Rotation Manager
@@ -187,7 +200,7 @@ class ManagedToolProvider {
     }
 
     // 2. Extract Keys & Limits
-    const keys = isObject ? config.keys : config;
+    const keys = this._splitKeys(isObject ? config.keys : config);
     const limits = isObject ? { rpm: config.rpm, rpd: config.rpd, rpmnt: config.rpmnt } : {};
 
     // 3. Register with Global Rotation Manager
@@ -200,34 +213,35 @@ class ManagedToolProvider {
       return null;
     }
 
-    // 5. Injected key into configurable field of the tool
-    const tool = youtubeSearch;
+    // 4. Create a clean wrapper to avoid mutating the shared youtubeSearch singleton
+    const tool = {
+      name: youtubeSearch.name,
+      description: youtubeSearch.description,
+      schema: youtubeSearch.schema,
+      invoke: async (input, callConfig) => {
+        // Inject the rotated key into the tool's execution context
+        const configWithKey = {
+          ...callConfig,
+          configurable: { ...callConfig?.configurable, apiKey: pooled.apiKey },
+        };
 
-    // 6. Wrap with "Limit Discovery" Logic
-    const originalInvoke = tool.invoke.bind(tool);
-    tool.invoke = async (input, callConfig) => {
-      // Inject the rotated key into the tool's execution context
-      const configWithKey = {
-        ...callConfig,
-        configurable: { ...callConfig?.configurable, apiKey: pooled.apiKey },
-      };
-
-      try {
-        return await originalInvoke(input, configWithKey);
-      } catch (err) {
-        const msg = err.message?.toLowerCase() || '';
-        // YouTube usually returns 403 for quota errors
-        if (
-          err.status === 429 ||
-          err.status === 403 ||
-          msg.includes('quota') ||
-          msg.includes('limit')
-        ) {
-          logger.warn(`🛑 YouTube key ${pooled.internalId} hit a limit! Throttling globally.`);
-          await keyRotationManager.markThrottled('YOUTUBE_SEARCH', pooled.internalId);
+        try {
+          return await youtubeSearch.invoke(input, configWithKey);
+        } catch (err) {
+          const msg = err.message?.toLowerCase() || '';
+          // YouTube usually returns 403 for quota errors
+          if (
+            err.status === 429 ||
+            err.status === 403 ||
+            msg.includes('quota') ||
+            msg.includes('limit')
+          ) {
+            logger.warn(`🛑 YouTube key ${pooled.internalId} hit a limit! Throttling globally.`);
+            await keyRotationManager.markThrottled('YOUTUBE_SEARCH', pooled.internalId);
+          }
+          throw err;
         }
-        throw err;
-      }
+      },
     };
 
     logger.info(`✅ YouTube Tool ready (using ${pooled.internalId})`);

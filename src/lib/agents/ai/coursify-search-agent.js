@@ -1,7 +1,7 @@
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 import BaseAgent from '../BaseAgent';
-import { AGENT_IDS } from '@/lib/constants/agents';
+import { AGENT_IDS, getAgentTools } from '@/lib/constants/agents';
 import managedToolProvider from '../utils/ManagedToolProvider';
 
 const SYSTEM_PROMPT = `
@@ -136,14 +136,20 @@ class CoursifySearchAgent extends BaseAgent {
     this.logger.debug('✅ Chat model created');
 
     // Load self-healing, load-balanced tools from the Managed Provider
-    const enabledToolIds = this.config.tools || [];
+    // FALLBACK: Use AGENT_TOOLS constant if DB config has no tools enabled
+    let enabledToolIds = this.config.tools || [];
+    if (enabledToolIds.length === 0) {
+      enabledToolIds = getAgentTools(this.agentId);
+      this.logger.debug(`Using default tools from constants: ${enabledToolIds.join(', ')}`);
+    }
+
     const tools = await managedToolProvider.getTools(enabledToolIds, this.logger);
 
     const contentAgent = createReactAgent({
       llm,
       tools,
     });
-    this.logger.debug('✅ ReAct agent created');
+    this.logger.debug(`✅ ReAct agent created with ${tools.length} tools`);
 
     let dynamicSystemPrompt = SYSTEM_PROMPT;
     if (isReferenceEnabled) {
@@ -172,12 +178,13 @@ class CoursifySearchAgent extends BaseAgent {
       for await (const event of stream) {
         const { event: type, data, name } = event;
 
-        if (
-          type === 'on_chat_model_stream' &&
-          data.chunk?.content &&
-          name !== 'ChatPromptTemplate'
-        ) {
-          yield { type: 'content', message: data.chunk.content };
+        // Support both OpenAI and Gemini stream formats
+        const content = data.chunk?.content || data.chunk?.text || '';
+
+        if (type === 'on_chat_model_stream' && content && name !== 'ChatPromptTemplate') {
+          // Normalize content if it's an array (sometimes happens with certain models)
+          const message = typeof content === 'string' ? content : JSON.stringify(content);
+          yield { type: 'content', message };
         } else if (type === 'on_tool_start') {
           yield {
             type: 'tool_call',
@@ -201,17 +208,25 @@ class CoursifySearchAgent extends BaseAgent {
         } else if (type === 'on_chat_model_start') {
           yield { type: 'status', message: '' };
         } else if (type === 'on_chat_model_end') {
+          // Robust usage extraction for OpenAI and Gemini
           const usage =
+            data.output?.usage_metadata || // Gemini format
             data.output?.usage ||
             data.output?.response_metadata?.tokenUsage ||
             data.output?.response_metadata?.usage;
+
           if (usage) {
             yield {
               type: 'usage',
               data: {
-                promptTokens: usage.prompt_tokens || usage.promptTokens || 0,
-                completionTokens: usage.completion_tokens || usage.completionTokens || 0,
-                totalTokens: usage.total_tokens || usage.totalTokens || 0,
+                promptTokens:
+                  usage.prompt_tokens || usage.promptTokens || usage.promptTokenCount || 0,
+                completionTokens:
+                  usage.completion_tokens ||
+                  usage.completionTokens ||
+                  usage.candidatesTokenCount ||
+                  0,
+                totalTokens: usage.total_tokens || usage.totalTokens || usage.totalTokenCount || 0,
               },
             };
           }
