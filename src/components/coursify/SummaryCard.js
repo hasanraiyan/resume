@@ -35,7 +35,7 @@ export default function SummaryCard({ summary }) {
     <div className="mb-8 bg-[#f0f5f2] rounded-xl border border-[#d4e6de] overflow-hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center gap-2 text-left hover:bg-[#e8efe9] transition-colors ${isOpen ? 'p-5' : 'p-3'}`}
+        className="w-full flex items-center gap-2 text-left hover:bg-[#e8efe9] transition-colors p-5"
       >
         <Sparkles className="w-4 h-4 text-[#1f644e] shrink-0" />
         <h2 className="text-sm font-bold text-[#1e3a34] uppercase tracking-wider">AI Summary</h2>
@@ -44,7 +44,7 @@ export default function SummaryCard({ summary }) {
         />
       </button>
       {isOpen && (
-        <div className="px-5 pb-5 -mt-1 space-y-3">
+        <div className="px-5 pb-5 space-y-3 border-t border-[#d4e6de] pt-4">
           {intro && <p className="text-[#1e3a34] leading-relaxed text-sm">{intro}</p>}
           {bullets.length > 0 && (
             <ul className="space-y-1.5">
