@@ -72,12 +72,6 @@ options:
   showGrid: true
   beginAtZero: true
 
-**## [ResourceBlock]**
-For external links, documentation, or further reading.
-title: "Resource Title"
-url: "https://example.com/docs"
-type: "documentation" (options: video, documentation, article, tool, other)
-
 **## [VideoBlock]**
 Embed relevant YouTube or educational videos.
 title: "Video Title"
