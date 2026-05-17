@@ -44,6 +44,7 @@ export const firecrawlScrape = tool(
 
       // Robust content extraction with truncation
       const rawContent = markdown || html || '';
+      const wasTruncated = rawContent.length > 10000;
       const result = {
         content: rawContent.substring(0, 10000), // Truncate to 10k chars to avoid token overload
         title: metadata?.title || metadata?.ogTitle || 'Unknown Title',

@@ -402,6 +402,75 @@ async function cleanupDuplicates() {
 }
 
 /**
+ * Clean up duplicates by title: keep the latest record per normalized title,
+ * soft-delete older ones from MongoDB and delete from Qdrant
+ */
+async function cleanupByTitle() {
+  await dbConnect();
+
+  // Get all active records
+  const allDocs = await CoursifyResearch.find({ deletedAt: null }).sort({ createdAt: -1 });
+  console.log(`\n📊 Found ${allDocs.length} active articles`);
+
+  // Group by normalized title
+  const titleGroups = new Map();
+  for (const doc of allDocs) {
+    const normalizedTitle = normalizePrompt(doc.title);
+    if (!titleGroups.has(normalizedTitle)) {
+      titleGroups.set(normalizedTitle, []);
+    }
+    titleGroups.get(normalizedTitle).push(doc);
+  }
+
+  // Filter to only groups with duplicates
+  const duplicateGroups = [...titleGroups.entries()].filter(([, docs]) => docs.length > 1);
+  console.log(`🔍 Found ${duplicateGroups.length} duplicate title groups\n`);
+
+  if (duplicateGroups.length === 0) {
+    console.log('✅ No duplicate titles found\n');
+    return { deleted: 0, deletedFromQdrant: 0 };
+  }
+
+  let totalDeletedMongo = 0;
+  let totalDeletedQdrant = 0;
+
+  for (const [normalizedTitle, docs] of duplicateGroups) {
+    // docs are already sorted by createdAt desc (from query)
+    const keep = docs[0]; // Latest
+    const toDelete = docs.slice(1); // Older duplicates
+
+    console.log(`📌 Group: "${keep.title}"`);
+    console.log(
+      `   ✅ Keeping (latest): "${keep.title}" (${keep.slug}) — Created: ${keep.createdAt}`
+    );
+
+    for (const doc of toDelete) {
+      console.log(`   🗑️  Deleting: "${doc.title}" (${doc.slug}) — Created: ${doc.createdAt}`);
+
+      // Soft-delete in MongoDB
+      doc.deletedAt = new Date();
+      await doc.save();
+      totalDeletedMongo++;
+
+      // Delete from Qdrant
+      const qdrantResult = await deleteFromQdrant(doc.slug);
+      if (qdrantResult.deleted > 0) {
+        console.log(`      ✓ Removed from Qdrant`);
+        totalDeletedQdrant += qdrantResult.deleted;
+      }
+    }
+    console.log();
+  }
+
+  console.log(`📊 Summary:`);
+  console.log(`   Total deleted from MongoDB: ${totalDeletedMongo}`);
+  console.log(`   Total deleted from Qdrant: ${totalDeletedQdrant}`);
+  console.log(`   Groups consolidated: ${duplicateGroups.length}\n`);
+
+  return { deleted: totalDeletedMongo, deletedFromQdrant: totalDeletedQdrant };
+}
+
+/**
  * Find all research with duplicate titles
  */
 async function findDuplicateTitles() {
@@ -432,6 +501,113 @@ async function findDuplicateTitles() {
   return duplicates;
 }
 
+/**
+ * Deduplicate by similarity using Qdrant embeddings: find semantically similar articles,
+ * keep the latest, soft-delete the rest from MongoDB and delete from Qdrant
+ */
+async function deduplicateBySimilarity() {
+  await dbConnect();
+
+  const qdrantUrl = process.env.QDRANT_URL;
+  if (!qdrantUrl) {
+    console.log('❌ QDRANT_URL not set');
+    return { deleted: 0, deletedFromQdrant: 0 };
+  }
+
+  const SIMILARITY_THRESHOLD = parseFloat(process.env.SIMILARITY_THRESHOLD || '0.90'); // 85% similarity
+
+  console.log(
+    `\n🔍 Finding semantically similar articles (threshold: ${(SIMILARITY_THRESHOLD * 100).toFixed(0)}%)\n`
+  );
+
+  // Fetch all active records
+  const allDocs = await CoursifyResearch.find({ deletedAt: null }).sort({ createdAt: -1 });
+  console.log(`📊 Found ${allDocs.length} active articles to compare\n`);
+
+  if (allDocs.length === 0) {
+    console.log('✅ No articles to compare\n');
+    return { deleted: 0, deletedFromQdrant: 0 };
+  }
+
+  try {
+    const embeddings = new PollinationsEmbeddings();
+    const vectorStore = await QdrantVectorStore.fromExistingCollection(embeddings, {
+      url: qdrantUrl,
+      apiKey: process.env.QDRANT_API_KEY,
+      collectionName: 'coursify_research',
+    });
+
+    const deletedSlugs = new Set(); // Track already-deleted slugs to avoid re-processing
+    let totalDeletedMongo = 0;
+    let totalDeletedQdrant = 0;
+    let groupsFound = 0;
+
+    for (const doc of allDocs) {
+      // Skip if already deleted
+      if (deletedSlugs.has(doc.slug)) continue;
+
+      // Search for similar documents (include current doc)
+      const results = await vectorStore.similaritySearchWithScore(
+        `${doc.title}\n${doc.topic}`,
+        Math.min(10, allDocs.length) // Search top 10 or less
+      );
+
+      // Filter to only high-similarity matches that are different docs
+      const similarDocs = results
+        .filter(([resultDoc, score]) => {
+          const otherSlug = resultDoc.metadata?.slug;
+          return (
+            otherSlug &&
+            otherSlug !== doc.slug &&
+            score >= SIMILARITY_THRESHOLD &&
+            !deletedSlugs.has(otherSlug)
+          );
+        })
+        .map(([resultDoc, score]) => ({ slug: resultDoc.metadata.slug, score }));
+
+      if (similarDocs.length === 0) continue;
+
+      groupsFound++;
+      console.log(`📌 Similarity Group ${groupsFound}: "${doc.title}" (${doc.slug})`);
+      console.log(`   ✅ Keeping (latest): "${doc.title}" — Created: ${doc.createdAt}`);
+
+      for (const { slug, score } of similarDocs) {
+        // Find the MongoDB doc
+        const similarDoc = await CoursifyResearch.findOne({ slug, deletedAt: null });
+        if (!similarDoc) continue;
+
+        console.log(
+          `   🗑️  Deleting: "${similarDoc.title}" (${slug}) — Similarity: ${(score * 100).toFixed(1)}% — Created: ${similarDoc.createdAt}`
+        );
+
+        // Soft-delete in MongoDB
+        similarDoc.deletedAt = new Date();
+        await similarDoc.save();
+        totalDeletedMongo++;
+        deletedSlugs.add(slug);
+
+        // Delete from Qdrant
+        const qdrantResult = await deleteFromQdrant(slug);
+        if (qdrantResult.deleted > 0) {
+          console.log(`      ✓ Removed from Qdrant`);
+          totalDeletedQdrant += qdrantResult.deleted;
+        }
+      }
+      console.log();
+    }
+
+    console.log(`📊 Summary:`);
+    console.log(`   Similarity groups found: ${groupsFound}`);
+    console.log(`   Total deleted from MongoDB: ${totalDeletedMongo}`);
+    console.log(`   Total deleted from Qdrant: ${totalDeletedQdrant}\n`);
+
+    return { deleted: totalDeletedMongo, deletedFromQdrant: totalDeletedQdrant };
+  } catch (err) {
+    console.log(`❌ Error during similarity deduplication: ${err.message}`);
+    throw err;
+  }
+}
+
 const command = process.argv[2] || 'hash';
 const keyword = process.argv[3];
 
@@ -456,6 +632,20 @@ const keyword = process.argv[3];
       const result = await cleanupDuplicates();
       console.log(
         `\n✅ Cleanup complete! Deleted ${result.deleted} duplicates across ${result.groups} groups\n`
+      );
+      process.exit(0);
+    } else if (command === 'cleanup-by-title') {
+      console.log('Cleaning up duplicates by title (keeping latest per title)...\n');
+      const result = await cleanupByTitle();
+      console.log(
+        `\n✅ Cleanup complete! Deleted ${result.deleted} from MongoDB, ${result.deletedFromQdrant} from Qdrant\n`
+      );
+      process.exit(0);
+    } else if (command === 'dedup-by-similarity') {
+      console.log('Deduplicating by semantic similarity (keeping latest per group)...\n');
+      const result = await deduplicateBySimilarity();
+      console.log(
+        `\n✅ Dedup complete! Deleted ${result.deleted} from MongoDB, ${result.deletedFromQdrant} from Qdrant\n`
       );
       process.exit(0);
     } else if (command === 'count') {
@@ -498,17 +688,22 @@ const keyword = process.argv[3];
   hash              - Generate promptHash for records missing it
   titles            - Find and list duplicate titles
   cleanup           - Keep 1 random per group, soft-delete duplicates
+  cleanup-by-title  - Group by normalized title, keep latest, delete rest (MongoDB + Qdrant)
+  dedup-by-similarity - Find semantically similar articles via Qdrant, keep latest, delete rest
   count             - Check article counts in MongoDB and Qdrant
   orphaned          - Find orphaned documents in Qdrant (not in MongoDB)
   cleanup-orphaned  - Delete orphaned documents from Qdrant
   find <keyword>    - Find articles with keyword in title
   delete <keyword>  - Delete articles with keyword in title (from both DBs)
-  help              - Show this message\n`);
+  help              - Show this message
+
+Environment Variables:
+  SIMILARITY_THRESHOLD - Cosine similarity threshold for dedup-by-similarity (default: 0.85)\n`);
       process.exit(0);
     } else {
       console.log(`❌ Unknown command: ${command}\n`);
       console.log(
-        `Use: node scripts/deduplicate-research.js hash|titles|cleanup|count|orphaned|cleanup-orphaned|find|delete|help\n`
+        `Use: node scripts/deduplicate-research.js hash|titles|cleanup|cleanup-by-title|dedup-by-similarity|count|orphaned|cleanup-orphaned|find|delete|help\n`
       );
       process.exit(1);
     }
