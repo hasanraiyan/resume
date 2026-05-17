@@ -21,8 +21,17 @@ import {
   X,
   MoreVertical,
   Trash2,
+  Pencil,
 } from 'lucide-react';
-import { Card, Button, Badge, Dialog, DialogContent } from '@/components/custom-ui';
+import {
+  Card,
+  Button,
+  Badge,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/custom-ui';
 import { cn } from '@/utils/classNames';
 import { CoursifyBlockRenderer } from '../reader/CoursifyBlockRenderer';
 
@@ -40,6 +49,9 @@ export function ResearchHistory() {
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editedContent, setEditedContent] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Handle search debouncing
   useEffect(() => {
@@ -75,16 +87,43 @@ export function ResearchHistory() {
     setIsDetailLoading(true);
     setShowDialog(true);
     setCopied(false);
+    setEditMode(false);
     try {
       const res = await fetch(`/api/admin/coursify/history?id=${id}`);
       const data = await res.json();
       if (data.success) {
         setSelectedArtifact(data.artifact);
+        setEditedContent(data.artifact.content || '');
       }
     } catch (err) {
       console.error('Failed to fetch artifact detail:', err);
     } finally {
       setIsDetailLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!selectedArtifact) return;
+    setIsSaving(true);
+    try {
+      const res = await fetch(`/api/admin/coursify/history?id=${selectedArtifact._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: editedContent }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSelectedArtifact({ ...selectedArtifact, content: editedContent });
+        setEditMode(false);
+        toast.success('Artifact saved successfully');
+      } else {
+        toast.error('Failed to save artifact: ' + data.error);
+      }
+    } catch (err) {
+      console.error('Failed to save artifact:', err);
+      toast.error('Error saving artifact');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -324,20 +363,53 @@ export function ResearchHistory() {
               {/* Header */}
               <div className="bg-white border-b border-[#e5e3d8] p-6 flex flex-wrap items-center justify-between gap-4 shrink-0 relative z-20">
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-xl font-bold text-[#1e3a34] truncate mb-1">
+                  <DialogTitle className="text-xl font-bold text-[#1e3a34] truncate mb-1">
                     {selectedArtifact.title}
-                  </h3>
-                  <p className="text-[11px] text-[#7c8e88] uppercase font-bold tracking-wider truncate">
+                  </DialogTitle>
+                  <DialogDescription className="text-[11px] text-[#7c8e88] uppercase font-bold tracking-wider truncate">
                     Topic: {selectedArtifact.topic}
-                  </p>
+                  </DialogDescription>
                 </div>
                 <div className="flex items-center gap-2 sm:mr-10">
-                  <button
-                    onClick={() => window.open(`/coursify/r/${selectedArtifact.slug}`, '_blank')}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[#d4e6de] text-[#1f644e] rounded-lg text-[10px] font-bold hover:bg-[#f0f5f2] transition-all"
-                  >
-                    <Eye size={12} /> <span className="hidden sm:inline">View Live</span>
-                  </button>
+                  {!editMode ? (
+                    <>
+                      <button
+                        onClick={() => setEditMode(true)}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[#d4e6de] text-[#1f644e] rounded-lg text-[10px] font-bold hover:bg-[#f0f5f2] transition-all"
+                      >
+                        <Pencil size={12} /> <span className="hidden sm:inline">Edit Artifact</span>
+                      </button>
+                      <button
+                        onClick={() =>
+                          window.open(`/coursify/r/${selectedArtifact.slug}`, '_blank')
+                        }
+                        className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[#d4e6de] text-[#1f644e] rounded-lg text-[10px] font-bold hover:bg-[#f0f5f2] transition-all"
+                      >
+                        <Eye size={12} /> <span className="hidden sm:inline">View Live</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => setEditMode(false)}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[#e5e3d8] text-[#7c8e88] rounded-lg text-[10px] font-bold hover:bg-gray-50 transition-all"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-[#1f644e] text-white border border-[#1f644e] rounded-lg text-[10px] font-bold hover:bg-[#184d3c] transition-all disabled:opacity-50"
+                      >
+                        {isSaving ? (
+                          <RefreshCw size={12} className="animate-spin" />
+                        ) : (
+                          <CheckCircle2 size={12} />
+                        )}
+                        <span>Save Changes</span>
+                      </button>
+                    </>
+                  )}
                   <button
                     onClick={handleCopyLink}
                     className={cn(
@@ -355,11 +427,20 @@ export function ResearchHistory() {
 
               {/* Content Grid */}
               <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-[1fr_320px] relative">
-                {/* Left: Artifact Rendering */}
+                {/* Left: Artifact Rendering or Editor */}
                 <div className="min-w-0 overflow-y-auto overflow-x-auto custom-scrollbar p-6 sm:p-10 bg-[#fcfbf5] flex justify-center">
                   <div className="w-full max-w-3xl">
                     <div className="artifact-renderer w-full overflow-hidden">
-                      <CoursifyBlockRenderer content={selectedArtifact.content} />
+                      {editMode ? (
+                        <textarea
+                          value={editedContent}
+                          onChange={(e) => setEditedContent(e.target.value)}
+                          className="w-full h-full min-h-[60vh] p-6 rounded-2xl border border-[#e5e3d8] bg-white text-sm font-mono focus:ring-2 focus:ring-[#1f644e] outline-none resize-none leading-relaxed text-[#1e3a34]"
+                          placeholder="Write your markdown here..."
+                        />
+                      ) : (
+                        <CoursifyBlockRenderer content={selectedArtifact.content} />
+                      )}
                     </div>
                   </div>
                 </div>

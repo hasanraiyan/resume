@@ -10,6 +10,9 @@ export function CoursifyProvider({ children }) {
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(true);
   const [courses, setCourses] = useState([]);
+  const [globalSearch, setGlobalSearch] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const pollRef = useRef(null);
 
   const silentRefresh = useCallback(async () => {
@@ -228,6 +231,12 @@ export function CoursifyProvider({ children }) {
         permanentlyDeleteCourse,
         emptyTrash,
         refresh: fetchBootstrap,
+        globalSearch,
+        setGlobalSearch,
+        showCreateModal,
+        setShowCreateModal,
+        showImportModal,
+        setShowImportModal,
       }}
     >
       {children}

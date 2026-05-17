@@ -56,11 +56,9 @@ const AUTHORING_STATUS_COLORS = {
 export default function CourseDetailPage({ params }) {
   const { id } = use(params);
   return (
-    <SessionProvider>
-      <CoursifyStudioProvider id={id}>
-        <CourseStudioInner />
-      </CoursifyStudioProvider>
-    </SessionProvider>
+    <CoursifyStudioProvider id={id}>
+      <CourseStudioInner />
+    </CoursifyStudioProvider>
   );
 }
 

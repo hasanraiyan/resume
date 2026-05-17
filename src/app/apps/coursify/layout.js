@@ -1,4 +1,8 @@
+'use client';
+
 import { Pacifico, Nunito } from 'next/font/google';
+import SessionProvider from '@/components/SessionProvider';
+import { CoursifyProvider } from '@/context/CoursifyContext';
 
 const pacifico = Pacifico({
   weight: '400',
@@ -14,15 +18,16 @@ const nunito = Nunito({
   display: 'swap',
 });
 
-export const metadata = {
-  title: 'Coursify - AI Course Builder',
-  description: 'Create and manage courses built by AI agents',
-  icons: {
-    icon: '/images/apps/coursify.png',
-    apple: '/images/apps/coursify.png',
-  },
-};
-
-export default function CoursifyLayout({ children }) {
-  return <div className={`${pacifico.variable} ${nunito.variable}`}>{children}</div>;
+export default function CoursifyRootLayout({ children }) {
+  return (
+    <SessionProvider>
+      <CoursifyProvider>
+        <div
+          className={`${pacifico.variable} ${nunito.variable} min-h-screen bg-[#fcfbf5] font-[family-name:var(--font-sans)] text-[#1e3a34]`}
+        >
+          {children}
+        </div>
+      </CoursifyProvider>
+    </SessionProvider>
+  );
 }

@@ -306,10 +306,10 @@ export function CoursifyAnalytics() {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-left table-fixed">
             <thead className="bg-gray-50/50 text-[10px] font-bold text-[#7c8e88] uppercase tracking-widest border-b">
               <tr>
-                <th className="px-6 py-3">Topic</th>
+                <th className="px-6 py-3 w-1/2">Topic</th>
                 <th className="px-6 py-3">Frequency</th>
                 <th className="px-6 py-3">Tokens</th>
                 <th className="px-6 py-3 text-right">Investment</th>
@@ -318,10 +318,16 @@ export function CoursifyAnalytics() {
             <tbody className="divide-y text-xs">
               {filteredTopics.map((topic, i) => (
                 <tr key={i} className="hover:bg-[#f0f5f2]/20">
-                  <td className="px-6 py-3 font-bold">{topic.title}</td>
-                  <td className="px-6 py-3 text-[#7c8e88]">{topic.count} runs</td>
-                  <td className="px-6 py-3 text-[#7c8e88]">{(topic.tokens / 1000).toFixed(1)}k</td>
-                  <td className="px-6 py-3 text-right font-bold">
+                  <td className="px-6 py-3 font-bold">
+                    <div className="line-clamp-2 leading-relaxed" title={topic.title}>
+                      {topic.title}
+                    </div>
+                  </td>
+                  <td className="px-6 py-3 text-[#7c8e88] whitespace-nowrap">{topic.count} runs</td>
+                  <td className="px-6 py-3 text-[#7c8e88] whitespace-nowrap">
+                    {(topic.tokens / 1000).toFixed(1)}k
+                  </td>
+                  <td className="px-6 py-3 text-right font-bold whitespace-nowrap">
                     ${(topic.costUSD || 0).toFixed(4)}
                   </td>
                 </tr>
