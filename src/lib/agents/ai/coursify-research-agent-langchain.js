@@ -106,51 +106,71 @@ class CoursifyResearchAgent extends BaseAgent {
       this.logger.debug(`Web queries: ${webQueries.join(', ')}`);
       this.logger.debug(`Video query: ${videoQuery}`);
 
-      // Step 2: Execute parallel searches
+      // Step 2: Execute all searches in parallel
       yield { type: 'status', message: 'Searching web and video sources...' };
 
-      const webSearchResults = [];
-      for (const query of webQueries.slice(0, 3)) {
+      // Create search tasks for parallel execution
+      const searchTasks = webQueries.slice(0, 3).map((query, idx) => ({
+        query,
+        tool: tavilyTool,
+        toolName: 'tavily_search',
+      }));
+
+      // Add YouTube search
+      searchTasks.push({
+        query: videoQuery,
+        tool: youtubeTool,
+        toolName: 'youtube_search',
+      });
+
+      // Emit all tool_call started events
+      for (const task of searchTasks) {
         yield {
           type: 'tool_call',
-          tool: 'tavily_search',
+          tool: task.toolName,
           status: 'started',
-          input: { query },
+          input: { query: task.query },
         };
-
-        try {
-          const searchResult = await tavilyTool.invoke({ query });
-          webSearchResults.push({ query, result: searchResult });
-          yield {
-            type: 'tool_call',
-            tool: 'tavily_search',
-            status: 'completed',
-            output: searchResult?.substring?.(0, 200) || 'Completed',
-          };
-        } catch (err) {
-          this.logger.error(`Web search failed for "${query}": ${err.message}`);
-        }
       }
 
-      // YouTube search
-      yield {
-        type: 'tool_call',
-        tool: 'youtube_search',
-        status: 'started',
-        input: { query: videoQuery },
-      };
+      // Execute all searches in parallel
+      const results = await Promise.allSettled(
+        searchTasks.map((task) =>
+          task.tool.invoke({ query: task.query }).catch((err) => {
+            this.logger.error(`${task.toolName} failed for "${task.query}": ${err.message}`);
+            return null;
+          })
+        )
+      );
 
+      // Process results and emit completed events
+      const webSearchResults = [];
       let videoSearchResult = null;
-      try {
-        videoSearchResult = await youtubeTool.invoke({ query: videoQuery });
-        yield {
-          type: 'tool_call',
-          tool: 'youtube_search',
-          status: 'completed',
-          output: videoSearchResult?.substring?.(0, 200) || 'Completed',
-        };
-      } catch (err) {
-        this.logger.error(`YouTube search failed: ${err.message}`);
+
+      for (let idx = 0; idx < results.length; idx++) {
+        const result = results[idx];
+        const task = searchTasks[idx];
+        if (result.status === 'fulfilled' && result.value) {
+          yield {
+            type: 'tool_call',
+            tool: task.toolName,
+            status: 'completed',
+            output: result.value?.substring?.(0, 200) || 'Completed',
+          };
+
+          if (task.toolName === 'tavily_search') {
+            webSearchResults.push({ query: task.query, result: result.value });
+          } else if (task.toolName === 'youtube_search') {
+            videoSearchResult = result.value;
+          }
+        } else {
+          yield {
+            type: 'tool_call',
+            tool: task.toolName,
+            status: 'failed',
+            output: result.reason?.message || 'Failed',
+          };
+        }
       }
 
       // Step 3: Combine research into structured context
