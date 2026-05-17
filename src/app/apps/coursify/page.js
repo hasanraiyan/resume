@@ -128,11 +128,15 @@ function CoursifyApp() {
     return acc;
   }, {});
 
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (status === 'unauthenticated' || session?.user?.role !== 'admin') {
+      router.push('/login');
+    }
+  }, [status, session, router]);
+
   if (status === 'loading') return null;
   if (status === 'unauthenticated' || session?.user?.role !== 'admin') {
-    useEffect(() => {
-      router.push('/login');
-    }, [router]);
     return null;
   }
 
