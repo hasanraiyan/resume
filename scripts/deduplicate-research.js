@@ -154,15 +154,7 @@ async function deleteOrphanedFromQdrant() {
 
     const orphanedIds = orphaned.map((p) => p.id);
 
-    // Log first few IDs for debugging
-    console.log(
-      `   Sample IDs: ${orphanedIds
-        .slice(0, 3)
-        .map((id) => `${id} (type: ${typeof id})`)
-        .join(', ')}`
-    );
-
-    // Delete points from Qdrant using filter (more reliable than points_selector for mixed ID types)
+    // Delete points from Qdrant
     const deleteResponse = await fetch(`${qdrantUrl}/collections/coursify_research/points/delete`, {
       method: 'POST',
       headers: {
@@ -170,14 +162,14 @@ async function deleteOrphanedFromQdrant() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        points: orphanedIds,
+        points_selector: {
+          points: orphanedIds,
+        },
       }),
     });
 
-    const deleteBody = await deleteResponse.text();
     if (!deleteResponse.ok) {
       console.log(`❌ Failed to delete from Qdrant: ${deleteResponse.status}`);
-      console.log(`   Response: ${deleteBody.substring(0, 200)}`);
       return { deleted: 0 };
     }
 
@@ -522,7 +514,7 @@ async function deduplicateBySimilarity() {
     return { deleted: 0, deletedFromQdrant: 0 };
   }
 
-  const SIMILARITY_THRESHOLD = parseFloat(process.env.SIMILARITY_THRESHOLD || '0.90'); // 85% similarity
+  const SIMILARITY_THRESHOLD = parseFloat(process.env.SIMILARITY_THRESHOLD || '0.85'); // 85% similarity
 
   console.log(
     `\n🔍 Finding semantically similar articles (threshold: ${(SIMILARITY_THRESHOLD * 100).toFixed(0)}%)\n`
