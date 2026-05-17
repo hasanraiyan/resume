@@ -10,8 +10,8 @@ export async function GET(request) {
       return NextResponse.json({ error: 'slug required' }, { status: 400 });
     }
 
-    // Get related articles without snippets (fast path for API)
-    const related = await getRelatedArticles(slug, 5, false);
+    // Get related articles WITH snippets for consistent data structure
+    const related = await getRelatedArticles(slug, 4, true);
 
     console.log(`[CoursifyRelated] Found ${related.length} related articles for ${slug}`);
 

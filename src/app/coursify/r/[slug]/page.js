@@ -2,12 +2,13 @@ import { notFound } from 'next/navigation';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyResearch from '@/models/CoursifyResearch';
 import { CoursifyBlockRenderer } from '@/components/coursify/reader/CoursifyBlockRenderer';
-import { Search, Plus, Sparkles, ArrowLeft, Link as LinkIcon } from 'lucide-react';
+import { Search, Plus, Sparkles, ArrowLeft } from 'lucide-react';
 import { BalanceBadgeServer } from './BalanceBadgeServer';
 import Link from 'next/link';
 import ResearchActions from './ResearchActions';
 import ResearchTOC from './ResearchTOC';
 import { getRelatedArticles } from '@/lib/coursify/related';
+import { RelatedArticlesGrid } from '@/components/coursify/RelatedArticlesGrid';
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
@@ -33,8 +34,6 @@ export default async function SharedResearchPage({ params }) {
 
   // Fetch related articles with snippets
   const relatedArticles = await getRelatedArticles(slug, 3, true);
-
-  console.log('[CoursifyDetail] Related articles:', JSON.stringify(relatedArticles, null, 2));
 
   return (
     <div className="min-h-screen bg-[#fcfbf5] text-[#1e3a34]">
@@ -119,36 +118,7 @@ export default async function SharedResearchPage({ params }) {
 
             {/* Related Articles */}
             {relatedArticles.length > 0 && (
-              <div className="mt-16 pt-12 border-t border-[#e5e3d8]">
-                <div className="flex items-center gap-2 mb-8">
-                  <LinkIcon className="w-5 h-5 text-[#1f644e]" />
-                  <h2 className="text-xl font-bold text-[#1e3a34]">Related Articles</h2>
-                </div>
-
-                <div className="space-y-4">
-                  {relatedArticles.map((article) => (
-                    <Link
-                      key={article.slug}
-                      href={`/coursify/r/${article.slug}`}
-                      className="group block p-5 border border-[#e5e3d8] rounded-lg hover:border-[#1f644e] hover:shadow-md hover:shadow-[#1f644e]/5 transition-all bg-white"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-base text-[#1e3a34] group-hover:text-[#1f644e] transition-colors line-clamp-2">
-                            {article.title}
-                          </p>
-                          <p className="text-sm text-[#5a6b65] line-clamp-2 mt-2">
-                            {article.snippet}
-                          </p>
-                        </div>
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#f0f5f2] group-hover:bg-[#1f644e] transition-colors flex items-center justify-center">
-                          <LinkIcon className="w-4 h-4 text-[#1f644e] group-hover:text-white transition-colors" />
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
+              <RelatedArticlesGrid articles={relatedArticles} variant="list" />
             )}
 
             {/* Footer (SSR) */}
