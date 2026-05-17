@@ -131,10 +131,7 @@ const REFERENCE_ADDENDUM = `
 - MANDATORY: Provide the corresponding footnote definitions ONLY ONCE at the VERY END.
   [^1]: [Source Title](Source URL) - Brief description.`;
 
-const SEARCH_ENGINES = [
-  { toolName: 'tavily_search', filterName: 'firecrawl_scrape' },
-  { toolName: 'firecrawl_scrape', filterName: 'tavily_search' },
-];
+const SEARCH_TOOL = 'tavily_search';
 
 class CoursifySearchAgent extends BaseAgent {
   constructor(agentId = AGENT_IDS.COURSIFY_SEARCH, config = {}) {
@@ -155,14 +152,10 @@ class CoursifySearchAgent extends BaseAgent {
     const topicPreview = topic.substring(0, 50);
     this.logger.info(`Starting CoursifySearchAgent for topic: "${topicPreview}..."`);
 
-    // Randomly pick search engine
-    const chosen = SEARCH_ENGINES[Math.floor(Math.random() * SEARCH_ENGINES.length)];
-    this.logger.info(`Selected search engine: ${chosen.toolName}`);
-
     const llm = await this.createChatModel();
     this.logger.debug('Chat model created');
 
-    // Load tools, exclude the non-chosen search engine
+    // Load tools, exclude firecrawl_scrape
     let enabledToolIds = this.config.tools || [];
     if (enabledToolIds.length === 0) {
       enabledToolIds = getAgentTools(this.agentId);
@@ -170,11 +163,9 @@ class CoursifySearchAgent extends BaseAgent {
     }
 
     const allTools = await managedToolProvider.getTools(enabledToolIds, this.logger);
-    const tools = allTools.filter((t) => t.name !== chosen.filterName);
+    const tools = allTools.filter((t) => t.name !== 'firecrawl_scrape');
 
-    this.logger.debug(
-      `ReAct agent created with ${tools.length} tools (filtered out: ${chosen.filterName})`
-    );
+    this.logger.debug(`ReAct agent created with ${tools.length} tools`);
     tools.forEach((tool, idx) => {
       const toolName = tool.name || tool.lc_id?.[tool.lc_id.length - 1] || 'unknown';
       this.logger.debug(`  Tool ${idx + 1}: ${toolName}`);
@@ -182,7 +173,7 @@ class CoursifySearchAgent extends BaseAgent {
 
     // Build prompt from template
     const promptTemplate = PromptTemplate.fromTemplate(SYSTEM_PROMPT_TEMPLATE);
-    let systemPrompt = await promptTemplate.format({ SEARCH_TOOL: chosen.toolName });
+    let systemPrompt = await promptTemplate.format({ SEARCH_TOOL });
 
     if (isReferenceEnabled) {
       systemPrompt += REFERENCE_ADDENDUM;

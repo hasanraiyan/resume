@@ -3,7 +3,8 @@
   "permissions": {
     "allow": [
       "Bash(ls -d /mnt/d/projects/resume/src/app/\\\\\\(admin\\\\\\)/admin/sections/*/ 2>/dev/null | xargs -I {} basename {})",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(node:*)"
     ]
   }
 }

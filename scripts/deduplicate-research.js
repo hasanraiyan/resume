@@ -154,7 +154,15 @@ async function deleteOrphanedFromQdrant() {
 
     const orphanedIds = orphaned.map((p) => p.id);
 
-    // Delete points from Qdrant
+    // Log first few IDs for debugging
+    console.log(
+      `   Sample IDs: ${orphanedIds
+        .slice(0, 3)
+        .map((id) => `${id} (type: ${typeof id})`)
+        .join(', ')}`
+    );
+
+    // Delete points from Qdrant using filter (more reliable than points_selector for mixed ID types)
     const deleteResponse = await fetch(`${qdrantUrl}/collections/coursify_research/points/delete`, {
       method: 'POST',
       headers: {
@@ -162,14 +170,14 @@ async function deleteOrphanedFromQdrant() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        points_selector: {
-          points: orphanedIds,
-        },
+        points: orphanedIds,
       }),
     });
 
+    const deleteBody = await deleteResponse.text();
     if (!deleteResponse.ok) {
       console.log(`❌ Failed to delete from Qdrant: ${deleteResponse.status}`);
+      console.log(`   Response: ${deleteBody.substring(0, 200)}`);
       return { deleted: 0 };
     }
 
