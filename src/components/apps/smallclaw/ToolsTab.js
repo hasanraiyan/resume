@@ -24,6 +24,7 @@ const TOOLS_LIST = [
     keyName: 'TAVILY_API_KEY',
     placeholder: 'tvly-...',
     docsUrl: 'https://tavily.com',
+    canTrackUsage: true,
   },
   {
     id: 'youtube',
@@ -33,6 +34,7 @@ const TOOLS_LIST = [
     keyName: 'GOOGLE_API_KEY',
     placeholder: 'AIza...',
     docsUrl: 'https://console.cloud.google.com/apis/library/youtube.googleapis.com',
+    canTrackUsage: false,
   },
   {
     id: 'firecrawl',
@@ -42,6 +44,17 @@ const TOOLS_LIST = [
     keyName: 'FIRECRAWL_API_KEY',
     placeholder: 'fc-...',
     docsUrl: 'https://firecrawl.dev',
+    canTrackUsage: true,
+  },
+  {
+    id: 'exa',
+    name: 'Exa AI Search',
+    description: 'Neural search engine designed for AI agents. Finds semantic matches.',
+    icon: Globe,
+    keyName: 'EXASEARCH_API_KEY',
+    placeholder: 'exa-...',
+    docsUrl: 'https://dashboard.exa.ai',
+    canTrackUsage: false,
   },
 ];
 
@@ -309,8 +322,8 @@ export default function ToolsTab() {
 
               <p className="text-sm text-neutral-600 mb-6 flex-1">{tool.description}</p>
 
-              {/* Live Usage Stats */}
-              {usageStats[tool.id] && !usageStats[tool.id].error && (
+              {/* Live Usage Stats (Only if supported) */}
+              {tool.canTrackUsage && usageStats[tool.id] && !usageStats[tool.id].error && (
                 <div className="mb-6 space-y-2">
                   <div className="grid grid-cols-2 gap-4 p-3 bg-neutral-50 rounded-xl border border-neutral-100">
                     <div>

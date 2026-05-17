@@ -38,7 +38,12 @@ export async function GET(request) {
       youtube: 'YOUTUBE_SEARCH',
       firecrawl: 'FIRECRAWL_SCRAPE',
     };
-    const poolId = poolIdMap[toolId] || toolId.toUpperCase();
+    const poolId = poolIdMap[toolId];
+
+    if (!poolId) {
+      console.log(`[ToolUsage] Usage tracking not supported for tool: ${toolId}. Skipping.`);
+      return NextResponse.json({ success: true, results: [] });
+    }
 
     // Extract all keys
     let keysToProcess = [];

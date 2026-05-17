@@ -51,10 +51,6 @@ async function fetchFirecrawlUsage(apiKey) {
 
   const { data } = await res.json();
 
-  // Based on your specific Firecrawl API response format:
-  // total = planCredits
-  // remaining = remainingCredits
-  // used = total - remaining (if possible, or just use 0 if remaining > total due to carryover)
   const total = data.planCredits || 1000;
   const remaining = data.remainingCredits || 0;
   const used = Math.max(0, total - remaining);

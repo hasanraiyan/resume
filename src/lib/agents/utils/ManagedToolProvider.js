@@ -1,6 +1,7 @@
 import { TavilySearch } from '@langchain/tavily';
 import { youtubeSearch } from './youtube-tools';
 import { firecrawlScrape } from './firecrawl-tool';
+import { exaSearch } from './exa-tool';
 import dynamicSettingsManager from '@/lib/DynamicSettingsManager';
 import keyRotationManager from '@/lib/providers/KeyRotationManager';
 
@@ -43,9 +44,68 @@ class ManagedToolProvider {
         return await this._getYoutubeSearch(logger);
       case 'firecrawl_scrape':
         return await this._getFirecrawlScrape(logger);
+      case 'exa_search':
+        return await this._getExaSearch(logger);
       default:
         return null;
     }
+  }
+
+  /**
+   * Configure Exa Search with Rotation and Monthly Credit Discovery
+   * @private
+   */
+  async _getExaSearch(logger) {
+    const config = await dynamicSettingsManager.get('EXASEARCH_API_KEY');
+    if (!config) {
+      logger.warn('⚠️ EXASEARCH_API_KEY missing from database.');
+      return null;
+    }
+
+    // 1. Check Global Active State
+    const isObject = typeof config === 'object' && !Array.isArray(config);
+    if (isObject && config.isActive === false) {
+      logger.warn('🚫 Exa Search is globally disabled in Tools Settings.');
+      return null;
+    }
+
+    // 2. Extract Keys & Limits
+    const keys = this._splitKeys(isObject ? config.keys : config);
+    const limits = isObject ? { rpm: config.rpm, rpd: config.rpd, rpmnt: config.rpmnt } : {};
+
+    // 3. Register with Global Rotation Manager
+    keyRotationManager.registerToolPool('EXA_SEARCH', keys, 'Exa', limits);
+
+    // 4. Pick Next Available Key Globally
+    const pooled = await keyRotationManager.getNextProvider('EXA_SEARCH');
+    if (!pooled?.apiKey) {
+      logger.warn('⚠️ No available Exa keys in pool (limits reached).');
+      return null;
+    }
+
+    // 5. Wrap with "Limit Discovery" Logic
+    const tool = exaSearch;
+    const originalInvoke = tool.invoke.bind(tool);
+    tool.invoke = async (input, callConfig) => {
+      const configWithKey = {
+        ...callConfig,
+        configurable: { ...callConfig?.configurable, apiKey: pooled.apiKey },
+      };
+
+      try {
+        return await originalInvoke(input, configWithKey);
+      } catch (err) {
+        const msg = err.message?.toLowerCase() || '';
+        if (err.status === 429 || msg.includes('limit') || msg.includes('credit')) {
+          logger.warn(`🛑 Exa key ${pooled.internalId} hit a limit! Throttling globally.`);
+          await keyRotationManager.markThrottled('EXA_SEARCH', pooled.internalId);
+        }
+        throw err;
+      }
+    };
+
+    logger.info(`✅ Exa Tool ready (using ${pooled.internalId})`);
+    return tool;
   }
 
   /**
