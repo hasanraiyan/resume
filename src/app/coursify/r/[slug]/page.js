@@ -9,6 +9,7 @@ import ResearchActions from './ResearchActions';
 import ResearchTOC from './ResearchTOC';
 import { getRelatedArticles } from '@/lib/coursify/related';
 import { RelatedArticlesGrid } from '@/components/coursify/RelatedArticlesGrid';
+import SummaryCard from '@/components/coursify/SummaryCard';
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
@@ -111,18 +112,8 @@ export default async function SharedResearchPage({ params }) {
               </div>
             </div>
 
-            {/* Summary Card */}
-            {research.summary && (
-              <div className="mb-8 p-5 bg-[#f0f5f2] rounded-xl border border-[#d4e6de]">
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="w-4 h-4 text-[#1f644e]" />
-                  <h2 className="text-sm font-bold text-[#1e3a34] uppercase tracking-wider">
-                    AI Summary
-                  </h2>
-                </div>
-                <p className="text-[#1e3a34] leading-relaxed text-sm">{research.summary}</p>
-              </div>
-            )}
+            {/* Summary Card (collapsible) */}
+            <SummaryCard summary={research.summary} />
 
             {/* Content Rendering */}
             <div id="research-content" className="animate-in fade-in duration-1000">

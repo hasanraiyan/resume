@@ -47,6 +47,9 @@ export default function ResearchActions({ research }) {
       const data = await res.json();
       setSummary(data.summary);
       toast.success(data.cached ? 'Summary loaded from cache' : 'Summary generated!');
+
+      // Reload to show the SSR summary card
+      setTimeout(() => window.location.reload(), 500);
     } catch (err) {
       toast.error(err.message);
     } finally {

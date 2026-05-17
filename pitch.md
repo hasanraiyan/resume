@@ -23,6 +23,7 @@ Coursify operates on a Freemium SaaS model:
 - **Free Tier**: Allows users to generate basic, text-based single-module courses.
 - **Pro Subscription ($10–$15/month)**: Unlocks complex, multi-module course generation, technical diagram synthesis, and advanced progress analytics.
 - **B2B Enterprise (Future Expansion)**: API licensing for coding bootcamps, universities, and corporate training platforms to generate custom, on-demand curricula for their students and employees.
+  ![alt text](image-1.png)
 
 ### 4. Target Audience
 
