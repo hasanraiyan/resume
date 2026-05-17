@@ -14,27 +14,48 @@ export async function POST(request) {
     let result;
     const startTime = Date.now();
 
+    // Map tool names to DB key names
+    const keyMap = {
+      youtube_search: 'GOOGLE_API_KEY',
+      tavily_search: 'TAVILY_API_KEY',
+      firecrawl_scrape: 'FIRECRAWL_SCRAPE_API_KEY',
+    };
+
+    const dbKeyName = keyMap[tool];
+    let activeKey = params.apiKey;
+
+    if (!activeKey && dbKeyName) {
+      const config = await dynamicSettingsManager.get(dbKeyName);
+      // Handle both old format (string) and new format (config object)
+      if (typeof config === 'object' && !Array.isArray(config)) {
+        activeKey = config.keys?.split(/[\n,]/)[0]?.trim();
+      } else if (Array.isArray(config)) {
+        activeKey = config[0];
+      } else {
+        activeKey = String(config).split(/[\n,]/)[0]?.trim();
+      }
+    }
+
     switch (tool) {
       case 'youtube_search':
-        result = await youtubeSearch.invoke({ query, ...params });
+        if (!activeKey) throw new Error('YouTube API key not found');
+        result = await youtubeSearch.invoke(
+          { query, ...params },
+          { configurable: { apiKey: activeKey } }
+        );
         break;
       case 'tavily_search':
-        const apiKey = await dynamicSettingsManager.get('TAVILY_API_KEY');
-        if (!apiKey) {
-          return NextResponse.json(
-            {
-              success: false,
-              error: 'TAVILY_API_KEY not found in database',
-              debug: {
-                retrievedKey: apiKey,
-                keyType: typeof apiKey,
-              },
-            },
-            { status: 400 }
-          );
-        }
-        const tavily = new TavilySearch({ maxResults: 5, tavilyApiKey: apiKey });
+        if (!activeKey) throw new Error('Tavily API key not found');
+        const tavily = new TavilySearch({ maxResults: 5, tavilyApiKey: activeKey });
         result = await tavily.invoke({ query });
+        break;
+      case 'firecrawl_scrape':
+        const { firecrawlScrape } = await import('@/lib/agents/utils/firecrawl-tool');
+        if (!activeKey) throw new Error('Firecrawl API key not found');
+        result = await firecrawlScrape.invoke(
+          { url: query },
+          { configurable: { apiKey: activeKey } }
+        );
         break;
       default:
         return NextResponse.json({ error: 'Invalid tool' }, { status: 400 });
@@ -88,6 +109,29 @@ export async function GET(request) {
       }
       const debug = await dynamicSettingsManager.debugKey(key);
       return NextResponse.json({ success: true, debug });
+    }
+
+    if (action === 'get_decrypted_key') {
+      const keyName = searchParams.get('keyName');
+      const index = parseInt(searchParams.get('index') || '0');
+      if (!keyName) return NextResponse.json({ error: 'keyName required' }, { status: 400 });
+
+      const config = await dynamicSettingsManager.get(keyName);
+      let keys = [];
+      if (typeof config === 'object' && !Array.isArray(config)) {
+        keys = (config.keys || '').split(/[\n,]/).map((k) => k.trim());
+      } else if (Array.isArray(config)) {
+        keys = config;
+      } else {
+        keys = String(config)
+          .split(/[\n,]/)
+          .map((k) => k.trim());
+      }
+
+      const fullKey = keys[index];
+      if (!fullKey) return NextResponse.json({ error: 'Key not found at index' }, { status: 404 });
+
+      return NextResponse.json({ success: true, fullKey });
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });

@@ -49,7 +49,7 @@ class ManagedToolProvider {
   }
 
   /**
-   * Helper to split keys string into array
+   * Helper to split keys string into array and sanitize them
    * @private
    */
   _splitKeys(keys) {
@@ -57,8 +57,15 @@ class ManagedToolProvider {
     if (Array.isArray(keys)) return keys;
     return String(keys)
       .split(/[\n,]/)
-      .map((k) => k.trim())
-      .filter((k) => k.length > 0);
+      .map((k) => {
+        // Strip quotes, whitespace and common JSON punctuation
+        return k
+          .trim()
+          .replace(/^["']|["']$/g, '')
+          .replace(/[{},]/g, '')
+          .trim();
+      })
+      .filter((k) => k.length > 0 && !k.includes(':')); // Filter out JSON fragments like "rpm":4
   }
 
   /**

@@ -32,17 +32,27 @@ class DynamicSettingsManager {
 
     // Handle string values (detect multi-key or JSON)
     if (typeof rawValue === 'string') {
-      // 1. Try to parse as JSON first (For new Config Object format)
-      if (rawValue.trim().startsWith('{')) {
+      let currentVal = rawValue.trim();
+
+      // 1. Recursively parse as JSON (Handles potential double-encoding)
+      while (typeof currentVal === 'string' && currentVal.startsWith('{')) {
         try {
-          return JSON.parse(rawValue);
+          const parsed = JSON.parse(currentVal);
+          // If parsing succeeded, update currentVal and check if we need to parse again
+          currentVal = parsed;
         } catch (e) {
-          // Fall through if not valid JSON
+          // If parsing failed but it looked like JSON, break and treat as raw string
+          break;
         }
       }
 
+      // If we ended up with an object, return it
+      if (typeof currentVal === 'object' && currentVal !== null) {
+        return currentVal;
+      }
+
       // 2. Fallback to multi-key array detection (comma/newline separated)
-      const parts = rawValue
+      const parts = String(currentVal)
         .split(/[\n,]/)
         .map((p) => p.trim())
         .filter((p) => p.length > 0);
