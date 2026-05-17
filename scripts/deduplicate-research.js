@@ -26,13 +26,13 @@ async function deduplicateResearchByTitle() {
 
   const recordsWithoutHash = await CoursifyResearch.find({
     deletedAt: null,
-    promptHash: { $exists: false },
+    $or: [{ promptHash: { $exists: false } }, { titleHash: { $exists: false } }],
   });
 
-  console.log(`Found ${recordsWithoutHash.length} records without promptHash`);
+  console.log(`Found ${recordsWithoutHash.length} records without promptHash or titleHash`);
 
   if (recordsWithoutHash.length === 0) {
-    console.log('✅ All records have promptHash');
+    console.log('✅ All records have promptHash and titleHash');
     return { updated: 0, duplicates: 0 };
   }
 
@@ -42,23 +42,32 @@ async function deduplicateResearchByTitle() {
 
   for (const doc of recordsWithoutHash) {
     const hashInput = `${normalizePrompt(doc.topic)}|${normalizePrompt(doc.title)}`;
-    const newHash = crypto.createHash('sha256').update(hashInput).digest('hex');
+    const newPromptHash = crypto.createHash('sha256').update(hashInput).digest('hex');
 
-    if (hashMap.has(newHash)) {
+    // Also generate titleHash from the generated title
+    const titleHashInput = normalizePrompt(doc.title);
+    const newTitleHash = crypto.createHash('sha256').update(titleHashInput).digest('hex');
+
+    if (hashMap.has(newPromptHash)) {
       console.log(`⚠️  DUPLICATE FOUND:`);
-      console.log(`   [1] "${hashMap.get(newHash).title}" (${hashMap.get(newHash)._id})`);
+      console.log(
+        `   [1] "${hashMap.get(newPromptHash).title}" (${hashMap.get(newPromptHash)._id})`
+      );
       console.log(`   [2] "${doc.title}" (${doc._id})`);
       duplicates++;
       continue;
     }
 
-    hashMap.set(newHash, doc);
+    hashMap.set(newPromptHash, doc);
 
-    doc.promptHash = newHash;
+    doc.promptHash = newPromptHash;
+    doc.titleHash = newTitleHash;
     await doc.save();
     updated++;
 
-    console.log(`✅ ${doc.topic.substring(0, 40)}... → ${newHash.substring(0, 8)}...`);
+    console.log(
+      `✅ ${doc.topic.substring(0, 35)}... → promptHash: ${newPromptHash.substring(0, 8)}... titleHash: ${newTitleHash.substring(0, 8)}...`
+    );
   }
 
   console.log(`\n📊 Summary:`);
@@ -89,10 +98,12 @@ async function findDuplicateTitles() {
   for (const dup of duplicates) {
     console.log(`📌 "${dup._id}" (${dup.count} records)`);
     const docs = await CoursifyResearch.find({ _id: { $in: dup.ids } }).select(
-      'topic title slug createdAt'
+      'topic title titleHash slug createdAt'
     );
     docs.forEach((d) => {
-      console.log(`   • Topic: ${d.topic} | Slug: ${d.slug} | Created: ${d.createdAt}`);
+      console.log(
+        `   • Topic: ${d.topic} | TitleHash: ${d.titleHash ? d.titleHash.substring(0, 8) + '...' : 'missing'} | Slug: ${d.slug} | Created: ${d.createdAt}`
+      );
     });
     console.log();
   }
