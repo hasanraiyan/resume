@@ -123,7 +123,11 @@ export async function POST(request) {
           }
 
           // ─── Cache Miss: Generate New Content ───
-          const events = agentRegistry.streamExecute(AGENT_IDS.COURSIFY_SEARCH, {
+          // Use research agent (local LangChain) in dev, search agent in production
+          const isDev = process.env.NODE_ENV === 'development';
+          const agentId = isDev ? AGENT_IDS.COURSIFY_RESEARCH : AGENT_IDS.COURSIFY_SEARCH;
+
+          const events = agentRegistry.streamExecute(agentId, {
             topic: topic.trim(),
             isReferenceEnabled: !!isReferenceEnabled,
           });

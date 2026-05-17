@@ -147,7 +147,7 @@ export function ModuleSectionList() {
           ) : (
             <CoursifyBlockRenderer
               blocks={currentSection.blocks}
-              content={currentSection.content}
+              content={currentSection.blocks?.length ? undefined : currentSection.content}
               sectionId={currentSection._id}
             />
           )}

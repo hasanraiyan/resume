@@ -35,7 +35,11 @@ export async function POST(request) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const events = agentRegistry.streamExecute(AGENT_IDS.COURSIFY_SEARCH, {
+          // Use research agent (local LangChain) in dev, search agent in production
+          const isDev = process.env.NODE_ENV === 'development';
+          const agentId = isDev ? AGENT_IDS.COURSIFY_RESEARCH : AGENT_IDS.COURSIFY_SEARCH;
+
+          const events = agentRegistry.streamExecute(agentId, {
             topic: richTopic,
             isReferenceEnabled,
           });

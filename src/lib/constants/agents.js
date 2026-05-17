@@ -45,6 +45,7 @@ export const AGENT_IDS = {
   COURSIFY_THUMBNAIL_GENERATOR: 'coursify_thumbnail_generator',
   COURSIFY_CHAT: 'coursify_chat',
   COURSIFY_SEARCH: 'coursify_search',
+  COURSIFY_RESEARCH: 'coursify_research',
   COURSIFY_SUMMARY: 'coursify_summary',
 
   // Integrations
@@ -288,6 +289,18 @@ export const DEFAULT_AGENT_CONFIGS = {
     tools: ['tavily_search', 'youtube_search'],
     isActive: true,
   },
+  [AGENT_IDS.COURSIFY_RESEARCH]: {
+    name: 'Coursify Research Engine',
+    description:
+      'Deterministic research agent with exact step execution (LangChain sequential pipeline)',
+    type: AGENT_TYPES.CONTENT,
+    category: AGENT_CATEGORIES.WRITING,
+    icon: 'Search',
+    defaultModel: 'gpt-4o',
+    defaultProvider: 'openai',
+    tools: ['tavily_search', 'youtube_search'],
+    isActive: true,
+  },
   [AGENT_IDS.COURSIFY_SUMMARY]: {
     name: 'Coursify Summary Engine',
     description: 'Generates concise summaries of Coursify course content',
@@ -356,6 +369,7 @@ export const AGENT_TOOLS = {
   [AGENT_IDS.APP_BUILDER]: ['planning', 'html_generation', 'code_review'],
   [AGENT_IDS.FINANCE_ASSISTANT]: ['conversation'],
   [AGENT_IDS.COURSIFY_SEARCH]: ['tavily_search', 'youtube_search', 'firecrawl_scrape'],
+  [AGENT_IDS.COURSIFY_RESEARCH]: ['tavily_search', 'youtube_search'],
 };
 
 /**
@@ -384,6 +398,7 @@ export const RATE_LIMIT_DEFAULTS = {
   [AGENT_IDS.COURSIFY_THUMBNAIL_GENERATOR]: { requests: 10, window: 60 },
   [AGENT_IDS.COURSIFY_CHAT]: { requests: 20, window: 60 },
   [AGENT_IDS.COURSIFY_SEARCH]: { requests: 5, window: 60 },
+  [AGENT_IDS.COURSIFY_RESEARCH]: { requests: 5, window: 60 },
 };
 
 /**

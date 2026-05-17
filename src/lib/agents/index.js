@@ -42,6 +42,7 @@ import FinanceAssistantAgent from './ai/finance-assistant-agent';
 import CoursifyThumbnailAgent from './ai/coursify-thumbnail-agent';
 import CoursifyChatAgent from './ai/coursify-chat-agent';
 import CoursifySearchAgent from './ai/coursify-search-agent';
+import CoursifyResearchAgent from './ai/coursify-research-agent-langchain';
 import CoursifySummaryAgent from './ai/coursify-summary-agent';
 
 // Register agent classes into the registry
@@ -63,6 +64,7 @@ agentRegistry.register(AGENT_IDS.FINANCE_ASSISTANT, FinanceAssistantAgent);
 agentRegistry.register(AGENT_IDS.COURSIFY_THUMBNAIL_GENERATOR, CoursifyThumbnailAgent);
 agentRegistry.register(AGENT_IDS.COURSIFY_CHAT, CoursifyChatAgent);
 agentRegistry.register(AGENT_IDS.COURSIFY_SEARCH, CoursifySearchAgent);
+agentRegistry.register(AGENT_IDS.COURSIFY_RESEARCH, CoursifyResearchAgent);
 agentRegistry.register(AGENT_IDS.COURSIFY_SUMMARY, CoursifySummaryAgent);
 console.log('[agents/index.js] Agents registered successfully');
 
@@ -81,6 +83,7 @@ export {
   CoursifyThumbnailAgent,
   CoursifyChatAgent,
   CoursifySearchAgent,
+  CoursifyResearchAgent,
   CoursifySummaryAgent,
 };
 

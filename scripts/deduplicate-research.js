@@ -502,6 +502,89 @@ async function findDuplicateTitles() {
 }
 
 /**
+ * Group all articles by similarity to a given slug at multiple thresholds
+ */
+async function groupBySimilarity(slug) {
+  await dbConnect();
+
+  const qdrantUrl = process.env.QDRANT_URL;
+  if (!qdrantUrl) {
+    console.log('❌ QDRANT_URL not set');
+    return;
+  }
+
+  // Find the source article
+  const sourceDoc = await CoursifyResearch.findOne({ slug, deletedAt: null });
+  if (!sourceDoc) {
+    console.log(`❌ Article with slug "${slug}" not found\n`);
+    return;
+  }
+
+  console.log(`\n🎯 Source: "${sourceDoc.title}" (${slug})\n`);
+
+  try {
+    const embeddings = new PollinationsEmbeddings();
+    const vectorStore = await QdrantVectorStore.fromExistingCollection(embeddings, {
+      url: qdrantUrl,
+      apiKey: process.env.QDRANT_API_KEY,
+      collectionName: 'coursify_research',
+    });
+
+    // Get all similar docs with scores
+    const allResults = await vectorStore.similaritySearchWithScore(
+      `${sourceDoc.title}\n${sourceDoc.topic}`,
+      100
+    );
+
+    // Filter out the source itself
+    const similarDocs = allResults
+      .filter(([doc]) => doc.metadata?.slug !== slug)
+      .map(([doc, score]) => ({
+        title: doc.metadata?.title || 'Unknown',
+        slug: doc.metadata?.slug || 'unknown',
+        score,
+      }));
+
+    if (similarDocs.length === 0) {
+      console.log('✅ No similar articles found\n');
+      return;
+    }
+
+    // Group by thresholds
+    const thresholds = [
+      { label: '90%+', min: 0.9, matches: [] },
+      { label: '80-89%', min: 0.8, max: 0.9, matches: [] },
+      { label: '70-79%', min: 0.7, max: 0.8, matches: [] },
+      { label: '60-69%', min: 0.6, max: 0.7, matches: [] },
+      { label: '50-59%', min: 0.5, max: 0.6, matches: [] },
+    ];
+
+    for (const doc of similarDocs) {
+      for (const t of thresholds) {
+        if (doc.score >= t.min && (!t.max || doc.score < t.max)) {
+          t.matches.push(doc);
+          break;
+        }
+      }
+    }
+
+    console.log(`📊 Found ${similarDocs.length} articles total\n`);
+
+    for (const t of thresholds) {
+      if (t.matches.length === 0) continue;
+      console.log(`▓▓▓ ${t.label} similarity (${t.matches.length} articles)`);
+      for (const doc of t.matches) {
+        console.log(`   ${doc.title} (${doc.slug}) — ${(doc.score * 100).toFixed(1)}%`);
+      }
+      console.log();
+    }
+  } catch (err) {
+    console.log(`❌ Error: ${err.message}`);
+    throw err;
+  }
+}
+
+/**
  * Deduplicate by similarity using Qdrant embeddings: find semantically similar articles,
  * keep the latest, soft-delete the rest from MongoDB and delete from Qdrant
  */
@@ -648,6 +731,14 @@ const keyword = process.argv[3];
         `\n✅ Dedup complete! Deleted ${result.deleted} from MongoDB, ${result.deletedFromQdrant} from Qdrant\n`
       );
       process.exit(0);
+    } else if (command === 'group-by-similarity') {
+      if (!keyword) {
+        console.log('❌ Slug required\n');
+        console.log('Usage: node scripts/deduplicate-research.js group-by-similarity <slug>\n');
+        process.exit(1);
+      }
+      await groupBySimilarity(keyword);
+      process.exit(0);
     } else if (command === 'count') {
       console.log('Checking article counts in MongoDB and Qdrant...');
       const result = await checkDatabaseCounts();
@@ -690,6 +781,7 @@ const keyword = process.argv[3];
   cleanup           - Keep 1 random per group, soft-delete duplicates
   cleanup-by-title  - Group by normalized title, keep latest, delete rest (MongoDB + Qdrant)
   dedup-by-similarity - Find semantically similar articles via Qdrant, keep latest, delete rest
+  group-by-similarity <slug> - Show all articles grouped by similarity to a slug (90%, 80%, 70%, 60%, 50%)
   count             - Check article counts in MongoDB and Qdrant
   orphaned          - Find orphaned documents in Qdrant (not in MongoDB)
   cleanup-orphaned  - Delete orphaned documents from Qdrant
@@ -703,7 +795,7 @@ Environment Variables:
     } else {
       console.log(`❌ Unknown command: ${command}\n`);
       console.log(
-        `Use: node scripts/deduplicate-research.js hash|titles|cleanup|cleanup-by-title|dedup-by-similarity|count|orphaned|cleanup-orphaned|find|delete|help\n`
+        `Use: node scripts/deduplicate-research.js hash|titles|cleanup|cleanup-by-title|dedup-by-similarity|group-by-similarity|count|orphaned|cleanup-orphaned|find|delete|help\n`
       );
       process.exit(1);
     }

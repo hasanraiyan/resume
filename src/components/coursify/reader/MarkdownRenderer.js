@@ -129,7 +129,8 @@ const rehypeGroupFootnotes = () => (tree) => {
 // ==============================
 
 const rehypeProcessKeywords = () => (tree) => {
-  const KEYWORD_PATTERN = /\[([^\]]+)\]\{def="([^"]+)"\}/;
+  // Support both [keyword]{def="..."} and [keyword]{{def="..."}}
+  const KEYWORD_PATTERN = /\[([^\]]+)\]\{?\{def="([^"]+)"\}\??/;
 
   const processNode = (node) => {
     if (node.type === 'text') {
