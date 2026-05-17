@@ -639,6 +639,7 @@ export default function EditSectionModal({ section, onSave, onClose }) {
       finalBlocks = parsed.blocks;
     }
     await onSave({
+      _id: section?._id,
       title: title.trim(),
       content: finalContent,
       blocks: finalBlocks.map((b, i) => ({ ...b, order: i })),

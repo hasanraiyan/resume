@@ -147,8 +147,11 @@ export function CoursifyStudioProvider({ id, children }) {
   };
 
   const handleSaveSection = async (payload) => {
-    if (editingSection) {
-      const res = await fetch(`/api/coursify/sections/${editingSection._id}`, {
+    // Priority: 1. ID in payload, 2. ID in context state
+    const sectionId = payload?._id || editingSection?._id;
+
+    if (sectionId) {
+      const res = await fetch(`/api/coursify/sections/${sectionId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
