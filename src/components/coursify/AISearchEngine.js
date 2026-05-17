@@ -6,7 +6,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ArrowLeft, ChevronRight, RotateCcw, Search, Sparkles, Globe, Quote } from 'lucide-react';
+import { ArrowLeft, RotateCcw, Search, Sparkles, Globe, Quote } from 'lucide-react';
 
 import { toast } from 'sonner';
 
@@ -451,9 +451,7 @@ export function AISearchEngine({ onGenerated }) {
             <span className="hidden sm:inline"></span>
           </button>
 
-          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[#b5c4be]" />
-
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2 ml-2">
             <Sparkles className="h-3.5 w-3.5 shrink-0 text-[#1f644e]" />
             <span className="truncate text-xs font-bold text-[#1e3a34]">
               {generatedTitle || query}
