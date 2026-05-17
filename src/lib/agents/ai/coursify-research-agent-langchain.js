@@ -186,29 +186,41 @@ ${webSearchResults
 ${videoSearchResult || 'No video results found'}
 `;
 
-      // Step 4: Generate final content with single LLM call
+      // Step 4: Stream final content progressively
       let systemPrompt = SYSTEM_PROMPT_TEMPLATE.replace('{researchContext}', researchContext);
 
       if (isReferenceEnabled) {
         systemPrompt += REFERENCE_ADDENDUM;
       }
 
-      const contentPrompt = await llm.invoke([
+      // Stream tokens progressively
+      const stream = await llm.stream([
         new SystemMessage({ content: systemPrompt }),
         new HumanMessage({
           content: `Research and generate a comprehensive Coursify course section on: "${topic}"\n\nTopic Summary: ${topicSummary || topic}`,
         }),
       ]);
 
-      // Extract and emit title event (first # header)
-      const content = contentPrompt.content || contentPrompt.text || '';
-      const titleMatch = content.match(/^#\s+(.+)$/m);
-      if (titleMatch && titleMatch[1]) {
-        yield { type: 'title', text: titleMatch[1].trim() };
-      }
+      let fullContent = '';
+      let titleExtracted = false;
 
-      // Stream content
-      yield { type: 'content', message: content };
+      for await (const chunk of stream) {
+        const text = chunk.content || chunk.text || '';
+        if (text) {
+          fullContent += text;
+
+          // Extract title from first chunk that contains it
+          if (!titleExtracted) {
+            const titleMatch = fullContent.match(/^#\s+(.+)$/m);
+            if (titleMatch && titleMatch[1]) {
+              yield { type: 'title', text: titleMatch[1].trim() };
+              titleExtracted = true;
+            }
+          }
+
+          yield { type: 'content', message: text };
+        }
+      }
 
       // Emit tool results for compatibility
       for (const item of webSearchResults) {
@@ -229,12 +241,13 @@ ${videoSearchResult || 'No video results found'}
         };
       }
 
-      // Usage metadata
+      // Usage metadata from last stream chunk
+      const lastChunk = stream.response;
       const usage =
-        contentPrompt?.usage_metadata ||
-        contentPrompt?.usage ||
-        contentPrompt?.response_metadata?.tokenUsage ||
-        contentPrompt?.response_metadata?.usage;
+        lastChunk?.usage_metadata ||
+        lastChunk?.usage ||
+        lastChunk?.response_metadata?.tokenUsage ||
+        lastChunk?.response_metadata?.usage;
 
       if (usage) {
         yield {
