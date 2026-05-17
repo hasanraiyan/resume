@@ -49,7 +49,7 @@ const TOOLS = [
 const KEY_MAP = {
   youtube_search: 'GOOGLE_API_KEY',
   tavily_search: 'TAVILY_API_KEY',
-  firecrawl_scrape: 'FIRECRAWL_SCRAPE_API_KEY',
+  firecrawl_scrape: 'FIRECRAWL_API_KEY',
 };
 
 export default function DebugToolsPage() {

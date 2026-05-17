@@ -18,14 +18,18 @@ export async function POST(request) {
     const keyMap = {
       youtube_search: 'GOOGLE_API_KEY',
       tavily_search: 'TAVILY_API_KEY',
-      firecrawl_scrape: 'FIRECRAWL_SCRAPE_API_KEY',
+      firecrawl_scrape: 'FIRECRAWL_API_KEY',
     };
 
     const dbKeyName = keyMap[tool];
     let activeKey = params.apiKey;
 
+    console.log(`[DebugTools] Starting test for tool: ${tool}. DB Key Name: ${dbKeyName}`);
+
     if (!activeKey && dbKeyName) {
       const config = await dynamicSettingsManager.get(dbKeyName);
+      console.log(`[DebugTools] Retrieved config from DB for ${dbKeyName}:`, typeof config);
+
       // Handle both old format (string) and new format (config object)
       if (typeof config === 'object' && !Array.isArray(config)) {
         activeKey = config.keys?.split(/[\n,]/)[0]?.trim();
@@ -34,6 +38,14 @@ export async function POST(request) {
       } else {
         activeKey = String(config).split(/[\n,]/)[0]?.trim();
       }
+    }
+
+    if (activeKey) {
+      console.log(
+        `[DebugTools] Using API Key: ${activeKey.substring(0, 4)}...${activeKey.substring(activeKey.length - 4)} (Length: ${activeKey.length})`
+      );
+    } else {
+      console.warn(`[DebugTools] No API Key found for ${tool}`);
     }
 
     switch (tool) {
@@ -52,8 +64,15 @@ export async function POST(request) {
       case 'firecrawl_scrape':
         const { firecrawlScrape } = await import('@/lib/agents/utils/firecrawl-tool');
         if (!activeKey) throw new Error('Firecrawl API key not found');
+
+        // Auto-normalize URL (add https:// if missing)
+        let normalizedUrl = query.trim();
+        if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+          normalizedUrl = `https://${normalizedUrl}`;
+        }
+
         result = await firecrawlScrape.invoke(
-          { url: query },
+          { url: normalizedUrl },
           { configurable: { apiKey: activeKey } }
         );
         break;
@@ -71,6 +90,11 @@ export async function POST(request) {
       }
     } catch (e) {
       // Not JSON, keep as is
+    }
+
+    console.log(`[DebugTools] Test completed in ${duration}ms. Success: true`);
+    if (parsedResult && typeof parsedResult === 'object') {
+      console.log('[DebugTools] Result Keys:', Object.keys(parsedResult));
     }
 
     return NextResponse.json({
