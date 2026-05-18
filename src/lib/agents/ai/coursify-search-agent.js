@@ -1,19 +1,18 @@
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { HumanMessage } from '@langchain/core/messages';
-import { PromptTemplate } from '@langchain/core/prompts';
 import { EventType } from '@ag-ui/core';
 import BaseAgent from '../BaseAgent';
 import { AGENT_IDS, getAgentTools } from '@/lib/constants/agents';
 import managedToolProvider from '../utils/ManagedToolProvider';
-import { COURSIFY_MARKDOWN_FORMAT, REFERENCE_ADDENDUM } from './coursify-prompts';
+import { COURSIFY_MARKDOWN_FORMAT } from './coursify-prompts';
 
-const SYSTEM_PROMPT_TEMPLATE =
+const SYSTEM_PROMPT =
   `
 You are a Coursify AI Course Content Generator. Your job is to research a topic using web search and then generate a reponse to user query in the Coursify markdown format.
 
 ## Response Generation Process (MANDATORY)
 1. START your response with a clear, academic # Title header.
-2. SEARCH the web 2-4 times using different specific queries with the **{SEARCH_TOOL}** tool. Use different queries each time for broad coverage.
+2. SEARCH the web 2-4 times using different specific queries with the **tavily_search** tool. Use different queries each time for broad coverage.
 3. After gathering info, OUTPUT the full Coursify markdown content. Do NOT ask questions.
 ` + COURSIFY_MARKDOWN_FORMAT;
 
@@ -33,7 +32,7 @@ class CoursifySearchAgent extends BaseAgent {
   }
 
   async *_onStreamExecute(input) {
-    const { topic, isReferenceEnabled } = input;
+    const { topic } = input;
 
     const topicPreview = topic.substring(0, 50);
     this.logger.info(`Starting CoursifySearchAgent for topic: "${topicPreview}..."`);
@@ -57,13 +56,7 @@ class CoursifySearchAgent extends BaseAgent {
       this.logger.debug(`  Tool ${idx + 1}: ${toolName}`);
     });
 
-    // Build prompt from template
-    const promptTemplate = PromptTemplate.fromTemplate(SYSTEM_PROMPT_TEMPLATE);
-    let systemPrompt = await promptTemplate.format({ SEARCH_TOOL });
-
-    if (isReferenceEnabled) {
-      systemPrompt += REFERENCE_ADDENDUM;
-    }
+    const systemPrompt = SYSTEM_PROMPT;
 
     const contentMessages = [
       new HumanMessage({ role: 'system', content: systemPrompt }),

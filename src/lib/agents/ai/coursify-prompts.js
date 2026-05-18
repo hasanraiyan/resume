@@ -7,7 +7,7 @@ export const COURSIFY_MARKDOWN_FORMAT = `
 ## Coursify Markdown Format
 All content must use ## [BlockType] headers. Generate blocks as required.
 
-### Available Block Types:
+### Available Block Types and use this exact format for each some are in yaml format:
 
 **## [MdBlock]**
 Primary narrative text. Supports LaTeX math ($O(n \\log n)$), markdown tables, and Mermaid diagrams.
@@ -96,18 +96,16 @@ url: "https://www.youtube.com/watch?v=..."
 - DO NOT summarize or talk about your process. Just output markdown.
 
 ## Keyword Definitions (Interactive Learning)
-- Use [keyword]{{def="clear, concise definition"}} syntax for important technical terms throughout content
+- Use [keyword]{def="clear, concise definition"} syntax for important technical terms throughout content
 - Keep definitions under 150 characters, plain text only (no markdown formatting)
 - Add 3-5 key terms per major section for better learning
-- Example: [Algorithm]{{def="A step-by-step procedure for solving a problem or performing a computation"}}
+- Example: [Algorithm]{def="A step-by-step procedure for solving a problem or performing a computation"}
 - Place keywords naturally in sentences where they're first introduced
 - DO NOT define common words; focus on domain-specific or technical terms
-`;
-
-export const REFERENCE_ADDENDUM = `
 
 ## Reference System (Wikipedia-style) - MANDATORY
-- Use inline citations like [^1], [^2] within the text of ANY block.
+- Use inline citations with the exact syntax [^1], [^2], [^3] etc. within the text of ANY block.
 - MANDATORY: Every major claim, statistic, or technical detail must be backed by a search result citation.
 - MANDATORY: Provide the corresponding footnote definitions ONLY ONCE at the VERY END.
-  [^1]: [Source Title](Source URL) - Brief description.`;
+  [^1]: [Source Title](Source URL) - Brief description.
+`;

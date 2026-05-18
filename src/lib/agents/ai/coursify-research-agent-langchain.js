@@ -1,39 +1,25 @@
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
-import { PromptTemplate } from '@langchain/core/prompts';
 import { EventType } from '@ag-ui/core';
 import BaseAgent from '../BaseAgent';
 import { AGENT_IDS, getAgentTools } from '@/lib/constants/agents';
 import managedToolProvider from '../utils/ManagedToolProvider';
-import { COURSIFY_MARKDOWN_FORMAT, REFERENCE_ADDENDUM } from './coursify-prompts';
+import { COURSIFY_MARKDOWN_FORMAT } from './coursify-prompts';
 
 const ANALYSIS_PROMPT = `
 You are a Research Query Analyzer. Given a topic, generate specific search queries for web and video research.
 
 Output ONLY valid JSON with this exact structure:
-{{
+{
   "webQueries": ["query 1", "query 2", "query 3"],
   "videoQuery": "best search term for YouTube",
   "topicSummary": "one sentence topic overview"
-}}
+}
 
 Rules:
 - Generate 3 specific web queries covering different aspects
 - Generate 1 optimized YouTube search query
 - Be precise and academic in approach
 `;
-
-const SYSTEM_PROMPT_TEMPLATE =
-  `
-You are a Coursify AI Course Content Generator. Your job is to research a topic using web search and then generate a response to user query in the Coursify markdown format.
-
-## Research Results (Provided Below)
-{researchContext}
-
-## Response Generation Process (MANDATORY)
-1. START your response with a clear, academic # Title header.
-2. Use the provided research results to generate comprehensive content.
-3. OUTPUT the full Coursify markdown content. Do NOT ask questions.
-` + COURSIFY_MARKDOWN_FORMAT;
 
 class CoursifyResearchAgent extends BaseAgent {
   constructor(agentId = AGENT_IDS.COURSIFY_RESEARCH, config = {}) {
@@ -49,7 +35,7 @@ class CoursifyResearchAgent extends BaseAgent {
   }
 
   async *_onStreamExecute(input) {
-    const { topic, isReferenceEnabled } = input;
+    const { topic } = input;
 
     const topicPreview = topic.substring(0, 50);
     this.logger.info(`Starting CoursifyResearchAgent for topic: "${topicPreview}..."`);
@@ -235,11 +221,18 @@ ${webSearchResults
 ${videoSearchResult || 'No video results found'}
 `;
 
-      const promptTemplate = PromptTemplate.fromTemplate(SYSTEM_PROMPT_TEMPLATE);
-      let systemPrompt = await promptTemplate.format({ researchContext });
-      if (isReferenceEnabled) {
-        systemPrompt += REFERENCE_ADDENDUM;
-      }
+      const systemPrompt =
+        `
+You are a Coursify AI Course Content Generator. Your job is to research a topic using web search and then generate a response to user query in the Coursify markdown format.
+
+## Research Results (Provided Below)
+${researchContext}
+
+## Response Generation Process (MANDATORY)
+1. START your response with a clear, academic # Title header.
+2. Use the provided research results to generate comprehensive content.
+3. OUTPUT the full Coursify markdown content. Do NOT ask questions.
+` + COURSIFY_MARKDOWN_FORMAT;
 
       const messageId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       yield { type: EventType.TEXT_MESSAGE_START, messageId, role: 'assistant' };
