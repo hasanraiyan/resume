@@ -34,6 +34,11 @@ function hasAnswer(question, answer) {
   return answer !== undefined && answer !== '';
 }
 
+function stripFootnotes(text) {
+  if (!text) return '';
+  return text.replace(/\[\^[^\]]+\]/g, '').trim();
+}
+
 function QuestionView({ index, total, question, answer, submitted, onChange }) {
   const { type, question: text, options, correctAnswer, explanation, points } = question;
   const displayOptions =
@@ -145,7 +150,7 @@ function QuestionView({ index, total, question, answer, submitted, onChange }) {
                   Reference Answer
                 </span>
               </div>
-              <p className="leading-relaxed">{correctAnswer}</p>
+              <p className="leading-relaxed">{stripFootnotes(correctAnswer)}</p>
             </div>
           )}
         </div>
@@ -163,7 +168,7 @@ function QuestionView({ index, total, question, answer, submitted, onChange }) {
               Explanation
             </span>
           </div>
-          <p className="leading-relaxed opacity-90">{explanation}</p>
+          <p className="leading-relaxed opacity-90">{stripFootnotes(explanation)}</p>
         </motion.div>
       )}
     </div>
