@@ -1,4 +1,5 @@
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
+import { PromptTemplate } from '@langchain/core/prompts';
 import { EventType } from '@ag-ui/core';
 import BaseAgent from '../BaseAgent';
 import { AGENT_IDS, getAgentTools } from '@/lib/constants/agents';
@@ -234,7 +235,8 @@ ${webSearchResults
 ${videoSearchResult || 'No video results found'}
 `;
 
-      let systemPrompt = SYSTEM_PROMPT_TEMPLATE.replace('{researchContext}', researchContext);
+      const promptTemplate = PromptTemplate.fromTemplate(SYSTEM_PROMPT_TEMPLATE);
+      let systemPrompt = await promptTemplate.format({ researchContext });
       if (isReferenceEnabled) {
         systemPrompt += REFERENCE_ADDENDUM;
       }
