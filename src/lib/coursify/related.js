@@ -1,5 +1,7 @@
 import dbConnect from '@/lib/dbConnect';
 import CoursifyResearch from '@/models/CoursifyResearch';
+import { QdrantVectorStore } from '@langchain/qdrant';
+import { PollinationsEmbeddings } from '@/lib/coursify/PollinationsEmbeddings';
 
 const COLLECTION = 'coursify_research';
 
@@ -13,7 +15,6 @@ function qdrantHeaders() {
 // Upload an article to Qdrant on-demand and persist the UUID back to MongoDB
 async function lazyUpload(qdrantUrl, article) {
   try {
-    const { PollinationsEmbeddings } = await import('@/lib/coursify/PollinationsEmbeddings');
     const embeddings = new PollinationsEmbeddings();
     const text = `${article.title}\n${article.topic}`;
     const [vector] = await embeddings.embedDocuments([text]);
@@ -47,20 +48,15 @@ async function lazyUpload(qdrantUrl, article) {
   }
 }
 
-async function recommendByPointId(qdrantUrl, pointId, limit) {
-  const res = await fetch(`${qdrantUrl}/collections/${COLLECTION}/points/recommend`, {
-    method: 'POST',
-    headers: qdrantHeaders(),
-    body: JSON.stringify({
-      positive: [pointId],
-      limit,
-      with_payload: true,
-      with_vector: false,
-    }),
+async function getQdrantVectorStore() {
+  const embeddings = new PollinationsEmbeddings();
+  const qdrantUrl = process.env.QDRANT_URL;
+
+  return new QdrantVectorStore(embeddings, {
+    url: qdrantUrl,
+    apiKey: process.env.QDRANT_API_KEY,
+    collectionName: COLLECTION,
   });
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.result || [];
 }
 
 export async function getRelatedArticles(slug, limit = 3, includeSnippet = false) {
@@ -84,27 +80,32 @@ export async function getRelatedArticles(slug, limit = 3, includeSnippet = false
     }
 
     // Lazy-upload if qdrantId was never set (pre-fix articles or cache hits)
-    const qdrantId = article.qdrantId || (await lazyUpload(qdrantUrl, article));
-
-    if (!qdrantId) {
-      console.log(`[CoursifyRelated] Could not obtain qdrantId for slug: ${slug}`);
-      return [];
+    if (!article.qdrantId) {
+      await lazyUpload(qdrantUrl, article);
     }
 
-    const similar = (await recommendByPointId(qdrantUrl, qdrantId, limit + 1))
-      .filter((p) => p.payload?.metadata?.slug !== slug)
-      .slice(0, limit);
+    const vectorStore = await getQdrantVectorStore();
+    const query = `${article.title}\n${article.topic}`;
+
+    // Use LangChain's MMR search for diverse results
+    const similar = await vectorStore.maxMarginalRelevanceSearch(query, {
+      k: limit + 1,
+      fetchK: limit * 4, // Fetch more candidates for better diversity
+    });
+
+    // Filter out the query article itself
+    const filtered = similar.filter((doc) => doc.metadata?.slug !== slug).slice(0, limit);
 
     if (!includeSnippet) {
-      return similar.map((p) => ({
-        title: p.payload?.metadata?.title || '',
-        slug: p.payload?.metadata?.slug || '',
+      return filtered.map((doc) => ({
+        title: doc.metadata?.title || '',
+        slug: doc.metadata?.slug || '',
       }));
     }
 
     const relatedWithContent = await Promise.all(
-      similar.map(async (p) => {
-        const relSlug = p.payload?.metadata?.slug;
+      filtered.map(async (doc) => {
+        const relSlug = doc.metadata?.slug;
         if (!relSlug) return null;
         try {
           const research = await CoursifyResearch.findOne(
