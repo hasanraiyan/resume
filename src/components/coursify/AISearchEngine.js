@@ -221,6 +221,23 @@ export function AISearchEngine({ onGenerated }) {
                 step.toolCallId === event.toolCallId ? { ...step, status: 'completed' } : step
               )
             );
+          } else if (event.type === EventType.TOOL_CALL_RESULT) {
+            // Attach raw result snippet to the matching step for inline display
+            setToolSteps((prev) =>
+              prev.map((step) =>
+                step.toolCallId === event.toolCallId ? { ...step, result: event.result } : step
+              )
+            );
+          } else if (event.type === EventType.REASONING_MESSAGE_CONTENT) {
+            setStatusMessage(event.delta || '');
+          } else if (event.type === EventType.REASONING_END) {
+            setStatusMessage('');
+          } else if (event.type === EventType.STATE_SNAPSHOT) {
+            // Consolidate run metadata from the final snapshot
+            const snap = event.snapshot || {};
+            if (snap.title) setGeneratedTitle(snap.title);
+            if (snap.slug) setGeneratedSlug(snap.slug);
+            if (snap.fromCache) setIsFromCache(true);
           } else if (event.type === EventType.STEP_STARTED && event.stepName) {
             setStatusMessage(event.stepName);
           } else if (event.type === EventType.STEP_FINISHED) {

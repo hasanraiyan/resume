@@ -123,7 +123,6 @@ export async function POST(request) {
                 value: { text: cachedResearch.title },
               })
             );
-            // Emit cached content as a single TEXT_MESSAGE
             const msgId = `msg-cache-${Date.now()}`;
             controller.enqueue(
               encodeSSE({ type: EventType.TEXT_MESSAGE_START, messageId: msgId, role: 'assistant' })
@@ -150,6 +149,19 @@ export async function POST(request) {
                 type: EventType.CUSTOM,
                 name: 'coursify_persist',
                 value: { slug: cachedResearch.slug, id: String(cachedResearch._id) },
+              })
+            );
+            // STATE_SNAPSHOT: consolidated run metadata
+            controller.enqueue(
+              encodeSSE({
+                type: EventType.STATE_SNAPSHOT,
+                snapshot: {
+                  title: cachedResearch.title,
+                  slug: cachedResearch.slug,
+                  usage: cachedResearch.usage || {},
+                  fromCache: true,
+                  durationMs: Date.now() - startTime,
+                },
               })
             );
             controller.enqueue(encodeSSE({ type: EventType.RUN_FINISHED, threadId, runId }));
@@ -243,6 +255,20 @@ export async function POST(request) {
                 type: EventType.CUSTOM,
                 name: 'coursify_persist',
                 value: { slug, id: String(research._id) },
+              })
+            );
+
+            // STATE_SNAPSHOT: consolidated run metadata sent once after persist
+            controller.enqueue(
+              encodeSSE({
+                type: EventType.STATE_SNAPSHOT,
+                snapshot: {
+                  title: baseTitle,
+                  slug,
+                  usage: { ...totalUsage, estimatedCostUSD },
+                  fromCache: false,
+                  durationMs: Date.now() - startTime,
+                },
               })
             );
 

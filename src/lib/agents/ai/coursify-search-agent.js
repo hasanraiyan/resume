@@ -158,6 +158,18 @@ class CoursifySearchAgent extends BaseAgent {
           const toolCallId = activeToolCalls.get(run_id || name);
           if (toolCallId) {
             yield { type: EventType.TOOL_CALL_END, toolCallId };
+
+            // TOOL_CALL_RESULT: surface a trimmed excerpt of the raw tool output
+            const output = data.output;
+            if (output != null) {
+              const resultStr = typeof output === 'string' ? output : JSON.stringify(output);
+              yield {
+                type: EventType.TOOL_CALL_RESULT,
+                toolCallId,
+                result: resultStr.substring(0, 600),
+              };
+            }
+
             activeToolCalls.delete(run_id || name);
           }
         }

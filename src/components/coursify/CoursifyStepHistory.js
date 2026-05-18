@@ -1,7 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, CheckCircle2, Search, Youtube, Sparkles, Globe, Image } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronRight,
+  CheckCircle2,
+  Search,
+  Youtube,
+  Sparkles,
+  Globe,
+  Image,
+} from 'lucide-react';
 
 const TOOL_CONFIG = {
   tavily_search: { label: 'Web Research', icon: Globe },
@@ -9,6 +18,30 @@ const TOOL_CONFIG = {
   youtube_search: { label: 'Video Search', icon: Youtube },
   agent: { label: 'Planning Research', icon: Sparkles },
 };
+
+function StepResult({ result }) {
+  const [open, setOpen] = useState(false);
+  if (!result) return null;
+  const preview = result.substring(0, 120).replace(/\s+/g, ' ').trim();
+
+  return (
+    <div className="mt-1.5 ml-11">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1 text-[10px] font-semibold text-[#7c8e88] hover:text-[#1f644e] transition-colors"
+      >
+        <ChevronRight className={`w-3 h-3 transition-transform ${open ? 'rotate-90' : ''}`} />
+        {open ? 'Hide result' : 'View snippet'}
+      </button>
+      {open && (
+        <p className="mt-1.5 rounded-lg bg-[#f7faf8] border border-[#e5e3d8] px-3 py-2 text-[10px] text-[#7c8e88] leading-relaxed whitespace-pre-wrap break-words max-h-40 overflow-y-auto">
+          {preview}
+          {result.length > 120 ? '…' : ''}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function CoursifyStepHistory({ steps }) {
   const [expanded, setExpanded] = useState(true);
@@ -106,48 +139,53 @@ export default function CoursifyStepHistory({ steps }) {
             return (
               <div
                 key={`step-${idx}`}
-                className={`flex items-center justify-between gap-3 p-3 rounded-xl transition-all duration-300 border ${
+                className={`rounded-xl transition-all duration-300 border ${
                   isDone
                     ? 'bg-white border-[#e5e3d8]'
                     : 'bg-[#f0f5f2]/50 border-[#d4e6de] animate-pulse'
                 }`}
               >
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div
-                    className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                      isDone ? 'bg-[#f0f5f2] text-[#1f644e]' : 'bg-[#d4e6de] text-[#1f644e]/60'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className={`text-sm font-bold truncate ${
-                        isDone ? 'text-[#1e3a34]' : 'text-[#7c8e88]'
-                      }`}
-                      title={cleanQuery}
-                    >
-                      {displayQuery}
-                    </p>
-                    <p
-                      className={`text-[10px] font-bold uppercase tracking-wider ${
-                        isDone ? 'text-[#b5c4be]' : 'text-[#1f644e]/50'
+                <div className="flex items-center justify-between gap-3 p-3">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div
+                      className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                        isDone ? 'bg-[#f0f5f2] text-[#1f644e]' : 'bg-[#d4e6de] text-[#1f644e]/60'
                       }`}
                     >
-                      {config.label}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex-shrink-0 ml-2">
-                  {isDone ? (
-                    <div className="w-5 h-5 rounded-full bg-[#1f644e]/10 flex items-center justify-center">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#1f644e]" />
+                      <Icon className="w-4 h-4" />
                     </div>
-                  ) : (
-                    <div className="w-2 h-2 rounded-full bg-[#1f644e] animate-ping" />
-                  )}
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={`text-sm font-bold truncate ${
+                          isDone ? 'text-[#1e3a34]' : 'text-[#7c8e88]'
+                        }`}
+                        title={cleanQuery}
+                      >
+                        {displayQuery}
+                      </p>
+                      <p
+                        className={`text-[10px] font-bold uppercase tracking-wider ${
+                          isDone ? 'text-[#b5c4be]' : 'text-[#1f644e]/50'
+                        }`}
+                      >
+                        {config.label}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex-shrink-0 ml-2">
+                    {isDone ? (
+                      <div className="w-5 h-5 rounded-full bg-[#1f644e]/10 flex items-center justify-center">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#1f644e]" />
+                      </div>
+                    ) : (
+                      <div className="w-2 h-2 rounded-full bg-[#1f644e] animate-ping" />
+                    )}
+                  </div>
                 </div>
+                {/* Inline result snippet — only shown after TOOL_CALL_RESULT arrives */}
+                {isDone && <StepResult result={step.result} />}
+                {isDone && step.result && <div className="pb-2" />}
               </div>
             );
           })}

@@ -50,9 +50,21 @@ export async function POST(request) {
             isReferenceEnabled,
           });
 
+          let sectionTitle = '';
           for await (const event of events) {
+            if (event.type === EventType.CUSTOM && event.name === 'coursify_title') {
+              sectionTitle = event.value?.text || '';
+            }
             controller.enqueue(encodeSSE(event));
           }
+
+          // STATE_SNAPSHOT: send consolidated title at end of section generation
+          controller.enqueue(
+            encodeSSE({
+              type: EventType.STATE_SNAPSHOT,
+              snapshot: { title: sectionTitle },
+            })
+          );
 
           controller.enqueue(encodeSSE({ type: EventType.RUN_FINISHED, threadId, runId }));
           controller.close();

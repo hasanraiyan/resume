@@ -53,18 +53,14 @@ class CoursifyResearchAgent extends BaseAgent {
     const topicPreview = topic.substring(0, 50);
     this.logger.info(`Starting CoursifyResearchAgent for topic: "${topicPreview}..."`);
 
-    // Use local LangChain server (OpenAI-compatible)
     const { ChatOpenAI } = await import('@langchain/openai');
     const llm = new ChatOpenAI({
       modelName: 'antigravity-gemini-3-flash',
       apiKey: 'local-dummy-key',
-      configuration: {
-        baseURL: 'http://localhost:3001/v1',
-      },
+      configuration: { baseURL: 'http://localhost:3001/v1' },
     });
     this.logger.debug('Using local LangChain server: http://localhost:3001/v1');
 
-    // Load tools once - pick first instance of each type
     const allTools = await managedToolProvider.getTools(
       ['tavily_search', 'youtube_search'],
       this.logger
@@ -110,6 +106,25 @@ class CoursifyResearchAgent extends BaseAgent {
       this.logger.debug(`Web queries: ${webQueries.join(', ')}`);
       this.logger.debug(`Video query: ${videoQuery}`);
 
+      // ─── Reasoning: expose the generated plan ───
+      const reasoningId = `reasoning-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      yield { type: EventType.REASONING_START };
+      yield { type: EventType.REASONING_MESSAGE_START, messageId: reasoningId, role: 'assistant' };
+      yield {
+        type: EventType.REASONING_MESSAGE_CONTENT,
+        messageId: reasoningId,
+        delta: [
+          `Summary: ${topicSummary}`,
+          ``,
+          `Web queries:`,
+          ...webQueries.map((q, i) => `  ${i + 1}. ${q}`),
+          ``,
+          `Video: ${videoQuery}`,
+        ].join('\n'),
+      };
+      yield { type: EventType.REASONING_MESSAGE_END, messageId: reasoningId };
+      yield { type: EventType.REASONING_END };
+
       yield {
         type: EventType.STEP_FINISHED,
         stepName: 'Analyzing topic and generating search queries...',
@@ -125,11 +140,10 @@ class CoursifyResearchAgent extends BaseAgent {
       }));
       searchTasks.push({ query: videoQuery, tool: youtubeTool, toolName: 'youtube_search' });
 
-      // Emit all TOOL_CALL_START events before executing (parallel intent)
-      const taskMeta = searchTasks.map((task) => {
-        const toolCallId = `tc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-        return { ...task, toolCallId };
-      });
+      const taskMeta = searchTasks.map((task) => ({
+        ...task,
+        toolCallId: `tc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      }));
 
       for (const meta of taskMeta) {
         yield {
@@ -144,7 +158,6 @@ class CoursifyResearchAgent extends BaseAgent {
         };
       }
 
-      // Execute all searches in parallel
       const results = await Promise.allSettled(
         taskMeta.map((meta) =>
           meta.tool.invoke({ query: meta.query }).catch((err) => {
@@ -161,16 +174,24 @@ class CoursifyResearchAgent extends BaseAgent {
         const result = results[i];
         const meta = taskMeta[i];
 
+        yield { type: EventType.TOOL_CALL_END, toolCallId: meta.toolCallId };
+
         if (result.status === 'fulfilled' && result.value) {
-          yield { type: EventType.TOOL_CALL_END, toolCallId: meta.toolCallId };
+          const resultStr =
+            typeof result.value === 'string' ? result.value : JSON.stringify(result.value);
+
+          // TOOL_CALL_RESULT: trimmed excerpt for inline display
+          yield {
+            type: EventType.TOOL_CALL_RESULT,
+            toolCallId: meta.toolCallId,
+            result: resultStr.substring(0, 600),
+          };
+
           if (meta.toolName === 'tavily_search') {
             webSearchResults.push({ query: meta.query, result: result.value });
           } else if (meta.toolName === 'youtube_search') {
             videoSearchResult = result.value;
           }
-        } else {
-          // Emit end even on failure so the client cleans up the running state
-          yield { type: EventType.TOOL_CALL_END, toolCallId: meta.toolCallId };
         }
       }
 
@@ -230,7 +251,6 @@ ${videoSearchResult || 'No video results found'}
 
       yield { type: EventType.TEXT_MESSAGE_END, messageId };
 
-      // Usage from last chunk metadata
       const lastChunk = stream.response;
       const usage =
         lastChunk?.usage_metadata ||

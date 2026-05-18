@@ -523,6 +523,19 @@ export default function EditSectionModal({ section, onSave, onClose }) {
               step.toolCallId === event.toolCallId ? { ...step, status: 'completed' } : step
             )
           );
+        } else if (event.type === EventType.TOOL_CALL_RESULT) {
+          setToolSteps((prev) =>
+            prev.map((step) =>
+              step.toolCallId === event.toolCallId ? { ...step, result: event.result } : step
+            )
+          );
+        } else if (event.type === EventType.REASONING_MESSAGE_CONTENT) {
+          setStatusMessage(event.delta || '');
+        } else if (event.type === EventType.REASONING_END) {
+          setStatusMessage('');
+        } else if (event.type === EventType.STATE_SNAPSHOT) {
+          const snap = event.snapshot || {};
+          if (snap.title) setTitle((prev) => prev || snap.title);
         } else if (event.type === EventType.RUN_FINISHED) {
           setStatusMessage('Generation complete!');
         } else if (event.type === EventType.RUN_ERROR) {
