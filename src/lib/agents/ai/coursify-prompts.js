@@ -96,10 +96,10 @@ url: "https://www.youtube.com/watch?v=..."
 - DO NOT summarize or talk about your process. Just output markdown.
 
 ## Keyword Definitions (Interactive Learning)
-- Use [keyword]{def="clear, concise definition"} syntax for important technical terms throughout content
+- Use [keyword]{{def="clear, concise definition"}} syntax for important technical terms throughout content
 - Keep definitions under 150 characters, plain text only (no markdown formatting)
 - Add 3-5 key terms per major section for better learning
-- Example: [Algorithm]{def="A step-by-step procedure for solving a problem or performing a computation"}
+- Example: [Algorithm]{{def="A step-by-step procedure for solving a problem or performing a computation"}}
 - Place keywords naturally in sentences where they're first introduced
 - DO NOT define common words; focus on domain-specific or technical terms
 `;
