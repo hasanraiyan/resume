@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { EventEncoder } from '@ag-ui/encoder';
+import { EventType } from '@ag-ui/core';
 import { rateLimit } from '@/lib/rateLimit';
 import agentRegistry from '@/lib/agents';
 import { AGENT_IDS } from '@/lib/constants/agents';
@@ -8,8 +10,10 @@ import CoursifyCourse from '@/models/CoursifyCourse';
 import '@/lib/agents';
 import '@/lib/agents/ai/coursify-summary-agent';
 
-function encodeEvent(obj) {
-  return new TextEncoder().encode(JSON.stringify(obj) + '\n');
+const sseEncoder = new EventEncoder();
+
+function encodeSSE(obj) {
+  return new TextEncoder().encode(sseEncoder.encodeSSE(obj));
 }
 
 // Upload research to Qdrant for vector search
@@ -36,7 +40,6 @@ async function uploadToQdrant(research) {
       },
     });
 
-    // Add to Qdrant (generates embedding via PollinationsEmbeddings)
     await QdrantVectorStore.fromDocuments([document], embeddings, {
       url: qdrantUrl,
       apiKey: process.env.QDRANT_API_KEY,
@@ -73,12 +76,18 @@ export async function POST(request) {
       return NextResponse.json({ error: 'topic is required' }, { status: 400 });
     }
 
+    const threadId = `coursify-${Date.now()}`;
+    const runId = crypto.randomUUID();
+
     const stream = new ReadableStream({
       async start(controller) {
         const startTime = Date.now();
         let totalUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
         let finalContent = '';
         let finalTitle = '';
+
+        // Open the AG-UI run
+        controller.enqueue(encodeSSE({ type: EventType.RUN_STARTED, threadId, runId }));
 
         try {
           // ─── Check Cache First ───
@@ -88,13 +97,8 @@ export async function POST(request) {
 
           const promptHash = hashPrompt(topic.trim(), isReferenceEnabled);
 
-          // Try exact prompt match first
-          let cachedResearch = await CoursifyResearch.findOne({
-            promptHash,
-            deletedAt: null,
-          });
+          let cachedResearch = await CoursifyResearch.findOne({ promptHash, deletedAt: null });
 
-          // If no prompt match, try matching input against existing titles (title as input)
           if (!cachedResearch) {
             const inputHash = hashPrompt(topic.trim(), isReferenceEnabled);
             cachedResearch = await CoursifyResearch.findOne({
@@ -104,26 +108,56 @@ export async function POST(request) {
           }
 
           if (cachedResearch) {
-            // ─── Cache Hit: Return Immediately ───
-            controller.enqueue(encodeEvent({ type: 'cache_hit', slug: cachedResearch.slug }));
-            controller.enqueue(encodeEvent({ type: 'title', text: cachedResearch.title }));
-            controller.enqueue(encodeEvent({ type: 'content', message: cachedResearch.content }));
+            // ─── Cache Hit ───
             controller.enqueue(
-              encodeEvent({
-                type: 'usage',
-                data: cachedResearch.usage,
+              encodeSSE({
+                type: EventType.CUSTOM,
+                name: 'coursify_cache_hit',
+                value: { slug: cachedResearch.slug },
               })
             );
             controller.enqueue(
-              encodeEvent({ type: 'persist', slug: cachedResearch.slug, id: cachedResearch._id })
+              encodeSSE({
+                type: EventType.CUSTOM,
+                name: 'coursify_title',
+                value: { text: cachedResearch.title },
+              })
             );
-            controller.enqueue(encodeEvent({ type: 'done' }));
+            // Emit cached content as a single TEXT_MESSAGE
+            const msgId = `msg-cache-${Date.now()}`;
+            controller.enqueue(
+              encodeSSE({ type: EventType.TEXT_MESSAGE_START, messageId: msgId, role: 'assistant' })
+            );
+            controller.enqueue(
+              encodeSSE({
+                type: EventType.TEXT_MESSAGE_CONTENT,
+                messageId: msgId,
+                delta: cachedResearch.content,
+              })
+            );
+            controller.enqueue(encodeSSE({ type: EventType.TEXT_MESSAGE_END, messageId: msgId }));
+            if (cachedResearch.usage) {
+              controller.enqueue(
+                encodeSSE({
+                  type: EventType.CUSTOM,
+                  name: 'coursify_usage',
+                  value: cachedResearch.usage,
+                })
+              );
+            }
+            controller.enqueue(
+              encodeSSE({
+                type: EventType.CUSTOM,
+                name: 'coursify_persist',
+                value: { slug: cachedResearch.slug, id: String(cachedResearch._id) },
+              })
+            );
+            controller.enqueue(encodeSSE({ type: EventType.RUN_FINISHED, threadId, runId }));
             controller.close();
             return;
           }
 
           // ─── Cache Miss: Generate New Content ───
-          // Use research agent (local LangChain) in dev, search agent in production
           const isDev = process.env.NODE_ENV === 'development';
           const agentId = isDev ? AGENT_IDS.COURSIFY_RESEARCH : AGENT_IDS.COURSIFY_SEARCH;
 
@@ -133,20 +167,21 @@ export async function POST(request) {
           });
 
           for await (const event of events) {
-            if (event.type === 'usage' && event.data) {
-              totalUsage.promptTokens += event.data.promptTokens || 0;
-              totalUsage.completionTokens += event.data.completionTokens || 0;
-              totalUsage.totalTokens += event.data.totalTokens || 0;
-            } else if (event.type === 'content') {
-              finalContent += event.message || '';
-            } else if (event.type === 'title') {
-              finalTitle = event.text;
+            // Accumulate usage and content for persistence
+            if (event.type === EventType.CUSTOM && event.name === 'coursify_usage' && event.value) {
+              totalUsage.promptTokens += event.value.promptTokens || 0;
+              totalUsage.completionTokens += event.value.completionTokens || 0;
+              totalUsage.totalTokens += event.value.totalTokens || 0;
+            } else if (event.type === EventType.TEXT_MESSAGE_CONTENT) {
+              finalContent += event.delta || '';
+            } else if (event.type === EventType.CUSTOM && event.name === 'coursify_title') {
+              finalTitle = event.value?.text || '';
             }
-            // Forward all events including tool calls to client
-            controller.enqueue(encodeEvent(event));
+            // Forward all AG-UI events to client
+            controller.enqueue(encodeSSE(event));
           }
 
-          // ─── Persistence Logic ───
+          // ─── Persistence ───
           if (finalContent) {
             const { slugify } = await import('@/utils/string');
             const { calculateEstimatedCostUSD } = await import('@/lib/agents/utils/pricing');
@@ -156,7 +191,6 @@ export async function POST(request) {
               totalUsage.completionTokens
             );
 
-            // Extract title from content (first # header) or fallback to topic
             let baseTitle = topic.trim();
             const titleMatch = finalContent.match(/^#\s+(.+)$/m);
             if (titleMatch && titleMatch[1]) {
@@ -190,7 +224,6 @@ export async function POST(request) {
               }
             } catch (summaryErr) {
               console.error('[CoursifyGenerate] Summary generation failed:', summaryErr.message);
-              // Continue without summary if generation fails
             }
 
             const research = await CoursifyResearch.create({
@@ -201,31 +234,28 @@ export async function POST(request) {
               slug,
               promptHash,
               titleHash: hashPrompt(baseTitle, isReferenceEnabled),
-              usage: {
-                ...totalUsage,
-                estimatedCostUSD,
-              },
-              metadata: {
-                durationMs: Date.now() - startTime,
-              },
+              usage: { ...totalUsage, estimatedCostUSD },
+              metadata: { durationMs: Date.now() - startTime },
             });
 
-            // Emit the slug so the client can redirect/show link
-            controller.enqueue(encodeEvent({ type: 'persist', slug, id: research._id }));
+            controller.enqueue(
+              encodeSSE({
+                type: EventType.CUSTOM,
+                name: 'coursify_persist',
+                value: { slug, id: String(research._id) },
+              })
+            );
 
-            // Upload to Qdrant for vector search
             uploadToQdrant(research).catch((err) => {
               console.error('[CoursifyGenerate] Failed to upload to Qdrant:', err);
             });
 
-            // Update the execution log to link to this artifact
             try {
               const AgentExecutionLog = (await import('@/models/AgentExecutionLog')).default;
-              const { AGENT_IDS } = await import('@/lib/constants/agents');
+              const { AGENT_IDS: AIDS } = await import('@/lib/constants/agents');
 
-              // Find the most recent log for this agent created in the last minute
               const recentLog = await AgentExecutionLog.findOne({
-                agentId: AGENT_IDS.COURSIFY_SEARCH,
+                agentId: AIDS.COURSIFY_SEARCH,
                 createdAt: { $gt: new Date(Date.now() - 60000) },
                 outputSlug: { $exists: false },
               }).sort({ createdAt: -1 });
@@ -240,12 +270,16 @@ export async function POST(request) {
             }
           }
 
-          controller.enqueue(encodeEvent({ type: 'done' }));
+          controller.enqueue(encodeSSE({ type: EventType.RUN_FINISHED, threadId, runId }));
           controller.close();
         } catch (error) {
           console.error('[CoursifyGenerate] Stream error:', error);
           controller.enqueue(
-            encodeEvent({ type: 'error', message: error.message || 'Generation failed' })
+            encodeSSE({
+              type: EventType.RUN_ERROR,
+              message: error.message || 'Generation failed',
+              code: 'AGENT_ERROR',
+            })
           );
           controller.close();
         }
@@ -253,7 +287,7 @@ export async function POST(request) {
     });
 
     return new NextResponse(stream, {
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      headers: { 'Content-Type': 'text/event-stream; charset=utf-8' },
     });
   } catch (error) {
     console.error('[CoursifyGenerate] Fatal error:', error);

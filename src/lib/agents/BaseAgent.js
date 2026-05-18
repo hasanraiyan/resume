@@ -394,6 +394,7 @@ class BaseAgent {
 
       let toolCallCount = 0;
       const toolNames = [];
+      const toolCallIdToName = new Map(); // resolve TOOL_CALL_END names from AG-UI events
       let usage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
       let attempts = 0;
       const maxRetries = 5;
@@ -404,21 +405,39 @@ class BaseAgent {
           for await (const chunk of this._onStreamExecute(input)) {
             // Only consider the stream "dirty" if we yielded material data (content or results)
             // status and tool_call (started) are considered transient/retryable.
+            // Supports both legacy custom event types and AG-UI EventType strings.
             if (
               chunk.type === 'content' ||
+              chunk.type === 'TEXT_MESSAGE_CONTENT' ||
               chunk.type === 'tool_result' ||
-              chunk.type === 'usage'
+              chunk.type === 'TOOL_CALL_END' ||
+              chunk.type === 'usage' ||
+              (chunk.type === 'CUSTOM' && chunk.name === 'coursify_usage')
             ) {
               hasYielded = true;
             }
 
-            // Track tool usage - support both 'tool_result' and 'tool_call' (completed) types
+            // Track tool usage - support legacy and AG-UI event types
             const isToolResult = chunk.type === 'tool_result';
             const isCompletedToolCall = chunk.type === 'tool_call' && chunk.status === 'completed';
+            const isAGUIToolEnd = chunk.type === 'TOOL_CALL_END';
 
-            if (isToolResult || isCompletedToolCall) {
+            // Register name when a tool call starts so TOOL_CALL_END can resolve it
+            if (chunk.type === 'TOOL_CALL_START' && chunk.toolCallId && chunk.toolCallName) {
+              toolCallIdToName.set(chunk.toolCallId, chunk.toolCallName);
+            }
+
+            if (isToolResult || isCompletedToolCall || isAGUIToolEnd) {
               toolCallCount++;
-              const toolName = chunk.name || chunk.tool || chunk.toolName || 'unknown';
+              const toolName =
+                (isAGUIToolEnd && chunk.toolCallId
+                  ? toolCallIdToName.get(chunk.toolCallId)
+                  : null) ||
+                chunk.name ||
+                chunk.tool ||
+                chunk.toolName ||
+                chunk.toolCallName ||
+                'unknown';
               toolNames.push(toolName);
               this.logger.debug(`Tool #${toolCallCount}: ${toolName}`);
             }

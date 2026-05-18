@@ -21,7 +21,11 @@
       "Bash(coursify init-section *)",
       "Bash(python3 *)",
       "Bash(grep -E \"\\\\.\\(js|jsx\\)$\")",
-      "Bash(grep -E \"page\\\\.\\(js|jsx\\)$\")"
+      "Bash(grep -E \"page\\\\.\\(js|jsx\\)$\")",
+      "Skill(copilotkit-agui)",
+      "Bash(node -e \"const core = require\\('@ag-ui/core'\\); console.log\\('CORE keys:', Object.keys\\(core\\).slice\\(0,30\\)\\)\")",
+      "Bash(node -e \"const enc = require\\('@ag-ui/encoder'\\); console.log\\('ENCODER keys:', Object.keys\\(enc\\)\\)\")",
+      "Bash(node *)"
     ]
   }
 }

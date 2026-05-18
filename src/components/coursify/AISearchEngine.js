@@ -1,6 +1,3 @@
-// ✅ FINAL FIXED AISearchEngine.jsx
-// Fully responsive + overflow-safe + mobile-safe
-
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -9,6 +6,9 @@ import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, RotateCcw, Search, Sparkles, Globe, Quote } from 'lucide-react';
 
 import { toast } from 'sonner';
+
+import { EventType } from '@ag-ui/core';
+import { parseAGUIStream } from '@/utils/aguiStream';
 
 import { generateCoursifyPdf } from '@/utils/coursifyPdfGenerator';
 
@@ -82,7 +82,6 @@ export function AISearchEngine({ onGenerated }) {
   useEffect(() => {
     const autoTopic = searchParams.get('search_ai');
 
-    // Only update input if the search_ai parameter changed
     if (autoTopic && autoTopic !== previousSearchRef.current) {
       setInputValue(autoTopic);
     }
@@ -158,105 +157,83 @@ export function AISearchEngine({ onGenerated }) {
       if (!topic.trim()) return;
 
       setQuery(topic.trim());
-
       setPhase(PHASE.GENERATING);
-
       setContent('');
-
       setError('');
-
       setToolSteps([]);
-
       contentRef.current = '';
 
       try {
         const res = await fetch('/api/coursify/generate', {
           method: 'POST',
-
-          headers: {
-            'Content-Type': 'application/json',
-          },
-
-          body: JSON.stringify({
-            topic: topic.trim(),
-            isReferenceEnabled: true,
-          }),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ topic: topic.trim(), isReferenceEnabled: true }),
         });
 
         if (!res.ok) {
           throw new Error('Failed to generate');
         }
 
-        const reader = res.body.getReader();
-
-        const decoder = new TextDecoder();
-
-        let buffer = '';
-
-        while (true) {
-          const { done, value } = await reader.read();
-
-          if (done) break;
-
-          buffer += decoder.decode(value, {
-            stream: true,
-          });
-
-          const lines = buffer.split('\n');
-
-          buffer = lines.pop();
-
-          for (const line of lines) {
-            if (!line.trim()) continue;
-
-            let event;
-
-            try {
-              event = JSON.parse(line);
-            } catch {
-              continue;
-            }
-
-            if (event.type === 'content') {
-              contentRef.current += event.message;
-
-              setContent(contentRef.current);
-            } else if (event.type === 'title') {
-              setGeneratedTitle(event.text);
-            } else if (event.type === 'status') {
-              setStatusMessage(event.message);
-            } else if (event.type === 'cache_hit') {
+        // Consume the AG-UI SSE stream
+        for await (const event of parseAGUIStream(res)) {
+          if (event.type === EventType.TEXT_MESSAGE_CONTENT) {
+            contentRef.current += event.delta || '';
+            setContent(contentRef.current);
+          } else if (event.type === EventType.CUSTOM) {
+            const { name, value } = event;
+            if (name === 'coursify_title') {
+              setGeneratedTitle(value?.text || '');
+            } else if (name === 'coursify_cache_hit') {
               setIsFromCache(true);
-            } else if (event.type === 'tool_call') {
-              if (event.status === 'started') {
-                setToolSteps((prev) => [
-                  ...prev,
-                  {
-                    tool: event.tool,
-                    status: 'running',
-                    input: event.input,
-                  },
-                ]);
-              } else if (event.status === 'completed') {
-                setToolSteps((prev) =>
-                  prev.map((step, idx) =>
-                    idx === prev.length - 1 ? { ...step, status: 'completed' } : step
-                  )
-                );
-              }
-            } else if (event.type === 'persist') {
-              setGeneratedSlug(event.slug);
-            } else if (event.type === 'done') {
-              setPhase(PHASE.DONE);
-
-              setStatusMessage('');
-            } else if (event.type === 'error') {
-              throw new Error(event.message);
+            } else if (name === 'coursify_persist') {
+              setGeneratedSlug(value?.slug || '');
             }
+          } else if (event.type === EventType.TOOL_CALL_START) {
+            setToolSteps((prev) => [
+              ...prev,
+              {
+                tool: event.toolCallName,
+                status: 'running',
+                toolCallId: event.toolCallId,
+                input: null,
+              },
+            ]);
+          } else if (event.type === EventType.TOOL_CALL_ARGS) {
+            setToolSteps((prev) =>
+              prev.map((step) =>
+                step.toolCallId === event.toolCallId
+                  ? {
+                      ...step,
+                      input: (() => {
+                        try {
+                          return JSON.parse(event.delta || '{}');
+                        } catch {
+                          return { query: event.delta };
+                        }
+                      })(),
+                    }
+                  : step
+              )
+            );
+          } else if (event.type === EventType.TOOL_CALL_END) {
+            setToolSteps((prev) =>
+              prev.map((step) =>
+                step.toolCallId === event.toolCallId ? { ...step, status: 'completed' } : step
+              )
+            );
+          } else if (event.type === EventType.STEP_STARTED && event.stepName) {
+            setStatusMessage(event.stepName);
+          } else if (event.type === EventType.STEP_FINISHED) {
+            setStatusMessage('');
+          } else if (event.type === EventType.RUN_FINISHED) {
+            setPhase(PHASE.DONE);
+            setStatusMessage('');
+          } else if (event.type === EventType.RUN_ERROR) {
+            throw new Error(event.message || 'Generation failed');
           }
         }
 
-        if (contentRef.current) {
+        if (contentRef.current && phase !== PHASE.DONE) {
           setPhase(PHASE.DONE);
         }
 
@@ -266,31 +243,24 @@ export function AISearchEngine({ onGenerated }) {
       } catch (err) {
         console.error(err);
 
-        // Clean up technical error messages for display
         let displayError = err.message || 'Something went wrong.';
 
-        // Hide quota/rate limit details
         if (
           displayError.includes('quota') ||
           displayError.includes('rate limit') ||
           displayError.includes('429')
         ) {
           displayError = 'API quota exceeded. Please try again in a few moments.';
-        }
-        // Hide technical API errors
-        else if (
+        } else if (
           displayError.includes('GoogleGenerativeAI') ||
           displayError.includes('generativelanguage')
         ) {
           displayError = 'Service temporarily unavailable. Please try again.';
-        }
-        // Hide fetch errors
-        else if (displayError.includes('fetch') || displayError.includes('network')) {
+        } else if (displayError.includes('fetch') || displayError.includes('network')) {
           displayError = 'Connection error. Please check your internet and try again.';
         }
 
         setError(displayError);
-
         setPhase(PHASE.ERROR);
       }
     },
@@ -302,7 +272,6 @@ export function AISearchEngine({ onGenerated }) {
     const autoTopic = searchParams.get('search_ai');
     const autoSend = searchParams.get('send');
 
-    // Check if this is a new search_ai value (different from what we just processed)
     if (autoTopic && autoSend === 'true' && autoTopic !== previousSearchRef.current) {
       previousSearchRef.current = autoTopic;
       generate(autoTopic);
@@ -311,31 +280,20 @@ export function AISearchEngine({ onGenerated }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     generate(inputValue);
   };
 
   const handleReset = () => {
     setPhase(PHASE.IDLE);
-
     setInputValue('');
-
     setContent('');
-
     setError('');
-
     setStatusMessage('');
-
     setCompletedBlocks([]);
-
     setInProgressBlock('');
-
     setGeneratedTitle('');
-
     setToolSteps([]);
-
     setIsFromCache(false);
-
     setRelatedArticles([]);
   };
 

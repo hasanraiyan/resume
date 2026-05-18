@@ -1,4 +1,5 @@
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
+import { EventType } from '@ag-ui/core';
 import BaseAgent from '../BaseAgent';
 import { AGENT_IDS, getAgentTools } from '@/lib/constants/agents';
 import managedToolProvider from '../utils/ManagedToolProvider';
@@ -77,8 +78,11 @@ class CoursifyResearchAgent extends BaseAgent {
     this.logger.debug(`Tools loaded: tavily_search, youtube_search`);
 
     try {
-      // Step 1: Analyze input and generate search queries
-      yield { type: 'status', message: 'Analyzing topic and generating search queries...' };
+      // ─── Step 1: Analyze topic ───
+      yield {
+        type: EventType.STEP_STARTED,
+        stepName: 'Analyzing topic and generating search queries...',
+      };
 
       const analysisResult = await llm.invoke([
         new SystemMessage({ content: ANALYSIS_PROMPT }),
@@ -106,94 +110,93 @@ class CoursifyResearchAgent extends BaseAgent {
       this.logger.debug(`Web queries: ${webQueries.join(', ')}`);
       this.logger.debug(`Video query: ${videoQuery}`);
 
-      // Step 2: Execute all searches in parallel
-      yield { type: 'status', message: 'Searching web and video sources...' };
+      yield {
+        type: EventType.STEP_FINISHED,
+        stepName: 'Analyzing topic and generating search queries...',
+      };
 
-      // Create search tasks for parallel execution
-      const searchTasks = webQueries.slice(0, 3).map((query, idx) => ({
+      // ─── Step 2: Parallel searches ───
+      yield { type: EventType.STEP_STARTED, stepName: 'Searching web and video sources...' };
+
+      const searchTasks = webQueries.slice(0, 3).map((query) => ({
         query,
         tool: tavilyTool,
         toolName: 'tavily_search',
       }));
+      searchTasks.push({ query: videoQuery, tool: youtubeTool, toolName: 'youtube_search' });
 
-      // Add YouTube search
-      searchTasks.push({
-        query: videoQuery,
-        tool: youtubeTool,
-        toolName: 'youtube_search',
+      // Emit all TOOL_CALL_START events before executing (parallel intent)
+      const taskMeta = searchTasks.map((task) => {
+        const toolCallId = `tc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        return { ...task, toolCallId };
       });
 
-      // Emit all tool_call started events
-      for (const task of searchTasks) {
+      for (const meta of taskMeta) {
         yield {
-          type: 'tool_call',
-          tool: task.toolName,
-          status: 'started',
-          input: { query: task.query },
+          type: EventType.TOOL_CALL_START,
+          toolCallId: meta.toolCallId,
+          toolCallName: meta.toolName,
+        };
+        yield {
+          type: EventType.TOOL_CALL_ARGS,
+          toolCallId: meta.toolCallId,
+          delta: JSON.stringify({ query: meta.query }),
         };
       }
 
       // Execute all searches in parallel
       const results = await Promise.allSettled(
-        searchTasks.map((task) =>
-          task.tool.invoke({ query: task.query }).catch((err) => {
-            this.logger.error(`${task.toolName} failed for "${task.query}": ${err.message}`);
+        taskMeta.map((meta) =>
+          meta.tool.invoke({ query: meta.query }).catch((err) => {
+            this.logger.error(`${meta.toolName} failed for "${meta.query}": ${err.message}`);
             return null;
           })
         )
       );
 
-      // Process results and emit completed events
       const webSearchResults = [];
       let videoSearchResult = null;
 
-      for (let idx = 0; idx < results.length; idx++) {
-        const result = results[idx];
-        const task = searchTasks[idx];
-        if (result.status === 'fulfilled' && result.value) {
-          yield {
-            type: 'tool_call',
-            tool: task.toolName,
-            status: 'completed',
-            output: result.value?.substring?.(0, 200) || 'Completed',
-          };
+      for (let i = 0; i < results.length; i++) {
+        const result = results[i];
+        const meta = taskMeta[i];
 
-          if (task.toolName === 'tavily_search') {
-            webSearchResults.push({ query: task.query, result: result.value });
-          } else if (task.toolName === 'youtube_search') {
+        if (result.status === 'fulfilled' && result.value) {
+          yield { type: EventType.TOOL_CALL_END, toolCallId: meta.toolCallId };
+          if (meta.toolName === 'tavily_search') {
+            webSearchResults.push({ query: meta.query, result: result.value });
+          } else if (meta.toolName === 'youtube_search') {
             videoSearchResult = result.value;
           }
         } else {
-          yield {
-            type: 'tool_call',
-            tool: task.toolName,
-            status: 'failed',
-            output: result.reason?.message || 'Failed',
-          };
+          // Emit end even on failure so the client cleans up the running state
+          yield { type: EventType.TOOL_CALL_END, toolCallId: meta.toolCallId };
         }
       }
 
-      // Step 3: Combine research into structured context
-      yield { type: 'status', message: 'Generating course content...' };
+      yield { type: EventType.STEP_FINISHED, stepName: 'Searching web and video sources...' };
+
+      // ─── Step 3: Generate content ───
+      yield { type: EventType.STEP_STARTED, stepName: 'Generating course content...' };
 
       const researchContext = `
 ## Web Search Results
 ${webSearchResults
-  .map((item, idx) => `### Query: ${item.query}\n${item.result || 'No results'}`)
+  .map((item) => `### Query: ${item.query}\n${item.result || 'No results'}`)
   .join('\n\n')}
 
 ## YouTube Search Results
 ${videoSearchResult || 'No video results found'}
 `;
 
-      // Step 4: Stream final content progressively
       let systemPrompt = SYSTEM_PROMPT_TEMPLATE.replace('{researchContext}', researchContext);
-
       if (isReferenceEnabled) {
         systemPrompt += REFERENCE_ADDENDUM;
       }
 
-      // Stream tokens progressively
+      const messageId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      yield { type: EventType.TEXT_MESSAGE_START, messageId, role: 'assistant' };
+
       const stream = await llm.stream([
         new SystemMessage({ content: systemPrompt }),
         new HumanMessage({
@@ -209,39 +212,25 @@ ${videoSearchResult || 'No video results found'}
         if (text) {
           fullContent += text;
 
-          // Extract title from first chunk that contains it
           if (!titleExtracted) {
-            const titleMatch = fullContent.match(/^#\s+(.+)$/m);
-            if (titleMatch && titleMatch[1]) {
-              yield { type: 'title', text: titleMatch[1].trim() };
+            const m = fullContent.match(/^#\s+(.+)$/m);
+            if (m) {
+              yield {
+                type: EventType.CUSTOM,
+                name: 'coursify_title',
+                value: { text: m[1].trim() },
+              };
               titleExtracted = true;
             }
           }
 
-          yield { type: 'content', message: text };
+          yield { type: EventType.TEXT_MESSAGE_CONTENT, messageId, delta: text };
         }
       }
 
-      // Emit tool results for compatibility
-      for (const item of webSearchResults) {
-        yield {
-          type: 'tool_result',
-          name: 'tavily_search',
-          input: { query: item.query },
-          output: item.result,
-        };
-      }
+      yield { type: EventType.TEXT_MESSAGE_END, messageId };
 
-      if (videoSearchResult) {
-        yield {
-          type: 'tool_result',
-          name: 'youtube_search',
-          input: { query: videoQuery },
-          output: videoSearchResult,
-        };
-      }
-
-      // Usage metadata from last stream chunk
+      // Usage from last chunk metadata
       const lastChunk = stream.response;
       const usage =
         lastChunk?.usage_metadata ||
@@ -251,8 +240,9 @@ ${videoSearchResult || 'No video results found'}
 
       if (usage) {
         yield {
-          type: 'usage',
-          data: {
+          type: EventType.CUSTOM,
+          name: 'coursify_usage',
+          value: {
             promptTokens: usage.prompt_tokens || usage.promptTokens || usage.promptTokenCount || 0,
             completionTokens:
               usage.completion_tokens || usage.completionTokens || usage.candidatesTokenCount || 0,
@@ -261,7 +251,7 @@ ${videoSearchResult || 'No video results found'}
         };
       }
 
-      yield { type: 'status', message: 'Content generation complete' };
+      yield { type: EventType.STEP_FINISHED, stepName: 'Generating course content...' };
     } catch (err) {
       this.logger.error(`Agent execution failed: ${err.message}`);
       throw err;

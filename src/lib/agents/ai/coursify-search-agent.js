@@ -1,6 +1,7 @@
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { HumanMessage } from '@langchain/core/messages';
 import { PromptTemplate } from '@langchain/core/prompts';
+import { EventType } from '@ag-ui/core';
 import BaseAgent from '../BaseAgent';
 import { AGENT_IDS, getAgentTools } from '@/lib/constants/agents';
 import managedToolProvider from '../utils/ManagedToolProvider';
@@ -71,10 +72,13 @@ class CoursifySearchAgent extends BaseAgent {
       }),
     ];
 
-    const contentAgent = createReactAgent({
-      llm,
-      tools,
-    });
+    const contentAgent = createReactAgent({ llm, tools });
+
+    // Per-stream state
+    let messageId = null;
+    let titleExtracted = false;
+    let fullContent = '';
+    const activeToolCalls = new Map(); // run_id → toolCallId
 
     try {
       const stream = await contentAgent.streamEvents(
@@ -83,36 +87,40 @@ class CoursifySearchAgent extends BaseAgent {
       );
 
       for await (const event of stream) {
-        const { event: type, data, name } = event;
+        const { event: type, data, name, run_id } = event;
 
-        const content = data.chunk?.content || data.chunk?.text || '';
+        if (type === 'on_chat_model_start') {
+          // Begin a new assistant message for this LLM turn
+          messageId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+          yield { type: EventType.TEXT_MESSAGE_START, messageId, role: 'assistant' };
+        } else if (type === 'on_chat_model_stream') {
+          const raw = data.chunk?.content || data.chunk?.text || '';
+          if (raw && name !== 'ChatPromptTemplate') {
+            const delta = typeof raw === 'string' ? raw : JSON.stringify(raw);
+            fullContent += delta;
 
-        if (type === 'on_chat_model_stream' && content && name !== 'ChatPromptTemplate') {
-          const message = typeof content === 'string' ? content : JSON.stringify(content);
-          yield { type: 'content', message };
-        } else if (type === 'on_tool_start') {
-          yield {
-            type: 'tool_call',
-            tool: name,
-            status: 'started',
-            input: data.input,
-          };
-        } else if (type === 'on_tool_end') {
-          yield {
-            type: 'tool_call',
-            tool: name,
-            status: 'completed',
-            output: data.output,
-          };
-          yield {
-            type: 'tool_result',
-            name: name,
-            input: data.input,
-            output: data.output,
-          };
-        } else if (type === 'on_chat_model_start') {
-          yield { type: 'status', message: '' };
+            // Emit title once the # header appears in the accumulated content
+            if (!titleExtracted) {
+              const m = fullContent.match(/^#\s+(.+)$/m);
+              if (m) {
+                yield {
+                  type: EventType.CUSTOM,
+                  name: 'coursify_title',
+                  value: { text: m[1].trim() },
+                };
+                titleExtracted = true;
+              }
+            }
+
+            yield { type: EventType.TEXT_MESSAGE_CONTENT, messageId, delta };
+          }
         } else if (type === 'on_chat_model_end') {
+          if (messageId) {
+            yield { type: EventType.TEXT_MESSAGE_END, messageId };
+            messageId = null;
+          }
+
+          // Emit token usage as a CUSTOM event
           const usage =
             data.output?.usage_metadata ||
             data.output?.usage ||
@@ -121,8 +129,9 @@ class CoursifySearchAgent extends BaseAgent {
 
           if (usage) {
             yield {
-              type: 'usage',
-              data: {
+              type: EventType.CUSTOM,
+              name: 'coursify_usage',
+              value: {
                 promptTokens:
                   usage.prompt_tokens || usage.promptTokens || usage.promptTokenCount || 0,
                 completionTokens:
@@ -133,6 +142,23 @@ class CoursifySearchAgent extends BaseAgent {
                 totalTokens: usage.total_tokens || usage.totalTokens || usage.totalTokenCount || 0,
               },
             };
+          }
+        } else if (type === 'on_tool_start') {
+          const toolCallId = `tc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+          activeToolCalls.set(run_id || name, toolCallId);
+          yield { type: EventType.TOOL_CALL_START, toolCallId, toolCallName: name };
+          if (data.input) {
+            yield {
+              type: EventType.TOOL_CALL_ARGS,
+              toolCallId,
+              delta: JSON.stringify(data.input),
+            };
+          }
+        } else if (type === 'on_tool_end') {
+          const toolCallId = activeToolCalls.get(run_id || name);
+          if (toolCallId) {
+            yield { type: EventType.TOOL_CALL_END, toolCallId };
+            activeToolCalls.delete(run_id || name);
           }
         }
       }

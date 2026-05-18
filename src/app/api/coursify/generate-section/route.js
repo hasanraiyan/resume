@@ -1,16 +1,19 @@
 import { NextResponse } from 'next/server';
+import { EventEncoder } from '@ag-ui/encoder';
+import { EventType } from '@ag-ui/core';
 import { rateLimit } from '@/lib/rateLimit';
 import agentRegistry from '@/lib/agents';
 import { AGENT_IDS } from '@/lib/constants/agents';
 
 import '@/lib/agents';
 
-function encodeEvent(obj) {
-  return new TextEncoder().encode(JSON.stringify(obj) + '\n');
+const sseEncoder = new EventEncoder();
+
+function encodeSSE(obj) {
+  return new TextEncoder().encode(sseEncoder.encodeSSE(obj));
 }
 
 export async function POST(request) {
-  // Relaxed rate limit for admin studio use
   const rateLimitResponse = rateLimit(request, 10, 60000);
   if (rateLimitResponse) return rateLimitResponse;
 
@@ -22,7 +25,6 @@ export async function POST(request) {
       return NextResponse.json({ error: 'sectionName is required' }, { status: 400 });
     }
 
-    // Construct a rich topic string since the agent only takes one "topic" field
     let richTopic = `${sectionName.trim()}\n\n`;
     richTopic += `Context for Research:\n`;
     if (courseName) richTopic += `- Part of the course: ${courseName}\n`;
@@ -32,10 +34,14 @@ export async function POST(request) {
     }
     richTopic += `\nPlease research this specific topic and ensure the content fits this context.`;
 
+    const threadId = `coursify-section-${Date.now()}`;
+    const runId = crypto.randomUUID();
+
     const stream = new ReadableStream({
       async start(controller) {
+        controller.enqueue(encodeSSE({ type: EventType.RUN_STARTED, threadId, runId }));
+
         try {
-          // Use research agent (local LangChain) in dev, search agent in production
           const isDev = process.env.NODE_ENV === 'development';
           const agentId = isDev ? AGENT_IDS.COURSIFY_RESEARCH : AGENT_IDS.COURSIFY_SEARCH;
 
@@ -45,16 +51,19 @@ export async function POST(request) {
           });
 
           for await (const event of events) {
-            // Forward all relevant events to client
-            controller.enqueue(encodeEvent(event));
+            controller.enqueue(encodeSSE(event));
           }
 
-          controller.enqueue(encodeEvent({ type: 'done' }));
+          controller.enqueue(encodeSSE({ type: EventType.RUN_FINISHED, threadId, runId }));
           controller.close();
         } catch (error) {
           console.error('[CoursifySectionGenerate] Stream error:', error);
           controller.enqueue(
-            encodeEvent({ type: 'error', message: error.message || 'Generation failed' })
+            encodeSSE({
+              type: EventType.RUN_ERROR,
+              message: error.message || 'Generation failed',
+              code: 'AGENT_ERROR',
+            })
           );
           controller.close();
         }
@@ -62,7 +71,7 @@ export async function POST(request) {
     });
 
     return new NextResponse(stream, {
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      headers: { 'Content-Type': 'text/event-stream; charset=utf-8' },
     });
   } catch (error) {
     console.error('[CoursifySectionGenerate] Fatal error:', error);

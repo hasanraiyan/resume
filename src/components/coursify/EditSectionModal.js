@@ -22,6 +22,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { EventType } from '@ag-ui/core';
+import { parseAGUIStream } from '@/utils/aguiStream';
 import QuizEditor from './QuizEditor';
 import { parseMarkdownSection, generateFullMarkdown } from '@/utils/coursify-parser';
 import { useCoursifyStudio } from '@/context/CoursifyStudioContext';
@@ -479,56 +481,55 @@ export default function EditSectionModal({ section, onSave, onClose }) {
       });
       if (!res.ok) throw new Error('Generation failed');
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop();
-
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          let event;
-          try {
-            event = JSON.parse(line);
-          } catch {
-            continue;
-          }
-
-          if (event.type === 'content') {
-            generatedContent += event.message;
-            setContent(generatedContent);
-          } else if (event.type === 'status') {
-            setStatusMessage(event.message);
-          } else if (event.type === 'tool_call') {
-            if (event.status === 'started') {
-              setToolSteps((prev) => [
-                ...prev,
-                { tool: event.tool, status: 'running', input: event.input },
-              ]);
-            } else if (event.status === 'completed') {
-              setToolSteps((prev) => {
-                const next = [...prev];
-                for (let i = next.length - 1; i >= 0; i--) {
-                  if (next[i].tool === event.tool && next[i].status === 'running') {
-                    next[i] = { ...next[i], status: 'completed' };
-                    break;
+      // Consume the AG-UI SSE stream
+      for await (const event of parseAGUIStream(res)) {
+        if (event.type === EventType.TEXT_MESSAGE_CONTENT) {
+          generatedContent += event.delta || '';
+          setContent(generatedContent);
+        } else if (event.type === EventType.STEP_STARTED && event.stepName) {
+          setStatusMessage(event.stepName);
+        } else if (event.type === EventType.STEP_FINISHED) {
+          setStatusMessage('');
+        } else if (event.type === EventType.TOOL_CALL_START) {
+          setToolSteps((prev) => [
+            ...prev,
+            {
+              tool: event.toolCallName,
+              status: 'running',
+              toolCallId: event.toolCallId,
+              input: null,
+            },
+          ]);
+        } else if (event.type === EventType.TOOL_CALL_ARGS) {
+          setToolSteps((prev) =>
+            prev.map((step) =>
+              step.toolCallId === event.toolCallId
+                ? {
+                    ...step,
+                    input: (() => {
+                      try {
+                        return JSON.parse(event.delta || '{}');
+                      } catch {
+                        return { query: event.delta };
+                      }
+                    })(),
                   }
-                }
-                return next;
-              });
-            }
-          } else if (event.type === 'done') {
-            setStatusMessage('Generation complete!');
-          } else if (event.type === 'error') {
-            throw new Error(event.message);
-          }
+                : step
+            )
+          );
+        } else if (event.type === EventType.TOOL_CALL_END) {
+          setToolSteps((prev) =>
+            prev.map((step) =>
+              step.toolCallId === event.toolCallId ? { ...step, status: 'completed' } : step
+            )
+          );
+        } else if (event.type === EventType.RUN_FINISHED) {
+          setStatusMessage('Generation complete!');
+        } else if (event.type === EventType.RUN_ERROR) {
+          throw new Error(event.message || 'Generation failed');
         }
       }
+
       toast.success('Content generated successfully');
     } catch (err) {
       console.error(err);
