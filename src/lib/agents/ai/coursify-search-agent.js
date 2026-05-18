@@ -159,15 +159,29 @@ class CoursifySearchAgent extends BaseAgent {
           if (toolCallId) {
             yield { type: EventType.TOOL_CALL_END, toolCallId };
 
-            // TOOL_CALL_RESULT: surface a trimmed excerpt of the raw tool output
+            // TOOL_CALL_RESULT: send structured display payload
             const output = data.output;
             if (output != null) {
-              const resultStr = typeof output === 'string' ? output : JSON.stringify(output);
-              yield {
-                type: EventType.TOOL_CALL_RESULT,
-                toolCallId,
-                result: resultStr.substring(0, 600),
-              };
+              let resultPayload;
+              try {
+                const obj = typeof output === 'object' ? output : JSON.parse(output);
+                if (Array.isArray(obj.results)) {
+                  resultPayload = JSON.stringify({
+                    urls: obj.results.map((r) => r.url).filter(Boolean),
+                  });
+                } else if (typeof obj.output === 'string') {
+                  // YouTube: { output: "[{videoId, thumbnail, ...}]" }
+                  const videos = JSON.parse(obj.output);
+                  resultPayload = JSON.stringify({
+                    thumbnails: videos.map((v) => ({ thumbnail: v.thumbnail, title: v.title })),
+                  });
+                } else {
+                  resultPayload = JSON.stringify(obj).substring(0, 1500);
+                }
+              } catch {
+                resultPayload = String(output).substring(0, 1500);
+              }
+              yield { type: EventType.TOOL_CALL_RESULT, toolCallId, result: resultPayload };
             }
 
             activeToolCalls.delete(run_id || name);

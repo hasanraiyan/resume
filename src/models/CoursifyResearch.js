@@ -35,7 +35,7 @@ const CoursifyResearchSchema = new mongoose.Schema(
       index: true,
     },
     qdrantId: {
-      type: Number,
+      type: String,
       index: true,
       sparse: true,
     },

@@ -177,14 +177,38 @@ class CoursifyResearchAgent extends BaseAgent {
         yield { type: EventType.TOOL_CALL_END, toolCallId: meta.toolCallId };
 
         if (result.status === 'fulfilled' && result.value) {
-          const resultStr =
-            typeof result.value === 'string' ? result.value : JSON.stringify(result.value);
-
-          // TOOL_CALL_RESULT: trimmed excerpt for inline display
+          // TOOL_CALL_RESULT: send structured display payload
+          let resultPayload;
+          try {
+            const val = result.value;
+            if (meta.toolName === 'youtube_search') {
+              const outputStr = typeof val === 'string' ? val : val?.output || '';
+              const videos = typeof outputStr === 'string' ? JSON.parse(outputStr) : outputStr;
+              resultPayload = JSON.stringify({
+                thumbnails: (Array.isArray(videos) ? videos : []).map((v) => ({
+                  thumbnail: v.thumbnail,
+                  title: v.title,
+                })),
+              });
+            } else {
+              const obj = typeof val === 'object' ? val : JSON.parse(val);
+              if (Array.isArray(obj.results)) {
+                resultPayload = JSON.stringify({
+                  urls: obj.results.map((r) => r.url).filter(Boolean),
+                });
+              } else {
+                resultPayload = JSON.stringify(val).substring(0, 1500);
+              }
+            }
+          } catch {
+            const fallback =
+              typeof result.value === 'string' ? result.value : JSON.stringify(result.value);
+            resultPayload = fallback.substring(0, 1500);
+          }
           yield {
             type: EventType.TOOL_CALL_RESULT,
             toolCallId: meta.toolCallId,
-            result: resultStr.substring(0, 600),
+            result: resultPayload,
           };
 
           if (meta.toolName === 'tavily_search') {

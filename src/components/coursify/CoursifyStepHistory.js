@@ -1,16 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  ChevronDown,
-  ChevronRight,
-  CheckCircle2,
-  Search,
-  Youtube,
-  Sparkles,
-  Globe,
-  Image,
-} from 'lucide-react';
+import { ChevronDown, CheckCircle2, Search, Youtube, Sparkles, Globe } from 'lucide-react';
 
 const TOOL_CONFIG = {
   tavily_search: { label: 'Web Research', icon: Globe },
@@ -19,34 +10,92 @@ const TOOL_CONFIG = {
   agent: { label: 'Planning Research', icon: Sparkles },
 };
 
-function StepResult({ result }) {
-  const [open, setOpen] = useState(false);
-  if (!result) return null;
-  const preview = result.substring(0, 120).replace(/\s+/g, ' ').trim();
+const SEARCH_LABELS = {
+  tavily_search: 'Searching web for',
+  TavilySearch: 'Searching web for',
+  youtube_search: 'Searching YouTube for',
+};
 
-  return (
-    <div className="mt-1.5 ml-11">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 text-[10px] font-semibold text-[#7c8e88] hover:text-[#1f644e] transition-colors"
-      >
-        <ChevronRight className={`w-3 h-3 transition-transform ${open ? 'rotate-90' : ''}`} />
-        {open ? 'Hide result' : 'View snippet'}
-      </button>
-      {open && (
-        <p className="mt-1.5 rounded-lg bg-[#f7faf8] border border-[#e5e3d8] px-3 py-2 text-[10px] text-[#7c8e88] leading-relaxed whitespace-pre-wrap break-words max-h-40 overflow-y-auto">
-          {preview}
-          {result.length > 120 ? '…' : ''}
-        </p>
-      )}
-    </div>
-  );
+function extractDomains(result) {
+  if (!result) return [];
+  try {
+    const parsed = JSON.parse(result);
+    // Structured: { urls: [...] }
+    if (Array.isArray(parsed.urls)) {
+      return parsed.urls
+        .map((url) => {
+          try {
+            return new URL(url).hostname.replace(/^www\./, '');
+          } catch {
+            return null;
+          }
+        })
+        .filter(Boolean)
+        .slice(0, 4);
+    }
+    // Raw Tavily: { results: [{url}, ...] }
+    if (Array.isArray(parsed.results)) {
+      return parsed.results
+        .map((r) => {
+          try {
+            return new URL(r.url).hostname.replace(/^www\./, '');
+          } catch {
+            return null;
+          }
+        })
+        .filter(Boolean)
+        .slice(0, 4);
+    }
+  } catch {}
+  // Regex fallback
+  const matches = [...result.matchAll(/https?:\/\/([^/\s"'<>\]]+)/g)];
+  return [
+    ...new Set(
+      matches
+        .map((m) => {
+          try {
+            return new URL(m[0]).hostname.replace(/^www\./, '');
+          } catch {
+            return null;
+          }
+        })
+        .filter((d) => d && !d.includes('youtube') && !d.includes('ytimg'))
+    ),
+  ].slice(0, 4);
+}
+
+function extractYoutubeThumbnails(result) {
+  if (!result) return [];
+  try {
+    const parsed = JSON.parse(result);
+    // Structured: { thumbnails: [{thumbnail, title}, ...] }
+    if (Array.isArray(parsed.thumbnails)) {
+      return parsed.thumbnails.filter((v) => v?.thumbnail).slice(0, 3);
+    }
+    // Raw: { output: "[{videoId, thumbnail, ...}]" }
+    if (typeof parsed.output === 'string') {
+      const videos = JSON.parse(parsed.output);
+      return (Array.isArray(videos) ? videos : [])
+        .filter((v) => v.thumbnail || v.videoId)
+        .map((v) => ({
+          thumbnail: v.thumbnail || `https://img.youtube.com/vi/${v.videoId}/mqdefault.jpg`,
+          title: v.title || '',
+        }))
+        .slice(0, 3);
+    }
+  } catch {}
+  // Regex fallback for video IDs
+  const matches = [
+    ...result.matchAll(/(?:youtube\.com\/watch\?[^"'\s]*v=|youtu\.be\/)([A-Za-z0-9_-]{11})/g),
+  ];
+  return [...new Set(matches.map((m) => m[1]))]
+    .slice(0, 3)
+    .map((id) => ({ thumbnail: `https://img.youtube.com/vi/${id}/mqdefault.jpg`, title: '' }));
 }
 
 export default function CoursifyStepHistory({ steps }) {
   const [expanded, setExpanded] = useState(true);
 
-  // Filter out agent/planning steps - only show actual tool calls
   const visibleSteps = steps.filter((step) => step.tool !== 'agent');
 
   if (!visibleSteps || visibleSteps.length === 0) return null;
@@ -73,28 +122,24 @@ export default function CoursifyStepHistory({ steps }) {
             const config = TOOL_CONFIG[step.tool] || { label: step.tool, icon: Search };
             const Icon = config.icon;
             const isDone = step.status === 'completed';
+            const isYoutube = step.tool === 'youtube_search';
+            const searchLabel = SEARCH_LABELS[step.tool] || 'Searching for';
 
-            // Extract search query from input
             let query = '';
             let inputObj = step.input;
 
-            // Recursive or iterative helper to find the first string value in a nested object
             const findQueryValue = (obj) => {
               if (typeof obj === 'string') {
-                // If it's a string that looks like JSON, try parsing it again
                 if (obj.trim().startsWith('{') || obj.trim().startsWith('[')) {
                   try {
-                    const parsed = JSON.parse(obj);
-                    return findQueryValue(parsed);
+                    return findQueryValue(JSON.parse(obj));
                   } catch (e) {
                     return obj;
                   }
                 }
                 return obj;
               }
-
               if (typeof obj === 'object' && obj !== null) {
-                // Priority keys
                 const keys = ['query', 'input', 'q', 'topic', 'search_query', 'text'];
                 for (const key of keys) {
                   if (obj[key] && typeof obj[key] === 'string') return obj[key];
@@ -103,8 +148,6 @@ export default function CoursifyStepHistory({ steps }) {
                     if (found) return found;
                   }
                 }
-
-                // Fallback: search all keys
                 for (const key in obj) {
                   const found = findQueryValue(obj[key]);
                   if (found) return found;
@@ -114,27 +157,22 @@ export default function CoursifyStepHistory({ steps }) {
             };
 
             query = findQueryValue(inputObj);
-
-            // Fallback to original input if still empty
             if (!query && step.input) {
               query = typeof step.input === 'string' ? step.input : JSON.stringify(step.input);
             }
-
-            // Final cleanup: if it's still JSON (e.g. stringified fallback), strip it
             if (query && (query.startsWith('{') || query.includes('":"'))) {
               try {
-                const finalTry = JSON.parse(query);
-                const deepValue = findQueryValue(finalTry);
+                const deepValue = findQueryValue(JSON.parse(query));
                 if (deepValue) query = deepValue;
               } catch (e) {}
             }
 
-            // Only render if we have a valid query
             if (!query || query === '{}' || query === 'undefined' || query === 'null') return null;
 
-            // Ensure we don't have double quotes if we're wrapping it in quotes
             const cleanQuery = query.toString().replace(/^"|"$/g, '').trim();
-            const displayQuery = `Searching for "${cleanQuery}"`;
+            const domains = isDone && !isYoutube ? extractDomains(step.result) : [];
+            const youtubeThumbnails =
+              isDone && isYoutube ? extractYoutubeThumbnails(step.result) : [];
 
             return (
               <div
@@ -145,10 +183,10 @@ export default function CoursifyStepHistory({ steps }) {
                     : 'bg-[#f0f5f2]/50 border-[#d4e6de] animate-pulse'
                 }`}
               >
-                <div className="flex items-center justify-between gap-3 p-3">
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-3 p-3">
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
                     <div
-                      className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                      className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors mt-0.5 ${
                         isDone ? 'bg-[#f0f5f2] text-[#1f644e]' : 'bg-[#d4e6de] text-[#1f644e]/60'
                       }`}
                     >
@@ -161,7 +199,8 @@ export default function CoursifyStepHistory({ steps }) {
                         }`}
                         title={cleanQuery}
                       >
-                        {displayQuery}
+                        {searchLabel}{' '}
+                        <span className="font-normal">&ldquo;{cleanQuery}&rdquo;</span>
                       </p>
                       <p
                         className={`text-[10px] font-bold uppercase tracking-wider ${
@@ -170,10 +209,39 @@ export default function CoursifyStepHistory({ steps }) {
                       >
                         {config.label}
                       </p>
+
+                      {/* Web result domain pills */}
+                      {domains.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {domains.map((domain) => (
+                            <span
+                              key={domain}
+                              className="inline-flex items-center rounded-full bg-[#f0f5f2] border border-[#d4e6de] px-2 py-0.5 text-[10px] font-semibold text-[#1f644e] leading-tight"
+                            >
+                              {domain}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* YouTube video thumbnails */}
+                      {youtubeThumbnails.length > 0 && (
+                        <div className="flex gap-1.5 mt-2">
+                          {youtubeThumbnails.map((v, i) => (
+                            <img
+                              key={i}
+                              src={v.thumbnail}
+                              alt={v.title}
+                              title={v.title}
+                              className="w-16 h-10 rounded-md object-cover border border-[#e5e3d8]"
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  <div className="flex-shrink-0 ml-2">
+                  <div className="flex-shrink-0 ml-2 mt-0.5">
                     {isDone ? (
                       <div className="w-5 h-5 rounded-full bg-[#1f644e]/10 flex items-center justify-center">
                         <CheckCircle2 className="w-3.5 h-3.5 text-[#1f644e]" />
@@ -183,14 +251,10 @@ export default function CoursifyStepHistory({ steps }) {
                     )}
                   </div>
                 </div>
-                {/* Inline result snippet — only shown after TOOL_CALL_RESULT arrives */}
-                {isDone && <StepResult result={step.result} />}
-                {isDone && step.result && <div className="pb-2" />}
               </div>
             );
           })}
 
-          {/* Persistent "Thinking" state if the last step is done but we're still in generating phase */}
           {steps.length > 0 && steps[steps.length - 1].status === 'completed' && (
             <div className="flex items-center gap-3 p-3 rounded-xl bg-[#f0f5f2]/30 border border-[#d4e6de] border-dashed animate-pulse">
               <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-[#d4e6de]/50 flex items-center justify-center text-[#1f644e]/40">

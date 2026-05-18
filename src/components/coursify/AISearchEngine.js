@@ -70,6 +70,8 @@ export function AISearchEngine({ onGenerated }) {
 
   const [relatedArticles, setRelatedArticles] = useState([]);
 
+  const [isRelatedLoading, setIsRelatedLoading] = useState(false);
+
   const inputRef = useRef(null);
 
   const contentRef = useRef('');
@@ -139,12 +141,15 @@ export function AISearchEngine({ onGenerated }) {
   useEffect(() => {
     if (phase === PHASE.DONE && generatedSlug) {
       const fetchRelated = async () => {
+        setIsRelatedLoading(true);
         try {
           const res = await fetch(`/api/coursify/related?slug=${generatedSlug}`);
           const data = await res.json();
           setRelatedArticles(data.related || []);
         } catch (err) {
           console.error('Failed to fetch related articles:', err);
+        } finally {
+          setIsRelatedLoading(false);
         }
       };
 
@@ -312,6 +317,7 @@ export function AISearchEngine({ onGenerated }) {
     setToolSteps([]);
     setIsFromCache(false);
     setRelatedArticles([]);
+    setIsRelatedLoading(false);
   };
 
   // =====================================================
@@ -500,15 +506,37 @@ export function AISearchEngine({ onGenerated }) {
         </div>
       )}
 
+      {/* Research steps */}
+      <CoursifyStepHistory steps={toolSteps} />
+
       {/* Content */}
       <div ref={resultRef} className="w-full max-w-full overflow-x-hidden">
         <CoursifyBlockRenderer content={content} />
       </div>
 
       {/* Related Articles */}
-      {relatedArticles.length > 0 && (
+      {(isRelatedLoading || relatedArticles.length > 0) && (
         <div className="mt-12">
-          <RelatedArticlesGrid articles={relatedArticles} variant="grid" />
+          <div className="mb-4 h-3 w-32 rounded-full bg-[#f0f5f2] animate-pulse" />
+          {isRelatedLoading ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {Array(3)
+                .fill(0)
+                .map((_, i) => (
+                  <div
+                    key={i}
+                    className="rounded-2xl border border-[#e5e3d8] bg-white p-4 space-y-3"
+                  >
+                    <div className="h-3 w-3/4 rounded-full bg-[#f0f5f2] animate-pulse" />
+                    <div className="h-2.5 w-full rounded-full bg-[#f0f5f2] animate-pulse" />
+                    <div className="h-2.5 w-5/6 rounded-full bg-[#f0f5f2] animate-pulse" />
+                    <div className="h-2 w-1/3 rounded-full bg-[#f0f5f2] animate-pulse mt-2" />
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <RelatedArticlesGrid articles={relatedArticles} variant="grid" />
+          )}
         </div>
       )}
 

@@ -1,95 +1,122 @@
-import { QdrantVectorStore } from '@langchain/qdrant';
-import { PollinationsEmbeddings } from './PollinationsEmbeddings';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyResearch from '@/models/CoursifyResearch';
 
-function extractCleanSnippet(content, length = 200) {
-  // Remove block markers and headers
-  let cleaned = content
-    .replace(/^-{3,}.*$/gm, '') // Remove "---" lines (full line)
-    .replace(/##\s*\[\w+\]/g, '') // Remove "## [BlockType]" markers
-    .replace(/^#+\s+/gm, ''); // Remove headers at line start
+const COLLECTION = 'coursify_research';
 
-  // Remove markdown formatting but keep readable
-  cleaned = cleaned
-    .replace(/`{3}[\s\S]*?`{3}/g, '') // Remove code blocks
-    .replace(/`([^`]+)`/g, '$1') // Remove inline code
-    .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove bold
-    .replace(/\*([^*]+)\*/g, '$1') // Remove italic
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Convert links to text
-    .replace(/^\s*[-*+]\s+/gm, '') // Remove bullet points
-    .replace(/\n+/g, ' ') // Replace newlines with space
-    .replace(/\s+/g, ' ') // Collapse multiple spaces
-    .trim();
+function qdrantHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    ...(process.env.QDRANT_API_KEY ? { 'api-key': process.env.QDRANT_API_KEY } : {}),
+  };
+}
 
-  // Get first N chars and ensure it ends naturally
-  let snippet = cleaned.substring(0, length).trim();
+// Upload an article to Qdrant on-demand and persist the UUID back to MongoDB
+async function lazyUpload(qdrantUrl, article) {
+  try {
+    const { PollinationsEmbeddings } = await import('@/lib/coursify/PollinationsEmbeddings');
+    const embeddings = new PollinationsEmbeddings();
+    const text = `${article.title}\n${article.topic}`;
+    const [vector] = await embeddings.embedDocuments([text]);
+    const qdrantId = crypto.randomUUID();
 
-  // Find last space to avoid cutting mid-word
-  const lastSpace = snippet.lastIndexOf(' ');
-  if (lastSpace > length - 50) {
-    snippet = snippet.substring(0, lastSpace);
+    const res = await fetch(`${qdrantUrl}/collections/${COLLECTION}/points`, {
+      method: 'PUT',
+      headers: qdrantHeaders(),
+      body: JSON.stringify({
+        points: [
+          {
+            id: qdrantId,
+            vector,
+            payload: {
+              page_content: text,
+              metadata: { slug: article.slug, title: article.title, topic: article.topic },
+            },
+          },
+        ],
+      }),
+    });
+
+    if (!res.ok) throw new Error(`Qdrant PUT failed: ${res.status}`);
+
+    await CoursifyResearch.findByIdAndUpdate(article._id, { qdrantId });
+    console.log(`[CoursifyRelated] Lazy-uploaded "${article.slug}" to Qdrant (id: ${qdrantId})`);
+    return qdrantId;
+  } catch (err) {
+    console.error('[CoursifyRelated] Lazy upload error:', err.message);
+    return null;
   }
+}
 
-  return snippet + '...';
+async function recommendByPointId(qdrantUrl, pointId, limit) {
+  const res = await fetch(`${qdrantUrl}/collections/${COLLECTION}/points/recommend`, {
+    method: 'POST',
+    headers: qdrantHeaders(),
+    body: JSON.stringify({
+      positive: [pointId],
+      limit,
+      with_payload: true,
+      with_vector: false,
+    }),
+  });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.result || [];
 }
 
 export async function getRelatedArticles(slug, limit = 3, includeSnippet = false) {
   try {
     const qdrantUrl = process.env.QDRANT_URL;
-
     if (!qdrantUrl) {
       console.log('[CoursifyRelated] QDRANT_URL not set, skipping related articles');
       return [];
     }
 
-    const embeddings = new PollinationsEmbeddings();
+    await dbConnect();
 
-    const vectorStore = await QdrantVectorStore.fromExistingCollection(embeddings, {
-      url: qdrantUrl,
-      apiKey: process.env.QDRANT_API_KEY,
-      collectionName: 'coursify_research',
-    });
+    const article = await CoursifyResearch.findOne(
+      { slug, deletedAt: null },
+      '_id title topic slug qdrantId'
+    ).lean();
 
-    // Search for similar documents by slug
-    const results = await vectorStore.similaritySearch(slug, limit + 1); // +1 to account for excluding current
-
-    if (!includeSnippet) {
-      // Fast path: just metadata
-      return results
-        .filter((doc) => doc.metadata?.slug !== slug)
-        .slice(0, limit)
-        .map((doc) => ({
-          title: doc.metadata?.title || '',
-          slug: doc.metadata?.slug || '',
-        }));
+    if (!article) {
+      console.log(`[CoursifyRelated] Article not found in DB for slug: ${slug}`);
+      return [];
     }
 
-    // Fetch content for each result
+    // Lazy-upload if qdrantId was never set (pre-fix articles or cache hits)
+    const qdrantId = article.qdrantId || (await lazyUpload(qdrantUrl, article));
+
+    if (!qdrantId) {
+      console.log(`[CoursifyRelated] Could not obtain qdrantId for slug: ${slug}`);
+      return [];
+    }
+
+    const similar = (await recommendByPointId(qdrantUrl, qdrantId, limit + 1))
+      .filter((p) => p.payload?.metadata?.slug !== slug)
+      .slice(0, limit);
+
+    if (!includeSnippet) {
+      return similar.map((p) => ({
+        title: p.payload?.metadata?.title || '',
+        slug: p.payload?.metadata?.slug || '',
+      }));
+    }
+
     const relatedWithContent = await Promise.all(
-      results
-        .filter((doc) => doc.metadata?.slug !== slug)
-        .slice(0, limit)
-        .map(async (doc) => {
-          try {
-            await dbConnect();
-            const research = await CoursifyResearch.findOne(
-              { slug: doc.metadata?.slug, deletedAt: null },
-              'title summary slug'
-            ).lean();
-
-            if (!research) return null;
-
-            return {
-              title: research.title,
-              slug: research.slug,
-              snippet: research.summary || null,
-            };
-          } catch (err) {
-            console.error('[CoursifyRelated] Error fetching content:', err);
-            return null;
-          }
-        })
+      similar.map(async (p) => {
+        const relSlug = p.payload?.metadata?.slug;
+        if (!relSlug) return null;
+        try {
+          const research = await CoursifyResearch.findOne(
+            { slug: relSlug, deletedAt: null },
+            'title summary slug'
+          ).lean();
+          if (!research) return null;
+          return { title: research.title, slug: research.slug, snippet: research.summary || null };
+        } catch {
+          return null;
+        }
+      })
     );
 
     return relatedWithContent.filter(Boolean);
@@ -99,7 +126,6 @@ export async function getRelatedArticles(slug, limit = 3, includeSnippet = false
   }
 }
 
-// For debugging - log related articles data
 export function logRelatedArticles(data) {
   console.log('[CoursifyRelated Debug]', {
     count: data.length,

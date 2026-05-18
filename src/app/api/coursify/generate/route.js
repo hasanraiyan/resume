@@ -16,39 +16,56 @@ function encodeSSE(obj) {
   return new TextEncoder().encode(sseEncoder.encodeSSE(obj));
 }
 
-// Upload research to Qdrant for vector search
+// Upload research to Qdrant and return the point UUID (stored on the research doc)
 async function uploadToQdrant(research) {
   try {
-    const { QdrantVectorStore } = await import('@langchain/qdrant');
-    const { PollinationsEmbeddings } = await import('@/lib/coursify/PollinationsEmbeddings');
-    const { Document } = await import('@langchain/core/documents');
-
     const qdrantUrl = process.env.QDRANT_URL;
     if (!qdrantUrl) {
       console.log('[CoursifyGenerate] QDRANT_URL not set, skipping Qdrant upload');
-      return;
+      return null;
     }
 
+    const { PollinationsEmbeddings } = await import('@/lib/coursify/PollinationsEmbeddings');
     const embeddings = new PollinationsEmbeddings();
-    const document = new Document({
-      pageContent: `${research.title}\n${research.topic}`,
-      metadata: {
-        slug: research.slug,
-        title: research.title,
-        topic: research.topic,
-        createdAt: research.createdAt?.toISOString(),
+    const text = `${research.title}\n${research.topic}`;
+    const [vector] = await embeddings.embedDocuments([text]);
+
+    const qdrantId = crypto.randomUUID();
+
+    const res = await fetch(`${qdrantUrl}/collections/coursify_research/points`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(process.env.QDRANT_API_KEY ? { 'api-key': process.env.QDRANT_API_KEY } : {}),
       },
+      body: JSON.stringify({
+        points: [
+          {
+            id: qdrantId,
+            vector,
+            payload: {
+              page_content: text,
+              metadata: {
+                slug: research.slug,
+                title: research.title,
+                topic: research.topic,
+                createdAt: research.createdAt?.toISOString(),
+              },
+            },
+          },
+        ],
+      }),
     });
 
-    await QdrantVectorStore.fromDocuments([document], embeddings, {
-      url: qdrantUrl,
-      apiKey: process.env.QDRANT_API_KEY,
-      collectionName: 'coursify_research',
-    });
+    if (!res.ok) {
+      throw new Error(`Qdrant PUT failed: ${res.status}`);
+    }
 
-    console.log(`[CoursifyGenerate] Uploaded "${research.slug}" to Qdrant`);
+    console.log(`[CoursifyGenerate] Uploaded "${research.slug}" to Qdrant (id: ${qdrantId})`);
+    return qdrantId;
   } catch (err) {
     console.error('[CoursifyGenerate] Qdrant upload error:', err.message);
+    return null;
   }
 }
 
@@ -272,9 +289,10 @@ export async function POST(request) {
               })
             );
 
-            uploadToQdrant(research).catch((err) => {
-              console.error('[CoursifyGenerate] Failed to upload to Qdrant:', err);
-            });
+            const qdrantId = await uploadToQdrant(research);
+            if (qdrantId) {
+              await CoursifyResearch.findByIdAndUpdate(research._id, { qdrantId });
+            }
 
             try {
               const AgentExecutionLog = (await import('@/models/AgentExecutionLog')).default;
