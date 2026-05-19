@@ -13,13 +13,39 @@ import SummaryCard from '@/components/coursify/SummaryCard';
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
   await dbConnect();
   const research = await CoursifyResearch.findOne({ slug, deletedAt: null }).lean();
   if (!research) return { title: 'Not Found | Coursify' };
 
+  const title = `${research.title} | AI Research | Coursify`;
+  const description = `Read this AI-generated research on ${research.topic}`;
+  const publishedTime = research.createdAt ? new Date(research.createdAt).toISOString() : undefined;
+
   return {
-    title: `${research.title} | AI Research | Coursify`,
-    description: `Read this AI-generated research on ${research.topic}`,
+    metadataBase: new URL(baseUrl),
+    title,
+    description,
+    alternates: {
+      canonical: `/coursify/r/${slug}`,
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+    openGraph: {
+      title,
+      description,
+      url: `/coursify/r/${slug}`,
+      type: 'article',
+      publishedTime,
+      siteName: 'Coursify',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    },
   };
 }
 
