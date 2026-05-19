@@ -3,6 +3,7 @@ import CoursifyCourse from '@/models/CoursifyCourse';
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
   try {
     await dbConnect();
     const course = await CoursifyCourse.findOne({ slug, status: 'published', deletedAt: null })
@@ -17,12 +18,21 @@ export async function generateMetadata({ params }) {
     const image = course.thumbnail || '/images/apps/coursify.png';
 
     return {
+      metadataBase: new URL(baseUrl),
       title,
       description,
       keywords: course.tags || [],
+      alternates: {
+        canonical: `/coursify/${slug}`,
+      },
+      robots: {
+        index: true,
+        follow: true,
+      },
       openGraph: {
         title,
         description,
+        url: `/coursify/${slug}`,
         images: [{ url: image, alt: title }],
         type: 'article',
       },
