@@ -102,6 +102,7 @@ export async function POST(request) {
         let totalUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
         let finalContent = '';
         let finalTitle = '';
+        let finalResearchPlan = null;
 
         // Open the AG-UI run
         controller.enqueue(encodeSSE({ type: EventType.RUN_STARTED, threadId, runId }));
@@ -140,6 +141,15 @@ export async function POST(request) {
                 value: { text: cachedResearch.title },
               })
             );
+            if (cachedResearch.metadata?.researchPlan) {
+              controller.enqueue(
+                encodeSSE({
+                  type: EventType.CUSTOM,
+                  name: 'coursify_research_plan',
+                  value: cachedResearch.metadata.researchPlan,
+                })
+              );
+            }
             const msgId = `msg-cache-${Date.now()}`;
             controller.enqueue(
               encodeSSE({ type: EventType.TEXT_MESSAGE_START, messageId: msgId, role: 'assistant' })
@@ -176,6 +186,7 @@ export async function POST(request) {
                   title: cachedResearch.title,
                   slug: cachedResearch.slug,
                   usage: cachedResearch.usage || {},
+                  researchPlan: cachedResearch.metadata?.researchPlan || null,
                   fromCache: true,
                   durationMs: Date.now() - startTime,
                 },
@@ -205,6 +216,8 @@ export async function POST(request) {
               finalContent += event.delta || '';
             } else if (event.type === EventType.CUSTOM && event.name === 'coursify_title') {
               finalTitle = event.value?.text || '';
+            } else if (event.type === EventType.CUSTOM && event.name === 'coursify_research_plan') {
+              finalResearchPlan = event.value || null;
             }
             // Forward all AG-UI events to client
             controller.enqueue(encodeSSE(event));
@@ -264,7 +277,7 @@ export async function POST(request) {
               promptHash,
               titleHash: hashPrompt(baseTitle, isReferenceEnabled),
               usage: { ...totalUsage, estimatedCostUSD },
-              metadata: { durationMs: Date.now() - startTime },
+              metadata: { durationMs: Date.now() - startTime, researchPlan: finalResearchPlan },
             });
 
             controller.enqueue(
@@ -283,6 +296,7 @@ export async function POST(request) {
                   title: baseTitle,
                   slug,
                   usage: { ...totalUsage, estimatedCostUSD },
+                  researchPlan: finalResearchPlan,
                   fromCache: false,
                   durationMs: Date.now() - startTime,
                 },

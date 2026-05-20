@@ -40,6 +40,24 @@ const PHASE = {
   ERROR: 'error',
 };
 
+function upsertResearchPlanStep(setToolSteps, plan) {
+  if (!plan) return;
+
+  setToolSteps((prev) => {
+    const step = {
+      tool: 'research_plan',
+      status: 'completed',
+      toolCallId: 'research-plan',
+      plan,
+    };
+
+    const existingIndex = prev.findIndex((item) => item.toolCallId === step.toolCallId);
+    if (existingIndex === -1) return [step, ...prev];
+
+    return prev.map((item, index) => (index === existingIndex ? { ...item, ...step } : item));
+  });
+}
+
 export function AISearchEngine({ onGenerated }) {
   const [phase, setPhase] = useState(PHASE.IDLE);
 
@@ -166,6 +184,11 @@ export function AISearchEngine({ onGenerated }) {
       setContent('');
       setError('');
       setToolSteps([]);
+      setGeneratedTitle('');
+      setGeneratedSlug('');
+      setIsFromCache(false);
+      setRelatedArticles([]);
+      setIsRelatedLoading(false);
       contentRef.current = '';
 
       try {
@@ -190,6 +213,8 @@ export function AISearchEngine({ onGenerated }) {
               setGeneratedTitle(value?.text || '');
             } else if (name === 'coursify_cache_hit') {
               setIsFromCache(true);
+            } else if (name === 'coursify_research_plan') {
+              upsertResearchPlanStep(setToolSteps, value);
             } else if (name === 'coursify_persist') {
               setGeneratedSlug(value?.slug || '');
             }
@@ -243,6 +268,7 @@ export function AISearchEngine({ onGenerated }) {
             if (snap.title) setGeneratedTitle(snap.title);
             if (snap.slug) setGeneratedSlug(snap.slug);
             if (snap.fromCache) setIsFromCache(true);
+            if (snap.researchPlan) upsertResearchPlanStep(setToolSteps, snap.researchPlan);
           } else if (event.type === EventType.STEP_STARTED && event.stepName) {
             setStatusMessage(event.stepName);
           } else if (event.type === EventType.STEP_FINISHED) {
@@ -411,7 +437,7 @@ export function AISearchEngine({ onGenerated }) {
           </div>
         )}
 
-        <CoursifyStepHistory steps={toolSteps} />
+        <CoursifyStepHistory steps={toolSteps} showThinking />
 
         <div className="space-y-6 overflow-hidden">
           {completedBlocks.map((block, idx) => (

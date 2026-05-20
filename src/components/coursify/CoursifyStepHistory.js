@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ChevronDown, CheckCircle2, Search, Youtube, Sparkles, Globe } from 'lucide-react';
 
 const TOOL_CONFIG = {
+  research_plan: { label: 'Research Plan', icon: Sparkles },
   tavily_search: { label: 'Web Research', icon: Globe },
   TavilySearch: { label: 'Web Research', icon: Globe },
   youtube_search: { label: 'Video Search', icon: Youtube },
@@ -93,7 +94,7 @@ function extractYoutubeThumbnails(result) {
     .map((id) => ({ thumbnail: `https://img.youtube.com/vi/${id}/mqdefault.jpg`, title: '' }));
 }
 
-export default function CoursifyStepHistory({ steps }) {
+export default function CoursifyStepHistory({ steps, showThinking = false }) {
   const [expanded, setExpanded] = useState(true);
 
   const visibleSteps = steps.filter((step) => step.tool !== 'agent');
@@ -122,8 +123,51 @@ export default function CoursifyStepHistory({ steps }) {
             const config = TOOL_CONFIG[step.tool] || { label: step.tool, icon: Search };
             const Icon = config.icon;
             const isDone = step.status === 'completed';
+            const isResearchPlan = step.tool === 'research_plan';
             const isYoutube = step.tool === 'youtube_search';
             const searchLabel = SEARCH_LABELS[step.tool] || 'Searching for';
+
+            if (isResearchPlan) {
+              const mode = step.plan?.mode || 'none';
+              const modeLabel =
+                mode === 'none'
+                  ? 'No live search needed'
+                  : mode === 'both'
+                    ? 'Web and video research'
+                    : mode === 'web'
+                      ? 'Web research'
+                      : 'Video research';
+              const rationale =
+                step.plan?.rationale || 'The agent selected the research path for this topic.';
+
+              return (
+                <div
+                  key={`step-${idx}`}
+                  className="rounded-xl border border-[#e5e3d8] bg-white transition-all duration-300"
+                >
+                  <div className="flex items-start justify-between gap-3 p-3">
+                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                      <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#f0f5f2] text-[#1f644e]">
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-[#1e3a34]">{modeLabel}</p>
+                        <p className="mt-1 text-xs leading-relaxed text-[#7c8e88]">{rationale}</p>
+                        <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-[#b5c4be]">
+                          {config.label}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="ml-2 mt-0.5 flex-shrink-0">
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1f644e]/10">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-[#1f644e]" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
 
             let query = '';
             let inputObj = step.input;
@@ -255,7 +299,7 @@ export default function CoursifyStepHistory({ steps }) {
             );
           })}
 
-          {steps.length > 0 && steps[steps.length - 1].status === 'completed' && (
+          {showThinking && steps.length > 0 && steps[steps.length - 1].status === 'completed' && (
             <div className="flex items-center gap-3 p-3 rounded-xl bg-[#f0f5f2]/30 border border-[#d4e6de] border-dashed animate-pulse">
               <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-[#d4e6de]/50 flex items-center justify-center text-[#1f644e]/40">
                 <Sparkles className="w-4 h-4" />
