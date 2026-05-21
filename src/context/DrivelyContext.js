@@ -6,6 +6,31 @@ import { toast } from 'sonner';
 
 const DrivelyContext = createContext();
 
+const isDescendant = (sourceFolderId, targetFolderId, foldersList) => {
+  if (!sourceFolderId || !targetFolderId) return false;
+  if (sourceFolderId === targetFolderId) return true;
+
+  const targetFolder = foldersList.find((f) => f._id === targetFolderId);
+  const sourceFolder = foldersList.find((f) => f._id === sourceFolderId);
+
+  if (!targetFolder || !sourceFolder) return false;
+
+  const sourcePathPrefix = `${sourceFolder.path || ''}/${sourceFolder._id}`.replace(/^\/+/, '/');
+  const targetPath = `${targetFolder.path || ''}`.replace(/^\/+/, '/');
+
+  if (targetPath.startsWith(sourcePathPrefix)) {
+    return true;
+  }
+
+  let current = targetFolder;
+  while (current && current.parentId) {
+    if (current.parentId === sourceFolderId) return true;
+    current = foldersList.find((f) => f._id === current.parentId);
+  }
+
+  return false;
+};
+
 export function DrivelyProvider({ children }) {
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(true);
@@ -245,6 +270,17 @@ export function DrivelyProvider({ children }) {
   };
 
   const updateItem = async (type, id, payload) => {
+    if (type === 'folder' && payload.parentId !== undefined) {
+      if (payload.parentId === id) {
+        toast.error('Cannot move folder into itself');
+        return false;
+      }
+      if (payload.parentId && isDescendant(id, payload.parentId, folders)) {
+        toast.error('Cannot move folder into its own descendant');
+        return false;
+      }
+    }
+
     // Optimistic update
     const prevFiles = [...files];
     const prevFolders = [...folders];
@@ -384,6 +420,19 @@ export function DrivelyProvider({ children }) {
   };
 
   const executeBulk = async (action, targetFolderId = null) => {
+    if (action === 'move' && targetFolderId !== null) {
+      for (const fId of selectedItems.folders) {
+        if (fId === targetFolderId) {
+          toast.error('Cannot move a folder into itself');
+          return false;
+        }
+        if (isDescendant(fId, targetFolderId, folders)) {
+          toast.error('Cannot move a folder into its own descendant');
+          return false;
+        }
+      }
+    }
+
     const payload = {
       fileIds: selectedItems.files,
       folderIds: selectedItems.folders,

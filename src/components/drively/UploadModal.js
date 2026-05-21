@@ -12,7 +12,27 @@ export default function UploadModal({ onClose, currentFolderId }) {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [fileProgress, setFileProgress] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    if (droppedFiles.length > 0) {
+      setSelectedFiles(droppedFiles);
+      setFileProgress([]);
+    }
+  };
 
   const handleFileChange = (e) => {
     setSelectedFiles(Array.from(e.target.files));
@@ -150,13 +170,26 @@ export default function UploadModal({ onClose, currentFolderId }) {
               {!isUploading && (
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-[#e5e3d8] rounded-2xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-[#1f644e] hover:bg-[#f0f5f2] transition-all group"
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all group ${
+                    isDragging
+                      ? 'border-[#1f644e] bg-[#f0f5f2]'
+                      : 'border-[#e5e3d8] hover:border-[#1f644e] hover:bg-[#f0f5f2]'
+                  }`}
                 >
-                  <div className="w-12 h-12 bg-[#fcfbf5] rounded-full flex items-center justify-center text-[#7c8e88] group-hover:text-[#1f644e] transition-colors">
+                  <div
+                    className={`w-12 h-12 bg-[#fcfbf5] rounded-full flex items-center justify-center transition-colors ${
+                      isDragging ? 'text-[#1f644e]' : 'text-[#7c8e88] group-hover:text-[#1f644e]'
+                    }`}
+                  >
                     <Upload className="w-6 h-6" />
                   </div>
                   <div className="text-center">
-                    <p className="text-sm font-bold text-[#1e3a34]">Click to upload</p>
+                    <p className="text-sm font-bold text-[#1e3a34]">
+                      {isDragging ? 'Drop files here' : 'Click or drag files here'}
+                    </p>
                     <p className="text-xs text-[#7c8e88] mt-1">Maximum file size 50MB</p>
                   </div>
                   <input

@@ -11,15 +11,22 @@ import {
   Type,
   Maximize2,
   Minimize2,
+  Music,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useDrively } from '@/context/DrivelyContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function FilePreviewPanel({ file, onClose }) {
   const { updateItem, deleteItem } = useDrively();
   const [textContent, setTextContent] = useState(null);
   const [isZoomed, setIsZoomed] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    setIsPlaying(false);
+  }, [file]);
 
   useEffect(() => {
     const isText =
@@ -42,6 +49,7 @@ export default function FilePreviewPanel({ file, onClose }) {
   const isImage = file.mimeType.startsWith('image/');
   const isPdf = file.mimeType === 'application/pdf';
   const isVideo = file.mimeType.startsWith('video/');
+  const isAudio = file.mimeType.startsWith('audio/');
 
   const formatSize = (bytes) => {
     if (bytes === 0) return '0 B';
@@ -92,6 +100,81 @@ export default function FilePreviewPanel({ file, onClose }) {
             />
           ) : isVideo ? (
             <video src={file.secureUrl} controls className="w-full h-full bg-black" />
+          ) : isAudio ? (
+            <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-[#0f1d19] text-[#e0e6e4] relative overflow-hidden">
+              {/* Background ambient glow */}
+              <div className="absolute w-32 h-32 rounded-full bg-[#1f644e]/30 blur-2xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+
+              {/* Spinning/pulsing audio hub */}
+              <div className="relative z-10 flex flex-col items-center gap-3">
+                <div
+                  className={`w-16 h-16 rounded-full bg-gradient-to-tr from-[#1f644e] to-[#2ecc71] flex items-center justify-center shadow-lg shadow-[#1f644e]/30 relative transition-transform duration-500 ${
+                    isPlaying ? 'animate-spin [animation-duration:8s]' : ''
+                  }`}
+                >
+                  {/* Outer vinyl grooves */}
+                  <div className="absolute inset-1.5 rounded-full border border-white/10" />
+                  <div className="absolute inset-3.5 rounded-full border border-white/5" />
+                  <div className="w-5 h-5 rounded-full bg-[#0f1d19] flex items-center justify-center">
+                    <Music className="w-2.5 h-2.5 text-[#2ecc71]" />
+                  </div>
+                </div>
+
+                <div className="text-center max-w-[200px]">
+                  <p className="text-[11px] font-bold truncate text-white" title={file.filename}>
+                    {file.filename}
+                  </p>
+                  <p className="text-[9px] text-[#7c8e88] font-bold tracking-wider uppercase mt-0.5">
+                    Audio Track
+                  </p>
+                </div>
+
+                {/* Animated Simulated Visualizer Equalizer */}
+                <div className="flex items-end justify-center gap-0.5 h-6 mt-1 w-24">
+                  {[...Array(9)].map((_, i) => {
+                    const delay = [0.1, 0.4, 0.2, 0.6, 0.3, 0.5, 0.1, 0.4, 0.2][i];
+                    return (
+                      <span
+                        key={i}
+                        className="w-0.5 bg-[#2ecc71] rounded-full transition-all"
+                        style={{
+                          height: isPlaying ? '100%' : '15%',
+                          animation: isPlaying
+                            ? `bounceVisualizer 1.2s ease-in-out infinite alternate`
+                            : 'none',
+                          animationDelay: `${delay}s`,
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+
+                {/* HTML5 Standard Audio Player Styled beautifully */}
+                <div className="w-full mt-2">
+                  <audio
+                    ref={audioRef}
+                    src={file.secureUrl}
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                    onEnded={() => setIsPlaying(false)}
+                    controls
+                    className="w-56 h-7 bg-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Bounce visualizer animations embedded inside CSS */}
+              <style
+                dangerouslySetInnerHTML={{
+                  __html: `
+                @keyframes bounceVisualizer {
+                  0% { height: 15%; }
+                  100% { height: 100%; }
+                }
+              `,
+                }}
+              />
+            </div>
           ) : textContent !== null ? (
             <div className="w-full h-full p-4 overflow-auto bg-[#1e1e1e] text-[#d4d4d4] text-[10px] font-mono leading-relaxed whitespace-pre-wrap selection:bg-[#264f78]">
               {textContent}

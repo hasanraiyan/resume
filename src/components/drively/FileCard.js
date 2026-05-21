@@ -10,12 +10,14 @@ import {
   Download,
   Star,
   Link as LinkIcon,
+  Music,
 } from 'lucide-react';
 import ActionMenu from './ActionMenu';
 import { formatDistanceToNow } from 'date-fns';
 
 const getFileIcon = (mimeType) => {
   if (mimeType.startsWith('image/')) return <ImageIcon className="w-full h-full" />;
+  if (mimeType.startsWith('audio/')) return <Music className="w-full h-full text-emerald-600" />;
   if (mimeType === 'application/pdf') return <FileText className="w-full h-full text-red-500" />;
   if (mimeType.includes('zip') || mimeType.includes('tar'))
     return <FileArchive className="w-full h-full text-amber-500" />;
