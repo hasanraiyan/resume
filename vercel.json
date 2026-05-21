@@ -3,10 +3,6 @@
     {
       "path": "/api/cron/generate-summaries",
       "schedule": "0 2 * * *"
-    },
-    {
-      "path": "/api/cron/pocketly-reminder",
-      "schedule": "*/30 * * * *"
     }
   ]
 }
