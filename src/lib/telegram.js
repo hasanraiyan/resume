@@ -43,6 +43,55 @@ export async function sendTelegramMessage({ botToken, chatId, text, parseMode = 
   }
 }
 
+export async function sendTelegramDocument({
+  botToken,
+  chatId,
+  document,
+  filename,
+  caption,
+  parseMode = 'MarkdownV2',
+}) {
+  if (!botToken || !chatId || !document || !filename) {
+    return {
+      ok: false,
+      description: 'Missing bot token, chat ID, document, or filename.',
+    };
+  }
+
+  try {
+    const formData = new FormData();
+    const blob =
+      document instanceof Blob ? document : new Blob([document], { type: 'application/pdf' });
+
+    formData.append('chat_id', chatId);
+    formData.append('document', blob, filename);
+    if (caption) {
+      formData.append('caption', caption);
+      formData.append('parse_mode', parseMode);
+    }
+
+    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok || payload.ok === false) {
+      return {
+        ok: false,
+        description: payload.description || `Telegram request failed with ${response.status}`,
+        payload,
+      };
+    }
+
+    return { ok: true, payload };
+  } catch (error) {
+    console.error('[Telegram] Failed to send document:', error);
+    return { ok: false, description: error.message || 'Failed to send Telegram document.' };
+  }
+}
+
 export async function sendTelegramMessageFromSettings(text) {
   const settings = await TelegramSettings.findOne({ isEnabled: true }).lean();
   if (!settings?.botToken || !settings?.chatId) {
@@ -65,5 +114,32 @@ export async function sendTelegramMessageFromSettings(text) {
     botToken,
     chatId: settings.chatId,
     text,
+  });
+}
+
+export async function sendTelegramDocumentFromSettings({ document, filename, caption }) {
+  const settings = await TelegramSettings.findOne({ isEnabled: true }).lean();
+  if (!settings?.botToken || !settings?.chatId) {
+    return {
+      ok: false,
+      skipped: true,
+      description: 'Telegram notifications are disabled or incomplete.',
+    };
+  }
+
+  const botToken = decrypt(settings.botToken);
+  if (!botToken) {
+    return {
+      ok: false,
+      description: 'Failed to decrypt Telegram bot token.',
+    };
+  }
+
+  return sendTelegramDocument({
+    botToken,
+    chatId: settings.chatId,
+    document,
+    filename,
+    caption,
   });
 }

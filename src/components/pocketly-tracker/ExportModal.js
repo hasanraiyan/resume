@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, FileText, TrendingUp, LayoutGrid, ArrowDownToLine, Calendar } from 'lucide-react';
+import { X, FileText, TrendingUp, LayoutGrid, ArrowDownToLine, Calendar, Send } from 'lucide-react';
 import { useMoney } from '@/context/MoneyContext';
 import { generatePocketlyPdf } from '@/utils/pdfGenerator';
 
@@ -25,35 +25,40 @@ export default function ExportModal({ isOpen, onClose }) {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   if (!isOpen) return null;
+
+  const getSelectedPeriod = () => {
+    const now = new Date();
+    let start, end;
+
+    if (dateRange === 'this-month') {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    } else if (dateRange === 'last-month') {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      end = new Date(now.getFullYear(), now.getMonth(), 0);
+    } else if (dateRange === 'last-7-days') {
+      start = new Date(now);
+      start.setDate(now.getDate() - 7);
+      end = new Date(now);
+    } else if (dateRange === 'all-time') {
+      start = new Date(2000, 0, 1);
+      end = new Date(2100, 0, 1);
+    } else if (dateRange === 'custom') {
+      start = fromDate ? new Date(fromDate) : new Date(2000, 0, 1);
+      end = toDate ? new Date(toDate) : new Date(2100, 0, 1);
+    }
+
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
+  };
 
   const handleGeneratePdf = async () => {
     setIsGenerating(true);
     try {
-      const now = new Date();
-      let start, end;
-
-      if (dateRange === 'this-month') {
-        start = new Date(now.getFullYear(), now.getMonth(), 1);
-        end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      } else if (dateRange === 'last-month') {
-        start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        end = new Date(now.getFullYear(), now.getMonth(), 0);
-      } else if (dateRange === 'last-7-days') {
-        start = new Date(now);
-        start.setDate(now.getDate() - 7);
-        end = new Date(now);
-      } else if (dateRange === 'all-time') {
-        start = new Date(2000, 0, 1);
-        end = new Date(2100, 0, 1);
-      } else if (dateRange === 'custom') {
-        start = fromDate ? new Date(fromDate) : new Date(2000, 0, 1);
-        end = toDate ? new Date(toDate) : new Date(2100, 0, 1);
-      }
-
-      end.setHours(23, 59, 59, 999);
-
+      const { start, end } = getSelectedPeriod();
       const fetchedTransactions = await fetchTransactionsForPeriod(
         start.toISOString(),
         end.toISOString()
@@ -76,6 +81,34 @@ export default function ExportModal({ isOpen, onClose }) {
       alert('Failed to generate PDF. Please try again.');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleSendToTelegram = async () => {
+    setIsSending(true);
+    try {
+      const res = await fetch('/api/money/export/telegram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dateRange, fromDate, toDate }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.success === false) {
+        throw new Error(data.message || 'Failed to send PDF to Telegram');
+      }
+
+      alert(
+        `PDF sent to Telegram${
+          data.transactionCount != null ? ` (${data.transactionCount} transactions)` : ''
+        }.`
+      );
+      onClose();
+    } catch (err) {
+      console.error('Error sending PDF to Telegram:', err);
+      alert(err.message || 'Failed to send PDF to Telegram. Please try again.');
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -245,6 +278,9 @@ export default function ExportModal({ isOpen, onClose }) {
           background: #f4faf7;
           display: flex; align-items: center; justify-content: space-between; gap: 12px;
         }
+        .footer-actions {
+          display: flex; gap: 8px; align-items: center;
+        }
         .footer-hint { font-size: 11px; color: #8aa89e; }
         .footer-hint strong { color: #5a7a6e; font-weight: 600; }
         .btn-cancel {
@@ -257,10 +293,10 @@ export default function ExportModal({ isOpen, onClose }) {
         .btn-cancel:hover:not(:disabled) { color: #1e3a34; background: #dce8e4; }
         .btn-cancel:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        .btn-generate {
+        .btn-generate,
+        .btn-send {
           display: flex; align-items: center; gap: 8px;
           padding: 11px 20px;
-          background: linear-gradient(135deg, #1f644e 0%, #256f57 100%);
           color: #ffffff; border: none; cursor: pointer;
           font-family: 'DM Sans', sans-serif;
           font-size: 13px; font-weight: 600; letter-spacing: 0.01em;
@@ -269,13 +305,30 @@ export default function ExportModal({ isOpen, onClose }) {
           transition: all 0.2s ease;
           white-space: nowrap;
         }
-        .btn-generate:hover:not(:disabled) {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 16px rgba(31,100,78,0.4), 0 2px 4px rgba(31,100,78,0.2);
-          background: linear-gradient(135deg, #1a5740 0%, #1f644e 100%);
+        .btn-generate {
+          background: linear-gradient(135deg, #1f644e 0%, #256f57 100%);
+          box-shadow: 0 2px 8px rgba(31,100,78,0.35), 0 1px 2px rgba(31,100,78,0.2);
         }
-        .btn-generate:active:not(:disabled) { transform: translateY(0); }
-        .btn-generate:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+        .btn-send {
+          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+          box-shadow: 0 2px 8px rgba(37,99,235,0.3), 0 1px 2px rgba(37,99,235,0.18);
+        }
+        .btn-generate:hover:not(:disabled),
+        .btn-send:hover:not(:disabled) {
+          transform: translateY(-1px);
+        }
+        .btn-generate:hover:not(:disabled) {
+          background: linear-gradient(135deg, #1a5740 0%, #1f644e 100%);
+          box-shadow: 0 4px 16px rgba(31,100,78,0.4), 0 2px 4px rgba(31,100,78,0.2);
+        }
+        .btn-send:hover:not(:disabled) {
+          background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+          box-shadow: 0 4px 16px rgba(37,99,235,0.36), 0 2px 4px rgba(37,99,235,0.18);
+        }
+        .btn-generate:active:not(:disabled),
+        .btn-send:active:not(:disabled) { transform: translateY(0); }
+        .btn-generate:disabled,
+        .btn-send:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
 
         .spinner {
           width: 14px; height: 14px;
@@ -285,6 +338,26 @@ export default function ExportModal({ isOpen, onClose }) {
           animation: spin 0.7s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg) } }
+
+        @media (max-width: 520px) {
+          .modal-footer {
+            align-items: stretch;
+            flex-direction: column;
+          }
+          .footer-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+          }
+          .btn-cancel {
+            grid-column: 1 / -1;
+          }
+          .btn-generate,
+          .btn-send,
+          .btn-cancel {
+            justify-content: center;
+            width: 100%;
+          }
+        }
       `}</style>
 
       <div
@@ -386,11 +459,32 @@ export default function ExportModal({ isOpen, onClose }) {
             <span className="footer-hint">
               Format: <strong>PDF</strong>
             </span>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <button className="btn-cancel" onClick={onClose} disabled={isGenerating}>
+            <div className="footer-actions">
+              <button className="btn-cancel" onClick={onClose} disabled={isGenerating || isSending}>
                 Cancel
               </button>
-              <button className="btn-generate" onClick={handleGeneratePdf} disabled={isGenerating}>
+              <button
+                className="btn-send"
+                onClick={handleSendToTelegram}
+                disabled={isGenerating || isSending}
+              >
+                {isSending ? (
+                  <>
+                    <div className="spinner" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send size={14} />
+                    Telegram
+                  </>
+                )}
+              </button>
+              <button
+                className="btn-generate"
+                onClick={handleGeneratePdf}
+                disabled={isGenerating || isSending}
+              >
                 {isGenerating ? (
                   <>
                     <div className="spinner" />
