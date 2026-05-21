@@ -1,12 +1,8 @@
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import mongoose from 'mongoose';
-import {
-  getAccounts,
-  getCategories,
-  getTransactions,
-  getFinancialSummary,
-} from '@/lib/apps/pocketly/service/service';
+import { getAccounts, getCategories, getTransactions } from '@/lib/apps/pocketly/service/service';
+import { computeAnalysis } from '@/lib/finance-analysis';
 
 function isValidObjectId(value) {
   return typeof value === 'string' && mongoose.Types.ObjectId.isValid(value);
@@ -127,11 +123,9 @@ export function createGetAccountsTool() {
 export function createGetCategoriesTool() {
   return tool(
     async () => {
-      await ensureDb();
-      const categories = await Category.find({ deletedAt: null }).sort({ type: 1, name: 1 }).lean();
-      const serialized = categories.map(serializeCategory);
+      const categories = await getCategories();
       return JSON.stringify(
-        serialized.map((c) => ({
+        categories.map((c) => ({
           id: c.id,
           name: c.name,
           type: c.type,
@@ -162,21 +156,9 @@ export function createGetCategoriesTool() {
 export function createGetTransactionsTool() {
   return tool(
     async ({ type, limit }) => {
-      await ensureDb();
-      const query = { deletedAt: null };
-      if (type) query.type = type;
-
-      const transactions = await Transaction.find(query)
-        .populate('category', 'name icon type color')
-        .populate('account', 'name icon')
-        .populate('toAccount', 'name icon')
-        .sort({ date: -1 })
-        .limit(limit || 20)
-        .lean();
-
-      const serialized = transactions.map(serializeTransaction);
+      const transactions = await getTransactions({ type, limit: limit || 20 });
       return JSON.stringify(
-        serialized.map((t) => ({
+        transactions.map((t) => ({
           id: t.id,
           type: t.type,
           amount: t.amount,
@@ -218,106 +200,51 @@ export function createGetTransactionsTool() {
 export function createGetAnalysisTool() {
   return tool(
     async () => {
-      await ensureDb();
-      const [transactions, accounts] = await Promise.all([
-        Transaction.find({
-          deletedAt: null,
-          type: { $in: ['income', 'expense'] },
-        })
-          .populate('category', 'name icon type color')
-          .populate('account', 'name icon')
-          .lean(),
-        getAccountsWithComputedBalances(),
+      const [transactions, categories, accounts] = await Promise.all([
+        getTransactions(),
+        getCategories(),
+        getAccounts({ includeBalances: true }),
       ]);
+      const analysis = computeAnalysis({ transactions, categories, accounts });
 
-      const categoryBreakdown = [];
-      const dailyFlow = [];
-      const accountAnalysis = [];
-      let totalExpense = 0;
-      let totalIncome = 0;
-
-      const categoryMap = {};
-      const dailyMap = {};
-      const accountMap = {};
-
-      for (const t of transactions) {
-        const amount = t.amount;
-        if (t.type === 'expense') totalExpense += amount;
-        if (t.type === 'income') totalIncome += amount;
-
-        const catKey = `${t.category?._id || 'none'}-${t.type}`;
-        if (!categoryMap[catKey]) {
-          categoryMap[catKey] = {
-            categoryId: t.category?._id?.toString() || null,
-            type: t.type,
-            total: 0,
-            count: 0,
-            name: t.category?.name || 'Uncategorized',
-            icon: t.category?.icon || 'tag',
-            color: t.category?.color || '#999999',
-          };
-        }
-        categoryMap[catKey].total += amount;
-        categoryMap[catKey].count += 1;
-
-        const dateStr = new Date(t.date).toISOString().split('T')[0];
-        const dayKey = `${dateStr}-${t.type}`;
-        if (!dailyMap[dayKey]) {
-          dailyMap[dayKey] = { date: dateStr, type: t.type, total: 0 };
-        }
-        dailyMap[dayKey].total += amount;
-
-        const accKey = `${t.account?._id || 'none'}-${t.type}`;
-        if (!accountMap[accKey]) {
-          accountMap[accKey] = {
-            accountId: t.account?._id?.toString() || null,
-            type: t.type,
-            total: 0,
-            name: t.account?.name || 'Unknown',
-            icon: t.account?.icon || 'wallet',
-          };
-        }
-        accountMap[accKey].total += amount;
-      }
-
-      categoryBreakdown.push(...Object.values(categoryMap).sort((a, b) => b.total - a.total));
-      dailyFlow.push(...Object.values(dailyMap).sort((a, b) => a.date.localeCompare(b.date)));
-      accountAnalysis.push(...Object.values(accountMap));
       const totalAccountBalance = accounts.reduce(
-        (sum, account) => sum + (account.currentBalance || 0),
+        (sum, account) => (!account.ignored ? sum + (account.currentBalance || 0) : sum),
         0
       );
+      const accountActivityById = new Map();
+
+      for (const item of analysis.accountAnalysis) {
+        const existing = accountActivityById.get(item.accountId) || {
+          name: item.name,
+          expense: 0,
+          income: 0,
+          balance: accounts.find((account) => account.id === item.accountId)?.currentBalance || 0,
+        };
+
+        existing[item.type] = item.total;
+        accountActivityById.set(item.accountId, existing);
+      }
 
       const result = {
-        totalExpense,
-        totalIncome,
-        netFlow: totalIncome - totalExpense,
+        totalExpense: analysis.totalExpense,
+        totalIncome: analysis.totalIncome,
+        netFlow: analysis.netBalance,
         totalAccountBalance,
-        topExpenseCategories: categoryBreakdown
+        topExpenseCategories: analysis.categoryBreakdown
           .filter((c) => c.type === 'expense')
           .slice(0, 10)
           .map((c) => ({ name: c.name, total: c.total, count: c.count })),
-        topIncomeCategories: categoryBreakdown
+        topIncomeCategories: analysis.categoryBreakdown
           .filter((c) => c.type === 'income')
           .slice(0, 5)
           .map((c) => ({ name: c.name, total: c.total, count: c.count })),
-        accountActivity: accountAnalysis.map((a) => ({
-          name: a.name,
-          expense:
-            accountAnalysis.find((x) => x.accountId === a.accountId && x.type === 'expense')
-              ?.total || 0,
-          income:
-            accountAnalysis.find((x) => x.accountId === a.accountId && x.type === 'income')
-              ?.total || 0,
-          balance:
-            accounts.find((account) => account._id.toString() === a.accountId)?.currentBalance || 0,
-        })),
-        dailyExpenseFlow: dailyFlow
+        accountActivity: Array.from(accountActivityById.values()),
+        dailyExpenseFlow: analysis.dailyFlow
           .filter((d) => d.type === 'expense')
           .slice(-14)
           .map((d) => ({ date: d.date, total: d.total })),
         accounts: accounts.map((account) => ({
-          id: account._id.toString(),
+          id: account.id,
           name: account.name,
           balance: account.currentBalance || 0,
           initialBalance: account.initialBalance || 0,

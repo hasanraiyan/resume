@@ -13,6 +13,7 @@ export async function GET(request) {
     const account = searchParams.get('account');
     const category = searchParams.get('category');
     const type = searchParams.get('type');
+    const limit = searchParams.get('limit');
 
     const transactions = await getTransactions({
       startDate,
@@ -20,6 +21,7 @@ export async function GET(request) {
       account,
       category,
       type,
+      limit,
     });
 
     return NextResponse.json({ success: true, transactions });

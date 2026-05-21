@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useFinanceChat } from '@/context/FinanceChatContext';
 import { useMoney } from '@/context/MoneyContext';
+import { broadcastSavedTransaction } from '@/lib/finance-chat/draftEvents';
 import MessageList from '@/components/chatbot/MessageList';
 import ChatInput from '@/components/chatbot/ChatInput';
 
@@ -91,20 +92,14 @@ export default function ChatTab() {
 
         await addTransaction(payload, { switchTab: false });
 
-        // Broadcast to other components that this draft was saved
-        try {
-          window.localStorage.setItem(
-            'pocketly-last-saved-tx',
-            JSON.stringify({
-              amount: data.amount,
-              type: data.type,
-              accountId: data.accountId,
-              savedAt: Date.now(),
-            })
-          );
-        } catch {
-          // ignore
-        }
+        broadcastSavedTransaction({
+          amount: data.amount,
+          type: data.type,
+          accountId: data.accountId,
+          categoryId: data.categoryId,
+          toAccountId: data.toAccountId,
+          savedAt: Date.now(),
+        });
 
         if (setLocalState) {
           setLocalState('success');

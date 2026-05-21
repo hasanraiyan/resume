@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useMoney } from '@/context/MoneyContext';
+import { broadcastSavedTransaction } from '@/lib/finance-chat/draftEvents';
 import {
   Plus,
   X,
@@ -58,6 +59,17 @@ export default function AddTransactionModal() {
     : null;
 
   const filteredCategories = categories.filter((c) => c.type === type);
+  const parsedAmount = useMemo(() => {
+    if (!currentInput || currentInput === 'Error') return null;
+
+    try {
+      const result = evaluateMath(currentInput.replace(/x/g, '*'));
+      const rounded = Math.round(result * 100) / 100;
+      return Number.isFinite(rounded) && rounded > 0 ? rounded : null;
+    } catch {
+      return null;
+    }
+  }, [currentInput]);
 
   // Auto-scroll to the end of the amount display when input changes
   useEffect(() => {
@@ -167,11 +179,12 @@ export default function AddTransactionModal() {
     setValidationError('');
 
     // Validate amount
-    const amount = parseFloat(currentInput);
-    if (!amount || amount <= 0) {
+    const amount = parsedAmount;
+    if (!amount) {
       setValidationError('Please enter a valid amount greater than 0');
       return;
     }
+    setCurrentInput(String(amount));
 
     // Validate account
     if (!accountId) {
@@ -216,19 +229,14 @@ export default function AddTransactionModal() {
 
         // Broadcast to chat confirmation cards that this draft was saved externally
         if (isEditMode && !editTransactionData?.id) {
-          try {
-            window.localStorage.setItem(
-              'pocketly-last-saved-tx',
-              JSON.stringify({
-                amount,
-                type,
-                accountId,
-                savedAt: Date.now(),
-              })
-            );
-          } catch {
-            // ignore
-          }
+          broadcastSavedTransaction({
+            amount,
+            type,
+            accountId,
+            categoryId,
+            toAccountId,
+            savedAt: Date.now(),
+          });
         }
       }
       handleClose();
@@ -592,7 +600,7 @@ export default function AddTransactionModal() {
                 <div className="hidden lg:block mt-8">
                   <button
                     onClick={handleSubmit}
-                    disabled={parseFloat(currentInput) <= 0 || isSubmitting}
+                    disabled={!parsedAmount || isSubmitting}
                     className="w-full flex items-center justify-center gap-2 rounded-[20px] bg-[#1f644e] py-4 text-base font-bold text-white shadow-lg transition hover:bg-[#17503e] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {isSubmitting ? (
@@ -629,7 +637,7 @@ export default function AddTransactionModal() {
             </div>
             <button
               onClick={handleSubmit}
-              disabled={parseFloat(currentInput) <= 0 || isSubmitting}
+              disabled={!parsedAmount || isSubmitting}
               className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-[#1f644e] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#17503e] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Check className="w-4 h-4" />

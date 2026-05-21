@@ -196,7 +196,7 @@ function buildUiBlocks(toolName, output, toolArgs = {}) {
       {
         kind: 'category_breakdown',
         title: 'Category setup',
-        action: { type: 'switch_tab', tab: 'categories', label: 'Open categories' },
+        action: { type: 'switch_tab', tab: 'planning', label: 'Open planning' },
         data: {
           mode: 'groups',
           income,

@@ -2,6 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { ArrowLeftRight, Landmark, TrendingDown, TrendingUp } from 'lucide-react';
+import {
+  SAVED_TRANSACTION_EVENT,
+  SAVED_TRANSACTION_STORAGE_KEY,
+} from '@/lib/finance-chat/draftEvents';
 import IconRenderer from './IconRenderer';
 import { McqQuestionBlock } from './McqQuestionBlocks';
 
@@ -45,6 +49,15 @@ function getAccountIconClass(icon) {
   if (icon === 'ippb' || icon === 'pnb') return 'w-10 h-8 object-contain';
   if (icon === 'rupay') return 'w-7 h-7 object-contain';
   return 'w-6 h-6 scale-125';
+}
+
+function savedTransactionMatchesDraft(saved, draft) {
+  return (
+    saved &&
+    String(saved.amount) === String(draft.amount) &&
+    saved.type === draft.type &&
+    saved.accountId === draft.accountId
+  );
 }
 
 function ActionButton({ action, onInteract }) {
@@ -374,26 +387,33 @@ function TransactionConfirmationBlock({ block, onInteract }) {
   useEffect(() => {
     if (localState !== 'idle' || externallySaved) return;
 
-    const handleStorageEvent = (e) => {
-      if (e.key === 'pocketly-chat-draft-saved') {
-        try {
-          const saved = JSON.parse(e.newValue);
-          if (
-            saved &&
-            String(saved.amount) === String(data.amount) &&
-            saved.type === data.type &&
-            saved.accountId === data.accountId
-          ) {
-            setExternallySaved(true);
-          }
-        } catch {
-          // ignore
-        }
+    const applySavedPayload = (saved) => {
+      if (savedTransactionMatchesDraft(saved, data)) {
+        setExternallySaved(true);
       }
     };
 
+    const handleStorageEvent = (e) => {
+      if (e.key !== SAVED_TRANSACTION_STORAGE_KEY || !e.newValue) return;
+
+      try {
+        applySavedPayload(JSON.parse(e.newValue));
+      } catch {
+        // ignore
+      }
+    };
+
+    const handleSameTabEvent = (event) => {
+      applySavedPayload(event.detail);
+    };
+
     window.addEventListener('storage', handleStorageEvent);
-    return () => window.removeEventListener('storage', handleStorageEvent);
+    window.addEventListener(SAVED_TRANSACTION_EVENT, handleSameTabEvent);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageEvent);
+      window.removeEventListener(SAVED_TRANSACTION_EVENT, handleSameTabEvent);
+    };
   }, [localState, externallySaved, data.amount, data.type, data.accountId]);
 
   // Also check on mount in case the transaction was saved just before
@@ -402,15 +422,10 @@ function TransactionConfirmationBlock({ block, onInteract }) {
     if (localState !== 'idle' || externallySaved) return;
 
     try {
-      const lastSaved = window.localStorage.getItem('pocketly-last-saved-tx');
+      const lastSaved = window.localStorage.getItem(SAVED_TRANSACTION_STORAGE_KEY);
       if (lastSaved) {
         const saved = JSON.parse(lastSaved);
-        if (
-          saved &&
-          String(saved.amount) === String(data.amount) &&
-          saved.type === data.type &&
-          saved.accountId === data.accountId
-        ) {
+        if (savedTransactionMatchesDraft(saved, data)) {
           setExternallySaved(true);
         }
       }

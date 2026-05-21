@@ -78,7 +78,10 @@ export async function getTransactions({ type, limit, startDate, endDate, account
     .populate('toAccount', 'name icon currency')
     .sort({ date: -1, createdAt: -1 });
 
-  dbQuery = dbQuery.limit(limit || 20);
+  const parsedLimit = Number(limit);
+  if (Number.isFinite(parsedLimit) && parsedLimit > 0) {
+    dbQuery = dbQuery.limit(parsedLimit);
+  }
 
   const transactions = await dbQuery.lean();
   return transactions.map(serializeTransaction);
