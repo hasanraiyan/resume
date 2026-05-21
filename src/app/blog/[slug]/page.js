@@ -62,7 +62,7 @@ export default async function ArticlePage({ params }) {
   const isAuthenticated = !!session?.user?.isAdmin;
   const [{ success, article }, siteConfig] = await Promise.all([
     getArticleBySlug(slug, isAuthenticated),
-    getSiteConfig(),
+    { domain: 'example.com' },
   ]);
 
   if (!success || !article) {
@@ -71,7 +71,7 @@ export default async function ArticlePage({ params }) {
 
   // Fetch related articles
   // Get a few recent published articles
-  const { articles: allArticles } = await getAllPublishedArticles(isAuthenticated, { limit: 4 });
+  const { articles: allArticles } = { articles: [] };
   const relatedArticles = allArticles?.filter((a) => a.slug !== article.slug).slice(0, 3) || [];
 
   const formatDate = (dateString) => {

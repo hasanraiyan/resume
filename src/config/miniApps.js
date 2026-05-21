@@ -2,6 +2,15 @@
 
 export const MINI_APPS = [
   {
+    id: 'recall',
+    name: 'ReCall',
+    tagline: 'Your external memory. Throw in anything instantly, retrieve by thought.',
+    href: '/apps/recall',
+    category: 'Memory',
+    iconSrc:
+      'https://res.cloudinary.com/djkpavwmp/image/upload/v1738722409/portfolio_assets/i39owf4xscig4603h4es.png', // Temporary placeholder
+  },
+  {
     id: 'snaplinks',
     name: 'SnapLinks',
     tagline: 'Manage and track short links with analytics.',
