@@ -2,6 +2,7 @@ import { AGENT_IDS } from '@/lib/constants/agents';
 import BaseAgent from '../BaseAgent';
 import { AIMessage, HumanMessage, SystemMessage } from '@langchain/core/messages';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
+import { EventType } from '@ag-ui/core';
 import { createFinanceTools } from '../utils/finance-tools';
 
 function tryParseJson(value) {
@@ -114,6 +115,34 @@ function getToolLabel(toolName) {
   };
 
   return labels[toolName] || `Using ${toolName}`;
+}
+
+function getContentDelta(chunk) {
+  const raw = chunk?.content || chunk?.text || '';
+
+  if (typeof raw === 'string') return raw;
+
+  if (Array.isArray(raw)) {
+    return raw
+      .map((part) => {
+        if (typeof part === 'string') return part;
+        if (typeof part?.text === 'string') return part.text;
+        return '';
+      })
+      .join('');
+  }
+
+  return raw ? JSON.stringify(raw) : '';
+}
+
+function stringifyToolOutput(output) {
+  if (typeof output === 'string') return output;
+
+  try {
+    return JSON.stringify(output ?? null);
+  } catch {
+    return String(output);
+  }
 }
 
 function shouldRenderGui(toolName, toolArgs = {}) {
@@ -426,6 +455,7 @@ How clarification answers appear in chat:
     const eventStream = await agent.streamEvents({ messages }, { version: 'v2' });
     const activeToolCalls = new Map();
     const activeToolInputsByName = new Map();
+    let activeTextMessageId = null;
     let fallbackToolCounter = 0;
 
     for await (const event of eventStream) {
@@ -434,12 +464,38 @@ How clarification answers appear in chat:
         JSON.stringify(event.data).substring(0, 200)
       );
 
-      if (event.event === 'on_chat_model_stream' && event.data.chunk?.content) {
-        yield { type: 'content', message: event.data.chunk.content };
+      if (event.event === 'on_chat_model_stream') {
+        const delta = getContentDelta(event.data.chunk);
+
+        if (delta) {
+          if (!activeTextMessageId) {
+            activeTextMessageId = `finance-msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            yield {
+              type: EventType.TEXT_MESSAGE_START,
+              messageId: activeTextMessageId,
+              role: 'assistant',
+            };
+          }
+
+          yield {
+            type: EventType.TEXT_MESSAGE_CONTENT,
+            messageId: activeTextMessageId,
+            delta,
+          };
+        }
+      } else if (event.event === 'on_chat_model_end') {
+        if (activeTextMessageId) {
+          yield {
+            type: EventType.TEXT_MESSAGE_END,
+            messageId: activeTextMessageId,
+          };
+          activeTextMessageId = null;
+        }
       } else if (event.event === 'on_tool_start') {
         const toolCallId =
           event.run_id || event.data?.run_id || `${event.name}-${++fallbackToolCounter}`;
         const normalizedInput = normalizeToolInput(event.data?.input || event.data?.inputs || {});
+        const encodedInput = JSON.stringify(normalizedInput);
         activeToolCalls.set(toolCallId, {
           name: event.name,
           input: normalizedInput,
@@ -447,19 +503,42 @@ How clarification answers appear in chat:
         pushToolInput(activeToolInputsByName, event.name, normalizedInput);
 
         yield {
-          type: 'tool_start',
-          toolName: event.name,
+          type: EventType.TOOL_CALL_START,
           toolCallId,
+          toolCallName: event.name,
           label: getToolLabel(event.name),
           guiRequested: shouldRenderGui(event.name, normalizedInput),
         };
+
+        if (encodedInput) {
+          yield {
+            type: EventType.TOOL_CALL_ARGS,
+            toolCallId,
+            delta: encodedInput,
+          };
+        }
       } else if (event.event === 'on_tool_end') {
         this.logger.info(
           `[TOOL_RESULT] name="${event.name}", output length="${JSON.stringify(event.data.output || '').length}"`
         );
 
-        const toolCallId = event.run_id || event.data?.run_id || null;
-        const toolCallMeta = activeToolCalls.get(toolCallId);
+        let toolCallId = event.run_id || event.data?.run_id || null;
+        let toolCallMeta = toolCallId ? activeToolCalls.get(toolCallId) : null;
+
+        if (!toolCallMeta) {
+          for (const [activeToolCallId, activeToolCallMeta] of activeToolCalls) {
+            if (activeToolCallMeta.name === event.name) {
+              toolCallId = activeToolCallId;
+              toolCallMeta = activeToolCallMeta;
+              break;
+            }
+          }
+        }
+
+        if (!toolCallId) {
+          toolCallId = `${event.name}-${++fallbackToolCounter}`;
+        }
+
         const toolName = toolCallMeta?.name || event.name;
         const toolInput = toolCallMeta?.input || shiftToolInput(activeToolInputsByName, toolName);
         const uiBlocks = buildUiBlocks(toolName, event.data.output, toolInput);
@@ -469,20 +548,31 @@ How clarification answers appear in chat:
         );
 
         yield {
-          type: 'tool_result',
-          name: toolName,
+          type: EventType.TOOL_CALL_END,
           toolCallId,
-          output: event.data.output,
         };
 
         yield {
-          type: 'tool_end',
-          toolName,
+          type: EventType.TOOL_CALL_RESULT,
+          messageId: `finance-tool-result-${toolCallId}`,
           toolCallId,
-          uiBlocks,
-          guiRequested: shouldRenderGui(toolName, toolInput),
-          guiRendered: uiBlocks.length > 0,
+          content: stringifyToolOutput(event.data.output),
+          role: 'tool',
         };
+
+        if (uiBlocks.length > 0) {
+          yield {
+            type: EventType.CUSTOM,
+            name: 'pocketly_ui_blocks',
+            value: {
+              toolName,
+              toolCallId,
+              uiBlocks,
+              guiRequested: shouldRenderGui(toolName, toolInput),
+              guiRendered: uiBlocks.length > 0,
+            },
+          };
+        }
 
         if (toolCallId) {
           activeToolCalls.delete(toolCallId);

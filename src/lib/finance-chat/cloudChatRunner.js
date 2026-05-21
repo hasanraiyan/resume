@@ -1,4 +1,31 @@
+import { EventType, HttpAgent } from '@ag-ui/client';
 import { applyCloudStreamEventToMessages, setAssistantFallback } from './messageState';
+
+function toAguiMessages(history, userMessage) {
+  const messages = history
+    .filter(
+      (message) => message.content && (message.role === 'user' || message.role === 'assistant')
+    )
+    .map((message, index) => ({
+      id: String(message.id || `finance-history-${index}`),
+      role: message.role,
+      content: message.content,
+    }));
+
+  messages.push({
+    id: `finance-user-${Date.now()}`,
+    role: 'user',
+    content: userMessage.trim(),
+  });
+
+  return messages;
+}
+
+function createAbortError() {
+  const error = new Error('The operation was aborted.');
+  error.name = 'AbortError';
+  return error;
+}
 
 export async function runCloudFinanceChat({
   userMessage,
@@ -7,70 +34,61 @@ export async function runCloudFinanceChat({
   signal,
   setMessages,
 }) {
-  const chatHistory = history
-    .filter((message) => message.content)
-    .map((message) => ({
-      role: message.role,
-      content: message.content,
-    }));
+  const abortController = new AbortController();
+  const abortRun = () => abortController.abort(signal?.reason);
 
-  const response = await fetch('/api/pocketly/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      userMessage: userMessage.trim(),
-      chatHistory,
-      // Pass current time so the server-side agent has an explicit clock
-      meta: { now: new Date().toISOString() },
-    }),
-    signal,
-  });
-
-  if (!response.ok) {
-    throw new Error(response.status === 403 ? 'Authentication required' : 'Failed to get response');
+  if (signal?.aborted) {
+    abortRun();
+  } else {
+    signal?.addEventListener('abort', abortRun, { once: true });
   }
 
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
+  const agent = new HttpAgent({
+    url: '/api/pocketly/chat',
+    threadId: `finance-${Date.now()}`,
+    initialMessages: toAguiMessages(history, userMessage),
+  });
+
   let hasUiBlocks = false;
   let hasContent = false;
-  let buffer = '';
 
   const applyEvent = (event) => {
-    if (event.type === 'content' && event.message) {
+    if (event.type === EventType.TEXT_MESSAGE_CONTENT && event.delta) {
       hasContent = true;
     }
-    if ((event.uiBlocks || []).length > 0) {
+    if (
+      event.type === EventType.CUSTOM &&
+      event.name === 'pocketly_ui_blocks' &&
+      (event.value?.uiBlocks || []).length > 0
+    ) {
       hasUiBlocks = true;
     }
 
     setMessages((prev) => applyCloudStreamEventToMessages(prev, assistantMsgId, event));
   };
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || '';
-
-    for (const line of lines) {
-      if (!line.trim()) continue;
-      try {
-        applyEvent(JSON.parse(line));
-      } catch {
-        // Skip malformed lines.
+  try {
+    await agent.runAgent(
+      {
+        abortController,
+        forwardedProps: {
+          meta: { now: new Date().toISOString() },
+        },
+      },
+      {
+        onEvent: ({ event }) => {
+          applyEvent(event);
+        },
       }
+    );
+  } catch (error) {
+    if (abortController.signal.aborted || error.name === 'AbortError') {
+      throw createAbortError();
     }
-  }
 
-  if (buffer.trim()) {
-    try {
-      applyEvent(JSON.parse(buffer));
-    } catch {
-      // Ignore trailing partial payload.
-    }
+    throw new Error(error.status === 403 ? 'Authentication required' : 'Failed to get response');
+  } finally {
+    signal?.removeEventListener('abort', abortRun);
   }
 
   if (!hasContent && !hasUiBlocks) {

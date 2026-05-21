@@ -1,4 +1,5 @@
 import { Landmark, ListTree, ReceiptText, Tags } from 'lucide-react';
+import { EventType } from '@ag-ui/core';
 
 export const WELCOME_MESSAGE = {
   id: 1,
@@ -119,7 +120,7 @@ export function restoreMessagesFromStorage(rawMessages) {
 }
 
 export function applyCloudStreamEventToMessages(messages, assistantMsgId, event) {
-  if (event.type === 'content') {
+  if (event.type === 'content' || event.type === EventType.TEXT_MESSAGE_CONTENT) {
     const target = messages.find((message) => message.id === assistantMsgId);
     if (!target) return messages;
 
@@ -134,20 +135,26 @@ export function applyCloudStreamEventToMessages(messages, assistantMsgId, event)
     }
 
     const nextContent = target.content || '';
-    const fullContent = nextContent + event.message;
+    const fullContent = nextContent + (event.message || event.delta || '');
     return messages.map((message) =>
       message.id === assistantMsgId ? { ...message, content: fullContent } : message
     );
   }
 
-  if (event.type === 'tool_start') {
+  if (event.type === 'tool_start' || event.type === EventType.TOOL_CALL_START) {
+    const toolName = event.toolName || event.toolCallName;
     return messages.map((message) =>
       message.id === assistantMsgId
         ? {
             ...message,
             steps: [
               ...(message.steps || []),
-              createToolStep(event.toolName, event.label, event.toolCallId, event.guiRequested),
+              createToolStep(
+                toolName,
+                event.label || toolName || 'Using tool',
+                event.toolCallId,
+                event.guiRequested
+              ),
             ],
             guiRequested: message.guiRequested || event.guiRequested || false,
           }
@@ -155,7 +162,7 @@ export function applyCloudStreamEventToMessages(messages, assistantMsgId, event)
     );
   }
 
-  if (event.type === 'tool_end') {
+  if (event.type === 'tool_end' || event.type === EventType.TOOL_CALL_END) {
     return messages.map((message) => {
       if (message.id !== assistantMsgId) return message;
 
@@ -206,13 +213,67 @@ export function applyCloudStreamEventToMessages(messages, assistantMsgId, event)
 
       return {
         ...message,
-        // If this tool_end introduced an MCQ clarification UI, clear any
-        // accumulated assistant text so the user just sees the question card.
+        // If this event introduced an MCQ clarification UI, clear any accumulated
+        // assistant text so the user just sees the question card.
         content: hasBlockingUi ? '' : message.content,
         steps: finalizedSteps,
         uiBlocks: nextBlocks,
         guiRequested: message.guiRequested || event.guiRequested || false,
         guiRendered: message.guiRendered || event.guiRendered || (event.uiBlocks || []).length > 0,
+      };
+    });
+  }
+
+  if (event.type === EventType.CUSTOM && event.name === 'pocketly_ui_blocks') {
+    const {
+      toolName,
+      toolCallId,
+      uiBlocks = [],
+      guiRequested = false,
+      guiRendered = uiBlocks.length > 0,
+    } = event.value || {};
+
+    return messages.map((message) => {
+      if (message.id !== assistantMsgId) return message;
+
+      const nextSteps = (message.steps || []).map((step) => {
+        const matchesById = toolCallId && step.id === toolCallId;
+        const matchesFallback =
+          !toolCallId && toolName && step.toolName === toolName && step.type === 'tool';
+
+        return matchesById || matchesFallback
+          ? {
+              ...step,
+              guiRequested,
+              guiRendered,
+            }
+          : step;
+      });
+
+      const nextBlocks = [...(message.uiBlocks || [])];
+      for (const block of uiBlocks) {
+        const exists = nextBlocks.some(
+          (existing) =>
+            existing.kind === block.kind &&
+            JSON.stringify(existing.data) === JSON.stringify(block.data)
+        );
+
+        if (!exists) {
+          nextBlocks.push(block);
+        }
+      }
+
+      const hasBlockingUi = uiBlocks.some(
+        (block) => block.kind === 'mcq_question' || block.kind === 'mcq_question_group'
+      );
+
+      return {
+        ...message,
+        content: hasBlockingUi ? '' : message.content,
+        steps: nextSteps,
+        uiBlocks: nextBlocks,
+        guiRequested: message.guiRequested || guiRequested,
+        guiRendered: message.guiRendered || guiRendered,
       };
     });
   }
