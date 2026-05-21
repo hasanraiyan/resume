@@ -207,23 +207,23 @@ export default function FinanceSettingsTab() {
             </div>
 
             <div className="grid grid-cols-3 gap-2 sm:gap-4">
-              <div className="bg-[#f0f5f2] rounded-xl p-3 sm:p-4 text-center min-w-0">
+              <div className="bg-[#f0f5f2] rounded-xl px-2 py-3 text-center min-w-0 sm:p-4">
                 <p className="text-xl sm:text-2xl font-bold text-[#1f644e]">{accounts.length}</p>
-                <p className="text-xs text-[#7c8e88] mt-1 font-bold uppercase tracking-wider">
+                <p className="mt-1 break-words text-[10px] font-bold uppercase leading-tight tracking-normal text-[#7c8e88] sm:text-xs sm:tracking-wider">
                   Accounts
                 </p>
               </div>
-              <div className="bg-[#f0f5f2] rounded-xl p-3 sm:p-4 text-center min-w-0">
+              <div className="bg-[#f0f5f2] rounded-xl px-2 py-3 text-center min-w-0 sm:p-4">
                 <p className="text-xl sm:text-2xl font-bold text-[#1f644e]">
                   {stats.totalTransactionCount}
                 </p>
-                <p className="text-xs text-[#7c8e88] mt-1 font-bold uppercase tracking-wider">
+                <p className="mt-1 break-words text-[10px] font-bold uppercase leading-tight tracking-normal text-[#7c8e88] sm:text-xs sm:tracking-wider">
                   Transactions
                 </p>
               </div>
-              <div className="bg-[#f0f5f2] rounded-xl p-3 sm:p-4 text-center min-w-0">
+              <div className="bg-[#f0f5f2] rounded-xl px-2 py-3 text-center min-w-0 sm:p-4">
                 <p className="text-xl sm:text-2xl font-bold text-[#1f644e]">{categories.length}</p>
-                <p className="text-xs text-[#7c8e88] mt-1 font-bold uppercase tracking-wider">
+                <p className="mt-1 break-words text-[10px] font-bold uppercase leading-tight tracking-normal text-[#7c8e88] sm:text-xs sm:tracking-wider">
                   Categories
                 </p>
               </div>
