@@ -13,6 +13,8 @@ import {
   Trash2,
   Pencil,
   RefreshCw,
+  Undo2,
+  X,
 } from 'lucide-react';
 import { PurseSVG } from '@/components/pocketly-tracker/IconRenderer';
 
@@ -52,6 +54,9 @@ export default function RecordsTab() {
   const [mobileActionTransaction, setMobileActionTransaction] = useState(null);
   const [swipedTxId, setSwipedTxId] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedType, setSelectedType] = useState('all');
+  const [deletedTransaction, setDeletedTransaction] = useState(null);
+  const [undoTimeoutId, setUndoTimeoutId] = useState(null);
   const menuRef = useRef(null);
   const swipeTouchRef = useRef(null);
   const scrollRef = useRef(null);
@@ -77,6 +82,12 @@ export default function RecordsTab() {
     };
   }, [swipedTxId]);
 
+  useEffect(() => {
+    return () => {
+      if (undoTimeoutId) clearTimeout(undoTimeoutId);
+    };
+  }, [undoTimeoutId]);
+
   const navigateWeek = (direction) => {
     navigatePeriod(direction);
   };
@@ -89,16 +100,24 @@ export default function RecordsTab() {
   }, [periodEnd, periodStart]);
 
   const filteredTransactions = useMemo(() => {
-    if (!searchQuery) return transactions;
+    let filtered = transactions;
 
-    const normalizedQuery = searchQuery.toLowerCase();
-    return transactions.filter(
-      (transaction) =>
-        transaction.description?.toLowerCase().includes(normalizedQuery) ||
-        transaction.category?.name?.toLowerCase().includes(normalizedQuery) ||
-        transaction.account?.name?.toLowerCase().includes(normalizedQuery)
-    );
-  }, [searchQuery, transactions]);
+    if (searchQuery) {
+      const normalizedQuery = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (transaction) =>
+          transaction.description?.toLowerCase().includes(normalizedQuery) ||
+          transaction.category?.name?.toLowerCase().includes(normalizedQuery) ||
+          transaction.account?.name?.toLowerCase().includes(normalizedQuery)
+      );
+    }
+
+    if (selectedType !== 'all') {
+      filtered = filtered.filter((transaction) => transaction.type === selectedType);
+    }
+
+    return filtered;
+  }, [searchQuery, transactions, selectedType]);
 
   const groupedEntries = useMemo(() => {
     const groups = filteredTransactions.reduce((accumulator, transaction) => {
@@ -153,12 +172,31 @@ export default function RecordsTab() {
 
   const handleDelete = async (id) => {
     try {
-      await deleteTransaction(id);
+      const txToDelete = transactions.find((tx) => tx.id === id);
+      if (txToDelete) {
+        setDeletedTransaction(txToDelete);
+        if (undoTimeoutId) clearTimeout(undoTimeoutId);
+
+        const timeoutId = setTimeout(async () => {
+          await deleteTransaction(id);
+          setDeletedTransaction(null);
+        }, 5000);
+
+        setUndoTimeoutId(timeoutId);
+      }
       setOpenMenuId(null);
       setSwipedTxId(null);
     } catch (error) {
       console.error('Failed to delete transaction:', error);
     }
+  };
+
+  const handleUndo = () => {
+    if (undoTimeoutId) {
+      clearTimeout(undoTimeoutId);
+      setUndoTimeoutId(null);
+    }
+    setDeletedTransaction(null);
   };
 
   const handleRefresh = useCallback(async () => {
@@ -350,6 +388,27 @@ export default function RecordsTab() {
             </div>
           </div>
 
+          <div className="mb-4 flex gap-2">
+            {[
+              { id: 'all', label: 'All' },
+              { id: 'income', label: 'Income' },
+              { id: 'expense', label: 'Expense' },
+              { id: 'transfer', label: 'Transfer' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setSelectedType(tab.id)}
+                className={`px-4 py-2 rounded-full text-sm font-semibold transition border cursor-pointer ${
+                  selectedType === tab.id
+                    ? 'bg-[#1f644e] text-white border-[#1f644e]'
+                    : 'border-[#e5e3d8] text-[#7c8e88] bg-white'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
           {showEmptyState ? (
             <div className="rounded-xl border border-[#e5e3d8] bg-white p-12 text-center">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#f0f5f2]">
@@ -386,11 +445,14 @@ export default function RecordsTab() {
                       const catIcon = transaction.category?.icon || 'tag';
                       const catName = transaction.category?.name || 'Uncategorized';
                       const isMenuOpen = openMenuId === transaction.id;
+                      const isDeleted = deletedTransaction?.id === transaction.id;
 
                       return (
                         <div
                           key={transaction.id}
-                          className="relative overflow-hidden first:rounded-t-xl last:rounded-b-xl sm:overflow-visible"
+                          className={`relative overflow-hidden first:rounded-t-xl last:rounded-b-xl sm:overflow-visible transition-opacity ${
+                            isDeleted ? 'opacity-50' : 'opacity-100'
+                          }`}
                         >
                           <div
                             className={`absolute inset-y-0 right-0 z-0 flex items-center pr-1 transition-opacity duration-200 sm:hidden ${
@@ -522,7 +584,6 @@ export default function RecordsTab() {
                               <div className="relative">
                                 <button
                                   onClick={() => {
-                                    // On mobile, open a bottom sheet; on larger screens, use popover menu.
                                     if (window.innerWidth < 640) {
                                       setMobileActionTransaction(transaction);
                                     } else {
@@ -571,6 +632,28 @@ export default function RecordsTab() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {deletedTransaction && (
+            <div className="fixed bottom-6 left-4 right-4 z-50 flex items-center justify-between rounded-xl bg-[#1e3a34] px-4 py-3 text-white shadow-lg sm:left-auto sm:right-6 sm:w-auto sm:max-w-sm">
+              <div className="flex items-center gap-2">
+                <Trash2 className="h-4 w-4" />
+                <span className="text-sm font-semibold">Transaction deleted</span>
+              </div>
+              <button
+                onClick={handleUndo}
+                className="ml-4 flex items-center gap-1 rounded-lg bg-white/20 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/30"
+              >
+                <Undo2 className="h-3 w-3" />
+                Undo
+              </button>
+              <button
+                onClick={() => setDeletedTransaction(null)}
+                className="ml-2 rounded-lg p-1 text-white/60 transition hover:text-white hover:bg-white/10"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
           )}
 
