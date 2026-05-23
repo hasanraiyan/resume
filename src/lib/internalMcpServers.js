@@ -1,13 +1,14 @@
 import { getBaseUrl } from '@/lib/mcp/oauth';
 import { MCP_APPS } from '@/lib/mcp/scopes';
 
-const INTERNAL_MCP_ORDER = ['pocketly', 'snaplinks', 'coursify', 'recall'];
+const INTERNAL_MCP_ORDER = ['pocketly', 'snaplinks', 'coursify', 'recall', 'youtube'];
 
 const MCP_COLORS = {
   pocketly: 'emerald-500',
   snaplinks: 'sky-500',
   coursify: 'violet-500',
   recall: 'amber-500',
+  youtube: 'red-500',
 };
 
 export function getInternalMcpServers() {

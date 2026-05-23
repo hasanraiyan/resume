@@ -1,4 +1,5 @@
 import { getBaseUrl } from '@/lib/mcp/oauth';
+import { MCP_SCOPES_SUPPORTED } from '@/lib/mcp/scopes';
 
 export async function GET() {
   const base = getBaseUrl();
@@ -7,7 +8,7 @@ export async function GET() {
       resource: `${base}/api/mcp`,
       authorization_servers: [base],
       bearer_methods_supported: ['header'],
-      scopes_supported: ['pocketly', 'snaplinks', 'coursify', 'recall'],
+      scopes_supported: MCP_SCOPES_SUPPORTED,
     },
     { headers: { 'Access-Control-Allow-Origin': '*' } }
   );

@@ -20,9 +20,15 @@ export const MCP_APPS = {
     description: 'Store, search, and manage your personal memory bank.',
     icon: '/images/apps/recall.png',
   },
+  youtube: {
+    name: 'YouTube Search',
+    description: 'Find educational YouTube videos, tutorials, thumbnails, and direct video links.',
+    icon: '/images/apps/youtube.svg',
+  },
 };
 
 const RESOURCE_SCOPE_PATTERNS = [
+  { pattern: /\/api\/mcp\/youtube\/?$/i, scope: 'youtube' },
   { pattern: /\/api\/mcp\/recall\/?$/i, scope: 'recall' },
   { pattern: /\/api\/mcp\/pocketly\/?$/i, scope: 'pocketly' },
   { pattern: /\/api\/mcp\/snaplinks\/?$/i, scope: 'snaplinks' },
