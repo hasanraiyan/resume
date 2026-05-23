@@ -1,9 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Sparkles, Plus, Trash2, Loader2, Pencil, Check, BookOpen } from 'lucide-react';
 import { SkeletonProvider, SkeletonWrapper } from 'react-skeletonify';
 import 'react-skeletonify/dist/index.css';
+import SessionProvider from '@/components/SessionProvider';
 import AppLayout from '@/components/layout/AppLayout';
 
 const tabs = [
@@ -13,21 +16,25 @@ const tabs = [
 
 export default function RecallApp() {
   return (
-    <SkeletonProvider
-      config={{
-        animation: 'animation-1',
-        borderRadius: '8px',
-        animationSpeed: 2,
-        exceptTags: ['button', 'svg', 'img'],
-        background: '#e5e3d8',
-      }}
-    >
-      <RecallContent />
-    </SkeletonProvider>
+    <SessionProvider>
+      <SkeletonProvider
+        config={{
+          animation: 'animation-1',
+          borderRadius: '8px',
+          animationSpeed: 2,
+          exceptTags: ['button', 'svg', 'img'],
+          background: '#e5e3d8',
+        }}
+      >
+        <RecallContent />
+      </SkeletonProvider>
+    </SessionProvider>
   );
 }
 
 function RecallContent() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [memories, setMemories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
@@ -45,8 +52,17 @@ function RecallContent() {
   const searchInputRef = useRef(null);
 
   useEffect(() => {
-    fetchMemories();
-  }, []);
+    if (status === 'loading') return;
+    if (!session || session.user.role !== 'admin') {
+      router.push('/login?callbackUrl=/apps/recall');
+    }
+  }, [session, status, router]);
+
+  useEffect(() => {
+    if (session && session.user.role === 'admin') {
+      fetchMemories();
+    }
+  }, [session]);
 
   const fetchMemories = async () => {
     try {
@@ -375,6 +391,21 @@ function RecallContent() {
       );
     }
   };
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#fcfbf5]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#1f644e] border-t-transparent mx-auto"></div>
+          <p className="mt-4 text-[#7c8e88] font-medium">Loading ReCall...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session || session.user.role !== 'admin') {
+    return null;
+  }
 
   return (
     <AppLayout
