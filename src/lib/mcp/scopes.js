@@ -35,6 +35,11 @@ const RESOURCE_SCOPE_PATTERNS = [
   { pattern: /\/api\/mcp\/coursify\/?$/i, scope: 'coursify' },
 ];
 
+export function getMcpResourceUrl(scope, baseUrl) {
+  if (!scope || !MCP_APPS[scope]) return null;
+  return `${baseUrl.replace(/\/$/, '')}/api/mcp/${scope}`;
+}
+
 export function scopeFromResource(resource) {
   if (!resource || typeof resource !== 'string') return null;
   const normalized = resource.trim();
@@ -61,12 +66,11 @@ export function parseScopeString(scope) {
 
 /** Resolve scopes from OAuth scope param and/or RFC 8707 resource URL */
 export function resolveMcpScopes({ scope = '', resource = null } = {}) {
-  const fromScope = parseScopeString(scope);
   const fromResource = scopeFromResource(resource);
-  if (fromResource && !fromScope.includes(fromResource)) {
-    return [...fromScope, fromResource];
+  if (fromResource) {
+    return [fromResource];
   }
-  return fromScope;
+  return parseScopeString(scope);
 }
 
 /** App key stored on AppConnection — prefer resource-specific app when present */

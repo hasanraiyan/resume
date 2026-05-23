@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import dbConnect from '@/lib/dbConnect';
 import McpClient from '@/models/McpClient';
+import { parseScopeString } from '@/lib/mcp/scopes';
 
 const rateLimit = new Map();
 const WINDOW_MS = 15 * 60 * 1000;
@@ -32,6 +33,7 @@ export async function POST(request) {
     await dbConnect();
 
     const clientId = `mcp_${crypto.randomBytes(16).toString('hex')}`;
+    const scope = parseScopeString(body.scope).join(' ');
 
     const client = await McpClient.create({
       clientId,
@@ -40,7 +42,7 @@ export async function POST(request) {
       grantTypes: body.grant_types || ['authorization_code'],
       responseTypes: body.response_types || ['code'],
       tokenEndpointAuthMethod: body.token_endpoint_auth_method || 'none',
-      scope: body.scope || 'pocketly',
+      scope,
     });
 
     return NextResponse.json(

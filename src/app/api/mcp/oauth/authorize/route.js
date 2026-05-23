@@ -43,7 +43,7 @@ export async function GET(request) {
   const codeChallenge = searchParams.get('code_challenge');
   const codeChallengeMethod = searchParams.get('code_challenge_method');
   const state = searchParams.get('state');
-  const scope = searchParams.get('scope') || '';
+  const requestedScope = searchParams.get('scope') || '';
   const resource = searchParams.get('resource') || null;
 
   if (responseType !== 'code') {
@@ -73,7 +73,7 @@ export async function GET(request) {
     redirectUri: redirectUri || client.redirectUris[0],
     codeChallenge,
     state,
-    scope,
+    scope: requestedScope || client.scope || '',
     resource,
   });
 
@@ -120,7 +120,7 @@ export async function POST() {
       scope: pending.scope,
       resource: pending.resource,
     });
-    const scopeForToken = pending.scope?.trim() || resolvedScopes.join(' ');
+    const scopeForToken = resolvedScopes.join(' ');
 
     const primaryScope = getPrimaryMcpScope({
       scope: scopeForToken,
@@ -131,7 +131,7 @@ export async function POST() {
         {
           error: 'invalid_scope',
           error_description:
-            'No valid MCP scope. Use scope=recall or connect via the Recall MCP resource URL.',
+            'No valid MCP scope. Connect with a supported MCP resource URL or request a supported scope.',
         },
         { status: 400 }
       );
