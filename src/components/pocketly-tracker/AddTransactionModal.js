@@ -49,6 +49,11 @@ export default function AddTransactionModal() {
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [transactionDate, setTransactionDate] = useState(
+    editTransactionData?.date
+      ? new Date(editTransactionData.date).toISOString().split('T')[0]
+      : new Date().toISOString().split('T')[0]
+  );
   const amountDisplayRef = useRef(null);
 
   const isEditMode = !!editTransactionData;
@@ -163,6 +168,9 @@ export default function AddTransactionModal() {
       setCategoryId(editTransactionData.categoryId || editTransactionData.category?.id || '');
       setAccountId(editTransactionData.accountId || editTransactionData.account?.id || '');
       setToAccountId(editTransactionData.toAccountId || editTransactionData.toAccount?.id || '');
+      if (editTransactionData.date) {
+        setTransactionDate(new Date(editTransactionData.date).toISOString().split('T')[0]);
+      }
     }
   }, [isEditMode, editTransactionData]);
 
@@ -202,7 +210,9 @@ export default function AddTransactionModal() {
       type,
       amount,
       description: description || (type === 'transfer' ? 'Transfer' : 'Transaction'),
-      date: editTransactionData?.date || new Date().toISOString(),
+      date: transactionDate
+        ? new Date(transactionDate + 'T12:00:00').toISOString()
+        : new Date().toISOString(),
     };
 
     if (type === 'transfer') {
@@ -265,7 +275,7 @@ export default function AddTransactionModal() {
 
   const displayAmount = currentInput === '0' ? '0' : currentInput;
   const displayCurrency = '₹';
-  const effectiveDate = editTransactionData?.date ? new Date(editTransactionData.date) : new Date();
+  const effectiveDate = new Date(transactionDate + 'T12:00:00');
 
   const typeOptions = [
     { id: 'expense', label: 'Expense', icon: ArrowDownLeft },
@@ -505,20 +515,17 @@ export default function AddTransactionModal() {
                 </div>
 
                 {/* Transaction Date (Desktop only) */}
-                <div className="hidden lg:block pt-6 border-t border-[#e5e3d8]">
+                <div className="pt-6 border-t border-[#e5e3d8]">
                   <div className="text-[10px] font-bold text-[#7c8e88] uppercase tracking-wider mb-2.5">
                     Transaction Date
                   </div>
                   <div className="flex items-center gap-3 text-sm font-bold text-[#1e3a34]">
-                    <div className="bg-[#f0f5f2] px-4 py-2 rounded-xl flex items-center gap-2">
-                      <span className="text-[#7c8e88]">
-                        {effectiveDate.toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
-                      </span>
-                    </div>
+                    <input
+                      type="date"
+                      value={transactionDate}
+                      onChange={(e) => setTransactionDate(e.target.value)}
+                      className="bg-[#f0f5f2] px-4 py-2 rounded-xl font-bold text-[#1e3a34] text-sm outline-none focus:ring-2 focus:ring-[#1f644e]/30 cursor-pointer [color-scheme:light]"
+                    />
                     <div className="bg-[#f0f5f2] px-4 py-2 rounded-xl flex items-center gap-2">
                       <span className="text-[#7c8e88]">
                         {effectiveDate.toLocaleTimeString('en-US', {
@@ -623,18 +630,12 @@ export default function AddTransactionModal() {
 
           {/* Mobile Footer */}
           <div className="lg:hidden flex items-center justify-between gap-3 px-4 py-3 border-t border-[#e5e3d8] bg-white">
-            <div className="text-xs font-bold text-[#7c8e88]">
-              <div>
-                {effectiveDate.toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
-              </div>
-              <div className="mt-0.5">
-                {effectiveDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-              </div>
-            </div>
+            <input
+              type="date"
+              value={transactionDate}
+              onChange={(e) => setTransactionDate(e.target.value)}
+              className="text-xs font-bold text-[#7c8e88] bg-transparent outline-none cursor-pointer [color-scheme:light]"
+            />
             <button
               onClick={handleSubmit}
               disabled={!parsedAmount || isSubmitting}

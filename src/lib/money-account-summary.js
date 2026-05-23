@@ -1,3 +1,6 @@
+import dbConnect from '@/lib/dbConnect';
+import Transaction from '@/models/Transaction';
+
 function toId(value) {
   if (!value) return null;
   if (typeof value === 'string') return value;
@@ -48,5 +51,69 @@ export function computeAccountSummaries(accounts = [], transactions = []) {
       (sum, account) => sum + (Number(account.currentBalance) || 0),
       0
     ),
+  };
+}
+
+export async function computeAccountSummariesFromDb(accounts) {
+  await dbConnect();
+
+  const [directEffects, transferEffects] = await Promise.all([
+    Transaction.aggregate([
+      { $match: { deletedAt: null } },
+      {
+        $group: {
+          _id: '$account',
+          netEffect: {
+            $sum: {
+              $switch: {
+                branches: [
+                  { case: { $eq: ['$type', 'income'] }, then: '$amount' },
+                  { case: { $eq: ['$type', 'expense'] }, then: { $multiply: ['$amount', -1] } },
+                  { case: { $eq: ['$type', 'transfer'] }, then: { $multiply: ['$amount', -1] } },
+                ],
+                default: 0,
+              },
+            },
+          },
+        },
+      },
+    ]),
+    Transaction.aggregate([
+      { $match: { deletedAt: null, type: 'transfer', toAccount: { $ne: null, $exists: true } } },
+      {
+        $group: {
+          _id: '$toAccount',
+          netEffect: { $sum: '$amount' },
+        },
+      },
+    ]),
+  ]);
+
+  const balanceMap = new Map(
+    accounts.map((a) => [a._id.toString(), Number(a.initialBalance) || 0])
+  );
+
+  for (const entry of directEffects) {
+    const id = entry._id?.toString();
+    if (id && balanceMap.has(id)) {
+      balanceMap.set(id, balanceMap.get(id) + (entry.netEffect || 0));
+    }
+  }
+
+  for (const entry of transferEffects) {
+    const id = entry._id?.toString();
+    if (id && balanceMap.has(id)) {
+      balanceMap.set(id, balanceMap.get(id) + (entry.netEffect || 0));
+    }
+  }
+
+  const summaries = accounts.map((account) => ({
+    ...account,
+    currentBalance: balanceMap.get(account._id.toString()) ?? 0,
+  }));
+
+  return {
+    accounts: summaries,
+    totalAccountBalance: summaries.reduce((sum, acc) => sum + (Number(acc.currentBalance) || 0), 0),
   };
 }

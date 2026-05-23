@@ -11,7 +11,7 @@ import {
   serializeTransaction,
   serializeBudget,
 } from '@/lib/money-serializers';
-import { computeAccountSummaries } from '@/lib/money-account-summary';
+import { computeAccountSummariesFromDb } from '@/lib/money-account-summary';
 
 export async function GET(request) {
   const session = await requireAdminAuth(request);
@@ -31,22 +31,20 @@ export async function GET(request) {
       if (endDate) periodQuery.date.$lte = new Date(endDate);
     }
 
-    const [accounts, categories, budgets, transactions, ledgerTransactions, totalTransactionCount] =
-      await Promise.all([
-        Account.find({ deletedAt: null }).sort({ createdAt: 1 }).lean(),
-        Category.find({ deletedAt: null }).sort({ type: 1, name: 1 }).lean(),
-        Budget.find({ deletedAt: null }).populate('category', 'name icon type color').lean(),
-        Transaction.find(periodQuery)
-          .populate('category', 'name icon type color')
-          .populate('account', 'name icon')
-          .populate('toAccount', 'name icon')
-          .sort({ date: -1, createdAt: -1 })
-          .lean(),
-        Transaction.find({ deletedAt: null }).select('type amount account toAccount').lean(),
-        Transaction.countDocuments({ deletedAt: null }),
-      ]);
+    const [accounts, categories, budgets, transactions, totalTransactionCount] = await Promise.all([
+      Account.find({ deletedAt: null }).sort({ createdAt: 1 }).lean(),
+      Category.find({ deletedAt: null }).sort({ type: 1, name: 1 }).lean(),
+      Budget.find({ deletedAt: null }).populate('category', 'name icon type color').lean(),
+      Transaction.find(periodQuery)
+        .populate('category', 'name icon type color')
+        .populate('account', 'name icon')
+        .populate('toAccount', 'name icon')
+        .sort({ date: -1, createdAt: -1 })
+        .lean(),
+      Transaction.countDocuments({ deletedAt: null }),
+    ]);
 
-    const accountSummary = computeAccountSummaries(accounts, ledgerTransactions);
+    const accountSummary = await computeAccountSummariesFromDb(accounts);
 
     return NextResponse.json({
       success: true,

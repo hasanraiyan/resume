@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useMoney } from '@/context/MoneyContext';
 import {
   ChevronLeft,
@@ -12,6 +12,7 @@ import {
   MoreVertical,
   Trash2,
   Pencil,
+  RefreshCw,
 } from 'lucide-react';
 import { PurseSVG } from '@/components/pocketly-tracker/IconRenderer';
 
@@ -43,11 +44,19 @@ export default function RecordsTab() {
     openEditTransaction,
     isTabLoading,
     isBootstrapLoading,
+    fetchTransactionsForPeriod,
+    fetchAccountsSummary,
   } = useMoney();
   const [searchQuery, setSearchQuery] = useState('');
   const [openMenuId, setOpenMenuId] = useState(null);
   const [mobileActionTransaction, setMobileActionTransaction] = useState(null);
+  const [swipedTxId, setSwipedTxId] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const menuRef = useRef(null);
+  const swipeTouchRef = useRef(null);
+  const scrollRef = useRef(null);
+  const pullRefreshTouchRef = useRef(null);
+  const periodSwipeRef = useRef(null);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -55,9 +64,18 @@ export default function RecordsTab() {
         setOpenMenuId(null);
       }
     }
+    function handleTouchOutside(event) {
+      if (swipedTxId && !event.target.closest('[data-delete-btn]')) {
+        setSwipedTxId(null);
+      }
+    }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    document.addEventListener('touchstart', handleTouchOutside, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleTouchOutside);
+    };
+  }, [swipedTxId]);
 
   const navigateWeek = (direction) => {
     navigatePeriod(direction);
@@ -137,17 +155,54 @@ export default function RecordsTab() {
     try {
       await deleteTransaction(id);
       setOpenMenuId(null);
+      setSwipedTxId(null);
     } catch (error) {
       console.error('Failed to delete transaction:', error);
     }
   };
+
+  const handleRefresh = useCallback(async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        fetchTransactionsForPeriod(periodStart, periodEnd),
+        fetchAccountsSummary(),
+      ]);
+    } catch (err) {
+      console.error('Refresh failed:', err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [isRefreshing, fetchTransactionsForPeriod, fetchAccountsSummary, periodStart, periodEnd]);
 
   const hasTransactions = transactions.length > 0;
   const isRefreshingRecords = isTabLoading && hasTransactions;
   const showEmptyState = !isBootstrapLoading && groupedEntries.length === 0;
 
   return (
-    <div className="mb-6 bg-[#fcfbf5] pt-4 pb-24 sm:pt-6 sm:pb-8">
+    <div
+      className="mb-6 bg-[#fcfbf5] pt-4 pb-24 sm:pt-6 sm:pb-8"
+      onTouchStart={(e) => {
+        if (window.scrollY > 5) return;
+        pullRefreshTouchRef.current = e.touches[0].clientY;
+      }}
+      onTouchMove={(e) => {
+        if (pullRefreshTouchRef.current === null) return;
+        const dy = e.touches[0].clientY - pullRefreshTouchRef.current;
+        if (dy > 10) {
+          e.preventDefault();
+        }
+      }}
+      onTouchEnd={(e) => {
+        if (pullRefreshTouchRef.current === null) return;
+        const dy = e.changedTouches[0].clientY - pullRefreshTouchRef.current;
+        pullRefreshTouchRef.current = null;
+        if (dy > 60 && !isRefreshing) {
+          handleRefresh();
+        }
+      }}
+    >
       <div className="w-full px-4 lg:px-6">
         <div className="w-full max-w-6xl mx-auto">
           {/* Summary */}
@@ -246,7 +301,20 @@ export default function RecordsTab() {
               >
                 <ChevronLeft className="h-5 w-5 text-[#1e3a34]" />
               </button>
-              <div className="flex min-w-0 flex-1 items-center justify-center rounded-xl border border-[#e5e3d8] bg-white px-4 py-3 text-center">
+              <div
+                className="flex min-w-0 flex-1 items-center justify-center rounded-xl border border-[#e5e3d8] bg-white px-4 py-3 text-center"
+                onTouchStart={(e) => {
+                  periodSwipeRef.current = e.touches[0].clientX;
+                }}
+                onTouchEnd={(e) => {
+                  if (periodSwipeRef.current === null) return;
+                  const dx = e.changedTouches[0].clientX - periodSwipeRef.current;
+                  periodSwipeRef.current = null;
+                  if (Math.abs(dx) > 40 && !isTabLoading) {
+                    navigateWeek(dx < 0 ? 1 : -1);
+                  }
+                }}
+              >
                 <span className="truncate text-lg font-bold text-[#1e3a34]">
                   {periodRangeLabel}
                 </span>
@@ -261,10 +329,19 @@ export default function RecordsTab() {
               </button>
             </div>
 
-            {isRefreshingRecords && (
+            {isRefreshingRecords || isRefreshing ? (
               <div className="inline-flex items-center gap-2 rounded-full border border-[#d9e6df] bg-[#f0f5f2] px-3 py-1 text-xs font-semibold text-[#1f644e]">
-                <div className="h-2 w-2 rounded-full bg-[#1f644e] animate-pulse" />
+                <RefreshCw className="h-3 w-3 animate-spin" />
+                <span>Refreshing...</span>
               </div>
+            ) : (
+              <button
+                onClick={handleRefresh}
+                className="sm:hidden inline-flex items-center gap-1.5 rounded-full border border-[#e5e3d8] bg-white px-3 py-1.5 text-xs font-semibold text-[#7c8e88] hover:text-[#1f644e] hover:border-[#d9e6df] active:scale-95 transition"
+              >
+                <RefreshCw className="h-3 w-3" />
+                Refresh
+              </button>
             )}
           </div>
 
@@ -321,97 +398,179 @@ export default function RecordsTab() {
                       return (
                         <div
                           key={transaction.id}
-                          className={`relative flex items-center justify-between p-3 sm:p-4 transition hover:bg-[#f8f9f4] first:rounded-t-xl last:rounded-b-xl ${isMenuOpen ? 'z-10' : ''}`}
+                          className="relative overflow-hidden first:rounded-t-xl last:rounded-b-xl sm:overflow-visible"
                         >
-                          <div className="flex flex-1 items-center gap-3">
-                            <div
-                              className={`flex h-10 w-10 items-center justify-center rounded-xl text-white ${
-                                isTransfer
-                                  ? 'bg-[#4a86e8]'
-                                  : isExpense
-                                    ? 'bg-[#c94c4c]'
-                                    : 'bg-[#1f644e]'
-                              }`}
+                          <div
+                            className={`absolute inset-y-0 right-0 z-0 flex items-center pr-1 transition-opacity duration-200 sm:hidden ${
+                              swipedTxId === transaction.id
+                                ? 'opacity-100'
+                                : 'opacity-0 pointer-events-none'
+                            }`}
+                          >
+                            <button
+                              data-delete-btn
+                              onClick={() => handleDelete(transaction.id)}
+                              className="flex h-3/4 items-center gap-1.5 rounded-xl bg-[#c94c4c] px-5 text-xs font-bold text-white shadow-md active:scale-95 transition"
                             >
-                              <IconRenderer
-                                name={isTransfer ? 'arrow-left-right' : catIcon}
-                                className="h-5 w-5"
-                              />
+                              <Trash2 className="w-4 h-4" />
+                              Delete
+                            </button>
+                          </div>
+                          <div
+                            className={`relative flex items-center justify-between p-3 sm:p-4 transition hover:bg-[#f8f9f4] bg-white ${isMenuOpen ? 'z-10' : ''}`}
+                            style={{
+                              transform:
+                                swipedTxId === transaction.id
+                                  ? 'translateX(-100px)'
+                                  : 'translateX(0)',
+                              transition: 'transform 0.2s ease',
+                            }}
+                            onTouchStart={(e) => {
+                              if (window.innerWidth >= 640) return;
+                              swipeTouchRef.current = {
+                                startX: e.touches[0].clientX,
+                                startY: e.touches[0].clientY,
+                                txId: transaction.id,
+                                moved: false,
+                              };
+                            }}
+                            onTouchMove={(e) => {
+                              if (
+                                !swipeTouchRef.current ||
+                                swipeTouchRef.current.txId !== transaction.id
+                              )
+                                return;
+                              const dx = e.touches[0].clientX - swipeTouchRef.current.startX;
+                              const dy = e.touches[0].clientY - swipeTouchRef.current.startY;
+                              if (
+                                !swipeTouchRef.current.moved &&
+                                Math.abs(dx) > 10 &&
+                                Math.abs(dx) > Math.abs(dy)
+                              ) {
+                                swipeTouchRef.current.moved = true;
+                              }
+                              if (swipeTouchRef.current.moved) {
+                                e.preventDefault();
+                                const translateX = Math.max(
+                                  -100,
+                                  Math.min(swipedTxId === transaction.id ? -100 : 0, dx)
+                                );
+                                e.currentTarget.style.transform = `translateX(${translateX}px)`;
+                                e.currentTarget.style.transition = 'none';
+                              }
+                            }}
+                            onTouchEnd={(e) => {
+                              if (
+                                !swipeTouchRef.current ||
+                                swipeTouchRef.current.txId !== transaction.id
+                              )
+                                return;
+                              const moved = swipeTouchRef.current.moved;
+                              const dx = e.changedTouches[0].clientX - swipeTouchRef.current.startX;
+                              swipeTouchRef.current = null;
+                              if (!moved) return;
+                              if (dx < -40) {
+                                if (swipedTxId === transaction.id) return;
+                                setSwipedTxId(transaction.id);
+                                e.currentTarget.style.transform = 'translateX(-100px)';
+                                e.currentTarget.style.transition = 'transform 0.2s ease';
+                              } else {
+                                setSwipedTxId(null);
+                                e.currentTarget.style.transform = 'translateX(0)';
+                                e.currentTarget.style.transition = 'transform 0.2s ease';
+                              }
+                            }}
+                          >
+                            <div className="flex flex-1 items-center gap-3">
+                              <div
+                                className={`flex h-10 w-10 items-center justify-center rounded-xl text-white ${
+                                  isTransfer
+                                    ? 'bg-[#4a86e8]'
+                                    : isExpense
+                                      ? 'bg-[#c94c4c]'
+                                      : 'bg-[#1f644e]'
+                                }`}
+                              >
+                                <IconRenderer
+                                  name={isTransfer ? 'arrow-left-right' : catIcon}
+                                  className="h-5 w-5"
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <div className="text-[13px] sm:text-sm font-bold text-[#1e3a34]">
+                                  {isTransfer ? 'Transfer' : catName}
+                                </div>
+                                <div className="mt-0.5 flex items-center gap-1 text-[11px] text-[#7c8e88]">
+                                  {isTransfer ? (
+                                    <>
+                                      {transaction.account?.name || 'Account'}
+                                      <ArrowLeftRight className="h-3 w-3" />
+                                      {transaction.toAccount?.name || 'Account'}
+                                    </>
+                                  ) : (
+                                    transaction.account?.name || 'Account'
+                                  )}
+                                </div>
+                                {transaction.description &&
+                                  transaction.description !== 'Transaction' &&
+                                  transaction.description !== 'Transfer' && (
+                                    <div className="mt-0.5 hidden text-xs text-[#7c8e88] sm:block">
+                                      {transaction.description}
+                                    </div>
+                                  )}
+                              </div>
                             </div>
-                            <div className="flex-1">
-                              <div className="text-[13px] sm:text-sm font-bold text-[#1e3a34]">
-                                {isTransfer ? 'Transfer' : catName}
+
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`max-w-[40vw] truncate text-right text-xs sm:text-sm font-bold tabular-nums ${getAmountClass(transaction.type)}`}
+                              >
+                                {formatAmount(transaction.amount, transaction.type)}
                               </div>
-                              <div className="mt-0.5 flex items-center gap-1 text-[11px] text-[#7c8e88]">
-                                {isTransfer ? (
-                                  <>
-                                    {transaction.account?.name || 'Account'}
-                                    <ArrowLeftRight className="h-3 w-3" />
-                                    {transaction.toAccount?.name || 'Account'}
-                                  </>
-                                ) : (
-                                  transaction.account?.name || 'Account'
-                                )}
-                              </div>
-                              {transaction.description &&
-                                transaction.description !== 'Transaction' &&
-                                transaction.description !== 'Transfer' && (
-                                  <div className="mt-0.5 hidden text-xs text-[#7c8e88] sm:block">
-                                    {transaction.description}
+                              <div className="relative">
+                                <button
+                                  onClick={() => {
+                                    // On mobile, open a bottom sheet; on larger screens, use popover menu.
+                                    if (window.innerWidth < 640) {
+                                      setMobileActionTransaction(transaction);
+                                    } else {
+                                      setOpenMenuId(isMenuOpen ? null : transaction.id);
+                                    }
+                                  }}
+                                  className="cursor-pointer rounded-lg p-1.5 text-[#7c8e88] transition hover:bg-[#f8f9f4] hover:text-[#1e3a34]"
+                                  aria-label="Transaction options"
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                </button>
+
+                                {isMenuOpen && (
+                                  <div
+                                    ref={menuRef}
+                                    className="absolute right-0 top-full z-10 mt-1 hidden w-32 rounded-xl border border-[#e5e3d8] bg-white py-1 shadow-lg sm:block"
+                                  >
+                                    <button
+                                      onClick={() => {
+                                        openEditTransaction(transaction);
+                                        setOpenMenuId(null);
+                                      }}
+                                      className="cursor-pointer flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#1e3a34] transition hover:bg-[#f0f5f2]"
+                                      aria-label={`Edit transaction: ${transaction.description || 'Transaction'}`}
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                      Edit
+                                    </button>
+                                    <div className="my-1 border-t border-[#e5e3d8]" />
+                                    <button
+                                      onClick={() => handleDelete(transaction.id)}
+                                      className="cursor-pointer flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#c94c4c] transition hover:bg-[#fdf2f2]"
+                                      aria-label={`Delete transaction: ${transaction.description || 'Transaction'}`}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                      Delete
+                                    </button>
                                   </div>
                                 )}
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`max-w-[40vw] truncate text-right text-xs sm:text-sm font-bold tabular-nums ${getAmountClass(transaction.type)}`}
-                            >
-                              {formatAmount(transaction.amount, transaction.type)}
-                            </div>
-                            <div className="relative">
-                              <button
-                                onClick={() => {
-                                  // On mobile, open a bottom sheet; on larger screens, use popover menu.
-                                  if (window.innerWidth < 640) {
-                                    setMobileActionTransaction(transaction);
-                                  } else {
-                                    setOpenMenuId(isMenuOpen ? null : transaction.id);
-                                  }
-                                }}
-                                className="cursor-pointer rounded-lg p-1.5 text-[#7c8e88] transition hover:bg-[#f8f9f4] hover:text-[#1e3a34]"
-                                aria-label="Transaction options"
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </button>
-
-                              {isMenuOpen && (
-                                <div
-                                  ref={menuRef}
-                                  className="absolute right-0 top-full z-10 mt-1 hidden w-32 rounded-xl border border-[#e5e3d8] bg-white py-1 shadow-lg sm:block"
-                                >
-                                  <button
-                                    onClick={() => {
-                                      openEditTransaction(transaction);
-                                      setOpenMenuId(null);
-                                    }}
-                                    className="cursor-pointer flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#1e3a34] transition hover:bg-[#f0f5f2]"
-                                    aria-label={`Edit transaction: ${transaction.description || 'Transaction'}`}
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                    Edit
-                                  </button>
-                                  <div className="my-1 border-t border-[#e5e3d8]" />
-                                  <button
-                                    onClick={() => handleDelete(transaction.id)}
-                                    className="cursor-pointer flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#c94c4c] transition hover:bg-[#fdf2f2]"
-                                    aria-label={`Delete transaction: ${transaction.description || 'Transaction'}`}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                    Delete
-                                  </button>
-                                </div>
-                              )}
+                              </div>
                             </div>
                           </div>
                         </div>

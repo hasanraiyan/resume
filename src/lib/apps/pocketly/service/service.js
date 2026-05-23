@@ -9,6 +9,7 @@ import {
   serializeCategory,
   serializeBudget,
 } from '@/lib/money-serializers';
+import { computeAccountSummariesFromDb } from '@/lib/money-account-summary';
 import {
   isValidObjectId,
   DraftTransactionSchema,
@@ -27,27 +28,8 @@ export async function getAccounts({ includeBalances = true } = {}) {
   const accounts = await Account.find({ deletedAt: null }).lean();
 
   if (includeBalances) {
-    const transactions = await Transaction.find({ deletedAt: null }).lean();
-
-    accounts.forEach((acc) => {
-      let balance = acc.initialBalance || 0;
-      transactions.forEach((tx) => {
-        if (tx.type === 'income' && tx.account?.toString() === acc._id.toString()) {
-          balance += tx.amount;
-        } else if (tx.type === 'expense' && tx.account?.toString() === acc._id.toString()) {
-          balance -= tx.amount;
-        } else if (tx.type === 'transfer') {
-          if (tx.account?.toString() === acc._id.toString()) {
-            balance -= tx.amount;
-          }
-          if (tx.toAccount?.toString() === acc._id.toString()) {
-            balance += tx.amount;
-          }
-        }
-      });
-      acc.balance = balance;
-      acc.currentBalance = balance;
-    });
+    const summary = await computeAccountSummariesFromDb(accounts);
+    return summary.accounts.map(serializeAccount);
   }
 
   return accounts.map(serializeAccount);

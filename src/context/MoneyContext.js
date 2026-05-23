@@ -1,6 +1,14 @@
 'use client';
 
-import { createContext, useContext, useReducer, useEffect, useCallback, useRef } from 'react';
+import {
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from 'react';
 
 const MoneyContext = createContext(null);
 
@@ -339,28 +347,26 @@ export function MoneyProvider({ children }) {
         body: JSON.stringify(transaction),
       }).then(readJson);
 
-      transactionCacheRef.current.clear();
+      const currentKey = getCacheKey(state.periodStart, state.periodEnd);
+      transactionCacheRef.current.delete(currentKey);
       analysisCacheRef.current.clear();
 
-      // Navigate to current period if the new transaction is added today (which it always is by default in AddTransactionModal)
-      // This ensures the Records tab is showing the period that includes the new transaction.
       const now = new Date();
       const currentPeriodStart = getWeekStart(now);
       const currentPeriodEnd = getWeekEnd(now);
 
       if (state.periodStart !== currentPeriodStart || state.periodEnd !== currentPeriodEnd) {
         setPeriod(currentPeriodStart, currentPeriodEnd);
-        // fetchTransactionsForPeriod will be called automatically by the useEffect watching state.periodStart
       } else {
         await fetchTransactionsForPeriod(state.periodStart, state.periodEnd);
       }
 
-      await Promise.all([
-        fetchAccountsSummary(),
-        state.analysis ? fetchAnalysis(state.periodStart, state.periodEnd) : Promise.resolve(),
-      ]);
+      await fetchAccountsSummary();
 
-      // Auto-switch to records tab to see the latest transaction (only if switchTab is true)
+      if (state.analysis) {
+        fetchAnalysis(state.periodStart, state.periodEnd).catch(() => {});
+      }
+
       if (switchTab) {
         setActiveTab('records');
       }
@@ -373,38 +379,63 @@ export function MoneyProvider({ children }) {
   };
 
   const deleteTransaction = async (id) => {
+    dispatch({
+      type: 'SET_TRANSACTIONS',
+      payload: state.transactions.filter((t) => t.id !== id && t._id !== id),
+    });
+
     try {
       await fetch(`/api/money/transactions/${id}`, { method: 'DELETE' }).then(readJson);
-      transactionCacheRef.current.clear();
+      const currentKey = getCacheKey(state.periodStart, state.periodEnd);
+      transactionCacheRef.current.delete(currentKey);
       analysisCacheRef.current.clear();
+
       await Promise.all([
         fetchTransactionsForPeriod(state.periodStart, state.periodEnd),
         fetchAccountsSummary(),
-        state.analysis ? fetchAnalysis(state.periodStart, state.periodEnd) : Promise.resolve(),
       ]);
+
+      if (state.analysis) {
+        fetchAnalysis(state.periodStart, state.periodEnd).catch(() => {});
+      }
     } catch (error) {
       console.error('Failed to delete transaction:', error);
+      await fetchTransactionsForPeriod(state.periodStart, state.periodEnd);
       throw error;
     }
   };
 
   const updateTransaction = async (id, transaction) => {
+    dispatch({
+      type: 'SET_TRANSACTIONS',
+      payload: state.transactions.map((t) =>
+        t.id === id || t._id === id ? { ...t, ...transaction } : t
+      ),
+    });
+
     try {
       const data = await fetch(`/api/money/transactions/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(transaction),
       }).then(readJson);
-      transactionCacheRef.current.clear();
+      const currentKey = getCacheKey(state.periodStart, state.periodEnd);
+      transactionCacheRef.current.delete(currentKey);
       analysisCacheRef.current.clear();
+
       await Promise.all([
         fetchTransactionsForPeriod(state.periodStart, state.periodEnd),
         fetchAccountsSummary(),
-        state.analysis ? fetchAnalysis(state.periodStart, state.periodEnd) : Promise.resolve(),
       ]);
+
+      if (state.analysis) {
+        fetchAnalysis(state.periodStart, state.periodEnd).catch(() => {});
+      }
+
       return data.transaction;
     } catch (error) {
       console.error('Failed to update transaction:', error);
+      await fetchTransactionsForPeriod(state.periodStart, state.periodEnd);
       throw error;
     }
   };
@@ -575,13 +606,21 @@ export function MoneyProvider({ children }) {
     dispatch({ type: 'SET_EDIT_TRANSACTION_DATA', payload: null });
   };
 
-  const totalExpense = state.transactions
-    .filter((transaction) => transaction.type === 'expense')
-    .reduce((sum, transaction) => sum + transaction.amount, 0);
+  const totalExpense = useMemo(
+    () =>
+      state.transactions
+        .filter((transaction) => transaction.type === 'expense')
+        .reduce((sum, transaction) => sum + transaction.amount, 0),
+    [state.transactions]
+  );
 
-  const totalIncome = state.transactions
-    .filter((transaction) => transaction.type === 'income')
-    .reduce((sum, transaction) => sum + transaction.amount, 0);
+  const totalIncome = useMemo(
+    () =>
+      state.transactions
+        .filter((transaction) => transaction.type === 'income')
+        .reduce((sum, transaction) => sum + transaction.amount, 0),
+    [state.transactions]
+  );
 
   const accountsWithBalance = state.accounts;
   const totalBalance = state.stats.totalAccountBalance || 0;

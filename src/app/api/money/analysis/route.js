@@ -3,6 +3,7 @@ import dbConnect from '@/lib/dbConnect';
 import Transaction from '@/models/Transaction';
 import Account from '@/models/Account';
 import { requireAdminAuth } from '@/lib/money-auth';
+import { computeAccountSummariesFromDb } from '@/lib/money-account-summary';
 
 export async function GET(request) {
   const session = await requireAdminAuth(request);
@@ -96,39 +97,10 @@ export async function GET(request) {
     ]);
 
     const allAccounts = await Account.find({ deletedAt: null }).lean();
-    const allLedgerTransactions = await Transaction.find({ deletedAt: null })
-      .select('type amount account toAccount')
-      .lean();
-
-    const accountBalanceMap = new Map();
-    for (const account of allAccounts) {
-      accountBalanceMap.set(account._id.toString(), Number(account.initialBalance) || 0);
-    }
-
-    for (const transaction of allLedgerTransactions) {
-      const amount = Number(transaction.amount) || 0;
-      const accountId = transaction.account?.toString?.() || null;
-      const toAccountId = transaction.toAccount?.toString?.() || null;
-
-      if (transaction.type === 'expense' && accountId && accountBalanceMap.has(accountId)) {
-        accountBalanceMap.set(accountId, accountBalanceMap.get(accountId) - amount);
-        continue;
-      }
-
-      if (transaction.type === 'income' && accountId && accountBalanceMap.has(accountId)) {
-        accountBalanceMap.set(accountId, accountBalanceMap.get(accountId) + amount);
-        continue;
-      }
-
-      if (transaction.type === 'transfer') {
-        if (accountId && accountBalanceMap.has(accountId)) {
-          accountBalanceMap.set(accountId, accountBalanceMap.get(accountId) - amount);
-        }
-        if (toAccountId && accountBalanceMap.has(toAccountId)) {
-          accountBalanceMap.set(toAccountId, accountBalanceMap.get(toAccountId) + amount);
-        }
-      }
-    }
+    const accountSummary = await computeAccountSummariesFromDb(allAccounts);
+    const accountBalanceMap = new Map(
+      accountSummary.accounts.map((a) => [a._id?.toString() || a.id?.toString(), a.currentBalance])
+    );
 
     // Totals
     const totals = await Transaction.aggregate([
@@ -164,10 +136,7 @@ export async function GET(request) {
         totalExpense,
         totalIncome,
         netFlow: totalIncome - totalExpense,
-        totalAccountBalance: Array.from(accountBalanceMap.values()).reduce(
-          (sum, balance) => sum + balance,
-          0
-        ),
+        totalAccountBalance: accountSummary.totalAccountBalance,
       },
     });
   } catch (error) {
