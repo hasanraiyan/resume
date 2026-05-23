@@ -331,7 +331,7 @@ function shiftToolInput(queueMap, toolName) {
 }
 
 class FinanceAssistantAgent extends BaseAgent {
-  constructor(agentId = AGENT_IDS.FINANCE_ASSISTANT, config = {}) {
+  constructor(agentId = AGENT_IDS.FINANCE_FLASH, config = {}) {
     super(agentId, config);
   }
 
