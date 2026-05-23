@@ -35,7 +35,7 @@ export function FinanceChatProvider({ children }) {
   const { accounts, categories, transactions, analysis } = useMoney();
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [chatMode, setChatModeState] = useState('flash');
+  const [chatMode, setChatModeState] = useState('pro');
   const [deviceAvailability, setDeviceAvailability] = useState({
     supported: false,
     reason: '',

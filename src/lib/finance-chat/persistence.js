@@ -10,16 +10,16 @@ export const CLOUD_CHAT_STORAGE_KEY = 'pocketly-finance-cloud-chat';
 export const REMOTE_CHAT_STORAGE_KEY = 'pocketly-finance-remote-chat';
 
 function normalizeChatMode(mode, deviceSupported) {
-  if (mode === 'device') return deviceSupported ? 'device' : 'flash';
+  if (mode === 'device') return deviceSupported ? 'device' : 'pro';
   if (mode === 'pro') return 'pro';
-  if (mode === 'cloud' || mode === 'flash') return 'flash';
-  return 'flash';
+  if (mode === 'cloud' || mode === 'flash') return 'pro';
+  return 'pro';
 }
 
 export function loadFinanceChatState({ deviceSupported }) {
   if (typeof window === 'undefined') {
     return {
-      chatMode: 'flash',
+      chatMode: 'pro',
       messages: [WELCOME_MESSAGE],
       pendingDraft: null,
     };
@@ -56,7 +56,7 @@ export function loadFinanceChatState({ deviceSupported }) {
     };
   } catch {
     return {
-      chatMode: 'flash',
+      chatMode: 'pro',
       messages: [WELCOME_MESSAGE],
       pendingDraft: null,
     };
