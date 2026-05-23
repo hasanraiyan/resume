@@ -2,31 +2,9 @@ import { parseMarkdownToBlocks, generateMarkdownFromBlocks } from '@/utils/cours
 
 export { parseMarkdownToBlocks, generateMarkdownFromBlocks };
 
-export function textResult(text, structuredContent = undefined, extra = {}) {
-  const content = [{ type: 'text', text }];
-  if (structuredContent) {
-    content.push({ type: 'text', text: JSON.stringify(structuredContent, null, 2) });
-  }
-  return {
-    content,
-    ...(structuredContent ? { structuredContent } : {}),
-    ...extra,
-  };
-}
+import { textResult, errorResult, toolMeta } from '../utils.js';
 
-export function errorResult(message) {
-  return {
-    content: [{ type: 'text', text: message }],
-    isError: true,
-  };
-}
-
-export function toolMeta(invoking, invoked) {
-  return {
-    'openai/toolInvocation/invoking': invoking,
-    'openai/toolInvocation/invoked': invoked,
-  };
-}
+export { textResult, errorResult, toolMeta };
 
 export function normalizeCourse(course) {
   return {

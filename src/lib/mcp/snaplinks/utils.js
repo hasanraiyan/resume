@@ -1,25 +1,6 @@
-export function textResult(text, structuredContent = undefined, extra = {}) {
-  return {
-    content: [{ type: 'text', text }],
-    ...(structuredContent ? { structuredContent } : {}),
-    ...extra,
-  };
-}
+import { textResult, errorResult, toolMeta } from '../utils.js';
 
-export function errorResult(message) {
-  return {
-    content: [{ type: 'text', text: message }],
-    isError: true,
-  };
-}
-
-export function toolMeta(invoking, invoked, extra = {}) {
-  return {
-    'openai/toolInvocation/invoking': invoking,
-    'openai/toolInvocation/invoked': invoked,
-    ...extra,
-  };
-}
+export { textResult, errorResult, toolMeta };
 
 export function widgetToolMeta(widget, invoking, invoked) {
   return toolMeta(invoking, invoked, {
