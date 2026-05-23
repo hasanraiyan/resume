@@ -1,18 +1,27 @@
-export function textResult(text, data = null) {
+export function textResult(text, structuredContent = undefined, extra = {}) {
   const content = [{ type: 'text', text }];
-  if (data) {
-    content.push({ type: 'text', text: JSON.stringify(data, null, 2) });
+  if (structuredContent) {
+    content.push({ type: 'text', text: JSON.stringify(structuredContent, null, 2) });
   }
-  return { content };
-}
-
-export function errorResult(text) {
-  return { content: [{ type: 'text', text, isError: true }] };
-}
-
-export function toolMeta(loadingMessage, successMessage) {
   return {
-    progressMessages: [loadingMessage, successMessage],
+    content,
+    ...(structuredContent ? { structuredContent } : {}),
+    ...extra,
+  };
+}
+
+export function errorResult(message) {
+  return {
+    content: [{ type: 'text', text: message }],
+    isError: true,
+  };
+}
+
+export function toolMeta(invoking, invoked, extra = {}) {
+  return {
+    'openai/toolInvocation/invoking': invoking,
+    'openai/toolInvocation/invoked': invoked,
+    ...extra,
   };
 }
 

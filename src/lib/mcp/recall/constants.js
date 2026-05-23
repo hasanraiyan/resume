@@ -1,11 +1,19 @@
 export const READ_ONLY_ANNOTATIONS = {
-  userConfirmation: [],
+  readOnlyHint: true,
+  openWorldHint: false,
+  destructiveHint: false,
+  idempotentHint: true,
 };
 
 export const MUTATION_ANNOTATIONS = {
-  userConfirmation: ['tool_use'],
+  readOnlyHint: false,
+  openWorldHint: false,
+  destructiveHint: false,
+  idempotentHint: true,
 };
 
 export const DESTRUCTIVE_ANNOTATIONS = {
-  userConfirmation: ['tool_use'],
+  readOnlyHint: false,
+  openWorldHint: false,
+  destructiveHint: true,
 };
