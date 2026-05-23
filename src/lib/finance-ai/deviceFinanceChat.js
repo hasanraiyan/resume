@@ -26,10 +26,16 @@ function toPromptMessages(messages = []) {
       (message) => message?.content && (message.role === 'user' || message.role === 'assistant')
     )
     .slice(-MAX_HISTORY_MESSAGES)
-    .map((message) => ({
-      role: message.role,
-      content: message.content,
-    }));
+    .map((message) => {
+      const msg = {
+        role: message.role,
+        content: message.content,
+      };
+      if (message.images && Array.isArray(message.images) && message.images.length > 0) {
+        msg.images = message.images;
+      }
+      return msg;
+    });
 }
 
 function getLanguageModelApi() {

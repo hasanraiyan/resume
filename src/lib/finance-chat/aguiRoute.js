@@ -58,13 +58,19 @@ function buildFinanceAgentInput(body) {
     : normalizeChatHistory(aguiMessages, lastUserIndex);
 
   const images = lastUserMessage?.images || [];
+  const allImages = [];
+  for (const msg of aguiMessages) {
+    if (msg.role === 'user' && msg.images && Array.isArray(msg.images)) {
+      allImages.push(...msg.images);
+    }
+  }
 
   return {
     threadId: body.threadId || `finance-${Date.now()}`,
     runId: body.runId || crypto.randomUUID(),
     inputParams: {
       userMessage,
-      images,
+      images: allImages.length > 0 ? allImages : images,
       chatHistory,
       sessionId: body.threadId || `finance-${Date.now()}`,
       now: meta?.now || new Date().toISOString(),
