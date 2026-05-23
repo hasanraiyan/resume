@@ -11,6 +11,7 @@ export default function MessageList({
   theme = 'default',
   answeredBlockIds = new Set(),
   markBlockAsAnswered,
+  isStreaming,
 }) {
   const isGreenTheme = theme === 'green';
 
@@ -126,6 +127,13 @@ export default function MessageList({
         if (message.hidden) return null;
         const isAssistant = message.role === 'assistant';
 
+        const isEmptyStreamingPlaceholder =
+          isStreaming &&
+          isAssistant &&
+          !message.content &&
+          (!message.steps || message.steps.length === 0) &&
+          (!message.uiBlocks || message.uiBlocks.length === 0);
+
         let isConsecutive = false;
         for (let i = index - 1; i >= 0; i--) {
           const prevMsg = messages[i];
@@ -140,7 +148,9 @@ export default function MessageList({
             key={message.id}
             className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'} animate-in slide-in-from-bottom-2 duration-300 w-full`}
           >
-            <div className="relative w-7 h-7 shrink-0 mt-1 flex items-center justify-center">
+            <div
+              className={`relative w-7 h-7 shrink-0 mt-1 items-center justify-center ${isAssistant ? 'hidden sm:flex' : 'flex'}`}
+            >
               {!isConsecutive && (
                 <div
                   className={`w-full h-full rounded-full flex items-center justify-center shadow-sm ${message.role === 'user' ? (isGreenTheme ? 'bg-[#1f644e] ring-2 ring-[#1f644e]/10' : 'bg-black ring-2 ring-black/10') : 'bg-neutral-100 border border-neutral-200/60'}`}
@@ -155,7 +165,7 @@ export default function MessageList({
             </div>
 
             <div
-              className={`min-w-0 ${message.role === 'user' ? 'max-w-[85%] items-end' : 'w-full max-w-[85%] items-stretch'} flex flex-1 flex-col`}
+              className={`min-w-0 ${message.role === 'user' ? 'max-w-[85%] items-end' : 'w-full max-w-full sm:max-w-[85%] items-stretch'} flex flex-1 flex-col`}
             >
               {/* Show tool history for agents */}
               {isAssistant && message.steps?.length > 0 && (
@@ -178,26 +188,34 @@ export default function MessageList({
                 </div>
               )}
 
-              {message.content && (
-                <div
-                  className={`${
-                    isAssistant && message.uiBlocks?.length > 0 ? 'mt-3' : ''
-                  } px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-sm text-[13px] overflow-hidden ${message.role === 'user' ? (isGreenTheme ? 'bg-[#1f644e] text-white shadow-[#1f644e]/20 rounded-tr-sm' : 'bg-gradient-to-br from-black to-neutral-900 text-white shadow-black/20 rounded-tr-sm') : 'bg-white/90 backdrop-blur-sm text-neutral-900 shadow-neutral-200/50 border border-neutral-200/50 rounded-tl-sm'}`}
-                >
-                  {message.role === 'assistant' ? (
-                    <MdContent content={message.content} onLinkClick={handleLinkClick} />
-                  ) : (
-                    <MdContent content={formatMcqUserMessage(message.content)} isUser={true} />
-                  )}
-                  <p
-                    className={`text-[10px] mt-1.5 ${message.role === 'user' ? 'text-white/60' : 'text-neutral-400'}`}
-                  >
-                    {message.timestamp.toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </p>
+              {isEmptyStreamingPlaceholder ? (
+                <div className="flex items-center gap-1 h-4 px-0.5 mt-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-bounce [animation-delay:0ms]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-bounce [animation-delay:150ms]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-bounce [animation-delay:300ms]" />
                 </div>
+              ) : (
+                message.content && (
+                  <div
+                    className={`${
+                      isAssistant && message.uiBlocks?.length > 0 ? 'mt-3' : ''
+                    } px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-sm text-[13px] overflow-hidden ${message.role === 'user' ? (isGreenTheme ? 'bg-[#1f644e] text-white shadow-[#1f644e]/20 rounded-tr-sm' : 'bg-gradient-to-br from-black to-neutral-900 text-white shadow-black/20 rounded-tr-sm') : 'bg-white/90 backdrop-blur-sm text-neutral-900 shadow-neutral-200/50 border border-neutral-200/50 rounded-tl-sm'}`}
+                  >
+                    {message.role === 'assistant' ? (
+                      <MdContent content={message.content} onLinkClick={handleLinkClick} />
+                    ) : (
+                      <MdContent content={formatMcqUserMessage(message.content)} isUser={true} />
+                    )}
+                    <p
+                      className={`text-[10px] mt-1.5 ${message.role === 'user' ? 'text-white/60' : 'text-neutral-400'}`}
+                    >
+                      {message.timestamp.toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  </div>
+                )
               )}
             </div>
           </div>

@@ -2,6 +2,25 @@
 
 import * as Icons from 'lucide-react';
 
+function ChatIcon({ className, strokeWidth = 1.5 }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className={className}>
+      <path
+        d="M11 4H7.2C5.0998 4 4.0497 4 3.24757 4.4087C2.54203 4.76807 1.96807 5.34203 1.6087 6.04757C1.2 6.8497 1.2 7.0998 1.2 9.2V16.8C1.2 18.9002 1.2 19.9503 1.6087 20.7524C1.96807 21.458 2.54203 22.0319 3.24757 22.3913C4.0497 22.8 5.0998 22.8 7.2 22.8H14.8C16.9002 22.8 17.9503 22.8 18.7524 22.3913C19.458 22.0319 20.0319 21.458 20.3913 20.7524C20.8 19.9503 20.8 18.9002 20.8 16.8V13"
+        stroke="currentColor"
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+      />
+      <path
+        d="M11.8327 15.1741L8.14064 15.8454C7.45802 15.9695 6.8778 15.3893 7.00193 14.7067L7.6732 11.0146C7.72462 10.7318 7.86315 10.4728 8.06917 10.2668L17.7574 2.57859C18.7337 1.60228 20.3166 1.60228 21.2929 2.57859C22.2692 3.5549 22.2692 5.13781 21.2929 6.11412L11.8327 15.1741Z"
+        stroke="currentColor"
+        strokeWidth={strokeWidth}
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function RuPaySVG({ className }) {
   // Simple RuPay logo mark (solid rounded shape + stylized R) sized to fit
   return (
@@ -102,4 +121,4 @@ export default function IconRenderer({ name, className = 'w-4 h-4', fallback = '
   return <Icon className={className} />;
 }
 
-export { PurseSVG };
+export { PurseSVG, ChatIcon };

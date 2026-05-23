@@ -223,6 +223,7 @@ export default function ChatTab() {
       <MessageList
         messages={messages}
         isLoading={isStreaming}
+        isStreaming={isStreaming}
         messagesEndRef={messagesEndRef}
         handleUIInteract={handleUIInteract}
         handleLinkClick={() => {}}

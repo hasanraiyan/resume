@@ -21,9 +21,9 @@ import {
   AlertTriangle,
   Settings,
   Loader2,
-  MessageCircle,
   Target,
 } from 'lucide-react';
+import { ChatIcon } from '@/components/pocketly-tracker/IconRenderer';
 import { useCallback, useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 
@@ -40,7 +40,7 @@ const tabs = [
   { id: 'analysis', label: 'Analysis', icon: BarChart3 },
   { id: 'accounts', label: 'Accounts', icon: Wallet },
   { id: 'planning', label: 'Planning', icon: Target },
-  { id: 'chat', label: 'Chat', icon: MessageCircle },
+  { id: 'chat', label: 'Chat', icon: ChatIcon },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
@@ -153,7 +153,7 @@ function FinanceContent() {
               onClick={clearChat}
               className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <ChatIcon className="w-3.5 h-3.5" strokeWidth={2} />
               New Chat
             </button>
           )}
