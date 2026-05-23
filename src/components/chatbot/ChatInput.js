@@ -57,14 +57,14 @@ export default function ChatInput({
     : 'focus-within:border-black/50';
   const textColor = isGreenTheme ? 'text-[#1e3a34]' : 'text-neutral-900';
   const placeholderColor = isGreenTheme
-    ? 'placeholder:text-[#7c8e88]'
-    : 'placeholder:text-neutral-400';
+    ? 'placeholder:text-[#5c6e68]'
+    : 'placeholder:text-neutral-500';
   const warningBg = isGreenTheme ? 'bg-[#fef3c7]' : 'bg-amber-50';
   const warningText = isGreenTheme ? 'text-[#92400e]' : 'text-amber-700';
   const warningBorder = isGreenTheme ? 'border-[#fcd34d]' : 'border-amber-200';
 
   return (
-    <div className={`p-3 border-t ${borderColor} ${containerBg} shrink-0`}>
+    <div className={`p-2 sm:p-3 border-t ${borderColor} ${containerBg} shrink-0`}>
       <div
         className={`rounded-3xl border ${borderColor} ${containerBg} shadow-sm ${focusBorder} focus-within:ring-1 ${isGreenTheme ? 'focus-within:ring-[#1f644e]/20' : 'focus-within:ring-black/20'} transition-all flex flex-col`}
       >
@@ -97,8 +97,8 @@ export default function ChatInput({
           placeholder={`Ask ${chatbotSettings?.aiName || 'Kiro'} a question...`}
           rows={1}
           disabled={isLoading}
-          className={`w-full resize-none bg-transparent px-4 pt-3 pb-2 text-[13px] leading-relaxed outline-none ${placeholderColor} disabled:opacity-50 max-h-40 overflow-hidden ${textColor} [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}
-          style={{ height: '44px' }}
+          className={`w-full resize-none bg-transparent px-3.5 pt-2.5 pb-1.5 sm:px-4 sm:pt-3 sm:pb-2 text-[13px] leading-relaxed outline-none ${placeholderColor} disabled:opacity-50 max-h-40 overflow-hidden ${textColor} [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}
+          style={{ height: '40px' }}
         />
 
         {showImageWarning && (
@@ -114,7 +114,7 @@ export default function ChatInput({
             !showToolsMenu || !availableMCPs || availableMCPs.length === 0
               ? 'justify-end'
               : 'justify-between'
-          } items-center gap-1.5 px-2 pb-2 mt-auto`}
+          } items-center gap-1.5 px-3.5 pb-2 sm:px-4 sm:pb-3 mt-auto`}
         >
           {/* Left: Settings Menu & Active Tools */}
           <div className="flex items-center gap-2">
@@ -141,7 +141,7 @@ export default function ChatInput({
                         if (isLoading) return;
                         setIsModeMenuOpen((open) => !open);
                       }}
-                      className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-medium shadow-sm transition-colors ${
+                      className={`flex items-center justify-center gap-1.5 rounded-full border px-3 h-8 text-[11px] font-medium shadow-sm transition-colors ${
                         isGreenTheme
                           ? 'border-[#e5e3d8] bg-[#f5f3e6] text-[#1e3a34] hover:bg-[#ebe7d4]'
                           : 'border-neutral-200 bg-neutral-50 text-neutral-800 hover:bg-neutral-100'
@@ -184,7 +184,7 @@ export default function ChatInput({
                   </>
                 ) : (
                   <div
-                    className={`rounded-full border px-3 py-1.5 text-[11px] font-medium ${
+                    className={`flex items-center justify-center rounded-full border px-3 h-8 text-[11px] font-medium ${
                       isGreenTheme
                         ? 'border-[#e5e3d8] bg-[#f5f3e6] text-[#1e3a34]'
                         : 'border-neutral-200 bg-neutral-50 text-neutral-800'

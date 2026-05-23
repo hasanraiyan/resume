@@ -64,13 +64,13 @@ export default function ChatTab() {
 
   const getMobileHeight = () => {
     if (!viewportHeight) {
-      return 'calc(100vh - 7.25rem - env(safe-area-inset-bottom))';
+      return 'calc(100vh - 7rem - env(safe-area-inset-bottom))';
     }
     const headerHeight = 56; // 3.5rem / pt-14
     if (isKeyboardOpen) {
       return `${viewportHeight - headerHeight}px`;
     } else {
-      return `calc(${viewportHeight}px - 116px - env(safe-area-inset-bottom))`;
+      return `calc(${viewportHeight}px - 112px - env(safe-area-inset-bottom))`;
     }
   };
 
@@ -212,7 +212,7 @@ export default function ChatTab() {
 
   return (
     <div
-      className="flex h-[calc(100vh-7.25rem-env(safe-area-inset-bottom))] lg:h-[calc(100vh-4rem)] min-w-0 flex-col overflow-x-hidden bg-[#fcfbf5]"
+      className="flex h-[calc(100vh-7rem-env(safe-area-inset-bottom))] lg:h-[calc(100vh-4rem)] min-w-0 flex-col overflow-x-hidden bg-[#fcfbf5]"
       style={{
         height:
           typeof window !== 'undefined' && window.innerWidth < 1024 && viewportHeight
@@ -220,18 +220,16 @@ export default function ChatTab() {
             : undefined,
       }}
     >
-      <div className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden custom-chat-scrollbar px-4 py-4 sm:px-6">
-        <MessageList
-          messages={messages}
-          isLoading={isStreaming}
-          messagesEndRef={messagesEndRef}
-          handleUIInteract={handleUIInteract}
-          handleLinkClick={() => {}}
-          theme="green"
-          answeredBlockIds={answeredBlockIds}
-          markBlockAsAnswered={markBlockAsAnswered}
-        />
-      </div>
+      <MessageList
+        messages={messages}
+        isLoading={isStreaming}
+        messagesEndRef={messagesEndRef}
+        handleUIInteract={handleUIInteract}
+        handleLinkClick={() => {}}
+        theme="green"
+        answeredBlockIds={answeredBlockIds}
+        markBlockAsAnswered={markBlockAsAnswered}
+      />
 
       {/* Input */}
       <ChatInput

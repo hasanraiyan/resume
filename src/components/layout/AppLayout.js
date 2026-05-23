@@ -179,16 +179,13 @@ export default function AppLayout({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex flex-col items-center justify-center py-2 min-h-[60px] ${
+                className={`flex-1 flex flex-col items-center justify-center py-1.5 min-h-[56px] ${
                   activeTab === tab.id ? 'text-[#1f644e]' : 'text-[#7c8e88] hover:text-[#1e3a34]'
                 }`}
               >
-                <tab.icon
-                  className="w-[22px] h-[22px] mb-0.5"
-                  strokeWidth={activeTab === tab.id ? 2 : 1.5}
-                />
+                <tab.icon className="w-5 h-5 mb-0.5" strokeWidth={activeTab === tab.id ? 2 : 1.5} />
                 <span
-                  className={`text-[10px] ${activeTab === tab.id ? 'font-extrabold' : 'font-bold'}`}
+                  className={`text-[9.5px] ${activeTab === tab.id ? 'font-extrabold' : 'font-bold'}`}
                 >
                   {tab.label}
                 </span>

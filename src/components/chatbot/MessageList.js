@@ -116,7 +116,7 @@ export default function MessageList({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5 space-y-3 bg-gradient-to-b from-white/50 to-neutral-50/50 custom-chat-scrollbar">
+    <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5 space-y-3 bg-transparent custom-chat-scrollbar">
       {messages.map((message, index) => {
         // Hide tool_action messages - they're shown in StepHistory instead
         if (message.role === 'tool_action') {
@@ -155,7 +155,7 @@ export default function MessageList({
             </div>
 
             <div
-              className={`min-w-0 ${message.role === 'user' ? 'max-w-[85%] items-end' : 'w-full max-w-[95%] items-stretch'} flex flex-1 flex-col`}
+              className={`min-w-0 ${message.role === 'user' ? 'max-w-[85%] items-end' : 'w-full max-w-[85%] items-stretch'} flex flex-1 flex-col`}
             >
               {/* Show tool history for agents */}
               {isAssistant && message.steps?.length > 0 && (
@@ -189,7 +189,9 @@ export default function MessageList({
                   ) : (
                     <MdContent content={formatMcqUserMessage(message.content)} isUser={true} />
                   )}
-                  <p className={`text-[10px] mt-1.5 text-neutral-400`}>
+                  <p
+                    className={`text-[10px] mt-1.5 ${message.role === 'user' ? 'text-white/60' : 'text-neutral-400'}`}
+                  >
                     {message.timestamp.toLocaleTimeString([], {
                       hour: '2-digit',
                       minute: '2-digit',
