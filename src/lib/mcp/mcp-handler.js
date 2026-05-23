@@ -95,7 +95,7 @@ export async function handleMcpHttpRequest({ request, scope, createMcpServer, re
   const authInfo = await getAuthInfo(request);
   if (!authInfo) return unauthorizedResponse('Valid Bearer token required', realmPath);
 
-  if (scope && !authInfo.scopes.includes(scope)) {
+  if (scope && !authInfo.scopes.includes(scope) && !authInfo.scopes.includes('all')) {
     return unauthorizedResponse(`Token lacks required scope: ${scope}`, realmPath);
   }
 

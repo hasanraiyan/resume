@@ -4,6 +4,7 @@ import { StateGraph, END, START, Annotation } from '@langchain/langgraph';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { MultiServerMCPClient } from '@langchain/mcp-adapters';
 import { getBackendMCPConfig } from '@/lib/mcpConfig';
+import { buildMcpClientConfig } from '../utils/mcp-client-config';
 import agentRegistry from '../AgentRegistry';
 import Article from '@/models/Article';
 
@@ -89,12 +90,7 @@ class BlogWriterAgent extends BaseAgent {
         const selectedMCPConfigs = backendMCPs.filter((m) => activeMCPIds.includes(m.id));
 
         if (selectedMCPConfigs.length > 0) {
-          const mcpServerConfig = {};
-          for (const cfg of selectedMCPConfigs) {
-            if (cfg && cfg.type !== 'rest' && cfg.url) {
-              mcpServerConfig[cfg.id] = { transport: 'sse', url: cfg.url };
-            }
-          }
+          const mcpServerConfig = await buildMcpClientConfig(selectedMCPConfigs);
           if (Object.keys(mcpServerConfig).length > 0) {
             mcpClient = new MultiServerMCPClient(mcpServerConfig);
             allTools = await mcpClient.getTools();

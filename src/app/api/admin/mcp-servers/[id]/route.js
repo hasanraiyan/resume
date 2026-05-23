@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import dbConnect from '@/lib/dbConnect';
+import { getInternalMcpServers } from '@/lib/internalMcpServers';
 import McpServer from '@/models/McpServer';
 import AgentConfig from '@/models/AgentConfig';
 
@@ -13,6 +14,11 @@ export async function GET(request, { params }) {
     }
 
     const { id } = await params;
+    const internalServer = getInternalMcpServers().find((server) => server._id === id);
+    if (internalServer) {
+      return NextResponse.json({ server: internalServer });
+    }
+
     await dbConnect();
 
     const server = await McpServer.findById(id);
@@ -36,6 +42,13 @@ export async function PUT(request, { params }) {
 
     const { id } = await params;
     const data = await request.json();
+
+    if (id.startsWith('internal-')) {
+      return NextResponse.json(
+        { error: 'Built-in MCP servers cannot be modified' },
+        { status: 400 }
+      );
+    }
 
     await dbConnect();
 
@@ -64,6 +77,13 @@ export async function DELETE(request, { params }) {
     }
 
     const { id } = await params;
+
+    if (id.startsWith('internal-')) {
+      return NextResponse.json(
+        { error: 'Built-in MCP servers cannot be deleted' },
+        { status: 400 }
+      );
+    }
 
     await dbConnect();
 

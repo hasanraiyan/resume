@@ -10,6 +10,7 @@ import BaseAgent from '../BaseAgent';
 import Analytics from '@/models/Analytics';
 import ChatLog from '@/models/ChatLog';
 import { getBackendMCPConfig } from '@/lib/mcpConfig';
+import { buildMcpClientConfig } from '../utils/mcp-client-config';
 import { MultiServerMCPClient } from '@langchain/mcp-adapters';
 import { StateGraph, START, END, Annotation, messagesStateReducer } from '@langchain/langgraph';
 import { ToolNode } from '@langchain/langgraph/prebuilt';
@@ -209,15 +210,7 @@ class TelegramAgent extends BaseAgent {
       if (selectedMCPConfigs.length > 0) {
         yield { type: 'status', message: '🔌 Connecting to tools...' };
 
-        const mcpServerConfig = {};
-        for (const cfg of selectedMCPConfigs) {
-          if (cfg && cfg.type !== 'rest' && cfg.url) {
-            mcpServerConfig[cfg.id] = {
-              transport: 'sse',
-              url: cfg.url,
-            };
-          }
-        }
+        const mcpServerConfig = await buildMcpClientConfig(selectedMCPConfigs);
 
         if (Object.keys(mcpServerConfig).length > 0) {
           try {

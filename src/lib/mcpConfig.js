@@ -1,5 +1,6 @@
 import dbConnect from '@/lib/dbConnect';
 import McpServer from '@/models/McpServer';
+import { getInternalMcpServers } from '@/lib/internalMcpServers';
 
 /**
  * Server-side configuration for all available Model Context Protocol (MCP) integrations.
@@ -25,9 +26,25 @@ export const getBackendMCPConfig = async (isAdmin = false) => {
       color: server.color || 'blue-500',
       adminOnly: server.adminOnly || false,
       isDefault: server.isDefault || false,
+      isInternal: false,
     }));
 
-    return [...dbConfigs];
+    const internalConfigs = getInternalMcpServers()
+      .filter((server) => isAdmin || !server.adminOnly)
+      .map((server) => ({
+        id: server.id,
+        name: server.name,
+        description: server.description || '',
+        type: 'mcp',
+        url: server.url,
+        icon: server.icon || 'Server',
+        color: server.color || 'blue-500',
+        adminOnly: server.adminOnly || false,
+        isDefault: server.isDefault || false,
+        isInternal: true,
+      }));
+
+    return [...internalConfigs, ...dbConfigs];
   } catch (error) {
     console.error('Error fetching dynamic MCP config:', error);
     return [];

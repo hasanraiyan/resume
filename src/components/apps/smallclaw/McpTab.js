@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Server, Plus, Edit2, Trash2, Globe2, X, Activity, Loader2 } from 'lucide-react';
+import { Server, Plus, Edit2, Trash2, Globe2, X, Activity, Loader2, Lock } from 'lucide-react';
 import { Card } from '@/components/custom-ui';
 import { useSmallClaw } from '@/context/SmallClawContext';
 import Switch from '@/components/admin/Switch';
@@ -133,24 +133,33 @@ export default function McpTab() {
                 </div>
               </div>
               <div className="flex gap-1.5">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEditMcp(server);
-                  }}
-                  className="p-1.5 text-neutral-400 hover:text-black hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer"
-                >
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteMcp(server._id);
-                  }}
-                  className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {server.isInternal ? (
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-[#1f644e] bg-[#1f644e]/10 rounded-lg">
+                    <Lock className="w-3 h-3" />
+                    Built-in
+                  </span>
+                ) : (
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditMcp(server);
+                      }}
+                      className="p-1.5 text-neutral-400 hover:text-black hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteMcp(server._id);
+                      }}
+                      className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 

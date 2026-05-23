@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import dbConnect from '@/lib/dbConnect';
+import { getInternalMcpServers } from '@/lib/internalMcpServers';
 import McpServer from '@/models/McpServer';
 
 export async function GET(request) {
@@ -12,7 +13,8 @@ export async function GET(request) {
     }
 
     await dbConnect();
-    const servers = await McpServer.find({}).sort({ createdAt: -1 });
+    const dynamicServers = await McpServer.find({}).sort({ createdAt: -1 }).lean();
+    const servers = [...getInternalMcpServers(), ...dynamicServers];
 
     return NextResponse.json({ servers });
   } catch (error) {
