@@ -32,7 +32,12 @@ const compactNumberFormatter = new Intl.NumberFormat('en-IN', {
   maximumFractionDigits: 1,
 });
 
-export default function RecordsTab() {
+export default function RecordsTab({
+  selectedType: propSelectedType,
+  setSelectedType: propSetSelectedType,
+  searchQuery: propSearchQuery,
+  setSearchQuery: propSetSearchQuery,
+}) {
   const {
     transactions,
     totalExpense,
@@ -49,19 +54,25 @@ export default function RecordsTab() {
     fetchTransactionsForPeriod,
     fetchAccountsSummary,
   } = useMoney();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [localSearchQuery, setLocalSearchQuery] = useState('');
   const [openMenuId, setOpenMenuId] = useState(null);
   const [mobileActionTransaction, setMobileActionTransaction] = useState(null);
   const [swipedTxId, setSwipedTxId] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [selectedType, setSelectedType] = useState('all');
+  const [localSelectedType, setLocalSelectedType] = useState('all');
   const [deletedTransaction, setDeletedTransaction] = useState(null);
   const [undoTimeoutId, setUndoTimeoutId] = useState(null);
   const menuRef = useRef(null);
   const swipeTouchRef = useRef(null);
   const scrollRef = useRef(null);
   const pullRefreshTouchRef = useRef(null);
-  const periodSwipeRef = useRef(null);
+
+  const selectedType = propSelectedType !== undefined ? propSelectedType : localSelectedType;
+  const setSelectedType =
+    propSetSelectedType !== undefined ? propSetSelectedType : setLocalSelectedType;
+  const searchQuery = propSearchQuery !== undefined ? propSearchQuery : localSearchQuery;
+  const setSearchQuery =
+    propSetSearchQuery !== undefined ? propSetSearchQuery : setLocalSearchQuery;
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -87,17 +98,6 @@ export default function RecordsTab() {
       if (undoTimeoutId) clearTimeout(undoTimeoutId);
     };
   }, [undoTimeoutId]);
-
-  const navigateWeek = (direction) => {
-    navigatePeriod(direction);
-  };
-
-  const periodRangeLabel = useMemo(() => {
-    const start = new Date(periodStart);
-    const end = new Date(periodEnd);
-    const opts = { month: 'short', day: 'numeric' };
-    return `${start.toLocaleDateString('en-US', opts)} - ${end.toLocaleDateString('en-US', opts)}`;
-  }, [periodEnd, periodStart]);
 
   const filteredTransactions = useMemo(() => {
     let filtered = transactions;
@@ -329,84 +329,27 @@ export default function RecordsTab() {
             </div>
           </div>
 
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex w-full items-center gap-2">
-              <button
-                onClick={() => navigateWeek(-1)}
-                disabled={isTabLoading}
-                className="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-[#e5e3d8] bg-white transition hover:bg-[#f8f9f4] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-white"
-                aria-label="Previous week"
-              >
-                <ChevronLeft className="h-5 w-5 text-[#1e3a34]" />
-              </button>
-              <div
-                className="flex min-w-0 flex-1 items-center justify-center rounded-xl border border-[#e5e3d8] bg-white px-4 py-3 text-center"
-                onTouchStart={(e) => {
-                  periodSwipeRef.current = e.touches[0].clientX;
-                }}
-                onTouchEnd={(e) => {
-                  if (periodSwipeRef.current === null) return;
-                  const dx = e.changedTouches[0].clientX - periodSwipeRef.current;
-                  periodSwipeRef.current = null;
-                  if (Math.abs(dx) > 40 && !isTabLoading) {
-                    navigateWeek(dx < 0 ? 1 : -1);
-                  }
-                }}
-              >
-                <span className="truncate text-lg font-bold text-[#1e3a34]">
-                  {periodRangeLabel}
-                </span>
-              </div>
-              <button
-                onClick={() => navigateWeek(1)}
-                disabled={isTabLoading}
-                className="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-[#e5e3d8] bg-white transition hover:bg-[#f8f9f4] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-white"
-                aria-label="Next week"
-              >
-                <ChevronRight className="h-5 w-5 text-[#1e3a34]" />
-              </button>
+          <div className="lg:hidden sticky top-14 z-10 mb-3 flex flex-col gap-3 bg-[#fcfbf5] pb-3">
+            <div className="flex gap-2 overflow-x-auto px-4">
+              {[
+                { id: 'all', label: 'All' },
+                { id: 'income', label: 'Income' },
+                { id: 'expense', label: 'Expense' },
+                { id: 'transfer', label: 'Transfer' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setSelectedType(tab.id)}
+                  className={`px-4 py-2 rounded-full text-sm font-semibold transition border cursor-pointer shrink-0 ${
+                    selectedType === tab.id
+                      ? 'bg-[#1f644e] text-white border-[#1f644e]'
+                      : 'border-[#e5e3d8] text-[#7c8e88] bg-white'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
-
-            {(isRefreshingRecords || isRefreshing) && (
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#d9e6df] bg-[#f0f5f2] px-3 py-1 text-xs font-semibold text-[#1f644e]">
-                <RefreshCw className="h-3 w-3 animate-spin" />
-                <span>Refreshing...</span>
-              </div>
-            )}
-          </div>
-
-          <div className="mb-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7c8e88]" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search transactions..."
-                className="w-full rounded-xl border border-[#e5e3d8] bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition placeholder:text-[#7c8e88] focus:border-[#1f644e]"
-              />
-            </div>
-          </div>
-
-          <div className="mb-4 flex gap-2">
-            {[
-              { id: 'all', label: 'All' },
-              { id: 'income', label: 'Income' },
-              { id: 'expense', label: 'Expense' },
-              { id: 'transfer', label: 'Transfer' },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setSelectedType(tab.id)}
-                className={`px-4 py-2 rounded-full text-sm font-semibold transition border cursor-pointer ${
-                  selectedType === tab.id
-                    ? 'bg-[#1f644e] text-white border-[#1f644e]'
-                    : 'border-[#e5e3d8] text-[#7c8e88] bg-white'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
           </div>
 
           {showEmptyState ? (

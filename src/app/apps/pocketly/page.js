@@ -22,9 +22,13 @@ import {
   Settings,
   Loader2,
   Target,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  X,
 } from 'lucide-react';
 import { ChatIcon } from '@/components/pocketly-tracker/IconRenderer';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 
 const PlanningTab = dynamic(() => import('@/components/pocketly-tracker/PlanningTab'));
@@ -56,11 +60,24 @@ function FinanceContent() {
     fetchData,
     isBootstrapLoading,
     editTransactionData,
+    periodStart,
+    periodEnd,
+    navigatePeriod,
+    isTabLoading,
   } = useMoney();
   const { clearChat } = useFinanceChat();
   const [requestAddAccountModal, setRequestAddAccountModal] = useState(false);
   const [showDelayedBootstrapSkeleton, setShowDelayedBootstrapSkeleton] = useState(false);
+  const [selectedType, setSelectedType] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const handleAddModalClose = useCallback(() => setRequestAddAccountModal(false), []);
+
+  const periodRangeLabel = useMemo(() => {
+    const start = new Date(periodStart);
+    const end = new Date(periodEnd);
+    const opts = { month: 'short', day: 'numeric' };
+    return `${start.toLocaleDateString('en-US', opts)} - ${end.toLocaleDateString('en-US', opts)}`;
+  }, [periodEnd, periodStart]);
 
   useEffect(() => {
     if (!isBootstrapLoading) {
@@ -104,7 +121,14 @@ function FinanceContent() {
     const tabContent = (() => {
       switch (activeTab) {
         case 'records':
-          return <RecordsTab />;
+          return (
+            <RecordsTab
+              selectedType={selectedType}
+              setSelectedType={setSelectedType}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+            />
+          );
         case 'analysis':
           return <AnalysisTab />;
         case 'accounts':
@@ -121,7 +145,14 @@ function FinanceContent() {
         case 'settings':
           return <FinanceSettingsTab />;
         default:
-          return <RecordsTab />;
+          return (
+            <RecordsTab
+              selectedType={selectedType}
+              setSelectedType={setSelectedType}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+            />
+          );
       }
     })();
 
@@ -148,6 +179,47 @@ function FinanceContent() {
       hideSettingsFromMobileNav={true}
       headerActions={
         <>
+          {activeTab === 'records' && (
+            <div className="hidden lg:flex items-center gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#7c8e88]" />
+                <input
+                  type="text"
+                  placeholder="Search transactions..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 pr-3 py-2 rounded-lg border border-[#e5e3d8] bg-white text-sm text-[#1e3a34] placeholder-[#a0a0a0] focus:outline-none focus:border-[#1f644e]"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[#7c8e88] hover:text-[#1e3a34]"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              <button
+                onClick={() => navigatePeriod(-1)}
+                disabled={isTabLoading}
+                className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg transition hover:bg-[#f8f9f4] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent"
+                aria-label="Previous week"
+              >
+                <ChevronLeft className="h-4 w-4 text-[#1e3a34]" />
+              </button>
+              <div className="min-w-[140px] text-center">
+                <span className="text-sm font-bold text-[#1e3a34]">{periodRangeLabel}</span>
+              </div>
+              <button
+                onClick={() => navigatePeriod(1)}
+                disabled={isTabLoading}
+                className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg transition hover:bg-[#f8f9f4] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent"
+                aria-label="Next week"
+              >
+                <ChevronRight className="h-4 w-4 text-[#1e3a34]" />
+              </button>
+            </div>
+          )}
           {activeTab === 'chat' && (
             <button
               onClick={clearChat}
