@@ -13,28 +13,63 @@ describe('Finance Tools', () => {
   });
 
   describe('createDeleteTransactionTool', () => {
-    it('should delete a transaction successfully', async () => {
+    it('should ask for confirmation when confirmed=false', async () => {
+      const tool = createDeleteTransactionTool();
+      const result = await tool.invoke({
+        transactionId: '507f1f77bcf86cd799439011',
+        confirmed: false,
+      });
+
+      expect(result).toContain('requiresConfirmation');
+      expect(result).toContain('Please confirm');
+      expect(service.deleteTransaction).not.toHaveBeenCalled();
+    });
+
+    it('should delete transaction when confirmed=true', async () => {
       service.deleteTransaction.mockResolvedValue(true);
 
       const tool = createDeleteTransactionTool();
-      const result = await tool.invoke({ transactionId: '507f1f77bcf86cd799439011' });
+      const result = await tool.invoke({
+        transactionId: '507f1f77bcf86cd799439011',
+        confirmed: true,
+      });
 
       expect(service.deleteTransaction).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
       expect(result).toContain('deleted successfully');
     });
 
-    it('should throw error if transaction not found', async () => {
+    it('should throw error if transaction not found during deletion', async () => {
       service.deleteTransaction.mockResolvedValue(false);
 
       const tool = createDeleteTransactionTool();
-      await expect(tool.invoke({ transactionId: '507f1f77bcf86cd799439011' })).rejects.toThrow(
-        'not found or already deleted'
-      );
+      await expect(
+        tool.invoke({ transactionId: '507f1f77bcf86cd799439011', confirmed: true })
+      ).rejects.toThrow('not found or already deleted');
+    });
+
+    it('should default confirmed to false', async () => {
+      const tool = createDeleteTransactionTool();
+      const result = await tool.invoke({ transactionId: '507f1f77bcf86cd799439011' });
+
+      expect(result).toContain('requiresConfirmation');
     });
   });
 
   describe('createUpdateTransactionTool', () => {
-    it('should update transaction description', async () => {
+    it('should ask for confirmation when confirmed=false', async () => {
+      const tool = createUpdateTransactionTool();
+      const result = await tool.invoke({
+        transactionId: '507f1f77bcf86cd799439011',
+        description: 'Updated description',
+        confirmed: false,
+      });
+
+      expect(result).toContain('requiresConfirmation');
+      expect(result).toContain('Please confirm');
+      expect(service.updateTransaction).not.toHaveBeenCalled();
+    });
+
+    it('should update transaction when confirmed=true', async () => {
       const mockUpdated = {
         description: 'Updated description',
         amount: 100,
@@ -49,6 +84,7 @@ describe('Finance Tools', () => {
       const result = await tool.invoke({
         transactionId: '507f1f77bcf86cd799439011',
         description: 'Updated description',
+        confirmed: true,
       });
 
       expect(service.updateTransaction).toHaveBeenCalledWith('507f1f77bcf86cd799439011', {
@@ -57,7 +93,7 @@ describe('Finance Tools', () => {
       expect(result).toContain('updated successfully');
     });
 
-    it('should update transaction amount', async () => {
+    it('should update amount when confirmed=true', async () => {
       const mockUpdated = {
         description: 'Test',
         amount: 150,
@@ -72,6 +108,7 @@ describe('Finance Tools', () => {
       const result = await tool.invoke({
         transactionId: '507f1f77bcf86cd799439011',
         amount: 150,
+        confirmed: true,
       });
 
       expect(service.updateTransaction).toHaveBeenCalledWith('507f1f77bcf86cd799439011', {
@@ -85,8 +122,19 @@ describe('Finance Tools', () => {
       await expect(
         tool.invoke({
           transactionId: '507f1f77bcf86cd799439011',
+          confirmed: true,
         })
       ).rejects.toThrow('No fields to update provided');
+    });
+
+    it('should default confirmed to false', async () => {
+      const tool = createUpdateTransactionTool();
+      const result = await tool.invoke({
+        transactionId: '507f1f77bcf86cd799439011',
+        description: 'Updated description',
+      });
+
+      expect(result).toContain('requiresConfirmation');
     });
   });
 

@@ -325,6 +325,78 @@ function CategoryBreakdownBlock({ block, onInteract }) {
   );
 }
 
+function ActionConfirmationBlock({ block, onInteract }) {
+  const data = block.data || {};
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleConfirm = () => {
+    setIsProcessing(true);
+    onInteract?.({
+      type: 'confirm_action',
+      action: data.action,
+      transactionId: data.transactionId,
+      confirmed: true,
+      proposedChanges: data.proposedChanges,
+    });
+  };
+
+  const handleCancel = () => {
+    onInteract?.({
+      type: 'cancel_action',
+      action: data.action,
+      transactionId: data.transactionId,
+    });
+  };
+
+  return (
+    <div className="rounded-2xl border border-neutral-200/70 bg-[#f8f8f4] p-3 shadow-sm">
+      <p className="text-xs font-semibold text-neutral-800 mb-3">
+        {block.title || 'Confirm Action'}
+      </p>
+
+      <div className="rounded-xl border border-neutral-200 bg-white p-3 space-y-3">
+        <p className="text-sm text-neutral-700">{data.message || 'Please confirm this action.'}</p>
+
+        {data.proposedChanges && (
+          <div className="bg-neutral-50 rounded-lg p-2 border border-neutral-100">
+            <p className="text-[11px] font-semibold text-neutral-600 mb-2">Changes:</p>
+            <div className="space-y-1">
+              {Object.entries(data.proposedChanges).map(([key, value]) => (
+                <p key={key} className="text-[11px] text-neutral-700">
+                  <span className="font-medium">{key}:</span> {String(value)}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex gap-2 mt-3">
+        <button
+          type="button"
+          onClick={handleConfirm}
+          disabled={isProcessing}
+          className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold text-white transition ${
+            isProcessing
+              ? 'bg-[#1f644e]/70 cursor-not-allowed'
+              : 'bg-[#1f644e] cursor-pointer hover:bg-[#1a5240]'
+          }`}
+        >
+          {isProcessing ? 'Processing…' : 'Yes, Confirm'}
+        </button>
+        <button
+          type="button"
+          onClick={handleCancel}
+          disabled={isProcessing}
+          className="flex-1 cursor-pointer rounded-full border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
+        >
+          No, Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function FinanceChatBlockRenderer({
   block,
   onInteract,
@@ -351,6 +423,10 @@ export default function FinanceChatBlockRenderer({
 
   if (block.kind === 'transaction_confirmation') {
     return <TransactionConfirmationBlock block={block} onInteract={onInteract} />;
+  }
+
+  if (block.kind === 'action_confirmation') {
+    return <ActionConfirmationBlock block={block} onInteract={onInteract} />;
   }
 
   if (block.kind === 'mcq_question' || block.kind === 'mcq_question_group') {

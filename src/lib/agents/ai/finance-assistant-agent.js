@@ -248,6 +248,13 @@ function buildUiBlocks(toolName, output, toolArgs = {}) {
     ];
   }
 
+  if (toolName === 'delete_transaction' || toolName === 'update_transaction') {
+    if (parsed.uiBlock) {
+      return [parsed.uiBlock];
+    }
+    return [];
+  }
+
   if (toolName === 'ask_clarification_question') {
     // Group of questions flow
     if (Array.isArray(parsed.questions) && parsed.questions.length > 0) {

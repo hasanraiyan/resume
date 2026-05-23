@@ -532,7 +532,25 @@ export function createAskClarificationQuestionTool() {
 
 export function createDeleteTransactionTool() {
   return tool(
-    async ({ transactionId }) => {
+    async ({ transactionId, confirmed = false }) => {
+      if (!confirmed) {
+        return JSON.stringify({
+          requiresConfirmation: true,
+          action: 'delete_transaction',
+          transactionId,
+          uiBlock: {
+            kind: 'action_confirmation',
+            title: 'Delete Transaction',
+            data: {
+              action: 'delete_transaction',
+              transactionId,
+              message:
+                'This action will permanently delete the transaction. This cannot be undone.',
+            },
+          },
+        });
+      }
+
       const success = await deleteTransaction(transactionId);
 
       if (!success) {
@@ -548,9 +566,16 @@ export function createDeleteTransactionTool() {
     {
       name: 'delete_transaction',
       description:
-        'Delete a transaction by its ID. Use this when the user explicitly asks to delete a specific transaction. Always confirm with the user before deleting. After deletion, inform the user that the transaction has been removed.',
+        'Delete a transaction by its ID. IMPORTANT: This tool requires human confirmation. First call with confirmed=false to show the user a confirmation dialog. Only call with confirmed=true after the user explicitly confirms the deletion. Never delete without explicit user confirmation.',
       schema: z.object({
         transactionId: z.string().describe('The exact MongoDB ID of the transaction to delete'),
+        confirmed: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe(
+            'Must be true only after user explicitly confirms deletion. Start with false to show confirmation dialog.'
+          ),
       }),
     }
   );
@@ -558,7 +583,15 @@ export function createDeleteTransactionTool() {
 
 export function createUpdateTransactionTool() {
   return tool(
-    async ({ transactionId, description, amount, date, categoryId, accountId }) => {
+    async ({
+      transactionId,
+      description,
+      amount,
+      date,
+      categoryId,
+      accountId,
+      confirmed = false,
+    }) => {
       const patch = {};
       if (description !== undefined) patch.description = description;
       if (amount !== undefined) patch.amount = amount;
@@ -568,6 +601,24 @@ export function createUpdateTransactionTool() {
 
       if (Object.keys(patch).length === 0) {
         throw new Error('No fields to update provided');
+      }
+
+      if (!confirmed) {
+        return JSON.stringify({
+          requiresConfirmation: true,
+          action: 'update_transaction',
+          transactionId,
+          uiBlock: {
+            kind: 'action_confirmation',
+            title: 'Update Transaction',
+            data: {
+              action: 'update_transaction',
+              transactionId,
+              message: 'Please confirm these changes:',
+              proposedChanges: patch,
+            },
+          },
+        });
       }
 
       const updated = await updateTransaction(transactionId, patch);
@@ -588,7 +639,7 @@ export function createUpdateTransactionTool() {
     {
       name: 'update_transaction',
       description:
-        'Update an existing transaction. You can modify description, amount, date, category, or account. Use this when the user wants to correct or change details of an existing transaction. Always confirm the changes with the user before updating.',
+        'Update an existing transaction. IMPORTANT: This tool requires human confirmation. First call with confirmed=false to show the user the proposed changes and a confirmation dialog. Only call with confirmed=true after the user explicitly confirms the update. Never update without explicit user confirmation.',
       schema: z.object({
         transactionId: z.string().describe('The exact MongoDB ID of the transaction to update'),
         description: z.string().optional().describe('New description for the transaction'),
@@ -602,6 +653,13 @@ export function createUpdateTransactionTool() {
           .string()
           .optional()
           .describe('New account ID (must be resolved via get_accounts)'),
+        confirmed: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe(
+            'Must be true only after user explicitly confirms the update. Start with false to show confirmation dialog.'
+          ),
       }),
     }
   );
