@@ -22,12 +22,16 @@
 
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import GoogleProvider from 'next-auth/providers/google';
 import { OTP } from 'otplib';
 import dynamicSettingsManager from '@/lib/DynamicSettingsManager';
-// No adapter needed for simple credential login without a database session
 
 export const authOptions = {
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
@@ -93,12 +97,18 @@ export const authOptions = {
     signIn: '/login',
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       try {
         if (user) {
-          token.role = user.role;
-          token.isAdmin = user.role === 'admin';
-          token.userId = user.id;
+          if (account?.provider === 'google') {
+            token.role = 'admin';
+            token.isAdmin = true;
+            token.userId = user.email;
+          } else {
+            token.role = user.role;
+            token.isAdmin = user.role === 'admin';
+            token.userId = user.id;
+          }
         }
         return token;
       } catch (error) {
@@ -117,9 +127,12 @@ export const authOptions = {
         return session;
       }
     },
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account }) {
       try {
-        // Allow sign in if user is returned from authorize function
+        if (account?.provider === 'google') {
+          const adminEmail = process.env.ADMIN_EMAIL;
+          return !!(adminEmail && user.email === adminEmail);
+        }
         return !!user;
       } catch (error) {
         console.error('SignIn callback error:', error);
