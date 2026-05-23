@@ -1,17 +1,22 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Trash2, Loader2, Sparkles, Pencil, Check, X } from 'lucide-react';
+import { Sparkles, Plus, Trash2, Loader2, Pencil, Check, BookOpen } from 'lucide-react';
 import { SkeletonProvider, SkeletonWrapper } from 'react-skeletonify';
 import 'react-skeletonify/dist/index.css';
-import Link from 'next/link';
+import AppLayout from '@/components/layout/AppLayout';
+
+const tabs = [
+  { id: 'memories', label: 'Memories', icon: BookOpen },
+  { id: 'search', label: 'Search', icon: Sparkles },
+];
 
 export default function RecallApp() {
   return (
     <SkeletonProvider
       config={{
         animation: 'animation-1',
-        borderRadius: '12px',
+        borderRadius: '8px',
         animationSpeed: 2,
         exceptTags: ['button', 'svg', 'img'],
         background: '#e5e3d8',
@@ -27,6 +32,7 @@ function RecallContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [activeTab, setActiveTab] = useState('memories');
 
   const [captureText, setCaptureText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,7 +44,6 @@ function RecallContent() {
   const captureInputRef = useRef(null);
   const searchInputRef = useRef(null);
 
-  // Fetch recent memories on load
   useEffect(() => {
     fetchMemories();
   }, []);
@@ -46,7 +51,7 @@ function RecallContent() {
   const fetchMemories = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch('/api/recall/memories?limit=20');
+      const res = await fetch('/api/recall/memories?limit=50');
       if (res.ok) {
         const data = await res.json();
         setMemories(data.memories || []);
@@ -72,7 +77,6 @@ function RecallContent() {
 
       if (res.ok) {
         const data = await res.json();
-        // Clear search if active to see the new memory
         if (searchQuery) {
           setSearchQuery('');
           await fetchMemories();
@@ -80,6 +84,7 @@ function RecallContent() {
           setMemories((prev) => [data.memory, ...prev]);
         }
         setCaptureText('');
+        setActiveTab('memories');
       }
     } catch (error) {
       console.error('Failed to capture memory:', error);
@@ -96,7 +101,7 @@ function RecallContent() {
     }
 
     setIsSearching(true);
-    setIsLoading(true); // Trigger skeleton for results
+    setIsLoading(true);
     try {
       const res = await fetch(`/api/recall/search?q=${encodeURIComponent(searchQuery)}`);
       if (res.ok) {
@@ -112,7 +117,6 @@ function RecallContent() {
   };
 
   const handleDelete = async (id) => {
-    // Optimistic update
     const previous = [...memories];
     setMemories(memories.filter((m) => m._id !== id));
 
@@ -121,7 +125,6 @@ function RecallContent() {
       if (!res.ok) throw new Error('Delete failed');
     } catch (error) {
       console.error('Failed to delete memory:', error);
-      // Revert optimistic update
       setMemories(previous);
     }
   };
@@ -161,11 +164,6 @@ function RecallContent() {
     }
   };
 
-  const clearSearch = () => {
-    setSearchQuery('');
-    fetchMemories();
-  };
-
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
@@ -175,173 +173,303 @@ function RecallContent() {
     });
   };
 
-  return (
-    <div className="max-w-3xl mx-auto px-4 py-8 lg:py-12">
-      {/* Header */}
-      <header className="mb-10 text-center flex flex-col items-center">
-        <Link
-          href="/apps"
-          className="self-start text-[#7c8e88] hover:text-[#1f644e] mb-4 flex items-center gap-2 transition-colors text-sm font-bold"
-        >
-          ← Back to Apps
-        </Link>
-        <h1 className="font-[family-name:var(--font-logo)] text-5xl text-[#1f644e] mb-3">ReCall</h1>
-        <p className="text-[#7c8e88] font-medium text-lg">
-          Your external memory. Throw it in, find it later.
-        </p>
-      </header>
+  const tabTitles = {
+    memories: 'Your Memories',
+    search: 'Search Memories',
+  };
 
-      {/* Capture Section */}
-      <section className="mb-12">
-        <form onSubmit={handleCapture} className="relative shadow-sm rounded-2xl">
-          <textarea
-            ref={captureInputRef}
-            value={captureText}
-            onChange={(e) => setCaptureText(e.target.value)}
-            placeholder="Throw in a thought, link, or idea instantly..."
-            className="w-full rounded-2xl border border-[#e5e3d8] bg-white p-5 pr-16 text-lg outline-none transition placeholder:text-[#a0b2ac] focus:border-[#1f644e] focus:ring-4 focus:ring-[#1f644e]/10 resize-none min-h-[120px]"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleCapture(e);
-              }
-            }}
-          />
-          <button
-            type="submit"
-            disabled={!captureText.trim() || isCapturing}
-            className="absolute bottom-4 right-4 bg-[#1f644e] text-white p-3 rounded-xl hover:bg-[#17503e] disabled:opacity-50 disabled:hover:bg-[#1f644e] transition-all cursor-pointer shadow-md"
-          >
-            {isCapturing ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Plus className="w-5 h-5" />
-            )}
-          </button>
-        </form>
-      </section>
-
-      {/* Search Section */}
-      <section className="mb-8">
-        <form onSubmit={handleSearch} className="relative">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            {isSearching ? (
-              <Loader2 className="w-5 h-5 text-[#1f644e] animate-spin" />
-            ) : (
-              <Sparkles className="w-5 h-5 text-[#1f644e]" />
-            )}
-          </div>
-          <input
-            ref={searchInputRef}
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="I remember the idea vaguely..."
-            className="w-full rounded-xl border-2 border-[#1f644e]/20 bg-white py-4 pl-12 pr-12 text-base font-medium outline-none transition placeholder:text-[#7c8e88] focus:border-[#1f644e] focus:ring-4 focus:ring-[#1f644e]/10"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={clearSearch}
-              className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#7c8e88] hover:text-[#1e3a34] cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
-        </form>
-      </section>
-
-      {/* Feed / Results Section */}
-      <section>
-        <div className="flex items-center justify-between mb-4 px-1">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-[#7c8e88]">
-            {searchQuery ? 'Search Results' : 'Recent Memories'}
-          </h2>
-          <span className="text-xs font-bold text-[#b0bfba]">{memories.length} items</span>
-        </div>
-
-        <SkeletonWrapper loading={isLoading && memories.length === 0}>
-          <div className="space-y-4">
-            {!isLoading && memories.length === 0 ? (
-              <div className="text-center py-12 border-2 border-dashed border-[#e5e3d8] rounded-2xl bg-white/50">
-                <Sparkles className="w-8 h-8 mx-auto text-[#c8d8d0] mb-3" />
-                <p className="text-[#7c8e88] font-medium">
-                  {searchQuery
-                    ? 'No memories match that thought.'
-                    : 'Your memory bank is empty. Start capturing above!'}
+  const renderContent = () => {
+    if (activeTab === 'memories') {
+      return (
+        <div className="p-4 lg:p-6 space-y-6 max-w-4xl mx-auto">
+          {/* Capture Section - Enhanced */}
+          <div className="bg-gradient-to-br from-white to-[#fcfbf5] rounded-xl border border-[#e5e3d8] p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="p-2 bg-[#1f644e]/10 rounded-lg">
+                <Plus className="w-5 h-5 text-[#1f644e]" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-[#1e3a34]">Capture New Memory</h2>
+                <p className="text-xs text-[#7c8e88] mt-0.5">
+                  Save thoughts, ideas, and links for later
                 </p>
               </div>
-            ) : (
-              memories.map((memory) => (
-                <div
-                  key={memory._id}
-                  className="group border border-[#e5e3d8] bg-white rounded-2xl p-5 hover:border-[#c8d8d0] hover:shadow-sm transition-all"
+            </div>
+            <form onSubmit={handleCapture} className="relative">
+              <textarea
+                ref={captureInputRef}
+                value={captureText}
+                onChange={(e) => setCaptureText(e.target.value)}
+                placeholder="Throw in a thought, link, or idea instantly..."
+                className="w-full rounded-lg border border-[#e5e3d8] bg-white p-4 text-base outline-none transition placeholder:text-[#a0b2ac] focus:border-[#1f644e] focus:ring-2 focus:ring-[#1f644e]/20 resize-none min-h-[110px]"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.ctrlKey) {
+                    handleCapture(e);
+                  }
+                }}
+              />
+              <div className="flex justify-between items-center mt-3">
+                <p className="text-xs text-[#a0b2ac]">Press Ctrl+Enter to save</p>
+                <button
+                  type="submit"
+                  disabled={!captureText.trim() || isCapturing}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-[#1f644e] text-white text-sm font-bold rounded-lg hover:bg-[#17503e] disabled:opacity-50 disabled:hover:bg-[#1f644e] transition-all cursor-pointer shadow-sm hover:shadow-md"
                 >
-                  {editingId === memory._id ? (
-                    <div className="flex flex-col gap-3">
-                      <textarea
-                        value={editText}
-                        onChange={(e) => setEditText(e.target.value)}
-                        className="w-full rounded-xl border border-[#e5e3d8] bg-[#fcfbf5] p-3 text-[#1e3a34] outline-none focus:border-[#1f644e] min-h-[100px] resize-y"
-                        autoFocus
-                      />
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={cancelEditing}
-                          className="px-4 py-2 text-sm font-bold text-[#7c8e88] hover:bg-[#f0f5f2] rounded-xl transition-colors cursor-pointer"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={() => handleUpdate(memory._id)}
-                          disabled={isUpdating || !editText.trim()}
-                          className="flex items-center gap-2 px-4 py-2 text-sm font-bold bg-[#1f644e] text-white rounded-xl hover:bg-[#17503e] disabled:opacity-50 transition-colors cursor-pointer"
-                        >
-                          {isUpdating ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Check className="w-4 h-4" />
-                          )}
-                          Save
-                        </button>
-                      </div>
-                    </div>
+                  {isCapturing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <>
-                      <div className="whitespace-pre-wrap text-[#1e3a34] leading-relaxed mb-4 text-[15px]">
-                        {memory.text}
-                      </div>
-                      <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#f0f5f2]">
-                        <span className="text-xs font-semibold text-[#a0b2ac]">
-                          {formatDate(memory.createdAt)}
-                          {memory.score && ` • ${(memory.score * 100).toFixed(0)}% match`}
-                        </span>
-
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => startEditing(memory)}
-                            className="p-2 text-[#7c8e88] hover:text-[#1f644e] hover:bg-[#f0f5f2] rounded-lg transition-colors cursor-pointer"
-                            title="Edit"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(memory._id)}
-                            className="p-2 text-[#7c8e88] hover:text-[#c94c4c] hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </>
+                    <Plus className="w-4 h-4" />
                   )}
-                </div>
-              ))
-            )}
+                  Save Memory
+                </button>
+              </div>
+            </form>
           </div>
-        </SkeletonWrapper>
-      </section>
+
+          {/* Memories List - Enhanced */}
+          <div>
+            <div className="flex items-center justify-between mb-5 px-1">
+              <div>
+                <h2 className="text-sm font-bold text-[#1e3a34]">Recent Memories</h2>
+                <p className="text-xs text-[#7c8e88] mt-1">
+                  {memories.length} {memories.length === 1 ? 'memory' : 'memories'} saved
+                </p>
+              </div>
+            </div>
+
+            <SkeletonWrapper loading={isLoading && memories.length === 0}>
+              <div className="space-y-3">
+                {!isLoading && memories.length === 0 ? (
+                  <div className="text-center py-16 border-2 border-dashed border-[#e5e3d8] rounded-lg bg-gradient-to-b from-[#fcfbf5] to-white">
+                    <div className="inline-flex p-3 bg-[#1f644e]/5 rounded-full mb-4">
+                      <Sparkles className="w-8 h-8 text-[#1f644e]" />
+                    </div>
+                    <p className="text-[#1e3a34] font-semibold mb-1">No memories yet</p>
+                    <p className="text-[#7c8e88] text-sm">
+                      Start by capturing your first memory above
+                    </p>
+                  </div>
+                ) : (
+                  memories.map((memory) => (
+                    <MemoryCard
+                      key={memory._id}
+                      memory={memory}
+                      editingId={editingId}
+                      editText={editText}
+                      setEditText={setEditText}
+                      isUpdating={isUpdating}
+                      formatDate={formatDate}
+                      startEditing={startEditing}
+                      cancelEditing={cancelEditing}
+                      handleUpdate={handleUpdate}
+                      handleDelete={handleDelete}
+                    />
+                  ))
+                )}
+              </div>
+            </SkeletonWrapper>
+          </div>
+        </div>
+      );
+    }
+
+    if (activeTab === 'search') {
+      return (
+        <div className="p-4 lg:p-6 space-y-6 max-w-4xl mx-auto">
+          {/* Search Section - Enhanced */}
+          <div className="bg-gradient-to-br from-white to-[#fcfbf5] rounded-xl border border-[#e5e3d8] p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="p-2 bg-[#1f644e]/10 rounded-lg">
+                <Sparkles className="w-5 h-5 text-[#1f644e]" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-[#1e3a34]">Find Memories</h2>
+                <p className="text-xs text-[#7c8e88] mt-0.5">
+                  Search through your memory bank with AI
+                </p>
+              </div>
+            </div>
+            <form onSubmit={handleSearch} className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                {isSearching ? (
+                  <Loader2 className="w-5 h-5 text-[#1f644e] animate-spin" />
+                ) : (
+                  <Sparkles className="w-5 h-5 text-[#1f644e]" />
+                )}
+              </div>
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="I remember the idea vaguely..."
+                className="w-full rounded-lg border border-[#e5e3d8] bg-white py-3 pl-12 pr-4 text-base outline-none transition placeholder:text-[#7c8e88] focus:border-[#1f644e] focus:ring-2 focus:ring-[#1f644e]/20"
+              />
+              <button
+                type="submit"
+                disabled={!searchQuery.trim() || isSearching}
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#7c8e88] hover:text-[#1f644e] disabled:opacity-50 cursor-pointer font-bold text-sm transition-colors"
+              >
+                Search
+              </button>
+            </form>
+          </div>
+
+          {/* Search Results - Enhanced */}
+          <div>
+            <div className="flex items-center justify-between mb-5 px-1">
+              <div>
+                <h2 className="text-sm font-bold text-[#1e3a34]">
+                  {searchQuery ? 'Search Results' : 'Ready to search'}
+                </h2>
+                {searchQuery && (
+                  <p className="text-xs text-[#7c8e88] mt-1">
+                    {memories.length} {memories.length === 1 ? 'result' : 'results'} found
+                  </p>
+                )}
+                {!searchQuery && (
+                  <p className="text-xs text-[#7c8e88] mt-1">Enter a query to find memories</p>
+                )}
+              </div>
+            </div>
+
+            <SkeletonWrapper loading={isLoading && memories.length === 0 && searchQuery}>
+              <div className="space-y-3">
+                {!isLoading && memories.length === 0 && searchQuery ? (
+                  <div className="text-center py-16 border-2 border-dashed border-[#e5e3d8] rounded-lg bg-gradient-to-b from-[#fcfbf5] to-white">
+                    <div className="inline-flex p-3 bg-[#1f644e]/5 rounded-full mb-4">
+                      <Sparkles className="w-8 h-8 text-[#1f644e]" />
+                    </div>
+                    <p className="text-[#1e3a34] font-semibold mb-1">No matches found</p>
+                    <p className="text-[#7c8e88] text-sm">Try a different search term</p>
+                  </div>
+                ) : !searchQuery ? (
+                  <div className="text-center py-16 border-2 border-dashed border-[#e5e3d8] rounded-lg bg-gradient-to-b from-[#fcfbf5] to-white">
+                    <div className="inline-flex p-3 bg-[#1f644e]/5 rounded-full mb-4">
+                      <Sparkles className="w-8 h-8 text-[#1f644e]" />
+                    </div>
+                    <p className="text-[#1e3a34] font-semibold mb-1">Start searching</p>
+                    <p className="text-[#7c8e88] text-sm">Type a keyword to find memories</p>
+                  </div>
+                ) : (
+                  memories.map((memory) => (
+                    <MemoryCard
+                      key={memory._id}
+                      memory={memory}
+                      editingId={editingId}
+                      editText={editText}
+                      setEditText={setEditText}
+                      isUpdating={isUpdating}
+                      formatDate={formatDate}
+                      startEditing={startEditing}
+                      cancelEditing={cancelEditing}
+                      handleUpdate={handleUpdate}
+                      handleDelete={handleDelete}
+                    />
+                  ))
+                )}
+              </div>
+            </SkeletonWrapper>
+          </div>
+        </div>
+      );
+    }
+  };
+
+  return (
+    <AppLayout
+      appName="ReCall"
+      appLogo="/images/apps/recall.png"
+      tabs={tabs}
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      tabTitles={tabTitles}
+    >
+      <div className="pt-2 lg:pt-6 pb-20 lg:pb-0">{renderContent()}</div>
+    </AppLayout>
+  );
+}
+
+function MemoryCard({
+  memory,
+  editingId,
+  editText,
+  setEditText,
+  isUpdating,
+  formatDate,
+  startEditing,
+  cancelEditing,
+  handleUpdate,
+  handleDelete,
+}) {
+  return (
+    <div className="group border border-[#e5e3d8] bg-white rounded-lg p-4 hover:border-[#1f644e]/30 hover:shadow-md transition-all duration-200">
+      {editingId === memory._id ? (
+        <div className="flex flex-col gap-3">
+          <textarea
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            className="w-full rounded-lg border border-[#e5e3d8] bg-[#fcfbf5] p-3 text-[#1e3a34] outline-none focus:border-[#1f644e] focus:ring-2 focus:ring-[#1f644e]/20 min-h-[100px] resize-y text-sm"
+            autoFocus
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={cancelEditing}
+              className="px-3 py-1.5 text-xs font-bold text-[#7c8e88] hover:bg-[#f0f5f2] rounded-lg transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => handleUpdate(memory._id)}
+              disabled={isUpdating || !editText.trim()}
+              className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold bg-[#1f644e] text-white rounded-lg hover:bg-[#17503e] disabled:opacity-50 transition-colors cursor-pointer"
+            >
+              {isUpdating ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Check className="w-3 h-3" />
+              )}
+              Save
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="whitespace-pre-wrap text-[#1e3a34] leading-relaxed mb-3 text-sm font-medium">
+            {memory.text}
+          </div>
+          <div className="flex items-center justify-between pt-3 border-t border-[#f0f5f2]">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-[#a0b2ac]">
+                {formatDate(memory.createdAt)}
+              </span>
+              {memory.score && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#1f644e]/5 text-[#1f644e] rounded-full text-xs font-semibold">
+                  <Sparkles className="w-3 h-3" />
+                  {(memory.score * 100).toFixed(0)}% match
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={() => startEditing(memory)}
+                className="p-1.5 text-[#7c8e88] hover:text-[#1f644e] hover:bg-[#f0f5f2] rounded-lg transition-colors cursor-pointer"
+                title="Edit"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => handleDelete(memory._id)}
+                className="p-1.5 text-[#7c8e88] hover:text-[#c94c4c] hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                title="Delete"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

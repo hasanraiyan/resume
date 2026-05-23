@@ -8,6 +8,7 @@ import McpAuthCode from '@/models/McpAuthCode';
 import { getBaseUrl } from '@/lib/mcp/oauth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { createAppConnection, getSessionOwnerId } from '@/lib/app-connections';
+import { getPrimaryMcpScope, resolveMcpScopes } from '@/lib/mcp/scopes';
 
 // RFC 8252 §7.3 — loopback redirect URIs may use any port; match on scheme+host only.
 function isRedirectUriAllowed(redirectUri, allowedUris) {
@@ -115,9 +116,29 @@ export async function POST() {
 
     const pending = JSON.parse(pendingRaw);
 
+    const resolvedScopes = resolveMcpScopes({
+      scope: pending.scope,
+      resource: pending.resource,
+    });
+    const scopeForToken = pending.scope?.trim() || resolvedScopes.join(' ');
+
+    const primaryScope = getPrimaryMcpScope({
+      scope: scopeForToken,
+      resource: pending.resource,
+    });
+    if (!primaryScope) {
+      return NextResponse.json(
+        {
+          error: 'invalid_scope',
+          error_description:
+            'No valid MCP scope. Use scope=recall or connect via the Recall MCP resource URL.',
+        },
+        { status: 400 }
+      );
+    }
+
     await dbConnect();
     const ownerId = getSessionOwnerId(session);
-    const primaryScope = pending.scope?.split(/[\s+,]+/).find(Boolean) || 'pocketly';
     const connection = await createAppConnection({
       ownerId,
       appKey: primaryScope,
@@ -126,7 +147,7 @@ export async function POST() {
       connectionKey: `mcp:${pending.clientId}`,
       clientId: pending.clientId,
       clientName: pending.clientName || 'Unknown App',
-      scope: pending.scope,
+      scope: scopeForToken,
       resource: pending.resource || null,
       metadata: {
         grantType: 'authorization_code',
@@ -142,7 +163,7 @@ export async function POST() {
       redirectUri: pending.redirectUri,
       codeChallenge: pending.codeChallenge,
       codeChallengeMethod: 'S256',
-      scope: pending.scope,
+      scope: scopeForToken,
       state: pending.state || null,
       resource: pending.resource || null,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),

@@ -4,10 +4,10 @@ export async function GET() {
   const base = getBaseUrl();
   return Response.json(
     {
-      resource: `${base}/api/mcp`,
+      resource: `${base}/api/mcp/recall`,
       authorization_servers: [base],
       bearer_methods_supported: ['header'],
-      scopes_supported: ['pocketly', 'snaplinks', 'coursify', 'recall'],
+      scopes_supported: ['recall'],
     },
     { headers: { 'Access-Control-Allow-Origin': '*' } }
   );

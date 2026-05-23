@@ -2,39 +2,17 @@
 
 import { useState } from 'react';
 import { Card, Button } from '@/components/custom-ui';
+import { getMcpAppsForScopes, resolveMcpScopes } from '@/lib/mcp/scopes';
 
 export default function McpAuthorizeClient({ pending }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const scopes = (pending.scope || '').split(' ').filter(Boolean);
-  const isSnaplinks = scopes.includes('snaplinks');
-  const isPocketly = scopes.includes('pocketly');
-  const isCoursify = scopes.includes('coursify');
-
-  const apps = [];
-  if (isPocketly) {
-    apps.push({
-      name: 'Pocketly',
-      description: 'Track your personal finances, manage accounts, and analyze spending.',
-      icon: '/images/apps/pocketly.png',
-    });
-  }
-  if (isSnaplinks) {
-    apps.push({
-      name: 'SnapLinks',
-      description: 'Manage your short links and view click analytics.',
-      icon: '/images/apps/Snaplinks.png',
-    });
-  }
-  if (isCoursify) {
-    apps.push({
-      name: 'Coursify',
-      description: 'Create and manage AI-powered courses with sections, content, and thumbnails.',
-      icon: '/images/apps/coursify.png',
-    });
-  }
-
+  const scopeKeys = resolveMcpScopes({
+    scope: pending.scope,
+    resource: pending.resource,
+  });
+  const apps = getMcpAppsForScopes(scopeKeys);
   const hasValidScopes = apps.length > 0;
 
   const handleAuthorize = async () => {
@@ -84,7 +62,7 @@ export default function McpAuthorizeClient({ pending }) {
           <div className="flex justify-center -space-x-4 mb-8">
             {apps.map((app) => (
               <div
-                key={app.name}
+                key={app.key}
                 className="w-20 h-20 bg-white rounded-xl shadow-md border border-neutral-100 flex items-center justify-center overflow-hidden z-10 first:z-20 relative"
               >
                 <img src={app.icon} alt={app.name} className="w-full h-full object-cover" />
@@ -127,7 +105,7 @@ export default function McpAuthorizeClient({ pending }) {
             <div className="space-y-4">
               {apps.map((app) => (
                 <div
-                  key={app.name}
+                  key={app.key}
                   className="bg-neutral-50 rounded-lg p-4 border border-neutral-100"
                 >
                   <h3 className="font-semibold text-black mb-1">{app.name}</h3>
