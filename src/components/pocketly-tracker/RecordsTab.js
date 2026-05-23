@@ -329,19 +329,11 @@ export default function RecordsTab() {
               </button>
             </div>
 
-            {isRefreshingRecords || isRefreshing ? (
+            {(isRefreshingRecords || isRefreshing) && (
               <div className="inline-flex items-center gap-2 rounded-full border border-[#d9e6df] bg-[#f0f5f2] px-3 py-1 text-xs font-semibold text-[#1f644e]">
                 <RefreshCw className="h-3 w-3 animate-spin" />
                 <span>Refreshing...</span>
               </div>
-            ) : (
-              <button
-                onClick={handleRefresh}
-                className="sm:hidden inline-flex items-center gap-1.5 rounded-full border border-[#e5e3d8] bg-white px-3 py-1.5 text-xs font-semibold text-[#7c8e88] hover:text-[#1f644e] hover:border-[#d9e6df] active:scale-95 transition"
-              >
-                <RefreshCw className="h-3 w-3" />
-                Refresh
-              </button>
             )}
           </div>
 
