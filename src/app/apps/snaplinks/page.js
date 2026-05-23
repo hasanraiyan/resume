@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { LayoutDashboard, Link2, BarChart3, Settings, Menu } from 'lucide-react';
+import { LayoutDashboard, Link2, Settings } from 'lucide-react';
 import SessionProvider from '@/components/SessionProvider';
 import AppLayout from '@/components/layout/AppLayout';
+import AdminGuard from '@/components/AdminGuard';
 
 const DashboardTab = dynamic(() => import('@/components/snaplinks/DashboardTab'), {
   loading: () => <div className="p-6">Loading Dashboard...</div>,
@@ -25,31 +24,7 @@ const tabs = [
 ];
 
 function SnapLinksContent() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState('dashboard');
-
-  useEffect(() => {
-    if (status === 'loading') return;
-    if (!session || session.user.role !== 'admin') {
-      router.push('/login?callbackUrl=/snaplinks');
-    }
-  }, [session, status, router]);
-
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#fcfbf5]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#1f644e] border-t-transparent mx-auto"></div>
-          <p className="mt-4 text-[#7c8e88] font-medium">Loading SnapLinks...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!session || session.user.role !== 'admin') {
-    return null;
-  }
 
   const tabTitles = {
     dashboard: 'Dashboard',
@@ -87,7 +62,9 @@ function SnapLinksContent() {
 export default function SnapLinksPage() {
   return (
     <SessionProvider>
-      <SnapLinksContent />
+      <AdminGuard appName="SnapLinks">
+        <SnapLinksContent />
+      </AdminGuard>
     </SessionProvider>
   );
 }

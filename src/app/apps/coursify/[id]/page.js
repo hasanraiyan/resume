@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback, use, useRef } from 'react';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Pacifico, Nunito, Lora } from 'next/font/google';
 import { X, Clock, Layers } from 'lucide-react';
@@ -63,7 +62,6 @@ export default function CourseDetailPage({ params }) {
 }
 
 function CourseStudioInner() {
-  const { data: session, status } = useSession();
   const router = useRouter();
   const mainRef = useRef(null);
   const contentRef = useRef(null);
@@ -108,12 +106,6 @@ function CourseStudioInner() {
     contentRef,
     mainRef
   );
-
-  if (status === 'loading') return null;
-  if (status === 'unauthenticated' || session?.user?.role !== 'admin') {
-    router.push('/login');
-    return null;
-  }
 
   const handleCreateModule = () => {
     setEditingModule({ title: '', summary: '' });

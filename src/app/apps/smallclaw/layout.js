@@ -1,7 +1,7 @@
 import { Playfair_Display, Inter } from 'next/font/google';
 import { SmallClawProvider } from '@/context/SmallClawContext';
+import AdminGuard from '@/components/AdminGuard';
 import SmallClawAppLayout from '@/components/apps/smallclaw/SmallClawAppLayout';
-import SmallClawAuthWrapper from '@/components/apps/smallclaw/SmallClawAuthWrapper';
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -24,9 +24,9 @@ export default function SmallClawLayout({ children }) {
   return (
     <div className={`${playfair.variable} ${inter.variable}`}>
       <SmallClawProvider>
-        <SmallClawAuthWrapper>
+        <AdminGuard appName="SmallClaw">
           <SmallClawAppLayout>{children}</SmallClawAppLayout>
-        </SmallClawAuthWrapper>
+        </AdminGuard>
       </SmallClawProvider>
     </div>
   );

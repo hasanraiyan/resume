@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -22,7 +21,6 @@ import { useCoursify } from '@/context/CoursifyContext';
 import { toast } from 'sonner';
 
 export default function TrashPage() {
-  const { data: session, status } = useSession();
   const router = useRouter();
   const { fetchDeletedCourses, restoreCourse, permanentlyDeleteCourse, emptyTrash } = useCoursify();
   const [deletedCourses, setDeletedCourses] = useState([]);
@@ -36,16 +34,8 @@ export default function TrashPage() {
   }, [fetchDeletedCourses]);
 
   useEffect(() => {
-    if (status === 'loading') return;
-    if (!session || session.user.role !== 'admin') {
-      router.push('/login');
-      return;
-    }
     load();
-  }, [session, status, router, load]);
-
-  if (status === 'loading') return null;
-  if (!session || session.user.role !== 'admin') return null;
+  }, [load]);
 
   const handleRestore = async (id) => {
     const success = await restoreCourse(id);

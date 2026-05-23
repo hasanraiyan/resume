@@ -3,8 +3,7 @@
 import Image from 'next/image';
 import { MoneyProvider, useMoney } from '@/context/MoneyContext';
 import { FinanceChatProvider, useFinanceChat } from '@/context/FinanceChatContext';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import AdminGuard from '@/components/AdminGuard';
 import dynamic from 'next/dynamic';
 import { useEffect } from 'react';
 import SessionProvider from '@/components/SessionProvider';
@@ -46,8 +45,6 @@ const tabs = [
 ];
 
 function FinanceContent() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
   const {
     activeTab,
     setActiveTab,
@@ -77,26 +74,6 @@ function FinanceContent() {
 
     return () => window.clearTimeout(timer);
   }, [isBootstrapLoading]);
-
-  useEffect(() => {
-    if (status === 'loading') return;
-    if (!session) router.push('/login');
-  }, [session, status, router]);
-
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#fcfbf5]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#1f644e] border-t-transparent mx-auto"></div>
-          <p className="mt-4 text-[#7c8e88] font-medium">Loading Pocketly...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!session) {
-    return null;
-  }
 
   const hasBootstrappedData =
     transactions.length > 0 || accounts.length > 0 || categories.length > 0;
@@ -216,21 +193,23 @@ function FinanceContent() {
 export default function FinancePage() {
   return (
     <SessionProvider>
-      <MoneyProvider>
-        <FinanceChatProvider>
-          <SkeletonProvider
-            config={{
-              animation: 'animation-1',
-              borderRadius: '8px',
-              animationSpeed: 2,
-              exceptTags: ['img', 'button', 'svg'],
-              background: '#e5e3d8',
-            }}
-          >
-            <FinanceContent />
-          </SkeletonProvider>
-        </FinanceChatProvider>
-      </MoneyProvider>
+      <AdminGuard appName="Pocketly">
+        <MoneyProvider>
+          <FinanceChatProvider>
+            <SkeletonProvider
+              config={{
+                animation: 'animation-1',
+                borderRadius: '8px',
+                animationSpeed: 2,
+                exceptTags: ['img', 'button', 'svg'],
+                background: '#e5e3d8',
+              }}
+            >
+              <FinanceContent />
+            </SkeletonProvider>
+          </FinanceChatProvider>
+        </MoneyProvider>
+      </AdminGuard>
     </SessionProvider>
   );
 }

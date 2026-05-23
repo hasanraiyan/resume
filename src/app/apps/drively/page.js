@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import AdminGuard from '@/components/AdminGuard';
 import { Pacifico, Nunito } from 'next/font/google';
 import {
   HardDrive,
@@ -45,8 +45,7 @@ const nunito = Nunito({
 });
 
 function DrivelyApp() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
+  const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState('mydrive');
   const {
     trashCount,
@@ -95,12 +94,6 @@ function DrivelyApp() {
   useEffect(() => {
     performSearch(searchQuery);
   }, [searchQuery, performSearch]);
-
-  if (status === 'loading') return null;
-  if (status === 'unauthenticated' || session?.user?.role !== 'admin') {
-    router.push('/login');
-    return null;
-  }
 
   const tabs = [
     { id: 'mydrive', label: 'My Drive', icon: HardDrive },
@@ -375,8 +368,10 @@ function DrivelyApp() {
 
 export default function DrivelyPage() {
   return (
-    <DrivelyProvider>
-      <DrivelyApp />
-    </DrivelyProvider>
+    <AdminGuard appName="Drively">
+      <DrivelyProvider>
+        <DrivelyApp />
+      </DrivelyProvider>
+    </AdminGuard>
   );
 }

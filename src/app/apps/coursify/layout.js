@@ -2,6 +2,7 @@
 
 import { Pacifico, Nunito } from 'next/font/google';
 import SessionProvider from '@/components/SessionProvider';
+import AdminGuard from '@/components/AdminGuard';
 import { CoursifyProvider } from '@/context/CoursifyContext';
 
 const pacifico = Pacifico({
@@ -21,13 +22,15 @@ const nunito = Nunito({
 export default function CoursifyRootLayout({ children }) {
   return (
     <SessionProvider>
-      <CoursifyProvider>
-        <div
-          className={`${pacifico.variable} ${nunito.variable} min-h-screen bg-[#fcfbf5] font-[family-name:var(--font-sans)] text-[#1e3a34]`}
-        >
-          {children}
-        </div>
-      </CoursifyProvider>
+      <AdminGuard appName="Coursify">
+        <CoursifyProvider>
+          <div
+            className={`${pacifico.variable} ${nunito.variable} min-h-screen bg-[#fcfbf5] font-[family-name:var(--font-sans)] text-[#1e3a34]`}
+          >
+            {children}
+          </div>
+        </CoursifyProvider>
+      </AdminGuard>
     </SessionProvider>
   );
 }
