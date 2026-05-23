@@ -53,11 +53,12 @@ export function createCompletedToolStep(
   };
 }
 
-export function createUserMessage(content) {
+export function createUserMessage(content, images = []) {
   return {
     id: Date.now(),
     role: 'user',
     content: content.trim(),
+    images: images.length > 0 ? images : undefined,
     steps: [],
     timestamp: new Date(),
   };

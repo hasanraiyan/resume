@@ -1,7 +1,13 @@
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import mongoose from 'mongoose';
-import { getAccounts, getCategories, getTransactions } from '@/lib/apps/pocketly/service/service';
+import {
+  getAccounts,
+  getCategories,
+  getTransactions,
+  deleteTransaction,
+  updateTransaction,
+} from '@/lib/apps/pocketly/service/service';
 import { computeAnalysis } from '@/lib/finance-analysis';
 
 function isValidObjectId(value) {
@@ -155,8 +161,15 @@ export function createGetCategoriesTool() {
 
 export function createGetTransactionsTool() {
   return tool(
-    async ({ type, limit }) => {
-      const transactions = await getTransactions({ type, limit: limit || 20 });
+    async ({ type, limit, startDate, endDate, account, category }) => {
+      const transactions = await getTransactions({
+        type,
+        limit: limit || 20,
+        startDate,
+        endDate,
+        account,
+        category,
+      });
       return JSON.stringify(
         transactions.map((t) => ({
           id: t.id,
@@ -173,7 +186,7 @@ export function createGetTransactionsTool() {
     {
       name: 'get_transactions',
       description:
-        'Get recent transactions. Optionally filter by type (income, expense, transfer) and limit. Use this when the user asks about recent spending, recent income, or specific transactions. Prefer presentation="card" when the user says "show my last transactions", "list the last 5", "display recent expenses", or clearly wants a visual transaction list. Prefer presentation="text" for normal conversational answers.',
+        'Get transactions with optional filtering. Filter by type (income, expense, transfer), date range, account, category, and limit. Use this when the user asks about spending in a category, transactions from a specific account, recent spending, or specific transactions. Prefer presentation="card" when the user says "show my last transactions", "list the last 5", "display recent expenses", "show transactions from [date]", "show Food expenses", or clearly wants a visual transaction list. Prefer presentation="text" for normal conversational answers.',
       schema: z.object({
         type: z
           .enum(['income', 'expense', 'transfer'])
@@ -183,6 +196,22 @@ export function createGetTransactionsTool() {
           .number()
           .optional()
           .describe('Maximum number of transactions to return (default 20)'),
+        startDate: z
+          .string()
+          .optional()
+          .describe('Filter transactions from this date onwards (YYYY-MM-DD format)'),
+        endDate: z
+          .string()
+          .optional()
+          .describe('Filter transactions up to this date (YYYY-MM-DD format)'),
+        account: z
+          .string()
+          .optional()
+          .describe('Filter by account ID (must be resolved via get_accounts)'),
+        category: z
+          .string()
+          .optional()
+          .describe('Filter by category ID (must be resolved via get_categories)'),
         presentation: createPresentationSchema(
           'Choose "card" for a visual transaction list, or "text" for a normal text answer.'
         ),
@@ -501,6 +530,83 @@ export function createAskClarificationQuestionTool() {
   );
 }
 
+export function createDeleteTransactionTool() {
+  return tool(
+    async ({ transactionId }) => {
+      const success = await deleteTransaction(transactionId);
+
+      if (!success) {
+        throw new Error(`Transaction with ID ${transactionId} not found or already deleted`);
+      }
+
+      return JSON.stringify({
+        success: true,
+        message: 'Transaction deleted successfully',
+        transactionId,
+      });
+    },
+    {
+      name: 'delete_transaction',
+      description:
+        'Delete a transaction by its ID. Use this when the user explicitly asks to delete a specific transaction. Always confirm with the user before deleting. After deletion, inform the user that the transaction has been removed.',
+      schema: z.object({
+        transactionId: z.string().describe('The exact MongoDB ID of the transaction to delete'),
+      }),
+    }
+  );
+}
+
+export function createUpdateTransactionTool() {
+  return tool(
+    async ({ transactionId, description, amount, date, categoryId, accountId }) => {
+      const patch = {};
+      if (description !== undefined) patch.description = description;
+      if (amount !== undefined) patch.amount = amount;
+      if (date !== undefined) patch.date = new Date(date);
+      if (categoryId !== undefined) patch.category = categoryId;
+      if (accountId !== undefined) patch.account = accountId;
+
+      if (Object.keys(patch).length === 0) {
+        throw new Error('No fields to update provided');
+      }
+
+      const updated = await updateTransaction(transactionId, patch);
+
+      return JSON.stringify({
+        success: true,
+        message: 'Transaction updated successfully',
+        transactionId,
+        updated: {
+          description: updated.description,
+          amount: updated.amount,
+          date: updated.date,
+          category: updated.category?.name || 'Uncategorized',
+          account: updated.account?.name || 'Unknown',
+        },
+      });
+    },
+    {
+      name: 'update_transaction',
+      description:
+        'Update an existing transaction. You can modify description, amount, date, category, or account. Use this when the user wants to correct or change details of an existing transaction. Always confirm the changes with the user before updating.',
+      schema: z.object({
+        transactionId: z.string().describe('The exact MongoDB ID of the transaction to update'),
+        description: z.string().optional().describe('New description for the transaction'),
+        amount: z.number().optional().describe('New amount (must be positive)'),
+        date: z.string().optional().describe('New date in YYYY-MM-DD format'),
+        categoryId: z
+          .string()
+          .optional()
+          .describe('New category ID (must be resolved via get_categories)'),
+        accountId: z
+          .string()
+          .optional()
+          .describe('New account ID (must be resolved via get_accounts)'),
+      }),
+    }
+  );
+}
+
 export function createFinanceTools() {
   return [
     createGetAccountsTool(),
@@ -508,6 +614,8 @@ export function createFinanceTools() {
     createGetTransactionsTool(),
     createGetAnalysisTool(),
     createDraftTransactionTool(),
+    createDeleteTransactionTool(),
+    createUpdateTransactionTool(),
     createAskClarificationQuestionTool(),
   ];
 }

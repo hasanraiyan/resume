@@ -57,11 +57,14 @@ function buildFinanceAgentInput(body) {
     ? body.chatHistory
     : normalizeChatHistory(aguiMessages, lastUserIndex);
 
+  const images = lastUserMessage?.images || [];
+
   return {
     threadId: body.threadId || `finance-${Date.now()}`,
     runId: body.runId || crypto.randomUUID(),
     inputParams: {
       userMessage,
+      images,
       chatHistory,
       sessionId: body.threadId || `finance-${Date.now()}`,
       now: meta?.now || new Date().toISOString(),

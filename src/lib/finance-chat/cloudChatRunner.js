@@ -1,22 +1,36 @@
 import { EventType, HttpAgent } from '@ag-ui/client';
 import { applyCloudStreamEventToMessages, setAssistantFallback } from './messageState';
 
-function toAguiMessages(history, userMessage) {
+function toAguiMessages(history, userMessage, images = []) {
   const messages = history
     .filter(
       (message) => message.content && (message.role === 'user' || message.role === 'assistant')
     )
-    .map((message, index) => ({
-      id: String(message.id || `finance-history-${index}`),
-      role: message.role,
-      content: message.content,
-    }));
+    .map((message, index) => {
+      const msg = {
+        id: String(message.id || `finance-history-${index}`),
+        role: message.role,
+        content: message.content,
+      };
 
-  messages.push({
+      if (message.images && Array.isArray(message.images) && message.images.length > 0) {
+        msg.images = message.images;
+      }
+
+      return msg;
+    });
+
+  const userMsg = {
     id: `finance-user-${Date.now()}`,
     role: 'user',
     content: userMessage.trim(),
-  });
+  };
+
+  if (images && images.length > 0) {
+    userMsg.images = images;
+  }
+
+  messages.push(userMsg);
 
   return messages;
 }
@@ -29,6 +43,7 @@ function createAbortError() {
 
 export async function runCloudFinanceChat({
   userMessage,
+  images = [],
   history,
   assistantMsgId,
   chatMode = 'flash',
@@ -47,7 +62,7 @@ export async function runCloudFinanceChat({
   const agent = new HttpAgent({
     url: '/api/pocketly/chat',
     threadId: `finance-${Date.now()}`,
-    initialMessages: toAguiMessages(history, userMessage),
+    initialMessages: toAguiMessages(history, userMessage, images),
   });
 
   let hasUiBlocks = false;

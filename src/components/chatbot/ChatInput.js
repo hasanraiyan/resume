@@ -34,8 +34,9 @@ export default function ChatInput({
   // feature flags so parents can control which controls appear
   showModeToggle,
   showToolsMenu = true,
+  onImagesSelected,
+  uploadedImages = [],
 }) {
-  const [showImageWarning, setShowImageWarning] = useState(false);
   const isGreenTheme = theme === 'green';
   // default to showing the mode toggle whenever chat mode handlers exist,
   // but let parents explicitly disable it via the prop
@@ -76,13 +77,31 @@ export default function ChatInput({
             e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px';
           }}
           onPaste={(e) => {
-            const hasImage = Array.from(e.clipboardData?.items || []).some((item) =>
+            const imageItems = Array.from(e.clipboardData?.items || []).filter((item) =>
               item.type.startsWith('image/')
             );
-            if (hasImage) {
+            if (imageItems.length > 0) {
               e.preventDefault();
-              setShowImageWarning(true);
-              setTimeout(() => setShowImageWarning(false), 3000);
+              const newImages = [];
+              let loadedCount = 0;
+
+              imageItems.forEach((item) => {
+                const file = item.getAsFile();
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (event) => {
+                    const base64 = event.target.result;
+                    newImages.push({ base64, name: file.name });
+                    loadedCount++;
+
+                    if (loadedCount === imageItems.length) {
+                      const updated = [...uploadedImages, ...newImages];
+                      if (onImagesSelected) onImagesSelected(updated);
+                    }
+                  };
+                  reader.readAsDataURL(file);
+                }
+              });
             }
           }}
           onKeyDown={(e) => {
@@ -100,11 +119,27 @@ export default function ChatInput({
           style={{ height: '40px' }}
         />
 
-        {showImageWarning && (
-          <div
-            className={`mx-4 mb-2 px-3 py-2 text-xs ${warningBg} ${warningText} rounded-lg border ${warningBorder}`}
-          >
-            Image input not supported. Please paste a description or use text instead.
+        {uploadedImages.length > 0 && (
+          <div className="mx-4 mb-2 flex flex-wrap gap-2">
+            {uploadedImages.map((img, idx) => (
+              <div key={idx} className="relative">
+                <img
+                  src={img.base64}
+                  alt={img.name}
+                  className="h-16 w-16 rounded object-cover border border-gray-300"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = uploadedImages.filter((_, i) => i !== idx);
+                    if (onImagesSelected) onImagesSelected(updated);
+                  }}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
           </div>
         )}
 
@@ -117,6 +152,56 @@ export default function ChatInput({
         >
           {/* Left: Settings Menu & Active Tools */}
           <div className="flex items-center gap-2">
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                const newImages = [];
+                let loadedCount = 0;
+
+                files.forEach((file) => {
+                  const reader = new FileReader();
+                  reader.onload = (event) => {
+                    const base64 = event.target.result;
+                    newImages.push({ base64, name: file.name });
+                    loadedCount++;
+
+                    if (loadedCount === files.length) {
+                      const updated = [...uploadedImages, ...newImages];
+                      if (onImagesSelected) onImagesSelected(updated);
+                    }
+                  };
+                  reader.readAsDataURL(file);
+                });
+
+                e.target.value = '';
+              }}
+              style={{ display: 'none' }}
+              id="image-upload-input"
+            />
+            <button
+              type="button"
+              onClick={() => document.getElementById('image-upload-input').click()}
+              disabled={isLoading}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                isGreenTheme
+                  ? 'bg-[#f5f3e6] text-[#1f644e] hover:bg-[#ebe7d4]'
+                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+              } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              title="Upload images"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+            </button>
+
             {showToolsMenu && (
               <ToolSelector
                 activeMCPs={activeMCPs}
@@ -221,7 +306,8 @@ export default function ChatInput({
                   <rect x="6" y="6" width="12" height="12" rx="2" />
                 </svg>
               </button>
-            ) : !isListening && (inputMessage.trim() || activeQuote) ? (
+            ) : !isListening &&
+              (inputMessage.trim() || activeQuote || uploadedImages.length > 0) ? (
               <button
                 type="button"
                 onClick={handleSubmit}

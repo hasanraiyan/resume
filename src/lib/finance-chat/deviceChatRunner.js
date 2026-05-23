@@ -3,6 +3,7 @@ import { createCompletedToolStep, setAssistantDeviceResult } from './messageStat
 
 export async function runDeviceFinanceChatMessage({
   userMessage,
+  images = [],
   history,
   accounts,
   categories,
@@ -16,6 +17,7 @@ export async function runDeviceFinanceChatMessage({
   const result = await runDeviceFinanceChat(
     {
       userMessage,
+      images,
       history,
       accounts,
       categories,

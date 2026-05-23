@@ -110,15 +110,15 @@ export function FinanceChatProvider({ children }) {
   }, []);
 
   const sendMessage = useCallback(
-    async (userMessage) => {
-      if (!userMessage.trim() || isStreaming) return;
+    async (userMessage, images = []) => {
+      if ((!userMessage?.trim() && images.length === 0) || isStreaming) return;
 
       if (chatMode === 'device' && !deviceAvailability.supported) {
         appendAssistantMessage(deviceAvailability.reason);
         return;
       }
 
-      const userMsg = createUserMessage(userMessage);
+      const userMsg = createUserMessage(userMessage, images);
       const assistantMsg = createAssistantPlaceholder();
       const assistantMsgId = assistantMsg.id;
 
@@ -130,6 +130,7 @@ export function FinanceChatProvider({ children }) {
         if (chatMode === 'device') {
           const result = await runDeviceFinanceChatMessage({
             userMessage,
+            images,
             history: messages,
             accounts,
             categories,
@@ -144,6 +145,7 @@ export function FinanceChatProvider({ children }) {
         } else {
           await runCloudFinanceChat({
             userMessage,
+            images,
             history: messages,
             assistantMsgId,
             chatMode,

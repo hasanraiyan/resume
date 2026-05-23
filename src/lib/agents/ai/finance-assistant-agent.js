@@ -111,6 +111,8 @@ function getToolLabel(toolName) {
     get_accounts: 'Checking accounts',
     get_categories: 'Reviewing categories',
     draft_transaction: 'Drafting transaction',
+    delete_transaction: 'Deleting transaction',
+    update_transaction: 'Updating transaction',
     ask_clarification_question: 'Asking you a question',
   };
 
@@ -346,7 +348,7 @@ class FinanceAssistantAgent extends BaseAgent {
   }
 
   async *_onStreamExecute(input) {
-    const { userMessage, chatHistory = [], now } = input;
+    const { userMessage, images = [], chatHistory = [], now } = input;
 
     const llm = await this.createChatModel();
     const persona = this.config.persona || '';
@@ -435,12 +437,61 @@ How clarification answers appear in chat:
     const messages = [
       systemMessage,
       ...chatHistory.map((msg) => {
-        if (msg.role === 'user') return new HumanMessage({ content: msg.content || '' });
+        const content = [];
+
+        if (msg.content) {
+          content.push({ type: 'text', text: msg.content || '' });
+        }
+
+        if (msg.images && Array.isArray(msg.images) && msg.images.length > 0) {
+          for (const img of msg.images) {
+            if (img.base64) {
+              const base64Data = img.base64.includes('base64,')
+                ? img.base64.split('base64,')[1]
+                : img.base64;
+              content.push({
+                type: 'image_url',
+                image_url: {
+                  url: `data:image/jpeg;base64,${base64Data}`,
+                },
+              });
+            }
+          }
+        }
+
+        if (msg.role === 'user')
+          return new HumanMessage({ content: content.length > 0 ? content : msg.content || '' });
         if (msg.role === 'assistant') return new AIMessage({ content: msg.content || '' });
-        return new HumanMessage({ content: msg.content || '' });
+        return new HumanMessage({ content: content.length > 0 ? content : msg.content || '' });
       }),
-      new HumanMessage({ content: userMessage }),
     ];
+
+    const currentUserContent = [];
+    if (userMessage) {
+      currentUserContent.push({ type: 'text', text: userMessage });
+    }
+
+    if (images && Array.isArray(images) && images.length > 0) {
+      for (const img of images) {
+        if (img.base64) {
+          const base64Data = img.base64.includes('base64,')
+            ? img.base64.split('base64,')[1]
+            : img.base64;
+          currentUserContent.push({
+            type: 'image_url',
+            image_url: {
+              url: `data:image/jpeg;base64,${base64Data}`,
+            },
+          });
+        }
+      }
+    }
+
+    messages.push(
+      new HumanMessage({
+        content: currentUserContent.length > 0 ? currentUserContent : userMessage,
+      })
+    );
 
     const agent = createReactAgent({
       llm,

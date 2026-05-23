@@ -195,27 +195,41 @@ export default function MessageList({
                   <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-bounce [animation-delay:300ms]" />
                 </div>
               ) : (
-                message.content && (
-                  <div
-                    className={`${
-                      isAssistant && message.uiBlocks?.length > 0 ? 'mt-3' : ''
-                    } px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-sm text-[13px] overflow-hidden ${message.role === 'user' ? (isGreenTheme ? 'bg-[#1f644e] text-white shadow-[#1f644e]/20 rounded-tr-sm' : 'bg-gradient-to-br from-black to-neutral-900 text-white shadow-black/20 rounded-tr-sm') : 'bg-white/90 backdrop-blur-sm text-neutral-900 shadow-neutral-200/50 border border-neutral-200/50 rounded-tl-sm'}`}
-                  >
-                    {message.role === 'assistant' ? (
-                      <MdContent content={message.content} onLinkClick={handleLinkClick} />
-                    ) : (
-                      <MdContent content={formatMcqUserMessage(message.content)} isUser={true} />
-                    )}
-                    <p
-                      className={`text-[10px] mt-1.5 ${message.role === 'user' ? 'text-white/60' : 'text-neutral-400'}`}
+                <>
+                  {message.images && message.images.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {message.images.map((img, imgIdx) => (
+                        <img
+                          key={imgIdx}
+                          src={img.base64}
+                          alt={img.name || `image-${imgIdx}`}
+                          className="max-w-[200px] max-h-[200px] rounded-lg object-cover shadow-sm"
+                        />
+                      ))}
+                    </div>
+                  )}
+                  {message.content && (
+                    <div
+                      className={`${
+                        isAssistant && message.uiBlocks?.length > 0 ? 'mt-3' : ''
+                      } px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-sm text-[13px] overflow-hidden ${message.role === 'user' ? (isGreenTheme ? 'bg-[#1f644e] text-white shadow-[#1f644e]/20 rounded-tr-sm' : 'bg-gradient-to-br from-black to-neutral-900 text-white shadow-black/20 rounded-tr-sm') : 'bg-white/90 backdrop-blur-sm text-neutral-900 shadow-neutral-200/50 border border-neutral-200/50 rounded-tl-sm'}`}
                     >
-                      {message.timestamp.toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </p>
-                  </div>
-                )
+                      {message.role === 'assistant' ? (
+                        <MdContent content={message.content} onLinkClick={handleLinkClick} />
+                      ) : (
+                        <MdContent content={formatMcqUserMessage(message.content)} isUser={true} />
+                      )}
+                      <p
+                        className={`text-[10px] mt-1.5 ${message.role === 'user' ? 'text-white/60' : 'text-neutral-400'}`}
+                      >
+                        {message.timestamp.toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

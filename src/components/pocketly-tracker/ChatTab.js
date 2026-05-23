@@ -31,6 +31,7 @@ export default function ChatTab() {
   const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState(null);
+  const [uploadedImages, setUploadedImages] = useState([]);
   const chatbotSettings = { aiName: 'Finance Assistant' };
   const activeQuote = null;
 
@@ -96,9 +97,10 @@ export default function ChatTab() {
   const handleSubmit = (e) => {
     e.preventDefault();
     const trimmed = inputMessage.trim();
-    if (!trimmed || isStreaming) return;
-    sendMessage(trimmed);
+    if ((!trimmed && uploadedImages.length === 0) || isStreaming) return;
+    sendMessage(trimmed, uploadedImages);
     setInputMessage('');
+    setUploadedImages([]);
     if (inputRef.current) {
       inputRef.current.style.height = '44px';
     }
@@ -130,7 +132,9 @@ export default function ChatTab() {
           payload.category = data.categoryId;
         }
 
-        await addTransaction(payload, { switchTab: false });
+        console.log('[ChatTab] Saving transaction:', payload);
+        const result = await addTransaction(payload, { switchTab: false });
+        console.log('[ChatTab] Transaction saved:', result);
 
         broadcastSavedTransaction({
           amount: data.amount,
@@ -147,6 +151,7 @@ export default function ChatTab() {
           appendAssistantMessage('Transaction confirmed and saved successfully!');
         }
       } catch (err) {
+        console.error('[ChatTab] Error saving transaction:', err);
         if (setLocalState) setLocalState('error');
         appendAssistantMessage('Sorry, there was an error saving the transaction.');
       }
@@ -260,6 +265,8 @@ export default function ChatTab() {
         chatMode={chatMode}
         setChatMode={setChatMode}
         deviceAvailability={deviceAvailability}
+        onImagesSelected={setUploadedImages}
+        uploadedImages={uploadedImages}
       />
     </div>
   );
