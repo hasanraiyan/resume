@@ -33,6 +33,27 @@ export default function AppLayout({
   tabTitles = null,
 }) {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [isKeyboardOpen, setIsKeyboardOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+
+    const handleResize = () => {
+      const vv = window.visualViewport;
+      setIsKeyboardOpen(window.innerHeight - vv.height > 150);
+    };
+
+    window.visualViewport.addEventListener('resize', handleResize);
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  const showBottomNav = !useHamburgerMenu && !isKeyboardOpen;
 
   const getTabTitle = () => {
     if (tabTitles && tabTitles[activeTab]) {
@@ -94,7 +115,9 @@ export default function AppLayout({
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex min-w-0 flex-1 flex-col lg:ml-64 min-h-screen overflow-x-hidden pb-16 lg:pb-0 pt-14 lg:pt-0">
+      <div
+        className={`flex min-w-0 flex-1 flex-col lg:ml-64 min-h-screen overflow-x-hidden ${showBottomNav ? 'pb-16' : 'pb-0'} lg:pb-0 pt-14 lg:pt-0`}
+      >
         {/* Header */}
         <header className="lg:sticky lg:top-0 fixed top-0 left-0 right-0 z-20 bg-[#fcfbf5] border-b border-[#e5e3d8]">
           <div className="w-full px-4 lg:px-6 py-3 flex items-center justify-between">
@@ -145,7 +168,7 @@ export default function AppLayout({
       )}
 
       {/* Mobile Bottom Nav */}
-      {!useHamburgerMenu && (
+      {showBottomNav && (
         <nav
           className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#fcfbf5] border-t border-[#e5e3d8] z-30 flex"
           style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
