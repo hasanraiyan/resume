@@ -50,7 +50,11 @@ export function registerRecallTools(server) {
       description: 'Save a new memory or thought with vector embedding for semantic search later.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
-        text: z.string().describe('The memory content to save'),
+        text: z
+          .string()
+          .describe(
+            'The memory content to save. IMPORTANT: To optimize vector embedding and ensure high-quality semantic search retrieval later, expand simple or short inputs (like key phrases or URLs) into descriptive sentences. For example, instead of saving "hasanraiyan.me", write: "Raiyan Hasan personal website, portfolio, and resume link: hasanraiyan.me".'
+          ),
       },
       _meta: toolMeta('Saving memory...', 'Memory saved.'),
     },
@@ -113,7 +117,11 @@ export function registerRecallTools(server) {
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         id: z.string().describe('The memory ID to update'),
-        text: z.string().describe('The updated memory content'),
+        text: z
+          .string()
+          .describe(
+            'The updated memory content. IMPORTANT: To optimize vector embedding and ensure high-quality semantic search retrieval later, expand simple or short inputs (like key phrases or URLs) into descriptive sentences. For example, instead of saving "hasanraiyan.me", write: "Raiyan Hasan personal website, portfolio, and resume link: hasanraiyan.me".'
+          ),
       },
       _meta: toolMeta('Updating memory...', 'Memory updated.'),
     },

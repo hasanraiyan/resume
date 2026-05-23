@@ -2,8 +2,12 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import RecallMemory from '@/models/RecallMemory';
 import { createRecallMemory } from '@/lib/recall/memory-service';
+import { requireAdminAuth } from '@/lib/money-auth';
 
 export async function GET(req) {
+  const authResult = await requireAdminAuth(req);
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     await dbConnect();
     const url = new URL(req.url);
@@ -27,6 +31,9 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
+  const authResult = await requireAdminAuth(req);
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const body = await req.json();
     const memory = await createRecallMemory(body.text);

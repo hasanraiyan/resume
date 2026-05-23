@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { updateRecallMemory, deleteRecallMemory } from '@/lib/recall/memory-service';
+import { requireAdminAuth } from '@/lib/money-auth';
 
 export async function DELETE(req, { params }) {
+  const authResult = await requireAdminAuth(req);
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const { id } = params;
     const memory = await deleteRecallMemory(id);
@@ -21,6 +25,9 @@ export async function DELETE(req, { params }) {
 }
 
 export async function PUT(req, { params }) {
+  const authResult = await requireAdminAuth(req);
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const { id } = params;
     const body = await req.json();

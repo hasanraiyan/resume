@@ -57,7 +57,17 @@ function rateLimitResponse(retryAfter) {
 
 async function getAuthInfo(request) {
   const authHeader = request.headers.get('authorization') || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  let token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+  if (!token) {
+    try {
+      const url = new URL(request.url);
+      token = url.searchParams.get('token') || url.searchParams.get('access_token');
+    } catch {
+      // ignore
+    }
+  }
+
   if (!token) return null;
   const payload = await verifyAccessToken(token);
   if (!payload) return null;
@@ -85,6 +95,10 @@ async function getAuthInfo(request) {
 async function handleMcpRequest(request) {
   const authInfo = await getAuthInfo(request);
   if (!authInfo) return unauthorizedResponse('Valid Bearer token required');
+
+  if (!authInfo.scopes.includes('recall')) {
+    return unauthorizedResponse('Token lacks required scope: recall');
+  }
 
   const rateCheck = checkRateLimit(authInfo.clientId);
   if (!rateCheck.allowed) {

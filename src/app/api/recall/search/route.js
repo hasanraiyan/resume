@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { searchRecallMemories } from '@/lib/recall/memory-service';
+import { requireAdminAuth } from '@/lib/money-auth';
 
 export async function GET(req) {
+  const authResult = await requireAdminAuth(req);
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const url = new URL(req.url);
     const query = url.searchParams.get('q');
