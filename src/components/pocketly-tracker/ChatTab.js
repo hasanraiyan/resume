@@ -64,13 +64,13 @@ export default function ChatTab() {
 
   const getMobileHeight = () => {
     if (!viewportHeight) {
-      return 'calc(100vh - 7rem - env(safe-area-inset-bottom))';
+      return 'calc(100vh - 3.5rem - env(safe-area-inset-bottom))';
     }
     const headerHeight = 56; // 3.5rem / pt-14
     if (isKeyboardOpen) {
       return `${viewportHeight - headerHeight}px`;
     } else {
-      return `calc(${viewportHeight}px - 112px - env(safe-area-inset-bottom))`;
+      return `calc(${viewportHeight}px - 56px - env(safe-area-inset-bottom))`;
     }
   };
 
@@ -212,7 +212,7 @@ export default function ChatTab() {
 
   return (
     <div
-      className="flex h-[calc(100vh-7rem-env(safe-area-inset-bottom))] lg:h-[calc(100vh-4rem)] min-w-0 flex-col overflow-x-hidden bg-[#fcfbf5]"
+      className="flex h-[calc(100vh-3.5rem-env(safe-area-inset-bottom))] lg:h-[calc(100vh-4rem)] min-w-0 flex-col overflow-x-hidden bg-[#fcfbf5]"
       style={{
         height:
           typeof window !== 'undefined' && window.innerWidth < 1024 && viewportHeight

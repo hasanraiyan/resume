@@ -1,6 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
-import { Menu } from 'lucide-react';
+import { Menu, ArrowLeft } from 'lucide-react';
 
 /**
  * AppLayout Component
@@ -53,7 +53,7 @@ export default function AppLayout({
     };
   }, []);
 
-  const showBottomNav = !useHamburgerMenu && !isKeyboardOpen;
+  const showBottomNav = !useHamburgerMenu && !isKeyboardOpen && activeTab !== 'chat';
 
   const getTabTitle = () => {
     if (tabTitles && tabTitles[activeTab]) {
@@ -121,7 +121,17 @@ export default function AppLayout({
         {/* Header */}
         <header className="lg:sticky lg:top-0 fixed top-0 left-0 right-0 z-20 bg-[#fcfbf5] border-b border-[#e5e3d8]">
           <div className="w-full px-4 lg:px-6 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              {!showBottomNav && activeTab === 'chat' && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('records')}
+                  className="lg:hidden p-1 -ml-1 text-[#7c8e88] hover:text-[#1e3a34] hover:bg-neutral-100 rounded-full transition-colors cursor-pointer"
+                  aria-label="Go back to records"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+              )}
               {useHamburgerMenu && (
                 <button className="lg:hidden p-1" onClick={() => setSidebarOpen(true)}>
                   <Menu className="w-5 h-5 text-[#1e3a34]" />
