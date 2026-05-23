@@ -1,12 +1,7 @@
 import { NextResponse } from 'next/server';
-import crypto from 'crypto';
 import dbConnect from '@/lib/dbConnect';
 import RecallMemory from '@/models/RecallMemory';
-import { generateEmbedding } from '@/lib/coursify/embeddings';
-import { qdrantClient, ensureCollection } from '@/lib/qdrant';
-
-const QDRANT_COLLECTION = 'recall_memories';
-const VECTOR_DIMENSIONS = 1536;
+import { createRecallMemory } from '@/lib/recall/memory-service';
 
 export async function GET(req) {
   try {
@@ -33,48 +28,15 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    await dbConnect();
     const body = await req.json();
-    const { text } = body;
-
-    if (!text || text.trim() === '') {
-      return NextResponse.json({ error: 'Text is required' }, { status: 400 });
-    }
-
-    // Generate embedding
-    const embedding = await generateEmbedding(text);
-
-    // Prepare Qdrant point
-    const qdrantId = crypto.randomUUID();
-    const isReady = await ensureCollection(QDRANT_COLLECTION, VECTOR_DIMENSIONS);
-
-    if (!isReady) {
-      throw new Error('Failed to ensure Qdrant collection is ready');
-    }
-
-    await qdrantClient.upsert(QDRANT_COLLECTION, {
-      wait: true,
-      points: [
-        {
-          id: qdrantId,
-          vector: embedding,
-          payload: { text },
-        },
-      ],
-    });
-
-    // Save to MongoDB
-    const memory = await RecallMemory.create({
-      text,
-      qdrantId,
-    });
-
+    const memory = await createRecallMemory(body.text);
     return NextResponse.json({ memory }, { status: 201 });
   } catch (error) {
     console.error('[ReCall POST] Error:', error);
+    const status = error.message === 'Text is required' ? 400 : 500;
     return NextResponse.json(
       { error: 'Failed to create memory', details: error.message },
-      { status: 500 }
+      { status }
     );
   }
 }

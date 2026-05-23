@@ -2,6 +2,12 @@ import { z } from 'zod';
 import dbConnect from '@/lib/dbConnect';
 import RecallMemory from '@/models/RecallMemory';
 import {
+  createRecallMemory,
+  searchRecallMemories,
+  updateRecallMemory,
+  deleteRecallMemory,
+} from '@/lib/recall/memory-service';
+import {
   READ_ONLY_ANNOTATIONS,
   MUTATION_ANNOTATIONS,
   DESTRUCTIVE_ANNOTATIONS,
@@ -41,8 +47,7 @@ export function registerRecallTools(server) {
     'create_memory',
     {
       title: 'Create Memory',
-      description:
-        'Save a new memory or thought. This is the primary way to capture information for later retrieval.',
+      description: 'Save a new memory or thought with vector embedding for semantic search later.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         text: z.string().describe('The memory content to save'),
@@ -51,17 +56,8 @@ export function registerRecallTools(server) {
     },
     async (params) => {
       try {
-        if (!params.text || !params.text.trim()) {
-          return errorResult('Memory text cannot be empty');
-        }
-
-        await dbConnect();
-        const memory = await RecallMemory.create({
-          text: params.text.trim(),
-          qdrantId: `recall_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        });
-
-        return textResult(`Memory saved successfully.`, {
+        const memory = await createRecallMemory(params.text);
+        return textResult('Memory saved successfully.', {
           success: true,
           memory: normalizeMemory(memory),
         });
@@ -76,7 +72,7 @@ export function registerRecallTools(server) {
     {
       title: 'Search Memories',
       description:
-        'Search through your memories using semantic search. Returns memories that match the query.',
+        'Semantic vector search over saved memories (same as the ReCall app search). Returns the closest matches by meaning.',
       annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {
         query: z.string().describe('Search query to find matching memories'),
@@ -90,16 +86,8 @@ export function registerRecallTools(server) {
           return errorResult('Search query cannot be empty');
         }
 
-        await dbConnect();
         const limit = params.limit || 10;
-
-        const memories = await RecallMemory.find(
-          { $text: { $search: params.query } },
-          { score: { $meta: 'textScore' } }
-        )
-          .sort({ score: { $meta: 'textScore' } })
-          .limit(limit)
-          .lean();
+        const memories = await searchRecallMemories(params.query, limit);
 
         const normalized = memories.map((m) => ({
           ...normalizeMemory(m),
@@ -108,7 +96,7 @@ export function registerRecallTools(server) {
 
         return textResult(`Found ${normalized.length} matching memories.`, {
           kind: 'memories',
-          query: params.query,
+          query: params.query.trim(),
           memories: normalized,
         });
       } catch (err) {
@@ -121,7 +109,7 @@ export function registerRecallTools(server) {
     'update_memory',
     {
       title: 'Update Memory',
-      description: 'Edit an existing memory by its ID.',
+      description: 'Edit an existing memory by its ID and refresh its search embedding.',
       annotations: MUTATION_ANNOTATIONS,
       inputSchema: {
         id: z.string().describe('The memory ID to update'),
@@ -131,22 +119,13 @@ export function registerRecallTools(server) {
     },
     async (params) => {
       try {
-        if (!params.text || !params.text.trim()) {
-          return errorResult('Memory text cannot be empty');
-        }
-
-        await dbConnect();
-        const memory = await RecallMemory.findByIdAndUpdate(
-          params.id,
-          { text: params.text.trim() },
-          { new: true }
-        );
+        const memory = await updateRecallMemory(params.id, params.text);
 
         if (!memory) {
           return errorResult('Memory not found');
         }
 
-        return textResult(`Memory updated successfully.`, {
+        return textResult('Memory updated successfully.', {
           success: true,
           memory: normalizeMemory(memory),
         });
@@ -160,7 +139,8 @@ export function registerRecallTools(server) {
     'delete_memory',
     {
       title: 'Delete Memory',
-      description: 'Permanently delete a memory by its ID. This action cannot be undone.',
+      description:
+        'Permanently delete a memory by its ID from MongoDB and Qdrant. This action cannot be undone.',
       annotations: DESTRUCTIVE_ANNOTATIONS,
       inputSchema: {
         id: z.string().describe('The memory ID to delete'),
@@ -169,14 +149,13 @@ export function registerRecallTools(server) {
     },
     async (params) => {
       try {
-        await dbConnect();
-        const memory = await RecallMemory.findByIdAndDelete(params.id);
+        const memory = await deleteRecallMemory(params.id);
 
         if (!memory) {
           return errorResult('Memory not found');
         }
 
-        return textResult(`Memory deleted successfully.`, {
+        return textResult('Memory deleted successfully.', {
           success: true,
           deletedId: memory._id.toString(),
         });
@@ -203,7 +182,7 @@ export function registerRecallTools(server) {
         const oldest = await RecallMemory.findOne().sort({ createdAt: 1 }).lean();
         const newest = await RecallMemory.findOne().sort({ createdAt: -1 }).lean();
 
-        return textResult(`Memory statistics retrieved.`, {
+        return textResult('Memory statistics retrieved.', {
           kind: 'stats',
           stats: {
             totalMemories: total,
