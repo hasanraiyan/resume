@@ -37,6 +37,8 @@ export const AGENT_IDS = {
 
   // Finance
   FINANCE_ASSISTANT: 'finance_assistant',
+  FINANCE_FLASH: 'finance_flash',
+  FINANCE_PRO: 'finance_pro',
 
   // Tools / Apps
   APP_BUILDER: 'app_builder',
@@ -87,6 +89,19 @@ export const AGENT_CATEGORIES = {
   TRACKING: 'tracking',
   INSIGHTS: 'insights',
 };
+
+const FINANCE_ASSISTANT_PERSONA = `You are a professional Finance Assistant embedded in the Pocketly personal finance application. Your role is to help users understand their finances, answer questions about their transactions, and provide insights.
+
+KEY BEHAVIORS:
+1. Be concise, professional, and helpful.
+2. Always ground your answers in the user's actual financial data when available.
+3. Use clear formatting: bullet points, short paragraphs, and tables when appropriate.
+4. If you don't have access to specific data, say so honestly rather than making up numbers.
+5. Provide actionable insights, not just raw data.
+6. When discussing expenses, use the Indian Rupee (â‚¹) format.
+7. Keep responses focused and avoid unnecessary verbosity.
+
+YOU ARE NOT a generic finance chatbot. You are a specialized assistant for THIS user's personal finances.`;
 
 /**
  * Default Agent Configurations
@@ -343,6 +358,28 @@ KEY BEHAVIORS:
 YOU ARE NOT a generic finance chatbot. You are a specialized assistant for THIS user's personal finances.`,
     isActive: true,
   },
+  [AGENT_IDS.FINANCE_FLASH]: {
+    name: 'Pocketly Flash',
+    description: 'Fast personal finance assistant for Pocketly',
+    type: AGENT_TYPES.ANALYTICS,
+    category: AGENT_CATEGORIES.INSIGHTS,
+    icon: 'Zap',
+    defaultModel: 'gpt-4o-mini',
+    defaultProvider: 'openai',
+    persona: FINANCE_ASSISTANT_PERSONA,
+    isActive: true,
+  },
+  [AGENT_IDS.FINANCE_PRO]: {
+    name: 'Pocketly Pro',
+    description: 'Higher quality personal finance assistant for Pocketly',
+    type: AGENT_TYPES.ANALYTICS,
+    category: AGENT_CATEGORIES.INSIGHTS,
+    icon: 'Award',
+    defaultModel: 'gpt-4o',
+    defaultProvider: 'openai',
+    persona: FINANCE_ASSISTANT_PERSONA,
+    isActive: true,
+  },
 };
 
 /**
@@ -368,6 +405,8 @@ export const AGENT_TOOLS = {
   [AGENT_IDS.ENGAGEMENT_ANALYZER]: ['pattern_recognition', 'insights_generation'],
   [AGENT_IDS.APP_BUILDER]: ['planning', 'html_generation', 'code_review'],
   [AGENT_IDS.FINANCE_ASSISTANT]: ['conversation'],
+  [AGENT_IDS.FINANCE_FLASH]: ['conversation'],
+  [AGENT_IDS.FINANCE_PRO]: ['conversation'],
   [AGENT_IDS.COURSIFY_SEARCH]: ['tavily_search', 'youtube_search', 'firecrawl_scrape'],
   [AGENT_IDS.COURSIFY_RESEARCH]: ['tavily_search', 'youtube_search'],
 };
@@ -395,6 +434,8 @@ export const RATE_LIMIT_DEFAULTS = {
   [AGENT_IDS.ENGAGEMENT_ANALYZER]: { requests: 30, window: 60 },
   [AGENT_IDS.APP_BUILDER]: { requests: 10, window: 60 },
   [AGENT_IDS.FINANCE_ASSISTANT]: { requests: 10, window: 60 },
+  [AGENT_IDS.FINANCE_FLASH]: { requests: 20, window: 60 },
+  [AGENT_IDS.FINANCE_PRO]: { requests: 10, window: 60 },
   [AGENT_IDS.COURSIFY_THUMBNAIL_GENERATOR]: { requests: 10, window: 60 },
   [AGENT_IDS.COURSIFY_CHAT]: { requests: 20, window: 60 },
   [AGENT_IDS.COURSIFY_SEARCH]: { requests: 5, window: 60 },

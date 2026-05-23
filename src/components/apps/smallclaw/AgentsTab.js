@@ -16,21 +16,17 @@ export default function AgentsTab() {
 
   useEffect(() => {
     const loadData = async () => {
-      const needsAgents = agents.length === 0;
       const needsProviders = providers.length === 0;
 
-      if (needsAgents || needsProviders) {
-        setIsLoading(true);
-        const promises = [];
-        if (needsAgents) promises.push(refreshAgents());
-        if (needsProviders) promises.push(refreshProviders());
-        await Promise.all(promises);
-        setIsLoading(false);
-      }
+      setIsLoading(true);
+      const promises = [refreshAgents()];
+      if (needsProviders) promises.push(refreshProviders());
+      await Promise.all(promises);
+      setIsLoading(false);
     };
 
     loadData();
-  }, [agents.length, providers.length, refreshAgents, refreshProviders]);
+  }, [providers.length, refreshAgents, refreshProviders]);
 
   if (isLoading) {
     return (

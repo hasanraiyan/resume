@@ -51,6 +51,7 @@ function buildFinanceAgentInput(body) {
   const lastUserMessage = lastUserIndex >= 0 ? aguiMessages[lastUserIndex] : null;
   const forwardedMeta = body.forwardedProps?.meta || {};
   const meta = body.meta || forwardedMeta;
+  const agentMode = meta?.agentMode || body.agentMode || body.mode || 'flash';
   const userMessage = body.userMessage || getMessageText(lastUserMessage?.content);
   const chatHistory = Array.isArray(body.chatHistory)
     ? body.chatHistory
@@ -64,8 +65,15 @@ function buildFinanceAgentInput(body) {
       chatHistory,
       sessionId: body.threadId || `finance-${Date.now()}`,
       now: meta?.now || new Date().toISOString(),
+      agentMode,
     },
   };
+}
+
+function resolveFinanceAgentId(agentMode) {
+  if (agentMode === 'pro') return AGENT_IDS.FINANCE_PRO;
+  if (agentMode === 'flash') return AGENT_IDS.FINANCE_FLASH;
+  return AGENT_IDS.FINANCE_FLASH;
 }
 
 export async function createFinanceChatAGUIResponse(request, logPrefix = 'Finance Chat') {
@@ -120,7 +128,10 @@ export async function createFinanceChatAGUIResponse(request, logPrefix = 'Financ
           return;
         }
 
-        const events = agentRegistry.streamExecute(AGENT_IDS.FINANCE_ASSISTANT, inputParams);
+        const events = agentRegistry.streamExecute(
+          resolveFinanceAgentId(inputParams.agentMode),
+          inputParams
+        );
 
         for await (const event of events) {
           if (!safeEnqueue(event)) {

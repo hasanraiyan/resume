@@ -31,6 +31,7 @@ export async function runCloudFinanceChat({
   userMessage,
   history,
   assistantMsgId,
+  chatMode = 'flash',
   signal,
   setMessages,
 }) {
@@ -72,7 +73,7 @@ export async function runCloudFinanceChat({
       {
         abortController,
         forwardedProps: {
-          meta: { now: new Date().toISOString() },
+          meta: { now: new Date().toISOString(), agentMode: chatMode },
         },
       },
       {

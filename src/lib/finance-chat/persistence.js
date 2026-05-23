@@ -7,11 +7,19 @@ import {
 export const CHAT_MODE_STORAGE_KEY = 'pocketly-finance-chat-mode';
 export const DEVICE_CHAT_STORAGE_KEY = 'pocketly-finance-device-chat';
 export const CLOUD_CHAT_STORAGE_KEY = 'pocketly-finance-cloud-chat';
+export const REMOTE_CHAT_STORAGE_KEY = 'pocketly-finance-remote-chat';
+
+function normalizeChatMode(mode, deviceSupported) {
+  if (mode === 'device') return deviceSupported ? 'device' : 'flash';
+  if (mode === 'pro') return 'pro';
+  if (mode === 'cloud' || mode === 'flash') return 'flash';
+  return 'flash';
+}
 
 export function loadFinanceChatState({ deviceSupported }) {
   if (typeof window === 'undefined') {
     return {
-      chatMode: 'cloud',
+      chatMode: 'flash',
       messages: [WELCOME_MESSAGE],
       pendingDraft: null,
     };
@@ -20,32 +28,35 @@ export function loadFinanceChatState({ deviceSupported }) {
   try {
     const savedMode = window.localStorage.getItem(CHAT_MODE_STORAGE_KEY);
     const savedDeviceChat = window.localStorage.getItem(DEVICE_CHAT_STORAGE_KEY);
-    const savedCloudChat = window.localStorage.getItem(CLOUD_CHAT_STORAGE_KEY);
+    const savedRemoteChat =
+      window.localStorage.getItem(REMOTE_CHAT_STORAGE_KEY) ||
+      window.localStorage.getItem(CLOUD_CHAT_STORAGE_KEY);
+    const chatMode = normalizeChatMode(savedMode, deviceSupported);
 
     let messages = [WELCOME_MESSAGE];
     let pendingDraft = null;
 
-    if (savedMode === 'device' && savedDeviceChat) {
+    if (chatMode === 'device' && savedDeviceChat) {
       const parsed = JSON.parse(savedDeviceChat);
       if (Array.isArray(parsed.messages) && parsed.messages.length > 0) {
         messages = restoreMessagesFromStorage(parsed.messages);
       }
       pendingDraft = parsed.pendingDraft || null;
-    } else if (savedMode !== 'device' && savedCloudChat) {
-      const parsed = JSON.parse(savedCloudChat);
+    } else if (savedRemoteChat) {
+      const parsed = JSON.parse(savedRemoteChat);
       if (Array.isArray(parsed.messages) && parsed.messages.length > 0) {
         messages = restoreMessagesFromStorage(parsed.messages);
       }
     }
 
     return {
-      chatMode: savedMode === 'device' && deviceSupported ? 'device' : 'cloud',
+      chatMode,
       messages,
       pendingDraft,
     };
   } catch {
     return {
-      chatMode: 'cloud',
+      chatMode: 'flash',
       messages: [WELCOME_MESSAGE],
       pendingDraft: null,
     };
@@ -83,7 +94,7 @@ export function persistCloudChatState(messages) {
 
   try {
     window.localStorage.setItem(
-      CLOUD_CHAT_STORAGE_KEY,
+      REMOTE_CHAT_STORAGE_KEY,
       JSON.stringify({
         messages: serializeMessagesForStorage(messages),
       })
@@ -107,6 +118,7 @@ export function clearCloudChatState() {
   if (typeof window === 'undefined') return;
 
   try {
+    window.localStorage.removeItem(REMOTE_CHAT_STORAGE_KEY);
     window.localStorage.removeItem(CLOUD_CHAT_STORAGE_KEY);
   } catch {
     // Ignore local storage removal failures.

@@ -41,12 +41,11 @@ export default function ChatInput({
   // but let parents explicitly disable it via the prop
   const shouldShowModeToggle = showModeToggle ?? typeof setChatMode === 'function';
   const showDeviceOption = Boolean(deviceAvailability?.supported);
-  const modeOptions = showDeviceOption
-    ? [
-        { id: 'cloud', label: 'Cloud' },
-        { id: 'device', label: 'On-device' },
-      ]
-    : [{ id: 'cloud', label: 'Cloud' }];
+  const modeOptions = [
+    { id: 'flash', label: 'Flash' },
+    { id: 'pro', label: 'Pro' },
+    ...(showDeviceOption ? [{ id: 'device', label: 'On-device' }] : []),
+  ];
   const [isModeMenuOpen, setIsModeMenuOpen] = useState(false);
   const currentMode = modeOptions.find((option) => option.id === chatMode) || modeOptions[0];
 

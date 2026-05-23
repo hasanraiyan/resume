@@ -61,6 +61,8 @@ agentRegistry.register(AGENT_IDS.TELEGRAM_ASSISTANT, TelegramAgent);
 agentRegistry.register(AGENT_IDS.WHATSAPP_ASSISTANT, WhatsAppAgent);
 agentRegistry.register(AGENT_IDS.APP_BUILDER, AppBuilderAgent);
 agentRegistry.register(AGENT_IDS.FINANCE_ASSISTANT, FinanceAssistantAgent);
+agentRegistry.register(AGENT_IDS.FINANCE_FLASH, FinanceAssistantAgent);
+agentRegistry.register(AGENT_IDS.FINANCE_PRO, FinanceAssistantAgent);
 agentRegistry.register(AGENT_IDS.COURSIFY_THUMBNAIL_GENERATOR, CoursifyThumbnailAgent);
 agentRegistry.register(AGENT_IDS.COURSIFY_CHAT, CoursifyChatAgent);
 agentRegistry.register(AGENT_IDS.COURSIFY_SEARCH, CoursifySearchAgent);

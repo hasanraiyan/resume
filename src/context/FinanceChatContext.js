@@ -35,7 +35,7 @@ export function FinanceChatProvider({ children }) {
   const { accounts, categories, transactions, analysis } = useMoney();
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [chatMode, setChatModeState] = useState('cloud');
+  const [chatMode, setChatModeState] = useState('flash');
   const [deviceAvailability, setDeviceAvailability] = useState({
     supported: false,
     reason: '',
@@ -68,6 +68,10 @@ export function FinanceChatProvider({ children }) {
 
   const setChatMode = useCallback(
     (nextMode) => {
+      if (!['flash', 'pro', 'device'].includes(nextMode)) {
+        return;
+      }
+
       if (nextMode === 'device' && !deviceAvailability.supported) {
         return;
       }
@@ -142,6 +146,7 @@ export function FinanceChatProvider({ children }) {
             userMessage,
             history: messages,
             assistantMsgId,
+            chatMode,
             signal: abortRef.current.signal,
             setMessages,
           });
