@@ -51,4 +51,12 @@ export const MINI_APPS = [
     iconSrc:
       'https://res.cloudinary.com/djkpavwmp/image/upload/v1762069094/portfolio_assets/ckfre3frqkzgatpgmzu1.jpg', // Placeholder for now
   },
+  {
+    id: 'kanban',
+    name: 'Kanban',
+    tagline: 'Drag-and-drop task boards for personal project management.',
+    href: '/apps/kanban',
+    category: 'Productivity',
+    iconSrc: '/images/apps/kanban.png',
+  },
 ];
