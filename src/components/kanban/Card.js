@@ -20,16 +20,49 @@ const labelColors = [
   { bg: '#f5f5f5', text: '#424242' },
 ];
 
-export default function KanbanCard({ card, onDelete }) {
+export default function KanbanCard({ card, onDelete, compact }) {
   const priority = priorityColors[card.priority] || priorityColors.medium;
   const isOverdue = card.dueDate && new Date(card.dueDate) < new Date();
   const checklistDone = card.checklist?.filter((i) => i.done).length || 0;
   const checklistTotal = card.checklist?.length || 0;
 
+  if (compact) {
+    return (
+      <div className="bg-white rounded-lg border border-[#e5e3d8] px-3 py-2 hover:border-[#1f644e]/30 hover:shadow-sm transition-all duration-200 group cursor-pointer">
+        <div className="flex items-center gap-2">
+          <span
+            className="w-2 h-2 rounded-full flex-shrink-0"
+            style={{ backgroundColor: priorityColors[card.priority]?.text || '#7c8e88' }}
+          />
+          <span className="text-xs font-bold text-[#1e3a34] truncate flex-1">{card.title}</span>
+          {card.number && (
+            <span className="text-[10px] font-bold text-[#a0b2ac] flex-shrink-0">
+              {card.number}
+            </span>
+          )}
+          {isOverdue && <AlertTriangle className="w-3 h-3 text-[#c94c4c] flex-shrink-0" />}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (confirm('Delete this card?')) onDelete(card._id);
+            }}
+            className="p-0.5 text-[#7c8e88] hover:text-[#c94c4c] hover:bg-red-50 rounded opacity-0 group-hover:opacity-100 transition-all cursor-pointer flex-shrink-0"
+          >
+            <Trash2 className="w-3 h-3" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-lg border border-[#e5e3d8] p-3 hover:border-[#1f644e]/30 hover:shadow-sm transition-all duration-200 group cursor-pointer">
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
+          {card.number && (
+            <span className="text-[10px] font-bold text-[#a0b2ac] block mb-1">{card.number}</span>
+          )}
+
           {card.labels?.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-2">
               {card.labels.map((label, i) => (

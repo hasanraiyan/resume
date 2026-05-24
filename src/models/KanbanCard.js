@@ -27,6 +27,10 @@ const KanbanCardSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    number: {
+      type: String,
+      default: null,
+    },
     description: {
       type: String,
       default: '',

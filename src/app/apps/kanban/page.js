@@ -2,20 +2,22 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import AdminGuard from '@/components/AdminGuard';
-import { LayoutDashboard, Columns3, BarChart3, Trash2 } from 'lucide-react';
+import { LayoutDashboard, Columns3, BarChart3, Trash2, Activity } from 'lucide-react';
 import SessionProvider from '@/components/SessionProvider';
 import AppLayout from '@/components/layout/AppLayout';
-import { SkeletonProvider, SkeletonWrapper } from 'react-skeletonify';
+import { SkeletonProvider } from 'react-skeletonify';
 import 'react-skeletonify/dist/index.css';
 import BoardsTab from '@/components/kanban/BoardsTab';
 import BoardView from '@/components/kanban/BoardView';
 import AnalyticsTab from '@/components/kanban/AnalyticsTab';
 import TrashTab from '@/components/kanban/TrashTab';
+import ActivityTab from '@/components/kanban/ActivityTab';
 
 const tabs = [
   { id: 'boards', label: 'Boards', icon: LayoutDashboard },
   { id: 'board', label: 'Board', icon: Columns3 },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+  { id: 'activity', label: 'Activity', icon: Activity },
   { id: 'trash', label: 'Trash', icon: Trash2 },
 ];
 
@@ -111,6 +113,12 @@ function KanbanContent() {
     setBoards((prev) => prev.map((b) => (b._id === board._id ? board : b)));
   };
 
+  const handleBoardDuplicated = (newBoard) => {
+    setBoards((prev) => [newBoard, ...prev]);
+    setActiveBoardId(newBoard._id);
+    setActiveTab('board');
+  };
+
   const handleCardMoved = async (cardId, destColumnId, destIndex) => {
     const prevCards = [...cards];
     setCards((prev) =>
@@ -168,12 +176,13 @@ function KanbanContent() {
     fetchBoards();
   };
 
+  const activeBoard = boards.find((b) => b._id === activeBoardId);
+
   const tabTitles = {
     boards: 'Your Boards',
-    board: activeBoardId
-      ? boards.find((b) => b._id === activeBoardId)?.name || 'Board'
-      : 'Select a Board',
+    board: activeBoard?.name || 'Select a Board',
     analytics: 'Analytics',
+    activity: activeBoard ? `${activeBoard.name} Activity` : 'Activity',
     trash: 'Trash',
   };
 
@@ -187,6 +196,7 @@ function KanbanContent() {
             onBoardCreated={handleBoardCreated}
             onBoardDeleted={handleBoardDeleted}
             onBoardUpdated={handleBoardUpdated}
+            onBoardDuplicated={handleBoardDuplicated}
           />
         );
       case 'board':
@@ -216,6 +226,14 @@ function KanbanContent() {
         ) : (
           <div className="flex items-center justify-center h-64 text-[#7c8e88]">
             <p>Select a board to view analytics</p>
+          </div>
+        );
+      case 'activity':
+        return activeBoardId ? (
+          <ActivityTab boardId={activeBoardId} />
+        ) : (
+          <div className="flex items-center justify-center h-64 text-[#7c8e88]">
+            <p>Select a board to view activity</p>
           </div>
         );
       case 'trash':

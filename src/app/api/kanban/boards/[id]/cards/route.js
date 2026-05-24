@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import KanbanCard from '@/models/KanbanCard';
 import KanbanColumn from '@/models/KanbanColumn';
+import KanbanActivity from '@/models/KanbanActivity';
 import { requireAdminAuth } from '@/lib/money-auth';
 
 export async function GET(req, { params }) {
@@ -11,9 +12,7 @@ export async function GET(req, { params }) {
 
   try {
     await dbConnect();
-
     const cards = await KanbanCard.find({ boardId, deletedAt: null }).sort({ position: 1 }).lean();
-
     return NextResponse.json({ cards });
   } catch (error) {
     console.error('[Kanban Cards GET] Error:', error);
@@ -51,9 +50,13 @@ export async function POST(req, { params }) {
       .select('position')
       .lean();
 
+    const cardCount = await KanbanCard.countDocuments({ boardId, deletedAt: null });
+    const cardNumber = `CARD-${String(cardCount + 1).padStart(3, '0')}`;
+
     const card = await KanbanCard.create({
       boardId,
       columnId: body.columnId,
+      number: cardNumber,
       title: body.title.trim(),
       description: body.description?.trim() || '',
       position: (maxPos?.position ?? -1) + 1,
@@ -61,6 +64,13 @@ export async function POST(req, { params }) {
       priority: body.priority || 'medium',
       dueDate: body.dueDate || null,
       checklist: body.checklist || [],
+    });
+
+    await KanbanActivity.create({
+      boardId,
+      cardId: card._id,
+      action: 'card_created',
+      details: `Created "${card.title}" in "${column.title}"`,
     });
 
     return NextResponse.json({ card }, { status: 201 });

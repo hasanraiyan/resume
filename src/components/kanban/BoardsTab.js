@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, LayoutDashboard, Trash2, Pencil, Check, X, Loader2 } from 'lucide-react';
+import { Plus, LayoutDashboard, Trash2, Pencil, Check, X, Loader2, Copy } from 'lucide-react';
 
 export default function BoardsTab({
   boards,
@@ -9,6 +9,7 @@ export default function BoardsTab({
   onBoardCreated,
   onBoardDeleted,
   onBoardUpdated,
+  onBoardDuplicated,
 }) {
   const [isCreating, setIsCreating] = useState(false);
   const [newName, setNewName] = useState('');
@@ -91,6 +92,18 @@ export default function BoardsTab({
       }
     } catch (error) {
       console.error('Failed to delete board:', error);
+    }
+  };
+
+  const handleDuplicate = async (id) => {
+    try {
+      const res = await fetch(`/api/kanban/boards/${id}/duplicate`, { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        onBoardDuplicated(data.board);
+      }
+    } catch (error) {
+      console.error('Failed to duplicate board:', error);
     }
   };
 
@@ -238,6 +251,16 @@ export default function BoardsTab({
                       Created {new Date(board.createdAt).toLocaleDateString()}
                     </span>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDuplicate(board._id);
+                        }}
+                        className="p-1.5 text-[#7c8e88] hover:text-[#7b4f9c] hover:bg-[#f3e5f5] rounded-lg transition-colors cursor-pointer"
+                        title="Duplicate"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
