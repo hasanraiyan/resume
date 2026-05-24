@@ -33,6 +33,7 @@
     "@fortawesome/react-fontawesome": "^3.0.2",
     "@google/genai": "^1.43.0",
     "@googleapis/youtube": "^31.0.0",
+    "@hello-pangea/dnd": "^18.0.1",
     "@langchain/community": "^1.1.28",
     "@langchain/core": "^1.1.46",
     "@langchain/exa": "^1.0.1",

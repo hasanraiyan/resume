@@ -1,21 +1,16 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import {
   Plus,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
   X,
   Search,
-  Copy,
   Download,
   Upload,
   LayoutList,
   ChevronDown,
   CheckSquare,
-  Square,
-  GripVertical,
 } from 'lucide-react';
 import { SkeletonWrapper } from 'react-skeletonify';
 import Column from '@/components/kanban/Column';
@@ -100,6 +95,36 @@ export default function BoardView({
       setColumnOrder(columns.map((c) => c._id));
     }
   }, [columns, columnOrder]);
+
+  const handleDragEnd = useCallback(
+    (result) => {
+      const { source, destination, type } = result;
+      if (!destination) return;
+      if (source.droppableId === destination.droppableId && source.index === destination.index)
+        return;
+
+      if (type === 'COLUMN') {
+        setColumnOrder((prev) => {
+          if (!prev) return prev;
+          const next = Array.from(prev);
+          const [removed] = next.splice(source.index, 1);
+          next.splice(destination.index, 0, removed);
+          return next;
+        });
+      } else if (type === 'CARD') {
+        const sourceColId = source.droppableId;
+        const destColId = destination.droppableId;
+        const cardsInSource = filteredCards
+          .filter((c) => c.columnId === sourceColId || c.columnId?.toString() === sourceColId)
+          .sort((a, b) => a.position - b.position);
+        const card = cardsInSource[source.index];
+        if (card) {
+          onCardMoved(card._id, destColId, destination.index);
+        }
+      }
+    },
+    [filteredCards, onCardMoved]
+  );
 
   const handleCreateColumn = async (e) => {
     e.preventDefault();
@@ -202,15 +227,6 @@ export default function BoardView({
     }
   };
 
-  const toggleBulkSelect = (cardId) => {
-    setSelectedCards((prev) => {
-      const next = new Set(prev);
-      if (next.has(cardId)) next.delete(cardId);
-      else next.add(cardId);
-      return next;
-    });
-  };
-
   const handleBulkDelete = async () => {
     if (selectedCards.size === 0) return;
     if (!confirm(`Delete ${selectedCards.size} selected cards?`)) return;
@@ -262,16 +278,13 @@ export default function BoardView({
       if (!file) return;
       const text = await file.text();
       try {
-        const res = await fetch(`/api/kanban/boards/import`, {
+        const res = await fetch('/api/kanban/boards/import', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: text,
         });
         if (res.ok) {
-          const data = await res.json();
-          if (data.board) {
-            window.location.href = `/apps/kanban`;
-          }
+          window.location.href = '/apps/kanban';
         } else {
           alert('Import failed. Check the file format.');
         }
@@ -281,29 +294,6 @@ export default function BoardView({
       }
     };
     input.click();
-  };
-
-  const handleColumnDragStart = (e, columnId) => {
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', `column:${columnId}`);
-  };
-
-  const handleColumnDrop = (e, targetColumnId) => {
-    e.preventDefault();
-    const data = e.dataTransfer.getData('text/plain');
-    if (!data.startsWith('column:')) return;
-    const draggedId = data.replace('column:', '');
-    if (draggedId === targetColumnId) return;
-    setColumnOrder((prev) => {
-      if (!prev) return prev;
-      const idx = prev.indexOf(draggedId);
-      const targetIdx = prev.indexOf(targetColumnId);
-      if (idx === -1 || targetIdx === -1) return prev;
-      const next = [...prev];
-      next.splice(idx, 1);
-      next.splice(targetIdx, 0, draggedId);
-      return next;
-    });
   };
 
   useEffect(() => {
@@ -414,9 +404,7 @@ export default function BoardView({
 
           <button
             onClick={() => setCompact(!compact)}
-            className={`p-2 rounded-lg transition-colors cursor-pointer ${
-              compact ? 'bg-[#1f644e]/10 text-[#1f644e]' : 'text-[#7c8e88] hover:bg-[#f0f5f2]'
-            }`}
+            className={`p-2 rounded-lg transition-colors cursor-pointer ${compact ? 'bg-[#1f644e]/10 text-[#1f644e]' : 'text-[#7c8e88] hover:bg-[#f0f5f2]'}`}
             title={compact ? 'Expanded view' : 'Compact view'}
           >
             <LayoutList className="w-4 h-4" />
@@ -424,9 +412,7 @@ export default function BoardView({
 
           <button
             onClick={() => setBulkMode(!bulkMode)}
-            className={`p-2 rounded-lg transition-colors cursor-pointer ${
-              bulkMode ? 'bg-[#1f644e]/10 text-[#1f644e]' : 'text-[#7c8e88] hover:bg-[#f0f5f2]'
-            }`}
+            className={`p-2 rounded-lg transition-colors cursor-pointer ${bulkMode ? 'bg-[#1f644e]/10 text-[#1f644e]' : 'text-[#7c8e88] hover:bg-[#f0f5f2]'}`}
             title="Bulk actions"
           >
             <CheckSquare className="w-4 h-4" />
@@ -503,124 +489,124 @@ export default function BoardView({
         </div>
       )}
 
-      <div className="flex-1 overflow-x-auto">
-        <div
-          className="flex gap-4 p-4 lg:p-6 min-h-[calc(100vh-16rem)]"
-          style={{ minWidth: sortedColumns.length * 300 + 80 }}
-        >
-          {sortedColumns.map((column) => {
-            const columnCards = filteredCards
-              .filter(
-                (c) =>
-                  c.columnId === column._id || c.columnId?.toString() === column._id?.toString()
-              )
-              .sort((a, b) => a.position - b.position);
-
-            const isCollapsed = collapsedColumns.has(column._id);
-
-            return (
-              <div
-                key={column._id}
-                draggable
-                onDragStart={(e) => handleColumnDragStart(e, column._id)}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.dataTransfer.dropEffect = 'move';
-                }}
-                onDrop={(e) => handleColumnDrop(e, column._id)}
-              >
-                <Column
-                  column={column}
-                  cards={columnCards}
-                  onCardMoved={onCardMoved}
-                  onCardDeleted={onCardDeleted}
-                  onCardClick={setModalCard}
-                  onQuickAdd={handleQuickAdd}
-                  isEditing={editingColumnId === column._id}
-                  editTitle={editColumnTitle}
-                  onEditTitleChange={setEditColumnTitle}
-                  onStartEdit={() => startEditColumn(column)}
-                  onSaveEdit={() => handleUpdateColumn(column._id)}
-                  onCancelEdit={() => setEditingColumnId(null)}
-                  onDelete={() => handleDeleteColumn(column._id)}
-                  isUpdating={isUpdatingColumn}
-                  collapsed={isCollapsed}
-                  onToggleCollapse={() =>
-                    setCollapsedColumns((prev) => {
-                      const next = new Set(prev);
-                      if (next.has(column._id)) next.delete(column._id);
-                      else next.add(column._id);
-                      return next;
-                    })
-                  }
-                  compact={compact}
-                />
-              </div>
-            );
-          })}
-
-          {isAddingColumn ? (
-            <form onSubmit={handleCreateColumn} className="flex-shrink-0 w-[280px]">
-              <div className="bg-[#f0f5f2] rounded-xl p-3 border border-[#e5e3d8]">
-                <input
-                  type="text"
-                  value={newColumnTitle}
-                  onChange={(e) => setNewColumnTitle(e.target.value)}
-                  placeholder="Column title..."
-                  className="w-full rounded-lg border border-[#e5e3d8] bg-white px-3 py-2 text-sm outline-none focus:border-[#1f644e] focus:ring-2 focus:ring-[#1f644e]/20 mb-2"
-                  autoFocus
-                />
-                <div className="flex items-center gap-2">
-                  <button
-                    type="submit"
-                    disabled={!newColumnTitle.trim() || isCreatingColumn}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-[#1f644e] text-white text-xs font-bold rounded-lg hover:bg-[#17503e] disabled:opacity-50 transition-colors cursor-pointer"
-                  >
-                    {isCreatingColumn ? (
-                      <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                        />
-                      </svg>
-                    ) : (
-                      <Plus className="w-3 h-3" />
-                    )}
-                    Add
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsAddingColumn(false);
-                      setNewColumnTitle('');
-                    }}
-                    className="p-1.5 text-[#7c8e88] hover:bg-[#e5e3d8] rounded-lg cursor-pointer"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </form>
-          ) : (
-            <button
-              onClick={() => setIsAddingColumn(true)}
-              className="flex-shrink-0 w-[280px] h-fit border-2 border-dashed border-[#e5e3d8] rounded-xl p-4 text-[#7c8e88] hover:border-[#1f644e]/40 hover:text-[#1f644e] hover:bg-[#f0f5f2]/50 transition-all cursor-pointer flex items-center justify-center gap-2"
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Droppable droppableId="all-columns" direction="horizontal" type="COLUMN">
+          {(provided) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className="flex-1 overflow-x-auto"
             >
-              <Plus className="w-4 h-4" />
-              <span className="text-sm font-bold">Add Column</span>
-            </button>
+              <div
+                className="flex gap-4 p-4 lg:p-6 min-h-[calc(100vh-16rem)]"
+                style={{ minWidth: `${sortedColumns.length * 300 + 80}px` }}
+              >
+                {sortedColumns.map((column, index) => {
+                  const columnCards = filteredCards
+                    .filter(
+                      (c) =>
+                        c.columnId === column._id ||
+                        c.columnId?.toString() === column._id?.toString()
+                    )
+                    .sort((a, b) => a.position - b.position);
+
+                  return (
+                    <Column
+                      key={column._id}
+                      column={column}
+                      cards={columnCards}
+                      index={index}
+                      onCardDeleted={onCardDeleted}
+                      onCardClick={setModalCard}
+                      onQuickAdd={handleQuickAdd}
+                      isEditing={editingColumnId === column._id}
+                      editTitle={editColumnTitle}
+                      onEditTitleChange={setEditColumnTitle}
+                      onStartEdit={() => startEditColumn(column)}
+                      onSaveEdit={() => handleUpdateColumn(column._id)}
+                      onCancelEdit={() => setEditingColumnId(null)}
+                      onDelete={() => handleDeleteColumn(column._id)}
+                      isUpdating={isUpdatingColumn}
+                      collapsed={collapsedColumns.has(column._id)}
+                      onToggleCollapse={() =>
+                        setCollapsedColumns((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(column._id)) next.delete(column._id);
+                          else next.add(column._id);
+                          return next;
+                        })
+                      }
+                      compact={compact}
+                    />
+                  );
+                })}
+                {provided.placeholder}
+
+                {isAddingColumn ? (
+                  <form onSubmit={handleCreateColumn} className="flex-shrink-0 w-[280px]">
+                    <div className="bg-[#f0f5f2] rounded-xl p-3 border border-[#e5e3d8]">
+                      <input
+                        type="text"
+                        value={newColumnTitle}
+                        onChange={(e) => setNewColumnTitle(e.target.value)}
+                        placeholder="Column title..."
+                        className="w-full rounded-lg border border-[#e5e3d8] bg-white px-3 py-2 text-sm outline-none focus:border-[#1f644e] focus:ring-2 focus:ring-[#1f644e]/20 mb-2"
+                        autoFocus
+                      />
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="submit"
+                          disabled={!newColumnTitle.trim() || isCreatingColumn}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-[#1f644e] text-white text-xs font-bold rounded-lg hover:bg-[#17503e] disabled:opacity-50 transition-colors cursor-pointer"
+                        >
+                          {isCreatingColumn ? (
+                            <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              />
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                              />
+                            </svg>
+                          ) : (
+                            <Plus className="w-3 h-3" />
+                          )}
+                          Add
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAddingColumn(false);
+                            setNewColumnTitle('');
+                          }}
+                          className="p-1.5 text-[#7c8e88] hover:bg-[#e5e3d8] rounded-lg cursor-pointer"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                ) : (
+                  <button
+                    onClick={() => setIsAddingColumn(true)}
+                    className="flex-shrink-0 w-[280px] h-fit border-2 border-dashed border-[#e5e3d8] rounded-xl p-4 text-[#7c8e88] hover:border-[#1f644e]/40 hover:text-[#1f644e] hover:bg-[#f0f5f2]/50 transition-all cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span className="text-sm font-bold">Add Column</span>
+                  </button>
+                )}
+              </div>
+            </div>
           )}
-        </div>
-      </div>
+        </Droppable>
+      </DragDropContext>
 
       {modalCard && (
         <CardModal
