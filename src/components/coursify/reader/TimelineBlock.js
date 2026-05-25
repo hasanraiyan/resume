@@ -27,7 +27,6 @@ const ICON_MAP = {
   star: Star,
   play: Play,
   activity: Activity,
-  award: Award,
   book: BookOpen,
 };
 
@@ -44,7 +43,7 @@ export function TimelineBlock({ block }) {
         </h3>
       )}
 
-      <div className="relative border-l-2 border-[#d4e6db] ml-4 md:ml-6 pl-6 md:pl-8 space-y-10">
+      <div className="relative ml-4 md:ml-6 pl-6 md:pl-8 space-y-10">
         {/* Timeline Items */}
         {timelineItems.map((item, idx) => {
           const IconComponent = ICON_MAP[item.icon?.toLowerCase()] || Milestone;
@@ -56,15 +55,23 @@ export function TimelineBlock({ block }) {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: '-60px' }}
               transition={{ duration: 0.4, delay: Math.min(idx * 0.08, 0.4) }}
-              className="relative"
+              className="relative group"
             >
+              {/* Dotted Connector Line (Behind Nodes) */}
+              {idx < timelineItems.length - 1 && (
+                <div
+                  className="absolute left-[-28px] md:left-[-36px] top-[24px] bottom-[-35px] w-0 border-l-2 border-dotted border-[#1f644e]/60 z-0"
+                  aria-hidden="true"
+                />
+              )}
+
               {/* Timeline Dot/Icon wrapper */}
-              <div className="absolute -left-[45px] md:-left-[53px] top-1.5 flex h-9 w-9 items-center justify-center rounded-xl bg-white border-2 border-[#1f644e] text-[#1f644e] shadow-sm select-none">
+              <div className="absolute -left-[45px] md:-left-[53px] top-1.5 flex h-9 w-9 items-center justify-center rounded-full bg-[#fcfbf5] border-2 border-[#1f644e] text-[#1f644e] shadow-sm select-none z-10 transition-all duration-300 group-hover:scale-110 group-hover:border-[#1e3a34] group-hover:text-[#1e3a34]">
                 <IconComponent className="h-4.5 w-4.5" />
               </div>
 
               {/* Card Container */}
-              <div className="p-6 rounded-2xl border border-[#e5e3d8]/80 bg-[#fcfbf5]/40 backdrop-blur-sm hover:border-[#1f644e]/50 hover:bg-[#f0f5f2]/20 transition-all duration-300 group">
+              <div className="p-6 rounded-2xl border border-[#e5e3d8]/80 bg-[#fcfbf5]/40 backdrop-blur-sm hover:border-[#1f644e]/50 hover:bg-[#f0f5f2]/20 transition-all duration-300">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3">
                   <h4 className="text-base font-bold text-[#1e3a34] tracking-tight">
                     {item.title}
@@ -77,7 +84,7 @@ export function TimelineBlock({ block }) {
                   )}
                 </div>
                 {item.content && (
-                  <div className="text-sm text-[#536b64] leading-relaxed prose prose-sm max-w-none">
+                  <div className="text-sm text-[#1e3a34] leading-relaxed prose prose-sm max-w-none">
                     <MarkdownRenderer content={item.content} isInline={true} />
                   </div>
                 )}

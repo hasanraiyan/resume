@@ -25,14 +25,6 @@ const stepVariants = {
   },
 };
 
-const lineVariants = {
-  hidden: { scaleY: 0 },
-  visible: {
-    scaleY: 1,
-    transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.1 },
-  },
-};
-
 /**
  * Standardizes slug generation for TOC anchors.
  */
@@ -80,17 +72,6 @@ export function StepByStepBlock({ block }) {
         {/* Decorative background element for the timeline area */}
         <div className="absolute -left-3 -top-2 -bottom-2 w-16 bg-gradient-to-r from-[#f0f5f2]/30 to-transparent rounded-l-2xl pointer-events-none" />
 
-        {/* Animated Progress Line */}
-        <motion.div
-          variants={lineVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="absolute left-[15px] top-4 w-[1.5px] origin-top bg-[#1f644e]/30 sm:left-[19px]"
-          style={{ height: `calc(100% - 2rem)` }}
-          aria-hidden="true"
-        />
-
         <motion.ol
           variants={containerVariants}
           initial="hidden"
@@ -100,19 +81,25 @@ export function StepByStepBlock({ block }) {
         >
           {steps.map((step, i) => (
             <motion.li key={i} variants={stepVariants} className="group relative pl-10 sm:pl-14">
+              {/* Dotted Connector Line (Behind Nodes) */}
+              {i < steps.length - 1 && (
+                <div
+                  className="absolute left-[15px] top-[16px] bottom-[-20px] w-0 border-l-2 border-dotted border-[#1f644e]/60 sm:left-[19px] sm:top-[20px] sm:bottom-[-24px] z-0"
+                  aria-hidden="true"
+                />
+              )}
+
               {/* Step Marker Node */}
               <div className="absolute left-0 top-0.5 z-10">
                 <div className="relative flex h-8 w-8 items-center justify-center sm:h-10 sm:w-10">
-                  {/* Node Background - Glassmorphic */}
-                  <div className="absolute inset-0 rounded-full bg-white/60 border border-[#e5e3d8]/60 backdrop-blur-sm transition-all group-hover:border-[#1f644e]/30" />
-
-                  {/* Inner Marker Circle */}
-                  <div className="relative flex h-5 w-5 items-center justify-center rounded-full bg-[#1f644e] text-white transition-transform group-hover:scale-105 sm:h-6 sm:w-6">
+                  {/* Outer / Main Circle - hollow and beautiful matching image.png */}
+                  <div className="absolute inset-0 rounded-full bg-[#fcfbf5] border-2 border-[#1f644e] transition-all duration-300 group-hover:scale-110 group-hover:border-[#1e3a34] shadow-sm flex items-center justify-center">
                     {showNumbering ? (
-                      <span className="text-[9px] font-black sm:text-xs">{i + 1}</span>
-                    ) : (
-                      <div className="h-1.5 w-1.5 rounded-full bg-white/80" />
-                    )}
+                      <span className="font-serif text-xs font-bold text-[#1f644e] group-hover:text-[#1e3a34] sm:text-sm">
+                        {i + 1}
+                      </span>
+                    ) : // Empty inside, exactly like image.png
+                    null}
                   </div>
                 </div>
               </div>
@@ -161,7 +148,7 @@ export function StepByStepBlock({ block }) {
                       transition={{ duration: 0.3 }}
                       className="overflow-hidden"
                     >
-                      <div className="mt-3 text-[#536b64] selection:bg-[#1f644e]/10 px-4 sm:px-5 pb-4 sm:pb-5">
+                      <div className="mt-3 text-[#1e3a34] selection:bg-[#1f644e]/10 px-4 sm:px-5 pb-4 sm:pb-5">
                         <MarkdownRenderer content={step.content || ''} />
                       </div>
                     </motion.div>
