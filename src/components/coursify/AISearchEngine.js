@@ -13,6 +13,7 @@ import { parseAGUIStream } from '@/utils/aguiStream';
 import { generateCoursifyPdf } from '@/utils/coursifyPdfGenerator';
 
 import { CoursifyBlockRenderer } from '@/components/coursify/reader/CoursifyBlockRenderer';
+import { MarkdownRenderer } from '@/components/coursify/reader/MarkdownRenderer';
 
 import { SafeBlockRenderer } from '@/components/coursify/SafeBlockRenderer';
 
@@ -464,7 +465,7 @@ export function AISearchEngine({ onGenerated }) {
       <div className="w-full overflow-x-hidden">
         {generatedTitle && (
           <div className="mb-6 border-b border-[#e5e3d8] pb-6">
-            <h2 className="break-words text-2xl font-bold text-[#1e3a34]">{generatedTitle}</h2>
+            <MarkdownRenderer content={generatedTitle} />
           </div>
         )}
 
@@ -544,7 +545,7 @@ export function AISearchEngine({ onGenerated }) {
           <div className="flex min-w-0 items-center gap-2 ml-2">
             <Sparkles className="h-3.5 w-3.5 shrink-0 text-[#1f644e]" />
             <span className="truncate text-xs font-bold text-[#1e3a34]">
-              {generatedTitle || query}
+              <MarkdownRenderer content={generatedTitle || query} isInline />
             </span>
             {isFromCache && (
               <span className="whitespace-nowrap rounded-full bg-blue-100 px-2 py-1 text-[10px] font-bold text-blue-700 ml-2">
