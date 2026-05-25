@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyResearch from '@/models/CoursifyResearch';
 import { CoursifyBlockRenderer } from '@/components/coursify/reader/CoursifyBlockRenderer';
+import { MarkdownRenderer } from '@/components/coursify/reader/MarkdownRenderer';
 import { Search, Plus, Sparkles, ArrowLeft } from 'lucide-react';
 import { BalanceBadgeServer } from './BalanceBadgeServer';
 import Link from 'next/link';
@@ -113,7 +114,9 @@ export default async function SharedResearchPage({ params }) {
               </Link>
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <Sparkles className="w-3.5 h-3.5 text-[#1f644e] shrink-0" />
-                <span className="text-xs font-bold text-[#1e3a34] truncate">{research.title}</span>
+                <span className="text-xs font-bold text-[#1e3a34] truncate">
+                  <MarkdownRenderer content={research.title} bare isInline />
+                </span>
               </div>
               <ResearchActions research={JSON.parse(JSON.stringify(research))} />
             </div>
@@ -121,7 +124,7 @@ export default async function SharedResearchPage({ params }) {
             {/* Research Title & Metadata (SSR) */}
             <div className="mb-6">
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#1e3a34] tracking-tight leading-tight">
-                {research.title}
+                <MarkdownRenderer content={research.title} bare />
               </h1>
               <div className="flex items-center gap-4 mt-3 text-[#7c8e88]">
                 <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest">

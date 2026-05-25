@@ -8,6 +8,7 @@ import {
   FileText,
   Type,
 } from 'lucide-react';
+import { MarkdownRenderer } from './MarkdownRenderer';
 
 const ICON_MAP = {
   video: PlayCircle,
@@ -69,7 +70,9 @@ export function TableOfContents({ headings, activeHeading, isOpen, onToggle }) {
                 >
                   <Icon className="w-3.5 h-3.5" />
                 </div>
-                <span className="flex-1 truncate">{h.text}</span>
+                <span className="flex-1">
+                  <MarkdownRenderer content={h.text} bare isInline />
+                </span>
               </a>
             );
           })}

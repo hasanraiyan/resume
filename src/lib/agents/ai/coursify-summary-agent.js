@@ -15,6 +15,14 @@ You are a Coursify Content Summarizer. Your job is to generate a concise summary
 - Keep the entire summary under 100 words
 - DO NOT ask questions or add fluff
 - Output ONLY the summary text, nothing else
+
+## Math & LaTeX Rules (IMPORTANT)
+- If the source material contains mathematical notation, equations, recurrences, complexity expressions, formulas, or symbols (e.g. T(n), O(n log n), Σ, integrals, etc.), you MUST preserve them using proper LaTeX delimiters:
+  - Inline math: $...$   (example: $T(n) = T(n-1) + n$)
+  - Display math (rarely needed in summaries): $$...$$
+- NEVER output raw math without the dollar signs.
+- Never escape the dollar signs.
+- When in doubt, wrap any technical/math expression in $...$.
 `;
 
 class CoursifySummaryAgent extends BaseAgent {

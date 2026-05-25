@@ -2,6 +2,7 @@
 
 import { Sparkles, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
+import { MarkdownRenderer } from './reader/MarkdownRenderer';
 
 function parseSummary(summary) {
   const lines = summary.split('\n').filter(Boolean);
@@ -45,13 +46,19 @@ export default function SummaryCard({ summary }) {
       </button>
       {isOpen && (
         <div className="px-5 pb-5 space-y-3 border-t border-[#d4e6de] pt-4">
-          {intro && <p className="text-[#1e3a34] leading-relaxed text-sm">{intro}</p>}
+          {intro && (
+            <div className="text-[#1e3a34] leading-relaxed text-sm">
+              <MarkdownRenderer content={intro} bare isInline />
+            </div>
+          )}
           {bullets.length > 0 && (
             <ul className="space-y-1.5">
               {bullets.map((item, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-[#1e3a34]">
                   <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#1f644e] shrink-0" />
-                  <span className="leading-relaxed">{item}</span>
+                  <span className="leading-relaxed">
+                    <MarkdownRenderer content={item} bare isInline />
+                  </span>
                 </li>
               ))}
             </ul>

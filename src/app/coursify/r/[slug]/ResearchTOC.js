@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { List, ChevronDown } from 'lucide-react';
 import { useTableOfContents } from '@/hooks/coursify/useTableOfContents';
 import { cn } from '@/utils/classNames';
+import { MarkdownRenderer } from '@/components/coursify/reader/MarkdownRenderer';
 
 export default function ResearchTOC({ content }) {
   const [isOpen, setIsOpen] = useState(true);
@@ -79,7 +80,7 @@ export default function ResearchTOC({ content }) {
             )}
             style={{ paddingLeft: `${(heading.level - 1) * 12 + 16}px` }}
           >
-            {heading.text}
+            <MarkdownRenderer content={heading.text} bare isInline />
           </a>
         ))}
       </nav>
