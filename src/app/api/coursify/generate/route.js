@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { EventEncoder } from '@ag-ui/encoder';
 import { EventType } from '@ag-ui/core';
-import { rateLimit } from '@/lib/rateLimit';
+import { parseGenerateRequest } from '@/lib/coursify/api/parseGenerateRequest';
+import { resolveGenerationAgent } from '@/lib/coursify/generation/AgentSelector';
 import agentRegistry from '@/lib/agents';
-import { AGENT_IDS } from '@/lib/constants/agents';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
 
@@ -70,31 +70,16 @@ async function uploadToQdrant(research) {
 }
 
 export async function POST(request) {
-  const rateLimitResponse = rateLimit(request, 5, 60000);
-  if (rateLimitResponse) return rateLimitResponse;
+  const parsed = await parseGenerateRequest(request);
+  if (parsed.errorResponse) return parsed.errorResponse;
+
+  const { topic, isReferenceEnabled, agent } = parsed;
+
+  if (!topic) {
+    return NextResponse.json({ error: 'topic is required' }, { status: 400 });
+  }
 
   try {
-    const text = await request.text();
-    if (!text) {
-      return NextResponse.json({ error: 'Request body is empty' }, { status: 400 });
-    }
-
-    let topic;
-    let isReferenceEnabled = false;
-    let agent = null;
-    try {
-      const body = JSON.parse(text);
-      topic = body.topic;
-      isReferenceEnabled = body.isReferenceEnabled;
-      agent = body.agent || null;
-    } catch (e) {
-      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-    }
-
-    if (!topic?.trim()) {
-      return NextResponse.json({ error: 'topic is required' }, { status: 400 });
-    }
-
     const threadId = `coursify-${Date.now()}`;
     const runId = crypto.randomUUID();
 
@@ -115,12 +100,12 @@ export async function POST(request) {
           const { hashPrompt } = await import('@/lib/coursify/promptHasher');
           const CoursifyResearch = (await import('@/models/CoursifyResearch')).default;
 
-          const promptHash = hashPrompt(topic.trim(), isReferenceEnabled);
+          const promptHash = hashPrompt(topic, isReferenceEnabled);
 
           let cachedResearch = await CoursifyResearch.findOne({ promptHash, deletedAt: null });
 
           if (!cachedResearch) {
-            const inputHash = hashPrompt(topic.trim(), isReferenceEnabled);
+            const inputHash = hashPrompt(topic, isReferenceEnabled);
             cachedResearch = await CoursifyResearch.findOne({
               titleHash: inputHash,
               deletedAt: null,
@@ -201,19 +186,10 @@ export async function POST(request) {
 
           // ─── Cache Miss: Generate New Content ───
           const isDev = process.env.NODE_ENV === 'development';
-
-          // Dev-only agent selector support (from the UI in AISearchEngine)
-          // Only respected when running in development.
-          let agentId;
-          if (isDev && (agent === 'search' || agent === 'research')) {
-            agentId = agent === 'search' ? AGENT_IDS.COURSIFY_SEARCH : AGENT_IDS.COURSIFY_RESEARCH;
-          } else {
-            // Normal behavior
-            agentId = isDev ? AGENT_IDS.COURSIFY_RESEARCH : AGENT_IDS.COURSIFY_SEARCH;
-          }
+          const agentId = resolveGenerationAgent(isDev, agent);
 
           const events = agentRegistry.streamExecute(agentId, {
-            topic: topic.trim(),
+            topic,
             isReferenceEnabled: !!isReferenceEnabled,
           });
 
@@ -244,7 +220,7 @@ export async function POST(request) {
               totalUsage.completionTokens
             );
 
-            let baseTitle = topic.trim();
+            let baseTitle = topic;
             const titleMatch = finalContent.match(/^#\s+(.+)$/m);
             if (titleMatch && titleMatch[1]) {
               baseTitle = titleMatch[1].trim();
@@ -280,7 +256,7 @@ export async function POST(request) {
             }
 
             const research = await CoursifyResearch.create({
-              topic: topic.trim(),
+              topic,
               title: baseTitle,
               content: finalContent,
               summary,

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { EventEncoder } from '@ag-ui/encoder';
 import { EventType } from '@ag-ui/core';
-import { rateLimit } from '@/lib/rateLimit';
+import { parseGenerateRequest } from '@/lib/coursify/api/parseGenerateRequest';
+import { generateSection } from '@/lib/coursify/generation/generateSection';
 import agentRegistry from '@/lib/agents';
-import { AGENT_IDS } from '@/lib/constants/agents';
 
 import '@/lib/agents';
 
@@ -14,25 +14,22 @@ function encodeSSE(obj) {
 }
 
 export async function POST(request) {
-  const rateLimitResponse = rateLimit(request, 10, 60000);
-  if (rateLimitResponse) return rateLimitResponse;
+  const parsed = await parseGenerateRequest(request);
+  if (parsed.errorResponse) return parsed.errorResponse;
+
+  // Use the already-parsed body from the common helper (avoids "Body has already been read")
+  const body = parsed.body;
+  const { courseName, moduleName, sectionName, learningGoals } = body;
 
   try {
-    const body = await request.json();
-    const { courseName, moduleName, sectionName, learningGoals, isReferenceEnabled } = body;
-
-    if (!sectionName?.trim()) {
-      return NextResponse.json({ error: 'sectionName is required' }, { status: 400 });
-    }
-
-    let richTopic = `${sectionName.trim()}\n\n`;
-    richTopic += `Context for Research:\n`;
-    if (courseName) richTopic += `- Part of the course: ${courseName}\n`;
-    if (moduleName) richTopic += `- Within the module: ${moduleName}\n`;
-    if (learningGoals?.length > 0) {
-      richTopic += `- Learning Goals: ${learningGoals.join(', ')}\n`;
-    }
-    richTopic += `\nPlease research this specific topic and ensure the content fits this context.`;
+    const sectionConfig = await generateSection({
+      sectionName,
+      courseName,
+      moduleName,
+      learningGoals,
+      isReferenceEnabled: parsed.isReferenceEnabled,
+      requestedAgent: parsed.agent,
+    });
 
     const threadId = `coursify-section-${Date.now()}`;
     const runId = crypto.randomUUID();
@@ -42,12 +39,9 @@ export async function POST(request) {
         controller.enqueue(encodeSSE({ type: EventType.RUN_STARTED, threadId, runId }));
 
         try {
-          const isDev = process.env.NODE_ENV === 'development';
-          const agentId = isDev ? AGENT_IDS.COURSIFY_RESEARCH : AGENT_IDS.COURSIFY_SEARCH;
-
-          const events = agentRegistry.streamExecute(agentId, {
-            topic: richTopic,
-            isReferenceEnabled,
+          const events = agentRegistry.streamExecute(sectionConfig.agentId, {
+            topic: sectionConfig.topic,
+            isReferenceEnabled: sectionConfig.isReferenceEnabled,
           });
 
           let sectionTitle = '';
@@ -58,7 +52,6 @@ export async function POST(request) {
             controller.enqueue(encodeSSE(event));
           }
 
-          // STATE_SNAPSHOT: send consolidated title at end of section generation
           controller.enqueue(
             encodeSSE({
               type: EventType.STATE_SNAPSHOT,

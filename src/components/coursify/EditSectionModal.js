@@ -440,6 +440,10 @@ export default function EditSectionModal({ section, onSave, onClose }) {
   const [statusMessage, setStatusMessage] = useState('');
   const [toolSteps, setToolSteps] = useState([]);
 
+  // Dev-only agent picker (same as main AI Search)
+  const isDev = process.env.NODE_ENV === 'development';
+  const [selectedAgent, setSelectedAgent] = useState('search'); // 'search' | 'research'
+
   useEffect(() => {
     if (section) {
       setTitle(section.title);
@@ -477,6 +481,8 @@ export default function EditSectionModal({ section, onSave, onClose }) {
           sectionName: title.trim(),
           learningGoals: learningGoals.filter((g) => g.trim()),
           isReferenceEnabled,
+          // Dev-only agent override (openai = search, antigravity = research)
+          ...(isDev && { agent: selectedAgent }),
         }),
       });
       if (!res.ok) throw new Error('Generation failed');
@@ -862,6 +868,35 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                   </label>
 
                   <div className="w-px h-3" style={{ background: 'var(--esm-border)' }} />
+
+                  {/* Dev-only Agent Picker (same as main AI search) */}
+                  {isDev && (
+                    <div className="flex items-center gap-1 mr-2 text-[10px]">
+                      <span className="text-[#7c8e88] font-medium">Agent:</span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedAgent('search')}
+                        className={`px-2 py-0.5 rounded font-bold transition-all ${
+                          selectedAgent === 'search'
+                            ? 'bg-[#1f644e] text-white'
+                            : 'border border-[#e5e3d8] hover:bg-[#f0f5f2]'
+                        }`}
+                      >
+                        openai
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedAgent('research')}
+                        className={`px-2 py-0.5 rounded font-bold transition-all ${
+                          selectedAgent === 'research'
+                            ? 'bg-[#1f644e] text-white'
+                            : 'border border-[#e5e3d8] hover:bg-[#f0f5f2]'
+                        }`}
+                      >
+                        antigravity
+                      </button>
+                    </div>
+                  )}
 
                   {/* AI Generate */}
                   <button
