@@ -42,7 +42,7 @@ export function TabsBlock({ block }) {
         </div>
 
         {/* Tab Content */}
-        <div className="p-6 min-h-[150px]">
+        <div className="px-4">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -50,7 +50,7 @@ export function TabsBlock({ block }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -5 }}
               transition={{ duration: 0.15 }}
-              className="prose prose-sm max-w-none text-[#536b64] selection:bg-[#1f644e]/10"
+              className="prose prose-sm max-w-none  "
             >
               <MarkdownRenderer content={tabs[activeTab].content || ''} />
             </motion.div>
