@@ -90,6 +90,10 @@ export function AISearchEngine({ onGenerated }) {
 
   const [isRelatedLoading, setIsRelatedLoading] = useState(false);
 
+  // Dev-only agent picker (only shown when running `pnpm dev`)
+  const isDev = process.env.NODE_ENV === 'development';
+  const [selectedAgent, setSelectedAgent] = useState('search'); // 'search' | 'research'
+
   const inputRef = useRef(null);
 
   const contentRef = useRef('');
@@ -195,7 +199,12 @@ export function AISearchEngine({ onGenerated }) {
         const res = await fetch('/api/coursify/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ topic: topic.trim(), isReferenceEnabled: true }),
+          body: JSON.stringify({
+            topic: topic.trim(),
+            isReferenceEnabled: true,
+            // Only sent in dev — lets us pick Search vs Research agent from the UI
+            ...(isDev && { agent: selectedAgent }),
+          }),
         });
 
         if (!res.ok) {
@@ -356,6 +365,39 @@ export function AISearchEngine({ onGenerated }) {
         <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
           AI Research Engine
         </h2>
+
+        {/* Dev-only Agent Picker */}
+        {isDev && (
+          <div className="mb-3 flex items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
+              Agent:
+            </span>
+            <div className="flex rounded-full border border-[#e5e3d8] bg-white p-0.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setSelectedAgent('search')}
+                className={`cursor-pointer rounded-full px-3 py-1 font-bold transition-all ${
+                  selectedAgent === 'search'
+                    ? 'bg-[#1f644e] text-white'
+                    : 'text-[#7c8e88] hover:text-[#1e3a34]'
+                }`}
+              >
+                openai
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedAgent('research')}
+                className={`cursor-pointer rounded-full px-3 py-1 font-bold transition-all ${
+                  selectedAgent === 'research'
+                    ? 'bg-[#1f644e] text-white'
+                    : 'text-[#7c8e88] hover:text-[#1e3a34]'
+                }`}
+              >
+                antigravity
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Search */}
         <form onSubmit={handleSubmit} className="w-full">

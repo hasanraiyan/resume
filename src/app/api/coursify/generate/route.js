@@ -81,10 +81,12 @@ export async function POST(request) {
 
     let topic;
     let isReferenceEnabled = false;
+    let agent = null;
     try {
       const body = JSON.parse(text);
       topic = body.topic;
       isReferenceEnabled = body.isReferenceEnabled;
+      agent = body.agent || null;
     } catch (e) {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
@@ -199,7 +201,16 @@ export async function POST(request) {
 
           // ─── Cache Miss: Generate New Content ───
           const isDev = process.env.NODE_ENV === 'development';
-          const agentId = isDev ? AGENT_IDS.COURSIFY_RESEARCH : AGENT_IDS.COURSIFY_SEARCH;
+
+          // Dev-only agent selector support (from the UI in AISearchEngine)
+          // Only respected when running in development.
+          let agentId;
+          if (isDev && (agent === 'search' || agent === 'research')) {
+            agentId = agent === 'search' ? AGENT_IDS.COURSIFY_SEARCH : AGENT_IDS.COURSIFY_RESEARCH;
+          } else {
+            // Normal behavior
+            agentId = isDev ? AGENT_IDS.COURSIFY_RESEARCH : AGENT_IDS.COURSIFY_SEARCH;
+          }
 
           const events = agentRegistry.streamExecute(agentId, {
             topic: topic.trim(),
