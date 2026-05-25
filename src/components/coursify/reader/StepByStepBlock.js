@@ -40,7 +40,7 @@ function getSlug(text) {
 export function StepByStepBlock({ block }) {
   const steps = block.steps || [];
   const showNumbering = block.showNumbering !== false;
-  const [expandedSteps, setExpandedSteps] = useState(new Set([0])); // First step open by default
+  const [expandedSteps, setExpandedSteps] = useState(() => new Set(steps.map((_, i) => i))); // All steps open by default
 
   if (!steps.length) return null;
 
