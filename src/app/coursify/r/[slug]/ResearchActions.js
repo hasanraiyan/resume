@@ -74,7 +74,6 @@ export default function ResearchActions({ research }) {
         className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-[#1f644e] border border-[#d4e6de] rounded-full hover:bg-[#f0f5f2] transition-all shrink-0"
       >
         <Share2 className="w-3 h-3" />
-        Share
       </button>
     </>
   );
