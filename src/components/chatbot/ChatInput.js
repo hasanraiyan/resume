@@ -22,6 +22,7 @@ export default function ChatInput({
   setSelectedAgentId,
   showModelSelector = true,
   theme = 'default',
+  setIsToolsMenuOpen,
   chatMode,
   setChatMode,
   deviceAvailability,

@@ -360,6 +360,7 @@ export default function ChatbotWidget() {
             setSelectedAgentId={setSelectedAgentId}
             showModelSelector={!isCoursify}
             theme={isCoursify ? 'green' : 'default'}
+            setIsToolsMenuOpen={setIsToolsMenuOpen}
           />
         </div>
       </div>
