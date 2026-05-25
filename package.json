@@ -11,7 +11,7 @@
     "dev": "next dev --turbopack",
     "project-setup": "node scripts/setup.js",
     "build:mcp-widgets": "node scripts/build-pocketly-widget.mjs",
-    "build": "pnpm build:mcp-widgets && rimraf .next/cache && next build --no-lint",
+    "build": "rimraf .next/cache && next build --no-lint",
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write .",

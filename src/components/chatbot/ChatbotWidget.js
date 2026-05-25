@@ -27,6 +27,7 @@ export default function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
+  const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
