@@ -8,6 +8,7 @@ import { BalanceBadgeServer } from './BalanceBadgeServer';
 import Link from 'next/link';
 import ResearchActions from './ResearchActions';
 import ResearchTOC from './ResearchTOC';
+import SpeakButton from './SpeakButton';
 import { getRelatedArticles } from '@/lib/coursify/related';
 import { RelatedArticlesGrid } from '@/components/coursify/RelatedArticlesGrid';
 import SummaryCard from '@/components/coursify/SummaryCard';
@@ -118,6 +119,7 @@ export default async function SharedResearchPage({ params }) {
                   <MarkdownRenderer content={research.title} bare isInline />
                 </span>
               </div>
+              <SpeakButton />
               <ResearchActions research={JSON.parse(JSON.stringify(research))} />
             </div>
 
