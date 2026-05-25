@@ -6,6 +6,28 @@ import { AGENT_IDS, getAgentTools } from '@/lib/constants/agents';
 import managedToolProvider from '../utils/ManagedToolProvider';
 import { COURSIFY_MARKDOWN_FORMAT } from './coursify-prompts';
 
+// ============================================
+// JSDoc Types (for .js file compatibility)
+// ============================================
+
+/**
+ * Final result returned by the non-streaming `_onExecute()` path.
+ *
+ * @typedef {Object} CoursifySearchResult
+ * @property {string} title - Extracted academic title from the generated content (first `# ` heading)
+ * @property {string} content - Complete Coursify-formatted markdown (with [MdBlock], [QuizBlock], etc.)
+ * @property {Object} usage - Token usage aggregated across the entire research run
+ * @property {number} usage.promptTokens
+ * @property {number} usage.completionTokens
+ * @property {number} usage.totalTokens
+ * @property {Object} [metadata]
+ * @property {number} [metadata.durationMs] - Total time taken for the research run (ms)
+ */
+
+// ============================================
+// Constants
+// ============================================
+
 const SYSTEM_PROMPT =
   `
 You are a Coursify AI Course Content Generator. Your job is to research a topic using web search and then generate a reponse to user query in the Coursify markdown format.
@@ -18,29 +40,70 @@ You are a Coursify AI Course Content Generator. Your job is to research a topic 
 
 const SEARCH_TOOL = 'tavily_search';
 
+/**
+ * Coursify Search Agent
+ *
+ * A ReAct-based research agent that uses web search (primarily Tavily)
+ * to gather information and then generates content in the strict
+ * Coursify markdown block format.
+ *
+ * Features:
+ * - Streaming-first design (primary path)
+ * - Non-streaming `_onExecute()` support (for internal use)
+ * - Early title extraction during streaming
+ * - Detailed tool lifecycle events for UI progress
+ *
+ * Used in production for `/api/coursify/generate` and `/api/coursify/generate-section`.
+ */
 class CoursifySearchAgent extends BaseAgent {
+  /**
+   * @param {string} [agentId]
+   * @param {Object} [config]
+   */
   constructor(agentId = AGENT_IDS.COURSIFY_SEARCH, config = {}) {
     super(agentId, config);
   }
 
+  /**
+   * Called once when the agent is first initialized.
+   */
   async _onInitialize() {
     this.logger.info('Coursify Search Agent initialized');
   }
 
+  /**
+   * Validates that the required `topic` is present in the input.
+   * Called automatically by the BaseAgent framework before execution.
+   *
+   * @param {Object} input
+   * @param {string} input.topic - The research topic/query
+   * @throws {Error} If `topic` is missing
+   */
   async _validateInput(input) {
     if (!input?.topic) throw new Error('topic is required');
   }
 
-  async *_onStreamExecute(input) {
-    const { topic } = input;
+  // ============================================
+  // Shared Helpers
+  // ============================================
 
-    const topicPreview = topic.substring(0, 50);
-    this.logger.info(`Starting CoursifySearchAgent for topic: "${topicPreview}..."`);
+  /**
+   * Returns the full system prompt used by this agent.
+   * Extracted for reuse between streaming and non-streaming paths.
+   *
+   * @returns {string}
+   */
+  _buildSystemPrompt() {
+    return SYSTEM_PROMPT;
+  }
 
-    const llm = await this.createChatModel();
-    this.logger.debug('Chat model created');
-
-    // Load tools, exclude firecrawl_scrape
+  /**
+   * Loads tools for this agent and filters out `firecrawl_scrape`
+   * (this agent prefers Tavily + YouTube search).
+   *
+   * @returns {Promise<Array<Object>>} Array of tool instances
+   */
+  async _getFilteredTools() {
     let enabledToolIds = this.config.tools || [];
     if (enabledToolIds.length === 0) {
       enabledToolIds = getAgentTools(this.agentId);
@@ -56,7 +119,60 @@ class CoursifySearchAgent extends BaseAgent {
       this.logger.debug(`  Tool ${idx + 1}: ${toolName}`);
     });
 
-    const systemPrompt = SYSTEM_PROMPT;
+    return tools;
+  }
+
+  /**
+   * Extracts and normalizes token usage from various LangChain event shapes.
+   *
+   * @param {Object} [output] - Raw output object from a chat model event
+   * @returns {{promptTokens: number, completionTokens: number, totalTokens: number} | null}
+   */
+  _extractUsage(output) {
+    if (!output) return null;
+
+    const usage =
+      output.usage_metadata ||
+      output.usage ||
+      output.response_metadata?.tokenUsage ||
+      output.response_metadata?.usage;
+
+    if (!usage) return null;
+
+    return {
+      promptTokens: usage.prompt_tokens || usage.promptTokens || usage.promptTokenCount || 0,
+      completionTokens:
+        usage.completion_tokens || usage.completionTokens || usage.candidatesTokenCount || 0,
+      totalTokens: usage.total_tokens || usage.totalTokens || usage.totalTokenCount || 0,
+    };
+  }
+
+  // ============================================
+  // Execution Methods
+  // ============================================
+
+  /**
+   * Streaming research execution.
+   * Yields AG-UI compatible events (TEXT_MESSAGE_*, TOOL_CALL_*, CUSTOM) in real time.
+   * This is the primary path used by the research UI.
+   *
+   * @param {Object} input
+   * @param {string} input.topic - Research topic to investigate
+   * @yields {Object} AG-UI style events (TEXT_MESSAGE_START/CONTENT/END, TOOL_CALL_*, CUSTOM)
+   * @returns {Promise<CoursifySearchResult>} Final aggregated result (for consistency)
+   */
+  async *_onStreamExecute(input) {
+    const { topic } = input;
+
+    const topicPreview = topic.substring(0, 50);
+    this.logger.info(`Starting CoursifySearchAgent for topic: "${topicPreview}..."`);
+
+    const llm = await this.createChatModel();
+    this.logger.debug('Chat model created');
+
+    const tools = await this._getFilteredTools();
+
+    const systemPrompt = this._buildSystemPrompt();
 
     const contentMessages = [
       new HumanMessage({ role: 'system', content: systemPrompt }),
@@ -67,7 +183,7 @@ class CoursifySearchAgent extends BaseAgent {
 
     const contentAgent = createReactAgent({ llm, tools });
 
-    // Per-stream state
+    // Per-stream state (must stay inside the generator)
     let messageId = null;
     let titleExtracted = false;
     let fullContent = '';
@@ -83,7 +199,6 @@ class CoursifySearchAgent extends BaseAgent {
         const { event: type, data, name, run_id } = event;
 
         if (type === 'on_chat_model_start') {
-          // Begin a new assistant message for this LLM turn
           messageId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
           yield { type: EventType.TEXT_MESSAGE_START, messageId, role: 'assistant' };
         } else if (type === 'on_chat_model_stream') {
@@ -92,7 +207,7 @@ class CoursifySearchAgent extends BaseAgent {
             const delta = typeof raw === 'string' ? raw : JSON.stringify(raw);
             fullContent += delta;
 
-            // Emit title once the # header appears in the accumulated content
+            // Emit title once the # header appears
             if (!titleExtracted) {
               const m = fullContent.match(/^#\s+(.+)$/m);
               if (m) {
@@ -113,27 +228,12 @@ class CoursifySearchAgent extends BaseAgent {
             messageId = null;
           }
 
-          // Emit token usage as a CUSTOM event
-          const usage =
-            data.output?.usage_metadata ||
-            data.output?.usage ||
-            data.output?.response_metadata?.tokenUsage ||
-            data.output?.response_metadata?.usage;
-
+          const usage = this._extractUsage(data?.output);
           if (usage) {
             yield {
               type: EventType.CUSTOM,
               name: 'coursify_usage',
-              value: {
-                promptTokens:
-                  usage.prompt_tokens || usage.promptTokens || usage.promptTokenCount || 0,
-                completionTokens:
-                  usage.completion_tokens ||
-                  usage.completionTokens ||
-                  usage.candidatesTokenCount ||
-                  0,
-                totalTokens: usage.total_tokens || usage.totalTokens || usage.totalTokenCount || 0,
-              },
+              value: usage,
             };
           }
         } else if (type === 'on_tool_start') {
@@ -152,7 +252,6 @@ class CoursifySearchAgent extends BaseAgent {
           if (toolCallId) {
             yield { type: EventType.TOOL_CALL_END, toolCallId };
 
-            // TOOL_CALL_RESULT: send structured display payload
             const output = data.output;
             if (output != null) {
               let resultPayload;
@@ -163,7 +262,6 @@ class CoursifySearchAgent extends BaseAgent {
                     urls: obj.results.map((r) => r.url).filter(Boolean),
                   });
                 } else if (typeof obj.output === 'string') {
-                  // YouTube: { output: "[{videoId, thumbnail, ...}]" }
                   const videos = JSON.parse(obj.output);
                   resultPayload = JSON.stringify({
                     thumbnails: videos.map((v) => ({ thumbnail: v.thumbnail, title: v.title })),
@@ -187,8 +285,93 @@ class CoursifySearchAgent extends BaseAgent {
     }
   }
 
-  async _onExecute() {
-    throw new Error('CoursifySearchAgent only supports streamExecute');
+  /**
+   * Non-streaming research execution.
+   * Runs the full research flow and returns the final aggregated result.
+   * Useful for internal calls, testing, or non-UI consumers.
+   *
+   * @param {Object} input
+   * @param {string} input.topic - Research topic to investigate
+   * @returns {Promise<CoursifySearchResult>}
+   */
+  async _onExecute(input) {
+    const { topic } = input;
+
+    const topicPreview = topic.substring(0, 50);
+    this.logger.info(`Starting CoursifySearchAgent (non-stream) for topic: "${topicPreview}..."`);
+
+    const llm = await this.createChatModel();
+    const tools = await this._getFilteredTools();
+    const systemPrompt = this._buildSystemPrompt();
+
+    const contentMessages = [
+      new HumanMessage({ role: 'system', content: systemPrompt }),
+      new HumanMessage({
+        content: `Research and generate a comprehensive Coursify course section on: "${topic}"\n\nSearch for detailed information first, then write the full Coursify markdown content.`,
+      }),
+    ];
+
+    const contentAgent = createReactAgent({ llm, tools });
+
+    let fullContent = '';
+    let extractedTitle = '';
+    const usage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+    const startTime = Date.now();
+
+    try {
+      const stream = await contentAgent.streamEvents(
+        { messages: contentMessages },
+        { version: 'v2', runName: `Research: ${topic.substring(0, 30)}` }
+      );
+
+      for await (const event of stream) {
+        const { event: type, data } = event;
+
+        if (type === 'on_chat_model_stream') {
+          const raw = data.chunk?.content || data.chunk?.text || '';
+          if (raw) {
+            const delta = typeof raw === 'string' ? raw : JSON.stringify(raw);
+            fullContent += delta;
+
+            // Title extraction (non-streaming version)
+            if (!extractedTitle) {
+              const m = fullContent.match(/^#\s+(.+)$/m);
+              if (m) {
+                extractedTitle = m[1].trim();
+              }
+            }
+          }
+        } else if (type === 'on_chat_model_end') {
+          const turnUsage = this._extractUsage(data?.output);
+          if (turnUsage) {
+            usage.promptTokens += turnUsage.promptTokens;
+            usage.completionTokens += turnUsage.completionTokens;
+            usage.totalTokens += turnUsage.totalTokens;
+          }
+        }
+      }
+    } catch (err) {
+      this.logger.error(`Agent execution failed: ${err.message}`);
+      throw err;
+    }
+
+    // Final fallback title
+    if (!extractedTitle) {
+      const m = fullContent.match(/^#\s+(.+)$/m);
+      extractedTitle = m ? m[1].trim() : topic;
+    }
+
+    const result = {
+      title: extractedTitle,
+      content: fullContent.trim(),
+      usage,
+      metadata: {
+        durationMs: Date.now() - startTime,
+      },
+    };
+
+    this.logger.info(`CoursifySearchAgent (non-stream) completed. Title: "${result.title}"`);
+    return result;
   }
 }
 
