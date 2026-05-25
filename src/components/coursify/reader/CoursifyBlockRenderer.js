@@ -9,6 +9,7 @@ import { AccordionBlock } from './AccordionBlock';
 import { TabsBlock } from './TabsBlock';
 import { CalloutBlock } from './CalloutBlock';
 import { ChartBlock } from './ChartBlock';
+import { TimelineBlock } from './TimelineBlock';
 import { PlayCircle, ExternalLink, FileText, Pencil } from 'lucide-react';
 import { parseMarkdownToBlocks } from '@/utils/coursify-parser';
 
@@ -75,6 +76,7 @@ export function CoursifyBlockRenderer({ blocks, content, onEditBlock }) {
         else if (block.type === 'TabsBlock') blockTitle = 'Interactive Example';
         else if (block.type === 'CalloutBlock') blockTitle = 'Important Note';
         else if (block.type === 'ChartBlock') blockTitle = 'Data Visualization';
+        else if (block.type === 'TimelineBlock') blockTitle = block.title || 'Timeline Roadmap';
 
         const wrapperProps = blockTitle
           ? {
@@ -110,6 +112,8 @@ export function CoursifyBlockRenderer({ blocks, content, onEditBlock }) {
               return <CalloutBlock key={block._id || idx} block={block} />;
             case 'ChartBlock':
               return <ChartBlock key={block._id || idx} block={block} />;
+            case 'TimelineBlock':
+              return <TimelineBlock key={block._id || idx} block={block} />;
             default:
               return null;
           }

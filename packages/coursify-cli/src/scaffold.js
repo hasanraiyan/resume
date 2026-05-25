@@ -68,6 +68,18 @@ data:
       data: [450, 520, 610, 800]
       color: "#1f644e"
 
+## [TimelineBlock]
+title: "Learning Pathway"
+timelineItems:
+  - date: "Week 1"
+    title: "Getting Started"
+    icon: "play"
+    content: "Establish baseline tools and environments."
+  - date: "Week 2"
+    title: "Deep Dive"
+    icon: "code"
+    content: "Perform core programming tasks and advanced logic."
+
 ## [MdBlock]
 ### Additional Resources
 Link to external resources, documentation, or references here.

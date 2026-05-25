@@ -37,7 +37,7 @@ export function useTableOfContents(content, contentRef, scrollContainerRef) {
         // 2. Specialized Block Detection in Headings
         // e.g. ## [QuizBlock] ->Knowledge Check
         const blockMatch = text.match(
-          /^\[(MdBlock|QuizBlock|VideoBlock|ResourceBlock|StepByStepBlock|AccordionBlock|TabsBlock|CalloutBlock|ChartBlock)\]/
+          /^\[(MdBlock|QuizBlock|VideoBlock|ResourceBlock|StepByStepBlock|AccordionBlock|TabsBlock|CalloutBlock|ChartBlock|TimelineBlock)\]/
         );
 
         if (blockMatch) {
@@ -52,6 +52,7 @@ export function useTableOfContents(content, contentRef, scrollContainerRef) {
           else if (type === 'TabsBlock') text = 'Interactive Example';
           else if (type === 'CalloutBlock') text = 'Important Note';
           else if (type === 'ChartBlock') text = 'Data Visualization';
+          else if (type === 'TimelineBlock') text = 'Timeline Roadmap';
           else continue; // Skip generic MdBlock headers in TOC
         }
 

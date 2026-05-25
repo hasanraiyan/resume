@@ -15,6 +15,7 @@ export const SUPPORTED_BLOCKS = [
   'TabsBlock',
   'CalloutBlock',
   'ChartBlock',
+  'TimelineBlock',
 ];
 
 /**

@@ -82,6 +82,7 @@ export function normalizeSection(section) {
       tabs: b.tabs,
       calloutType: b.calloutType,
       chart: b.chart,
+      timelineItems: b.timelineItems,
       order: b.order ?? 0,
     })),
     summary: section.summary || '',

@@ -181,6 +181,7 @@ When you create a section with `coursify init-section`, it generates a template 
 - `[TabsBlock]` — for multi-language examples or alternative approaches
 - `[CalloutBlock]` — for warnings, tips, and important notes
 - `[ChartBlock]` — for interactive data visualizations
+- `[TimelineBlock]` — for vertical chronological roadmap paths
 - `[QuizBlock]` — for assessment
 
 Edit the template to keep only the blocks you need for that section, and customize the content.
@@ -356,6 +357,29 @@ data:
 - Supported types: `bar`, `line`, `pie`, `doughnut`, `polarArea`, `radar`, `scatter`, `bubble`
 - Labels count must match data points count
 - Use colors that are high-contrast and accessible
+
+#### TimelineBlock
+
+Interactive chronological milestones, event streams, or lifecycles.
+
+```markdown
+## [TimelineBlock]
+
+title: "Development Lifecycle"
+timelineItems:
+  - date: "Step 1"
+    title: "Planning"
+    icon: "play"
+    content: "Establish baseline rules."
+  - date: "Step 2"
+    title: "Design"
+    icon: "code"
+    content: "Write beautiful components."
+```
+
+**Best practices:**
+- Supported icons: `milestone`, `calendar`, `clock`, `code`, `layers`, `check`, `star`, `play`, `activity`, `award`, `book`
+- Content fields support full markdown (links, code, bold, math, etc.)
 
 #### VideoBlock
 Embed external videos (YouTube, Vimeo, etc.)

@@ -63,6 +63,7 @@ export function parseMarkdownToBlocks(text) {
     'TabsBlock',
     'CalloutBlock',
     'ChartBlock',
+    'TimelineBlock',
   ];
   const AUTHORING_ALIASES = {
     MermaidBlock: { target: 'MdBlock', wrap: (c) => `\`\`\`mermaid\n${c}\n\`\`\`` },
@@ -460,6 +461,52 @@ export function parseMarkdownToBlocks(text) {
           }
         });
       }
+    } else if (m.type === 'TimelineBlock') {
+      block.timelineItems = [];
+      const titleMatch = rawContent.match(/^title:\s*["']?(.*?)["']?$/m);
+      if (titleMatch) {
+        block.title = cleanUnresolvedFootnotes(unescapeString(titleMatch[1]), globalFootnotes);
+      }
+
+      const itemsSectionMatch = rawContent.match(/timelineItems:\s*\n([\s\S]*?)$/);
+      const itemsContent = itemsSectionMatch ? itemsSectionMatch[1] : rawContent;
+      const parts = itemsContent.split(/(?:^|\n)\s*-\s*date:\s*/).filter((p) => p.trim());
+
+      parts.forEach((part) => {
+        const lines = part.split('\n');
+        const date = unescapeString(lines[0].trim());
+        const item = { date, title: '', content: '', icon: 'milestone' };
+
+        const itemTitleMatch = part.match(/title:\s*["']?(.*?)["']?$/m);
+        if (itemTitleMatch) {
+          item.title = cleanUnresolvedFootnotes(unescapeString(itemTitleMatch[1]), globalFootnotes);
+        }
+
+        const itemIconMatch = part.match(/icon:\s*["']?(.*?)["']?$/m);
+        if (itemIconMatch) {
+          item.icon = unescapeString(itemIconMatch[1]);
+        }
+
+        const itemContentMatch = part.match(/content:\s*["']?([\s\S]*?)(?:["']?\n\s*\w+:|$)/);
+        if (itemContentMatch) {
+          let itemC = cleanUnresolvedFootnotes(
+            unescapeString(itemContentMatch[1]),
+            globalFootnotes
+          );
+          item.content = globalFootnotes ? itemC + '\n\n' + globalFootnotes : itemC;
+        } else {
+          const remainingLines = lines.filter(
+            (l) => !l.startsWith('title:') && !l.startsWith('icon:') && !l.startsWith('content:')
+          );
+          let itemC = cleanUnresolvedFootnotes(
+            unescapeString(remainingLines.join('\n').trim()),
+            globalFootnotes
+          );
+          item.content = globalFootnotes ? itemC + '\n\n' + globalFootnotes : itemC;
+        }
+
+        block.timelineItems.push(item);
+      });
     }
     blocks.push(block);
   }
@@ -549,6 +596,16 @@ export function generateMarkdownFromBlocks(blocks) {
           output += `  ${k}: ${typeof v === 'string' ? `"${v}"` : v}\n`;
         });
       }
+      output += '\n';
+    } else if (block.type === 'TimelineBlock') {
+      if (block.title) output += `title: "${block.title}"\n`;
+      output += `timelineItems:\n`;
+      (block.timelineItems || []).forEach((item) => {
+        output += `  - date: "${item.date}"\n`;
+        output += `    title: "${item.title}"\n`;
+        output += `    icon: "${item.icon || 'milestone'}"\n`;
+        output += `    content: "${(item.content || '').replace(/\n/g, '\\n')}"\n`;
+      });
       output += '\n';
     }
     if (i < blocks.length - 1) output += '---\n\n';

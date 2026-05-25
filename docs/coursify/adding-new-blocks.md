@@ -2,6 +2,9 @@
 
 This guide outlines the complete process for extending Coursify with a new interactive "Magic Block". To ensure a block is a first-class citizen, it must be supported in the **Web UI (Reader & Studio)**, the **CLI Tool**, and the **Agent Skills**.
 
+> [!NOTE]
+> The **`TimelineBlock`** is a prime example of a block successfully added by following this exact workflow, enabling high-fidelity chronological milestones rendering with native Markdown support.
+
 ---
 
 ## Phase 1: Core Logic & Configuration

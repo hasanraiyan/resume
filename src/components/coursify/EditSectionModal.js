@@ -20,6 +20,7 @@ import {
   Settings,
   Sparkles,
   Loader2,
+  Milestone,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { EventType } from '@ag-ui/core';
@@ -41,6 +42,7 @@ const BLOCK_TYPES = [
   { type: 'TabsBlock', label: 'Tabs', icon: FolderOpen },
   { type: 'CalloutBlock', label: 'Callout', icon: AlertCircle },
   { type: 'ChartBlock', label: 'Chart', icon: BarChart3 },
+  { type: 'TimelineBlock', label: 'Timeline', icon: Milestone },
 ];
 
 // ─── Injected styles ──────────────────────────────────────────────────────────
@@ -611,6 +613,12 @@ export default function EditSectionModal({ section, onSave, onClose }) {
         },
         options: { showLegend: true, showGrid: true },
       };
+    }
+    if (type === 'TimelineBlock') {
+      newBlock.title = '';
+      newBlock.timelineItems = [
+        { date: 'Step 1', title: 'Milestone Title', content: 'Details...', icon: 'milestone' },
+      ];
     }
     setBlocks((prev) => {
       const next = [...prev];
@@ -1662,6 +1670,163 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                                 </span>
                               </label>
                             ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* TimelineBlock */}
+                      {block.type === 'TimelineBlock' && (
+                        <div className="space-y-4">
+                          <input
+                            value={block.title || ''}
+                            onChange={(e) => updateBlock(i, 'title', e.target.value)}
+                            placeholder="Timeline Title (optional)"
+                            className={`${innerInput} font-semibold`}
+                            style={innerStyle}
+                          />
+
+                          <div
+                            className="rounded-xl p-4 space-y-4"
+                            style={{
+                              background: 'var(--esm-parchment)',
+                              border: '1px solid var(--esm-border)',
+                            }}
+                          >
+                            <Label className="mb-0">Timeline Milestones</Label>
+
+                            <div className="space-y-3">
+                              {(block.timelineItems || []).map((item, itemIdx) => (
+                                <div
+                                  key={itemIdx}
+                                  className="p-4 rounded-xl space-y-3"
+                                  style={{
+                                    background: '#fff',
+                                    border: '1px solid var(--esm-border)',
+                                  }}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      value={item.date || ''}
+                                      onChange={(e) => {
+                                        const timelineItems = block.timelineItems.map((itm, idx) =>
+                                          idx === itemIdx ? { ...itm, date: e.target.value } : itm
+                                        );
+                                        updateBlock(i, 'timelineItems', timelineItems);
+                                      }}
+                                      placeholder="Date / Phase (e.g. Q1 2026)"
+                                      className="esm-input w-1/3 px-3 py-1.5 rounded-lg border text-xs font-semibold"
+                                      style={{
+                                        borderColor: 'var(--esm-border)',
+                                        background: 'var(--esm-parchment)',
+                                        color: 'var(--esm-ink)',
+                                      }}
+                                    />
+
+                                    <input
+                                      value={item.title || ''}
+                                      onChange={(e) => {
+                                        const timelineItems = block.timelineItems.map((itm, idx) =>
+                                          idx === itemIdx ? { ...itm, title: e.target.value } : itm
+                                        );
+                                        updateBlock(i, 'timelineItems', timelineItems);
+                                      }}
+                                      placeholder="Milestone Title"
+                                      className="esm-input flex-1 px-3 py-1.5 rounded-lg border text-xs font-semibold"
+                                      style={{
+                                        borderColor: 'var(--esm-border)',
+                                        background: 'var(--esm-parchment)',
+                                        color: 'var(--esm-ink)',
+                                      }}
+                                    />
+
+                                    <select
+                                      value={item.icon || 'milestone'}
+                                      onChange={(e) => {
+                                        const timelineItems = block.timelineItems.map((itm, idx) =>
+                                          idx === itemIdx ? { ...itm, icon: e.target.value } : itm
+                                        );
+                                        updateBlock(i, 'timelineItems', timelineItems);
+                                      }}
+                                      className="esm-input px-2 py-1.5 rounded-lg border text-xs font-semibold"
+                                      style={{
+                                        borderColor: 'var(--esm-border)',
+                                        background: 'var(--esm-parchment)',
+                                        color: 'var(--esm-ink)',
+                                      }}
+                                    >
+                                      {[
+                                        'milestone',
+                                        'calendar',
+                                        'clock',
+                                        'code',
+                                        'layers',
+                                        'check',
+                                        'star',
+                                        'play',
+                                        'activity',
+                                        'award',
+                                        'book',
+                                      ].map((ico) => (
+                                        <option key={ico} value={ico}>
+                                          {ico}
+                                        </option>
+                                      ))}
+                                    </select>
+
+                                    <button
+                                      onClick={() => {
+                                        const timelineItems = block.timelineItems.filter(
+                                          (_, idx) => idx !== itemIdx
+                                        );
+                                        updateBlock(i, 'timelineItems', timelineItems);
+                                      }}
+                                      className="p-1.5 rounded-lg transition-colors"
+                                      style={{ color: 'var(--esm-muted)' }}
+                                      onMouseEnter={(e) =>
+                                        (e.currentTarget.style.color = 'var(--esm-danger)')
+                                      }
+                                      onMouseLeave={(e) =>
+                                        (e.currentTarget.style.color = 'var(--esm-muted)')
+                                      }
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+
+                                  <textarea
+                                    value={item.content || ''}
+                                    onChange={(e) => {
+                                      const timelineItems = block.timelineItems.map((itm, idx) =>
+                                        idx === itemIdx ? { ...itm, content: e.target.value } : itm
+                                      );
+                                      updateBlock(i, 'timelineItems', timelineItems);
+                                    }}
+                                    placeholder="Milestone content details (Markdown supported)"
+                                    className={`${innerTextarea} esm-mono text-xs`}
+                                    style={innerFaintStyle}
+                                    rows={2}
+                                  />
+                                </div>
+                              ))}
+
+                              <button
+                                onClick={() => {
+                                  const timelineItems = [
+                                    ...(block.timelineItems || []),
+                                    { date: '', title: '', content: '', icon: 'milestone' },
+                                  ];
+                                  updateBlock(i, 'timelineItems', timelineItems);
+                                }}
+                                className="esm-add-row w-full py-2 rounded-lg border border-dashed text-[10px] font-semibold"
+                                style={{
+                                  borderColor: 'var(--esm-border)',
+                                  color: 'var(--esm-muted)',
+                                  fontFamily: 'Outfit, sans-serif',
+                                }}
+                              >
+                                + Add Milestone
+                              </button>
+                            </div>
                           </div>
                         </div>
                       )}

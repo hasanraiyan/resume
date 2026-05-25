@@ -53,10 +53,11 @@ This document tracks ideas for new interactive "Magic Blocks" to implement in th
 - **What it does:** Renders a highlighted box with an icon. It could have variations like `info`, `warning`, `tip`, and `danger`.
 - **Best for:** "Gotchas", common interview traps, or important pro-tips that need to stand out from regular text.
 
-### 8. `TimelineBlock`
+### 8. `TimelineBlock` [IMPLEMENTED]
 
 - **What it does:** Draws a vertical line down the left side with nodes/dots mapping out a sequence of events.
 - **Best for:** Explaining the lifecycle of a request, the history of a technology, or roadmap-style overviews.
+- **Status:** Integrated into central registries, parser, renderer, visual editor, and CLI scaffolding!
 
 ### 9. `ComparisonBlock` (Pros/Cons Table)
 

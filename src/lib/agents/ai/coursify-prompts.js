@@ -72,6 +72,19 @@ options:
   showGrid: true
   beginAtZero: true
 
+**## [TimelineBlock]**
+Interactive chronological milestones, event streams, or lifecycles.
+title: "Development Lifecycle"
+timelineItems:
+  - date: "Step 1"
+    title: "Planning"
+    icon: "play"
+    content: "Establish baseline rules."
+  - date: "Step 2"
+    title: "Design"
+    icon: "code"
+    content: "Write beautiful components."
+
 **## [VideoBlock]**
 Embed relevant YouTube or educational videos.
 title: "Video Title"
@@ -87,6 +100,7 @@ url: "https://www.youtube.com/watch?v=..."
 - MANDATORY: Include at least 2 [CalloutBlock]s (tips, warnings)
 - Use [StepByStepBlock] for any process or algorithm
 - Use [ChartBlock] when data or comparisons are involved
+- Use [TimelineBlock] for timelines, histories, lifecycles, or chronological roadmap pathways.
 - Use Mermaid diagrams in [MdBlock]s for visual concepts
 - Cover the topic deeply and comprehensively
 - Professional, academic tone — no fluff

@@ -624,6 +624,47 @@ beginAtZero: true
 - `color` is optional (auto-assigned if omitted)
 - `options` are passed through to Chart.js
 
+### TimelineBlock
+
+Interactive vertical roadmap paths mapping chronological steps, phases, or lifecycles.
+
+```markdown
+## [TimelineBlock]
+
+title: "Roadmap Title"
+timelineItems:
+
+- date: "Step 1"
+  title: "Phase Title"
+  icon: "play"
+  content: "Milestone details (Markdown supported)"
+- date: "Step 2"
+  title: "Phase 2 Title"
+  icon: "code"
+  content: "More milestone details"
+```
+
+**Schema:**
+
+```json
+{
+  "type": "TimelineBlock",
+  "title": "Roadmap Title",
+  "timelineItems": [
+    {
+      "date": "Step 1",
+      "title": "Phase Title",
+      "icon": "play",
+      "content": "Milestone details"
+    }
+  ]
+}
+```
+
+**Supported Icons:**
+
+- `milestone`, `calendar`, `clock`, `code`, `layers`, `check`, `star`, `play`, `activity`, `award`, `book`
+
 ---
 
 ## ResearchNote Schema
