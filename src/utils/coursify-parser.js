@@ -380,10 +380,18 @@ export function parseMarkdownToBlocks(text) {
       if (typeMatch) block.chart.type = unescapeString(typeMatch[1]);
 
       const titleMatch = rawContent.match(/^title:\s*["']?(.*?)["']?$/m);
-      if (titleMatch) block.chart.title = unescapeString(titleMatch[1]);
+      if (titleMatch) {
+        block.chart.title = cleanUnresolvedFootnotes(
+          unescapeString(titleMatch[1]),
+          globalFootnotes
+        );
+      }
 
       const descMatch = rawContent.match(/^description:\s*["']?(.*?)["']?$/m);
-      if (descMatch) block.chart.description = unescapeString(descMatch[1]);
+      if (descMatch) {
+        const desc = cleanUnresolvedFootnotes(unescapeString(descMatch[1]), globalFootnotes);
+        block.chart.description = globalFootnotes ? desc + '\n\n' + globalFootnotes : desc;
+      }
 
       // Extract data section
       const dataSectionMatch = rawContent.match(/data:\s*\n([\s\S]*?)(?:\n\w+:|$)/);
@@ -438,7 +446,17 @@ export function parseMarkdownToBlocks(text) {
             else if (cleanVal === 'false') block.chart.options[key.trim()] = false;
             else if (!isNaN(cleanVal) && cleanVal !== '')
               block.chart.options[key.trim()] = parseFloat(cleanVal);
-            else block.chart.options[key.trim()] = cleanVal;
+            else {
+              const k = key.trim();
+              if (k === 'footer') {
+                const footerVal = cleanUnresolvedFootnotes(cleanVal, globalFootnotes);
+                block.chart.options[k] = globalFootnotes
+                  ? footerVal + '\n\n' + globalFootnotes
+                  : footerVal;
+              } else {
+                block.chart.options[k] = cleanVal;
+              }
+            }
           }
         });
       }

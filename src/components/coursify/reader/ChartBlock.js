@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { BarChart3, Info, AlertCircle } from 'lucide-react';
+import { MarkdownRenderer } from './MarkdownRenderer';
 
 // Dynamic loader for Chart.js components
 const ChartComponent = dynamic(
@@ -204,8 +205,16 @@ export function ChartBlock({ block }) {
     >
       {(title || description) && (
         <div className="p-6 border-b border-[#fcfbf5] bg-[#fcfbf5]/50">
-          {title && <h3 className="text-lg font-bold text-[#1e3a34]">{title}</h3>}
-          {description && <p className="text-sm text-[#7c8e88] mt-1">{description}</p>}
+          {title && (
+            <h3 className="text-lg font-bold text-[#1e3a34]">
+              <MarkdownRenderer content={title} bare={true} />
+            </h3>
+          )}
+          {description && (
+            <div className="text-sm text-[#7c8e88] mt-1 [&_p]:!text-[#7c8e88] [&_p]:!text-sm [&_p]:!leading-relaxed">
+              <MarkdownRenderer content={description} isInline={true} />
+            </div>
+          )}
         </div>
       )}
 
@@ -221,9 +230,11 @@ export function ChartBlock({ block }) {
       </div>
 
       {options.footer && (
-        <div className="px-6 py-4 bg-[#fcfbf5]/30 border-t border-[#fcfbf5] flex items-center gap-2">
-          <Info className="w-3.5 h-3.5 text-[#1f644e]" />
-          <span className="text-[11px] font-medium text-[#7c8e88]">{options.footer}</span>
+        <div className="px-6 py-4 bg-[#fcfbf5]/30 border-t border-[#fcfbf5] flex items-center gap-2 [&_p]:!text-[#7c8e88] [&_p]:!text-[11px] [&_p]:!font-medium">
+          <Info className="w-3.5 h-3.5 text-[#1f644e] shrink-0" />
+          <div className="flex-1 text-[11px] font-medium text-[#7c8e88]">
+            <MarkdownRenderer content={options.footer} isInline={true} />
+          </div>
         </div>
       )}
     </motion.div>
