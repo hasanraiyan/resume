@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { cn } from '@/utils/classNames';
+import { MarkdownRenderer } from './reader/MarkdownRenderer';
 
 export function RelatedArticlesGrid({ articles, variant = 'grid' }) {
   if (!articles || articles.length === 0) {
@@ -37,9 +38,9 @@ export function RelatedArticlesGrid({ articles, variant = 'grid' }) {
                   {article.title}
                 </p>
                 {article.snippet && (
-                  <p className="text-xs text-[#7c8e88] line-clamp-2 mt-1.5 leading-relaxed">
-                    {article.snippet}
-                  </p>
+                  <div className="text-xs text-[#7c8e88] line-clamp-2 mt-1.5 leading-relaxed">
+                    <MarkdownRenderer content={article.snippet} isInline bare />
+                  </div>
                 )}
               </div>
 
@@ -86,9 +87,9 @@ export function RelatedArticlesGrid({ articles, variant = 'grid' }) {
               </div>
 
               {article.snippet && (
-                <p className="text-xs text-[#7c8e88] line-clamp-2 leading-relaxed">
-                  {article.snippet}
-                </p>
+                <div className="text-xs text-[#7c8e88] line-clamp-2 leading-relaxed">
+                  <MarkdownRenderer content={article.snippet} isInline bare />
+                </div>
               )}
             </div>
           </Link>
