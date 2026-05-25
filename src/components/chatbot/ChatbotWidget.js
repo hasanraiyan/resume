@@ -26,9 +26,6 @@ export default function ChatbotWidget() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
-  const [activeMCPs, setActiveMCPs] = useState([]);
-  const [availableMCPs, setAvailableMCPs] = useState([]); // Fetched from backend
-  const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
 
   const messagesEndRef = useRef(null);
@@ -85,21 +82,6 @@ export default function ChatbotWidget() {
     }
   }, [chatbotSettings, messages.length, setMessages, isCoursifyPath, isCoursifyReader]);
 
-  useEffect(() => {
-    async function loadMCPs() {
-      try {
-        const res = await fetch('/api/mcps');
-        if (res.ok) {
-          const data = await res.json();
-          setAvailableMCPs(data);
-        }
-      } catch (err) {
-        console.error('Failed to load available tools:', err);
-      }
-    }
-    loadMCPs();
-  }, []);
-
   // UI Event Handlers
   useEffect(() => {
     const handleGlobalClick = (e) => {
@@ -138,7 +120,7 @@ export default function ChatbotWidget() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, isModelSelectorOpen, isToolsMenuOpen]);
+  }, [isOpen, isModelSelectorOpen]);
 
   const handleOpenChat = useCallback(async () => {
     setIsOpen(true);
@@ -149,7 +131,7 @@ export default function ChatbotWidget() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    send(inputMessage, activeQuote, activeMCPs, selectedAgentId);
+    send(inputMessage, activeQuote, [], selectedAgentId);
     setInputMessage('');
     setActiveQuote('');
     if (inputRef.current) {
@@ -158,7 +140,7 @@ export default function ChatbotWidget() {
   };
 
   const handlePromptClick = (text) => {
-    send(text, activeQuote, activeMCPs, selectedAgentId);
+    send(text, activeQuote, [], selectedAgentId);
     setActiveQuote('');
   };
 
@@ -224,7 +206,7 @@ export default function ChatbotWidget() {
     }
 
     if (prompt) {
-      send(prompt, activeQuote, activeMCPs, selectedAgentId, true);
+      send(prompt, activeQuote, [], selectedAgentId, true);
     }
   };
 
@@ -346,19 +328,17 @@ export default function ChatbotWidget() {
                   </div>
                 </div>
               ) : (
-                activeMCPs.length === 0 && (
-                  <div className="px-3 sm:px-4 py-2 flex items-center gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    {suggestedPrompts.map((prompt, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handlePromptClick(prompt.text)}
-                        className={`px-3 py-1.5 border rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 transition-colors duration-200 ${isCoursify ? 'bg-[#f0f5f2] hover:bg-[#e5e3d8] border-[#e5e3d8] text-[#1e3a34]' : 'bg-white hover:bg-neutral-100 border-neutral-200/80 text-neutral-700'}`}
-                      >
-                        {prompt.text}
-                      </button>
-                    ))}
-                  </div>
-                )
+                <div className="px-3 sm:px-4 py-2 flex items-center gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {suggestedPrompts.map((prompt, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handlePromptClick(prompt.text)}
+                      className={`px-3 py-1.5 border rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 transition-colors duration-200 ${isCoursify ? 'bg-[#f0f5f2] hover:bg-[#e5e3d8] border-[#e5e3d8] text-[#1e3a34]' : 'bg-white hover:bg-neutral-100 border-neutral-200/80 text-neutral-700'}`}
+                    >
+                      {prompt.text}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
           )}
@@ -372,18 +352,12 @@ export default function ChatbotWidget() {
             activeQuote={activeQuote}
             isListening={isListening}
             toggleListening={toggleListening}
-            activeMCPs={activeMCPs}
-            setActiveMCPs={setActiveMCPs}
-            availableMCPs={availableMCPs}
-            isToolsMenuOpen={isToolsMenuOpen}
-            setIsToolsMenuOpen={setIsToolsMenuOpen}
             isModelSelectorOpen={isModelSelectorOpen}
             setIsModelSelectorOpen={setIsModelSelectorOpen}
             chatbotSettings={chatbotSettings}
             selectedAgentId={selectedAgentId}
             setSelectedAgentId={setSelectedAgentId}
             showModelSelector={!isCoursify}
-            showToolsMenu={!isCoursify}
             theme={isCoursify ? 'green' : 'default'}
           />
         </div>

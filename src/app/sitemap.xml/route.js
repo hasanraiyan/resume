@@ -2,7 +2,7 @@ import { getAllPublishedArticles } from '@/app/actions/articleActions';
 import Project from '@/models/Project';
 import CoursifyCourse from '@/models/CoursifyCourse';
 import dbConnect from '@/lib/dbConnect';
-import { getBaseUrl } from '@/lib/mcp/oauth';
+import { getBaseUrl } from '@/lib/baseUrl';
 
 export async function GET() {
   await dbConnect();

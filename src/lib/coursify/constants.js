@@ -1,7 +1,3 @@
-import { READ_ONLY_ANNOTATIONS, MUTATION_ANNOTATIONS, DESTRUCTIVE_ANNOTATIONS } from '../utils.js';
-
-export { READ_ONLY_ANNOTATIONS, MUTATION_ANNOTATIONS, DESTRUCTIVE_ANNOTATIONS };
-
 export const COURSE_AUTHORING_GUIDE = {
   purpose: 'Help an AI assistant create complete, practical, high-quality courses in Coursify.',
 

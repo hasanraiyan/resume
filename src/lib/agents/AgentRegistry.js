@@ -320,7 +320,6 @@ class AgentRegistry {
       model: instance?.config?.model || config.model || defaultConfig.defaultModel || '',
       persona: instance?.config?.persona || config.persona || defaultConfig.persona || '',
       tools: instance?.config?.tools || config.tools || defaultConfig.tools || [],
-      activeMCPs: instance?.config?.activeMCPs || config.activeMCPs || [],
     };
   }
 }

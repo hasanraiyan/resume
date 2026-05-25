@@ -37,7 +37,7 @@ export const MINI_APPS = [
   {
     id: 'coursify',
     name: 'Coursify',
-    tagline: 'AI-built courses via MCP — read, edit, and learn.',
+    tagline: 'AI-built courses — read, edit, and learn.',
     href: '/apps/coursify',
     category: 'Learning',
     iconSrc: '/images/apps/coursify.png',

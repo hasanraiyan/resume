@@ -9,9 +9,7 @@ import { AGENT_IDS } from '@/lib/constants/agents';
 import BaseAgent from '../BaseAgent';
 import Analytics from '@/models/Analytics';
 import ChatLog from '@/models/ChatLog';
-import { getBackendMCPConfig } from '@/lib/mcpConfig';
-import { buildMcpClientConfig } from '../utils/mcp-client-config';
-import { MultiServerMCPClient } from '@langchain/mcp-adapters';
+
 import { StateGraph, START, END, Annotation, messagesStateReducer } from '@langchain/langgraph';
 import { ToolNode } from '@langchain/langgraph/prebuilt';
 import { MongoDBSaver } from '@langchain/langgraph-checkpoint-mongodb';
@@ -136,7 +134,6 @@ class TelegramAgent extends BaseAgent {
     let toolsUsed = [];
     let assistantContent = '';
     let allTools = [];
-    let mcpClient = null;
 
     const actualModel = {
       providerId: this.config.providerId,
@@ -196,32 +193,6 @@ class TelegramAgent extends BaseAgent {
         }
         return new SystemMessage({ content: msg.content || '', id });
       });
-
-      // Load MCP tools strictly based on activeMCPs
-      const backendMCPs = await getBackendMCPConfig(isAdmin);
-      // We do not auto-include default MCPs here to keep it strictly UI-driven
-      const selectedMCPConfigs = backendMCPs.filter((m) => activeMCPs.includes(m.id));
-
-      console.log(
-        'activeMCPs names:',
-        selectedMCPConfigs.map((m) => m.name)
-      );
-
-      if (selectedMCPConfigs.length > 0) {
-        yield { type: 'status', message: '🔌 Connecting to tools...' };
-
-        const mcpServerConfig = await buildMcpClientConfig(selectedMCPConfigs);
-
-        if (Object.keys(mcpServerConfig).length > 0) {
-          try {
-            mcpClient = new MultiServerMCPClient(mcpServerConfig);
-            const dynamicMcpTools = await mcpClient.getTools();
-            allTools.push(...dynamicMcpTools);
-          } catch (e) {
-            this.logger.error('Failed getting MCP Tools:', e);
-          }
-        }
-      }
 
       const finalTools = this.config.provider?.supportsTools !== false ? allTools : [];
 
@@ -533,11 +504,6 @@ class TelegramAgent extends BaseAgent {
     } catch (error) {
       this.logger.error('Stream execution error:', error);
       throw error;
-    } finally {
-      if (mcpClient) {
-        // MultiServerMCPClient currently doesn't require explicit cleanup in this context,
-        // but leaving space here in case adapter API changes.
-      }
     }
 
     if (assistantContent?.trim()) {

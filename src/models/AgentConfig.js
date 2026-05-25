@@ -44,11 +44,7 @@ const AgentConfigSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
-    // Allows assigning specific MCP servers to the agent
-    activeMCPs: {
-      type: [String],
-      default: [],
-    },
+
     // Allows assigning specific Skills to the agent
     activeSkills: {
       type: [String],

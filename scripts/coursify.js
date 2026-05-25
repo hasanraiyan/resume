@@ -26,8 +26,8 @@ const { program } = require('commander');
 
 // Import DB operations and constants using jiti
 const dbOps = jiti('@/lib/coursify/db-ops.js');
-const { COURSE_AUTHORING_GUIDE } = jiti('@/lib/mcp/coursify/constants.js');
-const { parseMarkdownToBlocks } = jiti('@/lib/mcp/coursify/utils.js');
+const { COURSE_AUTHORING_GUIDE } = jiti('@/lib/coursify/constants.js');
+const { parseMarkdownToBlocks } = jiti('@/lib/coursify/utils.js');
 const dbConnectImport = jiti('@/lib/dbConnect.js');
 const dbConnect = dbConnectImport.default || dbConnectImport;
 

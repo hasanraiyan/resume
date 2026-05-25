@@ -58,7 +58,7 @@ ChartJS.register(
 );
 
 export default function AgentConfigurationModal({ isOpen, onClose, agentData, providers, onSave }) {
-  const [activeTab, setActiveTab] = useState('engine'); // 'engine', 'tools', 'mcp', 'persona'
+  const [activeTab, setActiveTab] = useState('engine'); // 'engine', 'tools', 'persona'
   const [settings, setSettings] = useState({
     providerId: '',
     model: '',
@@ -67,7 +67,6 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
     persona: '',
     isActive: true,
     tools: [],
-    activeMCPs: [],
     activeSkills: [],
     metadata: {},
   });
@@ -77,8 +76,7 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
   const [summaryModels, setSummaryModels] = useState([]);
   const [fetchingSummaryModels, setFetchingSummaryModels] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [mcpServers, setMcpServers] = useState([]);
-  const [fetchingMCPs, setFetchingMCPs] = useState(false);
+
   const [skills, setSkills] = useState([]);
   const [fetchingSkills, setFetchingSkills] = useState(false);
 
@@ -115,21 +113,6 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
     }
   };
 
-  const fetchMCPs = async () => {
-    setFetchingMCPs(true);
-    try {
-      const res = await fetch('/api/admin/mcp-servers');
-      if (res.ok) {
-        const data = await res.json();
-        setMcpServers(Array.isArray(data.servers) ? data.servers : []);
-      }
-    } catch (error) {
-      console.error('Failed to fetch MCP servers:', error);
-    } finally {
-      setFetchingMCPs(false);
-    }
-  };
-
   const fetchSkills = async () => {
     setFetchingSkills(true);
     try {
@@ -163,7 +146,6 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
               persona: fresh.persona || '',
               isActive: fresh.isActive ?? true,
               tools: fresh.tools || [],
-              activeMCPs: fresh.activeMCPs || [],
               activeSkills: fresh.activeSkills || [],
               metadata: fresh.metadata || {},
             });
@@ -196,7 +178,6 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
               persona: agentData.persona || '',
               isActive: agentData.isActive ?? true,
               tools: agentData.tools || [],
-              activeMCPs: agentData.activeMCPs || [],
               activeSkills: agentData.activeSkills || [],
               metadata: agentData.metadata || {},
             });
@@ -213,7 +194,6 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
       setFetchingModels(true);
 
       fetchFreshAgentData();
-      fetchMCPs();
       fetchSkills();
       fetchMetrics(agentData.agentId);
       setActiveTab('engine'); // Reset tab on open
@@ -302,16 +282,6 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
     });
   };
 
-  const toggleMCP = (mcpId) => {
-    setSettings((prev) => {
-      const current = prev.activeMCPs || [];
-      if (current.includes(mcpId)) {
-        return { ...prev, activeMCPs: current.filter((id) => id !== mcpId) };
-      }
-      return { ...prev, activeMCPs: [...current, mcpId] };
-    });
-  };
-
   const toggleSkill = (skillId) => {
     setSettings((prev) => {
       const current = prev.activeSkills || [];
@@ -336,7 +306,6 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
     { id: 'engine', label: 'Engine', icon: Bot },
     { id: 'metrics', label: 'Metrics', icon: BarChart3 },
     { id: 'tools', label: 'Tools', icon: Webhook },
-    { id: 'mcp', label: 'MCP', icon: Plug },
     { id: 'skills', label: 'Skills', icon: BookOpen },
     { id: 'persona', label: 'Persona', icon: Settings2 },
   ];
@@ -846,78 +815,6 @@ export default function AgentConfigurationModal({ isOpen, onClose, agentData, pr
                           <CheckCircle2
                             className={`w-3.5 h-3.5 ${isEnabled ? 'text-white' : 'text-neutral-400'}`}
                           />
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* MCP Tab */}
-          {activeTab === 'mcp' && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              {fetchingMCPs ? (
-                <div className="flex flex-col items-center justify-center py-12 gap-3">
-                  <RefreshCw className="w-6 h-6 animate-spin text-neutral-300" />
-                  <p className="text-xs font-medium text-neutral-400">Syncing servers...</p>
-                </div>
-              ) : mcpServers.length === 0 ? (
-                <div className="text-center py-12 px-6 border-2 border-dashed border-neutral-100 rounded-3xl bg-neutral-50/30 flex flex-col items-center">
-                  <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center mb-4">
-                    <Plug className="w-6 h-6 text-neutral-300" />
-                  </div>
-                  <p className="text-sm font-medium text-neutral-600 mb-2">
-                    No MCP servers available.
-                  </p>
-                  <a
-                    href="/apps/smallclaw"
-                    className="text-xs font-bold text-[#1e3a34] underline underline-offset-4 hover:text-neutral-500 uppercase tracking-widest transition-colors"
-                  >
-                    Configure in Settings
-                  </a>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {mcpServers.map((mcp) => {
-                    const isAssigned = settings.activeMCPs.includes(mcp._id);
-                    return (
-                      <button
-                        key={mcp._id}
-                        type="button"
-                        onClick={() => toggleMCP(mcp._id)}
-                        className={`w-full flex items-center gap-4 px-5 py-4.5 rounded-2xl text-left border-2 cursor-pointer transition-all ${
-                          isAssigned
-                            ? 'bg-[#1e3a34] border-[#1e3a34] text-white shadow-xl shadow-[#1e3a34]/10'
-                            : 'bg-white border-neutral-100 hover:border-neutral-200 hover:bg-neutral-50/50'
-                        }`}
-                      >
-                        <div
-                          className={`w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 transition-all ${
-                            isAssigned
-                              ? 'bg-white text-black'
-                              : 'border-2 border-neutral-200 bg-white'
-                          }`}
-                        >
-                          {isAssigned && <CheckCircle2 className="w-3.5 h-3.5 text-[#1e3a34]" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-bold tracking-tight">{mcp.name}</p>
-                            {!mcp.isActive && (
-                              <span className="text-[9px] uppercase font-black text-red-500 bg-red-50 px-1.5 py-0.5 rounded-md border border-red-100">
-                                Offline
-                              </span>
-                            )}
-                          </div>
-                          {mcp.description && (
-                            <p
-                              className={`text-[11px] truncate mt-1 ${isAssigned ? 'text-neutral-400' : 'text-neutral-500'}`}
-                            >
-                              {mcp.description}
-                            </p>
-                          )}
                         </div>
                       </button>
                     );

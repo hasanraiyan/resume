@@ -2,9 +2,6 @@ import { AGENT_IDS } from '@/lib/constants/agents';
 import BaseAgent from '../BaseAgent';
 import { StateGraph, END, START, Annotation } from '@langchain/langgraph';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
-import { MultiServerMCPClient } from '@langchain/mcp-adapters';
-import { getBackendMCPConfig } from '@/lib/mcpConfig';
-import { buildMcpClientConfig } from '../utils/mcp-client-config';
 import agentRegistry from '../AgentRegistry';
 import Article from '@/models/Article';
 
@@ -72,136 +69,27 @@ class BlogWriterAgent extends BaseAgent {
       };
     };
 
-    // ─── Node 1: Research using MCP tools (web search) ───
+    // ─── Node 1: Research using LLM knowledge ───
     const researchTopic = async (state) => {
       self.logger.info(`Researching topic: ${state.topic}`);
 
       if (emitStatus) {
-        emitStatus({ type: 'status', message: '🔍 Researching topic with live web search...' });
-      }
-
-      let allTools = [];
-      let mcpClient = null;
-      let mcpToolsAvailable = false;
-
-      try {
-        const activeMCPIds = self.config.activeMCPs || [];
-        const backendMCPs = await getBackendMCPConfig(true);
-        const selectedMCPConfigs = backendMCPs.filter((m) => activeMCPIds.includes(m.id));
-
-        if (selectedMCPConfigs.length > 0) {
-          const mcpServerConfig = await buildMcpClientConfig(selectedMCPConfigs);
-          if (Object.keys(mcpServerConfig).length > 0) {
-            mcpClient = new MultiServerMCPClient(mcpServerConfig);
-            allTools = await mcpClient.getTools();
-            mcpToolsAvailable = allTools.length > 0;
-            self.logger.info(`Loaded ${allTools.length} MCP tools for research`);
-
-            if (emitStatus && mcpToolsAvailable) {
-              emitStatus({
-                type: 'status',
-                message: `📡 Connected to ${allTools.length} live data sources`,
-              });
-            }
-          }
-        }
-      } catch (e) {
-        self.logger.warn('Failed to load MCP tools for research:', e);
-        if (emitStatus) {
-          emitStatus({
-            type: 'status',
-            message: '⚠️ MCP connection failed, using fallback research',
-          });
-        }
+        emitStatus({ type: 'status', message: '🤖 Researching using AI knowledge base...' });
       }
 
       const llm = await self.createChatModel({ temperature: 0.3 });
 
-      const systemPrompt = `You are an expert technical researcher with access to live web search tools. Your job is to research topics thoroughly and provide CURRENT, UP-TO-DATE information.
-
-CURRENT DATE: ${CURRENT_DATE} (this is critical - prioritize information from ${CURRENT_YEAR} and late ${parseInt(CURRENT_YEAR) - 1})
-
-TOPIC: "${state.topic}"
-
-RESEARCH REQUIREMENTS - You MUST find:
-1. **Latest Updates & News** - What happened in ${CURRENT_YEAR}? Any recent releases, major updates, or breaking news?
-2. **Current Versions & Releases** - What are the latest stable versions? When were they released?
-3. **Trending Discussions** - What are developers talking about right now? Hot takes, debates, controversies?
-4. **Real-world Adoption** - Who is using this technology in production? Any notable case studies from ${CURRENT_YEAR}?
-5. **Performance Benchmarks** - Any new benchmarks or performance comparisons from recent months?
-6. **Future Roadmap** - What are the maintainers planning? Any RFCs, proposals, or upcoming features?
-
-CRITICAL INSTRUCTIONS:
-- PRIORITIZE information from ${CURRENT_YEAR} and late ${parseInt(CURRENT_YEAR) - 1}
-- If search results show outdated info (${parseInt(CURRENT_YEAR) - 2} or earlier), note that and try to find newer sources
-- Include specific dates, version numbers, and release notes when available
-- Look for official blog posts, GitHub releases, and conference talks from ${CURRENT_YEAR}
-- Search for "What's new in [topic] ${CURRENT_YEAR}" or "[topic] ${CURRENT_YEAR} roadmap"
-
-IMPORTANT: Make multiple search queries to cover different angles. Don't stop at one search.
-
-Output a comprehensive research summary with all your findings, including source URLs and dates where relevant.`;
-
-      let researchNotes = '';
-
-      if (allTools.length > 0) {
-        if (emitStatus) {
-          emitStatus({ type: 'status', message: '🌐 Searching the web for latest information...' });
-        }
-
-        try {
-          const researchAgent = createReactAgent({ llm, tools: allTools });
-          const result = await researchAgent.invoke({
-            messages: [
-              { role: 'system', content: systemPrompt },
-              {
-                role: 'user',
-                content: `Research this topic thoroughly using web search. Make multiple searches to get the most CURRENT information. Search for: "${state.topic} ${CURRENT_YEAR}", "${state.topic} latest version", "${state.topic} news ${CURRENT_YEAR}", and related queries.`,
-              },
-            ],
-          });
-          researchNotes = result.messages[result.messages.length - 1].content;
-
-          if (emitStatus) {
-            emitStatus({
-              type: 'status',
-              message: '✅ Web research complete, analyzing results...',
-            });
-          }
-        } catch (e) {
-          self.logger.warn('MCP research failed, falling back to LLM knowledge:', e);
-          if (emitStatus) {
-            emitStatus({
-              type: 'status',
-              message: '🔄 Web search unavailable, using LLM knowledge base...',
-            });
-          }
-          const result = await llm.invoke([
-            { role: 'system', content: systemPrompt },
-            {
-              role: 'user',
-              content: `Research: ${state.topic}. Note: The current date is ${CURRENT_DATE}. Prioritize information from ${CURRENT_YEAR} and late ${parseInt(CURRENT_YEAR) - 1}.`,
-            },
-          ]);
-          researchNotes = result.content;
-        }
-      } else {
-        self.logger.info('No MCP tools available, using LLM knowledge for research');
-        if (emitStatus) {
-          emitStatus({ type: 'status', message: '🤖 Researching using AI knowledge base...' });
-        }
-        const result = await llm.invoke([
-          {
-            role: 'system',
-            content: `You are an expert technical researcher. Provide a comprehensive research summary about the topic. IMPORTANT: The current date is ${CURRENT_DATE}. Focus on information from ${CURRENT_YEAR} and late ${parseInt(CURRENT_YEAR) - 1}. Include specific APIs, libraries, best practices, common pitfalls, and real-world examples. Note any recent updates or breaking changes.`,
-          },
-          {
-            role: 'user',
-            content: `Research: ${state.topic}. Provide the most current information as of ${CURRENT_DATE}.`,
-          },
-        ]);
-        researchNotes = result.content;
-      }
+      const result = await llm.invoke([
+        {
+          role: 'system',
+          content: `You are an expert technical researcher. Provide a comprehensive research summary about the topic. IMPORTANT: The current date is ${CURRENT_DATE}. Focus on information from ${CURRENT_YEAR} and late ${parseInt(CURRENT_YEAR) - 1}. Include specific APIs, libraries, best practices, common pitfalls, and real-world examples. Note any recent updates or breaking changes.`,
+        },
+        {
+          role: 'user',
+          content: `Research: ${state.topic}. Provide the most current information as of ${CURRENT_DATE}.`,
+        },
+      ]);
+      const researchNotes = result.content;
 
       return { researchNotes, status: 'Research complete' };
     };

@@ -12,7 +12,6 @@ export function SmallClawProvider({ children }) {
   const [providers, setProviders] = useState([]);
   const [agents, setAgents] = useState([]);
   const [integrations, setIntegrations] = useState([]);
-  const [mcpServers, setMcpServers] = useState([]);
   const [skills, setSkills] = useState([]);
   const [chatbotSettings, setChatbotSettings] = useState({
     aiName: 'Kiro',
@@ -57,16 +56,6 @@ export function SmallClawProvider({ children }) {
     }
   }, []);
 
-  const fetchMcpServers = useCallback(async () => {
-    try {
-      const res = await fetch('/api/admin/mcp-servers');
-      const data = await res.json();
-      if (res.ok) setMcpServers(data.servers || []);
-    } catch (error) {
-      console.error('Failed to fetch MCP servers:', error);
-    }
-  }, []);
-
   const fetchSkills = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/skills');
@@ -99,13 +88,11 @@ export function SmallClawProvider({ children }) {
     providers,
     agents,
     integrations,
-    mcpServers,
     skills,
     chatbotSettings,
     refreshProviders: fetchProviders,
     refreshAgents: fetchAgents,
     refreshIntegrations: fetchIntegrations,
-    refreshMcpServers: fetchMcpServers,
     refreshSkills: fetchSkills,
     refreshChatbotSettings: fetchChatbotSettings,
   };

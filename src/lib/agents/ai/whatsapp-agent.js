@@ -9,9 +9,7 @@ import { AGENT_IDS } from '@/lib/constants/agents';
 import BaseAgent from '../BaseAgent';
 import Analytics from '@/models/Analytics';
 import ChatLog from '@/models/ChatLog';
-import { getBackendMCPConfig } from '@/lib/mcpConfig';
-import { buildMcpClientConfig } from '../utils/mcp-client-config';
-import { MultiServerMCPClient } from '@langchain/mcp-adapters';
+
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { HumanMessage, SystemMessage, AIMessage, ToolMessage } from '@langchain/core/messages';
 
@@ -44,7 +42,6 @@ class WhatsAppAgent extends BaseAgent {
     let toolsUsed = [];
     let assistantContent = '';
     let allTools = [];
-    let mcpClient = null;
 
     const actualModel = {
       providerId: this.config.providerId,
@@ -100,26 +97,6 @@ class WhatsAppAgent extends BaseAgent {
         new HumanMessage({ content: userMessage }),
       ];
 
-      // Load MCP tools strictly based on activeMCPs
-      const backendMCPs = await getBackendMCPConfig(isAdmin);
-      const selectedMCPConfigs = backendMCPs.filter((m) => activeMCPs.includes(m.id));
-
-      if (selectedMCPConfigs.length > 0) {
-        yield { type: 'status', message: '🔌 Connecting to tools...' };
-
-        const mcpServerConfig = await buildMcpClientConfig(selectedMCPConfigs);
-
-        if (Object.keys(mcpServerConfig).length > 0) {
-          try {
-            mcpClient = new MultiServerMCPClient(mcpServerConfig);
-            const dynamicMcpTools = await mcpClient.getTools();
-            allTools.push(...dynamicMcpTools);
-          } catch (e) {
-            this.logger.error('Failed getting MCP Tools:', e);
-          }
-        }
-      }
-
       const finalTools = this.config.provider?.supportsTools !== false ? allTools : [];
 
       this.logger.info(
@@ -167,10 +144,6 @@ class WhatsAppAgent extends BaseAgent {
     } catch (error) {
       this.logger.error('Stream execution error:', error);
       throw error;
-    } finally {
-      if (mcpClient) {
-        // Placeholder for cleanup if needed
-      }
     }
 
     if (assistantContent?.trim()) {

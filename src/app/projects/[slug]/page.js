@@ -6,7 +6,7 @@ import { getProjectBySlug, getAllPublishedProjects } from '@/app/actions/project
 import { getSiteConfig } from '@/app/actions/siteActions';
 
 import ReadingProgressBar from '@/components/blog/ReadingProgressBar';
-import { getBaseUrl } from '@/lib/mcp/oauth';
+import { getBaseUrl } from '@/lib/baseUrl';
 
 // ========================================
 //  GENERATE STATIC PARAMS (Optional but recommended)

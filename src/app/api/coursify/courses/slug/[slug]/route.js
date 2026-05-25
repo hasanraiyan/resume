@@ -2,7 +2,7 @@ import { requireCoursifyAuth } from '@/lib/coursify-auth';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
-import { normalizeCourse } from '@/lib/mcp/coursify/utils';
+import { normalizeCourse } from '@/lib/coursify/utils';
 
 export async function GET(request, { params }) {
   const auth = await requireCoursifyAuth(request);

@@ -1,4 +1,4 @@
-import { getBaseUrl } from '@/lib/mcp/oauth';
+import { getBaseUrl } from '@/lib/baseUrl';
 
 export function GET() {
   const baseUrl = getBaseUrl();

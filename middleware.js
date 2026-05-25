@@ -33,12 +33,8 @@ export default withAuth(
        */
       authorized: ({ token, req }) => {
         const path = req.nextUrl.pathname;
-        // Check if user has admin role for admin routes, apps, and MCP authorization
-        if (
-          path.startsWith('/admin') ||
-          path.startsWith('/apps') ||
-          path.startsWith('/mcp-authorize')
-        ) {
+        // Check if user has admin role for admin routes and apps
+        if (path.startsWith('/admin') || path.startsWith('/apps')) {
           return token?.role === 'admin';
         }
         return true;
@@ -51,7 +47,6 @@ export const config = {
   matcher: [
     '/admin/((?!api|_next/static|_next/image|favicon.ico).*)',
     '/apps/:path*',
-    '/mcp-authorize',
     '/api/pocketly/:path*',
   ],
 };

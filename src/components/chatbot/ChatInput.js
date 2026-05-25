@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Send, ChevronDown } from 'lucide-react';
-import ToolSelector from './ToolSelector';
 import ModelSelector from './ModelSelector';
 import VoiceInputControl from './VoiceInputControl';
 
@@ -16,11 +15,6 @@ export default function ChatInput({
   activeQuote,
   isListening,
   toggleListening,
-  activeMCPs,
-  setActiveMCPs,
-  availableMCPs,
-  isToolsMenuOpen,
-  setIsToolsMenuOpen,
   isModelSelectorOpen,
   setIsModelSelectorOpen,
   chatbotSettings,
@@ -33,7 +27,6 @@ export default function ChatInput({
   deviceAvailability,
   // feature flags so parents can control which controls appear
   showModeToggle,
-  showToolsMenu = true,
   onImagesSelected,
   uploadedImages = [],
 }) {
@@ -143,13 +136,7 @@ export default function ChatInput({
           </div>
         )}
 
-        <div
-          className={`flex ${
-            !showToolsMenu || !availableMCPs || availableMCPs.length === 0
-              ? 'justify-end'
-              : 'justify-between'
-          } items-center gap-1.5 px-3.5 pb-2 sm:px-4 sm:pb-3 mt-auto`}
-        >
+        <div className="flex justify-between items-center gap-1.5 px-3.5 pb-2 sm:px-4 sm:pb-3 mt-auto">
           {/* Left: Settings Menu & Active Tools */}
           <div className="flex items-center gap-2">
             <input
@@ -201,19 +188,6 @@ export default function ChatInput({
                 />
               </svg>
             </button>
-
-            {showToolsMenu && (
-              <ToolSelector
-                activeMCPs={activeMCPs}
-                setActiveMCPs={setActiveMCPs}
-                availableMCPs={availableMCPs}
-                isToolsMenuOpen={isToolsMenuOpen}
-                setIsToolsMenuOpen={setIsToolsMenuOpen}
-                setIsModelSelectorOpen={setIsModelSelectorOpen}
-                isLoading={isLoading}
-                inputRef={inputRef}
-              />
-            )}
 
             {shouldShowModeToggle && (
               <div className="relative mode-selector-container">

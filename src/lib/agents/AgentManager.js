@@ -75,7 +75,6 @@ class AgentManager {
               isActive: config.isActive,
               metadata: config.metadata,
               tools: config.tools,
-              activeMCPs: config.activeMCPs,
             });
           }
 

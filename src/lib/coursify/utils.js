@@ -2,10 +2,6 @@ import { parseMarkdownToBlocks, generateMarkdownFromBlocks } from '@/utils/cours
 
 export { parseMarkdownToBlocks, generateMarkdownFromBlocks };
 
-import { textResult, errorResult, toolMeta } from '../utils.js';
-
-export { textResult, errorResult, toolMeta };
-
 export function normalizeCourse(course) {
   return {
     id: course._id?.toString?.() || course.id,

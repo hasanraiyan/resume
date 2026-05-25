@@ -8,7 +8,7 @@ import ChatbotWidget from '@/components/chatbot/ChatbotWidget';
 import PWAManager from '@/components/PWAManager';
 import { getHeroData } from '@/app/actions/heroActions';
 import { getSiteConfig } from '@/app/actions/siteActions';
-import { getBaseUrl } from '@/lib/mcp/oauth';
+import { getBaseUrl } from '@/lib/baseUrl';
 import { getInitials } from '@/utils/string';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';

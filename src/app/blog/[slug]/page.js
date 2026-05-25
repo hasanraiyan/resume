@@ -14,7 +14,7 @@ import SocialShare from '@/components/SocialShare';
 import LikeButton from '@/components/LikeButton';
 import NewsletterForm from '@/components/NewsletterForm';
 import ReadingProgressBar from '@/components/blog/ReadingProgressBar';
-import { getBaseUrl } from '@/lib/mcp/oauth';
+import { getBaseUrl } from '@/lib/baseUrl';
 
 export async function generateStaticParams() {
   // Pass empty options to get default limit, or a high limit if there are many articles
