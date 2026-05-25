@@ -119,7 +119,7 @@ export default async function SharedResearchPage({ params }) {
                   <MarkdownRenderer content={research.title} bare isInline />
                 </span>
               </div>
-              <SpeakButton />
+              <SpeakButton content={content} />
               <ResearchActions research={JSON.parse(JSON.stringify(research))} />
             </div>
 
