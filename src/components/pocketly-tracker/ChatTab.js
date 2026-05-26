@@ -223,7 +223,7 @@ export default function ChatTab() {
           </div>
 
           {/* Input */}
-          <div className="w-full max-w-xl">{makeInput(false)}</div>
+          <div className="w-full max-w-3xl">{makeInput(false)}</div>
         </div>
       </div>
     );
@@ -231,18 +231,20 @@ export default function ChatTab() {
 
   return (
     <div className="flex h-[calc(100vh-3.5rem-env(safe-area-inset-bottom))] lg:h-[calc(100vh-4rem)] min-w-0 flex-col overflow-x-hidden bg-[#fcfbf5]">
-      <MessageList
-        messages={messages}
-        isLoading={isStreaming}
-        isStreaming={isStreaming}
-        messagesEndRef={messagesEndRef}
-        handleUIInteract={handleUIInteract}
-        handleLinkClick={() => {}}
-        theme="green"
-        answeredBlockIds={answeredBlockIds}
-        markBlockAsAnswered={markBlockAsAnswered}
-      />
-      {makeInput()}
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col overflow-hidden">
+        <MessageList
+          messages={messages}
+          isLoading={isStreaming}
+          isStreaming={isStreaming}
+          messagesEndRef={messagesEndRef}
+          handleUIInteract={handleUIInteract}
+          handleLinkClick={() => {}}
+          theme="green"
+          answeredBlockIds={answeredBlockIds}
+          markBlockAsAnswered={markBlockAsAnswered}
+        />
+        {makeInput()}
+      </div>
     </div>
   );
 }
