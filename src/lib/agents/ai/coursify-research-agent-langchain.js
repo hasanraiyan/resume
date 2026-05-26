@@ -135,7 +135,7 @@ class CoursifyResearchAgent extends BaseAgent {
     // const llm = await this.createChatModel();
     const { ChatOpenAI } = await import('@langchain/openai');
     const llm = new ChatOpenAI({
-      modelName: 'antigravity-gemini-3-flash',
+      modelName: 'antigravity-gemini-3.5-flash-low',
       apiKey: 'local-dummy-key',
       configuration: { baseURL: 'http://localhost:3001/v1' },
     });
