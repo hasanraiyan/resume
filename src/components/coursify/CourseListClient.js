@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
+import { useSession } from 'next-auth/react';
 import { Search, BookOpen, Plus, Sparkles } from 'lucide-react';
 import { PublicCourseCard } from './PublicCourseCard';
 import SearchOverlay from '@/components/search/SearchOverlay';
@@ -42,6 +43,7 @@ export function CourseListClient({ initialCourses, waitlistCount = 0 }) {
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
 
   const { balance, isLoading, refresh: refreshBalance } = useBalance();
+  const { data: session } = useSession();
 
   useEffect(() => {
     if (window.location.hash === '#waitlist') {
@@ -93,7 +95,7 @@ export function CourseListClient({ initialCourses, waitlistCount = 0 }) {
 
             {/* Desktop */}
             <div className="hidden items-center gap-2 sm:flex">
-              <BalanceBadge balance={balance} loading={isLoading} />
+              {session?.user && <BalanceBadge balance={balance} loading={isLoading} />}
 
               <Dialog open={isWaitlistOpen} onOpenChange={setIsWaitlistOpen}>
                 <DialogTrigger asChild>
@@ -150,11 +152,13 @@ export function CourseListClient({ initialCourses, waitlistCount = 0 }) {
 
             {/* Mobile */}
             <div className="flex items-center gap-2 sm:hidden">
-              <BalanceBadge
-                balance={balance}
-                loading={isLoading}
-                className="px-2 py-1 text-[9px]"
-              />
+              {session?.user && (
+                <BalanceBadge
+                  balance={balance}
+                  loading={isLoading}
+                  className="px-2 py-1 text-[9px]"
+                />
+              )}
 
               <button
                 onClick={() => setIsWaitlistOpen(true)}
