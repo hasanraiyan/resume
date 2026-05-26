@@ -189,10 +189,10 @@ export default function MessageList({
               )}
 
               {isEmptyStreamingPlaceholder ? (
-                <div className="flex items-center gap-1 h-4 px-0.5 mt-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-bounce [animation-delay:0ms]" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-bounce [animation-delay:150ms]" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-bounce [animation-delay:300ms]" />
+                <div className="flex items-center gap-1.5 h-6 px-0.5 mt-1.5">
+                  <span className="w-2 h-2 rounded-full bg-neutral-400 animate-bounce [animation-delay:0ms] [animation-duration:1s]" />
+                  <span className="w-2 h-2 rounded-full bg-neutral-400 animate-bounce [animation-delay:180ms] [animation-duration:1s]" />
+                  <span className="w-2 h-2 rounded-full bg-neutral-400 animate-bounce [animation-delay:360ms] [animation-duration:1s]" />
                 </div>
               ) : (
                 <>
