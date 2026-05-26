@@ -32,13 +32,18 @@ export default function ChatInput({
   uploadedImages = [],
   maxImages = 4,
   showTopBorder = true,
+  disabledModes = [],
+  customModeOptions = null,
+  dropdownPosition = 'up',
+  customOuterBg = null,
+  customInnerBg = null,
 }) {
   const isGreenTheme = theme === 'green';
   // default to showing the mode toggle whenever chat mode handlers exist,
   // but let parents explicitly disable it via the prop
   const shouldShowModeToggle = showModeToggle ?? typeof setChatMode === 'function';
   const showDeviceOption = Boolean(deviceAvailability?.supported);
-  const modeOptions = [
+  const modeOptions = customModeOptions || [
     { id: 'flash', label: 'Flash' },
     { id: 'pro', label: 'Pro' },
     ...(showDeviceOption ? [{ id: 'device', label: 'On-device' }] : []),
@@ -46,7 +51,8 @@ export default function ChatInput({
   const [isModeMenuOpen, setIsModeMenuOpen] = useState(false);
   const currentMode = modeOptions.find((option) => option.id === chatMode) || modeOptions[0];
 
-  const containerBg = isGreenTheme ? 'bg-[#fcfbf5]' : 'bg-white';
+  const outerBg = customOuterBg || (isGreenTheme ? 'bg-[#fcfbf5]' : 'bg-white');
+  const innerBg = customInnerBg || (isGreenTheme ? 'bg-[#fcfbf5]' : 'bg-white');
   const borderColor = isGreenTheme ? 'border-[#e5e3d8]' : 'border-neutral-200/80';
   const focusBorder = isGreenTheme
     ? 'focus-within:border-[#1f644e]/50'
@@ -61,10 +67,10 @@ export default function ChatInput({
 
   return (
     <div
-      className={`p-2 sm:p-3 ${showTopBorder ? `border-t ${borderColor}` : ''} ${containerBg} shrink-0`}
+      className={`p-2 sm:p-3 ${showTopBorder ? `border-t ${borderColor}` : ''} ${outerBg} shrink-0`}
     >
       <div
-        className={`rounded-3xl border ${borderColor} ${containerBg} ${focusBorder} focus-within:ring-1 ${isGreenTheme ? 'focus-within:ring-[#1f644e]/20' : 'focus-within:ring-black/20'} transition-all flex flex-col`}
+        className={`rounded-3xl border ${borderColor} ${innerBg} ${focusBorder} focus-within:ring-1 ${isGreenTheme ? 'focus-within:ring-[#1f644e]/20' : 'focus-within:ring-black/20'} transition-all flex flex-col`}
       >
         <textarea
           ref={inputRef}
@@ -229,26 +235,50 @@ export default function ChatInput({
                     </button>
 
                     {isModeMenuOpen && (
-                      <div className="absolute bottom-full left-0 mb-2 w-32 rounded-xl border border-neutral-200 bg-white overflow-hidden z-40">
+                      <div
+                        className={`absolute left-0 w-32 rounded-xl border border-neutral-200 bg-white overflow-hidden z-40 ${
+                          dropdownPosition === 'down' ? 'top-full mt-2' : 'bottom-full mb-2'
+                        }`}
+                      >
                         {modeOptions.map((option) => {
                           const isActive = option.id === currentMode.id;
+                          const isDisabled = disabledModes.includes(option.id);
                           return (
                             <button
                               key={option.id}
                               type="button"
+                              disabled={isDisabled}
                               onClick={() => {
                                 setIsModeMenuOpen(false);
                                 if (!isLoading && setChatMode) {
                                   setChatMode(option.id);
                                 }
                               }}
-                              className={`w-full text-left px-3 py-2 text-[11px] transition-colors ${
+                              className={`w-full text-left px-3 py-2 text-[11px] transition-colors flex items-center justify-between ${
                                 isActive
                                   ? 'bg-neutral-100 text-neutral-900 font-semibold'
-                                  : 'bg-white text-neutral-700 hover:bg-neutral-50'
+                                  : isDisabled
+                                    ? 'text-neutral-300 bg-neutral-50 cursor-not-allowed'
+                                    : 'bg-white text-neutral-700 hover:bg-neutral-50'
                               }`}
+                              title={
+                                isDisabled ? 'Sign in as admin to access Pro model' : undefined
+                              }
                             >
-                              {option.label}
+                              <span>{option.label}</span>
+                              {isDisabled && (
+                                <svg
+                                  className="w-2.5 h-2.5 text-neutral-400 shrink-0"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              )}
                             </button>
                           );
                         })}

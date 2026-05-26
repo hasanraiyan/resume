@@ -186,7 +186,7 @@ export function CourseListClient({ initialCourses, waitlistCount = 0 }) {
           </div>
 
           {/* AI SEARCH */}
-          <div className="w-full overflow-x-hidden">
+          <div className="w-full">
             <Suspense
               fallback={<div className="h-16 w-full animate-pulse rounded-full bg-[#f0f5f2]" />}
             >

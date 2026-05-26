@@ -21,6 +21,7 @@ import { SafeBlockRenderer } from '@/components/coursify/SafeBlockRenderer';
 import { RelatedArticlesGrid } from '@/components/coursify/RelatedArticlesGrid';
 
 import CoursifyStepHistory from '@/components/coursify/CoursifyStepHistory';
+import ChatInput from '@/components/chatbot/ChatInput';
 
 import { parseMarkdownToBlocks } from '@/utils/coursify-parser';
 
@@ -65,6 +66,8 @@ export function AISearchEngine({ onGenerated }) {
 
   const [query, setQuery] = useState('');
   const [inputValue, setInputValue] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const toggleListening = () => setIsListening((prev) => !prev);
 
   const [statusMessage, setStatusMessage] = useState('');
 
@@ -92,12 +95,17 @@ export function AISearchEngine({ onGenerated }) {
 
   const [isRelatedLoading, setIsRelatedLoading] = useState(false);
 
-  // Dev-only agent picker (only shown when running `pnpm dev`)
+  // Dev-only options (only shown when running `pnpm dev`)
   const isDev = process.env.NODE_ENV === 'development';
-  const [selectedAgent, setSelectedAgent] = useState('search'); // 'search' | 'research'
   const { data: session } = useSession();
   const isAuthenticated = session?.user?.role === 'admin';
-  const [generationMode, setGenerationMode] = useState('flash'); // 'flash' | 'pro'
+  const [generationMode, setGenerationMode] = useState('flash'); // 'flash' | 'pro' | 'research'
+
+  const modeOptions = [
+    { id: 'flash', label: 'Flash' },
+    { id: 'pro', label: 'Pro' },
+    ...(isDev ? [{ id: 'research', label: 'Antigravity' }] : []),
+  ];
 
   // Sync default generationMode once auth session resolves
   useEffect(() => {
@@ -220,15 +228,7 @@ export function AISearchEngine({ onGenerated }) {
           isReferenceEnabled: true,
         };
 
-        if (isDev) {
-          if (selectedAgent === 'search') {
-            payload.agent = generationMode;
-          } else {
-            payload.agent = selectedAgent;
-          }
-        } else {
-          payload.agent = generationMode;
-        }
+        payload.agent = generationMode;
 
         const res = await fetch('/api/coursify/generate', {
           method: 'POST',
@@ -350,7 +350,7 @@ export function AISearchEngine({ onGenerated }) {
         setPhase(PHASE.ERROR);
       }
     },
-    [onGenerated, isDev, selectedAgent, generationMode]
+    [onGenerated, isDev, generationMode]
   );
 
   // Handle auto-generate when send=true parameter is present
@@ -365,7 +365,9 @@ export function AISearchEngine({ onGenerated }) {
   }, [searchParams, generate]);
 
   const handleSubmit = (e) => {
-    e.preventDefault();
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault();
+    }
     generate(inputValue);
   };
 
@@ -390,119 +392,36 @@ export function AISearchEngine({ onGenerated }) {
 
   if (phase === PHASE.IDLE) {
     return (
-      <div className="w-full max-w-full overflow-x-hidden">
+      <div className="w-full max-w-full">
         <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
           AI Research Engine
         </h2>
 
-        {/* Model Mode Selector */}
-        <div className="mb-4 flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
-            Model Mode:
-          </span>
-          <div className="flex rounded-full border border-[#e5e3d8] bg-white p-0.5 text-xs">
-            <button
-              type="button"
-              onClick={() => setGenerationMode('flash')}
-              className={`cursor-pointer rounded-full px-3 py-1 font-bold transition-all ${
-                generationMode === 'flash'
-                  ? 'bg-[#1f644e] text-white'
-                  : 'text-[#7c8e88] hover:text-[#1e3a34]'
-              }`}
-            >
-              Flash
-            </button>
-            <button
-              type="button"
-              disabled={!isAuthenticated}
-              onClick={() => {
-                if (isAuthenticated) {
-                  setGenerationMode('pro');
-                }
-              }}
-              className={`cursor-pointer rounded-full px-3 py-1 font-bold transition-all flex items-center gap-1 ${
-                generationMode === 'pro'
-                  ? 'bg-[#1f644e] text-white'
-                  : !isAuthenticated
-                    ? 'text-[#a1b3ad] cursor-not-allowed'
-                    : 'text-[#7c8e88] hover:text-[#1e3a34]'
-              }`}
-              title={!isAuthenticated ? 'Sign in as admin to access Pro model' : undefined}
-            >
-              {!isAuthenticated && (
-                <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              )}
-              Pro
-            </button>
-          </div>
-        </div>
-
-        {/* Dev-only Agent Picker */}
-        {isDev && (
-          <div className="mb-3 flex items-center gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
-              Agent:
-            </span>
-            <div className="flex rounded-full border border-[#e5e3d8] bg-white p-0.5 text-xs">
-              <button
-                type="button"
-                onClick={() => setSelectedAgent('search')}
-                className={`cursor-pointer rounded-full px-3 py-1 font-bold transition-all ${
-                  selectedAgent === 'search'
-                    ? 'bg-[#1f644e] text-white'
-                    : 'text-[#7c8e88] hover:text-[#1e3a34]'
-                }`}
-              >
-                openai
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedAgent('research')}
-                className={`cursor-pointer rounded-full px-3 py-1 font-bold transition-all ${
-                  selectedAgent === 'research'
-                    ? 'bg-[#1f644e] text-white'
-                    : 'text-[#7c8e88] hover:text-[#1e3a34]'
-                }`}
-              >
-                antigravity
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Search */}
-        <form onSubmit={handleSubmit} className="w-full">
-          <div className="flex w-full items-center gap-2 rounded-full border-2 border-[#e5e3d8] bg-white px-4 py-3 transition-all focus-within:border-[#1f644e]">
-            <Sparkles className="h-5 w-5 shrink-0 text-[#1f644e]" />
-
-            <input
-              ref={inputRef}
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="What do you want to learn?"
-              className="min-w-0 flex-1 bg-transparent text-sm text-[#1e3a34] outline-none placeholder:text-[#b5c4be] sm:text-base"
-            />
-
-            <button
-              type="submit"
-              disabled={!inputValue.trim()}
-              className="shrink-0 rounded-full bg-[#1f644e] px-3 py-2 text-xs font-bold text-white transition-all hover:bg-[#184d3c] disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <div className="flex items-center gap-1">
-                <Search className="h-4 w-4" />
-
-                <span className="hidden sm:inline">Generate</span>
-              </div>
-            </button>
-          </div>
-        </form>
+        <div className="w-full">
+          <ChatInput
+            inputRef={inputRef}
+            inputMessage={inputValue}
+            setInputMessage={setInputValue}
+            isLoading={phase === PHASE.GENERATING}
+            handleSubmit={handleSubmit}
+            onStop={() => {}}
+            theme="green"
+            showModelSelector={false}
+            showModeToggle={true}
+            chatMode={generationMode}
+            setChatMode={setGenerationMode}
+            disabledModes={!isAuthenticated ? ['pro'] : []}
+            customModeOptions={modeOptions}
+            dropdownPosition="down"
+            customOuterBg="bg-[#f7f7f2]"
+            customInnerBg="bg-white"
+            showTopBorder={false}
+            chatbotSettings={{ aiName: 'Coursify' }}
+            isListening={isListening}
+            toggleListening={toggleListening}
+          />
+        </div>
 
         {/* Suggestions */}
         <div className="mt-5 w-full overflow-x-auto no-scrollbar">
