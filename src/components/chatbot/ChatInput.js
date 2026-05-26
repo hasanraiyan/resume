@@ -75,6 +75,30 @@ export default function ChatInput({
       <div
         className={`rounded-3xl border ${borderColor} ${innerBg} ${focusBorder} focus-within:ring-1 ${isGreenTheme ? 'focus-within:ring-[#1f644e]/20' : 'focus-within:ring-black/20'} transition-all flex flex-col`}
       >
+        {uploadedImages.length > 0 && (
+          <div className="mx-4 mt-2 flex flex-wrap gap-2">
+            {uploadedImages.map((img, idx) => (
+              <div key={idx} className="relative">
+                <img
+                  src={img.base64}
+                  alt={img.name}
+                  className="h-16 w-auto rounded object-contain border border-gray-300"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = uploadedImages.filter((_, i) => i !== idx);
+                    if (onImagesSelected) onImagesSelected(updated);
+                  }}
+                  className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] hover:bg-red-600 cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <textarea
           ref={inputRef}
           value={inputMessage}
@@ -126,30 +150,6 @@ export default function ChatInput({
           className={`w-full resize-none bg-transparent px-3.5 pt-2.5 pb-1.5 sm:px-4 sm:pt-3 sm:pb-2 text-[13px] leading-relaxed outline-none ${placeholderColor} disabled:opacity-50 max-h-40 overflow-hidden ${textColor} [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}
           style={{ height: '40px' }}
         />
-
-        {uploadedImages.length > 0 && (
-          <div className="mx-4 mb-2 flex flex-wrap gap-2">
-            {uploadedImages.map((img, idx) => (
-              <div key={idx} className="relative">
-                <img
-                  src={img.base64}
-                  alt={img.name}
-                  className="h-10 w-10 rounded object-cover border border-gray-300"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const updated = uploadedImages.filter((_, i) => i !== idx);
-                    if (onImagesSelected) onImagesSelected(updated);
-                  }}
-                  className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] hover:bg-red-600"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
 
         <div className="flex justify-between items-center gap-1.5 px-3.5 pb-2 sm:px-4 sm:pb-3 mt-auto">
           {/* Left: Settings Menu & Active Tools */}
