@@ -393,10 +393,6 @@ export function AISearchEngine({ onGenerated }) {
   if (phase === PHASE.IDLE) {
     return (
       <div className="w-full max-w-full">
-        <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
-          AI Research Engine
-        </h2>
-
         {/* Search */}
         <div className="w-full">
           <ChatInput
@@ -416,6 +412,7 @@ export function AISearchEngine({ onGenerated }) {
             dropdownPosition="down"
             customOuterBg="bg-[#f7f7f2]"
             customInnerBg="bg-white"
+            customPadding="p-0"
             showTopBorder={false}
             chatbotSettings={{ aiName: 'Coursify' }}
             isListening={isListening}

@@ -37,6 +37,7 @@ export default function ChatInput({
   dropdownPosition = 'up',
   customOuterBg = null,
   customInnerBg = null,
+  customPadding = 'p-2 sm:p-3',
 }) {
   const isGreenTheme = theme === 'green';
   // default to showing the mode toggle whenever chat mode handlers exist,
@@ -67,7 +68,7 @@ export default function ChatInput({
 
   return (
     <div
-      className={`p-2 sm:p-3 ${showTopBorder ? `border-t ${borderColor}` : ''} ${outerBg} shrink-0`}
+      className={`${customPadding} ${showTopBorder ? `border-t ${borderColor}` : ''} ${outerBg} shrink-0`}
     >
       <div
         className={`rounded-3xl border ${borderColor} ${innerBg} ${focusBorder} focus-within:ring-1 ${isGreenTheme ? 'focus-within:ring-[#1f644e]/20' : 'focus-within:ring-black/20'} transition-all flex flex-col`}
@@ -188,7 +189,7 @@ export default function ChatInput({
                   disabled={isLoading}
                   className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
                     isGreenTheme
-                      ? 'bg-[#f5f3e6] text-[#1f644e] hover:bg-[#ebe7d4]'
+                      ? 'bg-transparent text-[#1f644e] hover:bg-[#f5f3e6]'
                       : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
                   } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   title="Upload images"
@@ -222,7 +223,7 @@ export default function ChatInput({
                       }}
                       className={`flex items-center justify-center gap-1 rounded-full border px-2.5 h-7 text-[10px] font-medium transition-colors ${
                         isGreenTheme
-                          ? 'border-[#e5e3d8] bg-[#f5f3e6] text-[#1e3a34] hover:bg-[#ebe7d4]'
+                          ? 'border-[#e5e3d8] bg-transparent text-[#1e3a34] hover:bg-[#f5f3e6]'
                           : 'border-neutral-200 bg-neutral-50 text-neutral-800 hover:bg-neutral-100'
                       } ${isLoading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
@@ -289,7 +290,7 @@ export default function ChatInput({
                   <div
                     className={`flex items-center justify-center rounded-full border px-2.5 h-7 text-[10px] font-medium ${
                       isGreenTheme
-                        ? 'border-[#e5e3d8] bg-[#f5f3e6] text-[#1e3a34]'
+                        ? 'border-[#e5e3d8] bg-transparent text-[#1e3a34]'
                         : 'border-neutral-200 bg-neutral-50 text-neutral-800'
                     }`}
                   >
