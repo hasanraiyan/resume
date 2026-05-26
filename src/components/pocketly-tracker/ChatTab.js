@@ -18,7 +18,7 @@ const TYPEWRITER_TOPICS = [
   'Transfer ₹2000 to savings...',
 ];
 
-function useTypewriterPlaceholder(topics) {
+function useTypewriterPlaceholder(topics, disabled = false) {
   const [displayText, setDisplayText] = useState('');
   const [tick, setTick] = useState(0);
   const [showCursor, setShowCursor] = useState(true);
@@ -26,8 +26,18 @@ function useTypewriterPlaceholder(topics) {
   const topicIndexRef = useRef(0);
   const charIndexRef = useRef(0);
 
+  // Stop and clear when disabled (e.g. while AI is streaming)
   useEffect(() => {
-    if (!topics || topics.length === 0) return;
+    if (disabled) {
+      setDisplayText('');
+      setShowCursor(false);
+      charIndexRef.current = 0;
+      phaseRef.current = 'typing';
+    }
+  }, [disabled]);
+
+  useEffect(() => {
+    if (disabled || !topics || topics.length === 0) return;
 
     const topic = topics[topicIndexRef.current];
     let timer;
@@ -63,7 +73,7 @@ function useTypewriterPlaceholder(topics) {
     }
 
     return () => clearTimeout(timer);
-  }, [displayText, tick, topics]);
+  }, [displayText, tick, topics, disabled]);
 
   return displayText + (displayText && showCursor ? '▎' : '');
 }
@@ -94,7 +104,7 @@ export default function ChatTab() {
   const [selectedAgentId, setSelectedAgentId] = useState(null);
   const [uploadedImages, setUploadedImages] = useState([]);
   const chatbotSettings = { aiName: 'Finance Assistant' };
-  const typewriterPlaceholder = useTypewriterPlaceholder(TYPEWRITER_TOPICS);
+  const typewriterPlaceholder = useTypewriterPlaceholder(TYPEWRITER_TOPICS, isStreaming);
   const activeQuote = null;
 
   useEffect(() => {
