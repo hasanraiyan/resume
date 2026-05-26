@@ -100,6 +100,7 @@
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
     "rxjs": "^7.8.2",
+    "sarvamai": "^1.1.7",
     "sharp": "^0.34.5",
     "sonner": "^2.0.7",
     "swiper": "^12.0.3",

@@ -248,6 +248,9 @@ importers:
       rxjs:
         specifier: ^7.8.2
         version: 7.8.2
+      sarvamai:
+        specifier: ^1.1.7
+        version: 1.1.7
       sharp:
         specifier: ^0.34.5
         version: 0.34.5
@@ -5474,6 +5477,10 @@ packages:
 
   safer-buffer@2.1.2:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
+
+  sarvamai@1.1.7:
+    resolution: {integrity: sha512-xROqWjLB2jajV+CFzMUAS913poGgpVP0t/ELwn4cAVNXX4dju/LcP8VrOWzIeU0LTK9n2M00UQEriJTYNrIrJw==}
+    engines: {node: '>=18.0.0'}
 
   scheduler@0.26.0:
     resolution: {integrity: sha512-NlHwttCI/l5gCPR3D1nNXtWABUmBwvZpEQiD4IXSbIDq8BzLIK/7Ir5gTFSGZDUu37K5cMNp0hFtzO38sC7gWA==}
@@ -11437,6 +11444,13 @@ snapshots:
       is-regex: 1.2.1
 
   safer-buffer@2.1.2: {}
+
+  sarvamai@1.1.7:
+    dependencies:
+      ws: 8.20.1
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
 
   scheduler@0.26.0: {}
 
