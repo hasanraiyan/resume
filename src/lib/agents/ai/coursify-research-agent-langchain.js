@@ -5,68 +5,62 @@ import { AGENT_IDS } from '@/lib/constants/agents';
 import managedToolProvider from '../utils/ManagedToolProvider';
 import { COURSIFY_MARKDOWN_FORMAT } from './coursify-prompts';
 
-const ANALYSIS_PROMPT = `
-You are a Research Planner. Given a topic, decide whether external research is needed before
-generating Coursify course content.
+const QUERY_PROMPT = `
+You are a Research Query Generator. Given a topic, generate effective search queries for web and video
+research to support Coursify course content creation.
 
 Output ONLY valid JSON with this exact structure:
 {
-  "researchMode": "none | web | video | both",
-  "webQueries": ["query 1", "query 2"],
-  "videoQuery": "best search term for YouTube, or empty string",
-  "rationale": "short reason for the chosen mode",
+  "webQueries": ["query 1", "query 2", "query 3"],
+  "videoQuery": "best search term for YouTube",
+  "rationale": "short reason for the chosen queries",
   "topicSummary": "one sentence topic overview"
 }
 
 Rules:
-- Prefer "none" when the topic can be answered from stable general knowledge.
-- Use "web" only for current, recent, fast-changing, statistical, legal, product, API, or citation-heavy topics.
-- Use "video" only when the user explicitly asks for videos or the topic needs visual demonstration.
-- Use "both" only when both web freshness and video discovery are clearly useful.
-- If using web, generate 1-3 specific web queries covering different aspects.
-- If using video, generate 1 optimized YouTube search query.
-- Do not choose external research just because the task is to create course content.
+- Generate 2-3 specific web queries covering different aspects of the topic.
+- Generate minimum 1 optimized YouTube search query for finding educational/tutorial content.
+- Queries should target authoritative, up-to-date sources.
 - Be precise and academic in approach.
+- Always generate queries — research is always conducted.
 `;
 
-const RESEARCH_MODES = new Set(['none', 'web', 'video', 'both']);
+function parseQueryPlan(analysisContent, topic) {
+  let plan = null;
+  try {
+    const jsonMatch = analysisContent.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      plan = JSON.parse(jsonMatch[0]);
+    }
+  } catch (err) {
+    // fall through to defaults
+  }
 
-function normalizeResearchPlan(plan, topic) {
-  const researchMode = RESEARCH_MODES.has(plan?.researchMode) ? plan.researchMode : 'none';
-  const needsWeb = researchMode === 'web' || researchMode === 'both';
-  const needsVideo = researchMode === 'video' || researchMode === 'both';
-  const webQueries = needsWeb
-    ? (Array.isArray(plan?.webQueries) ? plan.webQueries : [])
-        .filter((query) => typeof query === 'string' && query.trim())
-        .slice(0, 3)
-    : [];
+  const webQueries = (Array.isArray(plan?.webQueries) ? plan.webQueries : [])
+    .filter((query) => typeof query === 'string' && query.trim())
+    .slice(0, 3);
+
   const videoQuery =
-    needsVideo && typeof plan?.videoQuery === 'string' && plan.videoQuery.trim()
-      ? plan.videoQuery.trim()
-      : '';
+    typeof plan?.videoQuery === 'string' && plan.videoQuery.trim() ? plan.videoQuery.trim() : topic;
+
+  const rationale =
+    typeof plan?.rationale === 'string' && plan.rationale.trim()
+      ? plan.rationale.trim()
+      : 'Researching topic from web and video sources to ensure comprehensive course content.';
+
+  const topicSummary =
+    typeof plan?.topicSummary === 'string' && plan.topicSummary.trim()
+      ? plan.topicSummary.trim()
+      : topic;
 
   return {
-    researchMode,
-    needsWeb,
-    needsVideo,
-    webQueries: needsWeb && webQueries.length > 0 ? webQueries : needsWeb ? [topic] : [],
-    videoQuery: needsVideo ? videoQuery || topic : '',
-    rationale:
-      typeof plan?.rationale === 'string' && plan.rationale.trim()
-        ? plan.rationale.trim()
-        : 'External research is not required for this topic.',
-    topicSummary:
-      typeof plan?.topicSummary === 'string' && plan.topicSummary.trim()
-        ? plan.topicSummary.trim()
-        : topic,
+    needsWeb: true,
+    needsVideo: true,
+    webQueries: webQueries.length > 0 ? webQueries : [topic],
+    videoQuery,
+    rationale,
+    topicSummary,
   };
-}
-
-function getResearchStepName({ needsWeb, needsVideo }) {
-  if (needsWeb && needsVideo) return 'Searching web and video sources...';
-  if (needsWeb) return 'Searching web sources...';
-  if (needsVideo) return 'Searching video sources...';
-  return 'Skipping external search...';
 }
 
 class CoursifyResearchAgent extends BaseAgent {
@@ -104,44 +98,24 @@ class CoursifyResearchAgent extends BaseAgent {
       };
 
       const analysisResult = await llm.invoke([
-        new SystemMessage({ content: ANALYSIS_PROMPT }),
+        new SystemMessage({ content: QUERY_PROMPT }),
         new HumanMessage({ content: `Topic: "${topic}"` }),
       ]);
 
       const analysisContent = analysisResult.content || analysisResult.text || '';
-      let researchPlan = normalizeResearchPlan(null, topic);
+      const researchPlan = parseQueryPlan(analysisContent, topic);
 
-      try {
-        const jsonMatch = analysisContent.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          researchPlan = normalizeResearchPlan(parsed, topic);
-        }
-      } catch (err) {
-        this.logger.error(`Failed to parse analysis result: ${err.message}`);
-      }
-
-      const {
-        researchMode,
-        needsWeb,
-        needsVideo,
-        webQueries,
-        videoQuery,
-        rationale,
-        topicSummary,
-      } = researchPlan;
+      const { webQueries, videoQuery, rationale, topicSummary } = researchPlan;
 
       this.logger.info(`Analysis complete: ${topicSummary}`);
-      this.logger.debug(`Research mode: ${researchMode}`);
       this.logger.debug(`Research rationale: ${rationale}`);
-      if (needsWeb) this.logger.debug(`Web queries: ${webQueries.join(', ')}`);
-      if (needsVideo) this.logger.debug(`Video query: ${videoQuery}`);
+      this.logger.debug(`Web queries: ${webQueries.join(', ')}`);
+      this.logger.debug(`Video query: ${videoQuery}`);
 
       yield {
         type: EventType.CUSTOM,
         name: 'coursify_research_plan',
         value: {
-          mode: researchMode,
           rationale,
           topicSummary,
           webQueries,
@@ -159,13 +133,12 @@ class CoursifyResearchAgent extends BaseAgent {
         delta: [
           `Summary: ${topicSummary}`,
           ``,
-          `Research mode: ${researchMode}`,
           `Reason: ${rationale}`,
           ``,
-          ...(needsWeb
-            ? [`Web queries:`, ...webQueries.map((q, i) => `  ${i + 1}. ${q}`), ``]
-            : []),
-          ...(needsVideo ? [`Video query: ${videoQuery}`] : []),
+          `Web queries:`,
+          ...webQueries.map((q, i) => `  ${i + 1}. ${q}`),
+          ``,
+          `Video query: ${videoQuery}`,
         ].join('\n'),
       };
       yield { type: EventType.REASONING_MESSAGE_END, messageId: reasoningId };
@@ -176,39 +149,28 @@ class CoursifyResearchAgent extends BaseAgent {
         stepName: 'Analyzing topic and generating search queries...',
       };
 
-      // ─── Step 2: Conditional search branch ───
-      const searchStepName = getResearchStepName(researchPlan);
-      yield { type: EventType.STEP_STARTED, stepName: searchStepName };
+      // ─── Step 2: Search web and video ───
+      yield { type: EventType.STEP_STARTED, stepName: 'Searching web and video sources...' };
 
-      let tavilyTool = null;
-      let youtubeTool = null;
+      const allTools = await managedToolProvider.getTools(
+        ['tavily_search', 'youtube_search'],
+        this.logger
+      );
+      const tavilyTool = allTools.find((t) => t.name === 'tavily_search');
+      const youtubeTool = allTools.find((t) => t.name === 'youtube_search');
 
-      if (needsWeb || needsVideo) {
-        const toolIds = [
-          ...(needsWeb ? ['tavily_search'] : []),
-          ...(needsVideo ? ['youtube_search'] : []),
-        ];
-        const allTools = await managedToolProvider.getTools(toolIds, this.logger);
-        tavilyTool = needsWeb ? allTools.find((t) => t.name === 'tavily_search') : null;
-        youtubeTool = needsVideo ? allTools.find((t) => t.name === 'youtube_search') : null;
+      if (!tavilyTool) throw new Error('tavily_search tool not found');
+      if (!youtubeTool) throw new Error('youtube_search tool not found');
 
-        if (needsWeb && !tavilyTool) throw new Error('tavily_search tool not found');
-        if (needsVideo && !youtubeTool) throw new Error('youtube_search tool not found');
-
-        this.logger.debug(`Tools loaded: ${toolIds.join(', ')}`);
-      }
+      this.logger.debug('Tools loaded: tavily_search, youtube_search');
 
       const searchTasks = [
-        ...(needsWeb
-          ? webQueries.slice(0, 3).map((query) => ({
-              query,
-              tool: tavilyTool,
-              toolName: 'tavily_search',
-            }))
-          : []),
-        ...(needsVideo
-          ? [{ query: videoQuery, tool: youtubeTool, toolName: 'youtube_search' }]
-          : []),
+        ...webQueries.slice(0, 3).map((query) => ({
+          query,
+          tool: tavilyTool,
+          toolName: 'tavily_search',
+        })),
+        { query: videoQuery, tool: youtubeTool, toolName: 'youtube_search' },
       ];
 
       const taskMeta = searchTasks.map((task) => ({
@@ -293,37 +255,38 @@ class CoursifyResearchAgent extends BaseAgent {
         }
       }
 
-      yield { type: EventType.STEP_FINISHED, stepName: searchStepName };
+      yield { type: EventType.STEP_FINISHED, stepName: 'Searching web and video sources...' };
 
       // ─── Step 3: Generate content ───
       yield { type: EventType.STEP_STARTED, stepName: 'Generating course content...' };
 
       const researchContext = `
-## Research Plan
-Mode: ${researchMode}
-Rationale: ${rationale}
+## Research Rationale
+${rationale}
 
 ## Web Search Results
 ${
-  webSearchResults
-    .map((item) => `### Query: ${item.query}\n${item.result || 'No results'}`)
-    .join('\n\n') || 'Web search was not used for this topic.'
+  webSearchResults.length > 0
+    ? webSearchResults
+        .map((item) => `### Query: ${item.query}\n${item.result || 'No results'}`)
+        .join('\n\n')
+    : 'No web search results returned.'
 }
 
 ## YouTube Search Results
-${videoSearchResult || 'Video search was not used for this topic.'}
+${videoSearchResult || 'No video search results returned.'}
 `;
 
       const systemPrompt =
         `
-You are a Coursify AI Course Content Generator. Your job is to generate a response to the user query in the Coursify markdown format. Use external research only when it was provided by the planner.
+You are a Coursify AI Course Content Generator. Your job is to generate a response to the user query in the Coursify markdown format using the provided research results.
 
 ## Research Results (Provided Below)
 ${researchContext}
 
 ## Response Generation Process (MANDATORY)
 1. START your response with a clear, academic # Title header.
-2. Use the provided research results when available. If search was skipped, rely on stable general knowledge and do not invent citations or sources.
+2. Use the provided research results to inform your content.
 3. OUTPUT the full Coursify markdown content. Do NOT ask questions.
 ` + COURSIFY_MARKDOWN_FORMAT;
 
