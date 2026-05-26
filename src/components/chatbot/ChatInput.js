@@ -38,6 +38,7 @@ export default function ChatInput({
   customOuterBg = null,
   customInnerBg = null,
   customPadding = 'p-2 sm:p-3',
+  modeSelectorSide = 'left',
 }) {
   const isGreenTheme = theme === 'green';
   // default to showing the mode toggle whenever chat mode handlers exist,
@@ -211,7 +212,7 @@ export default function ChatInput({
               </>
             )}
 
-            {shouldShowModeToggle && (
+            {shouldShowModeToggle && modeSelectorSide !== 'right' && (
               <div className="relative mode-selector-container">
                 {modeOptions.length > 1 ? (
                   <>
@@ -303,6 +304,95 @@ export default function ChatInput({
 
           {/* Right: Submit Button or Voice Input */}
           <div className="flex items-center justify-end gap-2">
+            {shouldShowModeToggle && modeSelectorSide === 'right' && (
+              <div className="relative mode-selector-container">
+                {modeOptions.length > 1 ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isLoading) return;
+                        setIsModeMenuOpen((open) => !open);
+                      }}
+                      className={`flex items-center justify-center gap-1 rounded-full border px-2.5 h-7 text-[10px] font-medium transition-colors ${
+                        isGreenTheme
+                          ? 'border-[#e5e3d8] bg-transparent text-[#1e3a34] hover:bg-[#f5f3e6]'
+                          : 'border-neutral-200 bg-neutral-50 text-neutral-800 hover:bg-neutral-100'
+                      } ${isLoading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
+                    >
+                      <span>{currentMode.label}</span>
+                      <ChevronDown
+                        className={`w-3 h-3 transition-transform ${
+                          isModeMenuOpen ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </button>
+
+                    {isModeMenuOpen && (
+                      <div
+                        className={`absolute right-0 w-32 rounded-xl border border-neutral-200 bg-white overflow-hidden z-40 ${
+                          dropdownPosition === 'down' ? 'top-full mt-2' : 'bottom-full mb-2'
+                        }`}
+                      >
+                        {modeOptions.map((option) => {
+                          const isActive = option.id === currentMode.id;
+                          const isDisabled = disabledModes.includes(option.id);
+                          return (
+                            <button
+                              key={option.id}
+                              type="button"
+                              disabled={isDisabled}
+                              onClick={() => {
+                                setIsModeMenuOpen(false);
+                                if (!isLoading && setChatMode) {
+                                  setChatMode(option.id);
+                                }
+                              }}
+                              className={`w-full text-left px-3 py-2 text-[11px] transition-colors flex items-center justify-between ${
+                                isActive
+                                  ? 'bg-neutral-100 text-neutral-900 font-semibold'
+                                  : isDisabled
+                                    ? 'text-neutral-300 bg-neutral-50 cursor-not-allowed'
+                                    : 'bg-white text-neutral-700 hover:bg-neutral-50'
+                              }`}
+                              title={
+                                isDisabled ? 'Sign in as admin to access Pro model' : undefined
+                              }
+                            >
+                              <span>{option.label}</span>
+                              {isDisabled && (
+                                <svg
+                                  className="w-2.5 h-2.5 text-neutral-400 shrink-0"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div
+                    className={`flex items-center justify-center rounded-full border px-2.5 h-7 text-[10px] font-medium ${
+                      isGreenTheme
+                        ? 'border-[#e5e3d8] bg-transparent text-[#1e3a34]'
+                        : 'border-neutral-200 bg-neutral-50 text-neutral-800'
+                    }`}
+                  >
+                    {currentMode.label}
+                  </div>
+                )}
+              </div>
+            )}
+
             {showModelSelector && (
               <ModelSelector
                 chatbotSettings={chatbotSettings}

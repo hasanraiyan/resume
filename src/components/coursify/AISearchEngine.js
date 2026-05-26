@@ -414,6 +414,7 @@ export function AISearchEngine({ onGenerated }) {
             customInnerBg="bg-white"
             customPadding="p-0"
             showTopBorder={false}
+            modeSelectorSide="right"
             chatbotSettings={{ aiName: 'Coursify' }}
             isListening={isListening}
             toggleListening={toggleListening}
