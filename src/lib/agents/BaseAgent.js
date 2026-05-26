@@ -442,11 +442,15 @@ class BaseAgent {
               this.logger.debug(`Tool #${toolCallCount}: ${toolName}`);
             }
 
-            // Track token usage if emitted by subclass
+            // Track token usage if emitted by subclass (legacy `usage` type or AG-UI CUSTOM `coursify_usage`)
             if (chunk.type === 'usage' && chunk.data) {
               usage.promptTokens += chunk.data.promptTokens || 0;
               usage.completionTokens += chunk.data.completionTokens || 0;
               usage.totalTokens += chunk.data.totalTokens || 0;
+            } else if (chunk.type === 'CUSTOM' && chunk.name === 'coursify_usage' && chunk.value) {
+              usage.promptTokens += chunk.value.promptTokens || 0;
+              usage.completionTokens += chunk.value.completionTokens || 0;
+              usage.totalTokens += chunk.value.totalTokens || 0;
             }
 
             yield chunk;
