@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, RotateCcw, Search, Sparkles, Globe, Quote } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 
 import { toast } from 'sonner';
 
@@ -94,6 +95,18 @@ export function AISearchEngine({ onGenerated }) {
   // Dev-only agent picker (only shown when running `pnpm dev`)
   const isDev = process.env.NODE_ENV === 'development';
   const [selectedAgent, setSelectedAgent] = useState('search'); // 'search' | 'research'
+  const { data: session } = useSession();
+  const isAuthenticated = session?.user?.role === 'admin';
+  const [generationMode, setGenerationMode] = useState('flash'); // 'flash' | 'pro'
+
+  // Sync default generationMode once auth session resolves
+  useEffect(() => {
+    if (isAuthenticated) {
+      setGenerationMode('pro');
+    } else {
+      setGenerationMode('flash');
+    }
+  }, [isAuthenticated]);
 
   const inputRef = useRef(null);
 
@@ -203,8 +216,11 @@ export function AISearchEngine({ onGenerated }) {
           body: JSON.stringify({
             topic: topic.trim(),
             isReferenceEnabled: true,
-            // Only sent in dev — lets us pick Search vs Research agent from the UI
+            // Dev-only agent override (openai = search, antigravity = research)
             ...(isDev && { agent: selectedAgent }),
+            // Send selected generation mode if agent isn't explicitly overridden by dev picker
+            ...(!isDev && { agent: generationMode }),
+            ...(isDev && selectedAgent === 'search' && { agent: generationMode }),
           }),
         });
 
@@ -366,6 +382,54 @@ export function AISearchEngine({ onGenerated }) {
         <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
           AI Research Engine
         </h2>
+
+        {/* Model Mode Selector */}
+        <div className="mb-4 flex items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
+            Model Mode:
+          </span>
+          <div className="flex rounded-full border border-[#e5e3d8] bg-white p-0.5 text-xs">
+            <button
+              type="button"
+              onClick={() => setGenerationMode('flash')}
+              className={`cursor-pointer rounded-full px-3 py-1 font-bold transition-all ${
+                generationMode === 'flash'
+                  ? 'bg-[#1f644e] text-white'
+                  : 'text-[#7c8e88] hover:text-[#1e3a34]'
+              }`}
+            >
+              Flash
+            </button>
+            <button
+              type="button"
+              disabled={!isAuthenticated}
+              onClick={() => {
+                if (isAuthenticated) {
+                  setGenerationMode('pro');
+                }
+              }}
+              className={`cursor-pointer rounded-full px-3 py-1 font-bold transition-all flex items-center gap-1 ${
+                generationMode === 'pro'
+                  ? 'bg-[#1f644e] text-white'
+                  : !isAuthenticated
+                    ? 'text-[#a1b3ad] cursor-not-allowed'
+                    : 'text-[#7c8e88] hover:text-[#1e3a34]'
+              }`}
+              title={!isAuthenticated ? 'Sign in as admin to access Pro model' : undefined}
+            >
+              {!isAuthenticated && (
+                <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              )}
+              Pro
+            </button>
+          </div>
+        </div>
 
         {/* Dev-only Agent Picker */}
         {isDev && (

@@ -503,7 +503,7 @@ export function ResearchHistory() {
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] text-[#7c8e88] font-medium">Agent</span>
                           <Badge className="bg-[#f0f5f2] text-[#1f644e] border-none text-[10px] font-bold px-2 py-0.5">
-                            {selectedArtifact.metadata?.agentId || 'coursify_search'}
+                            {selectedArtifact.metadata?.agentId || 'coursify_search_flash'}
                           </Badge>
                         </div>
                         <div className="flex items-center justify-between">

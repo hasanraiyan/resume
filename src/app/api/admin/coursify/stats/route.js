@@ -17,7 +17,9 @@ export async function GET(request) {
 
     // 1. Get all Coursify Search logs for the selected range
     const logs = await AgentExecutionLog.find({
-      agentId: AGENT_IDS.COURSIFY_SEARCH,
+      agentId: {
+        $in: [AGENT_IDS.COURSIFY_SEARCH_FLASH, AGENT_IDS.COURSIFY_SEARCH_PRO],
+      },
       createdAt: { $gte: sinceDate },
     })
       .sort({ createdAt: -1 })

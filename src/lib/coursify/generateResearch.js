@@ -32,7 +32,7 @@ import { AGENT_IDS } from '@/lib/constants/agents';
  * @returns {Promise<GeneratedResearch>}
  */
 export async function generateResearch(topic, options = {}) {
-  const { isReferenceEnabled = false } = options;
+  const { isReferenceEnabled = false, agent = null, isAuthenticated = false } = options;
 
   if (!topic?.trim()) {
     throw new Error('topic is required');
@@ -64,8 +64,13 @@ export async function generateResearch(topic, options = {}) {
 
   const startTime = Date.now();
 
+  // Import resolveGenerationAgent and resolve agentId
+  const { resolveGenerationAgent } = await import('@/lib/coursify/generation/AgentSelector');
+  const isDev = process.env.NODE_ENV === 'development';
+  const agentId = resolveGenerationAgent(isDev, agent, isAuthenticated);
+
   // Run the Search Agent (non-streaming)
-  const agentResult = await agentRegistry.execute(AGENT_IDS.COURSIFY_SEARCH, {
+  const agentResult = await agentRegistry.execute(agentId, {
     topic: topic.trim(),
   });
 
@@ -134,7 +139,7 @@ export async function generateResearch(topic, options = {}) {
     },
     metadata: {
       durationMs: Date.now() - startTime,
-      agentId: 'coursify_search',
+      agentId,
     },
   });
 

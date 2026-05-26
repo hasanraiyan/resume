@@ -47,7 +47,7 @@ const CoursifyResearchSchema = new mongoose.Schema(
     },
     metadata: {
       durationMs: { type: Number, default: 0 },
-      agentId: { type: String, default: 'coursify_search' },
+      agentId: { type: String, default: 'coursify_search_flash' },
       provider: { type: String, default: 'pollinations' },
       fromCache: { type: Boolean, default: false },
     },

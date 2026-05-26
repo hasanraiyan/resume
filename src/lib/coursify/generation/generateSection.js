@@ -12,6 +12,7 @@ export async function generateSection({
   learningGoals,
   isReferenceEnabled = false,
   requestedAgent = null, // 'search' | 'research' from UI (dev only)
+  isAuthenticated = false,
 }) {
   if (!sectionName?.trim()) {
     throw new Error('sectionName is required');
@@ -28,7 +29,7 @@ export async function generateSection({
   richTopic += `\nPlease research this specific topic and ensure the content fits this context.`;
 
   const isDev = process.env.NODE_ENV === 'development';
-  const agentId = resolveGenerationAgent(isDev, requestedAgent);
+  const agentId = resolveGenerationAgent(isDev, requestedAgent, isAuthenticated);
 
   return {
     agentId,

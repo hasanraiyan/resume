@@ -1,6 +1,6 @@
 /**
  * Shared Coursify prompt templates
- * Used by both COURSIFY_SEARCH and COURSIFY_RESEARCH agents
+ * Used by COURSIFY_SEARCH_FLASH, COURSIFY_SEARCH_PRO, and COURSIFY_RESEARCH agents
  */
 
 export const COURSIFY_MARKDOWN_FORMAT = `

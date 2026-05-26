@@ -3,6 +3,7 @@ import { EventEncoder } from '@ag-ui/encoder';
 import { EventType } from '@ag-ui/core';
 import { parseGenerateRequest } from '@/lib/coursify/api/parseGenerateRequest';
 import { resolveGenerationAgent } from '@/lib/coursify/generation/AgentSelector';
+import { requireCoursifyAuth } from '@/lib/coursify-auth';
 import agentRegistry from '@/lib/agents';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
@@ -77,6 +78,18 @@ export async function POST(request) {
 
   if (!topic) {
     return NextResponse.json({ error: 'topic is required' }, { status: 400 });
+  }
+
+  // ─── Authentication Check ───
+  const authResult = await requireCoursifyAuth(request);
+  const isAuthenticated = !(authResult instanceof NextResponse);
+
+  // Restrict Pro generation to authenticated users only
+  if (agent === 'pro' && !isAuthenticated) {
+    return NextResponse.json(
+      { error: 'Authentication required for Pro generation' },
+      { status: 403 }
+    );
   }
 
   try {
@@ -186,7 +199,7 @@ export async function POST(request) {
 
           // ─── Cache Miss: Generate New Content ───
           const isDev = process.env.NODE_ENV === 'development';
-          const agentId = resolveGenerationAgent(isDev, agent);
+          const agentId = resolveGenerationAgent(isDev, agent, isAuthenticated);
 
           const events = agentRegistry.streamExecute(agentId, {
             topic,
@@ -264,7 +277,11 @@ export async function POST(request) {
               promptHash,
               titleHash: hashPrompt(baseTitle, isReferenceEnabled),
               usage: { ...totalUsage, estimatedCostUSD },
-              metadata: { durationMs: Date.now() - startTime, researchPlan: finalResearchPlan },
+              metadata: {
+                durationMs: Date.now() - startTime,
+                researchPlan: finalResearchPlan,
+                agentId,
+              },
             });
 
             controller.enqueue(
@@ -300,7 +317,7 @@ export async function POST(request) {
               const { AGENT_IDS: AIDS } = await import('@/lib/constants/agents');
 
               const recentLog = await AgentExecutionLog.findOne({
-                agentId: AIDS.COURSIFY_SEARCH,
+                agentId,
                 createdAt: { $gt: new Date(Date.now() - 60000) },
                 outputSlug: { $exists: false },
               }).sort({ createdAt: -1 });

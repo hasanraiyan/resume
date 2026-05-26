@@ -60,7 +60,7 @@ class CoursifySearchAgent extends BaseAgent {
    * @param {string} [agentId]
    * @param {Object} [config]
    */
-  constructor(agentId = AGENT_IDS.COURSIFY_SEARCH, config = {}) {
+  constructor(agentId = AGENT_IDS.COURSIFY_SEARCH_FLASH, config = {}) {
     super(agentId, config);
   }
 
@@ -110,8 +110,7 @@ class CoursifySearchAgent extends BaseAgent {
       this.logger.debug(`Using default tools from constants: ${enabledToolIds.join(', ')}`);
     }
 
-    const allTools = await managedToolProvider.getTools(enabledToolIds, this.logger);
-    const tools = allTools.filter((t) => t.name !== 'firecrawl_scrape');
+    const tools = await managedToolProvider.getTools(enabledToolIds, this.logger);
 
     this.logger.debug(`ReAct agent created with ${tools.length} tools`);
     tools.forEach((tool, idx) => {

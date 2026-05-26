@@ -51,7 +51,11 @@ async function getExchangeRate() {
 export async function getPollinationsConfig() {
   await dbConnect();
 
-  const config = await AgentConfig.findOne({ agentId: AGENT_IDS.COURSIFY_SEARCH }).lean();
+  const config = await AgentConfig.findOne({
+    agentId: {
+      $in: [AGENT_IDS.COURSIFY_SEARCH_FLASH, AGENT_IDS.COURSIFY_SEARCH_PRO],
+    },
+  }).lean();
   const providerId = config?.providerId || 'openai';
 
   let provider = await ProviderSettings.findOne({ providerId }).lean();
@@ -131,7 +135,9 @@ export async function getPollinationsBalance() {
 
     const AgentExecutionLog = (await import('@/models/AgentExecutionLog')).default;
     const dailyLogs = await AgentExecutionLog.find({
-      agentId: AGENT_IDS.COURSIFY_SEARCH,
+      agentId: {
+        $in: [AGENT_IDS.COURSIFY_SEARCH_FLASH, AGENT_IDS.COURSIFY_SEARCH_PRO],
+      },
       status: 'success',
       createdAt: { $gte: startOfDay },
     }).lean();

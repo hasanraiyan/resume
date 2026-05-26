@@ -45,7 +45,8 @@ export const AGENT_IDS = {
   // Coursify
   COURSIFY_THUMBNAIL_GENERATOR: 'coursify_thumbnail_generator',
   COURSIFY_CHAT: 'coursify_chat',
-  COURSIFY_SEARCH: 'coursify_search',
+  COURSIFY_SEARCH_FLASH: 'coursify_search_flash',
+  COURSIFY_SEARCH_PRO: 'coursify_search_pro',
   COURSIFY_RESEARCH: 'coursify_research',
   COURSIFY_SUMMARY: 'coursify_summary',
 
@@ -291,16 +292,28 @@ export const DEFAULT_AGENT_CONFIGS = {
     defaultProvider: 'openai',
     isActive: true,
   },
-  [AGENT_IDS.COURSIFY_SEARCH]: {
-    name: 'Coursify Search Engine',
+  [AGENT_IDS.COURSIFY_SEARCH_FLASH]: {
+    name: 'Coursify Search Flash',
     description:
-      'Researches topics via internet search and generates structured Coursify course content',
+      'Researches topics via internet search and generates structured course content (Flash Model)',
     type: AGENT_TYPES.CONTENT,
     category: AGENT_CATEGORIES.WRITING,
-    icon: 'Search',
-    defaultModel: 'gpt-4o',
-    defaultProvider: 'openai',
-    tools: ['tavily_search', 'youtube_search'],
+    icon: 'Zap',
+    defaultModel: 'gemini-1.5-flash',
+    defaultProvider: 'google',
+    tools: ['tavily_search', 'youtube_search', 'firecrawl_scrape'],
+    isActive: true,
+  },
+  [AGENT_IDS.COURSIFY_SEARCH_PRO]: {
+    name: 'Coursify Search Pro',
+    description:
+      'Researches topics via internet search and generates structured course content (Pro Model)',
+    type: AGENT_TYPES.CONTENT,
+    category: AGENT_CATEGORIES.WRITING,
+    icon: 'Award',
+    defaultModel: 'gemini-1.5-pro',
+    defaultProvider: 'google',
+    tools: ['tavily_search', 'youtube_search', 'firecrawl_scrape'],
     isActive: true,
   },
   [AGENT_IDS.COURSIFY_RESEARCH]: {
@@ -383,7 +396,8 @@ export const AGENT_TOOLS = {
   [AGENT_IDS.APP_BUILDER]: ['planning', 'html_generation', 'code_review'],
   [AGENT_IDS.FINANCE_FLASH]: ['conversation'],
   [AGENT_IDS.FINANCE_PRO]: ['conversation'],
-  [AGENT_IDS.COURSIFY_SEARCH]: ['tavily_search', 'youtube_search', 'firecrawl_scrape'],
+  [AGENT_IDS.COURSIFY_SEARCH_FLASH]: ['tavily_search', 'youtube_search', 'firecrawl_scrape'],
+  [AGENT_IDS.COURSIFY_SEARCH_PRO]: ['tavily_search', 'youtube_search', 'firecrawl_scrape'],
   [AGENT_IDS.COURSIFY_RESEARCH]: ['tavily_search', 'youtube_search'],
 };
 
@@ -413,7 +427,8 @@ export const RATE_LIMIT_DEFAULTS = {
   [AGENT_IDS.FINANCE_PRO]: { requests: 10, window: 60 },
   [AGENT_IDS.COURSIFY_THUMBNAIL_GENERATOR]: { requests: 10, window: 60 },
   [AGENT_IDS.COURSIFY_CHAT]: { requests: 20, window: 60 },
-  [AGENT_IDS.COURSIFY_SEARCH]: { requests: 5, window: 60 },
+  [AGENT_IDS.COURSIFY_SEARCH_FLASH]: { requests: 10, window: 60 },
+  [AGENT_IDS.COURSIFY_SEARCH_PRO]: { requests: 5, window: 60 },
   [AGENT_IDS.COURSIFY_RESEARCH]: { requests: 5, window: 60 },
 };
 

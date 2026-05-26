@@ -3,6 +3,7 @@ import { EventEncoder } from '@ag-ui/encoder';
 import { EventType } from '@ag-ui/core';
 import { parseGenerateRequest } from '@/lib/coursify/api/parseGenerateRequest';
 import { generateSection } from '@/lib/coursify/generation/generateSection';
+import { requireCoursifyAuth } from '@/lib/coursify-auth';
 import agentRegistry from '@/lib/agents';
 
 import '@/lib/agents';
@@ -17,6 +18,18 @@ export async function POST(request) {
   const parsed = await parseGenerateRequest(request);
   if (parsed.errorResponse) return parsed.errorResponse;
 
+  // ─── Authentication Check ───
+  const authResult = await requireCoursifyAuth(request);
+  const isAuthenticated = !(authResult instanceof NextResponse);
+
+  // Restrict Pro generation to authenticated users only
+  if (parsed.agent === 'pro' && !isAuthenticated) {
+    return NextResponse.json(
+      { error: 'Authentication required for Pro generation' },
+      { status: 403 }
+    );
+  }
+
   // Use the already-parsed body from the common helper (avoids "Body has already been read")
   const body = parsed.body;
   const { courseName, moduleName, sectionName, learningGoals } = body;
@@ -29,6 +42,7 @@ export async function POST(request) {
       learningGoals,
       isReferenceEnabled: parsed.isReferenceEnabled,
       requestedAgent: parsed.agent,
+      isAuthenticated,
     });
 
     const threadId = `coursify-section-${Date.now()}`;

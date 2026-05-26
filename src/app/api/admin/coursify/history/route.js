@@ -55,7 +55,7 @@ export async function GET(request) {
       costUSD: item.usage?.estimatedCostUSD || 0,
       durationMs: item.metadata?.durationMs,
       outputSlug: item.slug,
-      agentId: item.metadata?.agentId || 'coursify_search',
+      agentId: item.metadata?.agentId || 'coursify_search_flash',
     }));
 
     return NextResponse.json({
