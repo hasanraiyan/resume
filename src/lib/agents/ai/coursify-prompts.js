@@ -11,6 +11,7 @@ All content must use ## [BlockType] headers. Generate blocks as required.
 
 **## [MdBlock]**
 Primary narrative text. Supports LaTeX math ($O(n \\log n)$), markdown tables, and Mermaid diagrams.
+Use $$...$$ for display/block LaTeX and $...$ for inline LaTeX. Do NOT use triple-backtick math code fences — use $$...$$ instead.
 \`\`\`mermaid
 graph TD
   A --> B

@@ -13,6 +13,7 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { MermaidDiagram } from './MermaidDiagram';
 import { KeywordTooltip } from '../KeywordTooltip';
 import { ExternalLink, Quote, Globe, Link2, ChevronLeft, ChevronRight } from 'lucide-react';
+import katex from 'katex';
 
 // ==============================
 // ASCII Detection
@@ -491,6 +492,28 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({
 
           if (lang === 'mermaid') {
             return <MermaidDiagram chart={raw} />;
+          }
+
+          if (lang === 'math') {
+            try {
+              const html = katex.renderToString(raw, {
+                throwOnError: false,
+                displayMode: true,
+                output: 'html',
+              });
+              return (
+                <div
+                  className="my-4 flex justify-center overflow-x-auto rounded-xl bg-[#fcfbf5] border border-[#e5e3d8] py-4 px-6"
+                  dangerouslySetInnerHTML={{ __html: html }}
+                />
+              );
+            } catch {
+              return (
+                <pre className="my-4 overflow-x-auto rounded-xl bg-[#fcfbf5] border border-[#e5e3d8] p-4 text-sm font-mono text-[#1e3a34]">
+                  {raw}
+                </pre>
+              );
+            }
           }
 
           if (isBlock && (lang === 'ascii' || (!lang && isAsciiArt(raw)))) {
