@@ -39,6 +39,7 @@ export default function ChatInput({
   customInnerBg = null,
   customPadding = 'p-2 sm:p-3',
   modeSelectorSide = 'left',
+  placeholder,
 }) {
   const isGreenTheme = theme === 'green';
   // default to showing the mode toggle whenever chat mode handlers exist,
@@ -119,7 +120,7 @@ export default function ChatInput({
               }
             }
           }}
-          placeholder={`Ask ${chatbotSettings?.aiName || 'Kiro'} a question...`}
+          placeholder={placeholder || `Ask ${chatbotSettings?.aiName || 'Kiro'} a question...`}
           rows={1}
           disabled={isLoading}
           className={`w-full resize-none bg-transparent px-3.5 pt-2.5 pb-1.5 sm:px-4 sm:pt-3 sm:pb-2 text-[13px] leading-relaxed outline-none ${placeholderColor} disabled:opacity-50 max-h-40 overflow-hidden ${textColor} [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}

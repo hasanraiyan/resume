@@ -26,6 +26,17 @@ import katex from 'katex';
 
 import { parseMarkdownToBlocks } from '@/utils/coursify-parser';
 
+const TYPEWRITER_TOPICS = [
+  'Teach me machine learning...',
+  'Tell me about cosmology...',
+  'What is consciousness?',
+  'Explain quantum physics...',
+  'How do black holes work?',
+  'Tell me about the Roman Empire...',
+  'Explain the multiverse theory...',
+  'What is string theory?',
+];
+
 const FALLBACK_TOPICS = [
   "Dijkstra's Algorithm",
   'React Hooks in depth',
@@ -43,6 +54,56 @@ const PHASE = {
   DONE: 'done',
   ERROR: 'error',
 };
+
+function useTypewriterPlaceholder(topics) {
+  const [displayText, setDisplayText] = useState('');
+  const [tick, setTick] = useState(0);
+  const [showCursor, setShowCursor] = useState(true);
+  const phaseRef = useRef('typing');
+  const topicIndexRef = useRef(0);
+  const charIndexRef = useRef(0);
+
+  useEffect(() => {
+    if (!topics || topics.length === 0) return;
+
+    const topic = topics[topicIndexRef.current];
+    let timer;
+
+    if (phaseRef.current === 'typing') {
+      setShowCursor(true);
+      if (charIndexRef.current < topic.length) {
+        timer = setTimeout(() => {
+          charIndexRef.current += 1;
+          setDisplayText(topic.slice(0, charIndexRef.current));
+        }, 55);
+      } else {
+        timer = setTimeout(() => {
+          phaseRef.current = 'erasing';
+          setTick((t) => t + 1);
+        }, 2500);
+      }
+    } else if (phaseRef.current === 'erasing') {
+      setShowCursor(true);
+      if (charIndexRef.current > 0) {
+        timer = setTimeout(() => {
+          charIndexRef.current -= 1;
+          setDisplayText(topic.slice(0, charIndexRef.current));
+        }, 25);
+      } else {
+        timer = setTimeout(() => {
+          setShowCursor(false);
+          topicIndexRef.current = (topicIndexRef.current + 1) % topics.length;
+          phaseRef.current = 'typing';
+          setTick((t) => t + 1);
+        }, 800);
+      }
+    }
+
+    return () => clearTimeout(timer);
+  }, [displayText, tick, topics]);
+
+  return displayText + (displayText && showCursor ? '▎' : '');
+}
 
 function upsertResearchPlanStep(setToolSteps, plan) {
   if (!plan) return;
@@ -131,6 +192,8 @@ export function AISearchEngine({ onGenerated }) {
   const [relatedArticles, setRelatedArticles] = useState([]);
 
   const [isRelatedLoading, setIsRelatedLoading] = useState(false);
+
+  const typewriterPlaceholder = useTypewriterPlaceholder(TYPEWRITER_TOPICS);
 
   // Dev-only options (only shown when running `pnpm dev`)
   const isDev = process.env.NODE_ENV === 'development';
@@ -455,6 +518,7 @@ export function AISearchEngine({ onGenerated }) {
             chatbotSettings={{ aiName: 'Coursify' }}
             isListening={isListening}
             toggleListening={toggleListening}
+            placeholder={typewriterPlaceholder}
           />
         </div>
 
