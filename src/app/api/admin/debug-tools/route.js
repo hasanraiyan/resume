@@ -18,7 +18,6 @@ export async function POST(request) {
     const keyMap = {
       youtube_search: 'GOOGLE_API_KEY',
       tavily_search: 'TAVILY_API_KEY',
-      firecrawl_scrape: 'FIRECRAWL_API_KEY',
     };
 
     const dbKeyName = keyMap[tool];
@@ -60,21 +59,6 @@ export async function POST(request) {
         if (!activeKey) throw new Error('Tavily API key not found');
         const tavily = new TavilySearch({ maxResults: 5, tavilyApiKey: activeKey });
         result = await tavily.invoke({ query });
-        break;
-      case 'firecrawl_scrape':
-        const { firecrawlScrape } = await import('@/lib/agents/utils/firecrawl-tool');
-        if (!activeKey) throw new Error('Firecrawl API key not found');
-
-        // Auto-normalize URL (add https:// if missing)
-        let normalizedUrl = query.trim();
-        if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
-          normalizedUrl = `https://${normalizedUrl}`;
-        }
-
-        result = await firecrawlScrape.invoke(
-          { url: normalizedUrl },
-          { configurable: { apiKey: activeKey } }
-        );
         break;
       default:
         return NextResponse.json({ error: 'Invalid tool' }, { status: 400 });

@@ -9,8 +9,6 @@ export async function getToolUsage(toolId, apiKey) {
     switch (toolId) {
       case 'tavily':
         return await fetchTavilyUsage(apiKey);
-      case 'firecrawl':
-        return await fetchFirecrawlUsage(apiKey);
       default:
         return null;
     }
@@ -39,27 +37,5 @@ async function fetchTavilyUsage(apiKey) {
     remaining: (data.account?.plan_limit || 1000) - (data.account?.plan_usage || 0),
     resetDate: resetDate.toISOString(),
     plan: data.account?.current_plan || 'Free',
-  };
-}
-
-async function fetchFirecrawlUsage(apiKey) {
-  const res = await fetch('https://api.firecrawl.dev/v1/team/credit-usage', {
-    headers: { Authorization: `Bearer ${apiKey}` },
-  });
-
-  if (!res.ok) throw new Error(`Firecrawl API responded with ${res.status}`);
-
-  const { data } = await res.json();
-
-  const total = data.planCredits || 1000;
-  const remaining = data.remainingCredits || 0;
-  const used = Math.max(0, total - remaining);
-
-  return {
-    used,
-    total,
-    remaining,
-    resetDate: data.billingPeriodEnd || null,
-    plan: 'Managed',
   };
 }

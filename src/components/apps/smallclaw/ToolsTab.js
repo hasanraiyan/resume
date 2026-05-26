@@ -37,16 +37,6 @@ const TOOLS_LIST = [
     canTrackUsage: false,
   },
   {
-    id: 'firecrawl',
-    name: 'Firecrawl',
-    description: 'Deep website reader. Converts any URL into clean Markdown for LLMs.',
-    icon: Globe,
-    keyName: 'FIRECRAWL_API_KEY',
-    placeholder: 'fc-...',
-    docsUrl: 'https://firecrawl.dev',
-    canTrackUsage: true,
-  },
-  {
     id: 'exa',
     name: 'Exa AI Search',
     description: 'Neural search engine designed for AI agents. Finds semantic matches.',

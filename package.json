@@ -43,7 +43,6 @@
     "@langchain/openai": "^1.2.11",
     "@langchain/qdrant": "^1.0.2",
     "@langchain/tavily": "^1.2.0",
-    "@mendable/firecrawl-js": "0.0.36",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@monaco-editor/react": "^4.7.0",
     "@qdrant/js-client-rest": "^1.17.0",

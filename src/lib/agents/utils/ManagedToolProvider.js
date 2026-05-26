@@ -1,6 +1,5 @@
 import { TavilySearch } from '@langchain/tavily';
 import { youtubeSearch } from './youtube-tools';
-import { firecrawlScrape } from './firecrawl-tool';
 import dynamicSettingsManager from '@/lib/DynamicSettingsManager';
 import keyRotationManager from '@/lib/providers/KeyRotationManager';
 
@@ -41,8 +40,6 @@ class ManagedToolProvider {
         return await this._getTavilySearch(logger);
       case 'youtube_search':
         return await this._getYoutubeSearch(logger);
-      case 'firecrawl_scrape':
-        return await this._getFirecrawlScrape(logger);
       default:
         return null;
     }
@@ -66,71 +63,6 @@ class ManagedToolProvider {
           .trim();
       })
       .filter((k) => k.length > 0 && !k.includes(':')); // Filter out JSON fragments like "rpm":4
-  }
-
-  /**
-   * Configure Firecrawl with Rotation and Monthly Credit Discovery
-   * @private
-   */
-  async _getFirecrawlScrape(logger) {
-    const config = await dynamicSettingsManager.get('FIRECRAWL_API_KEY');
-    if (!config) {
-      logger.warn('⚠️ FIRECRAWL_API_KEY missing from database.');
-      return null;
-    }
-
-    // 1. Check Global Active State
-    const isObject = typeof config === 'object' && !Array.isArray(config);
-    if (isObject && config.isActive === false) {
-      logger.warn('🚫 Firecrawl is globally disabled in Tools Settings.');
-      return null;
-    }
-
-    // 2. Extract Keys & Limits
-    const keys = this._splitKeys(isObject ? config.keys : config);
-    const limits = isObject ? { rpm: config.rpm, rpd: config.rpd, rpmnt: config.rpmnt } : {};
-
-    // 3. Register with Global Rotation Manager
-    keyRotationManager.registerToolPool('FIRECRAWL_SCRAPE', keys, 'Firecrawl', limits);
-
-    // 4. Pick Next Available Key Globally
-    const pooled = await keyRotationManager.getNextProvider('FIRECRAWL_SCRAPE');
-    if (!pooled?.apiKey) {
-      logger.warn('⚠️ No available Firecrawl keys in pool (limits reached).');
-      return null;
-    }
-
-    // 5. Injected key into configurable field of the tool
-    const tool = firecrawlScrape;
-
-    // 6. Wrap with "Limit Discovery" Logic
-    const originalInvoke = tool.invoke.bind(tool);
-    tool.invoke = async (input, callConfig) => {
-      const configWithKey = {
-        ...callConfig,
-        configurable: { ...callConfig?.configurable, apiKey: pooled.apiKey },
-      };
-
-      try {
-        return await originalInvoke(input, configWithKey);
-      } catch (err) {
-        const msg = err.message?.toLowerCase() || '';
-        // 402 = Payment Required / Credits Empty
-        if (
-          err.status === 429 ||
-          err.status === 402 ||
-          msg.includes('limit') ||
-          msg.includes('credit')
-        ) {
-          logger.warn(`🛑 Firecrawl key ${pooled.internalId} hit a limit! Throttling globally.`);
-          await keyRotationManager.markThrottled('FIRECRAWL_SCRAPE', pooled.internalId);
-        }
-        throw err;
-      }
-    };
-
-    logger.info(`✅ Firecrawl Tool ready (using ${pooled.internalId})`);
-    return tool;
   }
 
   /**

@@ -61,7 +61,7 @@ title: Building Your Ingestion Script
 showNumbering: true
 
 - step: Select the Engine
-  content: "Identify the document type. For technical data, use `PyPDFLoader`. For web documentation, use `WebBaseLoader` or `FirecrawlLoader`."
+  content: "Identify the document type. For technical data, use `PyPDFLoader`. For web documentation, use `WebBaseLoader` "
 - step: Configure the Splitter
   content: "Set your `chunk_size` based on the complexity of your data. Large chunk sizes (1500+) are better for legal text; smaller sizes (400-600) are better for Q&A."
 - step: Set the "Semantic Safety Net"

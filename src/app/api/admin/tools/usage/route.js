@@ -36,7 +36,6 @@ export async function GET(request) {
     const poolIdMap = {
       tavily: 'TAVILY_SEARCH',
       youtube: 'YOUTUBE_SEARCH',
-      firecrawl: 'FIRECRAWL_SCRAPE',
     };
     const poolId = poolIdMap[toolId];
 
