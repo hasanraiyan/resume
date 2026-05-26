@@ -5,6 +5,7 @@ import { parseGenerateRequest } from '@/lib/coursify/api/parseGenerateRequest';
 import { resolveGenerationAgent } from '@/lib/coursify/generation/AgentSelector';
 import { requireCoursifyAuth } from '@/lib/coursify-auth';
 import agentRegistry from '@/lib/agents';
+import { AGENT_IDS } from '@/lib/constants/agents';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
 
@@ -321,7 +322,6 @@ export async function POST(request) {
 
             try {
               const AgentExecutionLog = (await import('@/models/AgentExecutionLog')).default;
-              const { AGENT_IDS: AIDS } = await import('@/lib/constants/agents');
 
               const recentLog = await AgentExecutionLog.findOne({
                 agentId,
