@@ -1,5 +1,5 @@
 import { RunnableLambda } from '@langchain/core/runnables';
-import { HumanMessage } from '@langchain/core/messages';
+import { SystemMessage, HumanMessage } from '@langchain/core/messages';
 import { AgentExecutor, createReactAgent } from '@langchain/classic/agents';
 import { EventType } from '@ag-ui/core';
 import BaseAgent from '../BaseAgent';
@@ -11,31 +11,42 @@ import { COURSIFY_MARKDOWN_FORMAT } from './coursify-prompts';
  * Custom Safe React Prompt Formatter
  * Avoids standard PromptTemplate parser curly brace '{' escaping issues
  * by doing exact string replacements only for the required keys.
+ * Splits prompt into SystemMessage and HumanMessage so ChatModels strictly obey system-level instructions.
  */
 class CustomSafeReactPrompt {
-  constructor(templateString) {
-    this.templateString = templateString;
+  constructor(systemPrompt, humanTemplate) {
+    this.systemPrompt = systemPrompt;
+    this.humanTemplate = humanTemplate;
     this.inputVariables = ['tools', 'tool_names', 'agent_scratchpad', 'input'];
   }
 
   async partial(values) {
-    let partiallyFormatted = this.templateString;
+    let partiallyFormattedSystem = this.systemPrompt;
     if (values.tools !== undefined) {
-      partiallyFormatted = partiallyFormatted.replace('{tools}', values.tools);
+      partiallyFormattedSystem = partiallyFormattedSystem.replace('{tools}', values.tools);
     }
     if (values.tool_names !== undefined) {
-      partiallyFormatted = partiallyFormatted.replace('{tool_names}', values.tool_names);
+      partiallyFormattedSystem = partiallyFormattedSystem.replace(
+        '{tool_names}',
+        values.tool_names
+      );
     }
 
+    const humanTemplateStr = this.humanTemplate;
+
     const runnable = RunnableLambda.from(async (inputs) => {
-      let finalPrompt = partiallyFormatted;
+      let finalHumanPrompt = humanTemplateStr;
       if (inputs.input !== undefined) {
-        finalPrompt = finalPrompt.replace('{input}', inputs.input);
+        finalHumanPrompt = finalHumanPrompt.replace('{input}', inputs.input);
       }
       if (inputs.agent_scratchpad !== undefined) {
-        finalPrompt = finalPrompt.replace('{agent_scratchpad}', inputs.agent_scratchpad);
+        finalHumanPrompt = finalHumanPrompt.replace('{agent_scratchpad}', inputs.agent_scratchpad);
       }
-      return [new HumanMessage({ content: finalPrompt })];
+
+      return [
+        new SystemMessage({ content: partiallyFormattedSystem }),
+        new HumanMessage({ content: finalHumanPrompt }),
+      ];
     });
 
     runnable.inputVariables = ['input', 'agent_scratchpad'];
@@ -66,10 +77,13 @@ Final Answer: the final answer to the original input question
 2. SEARCH the web using Tavily or YouTube search 2-4 times with specific, distinct queries to gather sufficient context and video content before compiling the results.
 3. OUTPUT the full Coursify markdown content inside the "Final Answer" section. Do NOT ask questions.
 
+CRITICAL RULE (MANDATORY): You MUST ALWAYS execute a minimum of 2-4 searches using 'tavily_search' and 'youtube_search' before formulating your final answer. Even if you already know everything about the topic, you MUST query the tools to gather references and video embeds. Skipping tool execution is STRICTLY FORBIDDEN and will fail the generation. Do NOT immediately output the "Final Answer" without first thinking and taking actions.
+
 ` + COURSIFY_MARKDOWN_FORMAT;
 
 const REACT_PROMPT = new CustomSafeReactPrompt(
-  SYSTEM_PROMPT + `\n\nBegin!\n\nQuestion: {input}\nThought: {agent_scratchpad}`
+  SYSTEM_PROMPT,
+  `Begin!\n\nQuestion: {input}\nThought: {agent_scratchpad}`
 );
 
 class CoursifyResearchAgent extends BaseAgent {
@@ -117,14 +131,7 @@ class CoursifyResearchAgent extends BaseAgent {
     const topicPreview = topic.substring(0, 50);
     this.logger.info(`Starting CoursifyResearchAgent (classic) for topic: "${topicPreview}..."`);
 
-    // const llm = await this.createChatModel();
-
-    const { ChatOpenAI } = await import('@langchain/openai');
-    const llm = new ChatOpenAI({
-      modelName: 'antigravity-gemini-3-flash',
-      apiKey: 'local-dummy-key',
-      configuration: { baseURL: 'http://localhost:3001/v1' },
-    });
+    const llm = await this.createChatModel();
     this.logger.debug('Chat model created');
 
     let enabledToolIds = this.config.tools || [];
@@ -134,17 +141,67 @@ class CoursifyResearchAgent extends BaseAgent {
     }
 
     const tools = await managedToolProvider.getTools(enabledToolIds, this.logger);
-    this.logger.debug(`ReAct agent tools loaded: ${tools.map((t) => t.name).join(', ')}`);
+    this.logger.debug(`Raw tools loaded: ${tools.map((t) => t.name).join(', ')}`);
+
+    // Map tools to wrap their raw string input from ReAct parser into the expected structured { query: string } object
+    const classicTools = tools.map((originalTool) => {
+      return {
+        name: originalTool.name,
+        description: originalTool.description,
+        lc_namespace: originalTool.lc_namespace || ['langchain', 'tools'],
+        lc_id: originalTool.lc_id || [originalTool.name],
+        invoke: async (input, config) => {
+          let cleanedInput = typeof input === 'string' ? input.trim() : input;
+          if (
+            typeof cleanedInput === 'string' &&
+            cleanedInput.startsWith('"') &&
+            cleanedInput.endsWith('"')
+          ) {
+            cleanedInput = cleanedInput.substring(1, cleanedInput.length - 1).trim();
+          }
+          if (
+            typeof cleanedInput === 'string' &&
+            cleanedInput.startsWith("'") &&
+            cleanedInput.endsWith("'")
+          ) {
+            cleanedInput = cleanedInput.substring(1, cleanedInput.length - 1).trim();
+          }
+
+          const structuredInput = { query: cleanedInput };
+          return originalTool.invoke(structuredInput, config);
+        },
+        call: async (input, config) => {
+          let cleanedInput = typeof input === 'string' ? input.trim() : input;
+          if (
+            typeof cleanedInput === 'string' &&
+            cleanedInput.startsWith('"') &&
+            cleanedInput.endsWith('"')
+          ) {
+            cleanedInput = cleanedInput.substring(1, cleanedInput.length - 1).trim();
+          }
+          if (
+            typeof cleanedInput === 'string' &&
+            cleanedInput.startsWith("'") &&
+            cleanedInput.endsWith("'")
+          ) {
+            cleanedInput = cleanedInput.substring(1, cleanedInput.length - 1).trim();
+          }
+
+          const structuredInput = { query: cleanedInput };
+          return originalTool.invoke(structuredInput, config);
+        },
+      };
+    });
 
     const agent = await createReactAgent({
       llm,
-      tools,
+      tools: classicTools,
       prompt: REACT_PROMPT,
     });
 
     const executor = new AgentExecutor({
       agent,
-      tools,
+      tools: classicTools,
       handleParsingErrors: true,
       maxIterations: 10,
     });
