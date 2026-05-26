@@ -195,7 +195,7 @@ function AdminLogin() {
           </div>
 
           {/* Main Card */}
-          <Card className="p-8 space-y-6">
+          <Card className="py-8 px-0 sm:px-8 space-y-6">
             {/* Google Sign-In */}
             {authConfig.googleEnabled && (
               <div className="space-y-3">
