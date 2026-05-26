@@ -124,7 +124,7 @@ export default function ChatInput({
                 <img
                   src={img.base64}
                   alt={img.name}
-                  className="h-16 w-16 rounded object-cover border border-gray-300"
+                  className="h-10 w-10 rounded object-cover border border-gray-300"
                 />
                 <button
                   type="button"
@@ -132,7 +132,7 @@ export default function ChatInput({
                     const updated = uploadedImages.filter((_, i) => i !== idx);
                     if (onImagesSelected) onImagesSelected(updated);
                   }}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                  className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] hover:bg-red-600"
                 >
                   ✕
                 </button>
@@ -179,14 +179,19 @@ export default function ChatInput({
                   type="button"
                   onClick={() => document.getElementById('image-upload-input').click()}
                   disabled={isLoading}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                  className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
                     isGreenTheme
                       ? 'bg-[#f5f3e6] text-[#1f644e] hover:bg-[#ebe7d4]'
                       : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
                   } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   title="Upload images"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -208,7 +213,7 @@ export default function ChatInput({
                         if (isLoading) return;
                         setIsModeMenuOpen((open) => !open);
                       }}
-                      className={`flex items-center justify-center gap-1.5 rounded-full border px-3 h-8 text-[11px] font-medium transition-colors ${
+                      className={`flex items-center justify-center gap-1 rounded-full border px-2.5 h-7 text-[10px] font-medium transition-colors ${
                         isGreenTheme
                           ? 'border-[#e5e3d8] bg-[#f5f3e6] text-[#1e3a34] hover:bg-[#ebe7d4]'
                           : 'border-neutral-200 bg-neutral-50 text-neutral-800 hover:bg-neutral-100'
@@ -251,7 +256,7 @@ export default function ChatInput({
                   </>
                 ) : (
                   <div
-                    className={`flex items-center justify-center rounded-full border px-3 h-8 text-[11px] font-medium ${
+                    className={`flex items-center justify-center rounded-full border px-2.5 h-7 text-[10px] font-medium ${
                       isGreenTheme
                         ? 'border-[#e5e3d8] bg-[#f5f3e6] text-[#1e3a34]'
                         : 'border-neutral-200 bg-neutral-50 text-neutral-800'
@@ -283,9 +288,9 @@ export default function ChatInput({
               <button
                 type="button"
                 onClick={onStop}
-                className="w-8 h-8 rounded-full flex items-center justify-center bg-[#c94c4c] text-white hover:bg-[#b03a3a] active:scale-95 transition-all cursor-pointer"
+                className="w-7 h-7 rounded-full flex items-center justify-center bg-[#c94c4c] text-white hover:bg-[#b03a3a] active:scale-95 transition-all cursor-pointer"
               >
-                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                   <rect x="6" y="6" width="12" height="12" rx="2" />
                 </svg>
               </button>
@@ -295,9 +300,9 @@ export default function ChatInput({
                 type="button"
                 onClick={handleSubmit}
                 disabled={isLoading}
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isGreenTheme ? 'bg-[#1f644e] text-white hover:bg-[#1a5542]' : 'bg-black text-white hover:opacity-90'} active:scale-95`}
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${isGreenTheme ? 'bg-[#1f644e] text-white hover:bg-[#1a5542]' : 'bg-black text-white hover:opacity-90'} active:scale-95`}
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-3.5 h-3.5" />
               </button>
             ) : (
               <VoiceInputControl

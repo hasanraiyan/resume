@@ -11,7 +11,6 @@ import {
   Plug,
   Unlink,
   Loader2,
-  ExternalLink,
   Smartphone,
   QrCode,
   Bell,
@@ -27,40 +26,21 @@ export default function FinanceSettingsTab() {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const [baseUrl, setBaseUrl] = useState('');
-  const [mcpUrl, setMcpUrl] = useState('');
-  const [reminderSettings, setReminderSettings] = useState({
-    isEnabled: false,
-    reminderTime: '21:00',
-    timezone: 'Asia/Kolkata',
-    reminderMode: 'if_no_transactions',
-    lastReminderSentAt: null,
-    lastReminderSentDate: null,
-  });
   const [isReminderLoading, setIsReminderLoading] = useState(true);
   const [isReminderSaving, setIsReminderSaving] = useState(false);
+  const [reminderSettings, setReminderSettings] = useState({});
   const [reminderStatus, setReminderStatus] = useState(null);
-
-  // Mobile QR state
+  const [loadingApps, setLoadingApps] = useState(false);
+  const [connectedApps, setConnectedApps] = useState([]);
+  const [revokingId, setRevokingId] = useState(null);
   const [mobileQr, setMobileQr] = useState(null);
   const [mobileQrLoading, setMobileQrLoading] = useState(false);
   const [mobileQrExpiry, setMobileQrExpiry] = useState(null);
-
-  // Connected apps state
-  const [connectedApps, setConnectedApps] = useState([]);
-  const [loadingApps, setLoadingApps] = useState(false);
-  const [revokingId, setRevokingId] = useState(null);
-
-  const getConnectionLabel = (app) => {
-    if (app.channel === 'android') return 'Android';
-    if (app.channel === 'mcp') return 'MCP';
-    return app.channel || app.appKey || 'connection';
-  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const origin = window.location.origin.replace(/\/$/, '');
       setBaseUrl(origin);
-      setMcpUrl(`${origin}/api/mcp/pocketly`);
     }
   }, []);
 
@@ -405,73 +385,6 @@ export default function FinanceSettingsTab() {
                 <Download className="h-4 w-4" />
                 Export
               </button>
-            </div>
-          </div>
-
-          {/* MCP Server */}
-          <div className="bg-white border border-[#e5e3d8] rounded-xl p-4 sm:p-6">
-            <div className="flex items-center gap-3 mb-4 sm:mb-5">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#8b5cf6]/10 flex items-center justify-center shrink-0">
-                <Plug className="w-5 h-5 text-[#8b5cf6]" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-sm font-bold text-[#1e3a34]">MCP Server</h3>
-                <p className="text-xs text-[#7c8e88]">
-                  Connect Pocketly to ChatGPT and other AI assistants via MCP
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">MCP Endpoint</label>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <input
-                    readOnly
-                    value={mcpUrl}
-                    className="w-full min-w-0 p-3 border rounded-lg bg-neutral-50 text-xs font-mono sm:p-2.5 sm:text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigator.clipboard?.writeText(mcpUrl);
-                      alert('MCP endpoint copied');
-                    }}
-                    className="w-full px-4 py-2.5 bg-[#1f644e] text-white rounded-lg text-sm font-bold hover:bg-[#17503e] transition cursor-pointer sm:w-auto sm:shrink-0 sm:py-2"
-                  >
-                    Copy
-                  </button>
-                </div>
-                <p className="text-xs text-[#7c8e88]">
-                  To connect ChatGPT or Claude, provide this URL with OAuth 2.0 authentication.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Well-Known Endpoints
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <a
-                    href={`${baseUrl}/.well-known/oauth-authorization-server`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex min-w-0 items-center gap-2 p-3 rounded-lg border border-[#e5e3d8] bg-neutral-50 hover:bg-neutral-100 transition text-xs font-mono text-[#1f644e] sm:p-2.5"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                    <span className="min-w-0 break-words">OAuth Authorization Server</span>
-                  </a>
-                  <a
-                    href={`${baseUrl}/.well-known/openapi.json`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex min-w-0 items-center gap-2 p-3 rounded-lg border border-[#e5e3d8] bg-neutral-50 hover:bg-neutral-100 transition text-xs font-mono text-[#1f644e] sm:p-2.5"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                    <span className="min-w-0 break-words">OpenAPI Spec</span>
-                  </a>
-                </div>
-              </div>
             </div>
           </div>
 

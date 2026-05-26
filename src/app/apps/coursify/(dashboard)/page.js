@@ -108,11 +108,8 @@ export default function CourseLibraryPage() {
           <Bot className="w-8 h-8 text-[#1f644e]" />
         </div>
         <h2 className="text-xl font-bold text-[#1e3a34] mb-2">No courses yet</h2>
-        <p className="text-sm text-[#7c8e88] max-w-sm mb-3">
+        <p className="text-sm text-[#7c8e88] max-w-sm mb-6">
           Connect Claude or ChatGPT to the Coursify MCP server and ask it to build you a course.
-        </p>
-        <p className="text-xs text-[#7c8e88] bg-[#f0f5f2] rounded-xl px-4 py-2 font-mono mb-6">
-          MCP endpoint: /api/mcp/coursify
         </p>
         <div className="flex flex-col sm:flex-row gap-2">
           <button
