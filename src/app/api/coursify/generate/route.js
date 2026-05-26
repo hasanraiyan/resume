@@ -111,6 +111,7 @@ export async function POST(request) {
         let finalContent = '';
         let finalTitle = '';
         let finalResearchPlan = null;
+        let wasRejected = false;
 
         // Open the AG-UI run
         controller.enqueue(encodeSSE({ type: EventType.RUN_STARTED, threadId, runId }));
@@ -226,13 +227,15 @@ export async function POST(request) {
               finalTitle = event.value?.text || '';
             } else if (event.type === EventType.CUSTOM && event.name === 'coursify_research_plan') {
               finalResearchPlan = event.value || null;
+            } else if (event.type === EventType.CUSTOM && event.name === 'coursify_rejection') {
+              wasRejected = true;
             }
             // Forward all AG-UI events to client
             controller.enqueue(encodeSSE(event));
           }
 
           // ─── Persistence ───
-          if (finalContent) {
+          if (finalContent && !wasRejected) {
             const { slugify } = await import('@/utils/string');
             const { calculateEstimatedCostUSD } = await import('@/lib/agents/utils/pricing');
 

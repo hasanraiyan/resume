@@ -1,6 +1,7 @@
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { HumanMessage } from '@langchain/core/messages';
 import { EventType } from '@ag-ui/core';
+import { Filter } from 'bad-words';
 import BaseAgent from '../BaseAgent';
 import { AGENT_IDS, getAgentTools } from '@/lib/constants/agents';
 import managedToolProvider from '../utils/ManagedToolProvider';
@@ -39,6 +40,8 @@ You are a Coursify AI Course Content Generator. Your job is to research a topic 
 ` + COURSIFY_MARKDOWN_FORMAT;
 
 const SEARCH_TOOL = 'tavily_search';
+
+const contentFilter = new Filter();
 
 /**
  * Coursify Search Agent
@@ -81,6 +84,9 @@ class CoursifySearchAgent extends BaseAgent {
    */
   async _validateInput(input) {
     if (!input?.topic) throw new Error('topic is required');
+
+    const topic = input.topic.trim();
+    if (!topic) throw new Error('topic is required');
   }
 
   // ============================================
@@ -165,6 +171,27 @@ class CoursifySearchAgent extends BaseAgent {
 
     const topicPreview = topic.substring(0, 50);
     this.logger.info(`Starting CoursifySearchAgent for topic: "${topicPreview}..."`);
+
+    // ── Content Filter ──
+    if (contentFilter.isProfane(topic)) {
+      yield {
+        type: EventType.CUSTOM,
+        name: 'coursify_rejection',
+        value: { reason: 'inappropriate_content' },
+      };
+
+      const msgId = `msg-${Date.now()}`;
+      yield { type: EventType.TEXT_MESSAGE_START, messageId: msgId, role: 'assistant' };
+      yield {
+        type: EventType.TEXT_MESSAGE_CONTENT,
+        messageId: msgId,
+        delta: `I cannot generate course content for this topic as it was flagged for inappropriate content. Please try a different, educational topic.`,
+      };
+      yield { type: EventType.TEXT_MESSAGE_END, messageId: msgId };
+      yield { type: EventType.RUN_FINISHED };
+      return;
+    }
+    // ── End Content Filter ──
 
     const llm = await this.createChatModel();
     this.logger.debug('Chat model created');
@@ -298,6 +325,10 @@ class CoursifySearchAgent extends BaseAgent {
 
     const topicPreview = topic.substring(0, 50);
     this.logger.info(`Starting CoursifySearchAgent (non-stream) for topic: "${topicPreview}..."`);
+
+    if (contentFilter.isProfane(topic)) {
+      throw new Error('CONTENT_REJECTED');
+    }
 
     const llm = await this.createChatModel();
     const tools = await this._getFilteredTools();

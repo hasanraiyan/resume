@@ -193,6 +193,8 @@ export function AISearchEngine({ onGenerated }) {
 
   const [isRelatedLoading, setIsRelatedLoading] = useState(false);
 
+  const [isRejected, setIsRejected] = useState(false);
+
   const typewriterPlaceholder = useTypewriterPlaceholder(TYPEWRITER_TOPICS);
 
   // Dev-only options (only shown when running `pnpm dev`)
@@ -320,6 +322,7 @@ export function AISearchEngine({ onGenerated }) {
       setIsFromCache(false);
       setRelatedArticles([]);
       setIsRelatedLoading(false);
+      setIsRejected(false);
       contentRef.current = '';
 
       try {
@@ -355,6 +358,8 @@ export function AISearchEngine({ onGenerated }) {
               upsertResearchPlanStep(setToolSteps, value);
             } else if (name === 'coursify_persist') {
               setGeneratedSlug(value?.slug || '');
+            } else if (name === 'coursify_rejection') {
+              setIsRejected(true);
             }
           } else if (event.type === EventType.TOOL_CALL_START) {
             setToolSteps((prev) => [
@@ -673,9 +678,22 @@ export function AISearchEngine({ onGenerated }) {
       <CoursifyStepHistory steps={toolSteps} />
 
       {/* Content */}
-      <div ref={resultRef} className="w-full max-w-full overflow-x-hidden">
-        <CoursifyBlockRenderer content={content} />
-      </div>
+      {isRejected ? (
+        <div className="w-full rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
+            <span className="text-2xl">!</span>
+          </div>
+          <h3 className="mb-2 text-lg font-bold text-amber-900">Topic Not Accepted</h3>
+          <p className="mx-auto max-w-md text-sm text-amber-700">
+            This topic was flagged as inappropriate and cannot be used for course generation. Please
+            try a different, educational topic.
+          </p>
+        </div>
+      ) : (
+        <div ref={resultRef} className="w-full max-w-full overflow-x-hidden">
+          <CoursifyBlockRenderer content={content} />
+        </div>
+      )}
 
       {/* Related Articles */}
       {(isRelatedLoading || relatedArticles.length > 0) && (
@@ -713,9 +731,11 @@ export function AISearchEngine({ onGenerated }) {
           Search another topic
         </button>
 
-        <p className="text-[10px] text-[#b5c4be]">
-          AI-generated • verify from authoritative sources
-        </p>
+        {!isRejected && (
+          <p className="text-[10px] text-[#b5c4be]">
+            AI-generated • verify from authoritative sources
+          </p>
+        )}
       </div>
     </div>
   );
