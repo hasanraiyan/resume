@@ -40,9 +40,9 @@ const FinanceSettingsTab = dynamic(
 );
 
 const tabs = [
+  { id: 'accounts', label: 'Accounts', icon: Wallet },
   { id: 'records', label: 'Records', icon: Receipt },
   { id: 'analysis', label: 'Analysis', icon: BarChart3 },
-  { id: 'accounts', label: 'Accounts', icon: Wallet },
   { id: 'planning', label: 'Planning', icon: Target },
   { id: 'chat', label: 'Chat', icon: ChatIcon },
   { id: 'settings', label: 'Settings', icon: Settings },

@@ -31,7 +31,7 @@ const initialState = {
   isTabLoading: false,
   isSyncing: true,
   error: null,
-  activeTab: 'records',
+  activeTab: 'accounts',
   periodStart: getWeekStart(),
   periodEnd: getWeekEnd(),
   periodType: 'week', // 'day' | 'week' | 'month' | 'custom'
