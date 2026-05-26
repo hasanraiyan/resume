@@ -7,6 +7,67 @@ import { broadcastSavedTransaction } from '@/lib/finance-chat/draftEvents';
 import MessageList from '@/components/chatbot/MessageList';
 import ChatInput from '@/components/chatbot/ChatInput';
 
+const TYPEWRITER_TOPICS = [
+  'How much did I spend on food this month?',
+  'Show me my account balances...',
+  'What is my largest expense?',
+  'Add a transaction for ₹500...',
+  'How much is left in my budget?',
+  'Show transactions from last week...',
+  'What did I spend on groceries?',
+  'Transfer ₹2000 to savings...',
+];
+
+function useTypewriterPlaceholder(topics) {
+  const [displayText, setDisplayText] = useState('');
+  const [tick, setTick] = useState(0);
+  const [showCursor, setShowCursor] = useState(true);
+  const phaseRef = useRef('typing');
+  const topicIndexRef = useRef(0);
+  const charIndexRef = useRef(0);
+
+  useEffect(() => {
+    if (!topics || topics.length === 0) return;
+
+    const topic = topics[topicIndexRef.current];
+    let timer;
+
+    if (phaseRef.current === 'typing') {
+      setShowCursor(true);
+      if (charIndexRef.current < topic.length) {
+        timer = setTimeout(() => {
+          charIndexRef.current += 1;
+          setDisplayText(topic.slice(0, charIndexRef.current));
+        }, 55);
+      } else {
+        timer = setTimeout(() => {
+          phaseRef.current = 'erasing';
+          setTick((t) => t + 1);
+        }, 2500);
+      }
+    } else if (phaseRef.current === 'erasing') {
+      setShowCursor(true);
+      if (charIndexRef.current > 0) {
+        timer = setTimeout(() => {
+          charIndexRef.current -= 1;
+          setDisplayText(topic.slice(0, charIndexRef.current));
+        }, 25);
+      } else {
+        timer = setTimeout(() => {
+          setShowCursor(false);
+          topicIndexRef.current = (topicIndexRef.current + 1) % topics.length;
+          phaseRef.current = 'typing';
+          setTick((t) => t + 1);
+        }, 800);
+      }
+    }
+
+    return () => clearTimeout(timer);
+  }, [displayText, tick, topics]);
+
+  return displayText + (displayText && showCursor ? '▎' : '');
+}
+
 export default function ChatTab() {
   const {
     messages,
@@ -33,6 +94,7 @@ export default function ChatTab() {
   const [selectedAgentId, setSelectedAgentId] = useState(null);
   const [uploadedImages, setUploadedImages] = useState([]);
   const chatbotSettings = { aiName: 'Finance Assistant' };
+  const typewriterPlaceholder = useTypewriterPlaceholder(TYPEWRITER_TOPICS);
   const activeQuote = null;
 
   useEffect(() => {
@@ -209,6 +271,7 @@ export default function ChatTab() {
       uploadedImages={uploadedImages}
       maxImages={2}
       showTopBorder={showTopBorder}
+      placeholder={typewriterPlaceholder}
     />
   );
 
