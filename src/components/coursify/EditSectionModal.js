@@ -902,9 +902,7 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                   className="text-[11px]"
                   style={{ color: 'var(--esm-muted)', fontFamily: 'Outfit, sans-serif' }}
                 >
-                  {isGenerating
-                    ? statusMessage || 'AI is researching…'
-                    : 'Supports ## [BlockType] headers for interactive blocks.'}
+                  {isGenerating ? statusMessage || 'AI is researching…' : ''}
                 </p>
                 <div className="flex items-center gap-2.5">
                   {/* Reference Toggle */}
@@ -1003,18 +1001,18 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                   <button
                     onClick={handleAIGenerate}
                     disabled={isGenerating || !title.trim()}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all disabled:opacity-50"
+                    className="esm-save-btn flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                     style={{
-                      color: 'var(--esm-forest)',
-                      border: '1px solid rgba(31,100,78,0.22)',
-                      background: isGenerating ? 'var(--esm-hover)' : 'transparent',
+                      background: isGenerating ? 'var(--esm-hover)' : 'var(--esm-forest)',
+                      color: isGenerating ? 'var(--esm-forest)' : '#fff',
                       fontFamily: 'Outfit, sans-serif',
+                      boxShadow: isGenerating ? 'none' : '0 2px 8px rgba(31,100,78,0.18)',
                     }}
                     onMouseEnter={(e) => {
-                      if (!isGenerating) e.currentTarget.style.background = 'var(--esm-hover)';
+                      if (!isGenerating) e.currentTarget.style.background = '#184d3c';
                     }}
                     onMouseLeave={(e) => {
-                      if (!isGenerating) e.currentTarget.style.background = 'transparent';
+                      if (!isGenerating) e.currentTarget.style.background = 'var(--esm-forest)';
                     }}
                   >
                     {isGenerating ? (
@@ -1022,7 +1020,7 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                     ) : (
                       <Sparkles className="w-3 h-3" />
                     )}
-                    {isGenerating ? 'Researching…' : 'AI Research'}
+                    {isGenerating ? 'Researching…' : 'Generate'}
                   </button>
 
                   <div className="w-px h-3" style={{ background: 'var(--esm-border)' }} />

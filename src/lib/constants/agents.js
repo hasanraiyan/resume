@@ -313,7 +313,7 @@ export const DEFAULT_AGENT_CONFIGS = {
     icon: 'Award',
     defaultModel: 'gemini-1.5-pro',
     defaultProvider: 'google',
-    tools: ['tavily_search', 'youtube_search', 'firecrawl_scrape'],
+    tools: ['tavily_search', 'youtube_search'],
     isActive: true,
   },
   [AGENT_IDS.COURSIFY_RESEARCH]: {
