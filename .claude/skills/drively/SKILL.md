@@ -1,6 +1,6 @@
 ---
 name: drively
-description: Full-stack reference for Drively, the private cloud storage mini-app. Use this when building file management features in other apps, adding upload/trash/share/search/activity patterns, or porting Drively patterns (bulk actions, infinite scroll, XHR upload progress, keyboard shortcuts, drag-and-drop, preview panels, storage analytics).
+description: Full-stack reference for Drively, the private cloud storage mini-app. Use this when building file management features in other apps, adding upload/trash/share/search/activity patterns, or porting Drively patterns (bulk actions, infinite scroll, XHR upload progress, keyboard shortcuts, drag-and-drop, preview panels, storage analytics). Also covers cross-app reuse — other apps (e.g. Coursify) consume Drively models and service functions.
 version: 0.1.0
 ---
 
@@ -16,7 +16,7 @@ src/app/api/drively/                ← 14 REST endpoints
 src/components/drively/             ← 20 UI components
 src/context/DrivelyContext.js       ← useState-based state management
 src/models/Drively{File,Folder,Activity,Share,Settings}.js
-src/lib/apps/drively/service/service.js    ← 603-line business logic
+src/lib/apps/drively/service/service.js    ← 614-line business logic + 4 reusable exports
 src/lib/apps/drively/service/validators.js ← Zod schemas
 ```
 
@@ -111,6 +111,54 @@ Key methods: `fetchBootstrap()`, `uploadFiles()`, `createNewFolder()`, `deleteIt
 | `ErrorBoundary`     | `ErrorBoundary.js`     | React class error boundary with retry                                                                      |
 | `utils.js`          | `utils.js`             | `getFileIcon(mimeType)` → Lucide icon, `formatSize(bytes)`                                                 |
 
+## Service Layer Exports
+
+`src/lib/apps/drively/service/service.js` exports reusable functions consumable by other apps:
+
+| Function                                                                                              | Signature                                                                                            | Purpose                                                                               |
+| ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `saveFileRecord({ filename, mimeType, size, cloudinaryPublicId, secureUrl, resourceType, folderId })` | Upserts DrivelyFile by `cloudinaryPublicId`, logs activity                                           | Idempotent — callers manage Cloudinary upload, delegate DrivelyFile/Activity creation |
+| `uploadFile(file, folderId)`                                                                          | Full pipeline: validate 50MB, sanitize filename, Cloudinary upload, create DrivelyFile, log activity | General-purpose file upload                                                           |
+| `logDrivelyAction(action, itemType, itemName, targetFolder)`                                          | Standalone activity logging                                                                          | Any app needing audit log entries                                                     |
+| `getStorageStats()`                                                                                   | Aggregation: total size, type breakdown, largest files                                               | Storage analytics                                                                     |
+| `softDeleteFile(id)` / `permanentDeleteFile(id)`                                                      | Soft-delete + Cloudinary destroy                                                                     | Trash management                                                                      |
+| `duplicateFile(id)`                                                                                   | Cloudinary re-upload with "(copy)" suffix                                                            | File duplication                                                                      |
+
+### Cross-App Reuse (Coursify Example)
+
+Coursify imports `saveFileRecord` to persist thumbnail metadata without duplicating DrivelyFile/DrivelyActivity boilerplate:
+
+```js
+import { saveFileRecord } from '@/lib/apps/drively/service/service';
+import DrivelyFolder from '@/models/DrivelyFolder';
+
+// Coursify handles its own Cloudinary upload (needs specific public_id + transformations)
+const uploadResult = await cloudinaryUpload(buffer, {
+  public_id: `coursify/thumbnail_${courseId}`,
+  overwrite: true,
+  transformation: [{ width: 1280, height: 720, crop: 'fill', quality: 'auto' }],
+});
+
+// Then delegates Drively record-keeping to the shared helper
+await saveFileRecord({
+  filename: `${courseTitle} - Thumbnail.webp`,
+  mimeType: 'image/webp',
+  size: uploadResult.bytes,
+  cloudinaryPublicId: uploadResult.public_id,
+  secureUrl: uploadResult.secure_url,
+  resourceType: 'image',
+  folderId: await getOrCreateCoursifyFolder(),
+});
+```
+
+**Rules for cross-app reuse:**
+
+- Keep Cloudinary upload in the consumer app if you need a **predictable public_id** with `overwrite: true` or **custom transformations** (Drively's `uploadFile()` generates unique public_ids)
+- Use `saveFileRecord()` for the DrivelyFile + DrivelyActivity boilerplate — it upserts by `cloudinaryPublicId` so it's safe to call repeatedly
+- Create a dedicated `DrivelyFolder` per consumer app (e.g., "Coursify Thumbnails") for organization
+- All apps share the same Cloudinary folder (`drively/`) with sub-namespace public*ids (e.g., `coursify/thumbnail*\*`)
+- Import `ensureDb()` from the service before any Drively model operation outside the service functions
+
 ## Reusable Patterns
 
 ### 1. Fixed-Position Context Menu
@@ -188,7 +236,10 @@ Array-based `selectedItems` state. Floating toolbar appears on any selection. Ac
 - MIME type icons from Lucide via `getFileIcon()` in `utils.js` — maps common MIME categories to icon components
 - Sort queries use `{ $sort: { [sortField]: sortOrder } }` — sortField must be validated against an allowlist to prevent injection
 - Env var `NEXT_PUBLIC_DRIVELY_QUOTA_MB` (default `1000`) controls per-user storage quota
-- The Coursify app also stores thumbnails in `/drively` Cloudinary folder
+- The Coursify app also stores thumbnails in `/drively` Cloudinary folder and imports `saveFileRecord` from Drively's service
+- `saveFileRecord()` calls `ensureDb()` internally — consumers don't need to call `dbConnect()` before it
+- When consuming Drively models directly (e.g., `DrivelyFolder.find()`), you must call `await ensureDb()` or `await dbConnect()` first
+- `saveFileRecord()` uses `findOneAndUpdate` with `upsert: true` by `cloudinaryPublicId` — safe for repeated calls with the same Cloudinary asset
 
 ## Sharing This Skill
 

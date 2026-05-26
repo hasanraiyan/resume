@@ -171,6 +171,25 @@ const getCloudinaryResourceType = (mimeType) => {
   return 'raw';
 };
 
+export async function saveFileRecord({
+  filename,
+  mimeType,
+  size,
+  cloudinaryPublicId,
+  secureUrl,
+  resourceType,
+  folderId = null,
+}) {
+  await ensureDb();
+  const file = await DrivelyFile.findOneAndUpdate(
+    { cloudinaryPublicId },
+    { filename, mimeType, size, cloudinaryPublicId, secureUrl, resourceType, folderId },
+    { upsert: true, new: true }
+  );
+  await logActivity('upload', 'file', file.filename);
+  return file.toObject();
+}
+
 export async function uploadFile(file, folderId = null) {
   await ensureDb();
 

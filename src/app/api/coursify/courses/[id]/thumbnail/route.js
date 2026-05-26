@@ -3,8 +3,7 @@ import { NextResponse } from 'next/server';
 import { getCloudinary } from '@/lib/cloudinary';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
-import DrivelyFile from '@/models/DrivelyFile';
-import DrivelyActivity from '@/models/DrivelyActivity';
+import { saveFileRecord } from '@/lib/apps/drively/service/service';
 import { getOrCreateThumbnailFolder } from '@/lib/coursify/thumbnailGen';
 
 export async function POST(request, { params }) {
@@ -53,21 +52,15 @@ export async function POST(request, { params }) {
     const filename = `${course.title} - Thumbnail.webp`;
     const folderId = await getOrCreateThumbnailFolder();
 
-    await DrivelyFile.findOneAndUpdate(
-      { cloudinaryPublicId: uploadResult.public_id },
-      {
-        filename,
-        mimeType: 'image/webp',
-        size: uploadResult.bytes,
-        cloudinaryPublicId: uploadResult.public_id,
-        secureUrl: uploadResult.secure_url,
-        resourceType: 'image',
-        folderId,
-      },
-      { upsert: true, new: true }
-    );
-
-    await DrivelyActivity.create({ action: 'upload', itemType: 'file', itemName: filename });
+    await saveFileRecord({
+      filename,
+      mimeType: 'image/webp',
+      size: uploadResult.bytes,
+      cloudinaryPublicId: uploadResult.public_id,
+      secureUrl: uploadResult.secure_url,
+      resourceType: 'image',
+      folderId,
+    });
 
     return NextResponse.json({ success: true, thumbnail: uploadResult.secure_url });
   } catch (error) {

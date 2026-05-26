@@ -1,9 +1,8 @@
 import { getCloudinary } from '@/lib/cloudinary';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyCourse from '@/models/CoursifyCourse';
-import DrivelyFile from '@/models/DrivelyFile';
 import DrivelyFolder from '@/models/DrivelyFolder';
-import DrivelyActivity from '@/models/DrivelyActivity';
+import { saveFileRecord } from '@/lib/apps/drively/service/service';
 
 export async function getOrCreateThumbnailFolder() {
   const existing = await DrivelyFolder.findOne({ name: 'Coursify Thumbnails', deletedAt: null });
@@ -82,21 +81,15 @@ export async function generateCourseThumbnail(courseId, title, description) {
 
     const folderId = await getOrCreateThumbnailFolder();
 
-    await DrivelyFile.findOneAndUpdate(
-      { cloudinaryPublicId: uploadResult.public_id },
-      {
-        filename,
-        mimeType: 'image/webp',
-        size: buffer.length,
-        cloudinaryPublicId: uploadResult.public_id,
-        secureUrl: uploadResult.secure_url,
-        resourceType: 'image',
-        folderId,
-      },
-      { upsert: true, new: true }
-    );
-
-    await DrivelyActivity.create({ action: 'upload', itemType: 'file', itemName: filename });
+    await saveFileRecord({
+      filename,
+      mimeType: 'image/webp',
+      size: buffer.length,
+      cloudinaryPublicId: uploadResult.public_id,
+      secureUrl: uploadResult.secure_url,
+      resourceType: 'image',
+      folderId,
+    });
 
     await CoursifyCourse.findByIdAndUpdate(courseId, {
       $set: { thumbnail: uploadResult.secure_url, thumbnailGenerating: false },
