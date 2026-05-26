@@ -18,7 +18,6 @@ import {
   createAssistantPlaceholder,
   createUserMessage,
   setAssistantError,
-  WELCOME_MESSAGE,
 } from '@/lib/finance-chat/messageState';
 import {
   clearDeviceChatState,
@@ -33,7 +32,7 @@ const FinanceChatContext = createContext(null);
 
 export function FinanceChatProvider({ children }) {
   const { accounts, categories, transactions, analysis } = useMoney();
-  const [messages, setMessages] = useState([WELCOME_MESSAGE]);
+  const [messages, setMessages] = useState([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [chatMode, setChatModeState] = useState('pro');
   const [deviceAvailability, setDeviceAvailability] = useState({
@@ -191,7 +190,7 @@ export function FinanceChatProvider({ children }) {
     pendingDraftRef.current = null;
     setIsStreaming(false);
     setAnsweredBlockIds(new Set());
-    setMessages([WELCOME_MESSAGE]);
+    setMessages([]);
     if (chatMode === 'device') {
       clearDeviceChatState();
     } else {

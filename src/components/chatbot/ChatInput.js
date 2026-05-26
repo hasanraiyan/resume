@@ -30,6 +30,7 @@ export default function ChatInput({
   showModeToggle,
   onImagesSelected,
   uploadedImages = [],
+  showTopBorder = true,
 }) {
   const isGreenTheme = theme === 'green';
   // default to showing the mode toggle whenever chat mode handlers exist,
@@ -58,7 +59,9 @@ export default function ChatInput({
   const warningBorder = isGreenTheme ? 'border-[#fcd34d]' : 'border-amber-200';
 
   return (
-    <div className={`p-2 sm:p-3 border-t ${borderColor} ${containerBg} shrink-0`}>
+    <div
+      className={`p-2 sm:p-3 ${showTopBorder ? `border-t ${borderColor}` : ''} ${containerBg} shrink-0`}
+    >
       <div
         className={`rounded-3xl border ${borderColor} ${containerBg} ${focusBorder} focus-within:ring-1 ${isGreenTheme ? 'focus-within:ring-[#1f644e]/20' : 'focus-within:ring-black/20'} transition-all flex flex-col`}
       >

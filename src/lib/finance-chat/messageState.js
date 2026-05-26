@@ -1,16 +1,6 @@
 import { Landmark, ListTree, ReceiptText, Tags } from 'lucide-react';
 import { EventType } from '@ag-ui/core';
 
-export const WELCOME_MESSAGE = {
-  id: 1,
-  role: 'assistant',
-  content:
-    "Hi! I'm your Finance Assistant. I can help you understand your spending habits, track budgets, and get insights about your finances. How can I help you today?",
-  steps: [],
-  uiBlocks: [],
-  timestamp: new Date(),
-};
-
 const TOOL_ICONS = {
   get_accounts: Landmark,
   get_analysis: ListTree,
@@ -106,7 +96,7 @@ export function serializeMessagesForStorage(messages) {
 
 export function restoreMessagesFromStorage(rawMessages) {
   if (!Array.isArray(rawMessages) || rawMessages.length === 0) {
-    return [WELCOME_MESSAGE];
+    return [];
   }
 
   return rawMessages.map((message) => ({

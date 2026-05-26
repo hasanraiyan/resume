@@ -36,7 +36,7 @@ export default function ChatTab() {
   const activeQuote = null;
 
   useEffect(() => {
-    if (messages.length === 1 && messages[0].id === 1) {
+    if (messages.length === 0) {
       setInputMessage('');
       setIsListening(false);
       setActiveMCPs([]);
@@ -175,6 +175,59 @@ export default function ChatTab() {
     }
   };
 
+  const isEmptyChat = messages.length === 0;
+
+  const makeInput = (showTopBorder = true) => (
+    <ChatInput
+      inputRef={inputRef}
+      inputMessage={inputMessage}
+      setInputMessage={setInputMessage}
+      isLoading={isStreaming}
+      handleSubmit={handleSubmit}
+      onStop={stopGenerating}
+      activeQuote={activeQuote}
+      isListening={isListening}
+      toggleListening={toggleListening}
+      activeMCPs={activeMCPs}
+      setActiveMCPs={setActiveMCPs}
+      availableMCPs={availableMCPs}
+      isToolsMenuOpen={isToolsMenuOpen}
+      setIsToolsMenuOpen={setIsToolsMenuOpen}
+      isModelSelectorOpen={isModelSelectorOpen}
+      setIsModelSelectorOpen={setIsModelSelectorOpen}
+      chatbotSettings={chatbotSettings}
+      selectedAgentId={selectedAgentId}
+      setSelectedAgentId={setSelectedAgentId}
+      showModelSelector={false}
+      showToolsMenu={false}
+      showModeToggle
+      theme="green"
+      chatMode={chatMode}
+      setChatMode={setChatMode}
+      deviceAvailability={deviceAvailability}
+      onImagesSelected={setUploadedImages}
+      uploadedImages={uploadedImages}
+      showTopBorder={showTopBorder}
+    />
+  );
+
+  if (isEmptyChat) {
+    return (
+      <div className="flex h-[calc(100vh-3.5rem-env(safe-area-inset-bottom))] lg:h-[calc(100vh-4rem)] min-w-0 flex-col overflow-x-hidden bg-[#fcfbf5]">
+        <div className="flex flex-1 flex-col items-center justify-center px-4 pb-4 overflow-y-auto">
+          {/* Branding */}
+          <div className="mb-8 flex flex-col items-center text-center">
+            <h2 className="text-[17px] font-semibold text-[#1e3a34]">Finance Assistant</h2>
+            <p className="mt-1 text-[13px] text-[#5c6e68]">Ask me anything about your finances</p>
+          </div>
+
+          {/* Input */}
+          <div className="w-full max-w-xl">{makeInput(false)}</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-[calc(100vh-3.5rem-env(safe-area-inset-bottom))] lg:h-[calc(100vh-4rem)] min-w-0 flex-col overflow-x-hidden bg-[#fcfbf5]">
       <MessageList
@@ -188,38 +241,7 @@ export default function ChatTab() {
         answeredBlockIds={answeredBlockIds}
         markBlockAsAnswered={markBlockAsAnswered}
       />
-
-      {/* Input */}
-      <ChatInput
-        inputRef={inputRef}
-        inputMessage={inputMessage}
-        setInputMessage={setInputMessage}
-        isLoading={isStreaming}
-        handleSubmit={handleSubmit}
-        onStop={stopGenerating}
-        activeQuote={activeQuote}
-        isListening={isListening}
-        toggleListening={toggleListening}
-        activeMCPs={activeMCPs}
-        setActiveMCPs={setActiveMCPs}
-        availableMCPs={availableMCPs}
-        isToolsMenuOpen={isToolsMenuOpen}
-        setIsToolsMenuOpen={setIsToolsMenuOpen}
-        isModelSelectorOpen={isModelSelectorOpen}
-        setIsModelSelectorOpen={setIsModelSelectorOpen}
-        chatbotSettings={chatbotSettings}
-        selectedAgentId={selectedAgentId}
-        setSelectedAgentId={setSelectedAgentId}
-        showModelSelector={false}
-        showToolsMenu={false}
-        showModeToggle
-        theme="green"
-        chatMode={chatMode}
-        setChatMode={setChatMode}
-        deviceAvailability={deviceAvailability}
-        onImagesSelected={setUploadedImages}
-        uploadedImages={uploadedImages}
-      />
+      {makeInput()}
     </div>
   );
 }

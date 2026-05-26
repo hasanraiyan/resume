@@ -1,8 +1,4 @@
-import {
-  restoreMessagesFromStorage,
-  serializeMessagesForStorage,
-  WELCOME_MESSAGE,
-} from './messageState';
+import { restoreMessagesFromStorage, serializeMessagesForStorage } from './messageState';
 
 export const CHAT_MODE_STORAGE_KEY = 'pocketly-finance-chat-mode';
 export const DEVICE_CHAT_STORAGE_KEY = 'pocketly-finance-device-chat';
@@ -20,7 +16,7 @@ export function loadFinanceChatState({ deviceSupported }) {
   if (typeof window === 'undefined') {
     return {
       chatMode: 'pro',
-      messages: [WELCOME_MESSAGE],
+      messages: [],
       pendingDraft: null,
     };
   }
@@ -33,7 +29,7 @@ export function loadFinanceChatState({ deviceSupported }) {
       window.localStorage.getItem(CLOUD_CHAT_STORAGE_KEY);
     const chatMode = normalizeChatMode(savedMode, deviceSupported);
 
-    let messages = [WELCOME_MESSAGE];
+    let messages = [];
     let pendingDraft = null;
 
     if (chatMode === 'device' && savedDeviceChat) {
@@ -57,7 +53,7 @@ export function loadFinanceChatState({ deviceSupported }) {
   } catch {
     return {
       chatMode: 'pro',
-      messages: [WELCOME_MESSAGE],
+      messages: [],
       pendingDraft: null,
     };
   }
