@@ -22,6 +22,7 @@ import { RelatedArticlesGrid } from '@/components/coursify/RelatedArticlesGrid';
 
 import CoursifyStepHistory from '@/components/coursify/CoursifyStepHistory';
 import ChatInput from '@/components/chatbot/ChatInput';
+import katex from 'katex';
 
 import { parseMarkdownToBlocks } from '@/utils/coursify-parser';
 
@@ -59,6 +60,42 @@ function upsertResearchPlanStep(setToolSteps, plan) {
 
     return prev.map((item, index) => (index === existingIndex ? { ...item, ...step } : item));
   });
+}
+
+function LatexTitle({ children }) {
+  const parts = [];
+  const regex = /\$(.+?)\$/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(children)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ type: 'text', value: children.slice(lastIndex, match.index) });
+    }
+    try {
+      const html = katex.renderToString(match[1], { throwOnError: false, displayMode: false });
+      parts.push({ type: 'math', html });
+    } catch {
+      parts.push({ type: 'text', value: `$${match[1]}$` });
+    }
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < children.length) {
+    parts.push({ type: 'text', value: children.slice(lastIndex) });
+  }
+
+  return (
+    <h2 className="break-words text-2xl font-bold text-[#1e3a34]">
+      {parts.map((part, i) =>
+        part.type === 'math' ? (
+          <span key={i} dangerouslySetInnerHTML={{ __html: part.html }} />
+        ) : (
+          <span key={i}>{part.value}</span>
+        )
+      )}
+    </h2>
+  );
 }
 
 export function AISearchEngine({ onGenerated }) {
@@ -564,7 +601,7 @@ export function AISearchEngine({ onGenerated }) {
       {/* Title */}
       {generatedTitle && (
         <div className="mb-8 border-b border-[#e5e3d8] pb-6">
-          <h2 className="break-words text-2xl font-bold text-[#1e3a34]">{generatedTitle}</h2>
+          <LatexTitle>{generatedTitle}</LatexTitle>
         </div>
       )}
 
