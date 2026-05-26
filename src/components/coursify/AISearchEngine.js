@@ -209,20 +209,6 @@ export function AISearchEngine({ onGenerated }) {
     ...(isDev ? [{ id: 'research', label: 'Antigravity' }] : []),
   ];
 
-  // Sync default generationMode once auth session resolves
-  useEffect(() => {
-    console.log('[AISearchEngine] Session state updated:', {
-      session,
-      isAuthenticated,
-      role: session?.user?.role,
-    });
-    if (isAuthenticated) {
-      setGenerationMode('pro');
-    } else {
-      setGenerationMode('flash');
-    }
-  }, [isAuthenticated, session]);
-
   const inputRef = useRef(null);
 
   const contentRef = useRef('');
