@@ -16,6 +16,9 @@ graph TD
   A --> B
 \`\`\`
 IMPORTANT: For Mermaid diagrams, use only standard types (graph, sequenceDiagram, classDiagram, stateDiagram-v2, erDiagram, gantt, pie, journey, gitGraph, mindmap). DO NOT hallucinate custom types like 'grid-layout'. Use markdown tables for grid structures.
+For Mermaid diagrams, ALWAYS wrap node labels in double quotes.
+Example:
+A["Text"] --> B["More text"]
 
 **## [StepByStepBlock]**
 For processes, algorithms, sequential walkthroughs.
