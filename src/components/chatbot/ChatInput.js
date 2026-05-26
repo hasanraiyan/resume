@@ -30,6 +30,7 @@ export default function ChatInput({
   showModeToggle,
   onImagesSelected,
   uploadedImages = [],
+  maxImages = 4,
   showTopBorder = true,
 }) {
   const isGreenTheme = theme === 'green';
@@ -93,7 +94,7 @@ export default function ChatInput({
                     loadedCount++;
 
                     if (loadedCount === imageItems.length) {
-                      const updated = [...uploadedImages, ...newImages];
+                      const updated = [...uploadedImages, ...newImages].slice(0, maxImages);
                       if (onImagesSelected) onImagesSelected(updated);
                     }
                   };
@@ -163,7 +164,7 @@ export default function ChatInput({
                         loadedCount++;
 
                         if (loadedCount === files.length) {
-                          const updated = [...uploadedImages, ...newImages];
+                          const updated = [...uploadedImages, ...newImages].slice(0, maxImages);
                           if (onImagesSelected) onImagesSelected(updated);
                         }
                       };

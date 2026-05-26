@@ -207,6 +207,7 @@ export default function ChatTab() {
       deviceAvailability={deviceAvailability}
       onImagesSelected={setUploadedImages}
       uploadedImages={uploadedImages}
+      maxImages={2}
       showTopBorder={showTopBorder}
     />
   );
