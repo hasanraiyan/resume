@@ -229,6 +229,7 @@ export async function POST(request) {
               finalResearchPlan = event.value || null;
             } else if (event.type === EventType.CUSTOM && event.name === 'coursify_rejection') {
               wasRejected = true;
+              finalContent = '';
             }
             // Forward all AG-UI events to client
             controller.enqueue(encodeSSE(event));

@@ -683,28 +683,6 @@ export function AISearchEngine({ onGenerated }) {
           <div className="mb-6">
             <CoursifyBlockRenderer content={content} />
           </div>
-          <div className="w-full rounded-xl border border-red-200 bg-white p-6">
-            <div className="flex items-start gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-50">
-                <span className="text-lg font-bold text-red-500">!</span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-bold text-red-800">Topic Not Accepted</h3>
-                <p className="mt-1 text-xs leading-relaxed text-red-600">
-                  This topic was flagged as inappropriate and cannot be used for course generation.
-                  Please try a different, educational topic.
-                </p>
-                <button
-                  onClick={() => {
-                    toast.success("Thanks for your feedback! We'll review this.");
-                  }}
-                  className="mt-3 cursor-pointer rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-bold text-red-700 transition-all hover:bg-red-100"
-                >
-                  Report — this was wrongly flagged
-                </button>
-              </div>
-            </div>
-          </div>
         </>
       ) : (
         <div ref={resultRef} className="w-full max-w-full overflow-x-hidden">

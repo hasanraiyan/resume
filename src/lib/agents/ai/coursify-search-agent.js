@@ -104,7 +104,7 @@ class CoursifySearchAgent extends BaseAgent {
   }
 
   /**
-   * Loads tools for this agent and filters out `firecrawl_scrape`
+   * Loads tools for this agent and filters out
    * (this agent prefers Tavily + YouTube search).
    *
    * @returns {Promise<Array<Object>>} Array of tool instances
