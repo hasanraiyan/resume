@@ -84,6 +84,13 @@ export async function POST(request) {
   const authResult = await requireCoursifyAuth(request);
   const isAuthenticated = !(authResult instanceof NextResponse);
 
+  console.log('[POST /api/coursify/generate] Debug values:', {
+    parsedAgent: agent,
+    isAuthenticated,
+    authResultType:
+      authResult instanceof NextResponse ? 'NextResponse (Unauthorized)' : 'Session Object',
+  });
+
   // Restrict Pro generation to authenticated users only
   if (agent === 'pro' && !isAuthenticated) {
     return NextResponse.json(

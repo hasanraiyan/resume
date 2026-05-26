@@ -487,21 +487,28 @@ export default function EditSectionModal({ section, onSave, onClose }) {
     let generatedContent = '';
 
     try {
+      const payload = {
+        courseName: course?.title,
+        moduleName: currentModule?.title,
+        sectionName: title.trim(),
+        learningGoals: learningGoals.filter((g) => g.trim()),
+        isReferenceEnabled,
+      };
+
+      if (isDev) {
+        if (selectedAgent === 'search') {
+          payload.agent = generationMode;
+        } else {
+          payload.agent = selectedAgent;
+        }
+      } else {
+        payload.agent = generationMode;
+      }
+
       const res = await fetch('/api/coursify/generate-section', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          courseName: course?.title,
-          moduleName: currentModule?.title,
-          sectionName: title.trim(),
-          learningGoals: learningGoals.filter((g) => g.trim()),
-          isReferenceEnabled,
-          // Dev-only agent override (openai = search, antigravity = research)
-          ...(isDev && { agent: selectedAgent }),
-          // Send selected generation mode if agent isn't explicitly overridden by dev picker
-          ...(!isDev && { agent: generationMode }),
-          ...(isDev && selectedAgent === 'search' && { agent: generationMode }),
-        }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error('Generation failed');
 

@@ -101,12 +101,17 @@ export function AISearchEngine({ onGenerated }) {
 
   // Sync default generationMode once auth session resolves
   useEffect(() => {
+    console.log('[AISearchEngine] Session state updated:', {
+      session,
+      isAuthenticated,
+      role: session?.user?.role,
+    });
     if (isAuthenticated) {
       setGenerationMode('pro');
     } else {
       setGenerationMode('flash');
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, session]);
 
   const inputRef = useRef(null);
 
@@ -210,18 +215,25 @@ export function AISearchEngine({ onGenerated }) {
       contentRef.current = '';
 
       try {
+        const payload = {
+          topic: topic.trim(),
+          isReferenceEnabled: true,
+        };
+
+        if (isDev) {
+          if (selectedAgent === 'search') {
+            payload.agent = generationMode;
+          } else {
+            payload.agent = selectedAgent;
+          }
+        } else {
+          payload.agent = generationMode;
+        }
+
         const res = await fetch('/api/coursify/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            topic: topic.trim(),
-            isReferenceEnabled: true,
-            // Dev-only agent override (openai = search, antigravity = research)
-            ...(isDev && { agent: selectedAgent }),
-            // Send selected generation mode if agent isn't explicitly overridden by dev picker
-            ...(!isDev && { agent: generationMode }),
-            ...(isDev && selectedAgent === 'search' && { agent: generationMode }),
-          }),
+          body: JSON.stringify(payload),
         });
 
         if (!res.ok) {
@@ -338,7 +350,7 @@ export function AISearchEngine({ onGenerated }) {
         setPhase(PHASE.ERROR);
       }
     },
-    [onGenerated]
+    [onGenerated, isDev, selectedAgent, generationMode]
   );
 
   // Handle auto-generate when send=true parameter is present
