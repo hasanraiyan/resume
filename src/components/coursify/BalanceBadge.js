@@ -52,7 +52,6 @@ export function BalanceBadge({ balance, loading, className = '' }) {
           {balance.dailyStats && (
             <span className="text-[8px] text-[#7c8e88] -mt-0.5">
               Today: {(balance.dailyStats.totalTokens / 1000).toFixed(1)}k tokens (₹
-              {(balance.dailyStats.totalCostINR || 0).toFixed(2)})
             </span>
           )}
         </div>

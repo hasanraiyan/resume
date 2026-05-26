@@ -446,10 +446,15 @@ export default function EditSectionModal({ section, onSave, onClose }) {
 
   // Dev-only agent picker (same as main AI Search)
   const isDev = process.env.NODE_ENV === 'development';
-  const [selectedAgent, setSelectedAgent] = useState('search'); // 'search' | 'research'
   const { data: session } = useSession();
   const isAuthenticated = session?.user?.role === 'admin';
-  const [generationMode, setGenerationMode] = useState('flash'); // 'flash' | 'pro'
+  const [generationMode, setGenerationMode] = useState('flash'); // 'flash' | 'pro' | 'research'
+
+  const modeOptions = [
+    { id: 'flash', label: 'Flash' },
+    { id: 'pro', label: 'Pro' },
+    ...(isDev ? [{ id: 'research', label: 'Antigravity' }] : []),
+  ];
 
   // Sync default generationMode once auth session resolves
   useEffect(() => {
@@ -496,15 +501,7 @@ export default function EditSectionModal({ section, onSave, onClose }) {
         isReferenceEnabled,
       };
 
-      if (isDev) {
-        if (selectedAgent === 'search') {
-          payload.agent = generationMode;
-        } else {
-          payload.agent = selectedAgent;
-        }
-      } else {
-        payload.agent = generationMode;
-      }
+      payload.agent = generationMode;
 
       const res = await fetch('/api/coursify/generate-section', {
         method: 'POST',
@@ -916,77 +913,39 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                   {/* Model Mode Selector */}
                   <div className="flex items-center gap-1 mr-2 text-[10px]">
                     <span className="text-[#7c8e88] font-medium">Mode:</span>
-                    <button
-                      type="button"
-                      onClick={() => setGenerationMode('flash')}
-                      className={`px-2 py-0.5 rounded font-bold transition-all ${
-                        generationMode === 'flash'
-                          ? 'bg-[#1f644e] text-white'
-                          : 'border border-[#e5e3d8] hover:bg-[#f0f5f2]'
-                      }`}
-                    >
-                      Flash
-                    </button>
-                    <button
-                      type="button"
-                      disabled={!isAuthenticated}
-                      onClick={() => {
-                        if (isAuthenticated) {
-                          setGenerationMode('pro');
-                        }
-                      }}
-                      className={`px-2 py-0.5 rounded font-bold transition-all flex items-center gap-0.5 ${
-                        generationMode === 'pro'
-                          ? 'bg-[#1f644e] text-white'
-                          : !isAuthenticated
-                            ? 'text-[#a1b3ad] border border-dashed border-[#e5e3d8] cursor-not-allowed'
-                            : 'border border-[#e5e3d8] hover:bg-[#f0f5f2]'
-                      }`}
-                      title={!isAuthenticated ? 'Sign in as admin to access Pro model' : undefined}
-                    >
-                      {!isAuthenticated && (
-                        <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
-                          <path
-                            fillRule="evenodd"
-                            d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      )}
-                      Pro
-                    </button>
+                    {modeOptions.map((mode) => {
+                      const disabled = mode.id === 'pro' && !isAuthenticated;
+                      return (
+                        <button
+                          key={mode.id}
+                          type="button"
+                          disabled={disabled}
+                          onClick={() => setGenerationMode(mode.id)}
+                          className={`px-2 py-0.5 rounded font-bold transition-all flex items-center gap-0.5 ${
+                            generationMode === mode.id
+                              ? 'bg-[#1f644e] text-white'
+                              : disabled
+                                ? 'text-[#a1b3ad] border border-dashed border-[#e5e3d8] cursor-not-allowed'
+                                : 'border border-[#e5e3d8] hover:bg-[#f0f5f2]'
+                          }`}
+                          title={disabled ? 'Sign in as admin to access Pro model' : undefined}
+                        >
+                          {disabled && (
+                            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                              <path
+                                fillRule="evenodd"
+                                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          )}
+                          {mode.label}
+                        </button>
+                      );
+                    })}
                   </div>
 
                   <div className="w-px h-3" style={{ background: 'var(--esm-border)' }} />
-
-                  {/* Dev-only Agent Picker (same as main AI search) */}
-                  {isDev && (
-                    <div className="flex items-center gap-1 mr-2 text-[10px]">
-                      <span className="text-[#7c8e88] font-medium">Agent:</span>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedAgent('search')}
-                        className={`px-2 py-0.5 rounded font-bold transition-all ${
-                          selectedAgent === 'search'
-                            ? 'bg-[#1f644e] text-white'
-                            : 'border border-[#e5e3d8] hover:bg-[#f0f5f2]'
-                        }`}
-                      >
-                        openai
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedAgent('research')}
-                        className={`px-2 py-0.5 rounded font-bold transition-all ${
-                          selectedAgent === 'research'
-                            ? 'bg-[#1f644e] text-white'
-                            : 'border border-[#e5e3d8] hover:bg-[#f0f5f2]'
-                        }`}
-                      >
-                        antigravity
-                      </button>
-                    </div>
-                  )}
 
                   {/* AI Generate */}
                   <button
