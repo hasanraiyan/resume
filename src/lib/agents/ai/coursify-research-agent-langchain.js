@@ -1,6 +1,7 @@
 import { RunnableLambda } from '@langchain/core/runnables';
 import { SystemMessage, HumanMessage } from '@langchain/core/messages';
 import { AgentExecutor, createReactAgent } from '@langchain/classic/agents';
+import { DynamicTool } from '@langchain/classic/tools';
 import { EventType } from '@ag-ui/core';
 import BaseAgent from '../BaseAgent';
 import { AGENT_IDS, getAgentTools } from '@/lib/constants/agents';
@@ -131,7 +132,13 @@ class CoursifyResearchAgent extends BaseAgent {
     const topicPreview = topic.substring(0, 50);
     this.logger.info(`Starting CoursifyResearchAgent (classic) for topic: "${topicPreview}..."`);
 
-    const llm = await this.createChatModel();
+    // const llm = await this.createChatModel();
+    const { ChatOpenAI } = await import('@langchain/openai');
+    const llm = new ChatOpenAI({
+      modelName: 'antigravity-gemini-3-flash',
+      apiKey: 'local-dummy-key',
+      configuration: { baseURL: 'http://localhost:3001/v1' },
+    });
     this.logger.debug('Chat model created');
 
     let enabledToolIds = this.config.tools || [];
@@ -143,14 +150,11 @@ class CoursifyResearchAgent extends BaseAgent {
     const tools = await managedToolProvider.getTools(enabledToolIds, this.logger);
     this.logger.debug(`Raw tools loaded: ${tools.map((t) => t.name).join(', ')}`);
 
-    // Map tools to wrap their raw string input from ReAct parser into the expected structured { query: string } object
     const classicTools = tools.map((originalTool) => {
-      return {
+      return new DynamicTool({
         name: originalTool.name,
         description: originalTool.description,
-        lc_namespace: originalTool.lc_namespace || ['langchain', 'tools'],
-        lc_id: originalTool.lc_id || [originalTool.name],
-        invoke: async (input, config) => {
+        func: async (input, runManager) => {
           let cleanedInput = typeof input === 'string' ? input.trim() : input;
           if (
             typeof cleanedInput === 'string' &&
@@ -168,29 +172,10 @@ class CoursifyResearchAgent extends BaseAgent {
           }
 
           const structuredInput = { query: cleanedInput };
-          return originalTool.invoke(structuredInput, config);
+          const res = await originalTool.invoke(structuredInput);
+          return typeof res === 'string' ? res : JSON.stringify(res);
         },
-        call: async (input, config) => {
-          let cleanedInput = typeof input === 'string' ? input.trim() : input;
-          if (
-            typeof cleanedInput === 'string' &&
-            cleanedInput.startsWith('"') &&
-            cleanedInput.endsWith('"')
-          ) {
-            cleanedInput = cleanedInput.substring(1, cleanedInput.length - 1).trim();
-          }
-          if (
-            typeof cleanedInput === 'string' &&
-            cleanedInput.startsWith("'") &&
-            cleanedInput.endsWith("'")
-          ) {
-            cleanedInput = cleanedInput.substring(1, cleanedInput.length - 1).trim();
-          }
-
-          const structuredInput = { query: cleanedInput };
-          return originalTool.invoke(structuredInput, config);
-        },
-      };
+      });
     });
 
     const agent = await createReactAgent({

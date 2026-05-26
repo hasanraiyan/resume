@@ -203,6 +203,27 @@ export function AISearchEngine({ onGenerated }) {
   const isAuthenticated = session?.user?.role === 'admin';
   const [generationMode, setGenerationMode] = useState('flash'); // 'flash' | 'pro' | 'research'
 
+  useEffect(() => {
+    if (isDev) {
+      const checkPort3001 = async () => {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 1000);
+          await fetch('http://localhost:3001', {
+            mode: 'no-cors',
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+          setGenerationMode('research');
+        } catch (err) {
+          // If port 3001 is not available/listening, default remains 'flash'
+          console.log('Antigravity service on port 3001 not available, using flash default', err);
+        }
+      };
+      checkPort3001();
+    }
+  }, [isDev]);
+
   const modeOptions = [
     { id: 'flash', label: 'Flash' },
     { id: 'pro', label: 'Pro' },
