@@ -71,6 +71,7 @@ export default function ChatInput({
             e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px';
           }}
           onPaste={(e) => {
+            if (!onImagesSelected) return;
             const imageItems = Array.from(e.clipboardData?.items || []).filter((item) =>
               item.type.startsWith('image/')
             );
@@ -140,55 +141,59 @@ export default function ChatInput({
         <div className="flex justify-between items-center gap-1.5 px-3.5 pb-2 sm:px-4 sm:pb-3 mt-auto">
           {/* Left: Settings Menu & Active Tools */}
           <div className="flex items-center gap-2">
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={(e) => {
-                const files = Array.from(e.target.files || []);
-                const newImages = [];
-                let loadedCount = 0;
+            {onImagesSelected && (
+              <>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    const newImages = [];
+                    let loadedCount = 0;
 
-                files.forEach((file) => {
-                  const reader = new FileReader();
-                  reader.onload = (event) => {
-                    const base64 = event.target.result;
-                    newImages.push({ base64, name: file.name });
-                    loadedCount++;
+                    files.forEach((file) => {
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        const base64 = event.target.result;
+                        newImages.push({ base64, name: file.name });
+                        loadedCount++;
 
-                    if (loadedCount === files.length) {
-                      const updated = [...uploadedImages, ...newImages];
-                      if (onImagesSelected) onImagesSelected(updated);
-                    }
-                  };
-                  reader.readAsDataURL(file);
-                });
+                        if (loadedCount === files.length) {
+                          const updated = [...uploadedImages, ...newImages];
+                          if (onImagesSelected) onImagesSelected(updated);
+                        }
+                      };
+                      reader.readAsDataURL(file);
+                    });
 
-                e.target.value = '';
-              }}
-              style={{ display: 'none' }}
-              id="image-upload-input"
-            />
-            <button
-              type="button"
-              onClick={() => document.getElementById('image-upload-input').click()}
-              disabled={isLoading}
-              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                isGreenTheme
-                  ? 'bg-[#f5f3e6] text-[#1f644e] hover:bg-[#ebe7d4]'
-                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
-              } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-              title="Upload images"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    e.target.value = '';
+                  }}
+                  style={{ display: 'none' }}
+                  id="image-upload-input"
                 />
-              </svg>
-            </button>
+                <button
+                  type="button"
+                  onClick={() => document.getElementById('image-upload-input').click()}
+                  disabled={isLoading}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                    isGreenTheme
+                      ? 'bg-[#f5f3e6] text-[#1f644e] hover:bg-[#ebe7d4]'
+                      : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                  } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  title="Upload images"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </button>
+              </>
+            )}
 
             {shouldShowModeToggle && (
               <div className="relative mode-selector-container">

@@ -77,13 +77,6 @@ function AdminLayoutContent({ children }) {
             </span>
           ),
         },
-        {
-          name: 'SmallClaw',
-          href: '/apps/smallclaw',
-          icon: ({ className }) => (
-            <span className={`flex items-center justify-center ${className}`}>🦞</span>
-          ),
-        },
         { name: 'Prisma', href: '/admin/media', icon: Image },
         { name: 'App Builder', href: '/admin/apps', icon: TerminalSquare },
       ],
