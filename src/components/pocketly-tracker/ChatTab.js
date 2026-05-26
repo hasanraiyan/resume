@@ -35,46 +35,6 @@ export default function ChatTab() {
   const chatbotSettings = { aiName: 'Finance Assistant' };
   const activeQuote = null;
 
-  const [viewportHeight, setViewportHeight] = useState(null);
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.visualViewport) return;
-
-    const handleResize = () => {
-      const vv = window.visualViewport;
-      setIsKeyboardOpen(window.innerHeight - vv.height > 150);
-      setViewportHeight(vv.height);
-    };
-
-    window.visualViewport.addEventListener('resize', handleResize);
-    window.addEventListener('resize', handleResize);
-    handleResize();
-
-    return () => {
-      window.visualViewport?.removeEventListener('resize', handleResize);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (viewportHeight) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [viewportHeight]);
-
-  const getMobileHeight = () => {
-    if (!viewportHeight) {
-      return 'calc(100vh - 3.5rem - env(safe-area-inset-bottom))';
-    }
-    const headerHeight = 56; // 3.5rem / pt-14
-    if (isKeyboardOpen) {
-      return `${viewportHeight - headerHeight}px`;
-    } else {
-      return `calc(${viewportHeight}px - 56px - env(safe-area-inset-bottom))`;
-    }
-  };
-
   useEffect(() => {
     if (messages.length === 1 && messages[0].id === 1) {
       setInputMessage('');
@@ -216,15 +176,7 @@ export default function ChatTab() {
   };
 
   return (
-    <div
-      className="flex h-[calc(100vh-3.5rem-env(safe-area-inset-bottom))] lg:h-[calc(100vh-4rem)] min-w-0 flex-col overflow-x-hidden bg-[#fcfbf5]"
-      style={{
-        height:
-          typeof window !== 'undefined' && window.innerWidth < 1024 && viewportHeight
-            ? getMobileHeight()
-            : undefined,
-      }}
-    >
+    <div className="flex h-[calc(100vh-3.5rem-env(safe-area-inset-bottom))] lg:h-[calc(100vh-4rem)] min-w-0 flex-col overflow-x-hidden bg-[#fcfbf5]">
       <MessageList
         messages={messages}
         isLoading={isStreaming}
