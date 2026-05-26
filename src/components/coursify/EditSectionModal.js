@@ -443,6 +443,21 @@ export default function EditSectionModal({ section, onSave, onClose }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [toolSteps, setToolSteps] = useState([]);
+  const [isModeMenuOpen, setIsModeMenuOpen] = useState(false);
+  const modeMenuRef = React.useRef(null);
+
+  // Close mode dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (modeMenuRef.current && !modeMenuRef.current.contains(e.target)) {
+        setIsModeMenuOpen(false);
+      }
+    };
+    if (isModeMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isModeMenuOpen]);
 
   // Dev-only agent picker (same as main AI Search)
   const isDev = process.env.NODE_ENV === 'development';
@@ -910,39 +925,76 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                     </span>
                   </label>
 
-                  {/* Model Mode Selector */}
-                  <div className="flex items-center gap-1 mr-2 text-[10px]">
-                    <span className="text-[#7c8e88] font-medium">Mode:</span>
-                    {modeOptions.map((mode) => {
-                      const disabled = mode.id === 'pro' && !isAuthenticated;
-                      return (
-                        <button
-                          key={mode.id}
-                          type="button"
-                          disabled={disabled}
-                          onClick={() => setGenerationMode(mode.id)}
-                          className={`px-2 py-0.5 rounded font-bold transition-all flex items-center gap-0.5 ${
-                            generationMode === mode.id
-                              ? 'bg-[#1f644e] text-white'
-                              : disabled
-                                ? 'text-[#a1b3ad] border border-dashed border-[#e5e3d8] cursor-not-allowed'
-                                : 'border border-[#e5e3d8] hover:bg-[#f0f5f2]'
-                          }`}
-                          title={disabled ? 'Sign in as admin to access Pro model' : undefined}
-                        >
-                          {disabled && (
-                            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
-                              <path
-                                fillRule="evenodd"
-                                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          )}
-                          {mode.label}
-                        </button>
-                      );
-                    })}
+                  {/* Model Mode Selector — dropdown (same as ChatInput) */}
+                  <div className="relative" ref={modeMenuRef}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isGenerating) return;
+                        setIsModeMenuOpen((open) => !open);
+                      }}
+                      className={`flex items-center justify-center gap-1 rounded-full border px-2.5 h-7 text-[10px] font-medium transition-colors ${
+                        isGenerating
+                          ? 'opacity-70 cursor-not-allowed'
+                          : 'cursor-pointer border-[#e5e3d8] bg-transparent text-[#1e3a34] hover:bg-[#f5f3e6]'
+                      }`}
+                    >
+                      <span>
+                        {modeOptions.find((m) => m.id === generationMode)?.label || generationMode}
+                      </span>
+                      <ChevronDown
+                        className={`w-3 h-3 transition-transform ${isModeMenuOpen ? 'rotate-180' : ''}`}
+                      />
+                    </button>
+
+                    {isModeMenuOpen && (
+                      <div
+                        className={`absolute right-0 w-32 rounded-xl border border-neutral-200 bg-white overflow-hidden z-50 ${'top-full mt-2'}`}
+                      >
+                        {modeOptions.map((option) => {
+                          const isActive = option.id === generationMode;
+                          const isDisabled = option.id === 'pro' && !isAuthenticated;
+                          return (
+                            <button
+                              key={option.id}
+                              type="button"
+                              disabled={isDisabled}
+                              onClick={() => {
+                                setIsModeMenuOpen(false);
+                                if (!isGenerating) {
+                                  setGenerationMode(option.id);
+                                }
+                              }}
+                              className={`w-full text-left px-3 py-2 text-[11px] transition-colors flex items-center justify-between ${
+                                isActive
+                                  ? 'bg-neutral-100 text-neutral-900 font-semibold'
+                                  : isDisabled
+                                    ? 'text-neutral-300 bg-neutral-50 cursor-not-allowed'
+                                    : 'bg-white text-neutral-700 hover:bg-neutral-50'
+                              }`}
+                              title={
+                                isDisabled ? 'Sign in as admin to access Pro model' : undefined
+                              }
+                            >
+                              <span>{option.label}</span>
+                              {isDisabled && (
+                                <svg
+                                  className="w-2.5 h-2.5 text-neutral-400 shrink-0"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   <div className="w-px h-3" style={{ background: 'var(--esm-border)' }} />
