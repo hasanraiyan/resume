@@ -343,6 +343,7 @@ async function createSession(initialPrompts) {
 
   return api.create({
     initialPrompts,
+    outputLanguage: 'en',
   });
 }
 
