@@ -110,6 +110,7 @@ url: "https://www.youtube.com/watch?v=..."
 - Professional, academic tone — no fluff
 - Separate each block with ---
 - Use $...$ for inline LaTeX and $$...$$ for block/display LaTeX.
+- STRICT: EVERY LaTeX math expression (\\Theta, \\log, \\Omega, \\sum, \\int, \\alpha, etc.) MUST be wrapped in $...$ or $$...$$ delimiters. This applies to ALL fields: question text, quiz options, quiz explanations, accordion content, tab content, callout content — everywhere. Unwrapped \\Theta renders as literal text instead of the Greek letter.
 - Use only blocks that are necessary for the use case.
 - DO NOT summarize or talk about your process. Just output markdown.
 
