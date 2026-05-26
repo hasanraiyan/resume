@@ -301,7 +301,7 @@ export const DEFAULT_AGENT_CONFIGS = {
     icon: 'Zap',
     defaultModel: 'gemini-1.5-flash',
     defaultProvider: 'google',
-    tools: ['tavily_search', 'youtube_search', 'firecrawl_scrape'],
+    tools: ['tavily_search', 'youtube_search'],
     isActive: true,
   },
   [AGENT_IDS.COURSIFY_SEARCH_PRO]: {
@@ -396,8 +396,8 @@ export const AGENT_TOOLS = {
   [AGENT_IDS.APP_BUILDER]: ['planning', 'html_generation', 'code_review'],
   [AGENT_IDS.FINANCE_FLASH]: ['conversation'],
   [AGENT_IDS.FINANCE_PRO]: ['conversation'],
-  [AGENT_IDS.COURSIFY_SEARCH_FLASH]: ['tavily_search', 'youtube_search', 'firecrawl_scrape'],
-  [AGENT_IDS.COURSIFY_SEARCH_PRO]: ['tavily_search', 'youtube_search', 'firecrawl_scrape'],
+  [AGENT_IDS.COURSIFY_SEARCH_FLASH]: ['tavily_search', 'youtube_search'],
+  [AGENT_IDS.COURSIFY_SEARCH_PRO]: ['tavily_search', 'youtube_search'],
   [AGENT_IDS.COURSIFY_RESEARCH]: ['tavily_search', 'youtube_search'],
 };
 

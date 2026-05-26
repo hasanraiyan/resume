@@ -27,6 +27,7 @@ import { EventType } from '@ag-ui/core';
 import { parseAGUIStream } from '@/utils/aguiStream';
 import QuizEditor from './QuizEditor';
 import { parseMarkdownSection, generateFullMarkdown } from '@/utils/coursify-parser';
+import { CoursifyBlockRenderer } from './reader/CoursifyBlockRenderer';
 import { useCoursifyStudio } from '@/context/CoursifyStudioContext';
 import { useSession } from 'next-auth/react';
 
@@ -585,10 +586,23 @@ export default function EditSectionModal({ section, onSave, onClose }) {
   };
 
   const handleTabChange = (nextTab) => {
-    if (tab === 'content' && nextTab === 'visual') {
+    if (tab === 'content' && (nextTab === 'visual' || nextTab === 'preview')) {
       const parsed = parseMarkdownSection(content);
       setBlocks(parsed.blocks);
-    } else if (tab === 'visual' && nextTab === 'content') {
+    } else if (tab === 'visual' && (nextTab === 'content' || nextTab === 'preview')) {
+      const exported = generateFullMarkdown({
+        title,
+        summary,
+        learningGoals,
+        estimatedDuration,
+        status,
+        blocks,
+      });
+      setContent(exported);
+    } else if (tab === 'preview' && nextTab === 'content') {
+      const parsed = parseMarkdownSection(content);
+      setBlocks(parsed.blocks);
+    } else if (tab === 'preview' && nextTab === 'visual') {
       const exported = generateFullMarkdown({
         title,
         summary,
@@ -706,6 +720,7 @@ export default function EditSectionModal({ section, onSave, onClose }) {
   const TABS = [
     { id: 'content', label: 'Markdown' },
     { id: 'visual', label: 'Visual Editor' },
+    { id: 'preview', label: 'Preview' },
     { id: 'planning', label: 'Planning' },
   ];
 
@@ -1907,6 +1922,121 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                   />
                 </React.Fragment>
               ))}
+            </div>
+          )}
+
+          {/* ─── Preview Tab ─── */}
+          {tab === 'preview' && (
+            <div className="space-y-6 pb-16">
+              {/* Section header */}
+              <div className="space-y-4">
+                <h2
+                  className="text-2xl font-bold leading-snug"
+                  style={{
+                    color: 'var(--esm-ink)',
+                    fontFamily: "'DM Serif Display', serif",
+                    fontWeight: 400,
+                  }}
+                >
+                  {title || 'Untitled Section'}
+                </h2>
+
+                {status && (
+                  <div className="flex items-center gap-2">
+                    <span className="esm-status-dot inline-block" style={{ width: 6, height: 6 }} />
+                    <span
+                      className="text-[10px] font-semibold uppercase tracking-[0.1em]"
+                      style={{ color: 'var(--esm-muted)' }}
+                    >
+                      {status.replace('_', ' ')}
+                    </span>
+                    {estimatedDuration && (
+                      <>
+                        <span style={{ color: 'var(--esm-border)' }}>·</span>
+                        <span
+                          className="text-[10px] font-semibold"
+                          style={{ color: 'var(--esm-muted)' }}
+                        >
+                          {estimatedDuration}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Summary */}
+              {summary && (
+                <div
+                  className="p-5 rounded-2xl border"
+                  style={{
+                    background: 'var(--esm-parchment)',
+                    borderColor: 'var(--esm-border)',
+                  }}
+                >
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--esm-ink)' }}>
+                    {summary}
+                  </p>
+                </div>
+              )}
+
+              {/* Learning Goals */}
+              {learningGoals.filter((g) => g.trim()).length > 0 && (
+                <div>
+                  <h3
+                    className="text-xs font-bold uppercase tracking-[0.1em] mb-3"
+                    style={{ color: 'var(--esm-muted)' }}
+                  >
+                    Learning Goals
+                  </h3>
+                  <ul className="space-y-2">
+                    {learningGoals
+                      .filter((g) => g.trim())
+                      .map((goal, i) => (
+                        <li
+                          key={i}
+                          className="flex items-start gap-3 text-sm"
+                          style={{ color: 'var(--esm-ink)' }}
+                        >
+                          <div
+                            className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                            style={{
+                              background: 'rgba(31,100,78,0.1)',
+                              color: 'var(--esm-forest)',
+                            }}
+                          >
+                            <CheckCircle2 className="w-3 h-3" />
+                          </div>
+                          {goal}
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Divider */}
+              <div className="w-full h-px" style={{ background: 'var(--esm-border)' }} />
+
+              {/* Rendered blocks */}
+              {blocks.length > 0 ? (
+                <div className="prose-coursify" style={{ maxWidth: 'none' }}>
+                  <CoursifyBlockRenderer blocks={blocks} />
+                </div>
+              ) : (
+                <div
+                  className="py-16 rounded-2xl border border-dashed text-center"
+                  style={{
+                    borderColor: 'var(--esm-border)',
+                    background: 'var(--esm-parchment)',
+                  }}
+                >
+                  <p className="text-sm font-medium" style={{ color: 'var(--esm-muted)' }}>
+                    {content
+                      ? 'Switch to Visual Editor or Markdown tab to see rendered preview'
+                      : 'Add content blocks or write markdown to see a preview'}
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
