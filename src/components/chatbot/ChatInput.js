@@ -60,7 +60,7 @@ export default function ChatInput({
   return (
     <div className={`p-2 sm:p-3 border-t ${borderColor} ${containerBg} shrink-0`}>
       <div
-        className={`rounded-3xl border ${borderColor} ${containerBg} shadow-sm ${focusBorder} focus-within:ring-1 ${isGreenTheme ? 'focus-within:ring-[#1f644e]/20' : 'focus-within:ring-black/20'} transition-all flex flex-col`}
+        className={`rounded-3xl border ${borderColor} ${containerBg} ${focusBorder} focus-within:ring-1 ${isGreenTheme ? 'focus-within:ring-[#1f644e]/20' : 'focus-within:ring-black/20'} transition-all flex flex-col`}
       >
         <textarea
           ref={inputRef}
@@ -205,7 +205,7 @@ export default function ChatInput({
                         if (isLoading) return;
                         setIsModeMenuOpen((open) => !open);
                       }}
-                      className={`flex items-center justify-center gap-1.5 rounded-full border px-3 h-8 text-[11px] font-medium shadow-sm transition-colors ${
+                      className={`flex items-center justify-center gap-1.5 rounded-full border px-3 h-8 text-[11px] font-medium transition-colors ${
                         isGreenTheme
                           ? 'border-[#e5e3d8] bg-[#f5f3e6] text-[#1e3a34] hover:bg-[#ebe7d4]'
                           : 'border-neutral-200 bg-neutral-50 text-neutral-800 hover:bg-neutral-100'
@@ -220,7 +220,7 @@ export default function ChatInput({
                     </button>
 
                     {isModeMenuOpen && (
-                      <div className="absolute bottom-full left-0 mb-2 w-32 rounded-xl border border-neutral-200 bg-white shadow-lg overflow-hidden z-40">
+                      <div className="absolute bottom-full left-0 mb-2 w-32 rounded-xl border border-neutral-200 bg-white overflow-hidden z-40">
                         {modeOptions.map((option) => {
                           const isActive = option.id === currentMode.id;
                           return (

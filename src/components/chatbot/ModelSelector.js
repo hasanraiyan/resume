@@ -55,7 +55,7 @@ export default function ModelSelector({
       </button>
 
       {isModelSelectorOpen && (
-        <div className="absolute bottom-full right-0 mb-3 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-neutral-200/50 overflow-hidden text-left animate-in fade-in slide-in-from-bottom-2 duration-200 z-50">
+        <div className="absolute bottom-full right-0 mb-3 w-64 bg-white/95 backdrop-blur-xl rounded-2xl border border-neutral-200/50 overflow-hidden text-left animate-in fade-in slide-in-from-bottom-2 duration-200 z-50">
           <div className="px-4 py-3 border-b border-neutral-100 bg-neutral-50/80">
             <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-widest">
               AI Tiers
@@ -80,9 +80,7 @@ export default function ModelSelector({
                       : 'hover:bg-neutral-100 text-neutral-700'
                   }`}
                 >
-                  <div
-                    className={`p-2 rounded-lg ${isSelected ? 'bg-white shadow-sm' : 'bg-neutral-100'}`}
-                  >
+                  <div className={`p-2 rounded-lg ${isSelected ? 'bg-white' : 'bg-neutral-100'}`}>
                     <Icon className={`w-4 h-4 ${isSelected ? tier.color : 'text-neutral-500'}`} />
                   </div>
                   <div className="flex-1 flex flex-col min-w-0">
