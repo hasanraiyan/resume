@@ -3,10 +3,13 @@ import { SystemMessage, HumanMessage } from '@langchain/core/messages';
 import { AgentExecutor, createReactAgent } from '@langchain/classic/agents';
 import { DynamicTool } from '@langchain/classic/tools';
 import { EventType } from '@ag-ui/core';
+import { Filter } from 'bad-words';
 import BaseAgent from '../BaseAgent';
 import { AGENT_IDS, getAgentTools } from '@/lib/constants/agents';
 import managedToolProvider from '../utils/ManagedToolProvider';
 import { COURSIFY_MARKDOWN_FORMAT } from './coursify-prompts';
+
+const contentFilter = new Filter();
 
 /**
  * Custom Safe React Prompt Formatter
@@ -131,6 +134,27 @@ class CoursifyResearchAgent extends BaseAgent {
     const { topic } = input;
     const topicPreview = topic.substring(0, 50);
     this.logger.info(`Starting CoursifyResearchAgent (classic) for topic: "${topicPreview}..."`);
+
+    // ── Content Filter ──
+    if (contentFilter.isProfane(topic)) {
+      yield {
+        type: EventType.CUSTOM,
+        name: 'coursify_rejection',
+        value: { reason: 'inappropriate_content' },
+      };
+
+      const msgId = `msg-${Date.now()}`;
+      yield { type: EventType.TEXT_MESSAGE_START, messageId: msgId, role: 'assistant' };
+      yield {
+        type: EventType.TEXT_MESSAGE_CONTENT,
+        messageId: msgId,
+        delta: `I cannot generate course content for this topic as it was flagged for inappropriate content. Please try a different, educational topic.`,
+      };
+      yield { type: EventType.TEXT_MESSAGE_END, messageId: msgId };
+      yield { type: EventType.RUN_FINISHED };
+      return;
+    }
+    // ── End Content Filter ──
 
     // const llm = await this.createChatModel();
     const { ChatOpenAI } = await import('@langchain/openai');
