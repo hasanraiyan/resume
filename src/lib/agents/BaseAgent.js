@@ -12,7 +12,8 @@ import ProviderSettings from '@/models/ProviderSettings';
 import AgentExecutionLog from '@/models/AgentExecutionLog';
 import { decrypt } from '@/lib/crypto';
 import { ChatOpenAI, OpenAIEmbeddings } from '@langchain/openai';
-import { ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
+import { ChatGoogle } from '@langchain/google';
+import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 import { GoogleGenAI } from '@google/genai';
 import keyRotationManager from '@/lib/providers/KeyRotationManager';
 
@@ -718,7 +719,7 @@ class BaseAgent {
     }
 
     if (provider.baseUrl?.includes('googleapis') || provider.providerId === 'google') {
-      return new ChatGoogleGenerativeAI({
+      return new ChatGoogle({
         apiKey: provider.apiKey,
         model: normalizedModelName,
         maxOutputTokens: maxTokens,
@@ -749,7 +750,7 @@ class BaseAgent {
   /**
    * Create a LangChain Chat Model based on current provider and config
    * @param {Object} overrides - Optional overrides for model/temperature etc.
-   * @returns {Promise<ChatOpenAI|ChatGoogleGenerativeAI>}
+   * @returns {Promise<ChatOpenAI|ChatGoogle>}
    */
   async createChatModel(overrides = {}) {
     if (!this.isInitialized) await this.initialize();
@@ -772,7 +773,7 @@ class BaseAgent {
    * Create a dedicated chat model for lightweight conversation summarization.
    * Falls back to the primary agent provider/model when a separate summary engine is not configured.
    * @param {Object} overrides - Optional overrides for provider/model/temperature etc.
-   * @returns {Promise<ChatOpenAI|ChatGoogleGenerativeAI>}
+   * @returns {Promise<ChatOpenAI|ChatGoogle>}
    */
   async createSummaryChatModel(overrides = {}) {
     if (!this.isInitialized) await this.initialize();
