@@ -13,6 +13,28 @@ import { getRelatedArticles } from '@/lib/coursify/related';
 import { RelatedArticlesGrid } from '@/components/coursify/RelatedArticlesGrid';
 import SummaryCard from '@/components/coursify/SummaryCard';
 
+// Metadata cleaning utilities
+function cleanMetadataText(text) {
+  if (!text) return '';
+  return text
+    .replace(/\$[^$]+\$/g, (match) => match.replace(/\$/g, '')) // Remove $ math blocks but keep content
+    .replace(/[*_#`[\]()]/g, '') // Strip markdown formatting
+    .replace(/\s+/g, ' ') // Collapse multiple spaces
+    .trim();
+}
+
+function getSnippetFromContent(content) {
+  if (!content) return '';
+  const cleanedContent = content
+    .replace(/##\s+\[[^\]]+\][^]*?(\n\n|$)/g, '') // Remove complex blocks like [ChartBlock]
+    .replace(/##\s+.*?\n/g, '') // Remove section headers
+    .replace(/```[^]*?```/g, '') // Remove code blocks
+    .replace(/[*_#`[\]()]/g, '') // Strip markdown formatting
+    .replace(/\s+/g, ' ') // Collapse multiple spaces
+    .trim();
+  return cleanedContent.slice(0, 155) + (cleanedContent.length > 155 ? '...' : '');
+}
+
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
@@ -20,14 +42,26 @@ export async function generateMetadata({ params }) {
   const research = await CoursifyResearch.findOne({ slug, deletedAt: null }).lean();
   if (!research) return { title: 'Not Found | Coursify' };
 
-  const title = `${research.title} | AI Research | Coursify`;
-  const description = `Read this AI-generated research on ${research.topic}`;
+  const cleanTitle = cleanMetadataText(research.title);
+  const title = `${cleanTitle} | AI Research | Coursify`;
+
+  let cleanDescription = '';
+  if (research.summary) {
+    cleanDescription = cleanMetadataText(research.summary);
+  } else {
+    cleanDescription = getSnippetFromContent(research.content);
+  }
+  if (!cleanDescription) {
+    cleanDescription = `Read this AI-generated research on ${cleanMetadataText(research.topic)}`;
+  }
+
+  const ogImageUrl = `${baseUrl}/api/coursify/r/${slug}/og`;
   const publishedTime = research.createdAt ? new Date(research.createdAt).toISOString() : undefined;
 
   return {
     metadataBase: new URL(baseUrl),
     title,
-    description,
+    description: cleanDescription,
     alternates: {
       canonical: `/coursify/r/${slug}`,
     },
@@ -37,16 +71,25 @@ export async function generateMetadata({ params }) {
     },
     openGraph: {
       title,
-      description,
+      description: cleanDescription,
       url: `/coursify/r/${slug}`,
       type: 'article',
       publishedTime,
       siteName: 'Coursify',
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          alt: cleanTitle,
+        },
+      ],
     },
     twitter: {
       card: 'summary_large_image',
       title,
-      description,
+      description: cleanDescription,
+      images: [ogImageUrl],
     },
   };
 }
@@ -64,8 +107,46 @@ export default async function SharedResearchPage({ params }) {
   // Fetch related articles with snippets
   const relatedArticles = await getRelatedArticles(slug, 3, true);
 
+  // Generate dynamic TechArticle JSON-LD structured schema for search engines
+  const cleanTitle = cleanMetadataText(research.title);
+  const cleanDescription = research.summary
+    ? cleanMetadataText(research.summary)
+    : getSnippetFromContent(research.content) ||
+      `Read this AI-generated research on ${cleanMetadataText(research.topic)}`;
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: cleanTitle,
+    description: cleanDescription,
+    image: `${baseUrl}/api/coursify/r/${slug}/og`,
+    datePublished: research.createdAt ? new Date(research.createdAt).toISOString() : undefined,
+    dateModified: research.updatedAt ? new Date(research.updatedAt).toISOString() : undefined,
+    author: {
+      '@type': 'Organization',
+      name: 'Coursify AI',
+      url: `${baseUrl}/coursify`,
+    },
+    publisher: {
+      '@type': 'Person',
+      name: 'Hasan Raiyan',
+      url: baseUrl,
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `${baseUrl}/coursify/r/${slug}`,
+    },
+  };
+
   return (
     <div className="min-h-screen bg-[#fcfbf5] text-[#1e3a34]">
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       {/* SSR Header */}
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-[#e5e3d8]">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
