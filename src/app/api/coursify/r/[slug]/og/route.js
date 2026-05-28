@@ -10,21 +10,16 @@ export async function GET(request, { params }) {
     }
 
     await dbConnect();
-    const research = await CoursifyResearch.findOne({ slug, deletedAt: null }).lean();
+    const research = await CoursifyResearch.findOne({ slug, deletedAt: null })
+      .select('-topic')
+      .lean();
 
     // Fallback data if article is not found
     const title = research?.title || 'AI Research & Insights';
-    const topic = research?.topic || 'Technology & Science';
     const date = research?.createdAt ? new Date(research.createdAt) : new Date();
 
     // Clean markdown and LaTeX tags
     const cleanTitle = title
-      .replace(/\$[^$]+\$/g, (match) => match.replace(/\$/g, ''))
-      .replace(/[*_#`[\]()]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    const cleanTopic = topic
       .replace(/\$[^$]+\$/g, (match) => match.replace(/\$/g, ''))
       .replace(/[*_#`[\]()]/g, '')
       .replace(/\s+/g, ' ')
@@ -154,7 +149,7 @@ export async function GET(request, { params }) {
                 letterSpacing: '2px',
               }}
             >
-              Topic: {cleanTopic}
+              AI Research Paper
             </span>
             <span
               style={{

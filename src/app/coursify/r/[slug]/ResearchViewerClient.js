@@ -50,7 +50,7 @@ export default function ResearchViewerClient({ research }) {
       try {
         await navigator.share({
           title: research.title,
-          text: `Check out this AI-generated research on ${research.topic}`,
+          text: `Check out this AI-generated research: ${research.title}`,
           url: shareUrl,
         });
       } catch (err) {
@@ -161,7 +161,7 @@ export default function ResearchViewerClient({ research }) {
               <ChevronRight className="w-3.5 h-3.5 text-[#b5c4be]" />
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <Sparkles className="w-3.5 h-3.5 text-[#1f644e] shrink-0" />
-                <span className="text-xs font-bold text-[#1e3a34] truncate">{research.topic}</span>
+                <span className="text-xs font-bold text-[#1e3a34] truncate">AI Research Paper</span>
               </div>
               <button
                 onClick={handleCopy}

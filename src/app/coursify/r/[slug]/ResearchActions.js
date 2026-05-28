@@ -14,7 +14,7 @@ export default function ResearchActions({ research }) {
       try {
         await navigator.share({
           title: research.title,
-          text: `Check out this AI-generated research on ${research.topic}`,
+          text: `Check out this AI-generated research: ${research.title}`,
           url: shareUrl,
         });
       } catch (err) {

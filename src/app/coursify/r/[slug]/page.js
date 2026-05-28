@@ -12,6 +12,7 @@ import SpeakButton from './SpeakButton';
 import { getRelatedArticles } from '@/lib/coursify/related';
 import { RelatedArticlesGrid } from '@/components/coursify/RelatedArticlesGrid';
 import SummaryCard from '@/components/coursify/SummaryCard';
+import HeaderSearch from '@/components/coursify/HeaderSearch';
 
 // Metadata cleaning utilities
 function cleanMetadataText(text) {
@@ -42,7 +43,9 @@ export async function generateMetadata({ params }) {
   const research = await CoursifyResearch.findOne({
     slug: slug.toLowerCase(),
     deletedAt: null,
-  }).lean();
+  })
+    .select('-topic')
+    .lean();
   if (!research) return { title: 'Not Found | Coursify' };
 
   const cleanTitle = cleanMetadataText(research.title);
@@ -55,7 +58,7 @@ export async function generateMetadata({ params }) {
     cleanDescription = getSnippetFromContent(research.content);
   }
   if (!cleanDescription) {
-    cleanDescription = `Read this AI-generated research on ${cleanMetadataText(research.topic)}`;
+    cleanDescription = `Read this AI-generated research article on Coursify.`;
   }
 
   const ogImageUrl = `${baseUrl}/api/coursify/r/${slug}/og`;
@@ -110,7 +113,9 @@ export default async function SharedResearchPage({ params }) {
   const research = await CoursifyResearch.findOne({
     slug: slug.toLowerCase(),
     deletedAt: null,
-  }).lean();
+  })
+    .select('-topic')
+    .lean();
   if (!research) notFound();
 
   // Parse for TOC - We do this on server to pass to the client TOC component
@@ -124,7 +129,7 @@ export default async function SharedResearchPage({ params }) {
   const cleanDescription = research.summary
     ? cleanMetadataText(research.summary)
     : getSnippetFromContent(research.content) ||
-      `Read this AI-generated research on ${cleanMetadataText(research.topic)}`;
+      `Read this AI-generated research article on Coursify.`;
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
   const jsonLd = {
@@ -160,7 +165,7 @@ export default async function SharedResearchPage({ params }) {
       />
 
       {/* SSR Header */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-[#e5e3d8]">
+      <header className="sticky top-0 z-40 bg-white border-b border-[#e5e3d8]">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <Link href="/coursify" className="flex items-center gap-2 shrink-0 group">
             <img
@@ -174,12 +179,7 @@ export default async function SharedResearchPage({ params }) {
           </Link>
 
           <div className="flex items-center gap-2">
-            <Link
-              href="/coursify"
-              className="p-2 text-[#7c8e88] hover:text-[#1f644e] transition-colors rounded-full hover:bg-[#f0f5f2]"
-            >
-              <Search className="w-5 h-5" />
-            </Link>
+            <HeaderSearch />
             <div className="hidden sm:flex items-center gap-2">
               <BalanceBadgeServer />
               <button className="flex items-center gap-2 px-4 py-2 bg-[#1f644e] text-white rounded-full text-xs font-bold hover:bg-[#184d3c] transition-all shadow-md shadow-[#1f644e]/10">

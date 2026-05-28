@@ -7,11 +7,20 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q') || '';
 
-    if (!query.trim()) {
-      return NextResponse.json({ success: true, results: [] });
-    }
-
     await dbConnect();
+
+    // If query is empty, dynamically return the 5 most recently created public research articles
+    if (!query.trim()) {
+      const latest = await CoursifyResearch.find({
+        isPublic: true,
+        deletedAt: null,
+      })
+        .sort({ createdAt: -1 })
+        .select('title slug')
+        .limit(5)
+        .lean();
+      return NextResponse.json({ success: true, results: [], latest });
+    }
 
     let results = [];
     const cleanQuery = query.trim();
@@ -27,7 +36,7 @@ export async function GET(request) {
         { score: { $meta: 'textScore' } }
       )
         .sort({ score: { $meta: 'textScore' } })
-        .select('title topic slug createdAt')
+        .select('title slug createdAt')
         .limit(8)
         .lean();
     }
@@ -42,7 +51,7 @@ export async function GET(request) {
           { topic: { $regex: cleanQuery, $options: 'i' } },
         ],
       })
-        .select('title topic slug createdAt')
+        .select('title slug createdAt')
         .limit(8)
         .lean();
     }
