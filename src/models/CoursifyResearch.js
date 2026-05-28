@@ -64,5 +64,11 @@ const CoursifyResearchSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Compound Text Index for high-performance fuzzy search
+CoursifyResearchSchema.index(
+  { title: 'text', topic: 'text' },
+  { weights: { title: 10, topic: 5 }, name: 'ResearchTextIndex' }
+);
+
 export default mongoose.models.CoursifyResearch ||
   mongoose.model('CoursifyResearch', CoursifyResearchSchema);
