@@ -120,21 +120,7 @@ function getToolLabel(toolName) {
 }
 
 function getContentDelta(chunk) {
-  const raw = chunk?.content || chunk?.text || '';
-
-  if (typeof raw === 'string') return raw;
-
-  if (Array.isArray(raw)) {
-    return raw
-      .map((part) => {
-        if (typeof part === 'string') return part;
-        if (typeof part?.text === 'string') return part.text;
-        return '';
-      })
-      .join('');
-  }
-
-  return raw ? JSON.stringify(raw) : '';
+  return chunk?.text || '';
 }
 
 function stringifyToolOutput(output) {

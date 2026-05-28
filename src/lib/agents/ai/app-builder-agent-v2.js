@@ -467,8 +467,11 @@ PROCEED:
     );
 
     for await (const event of eventStream) {
-      if (event.event === 'on_chat_model_stream' && event.data.chunk?.content) {
-        yield { type: 'thought', message: event.data.chunk.content };
+      if (event.event === 'on_chat_model_stream') {
+        const text = event.data.chunk?.text;
+        if (text) {
+          yield { type: 'thought', message: text };
+        }
       } else if (event.event === 'on_tool_start') {
         if (event.name === 'save_plan') {
           yield { type: 'status', message: `Generating plan...` };

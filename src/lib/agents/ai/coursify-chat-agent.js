@@ -112,8 +112,11 @@ class CoursifyChatAgent extends BaseAgent {
     for await (const event of eventStream) {
       const { event: type, data, name } = event;
 
-      if (type === 'on_chat_model_stream' && data.chunk?.content) {
-        yield { type: 'content', message: data.chunk.content };
+      if (type === 'on_chat_model_stream') {
+        const text = data.chunk?.text;
+        if (text) {
+          yield { type: 'content', message: text };
+        }
       } else if (type === 'on_tool_start' && name !== 'agent') {
         yield { type: 'status', message: TOOL_STATUS_MESSAGES[name] || `⚙️ Running ${name}...` };
       } else if (type === 'on_tool_end' && name !== 'agent') {

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ArrowLeft, RotateCcw, Search, Sparkles, Globe, Quote } from 'lucide-react';
+import { ArrowLeft, RotateCcw, Search, Sparkles, Globe, Quote, ChevronDown } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 
 import { toast } from 'sonner';
@@ -168,6 +168,8 @@ export function AISearchEngine({ onGenerated }) {
   const toggleListening = () => setIsListening((prev) => !prev);
 
   const [statusMessage, setStatusMessage] = useState('');
+  const [thinkingText, setThinkingText] = useState('');
+  const [isThinkingCollapsed, setIsThinkingCollapsed] = useState(false);
 
   const [content, setContent] = useState('');
 
@@ -323,6 +325,7 @@ export function AISearchEngine({ onGenerated }) {
       setPhase(PHASE.GENERATING);
       setContent('');
       setError('');
+      setThinkingText('');
       setToolSteps([]);
       setGeneratedTitle('');
       setGeneratedSlug('');
@@ -409,6 +412,7 @@ export function AISearchEngine({ onGenerated }) {
               )
             );
           } else if (event.type === EventType.REASONING_MESSAGE_CONTENT) {
+            setThinkingText((prev) => prev + (event.delta || ''));
             setStatusMessage(event.delta || '');
           } else if (event.type === EventType.REASONING_END) {
             setStatusMessage('');
@@ -489,6 +493,7 @@ export function AISearchEngine({ onGenerated }) {
     setContent('');
     setError('');
     setStatusMessage('');
+    setThinkingText('');
     setCompletedBlocks([]);
     setInProgressBlock('');
     setGeneratedTitle('');
@@ -583,6 +588,36 @@ export function AISearchEngine({ onGenerated }) {
           <div className="mb-6 flex items-center gap-3">
             <div className="w-6 h-6 border-3 border-[#f0f5f2] border-t-[#1f644e] rounded-full animate-spin" />
             <p className="text-sm font-bold text-[#7c8e88]">Researching...</p>
+          </div>
+        )}
+
+        {thinkingText && (
+          <div className="mb-6 overflow-hidden rounded-xl border border-[#e5e3d8] bg-[#fcfcfb] shadow-sm transition-all duration-300">
+            <button
+              type="button"
+              onClick={() => setIsThinkingCollapsed(!isThinkingCollapsed)}
+              className="flex w-full items-center justify-between bg-[#f0f5f2] px-4 py-2.5 text-[11px] font-bold tracking-wider text-[#1f644e] uppercase transition-colors hover:bg-[#e4ece8] cursor-pointer"
+            >
+              <span className="flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 animate-pulse text-[#1f644e]" />
+                AI Thinking Process
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="text-[10px] font-normal lowercase text-[#7c8e88]">
+                  ({thinkingText.length} characters)
+                </span>
+                <ChevronDown
+                  className={`w-4 h-4 text-[#1f644e] transition-transform duration-300 ${
+                    isThinkingCollapsed ? '-rotate-90' : 'rotate-0'
+                  }`}
+                />
+              </span>
+            </button>
+            {!isThinkingCollapsed && (
+              <div className="p-4 text-xs font-mono leading-relaxed text-[#5a6a64] max-h-[200px] overflow-y-auto whitespace-pre-wrap bg-white border-t border-[#e5e3d8]">
+                {thinkingText}
+              </div>
+            )}
           </div>
         )}
 

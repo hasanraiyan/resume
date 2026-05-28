@@ -114,9 +114,10 @@ class WhatsAppAgent extends BaseAgent {
         const { event: type, data, name } = event;
 
         if (type === 'on_chat_model_stream') {
-          if (data.chunk?.content) {
-            assistantContent += data.chunk.content;
-            yield { type: 'content', message: data.chunk.content };
+          const text = data.chunk?.text;
+          if (text) {
+            assistantContent += text;
+            yield { type: 'content', message: text };
           }
         } else if (type === 'on_tool_start' && name !== 'agent') {
           yield { type: 'status', message: `⚙️ Running ${name}...` };

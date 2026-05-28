@@ -214,6 +214,8 @@ class CoursifySearchAgent extends BaseAgent {
     let titleExtracted = false;
     let fullContent = '';
     const activeToolCalls = new Map(); // run_id → toolCallId
+    let reasoningId = `reasoning-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    let reasoningStarted = false;
 
     try {
       const stream = await contentAgent.streamEvents(
@@ -228,25 +230,75 @@ class CoursifySearchAgent extends BaseAgent {
           messageId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
           yield { type: EventType.TEXT_MESSAGE_START, messageId, role: 'assistant' };
         } else if (type === 'on_chat_model_stream') {
-          const raw = data.chunk?.content || data.chunk?.text || '';
-          if (raw && name !== 'ChatPromptTemplate') {
-            const delta = typeof raw === 'string' ? raw : JSON.stringify(raw);
-            fullContent += delta;
-
-            // Emit title once the # header appears
-            if (!titleExtracted) {
-              const m = fullContent.match(/^#\s+(.+)$/m);
-              if (m) {
-                yield {
-                  type: EventType.CUSTOM,
-                  name: 'coursify_title',
-                  value: { text: m[1].trim() },
-                };
-                titleExtracted = true;
+          if (name !== 'ChatPromptTemplate') {
+            // Extract native thought delta if any
+            let thoughtDelta = '';
+            const contentBlocks = data.chunk?.contentBlocks;
+            if (Array.isArray(contentBlocks)) {
+              for (const block of contentBlocks) {
+                if (block && block.type === 'reasoning' && typeof block.reasoning === 'string') {
+                  thoughtDelta += block.reasoning;
+                }
+              }
+            } else {
+              const rawContent = data.chunk?.content;
+              if (Array.isArray(rawContent)) {
+                for (const part of rawContent) {
+                  if (
+                    part &&
+                    (part.type === 'reasoning' ||
+                      part.type === 'thought' ||
+                      part.type === 'thoughtSignature')
+                  ) {
+                    // Ignore thoughtSignature as requested
+                    if (part.type !== 'thoughtSignature') {
+                      thoughtDelta += part.reasoning || part.thought || '';
+                    }
+                  }
+                }
               }
             }
 
-            yield { type: EventType.TEXT_MESSAGE_CONTENT, messageId, delta };
+            if (thoughtDelta) {
+              if (!reasoningStarted) {
+                yield { type: EventType.REASONING_START };
+                yield {
+                  type: EventType.REASONING_MESSAGE_START,
+                  messageId: reasoningId,
+                  role: 'assistant',
+                };
+                reasoningStarted = true;
+              }
+              yield {
+                type: EventType.REASONING_MESSAGE_CONTENT,
+                messageId: reasoningId,
+                delta: thoughtDelta,
+              };
+            }
+
+            const delta = data.chunk?.text || '';
+            if (delta) {
+              if (reasoningStarted) {
+                yield { type: EventType.REASONING_MESSAGE_END, messageId: reasoningId };
+                yield { type: EventType.REASONING_END };
+                reasoningStarted = false;
+              }
+              fullContent += delta;
+              yield { type: EventType.TEXT_MESSAGE_CONTENT, messageId, delta };
+
+              // Emit title once the # header appears
+              if (!titleExtracted) {
+                const m = fullContent.match(/^#\s+(.+)$/m);
+                if (m) {
+                  yield {
+                    type: EventType.CUSTOM,
+                    name: 'coursify_title',
+                    value: { text: m[1].trim() },
+                  };
+                  titleExtracted = true;
+                }
+              }
+            }
           }
         } else if (type === 'on_chat_model_end') {
           if (messageId) {
@@ -358,9 +410,8 @@ class CoursifySearchAgent extends BaseAgent {
         const { event: type, data } = event;
 
         if (type === 'on_chat_model_stream') {
-          const raw = data.chunk?.content || data.chunk?.text || '';
-          if (raw) {
-            const delta = typeof raw === 'string' ? raw : JSON.stringify(raw);
+          const delta = data.chunk?.text || '';
+          if (delta) {
             fullContent += delta;
 
             // Title extraction (non-streaming version)
