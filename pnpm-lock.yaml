@@ -62,9 +62,12 @@ importers:
       '@langchain/exa':
         specifier: ^1.0.1
         version: 1.0.1(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))(ws@8.20.1)
+      '@langchain/google':
+        specifier: ^0.1.12
+        version: 0.1.12(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))
       '@langchain/google-genai':
-        specifier: ^2.1.30
-        version: 2.1.30(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))
+        specifier: ^2.1.31
+        version: 2.1.31(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))
       '@langchain/langgraph':
         specifier: ^1.2.0
         version: 1.3.0(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(ws@8.20.1)(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)
@@ -1280,11 +1283,17 @@ packages:
     peerDependencies:
       '@langchain/core': ^1.0.0
 
-  '@langchain/google-genai@2.1.30':
-    resolution: {integrity: sha512-0wKgy1NvV89fw5MwYiOOhh18SnUEH20z6MZrPV6Tj2hMAA3jAHVSLlIcCQ2mDRJo2r1aHLV8MDXhzkvD1tEHoQ==}
+  '@langchain/google-genai@2.1.31':
+    resolution: {integrity: sha512-lHIJGtZab0jqoufKRPXyHHg1nLXrE74LXd0ftgibWEACc1SpSLu6XwtA23+dX4l7Q/YeSgb9n40YJx5k00/fqw==}
     engines: {node: '>=20'}
     peerDependencies:
-      '@langchain/core': ^1.1.43
+      '@langchain/core': ^1.1.47
+
+  '@langchain/google@0.1.12':
+    resolution: {integrity: sha512-JY6qizHmfsMHBR3C7mXKZcQtqD31rNtiQ81466MWiJ0YRo97gxLi6Dg3nGvJzBan2tBuMo82MBMk8Ji1OxeNFg==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@langchain/core': ^1.0.0
 
   '@langchain/langgraph-checkpoint-mongodb@1.3.0':
     resolution: {integrity: sha512-/WWMnEva0Y2t5bDdms4kxkgxlVLhPED956yxJeRIaTuc8IbTmL3ToMJ9+E6TOb59UX/0gY4uBHGGmcfOh/sMpg==}
@@ -6738,10 +6747,19 @@ snapshots:
       - encoding
       - ws
 
-  '@langchain/google-genai@2.1.30(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))':
+  '@langchain/google-genai@2.1.31(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))':
     dependencies:
       '@google/generative-ai': 0.24.1
       '@langchain/core': 1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1)
+
+  '@langchain/google@0.1.12(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))':
+    dependencies:
+      '@langchain/core': 1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1)
+      eventsource-parser: 3.0.8
+      google-auth-library: 10.6.2
+      jose: 6.2.3
+    transitivePeerDependencies:
+      - supports-color
 
   '@langchain/langgraph-checkpoint-mongodb@1.3.0(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1))(@langchain/langgraph-checkpoint@1.0.2(@langchain/core@1.1.46(openai@6.37.0(ws@8.20.1)(zod@4.4.3))(ws@8.20.1)))':
     dependencies:
