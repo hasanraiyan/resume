@@ -66,13 +66,20 @@ export async function GET(request, { params }) {
     const link = await ShortLink.findOne({ slug: slug.toLowerCase() }).exec();
 
     // 2. Validate availability
-    if (!link || !link.isActive) {
-      // Could redirect to a specific "Link inactive" page in the future
-      return NextResponse.redirect(new URL('/404', request.url));
-    }
+    const isLinkValid = link && link.isActive && (!link.expiresAt || new Date() <= link.expiresAt);
 
-    if (link.expiresAt && new Date() > link.expiresAt) {
-      // Auto-deactivate logic could go here or in a cron, but for now just fail gracefully
+    if (!isLinkValid) {
+      // Fallback: Check if there is a Coursify Research article matching this slug
+      const CoursifyResearch = (await import('@/models/CoursifyResearch')).default;
+      const research = await CoursifyResearch.findOne({
+        slug: slug.toLowerCase(),
+        deletedAt: null,
+      }).lean();
+
+      if (research) {
+        return NextResponse.redirect(new URL(`/coursify/r/${research.slug}`, request.url));
+      }
+
       return NextResponse.redirect(new URL('/404', request.url));
     }
 

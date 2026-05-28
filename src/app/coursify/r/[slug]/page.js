@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyResearch from '@/models/CoursifyResearch';
 import { CoursifyBlockRenderer } from '@/components/coursify/reader/CoursifyBlockRenderer';
@@ -39,7 +39,10 @@ export async function generateMetadata({ params }) {
   const { slug } = await params;
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
   await dbConnect();
-  const research = await CoursifyResearch.findOne({ slug, deletedAt: null }).lean();
+  const research = await CoursifyResearch.findOne({
+    slug: slug.toLowerCase(),
+    deletedAt: null,
+  }).lean();
   if (!research) return { title: 'Not Found | Coursify' };
 
   const cleanTitle = cleanMetadataText(research.title);
@@ -63,7 +66,7 @@ export async function generateMetadata({ params }) {
     title,
     description: cleanDescription,
     alternates: {
-      canonical: `/coursify/r/${slug}`,
+      canonical: `/coursify/r/${slug.toLowerCase()}`,
     },
     robots: {
       index: true,
@@ -72,7 +75,7 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title,
       description: cleanDescription,
-      url: `/coursify/r/${slug}`,
+      url: `/coursify/r/${slug.toLowerCase()}`,
       type: 'article',
       publishedTime,
       siteName: 'Coursify',
@@ -96,9 +99,18 @@ export async function generateMetadata({ params }) {
 
 export default async function SharedResearchPage({ params }) {
   const { slug } = await params;
+
+  // Case sensitivity redirect fallback
+  if (slug !== slug.toLowerCase()) {
+    redirect(`/coursify/r/${slug.toLowerCase()}`);
+  }
+
   await dbConnect();
 
-  const research = await CoursifyResearch.findOne({ slug, deletedAt: null }).lean();
+  const research = await CoursifyResearch.findOne({
+    slug: slug.toLowerCase(),
+    deletedAt: null,
+  }).lean();
   if (!research) notFound();
 
   // Parse for TOC - We do this on server to pass to the client TOC component
