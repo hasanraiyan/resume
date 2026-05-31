@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { revokeAccessToken } from '@/lib/mcp/oauth';
+import { mcpOptionsResponse, withMcpCorsHeaders } from '@/lib/mcp/http-headers';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -12,5 +13,9 @@ export async function POST(request) {
     await revokeAccessToken(token);
   }
 
-  return new NextResponse(null, { status: 200 });
+  return withMcpCorsHeaders(new NextResponse(null, { status: 200 }));
+}
+
+export async function OPTIONS() {
+  return mcpOptionsResponse();
 }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import dbConnect from '@/lib/dbConnect';
 import { getAllSupportedScopes } from '@/lib/mcp/factory';
+import { mcpOptionsResponse, withMcpCorsHeaders } from '@/lib/mcp/http-headers';
 import McpClient from '@/models/McpClient';
 
 export const runtime = 'nodejs';
@@ -18,30 +19,36 @@ export async function POST(request) {
   const scope = body.scope || getAllSupportedScopes().join(' ');
 
   if (!redirectUris.length) {
-    return NextResponse.json(
-      { error: 'invalid_redirect_uri', error_description: 'redirect_uris is required.' },
-      { status: 400 }
+    return withMcpCorsHeaders(
+      NextResponse.json(
+        { error: 'invalid_redirect_uri', error_description: 'redirect_uris is required.' },
+        { status: 400 }
+      )
     );
   }
 
   if (!grantTypes.includes('authorization_code') || !responseTypes.includes('code')) {
-    return NextResponse.json(
-      {
-        error: 'invalid_client_metadata',
-        error_description: 'Only authorization_code/code clients are supported.',
-      },
-      { status: 400 }
+    return withMcpCorsHeaders(
+      NextResponse.json(
+        {
+          error: 'invalid_client_metadata',
+          error_description: 'Only authorization_code/code clients are supported.',
+        },
+        { status: 400 }
+      )
     );
   }
 
   if (tokenEndpointAuthMethod !== 'none') {
-    return NextResponse.json(
-      {
-        error: 'invalid_client_metadata',
-        error_description:
-          'Only public PKCE clients with token_endpoint_auth_method none are supported.',
-      },
-      { status: 400 }
+    return withMcpCorsHeaders(
+      NextResponse.json(
+        {
+          error: 'invalid_client_metadata',
+          error_description:
+            'Only public PKCE clients with token_endpoint_auth_method none are supported.',
+        },
+        { status: 400 }
+      )
     );
   }
 
@@ -57,18 +64,24 @@ export async function POST(request) {
     metadata: body,
   });
 
-  return NextResponse.json(
-    {
-      client_id: clientId,
-      client_id_issued_at: now,
-      client_name: body.client_name || 'MCP Client',
-      redirect_uris: redirectUris,
-      grant_types: grantTypes,
-      response_types: responseTypes,
-      token_endpoint_auth_method: tokenEndpointAuthMethod,
-      scope,
-      application_type: body.application_type || 'web',
-    },
-    { status: 201 }
+  return withMcpCorsHeaders(
+    NextResponse.json(
+      {
+        client_id: clientId,
+        client_id_issued_at: now,
+        client_name: body.client_name || 'MCP Client',
+        redirect_uris: redirectUris,
+        grant_types: grantTypes,
+        response_types: responseTypes,
+        token_endpoint_auth_method: tokenEndpointAuthMethod,
+        scope,
+        application_type: body.application_type || 'web',
+      },
+      { status: 201 }
+    )
   );
+}
+
+export async function OPTIONS() {
+  return mcpOptionsResponse();
 }

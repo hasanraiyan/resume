@@ -23,14 +23,20 @@ function safeJsonSchema(schema) {
   return { type: 'object', properties: {} };
 }
 
+function formatToolContent(output) {
+  return typeof output === 'string' ? output : JSON.stringify(output, null, 2);
+}
+
 export function listMcpServerDefinitions() {
   return MCP_SERVER_DEFINITIONS.map((definition) => ({
     key: definition.key,
     name: definition.name,
     version: definition.version,
     description: definition.description,
+    instructions: definition.instructions,
     defaultScopes: definition.defaultScopes,
     supportedScopes: definition.supportedScopes,
+    scopeDescriptions: definition.scopeDescriptions || {},
   }));
 }
 
@@ -59,8 +65,11 @@ export function createMcpServer({ serverKey, scopes = [], context = {} }) {
     getToolDescriptors() {
       return tools.map((tool) => ({
         name: tool.name,
+        title: tool.title,
         description: tool.description || '',
         inputSchema: safeJsonSchema(tool.schema),
+        outputSchema: tool.outputSchema ? safeJsonSchema(tool.outputSchema) : undefined,
+        annotations: tool.annotations,
       }));
     },
     async callTool(name, args = {}) {
@@ -76,7 +85,7 @@ export function createMcpServer({ serverKey, scopes = [], context = {} }) {
           ? await selectedTool.invoke(args)
           : await selectedTool.func(args);
 
-      return typeof output === 'string' ? output : JSON.stringify(output);
+      return formatToolContent(output);
     },
   };
 }
@@ -87,23 +96,44 @@ export function createSdkMcpServer({ serverKey, scopes = [], context = {} }) {
     return null;
   }
 
-  const server = new McpServer({
-    name: scopedServer.definition.name,
-    version: scopedServer.definition.version,
-  });
+  const server = new McpServer(
+    {
+      name: scopedServer.definition.name,
+      version: scopedServer.definition.version,
+    },
+    scopedServer.definition.instructions
+      ? { instructions: scopedServer.definition.instructions }
+      : undefined
+  );
 
   for (const tool of scopedServer.tools) {
     server.registerTool(
       tool.name,
       {
+        title: tool.title,
         description: tool.description || '',
         inputSchema: tool.schema,
+        outputSchema: tool.outputSchema,
+        annotations: tool.annotations,
       },
       async (args) => {
-        const text = await scopedServer.callTool(tool.name, args || {});
-        return {
+        const selectedTool = scopedServer.tools.find(
+          (registeredTool) => registeredTool.name === tool.name
+        );
+        const output =
+          typeof selectedTool.invoke === 'function'
+            ? await selectedTool.invoke(args || {})
+            : await selectedTool.func(args || {});
+        const text = formatToolContent(output);
+        const result = {
           content: [{ type: 'text', text }],
         };
+
+        if (output && typeof output === 'object') {
+          result.structuredContent = output;
+        }
+
+        return result;
       }
     );
   }

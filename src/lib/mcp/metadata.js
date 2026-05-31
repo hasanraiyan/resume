@@ -18,8 +18,10 @@ export function buildProtectedResourceMetadata({ origin, serverKey = null }) {
     mcp_servers: listMcpServerDefinitions().map((server) => ({
       key: server.key,
       name: server.name,
+      description: server.description,
       resource: `${origin}/api/mcp/${server.key}`,
       scopes_supported: server.supportedScopes,
+      scope_descriptions: server.scopeDescriptions,
     })),
   };
 }

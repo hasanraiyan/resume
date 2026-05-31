@@ -53,6 +53,15 @@ function getCanonicalResource(params, serverKey) {
   return origin ? `${origin}/api/mcp/${serverKey}` : `/api/mcp/${serverKey}`;
 }
 
+async function getRegisteredClient(clientId) {
+  if (!clientId) {
+    return null;
+  }
+
+  await dbConnect();
+  return McpClient.findOne({ clientId }).lean();
+}
+
 export function verifyPkce({ verifier, challenge, method }) {
   if (!challenge) {
     return true;
@@ -69,7 +78,7 @@ export function verifyPkce({ verifier, challenge, method }) {
   return verifier === challenge;
 }
 
-export async function createAuthorizationCode({ session, params }) {
+export async function getAuthorizationRequestDetails({ params }) {
   const serverKey =
     params.get('server') || parseServerKeyFromResource(params.get('resource')) || 'test';
   const definition = getMcpServerDefinition(serverKey);
@@ -85,25 +94,63 @@ export async function createAuthorizationCode({ session, params }) {
     throw new Error('redirect_uri and client_id are required');
   }
 
-  await dbConnect();
-  const registeredClient = await McpClient.findOne({ clientId }).lean();
+  const registeredClient = await getRegisteredClient(clientId);
   if (registeredClient && !registeredClient.redirectUris.includes(redirectUri)) {
     throw new Error('redirect_uri is not registered for this client');
   }
 
-  const scope = normalizeRequestedScopes(definition, params.get('scope')).join(' ');
+  const scopes = normalizeRequestedScopes(definition, params.get('scope'));
   const resource = getCanonicalResource(params, serverKey);
+
+  if (scopes.length === 0) {
+    throw new Error('No valid scopes requested');
+  }
+
+  return {
+    serverKey,
+    serverName: definition.name,
+    serverDescription: definition.description,
+    clientId,
+    clientName:
+      registeredClient?.clientName ||
+      params.get('client_name') ||
+      params.get('client_id') ||
+      'MCP Client',
+    redirectUri,
+    resource,
+    scopes,
+    scopeDescriptions: definition.scopeDescriptions || {},
+    state: params.get('state') || '',
+    registeredClient: Boolean(registeredClient),
+  };
+}
+
+export function createOAuthErrorRedirect({ redirectUri, state, error, description }) {
+  const redirectUrl = new URL(redirectUri);
+  redirectUrl.searchParams.set('error', error);
+  if (description) {
+    redirectUrl.searchParams.set('error_description', description);
+  }
+  if (state) {
+    redirectUrl.searchParams.set('state', state);
+  }
+
+  return redirectUrl;
+}
+
+export async function createAuthorizationCode({ session, params }) {
+  const details = await getAuthorizationRequestDetails({ params });
   const code = createConnectionKey('mcp_code');
 
   await McpAuthCode.create({
     code,
     ownerId: getSessionOwnerId(session),
-    serverKey,
-    clientId,
-    clientName: params.get('client_name') || params.get('client_id') || 'MCP Client',
-    redirectUri,
-    resource,
-    scope,
+    serverKey: details.serverKey,
+    clientId: details.clientId,
+    clientName: details.clientName,
+    redirectUri: details.redirectUri,
+    resource: details.resource,
+    scope: details.scopes.join(' '),
     codeChallenge: params.get('code_challenge'),
     codeChallengeMethod: params.get('code_challenge_method') || 'plain',
     expiresAt: new Date(Date.now() + 10 * 60 * 1000),
@@ -111,7 +158,7 @@ export async function createAuthorizationCode({ session, params }) {
 
   return {
     code,
-    redirectUri,
+    redirectUri: details.redirectUri,
     state: params.get('state'),
   };
 }

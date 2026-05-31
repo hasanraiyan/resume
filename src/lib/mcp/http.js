@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { createSdkMcpServer, getMcpServerDefinition } from './factory';
+import { withMcpCorsHeaders } from './http-headers';
 import {
   markConnectionUsed,
   normalizeScopes,
@@ -32,14 +33,16 @@ export function unauthorizedMcpResponse(serverKey, request) {
   const definition = getMcpServerDefinition(serverKey);
   const scope = definition?.defaultScopes?.join(' ') || '';
 
-  return NextResponse.json(
-    { error: 'unauthorized', error_description: 'A valid MCP bearer token is required.' },
-    {
-      status: 401,
-      headers: {
-        'WWW-Authenticate': `Bearer resource_metadata="${origin}/.well-known/oauth-protected-resource/api/mcp/${serverKey}", scope="${scope}"`,
-      },
-    }
+  return withMcpCorsHeaders(
+    NextResponse.json(
+      { error: 'unauthorized', error_description: 'A valid MCP bearer token is required.' },
+      {
+        status: 401,
+        headers: {
+          'WWW-Authenticate': `Bearer resource_metadata="${origin}/.well-known/oauth-protected-resource/api/mcp/${serverKey}", scope="${scope}"`,
+        },
+      }
+    )
   );
 }
 
@@ -135,46 +138,54 @@ export async function handleMcpStreamableHttp({ request, serverKey }) {
   if (sessionId) {
     const session = transports.get(getTransportKey(serverKey, sessionId));
     if (!session) {
-      return NextResponse.json(
-        {
-          jsonrpc: '2.0',
-          error: { code: -32001, message: 'Session not found' },
-          id: null,
-        },
-        { status: 404 }
+      return withMcpCorsHeaders(
+        NextResponse.json(
+          {
+            jsonrpc: '2.0',
+            error: { code: -32001, message: 'Session not found' },
+            id: null,
+          },
+          { status: 404 }
+        )
       );
     }
 
-    return session.transport.handleRequest(request, { authInfo });
+    const response = await session.transport.handleRequest(request, { authInfo });
+    return withMcpCorsHeaders(response);
   }
 
   if (request.method !== 'POST') {
-    return NextResponse.json(
-      {
-        jsonrpc: '2.0',
-        error: { code: -32000, message: 'Bad Request: Mcp-Session-Id header is required' },
-        id: null,
-      },
-      { status: 400 }
+    return withMcpCorsHeaders(
+      NextResponse.json(
+        {
+          jsonrpc: '2.0',
+          error: { code: -32000, message: 'Bad Request: Mcp-Session-Id header is required' },
+          id: null,
+        },
+        { status: 400 }
+      )
     );
   }
 
   const parsedBody = await request.json().catch(() => null);
   if (!isInitializePayload(parsedBody)) {
-    return NextResponse.json(
-      {
-        jsonrpc: '2.0',
-        error: { code: -32000, message: 'Bad Request: initialize must start a new session' },
-        id: null,
-      },
-      { status: 400 }
+    return withMcpCorsHeaders(
+      NextResponse.json(
+        {
+          jsonrpc: '2.0',
+          error: { code: -32000, message: 'Bad Request: initialize must start a new session' },
+          id: null,
+        },
+        { status: 400 }
+      )
     );
   }
 
   const transport = await createSessionTransport({ serverKey, auth });
   if (!transport) {
-    return NextResponse.json({ error: 'Unknown MCP server' }, { status: 404 });
+    return withMcpCorsHeaders(NextResponse.json({ error: 'Unknown MCP server' }, { status: 404 }));
   }
 
-  return transport.handleRequest(request, { parsedBody, authInfo });
+  const response = await transport.handleRequest(request, { parsedBody, authInfo });
+  return withMcpCorsHeaders(response);
 }

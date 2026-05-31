@@ -8,7 +8,12 @@ import {
   getSessionOwnerId,
   normalizeScopes,
 } from '@/lib/app-connections';
-import { getMcpServerDefinition, listMcpServerDefinitions } from '@/lib/mcp/factory';
+import {
+  createMcpServer,
+  getMcpServerDefinition,
+  listMcpServerDefinitions,
+} from '@/lib/mcp/factory';
+import { mcpOptionsResponse, withMcpCorsHeaders } from '@/lib/mcp/http-headers';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -21,14 +26,28 @@ function validateScopes(definition, requestedScopes) {
   return normalized.filter((scope) => supported.has(scope));
 }
 
+function getPublicServerDetails() {
+  return listMcpServerDefinitions().map((server) => {
+    const scopedServer = createMcpServer({
+      serverKey: server.key,
+      scopes: server.defaultScopes,
+    });
+
+    return {
+      ...server,
+      tools: scopedServer?.getToolDescriptors() || [],
+    };
+  });
+}
+
 export async function GET() {
-  return NextResponse.json({ servers: listMcpServerDefinitions() });
+  return withMcpCorsHeaders(NextResponse.json({ servers: getPublicServerDetails() }));
 }
 
 export async function POST(request) {
   const session = await getServerSession(authOptions);
   if (!session || session.user?.role !== 'admin') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return withMcpCorsHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
   }
 
   const body = await request.json().catch(() => ({}));
@@ -36,12 +55,14 @@ export async function POST(request) {
   const definition = getMcpServerDefinition(serverKey);
 
   if (!definition) {
-    return NextResponse.json({ error: 'Unknown MCP server' }, { status: 404 });
+    return withMcpCorsHeaders(NextResponse.json({ error: 'Unknown MCP server' }, { status: 404 }));
   }
 
   const scopes = validateScopes(definition, body.scopes || body.scope);
   if (scopes.length === 0) {
-    return NextResponse.json({ error: 'No valid scopes requested' }, { status: 400 });
+    return withMcpCorsHeaders(
+      NextResponse.json({ error: 'No valid scopes requested' }, { status: 400 })
+    );
   }
 
   const connection = await createAppConnection({
@@ -62,12 +83,18 @@ export async function POST(request) {
 
   const token = await createAppConnectionAccessToken(connection);
 
-  return NextResponse.json({
-    success: true,
-    serverKey,
-    connectionId: connection._id.toString(),
-    scope: connection.scope,
-    resource: connection.resource,
-    token,
-  });
+  return withMcpCorsHeaders(
+    NextResponse.json({
+      success: true,
+      serverKey,
+      connectionId: connection._id.toString(),
+      scope: connection.scope,
+      resource: connection.resource,
+      token,
+    })
+  );
+}
+
+export async function OPTIONS() {
+  return mcpOptionsResponse();
 }
