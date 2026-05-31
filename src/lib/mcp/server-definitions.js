@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { createAllPocketlyMcpTools } from './pocketly-tools';
 import { createAllRecallMcpTools } from './recall-tools';
+import { createAllYoutubeMcpTools } from './youtube-tools';
 
 export const MCP_SCOPES = {
   TEST_CALCULATE: 'test:calculate',
@@ -8,6 +9,7 @@ export const MCP_SCOPES = {
   POCKETLY_WRITE: 'pocketly:write',
   RECALL_READ: 'recall:read',
   RECALL_WRITE: 'recall:write',
+  YOUTUBE_SEARCH: 'youtube:search',
 };
 
 export const MCP_SCOPE_DESCRIPTIONS = {
@@ -16,6 +18,7 @@ export const MCP_SCOPE_DESCRIPTIONS = {
   [MCP_SCOPES.POCKETLY_WRITE]: 'Create, update, and delete transactions.',
   [MCP_SCOPES.RECALL_READ]: 'Read and search saved Recall memories.',
   [MCP_SCOPES.RECALL_WRITE]: 'Create, update, and delete saved Recall memories.',
+  [MCP_SCOPES.YOUTUBE_SEARCH]: 'Search for educational YouTube videos.',
 };
 
 const mathInputSchema = z.object({
@@ -95,6 +98,20 @@ export const MCP_SERVER_DEFINITIONS = [
     scopeDescriptions: MCP_SCOPE_DESCRIPTIONS,
     createTools({ scopes = [] } = {}) {
       return createAllPocketlyMcpTools({ scopes });
+    },
+  },
+  {
+    key: 'youtube',
+    name: 'YouTube Search Server',
+    version: '1.0.0',
+    description: 'Search for educational YouTube videos.',
+    instructions:
+      'Use this tool to find educational videos on YouTube. Always return the best available learning resources.',
+    defaultScopes: [MCP_SCOPES.YOUTUBE_SEARCH],
+    supportedScopes: [MCP_SCOPES.YOUTUBE_SEARCH],
+    scopeDescriptions: MCP_SCOPE_DESCRIPTIONS,
+    createTools({ scopes = [] } = {}) {
+      return createAllYoutubeMcpTools({ scopes });
     },
   },
   {
