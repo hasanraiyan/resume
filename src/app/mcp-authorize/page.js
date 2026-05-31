@@ -1,10 +1,10 @@
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { getServerSession } from 'next-auth';
-import { ShieldCheck, XCircle } from 'lucide-react';
+import { ExternalLink, X, XCircle } from 'lucide-react';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { getAuthorizationRequestDetails } from '@/lib/mcp/oauth';
-import { Card, Button } from '@/components/custom-ui';
+import { Card } from '@/components/custom-ui';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -37,6 +37,10 @@ function HiddenRequestFields({ params }) {
   return [...params.entries()].map(([key, value]) => (
     <input key={`${key}:${value}`} type="hidden" name={key} value={value} />
   ));
+}
+
+function getAppInitial(name = '') {
+  return name.trim().charAt(0).toUpperCase() || 'M';
 }
 
 export default async function McpAuthorizePage({ searchParams }) {
@@ -78,96 +82,120 @@ export default async function McpAuthorizePage({ searchParams }) {
   }
 
   return (
-    <main className="min-h-screen bg-neutral-50 px-4 py-10 flex items-center justify-center">
-      <Card className="w-full max-w-2xl border border-neutral-200 bg-white p-0 shadow-sm overflow-hidden">
-        <div className="border-b border-neutral-200 px-6 py-5 sm:px-8">
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-black text-white">
-              <ShieldCheck className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase text-neutral-500">MCP Authorization</p>
-              <h1 className="mt-1 text-2xl font-bold text-black">
-                Allow access to this MCP server?
-              </h1>
-              <p className="mt-2 text-sm text-neutral-600">
-                {requestDetails.clientName} is requesting access as {session.user?.name || 'admin'}.
-              </p>
-            </div>
-          </div>
-        </div>
+    <main className="min-h-screen overflow-hidden bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-6">
+      <div className="pointer-events-none fixed inset-0 opacity-70 blur-sm">
+        <div className="mx-auto mt-8 h-[90vh] max-w-5xl rounded-[28px] border border-neutral-200 bg-white/80 shadow-sm" />
+      </div>
 
-        <div className="space-y-6 px-6 py-6 sm:px-8">
-          <section className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-lg border border-neutral-200 p-4">
-              <p className="text-xs font-semibold uppercase text-neutral-500">Client</p>
-              <p className="mt-1 font-semibold text-black break-words">
-                {requestDetails.clientName}
-              </p>
-              <p className="mt-1 text-xs text-neutral-500 break-all">{requestDetails.clientId}</p>
-            </div>
-            <div className="rounded-lg border border-neutral-200 p-4">
-              <p className="text-xs font-semibold uppercase text-neutral-500">Server</p>
-              <p className="mt-1 font-semibold text-black">{requestDetails.serverName}</p>
-              <p className="mt-1 text-xs text-neutral-500">{requestDetails.serverDescription}</p>
-            </div>
-          </section>
-
-          <section className="rounded-lg border border-neutral-200 p-4">
-            <p className="text-xs font-semibold uppercase text-neutral-500">MCP URL</p>
-            <p className="mt-2 break-all rounded-md bg-neutral-50 px-3 py-2 text-sm text-neutral-700">
-              {requestDetails.resource}
-            </p>
-          </section>
-
-          <section>
-            <p className="text-xs font-semibold uppercase text-neutral-500">Requested scopes</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {requestDetails.scopes.map((scope) => (
-                <span
-                  key={scope}
-                  className="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-medium text-neutral-800"
-                >
-                  {getScopeDescription(requestDetails, scope)}
-                </span>
-              ))}
-            </div>
-          </section>
-
-          <section className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-            <p className="text-xs font-semibold uppercase text-neutral-500">Redirect URI</p>
-            <p className="mt-2 break-all text-sm text-neutral-700">{requestDetails.redirectUri}</p>
-          </section>
-        </div>
-
-        <form
-          method="post"
-          action="/api/mcp/oauth/authorize"
-          className="flex flex-col-reverse gap-3 border-t border-neutral-200 bg-neutral-50 px-6 py-5 sm:flex-row sm:justify-end sm:px-8"
-        >
+      <form
+        method="post"
+        action="/api/mcp/oauth/authorize"
+        className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[784px] items-center"
+      >
+        <Card className="relative w-full overflow-hidden rounded-[24px] border border-neutral-300 bg-white p-0 shadow-2xl shadow-black/15">
           <HiddenRequestFields params={params} />
-          <Button
+          <button
             type="submit"
             name="consent"
             value="deny"
-            variant="secondary"
-            magnetic={false}
-            className="justify-center border border-neutral-300 bg-white text-black"
+            className="absolute right-6 top-6 z-20 flex h-9 w-9 items-center justify-center rounded-full text-white/90 transition hover:bg-white/15 hover:text-white"
+            aria-label="Close authorization"
           >
-            Decline
-          </Button>
-          <Button
-            type="submit"
-            name="consent"
-            value="approve"
-            variant="primary"
-            magnetic={false}
-            className="justify-center"
-          >
-            Authorize
-          </Button>
-        </form>
-      </Card>
+            <X className="h-6 w-6" />
+          </button>
+
+          <section className="relative overflow-hidden bg-[#20a8ee] px-6 py-16 text-center text-white sm:px-10 sm:py-20">
+            <div className="absolute -left-16 top-0 h-72 w-48 rounded-full bg-[#ffd49a] blur-3xl" />
+            <div className="absolute right-0 top-0 h-72 w-80 rounded-full bg-[#8be4ee] opacity-80 blur-3xl" />
+            <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#0a8fe5] to-transparent opacity-70" />
+
+            <div className="relative mx-auto flex max-w-lg flex-col items-center">
+              <div className="flex items-center justify-center gap-5">
+                <div className="flex h-[68px] w-[68px] items-center justify-center rounded-[16px] bg-white shadow-lg shadow-sky-900/10">
+                  <div className="flex h-[42px] w-[42px] items-center justify-center rounded-lg bg-[#7d2ac8] text-2xl font-semibold text-white">
+                    {getAppInitial(requestDetails.serverName)}
+                  </div>
+                </div>
+                <div className="h-8 w-px bg-white/45" />
+                <div className="flex h-[64px] w-[64px] items-center justify-center rounded-[15px] bg-neutral-950 text-[30px] font-semibold text-white shadow-lg shadow-sky-900/10">
+                  ◌
+                </div>
+              </div>
+
+              <h1 className="mt-7 text-3xl font-bold leading-tight sm:text-[32px]">
+                Add {requestDetails.serverKey} to ChatGPT
+              </h1>
+
+              <button
+                type="submit"
+                name="consent"
+                value="approve"
+                className="mt-12 inline-flex min-h-14 items-center justify-center gap-2 rounded-full bg-white px-7 text-lg font-semibold text-neutral-950 shadow-sm transition hover:bg-neutral-100 focus:outline-none focus:ring-4 focus:ring-white/35"
+              >
+                Sign in with {requestDetails.serverKey}
+                <ExternalLink className="h-5 w-5" />
+              </button>
+
+              <p className="mt-5 max-w-md text-sm font-medium text-white/80">
+                {requestDetails.serverName} will expose {requestDetails.scopes.length}{' '}
+                {requestDetails.scopes.length === 1 ? 'permission' : 'permissions'} through{' '}
+                {requestDetails.resource}.
+              </p>
+            </div>
+          </section>
+
+          <section className="px-7 py-6 sm:px-8">
+            <div className="flex items-center justify-between gap-5 border-b border-neutral-200 pb-5">
+              <p className="text-[15px] leading-relaxed text-neutral-500">
+                <strong className="font-bold text-neutral-900">
+                  Reference memories and chats.
+                </strong>{' '}
+                Allow ChatGPT to reference relevant chats and memories when sharing data with{' '}
+                {requestDetails.serverKey} for more helpful responses.
+              </p>
+              <div className="relative h-8 w-12 shrink-0 rounded-full bg-neutral-200">
+                <div className="absolute left-1 top-1 h-6 w-6 rounded-full bg-white shadow-sm" />
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-5 text-[15px] leading-relaxed text-neutral-500">
+              <p>
+                <strong className="font-bold text-neutral-900">
+                  Permissions always respected.
+                </strong>{' '}
+                ChatGPT is strictly limited to permissions you have explicitly approved. Disable
+                access anytime to revoke permissions.
+              </p>
+              <p>
+                <strong className="font-bold text-neutral-900">You're in control.</strong> ChatGPT
+                always respects your training data preferences. Data from {requestDetails.serverKey}{' '}
+                may be used to provide you relevant and useful information.{' '}
+                <span className="underline">Learn more</span>
+              </p>
+              <p>
+                <strong className="font-bold text-neutral-900">
+                  Connectors may introduce risk.
+                </strong>{' '}
+                Connectors are designed to respect your privacy, but sites may attempt to steal your
+                data. <span className="underline">Learn more on how to stay safe</span>
+              </p>
+            </div>
+
+            <div className="mt-6 rounded-lg bg-neutral-50 px-4 py-3 text-xs text-neutral-500">
+              <p className="font-semibold uppercase tracking-wide text-neutral-700">
+                Requested access
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {requestDetails.scopes.map((scope) => (
+                  <span key={scope} className="rounded-md bg-white px-2.5 py-1 text-neutral-700">
+                    {getScopeDescription(requestDetails, scope)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </section>
+        </Card>
+      </form>
     </main>
   );
 }
