@@ -27,6 +27,12 @@ function formatToolContent(output) {
   return typeof output === 'string' ? output : JSON.stringify(output, null, 2);
 }
 
+function createDisabledToolError(name) {
+  const error = new Error(`Tool is disabled: ${name}`);
+  error.code = -32601;
+  return error;
+}
+
 export function listMcpServerDefinitions() {
   return MCP_SERVER_DEFINITIONS.map((definition) => ({
     key: definition.key,
@@ -50,17 +56,45 @@ export function getAllSupportedScopes() {
   ];
 }
 
-export function createMcpServer({ serverKey, scopes = [], context = {} }) {
+function getEffectiveSupportedScopes(definition, config = null) {
+  if (!config?.allowedScopes?.length) {
+    return definition.supportedScopes || [];
+  }
+
+  const supported = new Set(definition.supportedScopes || []);
+  return config.allowedScopes.filter((scope) => supported.has(scope));
+}
+
+function filterToolsByConfig(tools, config = null) {
+  if (config?.isEnabled === false) {
+    return [];
+  }
+
+  if (!config?.disabledTools?.length) {
+    return tools;
+  }
+
+  const disabledTools = new Set(config.disabledTools);
+  return tools.filter((tool) => !disabledTools.has(tool.name));
+}
+
+export function createMcpServer({ serverKey, scopes = [], context = {}, config = null }) {
   const definition = getMcpServerDefinition(serverKey);
   if (!definition) {
     return null;
   }
 
   const normalizedScopes = normalizeScopes(scopes);
-  const tools = definition.createTools({ ...context, scopes: normalizedScopes });
+  const tools = filterToolsByConfig(
+    definition.createTools({ ...context, scopes: normalizedScopes }),
+    config
+  );
 
   return {
-    definition,
+    definition: {
+      ...definition,
+      supportedScopes: getEffectiveSupportedScopes(definition, config),
+    },
     tools,
     getToolDescriptors() {
       return tools.map((tool) => ({
@@ -73,6 +107,10 @@ export function createMcpServer({ serverKey, scopes = [], context = {} }) {
       }));
     },
     async callTool(name, args = {}) {
+      if (config?.disabledTools?.includes(name)) {
+        throw createDisabledToolError(name);
+      }
+
       const selectedTool = tools.find((tool) => tool.name === name);
       if (!selectedTool) {
         const error = new Error(`Unknown tool: ${name}`);
@@ -90,8 +128,8 @@ export function createMcpServer({ serverKey, scopes = [], context = {} }) {
   };
 }
 
-export function createSdkMcpServer({ serverKey, scopes = [], context = {} }) {
-  const scopedServer = createMcpServer({ serverKey, scopes, context });
+export function createSdkMcpServer({ serverKey, scopes = [], context = {}, config = null }) {
+  const scopedServer = createMcpServer({ serverKey, scopes, context, config });
   if (!scopedServer) {
     return null;
   }
@@ -117,6 +155,13 @@ export function createSdkMcpServer({ serverKey, scopes = [], context = {} }) {
         annotations: tool.annotations,
       },
       async (args) => {
+        if (typeof context.getConfig === 'function') {
+          const latestConfig = await context.getConfig();
+          if (latestConfig?.disabledTools?.includes(tool.name)) {
+            throw createDisabledToolError(tool.name);
+          }
+        }
+
         const selectedTool = scopedServer.tools.find(
           (registeredTool) => registeredTool.name === tool.name
         );

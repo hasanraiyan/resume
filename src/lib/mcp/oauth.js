@@ -12,14 +12,18 @@ import {
   verifyAppConnectionToken,
 } from '@/lib/app-connections';
 import { getMcpServerDefinition } from './factory';
+import { getMcpServerConfig } from './config';
 
 function base64Url(buffer) {
   return Buffer.from(buffer).toString('base64url');
 }
 
-function normalizeRequestedScopes(definition, rawScope) {
+function normalizeRequestedScopes(definition, rawScope, config = null) {
   const requested = normalizeScopes(rawScope);
-  const supported = new Set(definition.supportedScopes || []);
+  const configuredScopes = config?.allowedScopes?.length
+    ? config.allowedScopes
+    : definition.supportedScopes || [];
+  const supported = new Set(configuredScopes);
   const defaults = definition.defaultScopes || [];
   const scopes = requested.length > 0 ? requested : defaults;
 
@@ -87,6 +91,11 @@ export async function getAuthorizationRequestDetails({ params }) {
     throw new Error('Unknown MCP server');
   }
 
+  const config = await getMcpServerConfig(serverKey);
+  if (!config.isEnabled) {
+    throw new Error(`${definition.name} is currently disabled`);
+  }
+
   const redirectUri = params.get('redirect_uri');
   const clientId = params.get('client_id');
 
@@ -99,7 +108,7 @@ export async function getAuthorizationRequestDetails({ params }) {
     throw new Error('redirect_uri is not registered for this client');
   }
 
-  const scopes = normalizeRequestedScopes(definition, params.get('scope'));
+  const scopes = normalizeRequestedScopes(definition, params.get('scope'), config);
   const resource = getCanonicalResource(params, serverKey);
 
   if (scopes.length === 0) {
@@ -182,6 +191,11 @@ export async function exchangeAuthorizationCode({
   });
 
   if (!authCode) {
+    return null;
+  }
+
+  const config = await getMcpServerConfig(authCode.serverKey);
+  if (!config.isEnabled) {
     return null;
   }
 

@@ -13,35 +13,44 @@ import {
   getMcpServerDefinition,
   listMcpServerDefinitions,
 } from '@/lib/mcp/factory';
+import { getMcpServerConfig } from '@/lib/mcp/config';
 import { mcpOptionsResponse, withMcpCorsHeaders } from '@/lib/mcp/http-headers';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-function validateScopes(definition, requestedScopes) {
-  const supported = new Set(definition.supportedScopes || []);
+function validateScopes(definition, requestedScopes, config = null) {
+  const configuredScopes = config?.allowedScopes?.length
+    ? config.allowedScopes
+    : definition.supportedScopes || [];
+  const supported = new Set(configuredScopes);
   const scopes = normalizeScopes(requestedScopes);
   const normalized = scopes.length > 0 ? scopes : definition.defaultScopes;
 
   return normalized.filter((scope) => supported.has(scope));
 }
 
-function getPublicServerDetails() {
-  return listMcpServerDefinitions().map((server) => {
-    const scopedServer = createMcpServer({
-      serverKey: server.key,
-      scopes: server.defaultScopes,
-    });
+async function getPublicServerDetails() {
+  return Promise.all(
+    listMcpServerDefinitions().map(async (server) => {
+      const config = await getMcpServerConfig(server.key);
+      const scopedServer = createMcpServer({
+        serverKey: server.key,
+        scopes: server.defaultScopes,
+        config,
+      });
 
-    return {
-      ...server,
-      tools: scopedServer?.getToolDescriptors() || [],
-    };
-  });
+      return {
+        ...server,
+        isEnabled: config.isEnabled,
+        tools: scopedServer?.getToolDescriptors() || [],
+      };
+    })
+  );
 }
 
 export async function GET() {
-  return withMcpCorsHeaders(NextResponse.json({ servers: getPublicServerDetails() }));
+  return withMcpCorsHeaders(NextResponse.json({ servers: await getPublicServerDetails() }));
 }
 
 export async function POST(request) {
@@ -58,7 +67,14 @@ export async function POST(request) {
     return withMcpCorsHeaders(NextResponse.json({ error: 'Unknown MCP server' }, { status: 404 }));
   }
 
-  const scopes = validateScopes(definition, body.scopes || body.scope);
+  const config = await getMcpServerConfig(serverKey);
+  if (!config.isEnabled) {
+    return withMcpCorsHeaders(
+      NextResponse.json({ error: 'MCP server is disabled' }, { status: 403 })
+    );
+  }
+
+  const scopes = validateScopes(definition, body.scopes || body.scope, config);
   if (scopes.length === 0) {
     return withMcpCorsHeaders(
       NextResponse.json({ error: 'No valid scopes requested' }, { status: 400 })

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { createSdkMcpServer, getMcpServerDefinition } from './factory';
+import { getMcpServerConfig } from './config';
 import { withMcpCorsHeaders } from './http-headers';
 import {
   markConnectionUsed,
@@ -14,6 +15,18 @@ globalThis.__mcpStreamableTransports = transports;
 
 function getTransportKey(serverKey, sessionId) {
   return `${serverKey}:${sessionId}`;
+}
+
+function disabledMcpResponse(serverKey) {
+  return withMcpCorsHeaders(
+    NextResponse.json(
+      {
+        error: 'mcp_server_disabled',
+        error_description: `MCP server "${serverKey}" is disabled.`,
+      },
+      { status: 403 }
+    )
+  );
 }
 
 function isInitializePayload(body) {
@@ -52,6 +65,11 @@ export async function authenticateMcpRequest(request, serverKey) {
     return null;
   }
 
+  const config = await getMcpServerConfig(serverKey);
+  if (!config.isEnabled) {
+    return { disabled: true, config };
+  }
+
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) {
     return null;
@@ -73,6 +91,7 @@ export async function authenticateMcpRequest(request, serverKey) {
     ...auth,
     token,
     scopes: normalizeScopes(auth.connection.scope),
+    config,
   };
 }
 
@@ -94,7 +113,8 @@ async function createSessionTransport({ serverKey, auth }) {
   const sdkServer = createSdkMcpServer({
     serverKey,
     scopes: auth.scopes,
-    context: { auth },
+    context: { auth, getConfig: () => getMcpServerConfig(serverKey) },
+    config: auth.config,
   });
 
   if (!sdkServer) {
@@ -128,6 +148,10 @@ async function createSessionTransport({ serverKey, auth }) {
 
 export async function handleMcpStreamableHttp({ request, serverKey }) {
   const auth = await authenticateMcpRequest(request, serverKey);
+  if (auth?.disabled) {
+    return disabledMcpResponse(serverKey);
+  }
+
   if (!auth) {
     return unauthorizedMcpResponse(serverKey, request);
   }
