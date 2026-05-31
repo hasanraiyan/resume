@@ -141,6 +141,7 @@ export function createOAuthErrorRedirect({ redirectUri, state, error, descriptio
 export async function createAuthorizationCode({ session, params }) {
   const details = await getAuthorizationRequestDetails({ params });
   const code = createConnectionKey('mcp_code');
+  const connectionKey = createConnectionKey('mcp');
 
   await McpAuthCode.create({
     code,
@@ -151,6 +152,7 @@ export async function createAuthorizationCode({ session, params }) {
     redirectUri: details.redirectUri,
     resource: details.resource,
     scope: details.scopes.join(' '),
+    connectionKey,
     codeChallenge: params.get('code_challenge'),
     codeChallengeMethod: params.get('code_challenge_method') || 'plain',
     expiresAt: new Date(Date.now() + 10 * 60 * 1000),
@@ -176,7 +178,6 @@ export async function exchangeAuthorizationCode({
     code,
     clientId,
     redirectUri,
-    usedAt: null,
     expiresAt: { $gt: new Date() },
   });
 
@@ -198,7 +199,14 @@ export async function exchangeAuthorizationCode({
     return null;
   }
 
-  authCode.usedAt = new Date();
+  if (!authCode.connectionKey) {
+    authCode.connectionKey = createConnectionKey('mcp');
+  }
+
+  if (!authCode.usedAt) {
+    authCode.usedAt = new Date();
+  }
+
   await authCode.save();
 
   const connection = await createAppConnection({
@@ -206,7 +214,7 @@ export async function exchangeAuthorizationCode({
     appKey: authCode.serverKey,
     channel: 'mcp',
     connectionType: 'oauth',
-    connectionKey: createConnectionKey('mcp'),
+    connectionKey: authCode.connectionKey,
     clientId,
     clientName: authCode.clientName || clientName,
     scope: authCode.scope,

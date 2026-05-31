@@ -38,6 +38,10 @@ const McpAuthCodeSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    connectionKey: {
+      type: String,
+      default: null,
+    },
     codeChallenge: {
       type: String,
       default: null,
