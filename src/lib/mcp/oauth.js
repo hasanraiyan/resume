@@ -25,6 +25,33 @@ function normalizeRequestedScopes(definition, rawScope) {
   return scopes.filter((scope) => supported.has(scope));
 }
 
+function parseServerKeyFromResource(resource) {
+  if (!resource) {
+    return null;
+  }
+
+  try {
+    const url = new URL(resource);
+    const parts = url.pathname.split('/').filter(Boolean);
+    const mcpIndex = parts.findIndex((part) => part === 'mcp');
+
+    return mcpIndex === -1 ? null : parts[mcpIndex + 1] || null;
+  } catch {
+    return null;
+  }
+}
+
+function getCanonicalResource(params, serverKey) {
+  const requestedResource = params.get('resource');
+
+  if (requestedResource) {
+    return requestedResource;
+  }
+
+  const origin = params.get('origin');
+  return origin ? `${origin}/api/mcp/${serverKey}` : `/api/mcp/${serverKey}`;
+}
+
 export function verifyPkce({ verifier, challenge, method }) {
   if (!challenge) {
     return true;
@@ -42,7 +69,8 @@ export function verifyPkce({ verifier, challenge, method }) {
 }
 
 export async function createAuthorizationCode({ session, params }) {
-  const serverKey = params.get('server') || params.get('resource')?.split('/').pop() || 'test';
+  const serverKey =
+    params.get('server') || parseServerKeyFromResource(params.get('resource')) || 'test';
   const definition = getMcpServerDefinition(serverKey);
 
   if (!definition) {
@@ -57,6 +85,7 @@ export async function createAuthorizationCode({ session, params }) {
   }
 
   const scope = normalizeRequestedScopes(definition, params.get('scope')).join(' ');
+  const resource = getCanonicalResource(params, serverKey);
   const code = createConnectionKey('mcp_code');
 
   await dbConnect();
@@ -67,6 +96,7 @@ export async function createAuthorizationCode({ session, params }) {
     clientId,
     clientName: params.get('client_name') || params.get('client_id') || 'MCP Client',
     redirectUri,
+    resource,
     scope,
     codeChallenge: params.get('code_challenge'),
     codeChallengeMethod: params.get('code_challenge_method') || 'plain',
@@ -85,6 +115,7 @@ export async function exchangeAuthorizationCode({
   redirectUri,
   clientId,
   codeVerifier,
+  resource,
   clientName = 'MCP Client',
 }) {
   await dbConnect();
@@ -97,6 +128,10 @@ export async function exchangeAuthorizationCode({
   });
 
   if (!authCode) {
+    return null;
+  }
+
+  if (resource && authCode.resource !== resource) {
     return null;
   }
 
@@ -122,10 +157,11 @@ export async function exchangeAuthorizationCode({
     clientId,
     clientName: authCode.clientName || clientName,
     scope: authCode.scope,
-    resource: `/api/mcp/${authCode.serverKey}`,
+    resource: authCode.resource,
     metadata: {
       authorizedAt: new Date().toISOString(),
       grantType: 'authorization_code',
+      resource: authCode.resource,
     },
   });
 

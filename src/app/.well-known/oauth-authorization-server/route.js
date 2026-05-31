@@ -14,8 +14,9 @@ export async function GET(request) {
     revocation_endpoint: `${origin}/api/mcp/oauth/revoke`,
     registration_endpoint: `${origin}/api/mcp/oauth/register`,
     response_types_supported: ['code'],
+    response_modes_supported: ['query'],
     grant_types_supported: ['authorization_code'],
-    code_challenge_methods_supported: ['S256', 'plain'],
+    code_challenge_methods_supported: ['S256'],
     token_endpoint_auth_methods_supported: ['none'],
     scopes_supported: getAllSupportedScopes(),
   });

@@ -23,6 +23,7 @@ export async function POST(request) {
     redirectUri: form.get('redirect_uri'),
     clientId: form.get('client_id'),
     codeVerifier: form.get('code_verifier'),
+    resource: form.get('resource'),
     clientName: form.get('client_name') || 'MCP Client',
   });
 

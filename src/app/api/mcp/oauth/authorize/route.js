@@ -19,7 +19,7 @@ export async function GET(request) {
   try {
     const { code, redirectUri, state } = await createAuthorizationCode({
       session,
-      params: url.searchParams,
+      params: new URLSearchParams([...url.searchParams.entries(), ['origin', url.origin]]),
     });
     const redirectUrl = new URL(redirectUri);
     redirectUrl.searchParams.set('code', code);

@@ -29,12 +29,15 @@ function isInitializePayload(body) {
 
 export function unauthorizedMcpResponse(serverKey, request) {
   const origin = new URL(request.url).origin;
+  const definition = getMcpServerDefinition(serverKey);
+  const scope = definition?.defaultScopes?.join(' ') || '';
+
   return NextResponse.json(
     { error: 'unauthorized', error_description: 'A valid MCP bearer token is required.' },
     {
       status: 401,
       headers: {
-        'WWW-Authenticate': `Bearer resource_metadata="${origin}/.well-known/oauth-protected-resource?server=${serverKey}"`,
+        'WWW-Authenticate': `Bearer resource_metadata="${origin}/.well-known/oauth-protected-resource/api/mcp/${serverKey}", scope="${scope}"`,
       },
     }
   );

@@ -1,14 +1,19 @@
 import { NextResponse } from 'next/server';
-import { buildProtectedResourceMetadata } from '@/lib/mcp/metadata';
+import {
+  buildProtectedResourceMetadata,
+  getServerKeyFromProtectedResourcePath,
+} from '@/lib/mcp/metadata';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET(request) {
+export async function GET(request, { params }) {
+  const { resourcePath } = await params;
   const url = new URL(request.url);
+  const serverKey = getServerKeyFromProtectedResourcePath(resourcePath);
   const metadata = buildProtectedResourceMetadata({
     origin: url.origin,
-    serverKey: url.searchParams.get('server'),
+    serverKey,
   });
 
   if (!metadata) {

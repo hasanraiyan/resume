@@ -30,6 +30,10 @@ const McpAuthCodeSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    resource: {
+      type: String,
+      required: true,
+    },
     scope: {
       type: String,
       default: '',
