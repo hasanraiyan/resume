@@ -56,7 +56,8 @@ export async function POST(request) {
             state: requestedState,
             error: 'access_denied',
             description: 'The authorization request was declined.',
-          })
+          }),
+          303
         )
       );
     }
@@ -71,7 +72,7 @@ export async function POST(request) {
       redirectUrl.searchParams.set('state', state);
     }
 
-    return withMcpCorsHeaders(NextResponse.redirect(redirectUrl));
+    return withMcpCorsHeaders(NextResponse.redirect(redirectUrl, 303));
   } catch (error) {
     return withMcpCorsHeaders(
       NextResponse.json(
