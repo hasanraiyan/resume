@@ -1,16 +1,21 @@
 import { z } from 'zod';
 import { createAllPocketlyMcpTools } from './pocketly-tools';
+import { createAllRecallMcpTools } from './recall-tools';
 
 export const MCP_SCOPES = {
   TEST_CALCULATE: 'test:calculate',
   POCKETLY_READ: 'pocketly:read',
   POCKETLY_WRITE: 'pocketly:write',
+  RECALL_READ: 'recall:read',
+  RECALL_WRITE: 'recall:write',
 };
 
 export const MCP_SCOPE_DESCRIPTIONS = {
   [MCP_SCOPES.TEST_CALCULATE]: 'Call the add and multiply calculator tools.',
   [MCP_SCOPES.POCKETLY_READ]: 'Read accounts, categories, transactions, and financial analysis.',
   [MCP_SCOPES.POCKETLY_WRITE]: 'Create, update, and delete transactions.',
+  [MCP_SCOPES.RECALL_READ]: 'Read and search saved Recall memories.',
+  [MCP_SCOPES.RECALL_WRITE]: 'Create, update, and delete saved Recall memories.',
 };
 
 const mathInputSchema = z.object({
@@ -90,6 +95,21 @@ export const MCP_SERVER_DEFINITIONS = [
     scopeDescriptions: MCP_SCOPE_DESCRIPTIONS,
     createTools({ scopes = [] } = {}) {
       return createAllPocketlyMcpTools({ scopes });
+    },
+  },
+  {
+    key: 'recall',
+    name: 'Recall Memory Server',
+    version: '1.0.0',
+    description:
+      'Personal memory capture and semantic recall server. Search, list, create, update, and delete saved memories.',
+    instructions:
+      'Use these tools to help the user retrieve and manage saved Recall memories. Search semantically before answering questions about prior notes, ideas, links, or thoughts. Always resolve a memory ID with list_memories or search_memories before updating or deleting a memory.',
+    defaultScopes: [MCP_SCOPES.RECALL_READ],
+    supportedScopes: [MCP_SCOPES.RECALL_READ, MCP_SCOPES.RECALL_WRITE],
+    scopeDescriptions: MCP_SCOPE_DESCRIPTIONS,
+    createTools({ scopes = [] } = {}) {
+      return createAllRecallMcpTools({ scopes });
     },
   },
 ];
