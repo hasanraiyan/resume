@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import dbConnect from '@/lib/dbConnect';
 import McpAuthCode from '@/models/McpAuthCode';
+import McpClient from '@/models/McpClient';
 import {
   createAppConnection,
   createAppConnectionAccessToken,
@@ -84,11 +85,16 @@ export async function createAuthorizationCode({ session, params }) {
     throw new Error('redirect_uri and client_id are required');
   }
 
+  await dbConnect();
+  const registeredClient = await McpClient.findOne({ clientId }).lean();
+  if (registeredClient && !registeredClient.redirectUris.includes(redirectUri)) {
+    throw new Error('redirect_uri is not registered for this client');
+  }
+
   const scope = normalizeRequestedScopes(definition, params.get('scope')).join(' ');
   const resource = getCanonicalResource(params, serverKey);
   const code = createConnectionKey('mcp_code');
 
-  await dbConnect();
   await McpAuthCode.create({
     code,
     ownerId: getSessionOwnerId(session),

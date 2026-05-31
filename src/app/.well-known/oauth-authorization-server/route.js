@@ -13,6 +13,7 @@ export async function GET(request) {
     token_endpoint: `${origin}/api/mcp/oauth/token`,
     revocation_endpoint: `${origin}/api/mcp/oauth/revoke`,
     registration_endpoint: `${origin}/api/mcp/oauth/register`,
+    client_id_metadata_document_supported: false,
     response_types_supported: ['code'],
     response_modes_supported: ['query'],
     grant_types_supported: ['authorization_code'],
