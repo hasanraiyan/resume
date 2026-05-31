@@ -187,4 +187,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
-Created with ❤️ by [Hasan Raiyan](https://hasanraiyan.me)
+Created with ❤️ by [Raiyan Hasan](https://hasanraiyan.me)
