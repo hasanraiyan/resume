@@ -4,6 +4,7 @@ import dbConnect from '@/lib/dbConnect';
 import AppConnection from '@/models/AppConnection';
 
 const MOBILE_TOKEN_TYPE = 'app_connection_mobile';
+const ACCESS_TOKEN_TYPE = 'app_connection_access';
 const OWNER_FALLBACK = 'admin';
 
 function getJwtSecret() {
@@ -16,6 +17,26 @@ export function getSessionOwnerId(session) {
 
 export function createConnectionKey(prefix) {
   return `${prefix}_${crypto.randomBytes(12).toString('hex')}`;
+}
+
+export function normalizeScopes(scope = '') {
+  if (Array.isArray(scope)) {
+    return [...new Set(scope.map((item) => String(item).trim()).filter(Boolean))];
+  }
+
+  return [
+    ...new Set(
+      String(scope || '')
+        .split(/\s+/)
+        .map((item) => item.trim())
+        .filter(Boolean)
+    ),
+  ];
+}
+
+export function hasRequiredScopes(grantedScope = '', requiredScopes = []) {
+  const granted = new Set(normalizeScopes(grantedScope));
+  return requiredScopes.every((scope) => granted.has(scope));
 }
 
 export async function createAppConnection({
@@ -117,23 +138,54 @@ export async function createMobileSessionToken(connection) {
     .sign(getJwtSecret());
 }
 
-export async function verifyMobileSessionToken(token) {
+export async function createAppConnectionAccessToken(connection, expiresIn = '90d') {
+  return new SignJWT({
+    role: 'admin',
+    type: ACCESS_TOKEN_TYPE,
+    ownerId: connection.ownerId,
+    connectionId: connection._id.toString(),
+    appKey: connection.appKey,
+    channel: connection.channel,
+    scope: connection.scope,
+    clientId: connection.clientId,
+  })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(expiresIn)
+    .sign(getJwtSecret());
+}
+
+export async function verifyAppConnectionToken(token, options = {}) {
   try {
     const { payload } = await jwtVerify(token, getJwtSecret());
-    if (payload.type !== MOBILE_TOKEN_TYPE || payload.role !== 'admin' || !payload.connectionId) {
+    const allowedTypes = options.allowedTypes || [MOBILE_TOKEN_TYPE, ACCESS_TOKEN_TYPE];
+
+    if (!allowedTypes.includes(payload.type) || payload.role !== 'admin' || !payload.connectionId) {
       return null;
     }
 
     await dbConnect();
-    const connection = await AppConnection.findOne({
+    const match = {
       _id: payload.connectionId,
       ownerId: payload.ownerId || OWNER_FALLBACK,
-      appKey: payload.appKey || 'pocketly',
-      channel: payload.channel || 'android',
       status: 'active',
-    }).lean();
+    };
+
+    if (options.appKey || payload.appKey) {
+      match.appKey = options.appKey || payload.appKey;
+    }
+
+    if (options.channel || payload.channel) {
+      match.channel = options.channel || payload.channel;
+    }
+
+    const connection = await AppConnection.findOne(match).lean();
 
     if (!connection) {
+      return null;
+    }
+
+    if (options.requiredScopes && !hasRequiredScopes(connection.scope, options.requiredScopes)) {
       return null;
     }
 
@@ -145,4 +197,8 @@ export async function verifyMobileSessionToken(token) {
   } catch {
     return null;
   }
+}
+
+export async function verifyMobileSessionToken(token) {
+  return verifyAppConnectionToken(token, { allowedTypes: [MOBILE_TOKEN_TYPE] });
 }
