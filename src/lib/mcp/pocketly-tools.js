@@ -15,6 +15,52 @@ import {
 } from '@/lib/apps/pocketly/service/service';
 import { computeAnalysis } from '@/lib/finance-analysis';
 
+// ── Output Schemas ────────────────────────────────────────────────────
+
+const accountObject = z.object({
+  id: z.string().describe('Unique account ID'),
+  name: z.string().describe('Account name'),
+  icon: z.string().optional().describe('Icon name'),
+  balance: z.number().describe('Current account balance in INR'),
+  initialBalance: z.number().describe('Initial balance in INR'),
+  currency: z.string().describe('Currency code'),
+});
+
+const categoryObject = z.object({
+  id: z.string().describe('Unique category ID'),
+  name: z.string().describe('Category name'),
+  type: z.enum(['income', 'expense']).describe('Category type'),
+  icon: z.string().optional().describe('Icon name'),
+  color: z.string().optional().describe('Hex color code'),
+});
+
+const transactionObject = z.object({
+  id: z.string().describe('Unique transaction ID'),
+  type: z.enum(['income', 'expense', 'transfer']).describe('Transaction type'),
+  amount: z.number().describe('Amount in INR'),
+  description: z.string().describe('Transaction description'),
+  category: z.string().nullable().describe('Category name'),
+  categoryId: z.string().nullable().describe('Category MongoDB ID'),
+  account: z.string().describe('Source account name'),
+  accountId: z.string().nullable().describe('Source account MongoDB ID'),
+  toAccount: z.string().nullable().describe('Destination account name (for transfers)'),
+  toAccountId: z.string().nullable().describe('Destination account MongoDB ID (for transfers)'),
+  date: z.string().describe('Transaction date'),
+});
+
+const budgetObject = z.object({
+  id: z.string().describe('Unique budget ID'),
+  categoryId: z.string().nullable().describe('Category MongoDB ID'),
+  categoryName: z.string().describe('Category name'),
+  amount: z.number().describe('Budget target amount in INR'),
+  period: z.string().describe('Budget period (monthly, weekly, yearly)'),
+});
+
+const successResponse = z.object({
+  success: z.literal(true).describe('Indicates success'),
+  message: z.string().describe('Success message'),
+});
+
 // ── Helpers ──────────────────────────────────────────────────────────
 
 function isValidObjectId(value) {
@@ -30,6 +76,7 @@ export function createGetAccountsMcpTool() {
     description:
       'Get all user financial accounts with names, types, and current balances. Use when the user asks about their accounts, wallets, or where their money is stored. Always call this to resolve account IDs before drafting transactions.',
     schema: z.object({}),
+    outputSchema: z.array(accountObject).describe('List of financial accounts'),
     annotations: {
       title: 'Get Accounts',
       readOnlyHint: true,
@@ -58,6 +105,7 @@ export function createGetCategoriesMcpTool() {
     description:
       'Get all income and expense categories. Use when the user asks about their category setup. Always call this to resolve category IDs before drafting income/expense transactions.',
     schema: z.object({}),
+    outputSchema: z.array(categoryObject).describe('List of income and expense categories'),
     annotations: {
       title: 'Get Categories',
       readOnlyHint: true,
@@ -107,6 +155,7 @@ export function createGetTransactionsMcpTool() {
         .optional()
         .describe('Filter by category ID (must be resolved via get_categories)'),
     }),
+    outputSchema: z.array(transactionObject).describe('List of transactions'),
     annotations: {
       title: 'Get Transactions',
       readOnlyHint: true,
@@ -141,12 +190,41 @@ export function createGetTransactionsMcpTool() {
 }
 
 export function createGetAnalysisMcpTool() {
+  const topCategorySummary = z.object({
+    name: z.string().describe('Category name'),
+    total: z.number().describe('Total amount spent/earned in INR'),
+    count: z.number().describe('Number of transactions'),
+  });
+
+  const accountActivitySummary = z.object({
+    name: z.string().describe('Account name'),
+    expense: z.number().describe('Total expenses from this account'),
+    income: z.number().describe('Total income to this account'),
+    balance: z.number().describe('Current account balance'),
+  });
+
+  const dailyFlowEntry = z.object({
+    date: z.string().describe('Date in YYYY-MM-DD format'),
+    total: z.number().describe('Total expense amount for that day'),
+  });
+
   return {
     name: 'get_analysis',
     title: 'Get Financial Analysis',
     description:
       'Get comprehensive financial analysis: total income/expenses, net balance, top spending categories, account activity, and daily expense flow. Use when the user asks for a summary, overview, or analysis of their finances.',
     schema: z.object({}),
+    outputSchema: z.object({
+      totalExpense: z.number().describe('Total expenses in INR'),
+      totalIncome: z.number().describe('Total income in INR'),
+      netFlow: z.number().describe('Net cash flow (income minus expenses)'),
+      totalAccountBalance: z.number().describe('Sum of all account balances'),
+      topExpenseCategories: z.array(topCategorySummary).describe('Top 10 expense categories'),
+      topIncomeCategories: z.array(topCategorySummary).describe('Top 5 income categories'),
+      accountActivity: z.array(accountActivitySummary).describe('Activity per account'),
+      dailyExpenseFlow: z.array(dailyFlowEntry).describe('Daily expense flow for last 14 days'),
+      accounts: z.array(accountObject).describe('All accounts with balances'),
+    }),
     annotations: {
       title: 'Get Financial Analysis',
       readOnlyHint: true,
@@ -213,6 +291,10 @@ export function createGetAnalysisMcpTool() {
 // ── Write tools ──────────────────────────────────────────────────────
 
 export function createDraftTransactionMcpTool() {
+  const createTransactionResponse = successResponse.extend({
+    transaction: transactionObject.describe('The created transaction details'),
+  });
+
   return {
     name: 'create_transaction',
     title: 'Create Transaction',
@@ -242,6 +324,7 @@ export function createDraftTransactionMcpTool() {
         .nullish()
         .describe('The date of the transaction in YYYY-MM-DD format. Default is today.'),
     }),
+    outputSchema: createTransactionResponse.describe('Result of creating a transaction'),
     annotations: {
       title: 'Create Transaction',
       readOnlyHint: false,
@@ -326,6 +409,10 @@ export function createDraftTransactionMcpTool() {
 }
 
 export function createDeleteTransactionMcpTool() {
+  const deleteTransactionResponse = successResponse.extend({
+    transactionId: z.string().describe('The deleted transaction ID'),
+  });
+
   return {
     name: 'delete_transaction',
     title: 'Delete Transaction',
@@ -334,6 +421,7 @@ export function createDeleteTransactionMcpTool() {
     schema: z.object({
       transactionId: z.string().describe('The exact MongoDB ID of the transaction to delete'),
     }),
+    outputSchema: deleteTransactionResponse.describe('Result of deleting a transaction'),
     annotations: {
       title: 'Delete Transaction',
       readOnlyHint: false,
@@ -362,6 +450,10 @@ export function createDeleteTransactionMcpTool() {
 }
 
 export function createUpdateTransactionMcpTool() {
+  const updateTransactionResponse = successResponse.extend({
+    transaction: transactionObject.describe('The updated transaction details'),
+  });
+
   return {
     name: 'update_transaction',
     title: 'Update Transaction',
@@ -381,6 +473,7 @@ export function createUpdateTransactionMcpTool() {
         .optional()
         .describe('New account ID (must be resolved via get_accounts)'),
     }),
+    outputSchema: updateTransactionResponse.describe('Result of updating a transaction'),
     annotations: {
       title: 'Update Transaction',
       readOnlyHint: false,
@@ -429,6 +522,7 @@ export function createGetBudgetsMcpTool() {
     title: 'Get Budgets',
     description: 'Get all user budgets with their category details, periods, and target amounts.',
     schema: z.object({}),
+    outputSchema: z.array(budgetObject).describe('List of budgets'),
     annotations: {
       title: 'Get Budgets',
       readOnlyHint: true,
@@ -450,6 +544,10 @@ export function createGetBudgetsMcpTool() {
 }
 
 export function createCreateBudgetMcpTool() {
+  const createBudgetResponse = successResponse.extend({
+    budget: budgetObject.describe('The created budget details'),
+  });
+
   return {
     name: 'create_budget',
     title: 'Create Budget',
@@ -466,6 +564,7 @@ export function createCreateBudgetMcpTool() {
         .default('monthly')
         .describe('The period of the budget (monthly, weekly, or yearly)'),
     }),
+    outputSchema: createBudgetResponse.describe('Result of creating a budget'),
     annotations: {
       title: 'Create Budget',
       readOnlyHint: false,
@@ -504,6 +603,10 @@ export function createCreateBudgetMcpTool() {
 }
 
 export function createDeleteBudgetMcpTool() {
+  const deleteBudgetResponse = successResponse.extend({
+    budgetId: z.string().describe('The deleted budget ID'),
+  });
+
   return {
     name: 'delete_budget',
     title: 'Delete Budget',
@@ -511,6 +614,7 @@ export function createDeleteBudgetMcpTool() {
     schema: z.object({
       budgetId: z.string().describe('The exact MongoDB ID of the budget to delete'),
     }),
+    outputSchema: deleteBudgetResponse.describe('Result of deleting a budget'),
     annotations: {
       title: 'Delete Budget',
       readOnlyHint: false,
@@ -538,6 +642,10 @@ export function createDeleteBudgetMcpTool() {
 }
 
 export function createCreateCategoryMcpTool() {
+  const createCategoryResponse = successResponse.extend({
+    category: categoryObject.describe('The created category details'),
+  });
+
   return {
     name: 'create_category',
     title: 'Create Category',
@@ -548,6 +656,7 @@ export function createCreateCategoryMcpTool() {
       icon: z.string().optional().describe('Icon name from Lucide/FontAwesome'),
       color: z.string().optional().describe('Hex color code (e.g. #FF5733)'),
     }),
+    outputSchema: createCategoryResponse.describe('Result of creating a category'),
     annotations: {
       title: 'Create Category',
       readOnlyHint: false,
@@ -583,6 +692,10 @@ export function createCreateCategoryMcpTool() {
 }
 
 export function createDeleteCategoryMcpTool() {
+  const deleteCategoryResponse = successResponse.extend({
+    categoryId: z.string().describe('The deleted category ID'),
+  });
+
   return {
     name: 'delete_category',
     title: 'Delete Category',
@@ -590,6 +703,7 @@ export function createDeleteCategoryMcpTool() {
     schema: z.object({
       categoryId: z.string().describe('The exact MongoDB ID of the category to delete'),
     }),
+    outputSchema: deleteCategoryResponse.describe('Result of deleting a category'),
     annotations: {
       title: 'Delete Category',
       readOnlyHint: false,
