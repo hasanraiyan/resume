@@ -7,6 +7,11 @@ import {
   deleteTransaction,
   updateTransaction,
   createTransaction,
+  getBudgets,
+  createBudget,
+  deleteBudget,
+  createCategory,
+  deleteCategory,
 } from '@/lib/apps/pocketly/service/service';
 import { computeAnalysis } from '@/lib/finance-analysis';
 
@@ -418,6 +423,199 @@ export function createUpdateTransactionMcpTool() {
   };
 }
 
+export function createGetBudgetsMcpTool() {
+  return {
+    name: 'get_budgets',
+    title: 'Get Budgets',
+    description: 'Get all user budgets with their category details, periods, and target amounts.',
+    schema: z.object({}),
+    annotations: {
+      title: 'Get Budgets',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    async invoke() {
+      const budgets = await getBudgets();
+      return budgets.map((b) => ({
+        id: b.id,
+        categoryId: b.category?.id || null,
+        categoryName: b.category?.name || 'Uncategorized',
+        amount: b.amount,
+        period: b.period,
+      }));
+    },
+  };
+}
+
+export function createCreateBudgetMcpTool() {
+  return {
+    name: 'create_budget',
+    title: 'Create Budget',
+    description:
+      'Create a new financial budget for an expense category. You MUST resolve categoryId via get_categories first.',
+    schema: z.object({
+      categoryId: z
+        .string()
+        .describe('The exact MongoDB ID of the category (resolved via get_categories)'),
+      amount: z.number().describe('The budget amount in INR (must be positive)'),
+      period: z
+        .enum(['monthly', 'weekly', 'yearly'])
+        .optional()
+        .default('monthly')
+        .describe('The period of the budget (monthly, weekly, or yearly)'),
+    }),
+    annotations: {
+      title: 'Create Budget',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+      invokingMessage: 'Creating budget...',
+      successMessage: 'Budget created successfully!',
+    },
+    async invoke({ categoryId, amount, period = 'monthly' }) {
+      if (!isValidObjectId(categoryId)) {
+        throw new Error('categoryId must be a valid MongoDB ObjectId');
+      }
+      if (typeof amount !== 'number' || amount <= 0) {
+        throw new Error('amount must be a positive number');
+      }
+
+      const result = await createBudget({
+        category: categoryId,
+        amount,
+        period,
+      });
+
+      return {
+        success: true,
+        message: 'Budget created successfully',
+        budget: {
+          id: result.id,
+          category: result.category?.name || 'Unknown',
+          amount: result.amount,
+          period: result.period,
+        },
+      };
+    },
+  };
+}
+
+export function createDeleteBudgetMcpTool() {
+  return {
+    name: 'delete_budget',
+    title: 'Delete Budget',
+    description: 'Delete a budget by its ID. The budget is soft-deleted.',
+    schema: z.object({
+      budgetId: z.string().describe('The exact MongoDB ID of the budget to delete'),
+    }),
+    annotations: {
+      title: 'Delete Budget',
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    async invoke({ budgetId }) {
+      if (!isValidObjectId(budgetId)) {
+        throw new Error('budgetId must be a valid MongoDB ObjectId');
+      }
+
+      const success = await deleteBudget(budgetId);
+      if (!success) {
+        throw new Error(`Budget ${budgetId} not found or already deleted`);
+      }
+
+      return {
+        success: true,
+        message: 'Budget deleted successfully',
+        budgetId,
+      };
+    },
+  };
+}
+
+export function createCreateCategoryMcpTool() {
+  return {
+    name: 'create_category',
+    title: 'Create Category',
+    description: 'Create a new budget category for expenses or incomes.',
+    schema: z.object({
+      name: z.string().describe('Name of the category (e.g. "Travel")'),
+      type: z.enum(['income', 'expense']).describe('Category type (income or expense)'),
+      icon: z.string().optional().describe('Icon name from Lucide/FontAwesome'),
+      color: z.string().optional().describe('Hex color code (e.g. #FF5733)'),
+    }),
+    annotations: {
+      title: 'Create Category',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
+    async invoke({ name, type, icon, color }) {
+      if (!name?.trim()) {
+        throw new Error('Category name is required');
+      }
+
+      const result = await createCategory({
+        name,
+        type,
+        icon: icon || 'dollar-sign',
+        color: color || '#000000',
+      });
+
+      return {
+        success: true,
+        message: 'Category created successfully',
+        category: {
+          id: result.id,
+          name: result.name,
+          type: result.type,
+          icon: result.icon,
+          color: result.color,
+        },
+      };
+    },
+  };
+}
+
+export function createDeleteCategoryMcpTool() {
+  return {
+    name: 'delete_category',
+    title: 'Delete Category',
+    description: 'Delete a category by its ID. The category is soft-deleted.',
+    schema: z.object({
+      categoryId: z.string().describe('The exact MongoDB ID of the category to delete'),
+    }),
+    annotations: {
+      title: 'Delete Category',
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    async invoke({ categoryId }) {
+      if (!isValidObjectId(categoryId)) {
+        throw new Error('categoryId must be a valid MongoDB ObjectId');
+      }
+
+      const success = await deleteCategory(categoryId);
+      if (!success) {
+        throw new Error(`Category ${categoryId} not found or already deleted`);
+      }
+
+      return {
+        success: true,
+        message: 'Category deleted successfully',
+        categoryId,
+      };
+    },
+  };
+}
+
 // ── Export all tools ──────────────────────────────────────────────────
 
 export function createPocketlyReadTools() {
@@ -426,6 +624,7 @@ export function createPocketlyReadTools() {
     createGetCategoriesMcpTool(),
     createGetTransactionsMcpTool(),
     createGetAnalysisMcpTool(),
+    createGetBudgetsMcpTool(),
   ];
 }
 
@@ -434,6 +633,10 @@ export function createPocketlyWriteTools() {
     createDraftTransactionMcpTool(),
     createDeleteTransactionMcpTool(),
     createUpdateTransactionMcpTool(),
+    createCreateBudgetMcpTool(),
+    createDeleteBudgetMcpTool(),
+    createCreateCategoryMcpTool(),
+    createDeleteCategoryMcpTool(),
   ];
 }
 
