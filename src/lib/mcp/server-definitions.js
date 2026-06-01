@@ -93,7 +93,7 @@ export const MCP_SERVER_DEFINITIONS = [
       'Personal finance tracker — query accounts, categories, transactions, and financial analysis. Create, update, and delete transactions.',
     instructions:
       'Use these tools to query and manage personal financial data. All monetary amounts are plain numbers in INR (e.g., 50.75 = ₹50.75). Always resolve account and category IDs via get_accounts / get_categories before creating or updating transactions — never invent IDs. Transactions can be income, expense, or transfer. Transfers move money between two accounts and do not use a category.',
-    defaultScopes: [MCP_SCOPES.POCKETLY_READ],
+    defaultScopes: [MCP_SCOPES.POCKETLY_READ, MCP_SCOPES.POCKETLY_WRITE],
     supportedScopes: [MCP_SCOPES.POCKETLY_READ, MCP_SCOPES.POCKETLY_WRITE],
     scopeDescriptions: MCP_SCOPE_DESCRIPTIONS,
     createTools({ scopes = [] } = {}) {
