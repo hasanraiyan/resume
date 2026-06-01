@@ -31,8 +31,40 @@ function notifyIntrinsicHeight() {
   window.openai?.notifyIntrinsicHeight?.(height);
 }
 
+function extractStructuredData(resultOrParams) {
+  if (!resultOrParams) return null;
+
+  // 1. Check direct structuredContent
+  if (resultOrParams.structuredContent) {
+    return resultOrParams.structuredContent;
+  }
+
+  // 2. Check _meta.structuredContent
+  if (resultOrParams._meta?.structuredContent) {
+    return resultOrParams._meta.structuredContent;
+  }
+
+  // 3. Fallback: Parse from text content
+  const content = resultOrParams.content || resultOrParams.result?.content;
+  if (Array.isArray(content) && content.length > 0) {
+    const textBlock = content.find((c) => c && c.type === 'text');
+    if (textBlock?.text) {
+      try {
+        return JSON.parse(textBlock.text);
+      } catch (e) {
+        // ignore
+      }
+    }
+  }
+
+  return null;
+}
+
 function App() {
-  const [data, setData] = useState(() => window.openai?.toolOutput);
+  const [data, setData] = useState(() => {
+    const initial = window.openai?.toolOutput;
+    return extractStructuredData(initial) || initial;
+  });
   const [isRefreshing, setIsRefreshing] = useState(false);
   const frameRef = useRef(null);
   const renderedKind = data?.kind || preferredKind;
@@ -51,7 +83,8 @@ function App() {
     try {
       if (window.openai?.callTool) {
         const result = await window.openai.callTool(toolName, {});
-        setData(result?.structuredContent || result);
+        const extracted = extractStructuredData(result);
+        setData(extracted || result);
         return;
       }
       window.parent.postMessage(
@@ -79,14 +112,16 @@ function App() {
     const handleGlobals = (event) => {
       syncHostMaxHeight();
       const nextData = event.detail?.globals?.toolOutput || window.openai?.toolOutput;
-      setData(nextData);
+      setData(extractStructuredData(nextData) || nextData);
     };
     const handleMessage = (event) => {
       if (event.source !== window.parent) return;
       const message = event.data;
       if (!message || message.jsonrpc !== '2.0') return;
       if (message.method === 'ui/notifications/tool-result') {
-        setData(message.params?.structuredContent);
+        const extracted =
+          extractStructuredData(message.params) || extractStructuredData(message.params?.result);
+        setData(extracted || message.params);
       }
     };
 
