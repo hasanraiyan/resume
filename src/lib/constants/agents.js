@@ -49,6 +49,8 @@ export const AGENT_IDS = {
   COURSIFY_SEARCH_PRO: 'coursify_search_pro',
   COURSIFY_RESEARCH: 'coursify_research',
   COURSIFY_SUMMARY: 'coursify_summary',
+  COURSIFY_MODULE_PLANNER: 'coursify_module_planner',
+  COURSIFY_SECTION_PLANNER: 'coursify_section_planner',
 
   // Integrations
 };
@@ -338,6 +340,26 @@ export const DEFAULT_AGENT_CONFIGS = {
     defaultProvider: 'groq',
     isActive: true,
   },
+  [AGENT_IDS.COURSIFY_MODULE_PLANNER]: {
+    name: 'Coursify AI Module Planner',
+    description: 'Parses raw syllabi and lecture plans to scaffold modules and sections',
+    type: AGENT_TYPES.CONTENT,
+    category: AGENT_CATEGORIES.WRITING,
+    icon: 'Sparkles',
+    defaultModel: 'gpt-4o-mini',
+    defaultProvider: 'openai',
+    isActive: true,
+  },
+  [AGENT_IDS.COURSIFY_SECTION_PLANNER]: {
+    name: 'Coursify AI Section Planner',
+    description: 'Parses raw lecture details and outlines to scaffold individual section metadata',
+    type: AGENT_TYPES.CONTENT,
+    category: AGENT_CATEGORIES.WRITING,
+    icon: 'Sparkles',
+    defaultModel: 'gpt-4o-mini',
+    defaultProvider: 'openai',
+    isActive: true,
+  },
   [AGENT_IDS.COURSIFY_THUMBNAIL_GENERATOR]: {
     name: 'Coursify Thumbnail Generator',
     description: 'Generates course thumbnail images via Pollinations AI (gptimage-large)',
@@ -430,6 +452,8 @@ export const RATE_LIMIT_DEFAULTS = {
   [AGENT_IDS.COURSIFY_SEARCH_FLASH]: { requests: 10, window: 60 },
   [AGENT_IDS.COURSIFY_SEARCH_PRO]: { requests: 5, window: 60 },
   [AGENT_IDS.COURSIFY_RESEARCH]: { requests: 5, window: 60 },
+  [AGENT_IDS.COURSIFY_MODULE_PLANNER]: { requests: 10, window: 60 },
+  [AGENT_IDS.COURSIFY_SECTION_PLANNER]: { requests: 10, window: 60 },
 };
 
 /**

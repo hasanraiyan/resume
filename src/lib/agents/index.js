@@ -44,6 +44,8 @@ import CoursifyChatAgent from './ai/coursify-chat-agent';
 import CoursifySearchAgent from './ai/coursify-search-agent';
 import CoursifyResearchAgent from './ai/coursify-research-agent-langchain';
 import CoursifySummaryAgent from './ai/coursify-summary-agent';
+import CoursifyModulePlannerAgent from './ai/coursify-module-planner-agent';
+import CoursifySectionPlannerAgent from './ai/coursify-section-planner-agent';
 
 // Register agent classes into the registry
 console.log('[agents/index.js] Registering agents...');
@@ -68,6 +70,8 @@ agentRegistry.register(AGENT_IDS.COURSIFY_SEARCH_FLASH, CoursifySearchAgent);
 agentRegistry.register(AGENT_IDS.COURSIFY_SEARCH_PRO, CoursifySearchAgent);
 agentRegistry.register(AGENT_IDS.COURSIFY_RESEARCH, CoursifyResearchAgent);
 agentRegistry.register(AGENT_IDS.COURSIFY_SUMMARY, CoursifySummaryAgent);
+agentRegistry.register(AGENT_IDS.COURSIFY_MODULE_PLANNER, CoursifyModulePlannerAgent);
+agentRegistry.register(AGENT_IDS.COURSIFY_SECTION_PLANNER, CoursifySectionPlannerAgent);
 console.log('[agents/index.js] Agents registered successfully');
 
 export {
@@ -87,6 +91,8 @@ export {
   CoursifySearchAgent,
   CoursifyResearchAgent,
   CoursifySummaryAgent,
+  CoursifyModulePlannerAgent,
+  CoursifySectionPlannerAgent,
 };
 
 export default agentRegistry;

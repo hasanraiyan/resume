@@ -163,6 +163,20 @@ export function CoursifyStudioProvider({ id, children }) {
       } else {
         toast.error(data.error || 'Failed to update');
       }
+    } else if (payload.detail) {
+      const res = await fetch(`/api/coursify/courses/${id}/sections/ai-plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ detail: payload.detail, moduleId: targetModuleId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Planned section with AI! Created blueprint successfully.');
+        setActiveSection(data.section._id);
+        refreshCourse();
+      } else {
+        toast.error(data.error || 'Failed to plan section with AI');
+      }
     } else {
       const res = await fetch(`/api/coursify/courses/${id}/sections`, {
         method: 'POST',
@@ -196,6 +210,19 @@ export function CoursifyStudioProvider({ id, children }) {
         refreshCourse();
       } else {
         toast.error(data.error || 'Failed to update');
+      }
+    } else if (payload.syllabus) {
+      const res = await fetch(`/api/coursify/courses/${id}/modules/ai-plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ syllabus: payload.syllabus }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Planned module with AI! Added ${data.sections?.length || 0} sections.`);
+        refreshCourse();
+      } else {
+        toast.error(data.error || 'Failed to plan module with AI');
       }
     } else {
       const res = await fetch(`/api/coursify/courses/${id}/modules`, {
