@@ -34,14 +34,18 @@ function notifyIntrinsicHeight() {
 function extractStructuredData(resultOrParams) {
   if (!resultOrParams) return null;
 
-  // 1. Check direct structuredContent
-  if (resultOrParams.structuredContent) {
-    return resultOrParams.structuredContent;
-  }
-
-  // 2. Check _meta.structuredContent
+  // 1. Prioritize _meta.structuredContent (contains the exact raw array/object output)
   if (resultOrParams._meta?.structuredContent) {
     return resultOrParams._meta.structuredContent;
+  }
+
+  // 2. Check direct structuredContent (and unwrap if it was defensively wrapped as `{ items: [...] }`)
+  if (resultOrParams.structuredContent) {
+    const data = resultOrParams.structuredContent;
+    if (data && typeof data === 'object' && 'items' in data && Array.isArray(data.items)) {
+      return data.items;
+    }
+    return data;
   }
 
   // 3. Fallback: Parse from text content

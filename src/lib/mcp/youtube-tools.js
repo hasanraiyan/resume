@@ -26,9 +26,15 @@ export function createYoutubeSearchMcpTool() {
     async invoke({ query, maxResults = 5 }) {
       const result = await youtubeSearch.invoke({ query, maxResults });
       try {
-        return JSON.parse(result);
+        const videos = JSON.parse(result);
+        return {
+          videos: Array.isArray(videos) ? videos : [],
+        };
       } catch (e) {
-        return result;
+        return {
+          videos: [],
+          error: typeof result === 'string' ? result : String(result),
+        };
       }
     },
   };

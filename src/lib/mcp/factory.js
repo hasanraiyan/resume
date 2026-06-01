@@ -175,10 +175,12 @@ export function createSdkMcpServer({ serverKey, scopes = [], context = {}, confi
         };
 
         if (output && typeof output === 'object') {
-          // structuredContent is non-standard and causes strict MCP clients (like ChatGPT/Claude)
-          // to reject the response with a schema validation error.
-          // We put it in _meta, which is standard-compliant, so standard clients don't complain
-          // while custom widget environments can still access it.
+          // Ensure structuredContent is always returned as a proper JSON object (record)
+          // to fully comply with ChatGPT's schema type expectations.
+          const structured = Array.isArray(output) ? { items: output } : output;
+          result.structuredContent = structured;
+
+          // Also keep the exact output in _meta for standard-compliant fallbacks
           result._meta = {
             ...(result._meta || {}),
             structuredContent: output,
