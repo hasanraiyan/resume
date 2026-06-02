@@ -497,6 +497,29 @@ export default function EditSectionModal({ section, onSave, onClose }) {
     }
   }, [section]);
 
+  const handleCopyPrompt = () => {
+    const promptParts = [];
+    if (title?.trim()) {
+      promptParts.push(`Title: ${title.trim()}`);
+    }
+    if (summary?.trim()) {
+      promptParts.push(`Description: ${summary.trim()}`);
+    }
+    const activeGoals = learningGoals.filter((g) => g?.trim());
+    if (activeGoals.length > 0) {
+      promptParts.push(`Goals:\n${activeGoals.map((g) => `- ${g.trim()}`).join('\n')}`);
+    }
+
+    if (promptParts.length === 0) {
+      toast.error('No information available to copy');
+      return;
+    }
+
+    const textToCopy = promptParts.join('\n\n');
+    navigator.clipboard.writeText(textToCopy);
+    toast.success('Prompt copied to clipboard!');
+  };
+
   const handleAIGenerate = async () => {
     if (!title.trim()) {
       toast.error('Please enter a section title first');
@@ -823,23 +846,39 @@ export default function EditSectionModal({ section, onSave, onClose }) {
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
-            style={{ color: 'var(--esm-muted)' }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--esm-hover)';
-              e.currentTarget.style.color = 'var(--esm-ink)';
-              e.currentTarget.style.transform = 'rotate(90deg)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = 'var(--esm-muted)';
-              e.currentTarget.style.transform = 'rotate(0deg)';
-            }}
-          >
-            <X className="w-4.5 h-4.5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCopyPrompt}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-semibold transition-all hover:bg-[var(--esm-hover)]"
+              style={{
+                borderColor: 'var(--esm-border)',
+                color: 'var(--esm-forest)',
+                background: 'transparent',
+                fontFamily: 'Outfit, sans-serif',
+              }}
+            >
+              <Copy className="w-3.5 h-3.5" />
+              Copy Prompt
+            </button>
+
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
+              style={{ color: 'var(--esm-muted)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--esm-hover)';
+                e.currentTarget.style.color = 'var(--esm-ink)';
+                e.currentTarget.style.transform = 'rotate(90deg)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.color = 'var(--esm-muted)';
+                e.currentTarget.style.transform = 'rotate(0deg)';
+              }}
+            >
+              <X className="w-4.5 h-4.5" />
+            </button>
+          </div>
         </div>
 
         {/* Optional Tabs for New Sections */}
