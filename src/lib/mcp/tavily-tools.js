@@ -36,6 +36,19 @@ export function createTavilySearchMcpTool() {
         .default(5)
         .describe('Number of search results to return (default 5, max 10)'),
     }),
+    outputSchema: z.object({
+      results: z
+        .array(
+          z.object({
+            title: z.string().optional().describe('Title of the search result page'),
+            url: z.string().optional().describe('URL of the search result'),
+            content: z.string().optional().describe('Relevant text snippet from the page'),
+            score: z.number().optional().describe('Relevance score of the result'),
+          })
+        )
+        .describe('List of search results'),
+      error: z.string().optional().describe('Error message if the search failed'),
+    }),
     annotations: {
       title: 'Tavily Search',
       readOnlyHint: true,
