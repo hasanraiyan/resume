@@ -9,6 +9,7 @@ import {
   ChevronDown,
   CheckCircle2,
   Copy,
+  Check,
   Type,
   PlayCircle,
   ListTree,
@@ -445,6 +446,7 @@ export default function EditSectionModal({ section, onSave, onClose }) {
   const [activeAdderIndex, setActiveAdderIndex] = useState(null);
 
   const [isGenerating, setIsGenerating] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [toolSteps, setToolSteps] = useState([]);
   const [isModeMenuOpen, setIsModeMenuOpen] = useState(false);
@@ -518,6 +520,10 @@ export default function EditSectionModal({ section, onSave, onClose }) {
     const textToCopy = promptParts.join('\n\n');
     navigator.clipboard.writeText(textToCopy);
     toast.success('Prompt copied to clipboard!');
+    setCopiedPrompt(true);
+    setTimeout(() => {
+      setCopiedPrompt(false);
+    }, 2000);
   };
 
   const handleAIGenerate = async () => {
@@ -857,8 +863,17 @@ export default function EditSectionModal({ section, onSave, onClose }) {
                 fontFamily: 'Outfit, sans-serif',
               }}
             >
-              <Copy className="w-3.5 h-3.5" />
-              Copy Prompt
+              {copiedPrompt ? (
+                <>
+                  <Check className="w-3.5 h-3.5" />
+                  Copied
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" />
+                  Copy Prompt
+                </>
+              )}
             </button>
 
             <button
