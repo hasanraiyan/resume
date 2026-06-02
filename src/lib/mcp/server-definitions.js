@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { createAllPocketlyMcpTools } from './pocketly-tools';
 import { createAllRecallMcpTools } from './recall-tools';
 import { createAllYoutubeMcpTools } from './youtube-tools';
+import { createAllTavilyMcpTools } from './tavily-tools';
 
 export const MCP_SCOPES = {
   TEST_CALCULATE: 'test:calculate',
@@ -10,6 +11,7 @@ export const MCP_SCOPES = {
   RECALL_READ: 'recall:read',
   RECALL_WRITE: 'recall:write',
   YOUTUBE_SEARCH: 'youtube:search',
+  TAVILY_SEARCH: 'tavily:search',
 };
 
 export const MCP_SCOPE_DESCRIPTIONS = {
@@ -19,6 +21,7 @@ export const MCP_SCOPE_DESCRIPTIONS = {
   [MCP_SCOPES.RECALL_READ]: 'Read and search saved Recall memories.',
   [MCP_SCOPES.RECALL_WRITE]: 'Create, update, and delete saved Recall memories.',
   [MCP_SCOPES.YOUTUBE_SEARCH]: 'Search for educational YouTube videos.',
+  [MCP_SCOPES.TAVILY_SEARCH]: 'Search the web using Tavily Search.',
 };
 
 const mathInputSchema = z.object({
@@ -127,6 +130,20 @@ export const MCP_SERVER_DEFINITIONS = [
     scopeDescriptions: MCP_SCOPE_DESCRIPTIONS,
     createTools({ scopes = [] } = {}) {
       return createAllRecallMcpTools({ scopes });
+    },
+  },
+  {
+    key: 'tavily',
+    name: 'Tavily Search Server',
+    version: '1.0.0',
+    description: 'Search the web for real-time information, news, and comprehensive research.',
+    instructions:
+      'Use this tool to search the web for current, real-time information. Provide helpful, structured summaries of search results.',
+    defaultScopes: [MCP_SCOPES.TAVILY_SEARCH],
+    supportedScopes: [MCP_SCOPES.TAVILY_SEARCH],
+    scopeDescriptions: MCP_SCOPE_DESCRIPTIONS,
+    createTools({ scopes = [] } = {}) {
+      return createAllTavilyMcpTools({ scopes });
     },
   },
 ];
