@@ -44,7 +44,31 @@ class CustomSafeReactPrompt {
         finalHumanPrompt = finalHumanPrompt.replace('{input}', inputs.input);
       }
       if (inputs.agent_scratchpad !== undefined) {
-        finalHumanPrompt = finalHumanPrompt.replace('{agent_scratchpad}', inputs.agent_scratchpad);
+        let scratchpadText = '';
+        if (Array.isArray(inputs.agent_scratchpad)) {
+          scratchpadText = inputs.agent_scratchpad
+            .map((msg) => {
+              if (!msg) return '';
+              const type = typeof msg._getType === 'function' ? msg._getType() : '';
+              const content =
+                typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content || '');
+              if (type === 'ai') {
+                // If it starts with 'Thought:', return it as is; otherwise format it cleanly
+                return content;
+              } else if (type === 'tool' || type === 'function') {
+                return `Observation: ${content}`;
+              } else {
+                return content;
+              }
+            })
+            .filter(Boolean)
+            .join('\n');
+        } else if (typeof inputs.agent_scratchpad === 'object') {
+          scratchpadText = JSON.stringify(inputs.agent_scratchpad);
+        } else {
+          scratchpadText = String(inputs.agent_scratchpad || '');
+        }
+        finalHumanPrompt = finalHumanPrompt.replace('{agent_scratchpad}', scratchpadText);
       }
 
       return [
