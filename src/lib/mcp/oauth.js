@@ -18,6 +18,31 @@ function base64Url(buffer) {
   return Buffer.from(buffer).toString('base64url');
 }
 
+export function areRedirectUrisEquivalent(uriA, uriB) {
+  if (uriA === uriB) return true;
+  if (!uriA || !uriB) return false;
+  try {
+    const urlA = new URL(uriA);
+    const urlB = new URL(uriB);
+
+    // Normalize local hostnames to IPv4 loopback
+    const hostA =
+      urlA.hostname === 'localhost' || urlA.hostname === '[::1]' ? '127.0.0.1' : urlA.hostname;
+    const hostB =
+      urlB.hostname === 'localhost' || urlB.hostname === '[::1]' ? '127.0.0.1' : urlB.hostname;
+
+    return (
+      urlA.protocol === urlB.protocol &&
+      hostA === hostB &&
+      urlA.port === urlB.port &&
+      urlA.pathname === urlB.pathname &&
+      urlA.search === urlB.search
+    );
+  } catch {
+    return false;
+  }
+}
+
 function normalizeRequestedScopes(definition, rawScope, config = null) {
   const requested = normalizeScopes(rawScope);
   const configuredScopes = config?.allowedScopes?.length
@@ -104,8 +129,13 @@ export async function getAuthorizationRequestDetails({ params }) {
   }
 
   const registeredClient = await getRegisteredClient(clientId);
-  if (registeredClient && !registeredClient.redirectUris.includes(redirectUri)) {
-    throw new Error('redirect_uri is not registered for this client');
+  if (registeredClient) {
+    const isRegistered = registeredClient.redirectUris.some((uri) =>
+      areRedirectUrisEquivalent(uri, redirectUri)
+    );
+    if (!isRegistered) {
+      throw new Error('redirect_uri is not registered for this client');
+    }
   }
 
   const scopes = normalizeRequestedScopes(definition, params.get('scope'), config);
@@ -186,11 +216,14 @@ export async function exchangeAuthorizationCode({
   const authCode = await McpAuthCode.findOne({
     code,
     clientId,
-    redirectUri,
     expiresAt: { $gt: new Date() },
   });
 
   if (!authCode) {
+    return null;
+  }
+
+  if (redirectUri && !areRedirectUrisEquivalent(authCode.redirectUri, redirectUri)) {
     return null;
   }
 
