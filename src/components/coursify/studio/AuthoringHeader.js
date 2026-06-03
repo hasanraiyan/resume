@@ -3,6 +3,7 @@
 import { RefreshCw, Globe, Lock, Pencil } from 'lucide-react';
 import { ReaderHeader } from '@/components/coursify/reader/ReaderHeader';
 import { useCoursifyStudio } from '@/context/CoursifyStudioContext';
+import { QueueGenerationButton } from './QueueGenerationButton';
 
 export function AuthoringHeader() {
   const {
@@ -27,6 +28,8 @@ export function AuthoringHeader() {
       onToggleSidebar={toggleSidebar}
       actions={
         <div className="flex items-center gap-1.5">
+          <QueueGenerationButton />
+
           <div className="hidden sm:flex items-center gap-0.5 bg-[#f0f5f2] rounded-xl p-0.5 shrink-0">
             {['content', 'planning'].map((tab) => (
               <button
