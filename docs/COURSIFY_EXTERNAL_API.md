@@ -243,13 +243,20 @@ async function fetchContent(slug) {
 
 1. **External app** calls `POST /api/coursify/generate-topic/queue` with a topic
 2. **API checks cache** — if the topic was generated before, returns immediately with slug
-3. **If new**, creates a `CoursifyExternalJob` record (queued)
-4. **Cron worker** (runs hourly) picks up external jobs and processes them
+3. **API checks queue** — if the same topic is already queued/generating, returns existing job ID (no duplicate)
+4. **If new**, creates a `CoursifyExternalJob` record (queued)
+5. **Cron worker** (runs hourly) picks up external jobs and processes them
    - Uses Flash tier only (free)
    - Respects $0.40/hr Pollinations budget
    - Stores results in `CoursifyResearch` (same table as web UI)
-5. **External app polls** `GET /api/coursify/generate-topic/[jobId]` until done
-6. **Once done**, fetches content via `GET /api/coursify/research/[slug]`
+6. **External app polls** `GET /api/coursify/generate-topic/[jobId]` until done
+7. **Once done**, fetches content via `GET /api/coursify/research/[slug]`
+
+**Deduplication:**
+
+- Same topic queued twice → returns first job's ID
+- Same topic already cached → returns cached result immediately
+- Prevents wasted API calls and budget
 
 ## Rate Limits
 

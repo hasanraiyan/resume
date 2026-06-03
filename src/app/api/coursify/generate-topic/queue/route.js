@@ -60,9 +60,26 @@ export async function POST(request) {
       });
     }
 
-    // For external apps, we generate synchronously via a background process
-    // Queue the job for the cron worker to pick up
-    const job = new (await import('@/models/CoursifyExternalJob')).default({
+    // Check if this topic is already queued/generating to avoid duplicates
+    const CoursifyExternalJob = (await import('@/models/CoursifyExternalJob')).default;
+    let existingJob = await CoursifyExternalJob.findOne({
+      topic: topicTrimmed,
+      isReferenceEnabled,
+      status: { $in: ['queued', 'generating'] },
+      deletedAt: null,
+    }).lean();
+
+    if (existingJob) {
+      return NextResponse.json({
+        success: true,
+        jobId: String(existingJob._id),
+        status: existingJob.status,
+        message: `Job already in queue (status: ${existingJob.status}). Reusing existing job ID.`,
+      });
+    }
+
+    // New topic — queue for generation
+    const job = new CoursifyExternalJob({
       topic: topicTrimmed,
       isReferenceEnabled,
       clientId,
