@@ -49,10 +49,10 @@ async function readBalance() {
 // GET /api/cron/coursify-generate
 // Drains the CoursifyGenJob queue, pacing against the live Pollinations balance.
 // Trigger this from an external scheduler (e.g. cron-job.org) with header:
-//   Authorization: Bearer <CRON_API_KEY>
+//   Authorization: Bearer <COURSIFY_CRON_API_KEY>
 export async function GET(request) {
   const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_API_KEY}`) {
+  if (authHeader !== `Bearer ${process.env.COURSIFY_CRON_API_KEY}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
