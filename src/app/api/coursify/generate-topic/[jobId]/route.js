@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
+import CoursifyExternalJob from '@/models/CoursifyExternalJob';
 
 /**
  * GET /api/coursify/generate-topic/[jobId]
@@ -16,7 +17,7 @@ export async function GET(request, { params }) {
   const authHeader = request.headers.get('authorization');
   const expectedKey = process.env.COURSIFY_API_KEY;
 
-  if (authHeader !== `Bearer ${expectedKey}`) {
+  if (!expectedKey || authHeader !== `Bearer ${expectedKey}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -24,7 +25,6 @@ export async function GET(request, { params }) {
     await dbConnect();
     const { jobId } = await params;
 
-    const CoursifyExternalJob = (await import('@/models/CoursifyExternalJob')).default;
     const job = await CoursifyExternalJob.findById(jobId).lean();
 
     if (!job) {

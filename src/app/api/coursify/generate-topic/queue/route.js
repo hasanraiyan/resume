@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import CoursifyResearch from '@/models/CoursifyResearch';
+import CoursifyExternalJob from '@/models/CoursifyExternalJob';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,7 @@ export async function POST(request) {
   const authHeader = request.headers.get('authorization');
   const expectedKey = process.env.COURSIFY_API_KEY;
 
-  if (authHeader !== `Bearer ${expectedKey}`) {
+  if (!expectedKey || authHeader !== `Bearer ${expectedKey}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -61,7 +62,6 @@ export async function POST(request) {
     }
 
     // Check if this topic is already queued/generating to avoid duplicates
-    const CoursifyExternalJob = (await import('@/models/CoursifyExternalJob')).default;
     let existingJob = await CoursifyExternalJob.findOne({
       topic: topicTrimmed,
       isReferenceEnabled,
