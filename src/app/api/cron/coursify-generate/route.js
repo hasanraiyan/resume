@@ -52,8 +52,28 @@ async function readBalance() {
 //   Authorization: Bearer <COURSIFY_CRON_API_KEY>
 export async function GET(request) {
   const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.COURSIFY_CRON_API_KEY}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const expectedKey = process.env.COURSIFY_CRON_API_KEY;
+  const expectedAuth = `Bearer ${expectedKey}`;
+
+  console.log('[CronCoursifyGenerate] Auth debug:', {
+    receivedHeader: authHeader,
+    expectedAuth,
+    envKeySet: !!expectedKey,
+    envKeyValue: expectedKey ? `${expectedKey.substring(0, 10)}...` : 'NOT SET',
+  });
+
+  if (authHeader !== expectedAuth) {
+    return NextResponse.json(
+      {
+        error: 'Unauthorized',
+        debug: {
+          received: authHeader,
+          expected: expectedAuth,
+          envSet: !!expectedKey,
+        },
+      },
+      { status: 401 }
+    );
   }
 
   const startedAt = Date.now();
