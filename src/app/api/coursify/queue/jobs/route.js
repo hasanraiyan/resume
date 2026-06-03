@@ -83,11 +83,11 @@ export async function GET(request) {
       CoursifyCourse.find({ _id: { $in: courseIds }, deletedAt: null })
         .select('_id title')
         .lean(),
-      modules.length > 0
+      moduleIds.length > 0
         ? CoursifyModule.find({ _id: { $in: moduleIds }, deletedAt: null })
             .select('_id title')
             .lean()
-        : [],
+        : Promise.resolve([]),
     ]);
 
     const sectionMap = Object.fromEntries(sections.map((s) => [String(s._id), s]));
