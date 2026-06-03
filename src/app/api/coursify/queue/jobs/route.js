@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import { requireCoursifyAuth } from '@/lib/coursify-auth';
 import CoursifyGenJob from '@/models/CoursifyGenJob';
+import CoursifyExternalJob from '@/models/CoursifyExternalJob';
 import CoursifySection from '@/models/CoursifySection';
 import CoursifyCourse from '@/models/CoursifyCourse';
 import CoursifyModule from '@/models/CoursifyModule';
@@ -54,16 +55,36 @@ export async function GET(request) {
         sort = { createdAt: -1 };
     }
 
-    // Fetch jobs
-    const jobs = await CoursifyGenJob.find(query)
-      .select(
-        '_id courseId moduleId sectionId status agent attempts maxAttempts error usage createdAt updatedAt lastRunAt completedAt'
-      )
-      .sort(sort)
-      .limit(limit)
-      .lean();
+    // Fetch both section jobs and external topic jobs
+    const [sectionJobs, externalJobs] = await Promise.all([
+      CoursifyGenJob.find(query)
+        .select(
+          '_id courseId moduleId sectionId status agent attempts maxAttempts error usage createdAt updatedAt lastRunAt completedAt'
+        )
+        .sort(sort)
+        .limit(limit)
+        .lean(),
+      CoursifyExternalJob.find(query)
+        .select(
+          '_id topic clientId status agent attempts maxAttempts error usage resultSlug createdAt updatedAt lastRunAt completedAt'
+        )
+        .sort(sort)
+        .limit(limit)
+        .lean(),
+    ]);
 
-    if (jobs.length === 0) {
+    // Merge and sort by createdAt
+    const allJobs = [
+      ...sectionJobs.map((j) => ({ ...j, jobType: 'section' })),
+      ...externalJobs.map((j) => ({ ...j, jobType: 'external' })),
+    ].sort((a, b) => {
+      if (sortBy === 'oldest') {
+        return new Date(a.createdAt) - new Date(b.createdAt);
+      }
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    if (allJobs.length === 0) {
       return NextResponse.json({
         success: true,
         jobs: [],
@@ -71,37 +92,59 @@ export async function GET(request) {
       });
     }
 
-    // Fetch related section/course/module in parallel
-    const sectionIds = [...new Set(jobs.map((j) => j.sectionId))];
-    const courseIds = [...new Set(jobs.map((j) => j.courseId))];
-    const moduleIds = [...new Set(jobs.map((j) => j.moduleId).filter(Boolean))];
+    // Fetch related docs for section jobs only
+    const sectionJobsInResults = allJobs.filter((j) => j.jobType === 'section');
+    let sectionMap = {};
+    let courseMap = {};
+    let moduleMap = {};
 
-    const [sections, courses, modules] = await Promise.all([
-      CoursifySection.find({ _id: { $in: sectionIds }, deletedAt: null })
-        .select('_id title')
-        .lean(),
-      CoursifyCourse.find({ _id: { $in: courseIds }, deletedAt: null })
-        .select('_id title')
-        .lean(),
-      moduleIds.length > 0
-        ? CoursifyModule.find({ _id: { $in: moduleIds }, deletedAt: null })
-            .select('_id title')
-            .lean()
-        : Promise.resolve([]),
-    ]);
+    if (sectionJobsInResults.length > 0) {
+      const sectionIds = [...new Set(sectionJobsInResults.map((j) => j.sectionId))];
+      const courseIds = [...new Set(sectionJobsInResults.map((j) => j.courseId))];
+      const moduleIds = [...new Set(sectionJobsInResults.map((j) => j.moduleId).filter(Boolean))];
 
-    const sectionMap = Object.fromEntries(sections.map((s) => [String(s._id), s]));
-    const courseMap = Object.fromEntries(courses.map((c) => [String(c._id), c]));
-    const moduleMap = Object.fromEntries(modules.map((m) => [String(m._id), m]));
+      const [sections, courses, modules] = await Promise.all([
+        CoursifySection.find({ _id: { $in: sectionIds }, deletedAt: null })
+          .select('_id title')
+          .lean(),
+        CoursifyCourse.find({ _id: { $in: courseIds }, deletedAt: null })
+          .select('_id title')
+          .lean(),
+        moduleIds.length > 0
+          ? CoursifyModule.find({ _id: { $in: moduleIds }, deletedAt: null })
+              .select('_id title')
+              .lean()
+          : Promise.resolve([]),
+      ]);
 
-    // Enrich jobs
-    const enriched = jobs.map((job) => ({
-      ...job,
-      id: String(job._id),
-      sectionTitle: sectionMap[String(job.sectionId)]?.title || '(deleted)',
-      courseTitle: courseMap[String(job.courseId)]?.title || '(deleted)',
-      moduleTitle: job.moduleId ? moduleMap[String(job.moduleId)]?.title : null,
-    }));
+      sectionMap = Object.fromEntries(sections.map((s) => [String(s._id), s]));
+      courseMap = Object.fromEntries(courses.map((c) => [String(c._id), c]));
+      moduleMap = Object.fromEntries(modules.map((m) => [String(m._id), m]));
+    }
+
+    // Enrich all jobs
+    const enriched = allJobs.map((job) => {
+      if (job.jobType === 'section') {
+        return {
+          ...job,
+          id: String(job._id),
+          jobType: 'section',
+          sectionTitle: sectionMap[String(job.sectionId)]?.title || '(deleted)',
+          courseTitle: courseMap[String(job.courseId)]?.title || '(deleted)',
+          moduleTitle: job.moduleId ? moduleMap[String(job.moduleId)]?.title : null,
+        };
+      } else {
+        // External job
+        return {
+          ...job,
+          id: String(job._id),
+          jobType: 'external',
+          sectionTitle: null,
+          courseTitle: job.topic, // Show topic as "course"
+          moduleTitle: job.clientId, // Show client ID as "module"
+        };
+      }
+    });
 
     return NextResponse.json({
       success: true,
@@ -116,7 +159,7 @@ export async function GET(request) {
 
 /**
  * POST /api/coursify/queue/jobs/:action
- * Actions: retry, cancel
+ * Actions: retry, cancel (works for both section and external jobs)
  */
 export async function POST(request) {
   const auth = await requireCoursifyAuth(request);
@@ -134,7 +177,15 @@ export async function POST(request) {
       );
     }
 
-    const job = await CoursifyGenJob.findById(jobId);
+    // Try both job types
+    let job = await CoursifyGenJob.findById(jobId);
+    let jobType = 'section';
+
+    if (!job) {
+      job = await CoursifyExternalJob.findById(jobId);
+      jobType = 'external';
+    }
+
     if (!job) {
       return NextResponse.json({ success: false, error: 'Job not found' }, { status: 404 });
     }

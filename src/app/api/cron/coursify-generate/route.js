@@ -5,9 +5,11 @@ import { generateSection } from '@/lib/coursify/generation/generateSection';
 import { getPollinationsBalance } from '@/lib/pollinations-balance';
 import { dbUpdateSection } from '@/lib/coursify/db-ops';
 import CoursifyGenJob from '@/models/CoursifyGenJob';
+import CoursifyExternalJob from '@/models/CoursifyExternalJob';
 import CoursifySection from '@/models/CoursifySection';
 import CoursifyCourse from '@/models/CoursifyCourse';
 import CoursifyModule from '@/models/CoursifyModule';
+import CoursifyResearch from '@/models/CoursifyResearch';
 
 import '@/lib/agents';
 
@@ -21,10 +23,10 @@ const MAX_RUN_MS = 3_000; // wall-clock budget — just claim jobs, return fast;
 const STALE_GENERATING_MS = 10 * 60_000; // reclaim jobs stuck "generating" this long
 
 /**
- * Execute a generation job asynchronously (fire-and-forget).
+ * Execute a section generation job asynchronously (fire-and-forget).
  * Doesn't block the cron response; errors are caught and logged.
  */
-async function executeJobAsync(job) {
+async function executeSectionJobAsync(job) {
   try {
     const section = await CoursifySection.findOne({
       _id: job.sectionId,
@@ -76,9 +78,60 @@ async function executeJobAsync(job) {
     job.syncVersion += 1;
     await job.save();
 
-    console.log(`[CronCoursifyGenerate:Async] Job ${job._id} completed`);
+    console.log(`[CronCoursifyGenerate:Async] Section job ${job._id} completed`);
   } catch (err) {
-    console.error(`[CronCoursifyGenerate:Async] Job ${job._id} failed:`, err.message);
+    console.error(`[CronCoursifyGenerate:Async] Section job ${job._id} failed:`, err.message);
+    const message = err?.message || 'Generation failed';
+
+    job.status = isBudgetError(message) ? 'queued' : 'failed';
+    job.error = message;
+    job.syncVersion += 1;
+    await job.save();
+  }
+}
+
+/**
+ * Execute an external topic generation job asynchronously.
+ * Results are stored in CoursifyResearch (not tied to sections).
+ */
+async function executeExternalJobAsync(job) {
+  try {
+    const { hashPrompt } = await import('@/lib/coursify/promptHasher');
+    const promptHash = hashPrompt(job.topic, job.isReferenceEnabled);
+
+    const result = await agentRegistry.execute('coursify-flash', {
+      topic: job.topic,
+      isReferenceEnabled: job.isReferenceEnabled,
+    });
+
+    const content = (result?.content || '').trim();
+    if (!content) {
+      throw new Error('Generation returned empty content');
+    }
+
+    // Store in CoursifyResearch (same table as web UI)
+    const research = new CoursifyResearch({
+      promptHash,
+      title: result.title || job.topic,
+      content,
+      slug: result.slug,
+      summary: result.summary || '',
+      fromCache: false,
+      usage: result.usage || null,
+    });
+    await research.save();
+
+    job.status = 'done';
+    job.resultSlug = research.slug;
+    job.usage = result.usage || null;
+    job.error = '';
+    job.completedAt = new Date();
+    job.syncVersion += 1;
+    await job.save();
+
+    console.log(`[CronCoursifyGenerate:External] Topic job ${job._id} -> slug ${research.slug}`);
+  } catch (err) {
+    console.error(`[CronCoursifyGenerate:External] Topic job ${job._id} failed:`, err.message);
     const message = err?.message || 'Generation failed';
 
     job.status = isBudgetError(message) ? 'queued' : 'failed';
@@ -115,12 +168,12 @@ async function readBalance() {
 }
 
 // GET /api/cron/coursify-generate
-// Drains the CoursifyGenJob queue, pacing against the live Pollinations balance.
+// Drains the CoursifyGenJob + CoursifyExternalJob queues, pacing against the live Pollinations balance.
 // Trigger this from an external scheduler (e.g. cron-job.org) with header:
-//   Authorization: Bearer <COURSIFY_CRON_API_KEY>
+//   Authorization: Bearer <COURSIFY_API_KEY>
 export async function GET(request) {
   const authHeader = request.headers.get('authorization');
-  const expectedKey = process.env.COURSIFY_CRON_API_KEY;
+  const expectedKey = process.env.COURSIFY_API_KEY;
   const expectedAuth = `Bearer ${expectedKey}`;
 
   console.log('[CronCoursifyGenerate] Auth debug:', {
@@ -173,8 +226,8 @@ export async function GET(request) {
         break;
       }
 
-      // Atomically claim the oldest queued job so overlapping runs don't collide.
-      const job = await CoursifyGenJob.findOneAndUpdate(
+      // Try to claim from section jobs first, then external topic jobs
+      let job = await CoursifyGenJob.findOneAndUpdate(
         { status: 'queued', deletedAt: null },
         {
           $set: { status: 'generating', lastRunAt: new Date() },
@@ -183,29 +236,58 @@ export async function GET(request) {
         { sort: { createdAt: 1 }, new: true }
       );
 
+      let jobType = 'section';
+
+      if (!job) {
+        // No section jobs, try external topic jobs
+        job = await CoursifyExternalJob.findOneAndUpdate(
+          { status: 'queued', deletedAt: null },
+          {
+            $set: { status: 'generating', lastRunAt: new Date() },
+            $inc: { attempts: 1, syncVersion: 1 },
+          },
+          { sort: { createdAt: 1 }, new: true }
+        );
+        jobType = 'external';
+      }
+
       if (!job) {
         stopReason = 'empty';
         break;
       }
 
       // Spawn the job asynchronously (fire-and-forget) — don't wait for it to complete
-      executeJobAsync(job).catch((err) => {
-        console.error(`[CronCoursifyGenerate] Unexpected error in async job ${job._id}:`, err);
-      });
+      if (jobType === 'section') {
+        executeSectionJobAsync(job).catch((err) => {
+          console.error(`[CronCoursifyGenerate] Unexpected error in section job ${job._id}:`, err);
+        });
+      } else {
+        executeExternalJobAsync(job).catch((err) => {
+          console.error(`[CronCoursifyGenerate] Unexpected error in external job ${job._id}:`, err);
+        });
+      }
 
       processed.push({
         jobId: String(job._id),
+        type: jobType,
         status: 'spawned',
       });
     }
 
-    const remaining = await CoursifyGenJob.countDocuments({ status: 'queued', deletedAt: null });
+    const [sectionRemaining, externalRemaining] = await Promise.all([
+      CoursifyGenJob.countDocuments({ status: 'queued', deletedAt: null }),
+      CoursifyExternalJob.countDocuments({ status: 'queued', deletedAt: null }),
+    ]);
 
     return NextResponse.json({
       ok: true,
       stopReason,
       processedCount: processed.length,
-      queuedRemaining: remaining,
+      queuedRemaining: {
+        sections: sectionRemaining,
+        external: externalRemaining,
+        total: sectionRemaining + externalRemaining,
+      },
       balance,
       durationMs: Date.now() - startedAt,
       processed,

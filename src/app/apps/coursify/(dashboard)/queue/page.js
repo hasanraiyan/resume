@@ -117,7 +117,7 @@ export default function QueuePage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-[#1e3a34] mb-2">Generation Queue</h1>
         <p className="text-[#7c8e88] text-sm">
-          Monitor background section generation jobs and their progress.
+          Monitor background generation jobs (sections and external topics) and their progress.
         </p>
       </div>
 
@@ -166,9 +166,10 @@ export default function QueuePage() {
           <table className="w-full text-sm">
             <thead className="bg-[#f0f5f2] border-b border-[#e5e3d8]">
               <tr>
+                <th className="px-4 py-3 text-left font-bold text-[#1e3a34]">Type</th>
                 <th className="px-4 py-3 text-left font-bold text-[#1e3a34]">Status</th>
-                <th className="px-4 py-3 text-left font-bold text-[#1e3a34]">Section</th>
-                <th className="px-4 py-3 text-left font-bold text-[#1e3a34]">Course</th>
+                <th className="px-4 py-3 text-left font-bold text-[#1e3a34]">Section / Topic</th>
+                <th className="px-4 py-3 text-left font-bold text-[#1e3a34]">Course / Client</th>
                 <th className="px-4 py-3 text-left font-bold text-[#1e3a34]">Module</th>
                 <th className="px-4 py-3 text-center font-bold text-[#1e3a34]">Attempts</th>
                 <th className="px-4 py-3 text-left font-bold text-[#1e3a34]">Created</th>
@@ -183,6 +184,17 @@ export default function QueuePage() {
                   className="border-b border-[#e5e3d8] hover:bg-[#f0f5f2] transition-colors"
                 >
                   <td className="px-4 py-3">
+                    <span
+                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${
+                        job.jobType === 'section'
+                          ? 'bg-purple-100 text-purple-700'
+                          : 'bg-orange-100 text-orange-700'
+                      }`}
+                    >
+                      {job.jobType === 'section' ? 'Section' : 'External'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       {STATUS_ICONS[job.status]}
                       <span
@@ -194,9 +206,15 @@ export default function QueuePage() {
                       </span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-[#1e3a34] font-medium">{job.sectionTitle}</td>
-                  <td className="px-4 py-3 text-[#7c8e88]">{job.courseTitle}</td>
-                  <td className="px-4 py-3 text-[#7c8e88]">{job.moduleTitle || '—'}</td>
+                  <td className="px-4 py-3 text-[#1e3a34] font-medium">
+                    {job.sectionTitle || job.courseTitle}
+                  </td>
+                  <td className="px-4 py-3 text-[#7c8e88]">
+                    {job.jobType === 'section' ? job.courseTitle : job.moduleTitle || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-[#7c8e88]">
+                    {job.jobType === 'section' ? job.moduleTitle || '—' : '—'}
+                  </td>
                   <td className="px-4 py-3 text-center text-[#7c8e88]">
                     {job.attempts}/{job.maxAttempts}
                   </td>
