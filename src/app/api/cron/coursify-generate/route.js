@@ -17,8 +17,76 @@ export const maxDuration = 60; // platform hint: allow up to 60s
 // ─── Tunables ───
 const MIN_BALANCE_USD = 0.03; // stop generating once the live balance drops below this
 const MAX_JOBS_PER_RUN = 10; // hard cap per cron invocation
-const MAX_RUN_MS = 50_000; // wall-clock budget, stay under platform timeouts
+const MAX_RUN_MS = 3_000; // wall-clock budget — just claim jobs, return fast; let them run in bg
 const STALE_GENERATING_MS = 10 * 60_000; // reclaim jobs stuck "generating" this long
+
+/**
+ * Execute a generation job asynchronously (fire-and-forget).
+ * Doesn't block the cron response; errors are caught and logged.
+ */
+async function executeJobAsync(job) {
+  try {
+    const section = await CoursifySection.findOne({
+      _id: job.sectionId,
+      deletedAt: null,
+    }).lean();
+    if (!section) {
+      job.status = 'canceled';
+      job.error = 'Section no longer exists';
+      job.syncVersion += 1;
+      await job.save();
+      return;
+    }
+
+    const [course, mod] = await Promise.all([
+      CoursifyCourse.findById(job.courseId).select('title').lean(),
+      job.moduleId ? CoursifyModule.findById(job.moduleId).select('title').lean() : null,
+    ]);
+
+    const sectionConfig = await generateSection({
+      sectionName: section.title,
+      courseName: course?.title,
+      moduleName: mod?.title,
+      learningGoals: section.learningGoals || [],
+      isReferenceEnabled: job.isReferenceEnabled,
+      requestedAgent: 'flash',
+      isAuthenticated: false,
+    });
+
+    const result = await agentRegistry.execute(sectionConfig.agentId, {
+      topic: sectionConfig.topic,
+      isReferenceEnabled: sectionConfig.isReferenceEnabled,
+    });
+
+    const content = (result?.content || '').trim();
+    if (!content) {
+      throw new Error('Generation returned empty content');
+    }
+
+    await dbUpdateSection({
+      id: String(job.sectionId),
+      content,
+      status: 'needs_review',
+    });
+
+    job.status = 'done';
+    job.usage = result.usage || null;
+    job.error = '';
+    job.completedAt = new Date();
+    job.syncVersion += 1;
+    await job.save();
+
+    console.log(`[CronCoursifyGenerate:Async] Job ${job._id} completed`);
+  } catch (err) {
+    console.error(`[CronCoursifyGenerate:Async] Job ${job._id} failed:`, err.message);
+    const message = err?.message || 'Generation failed';
+
+    job.status = isBudgetError(message) ? 'queued' : 'failed';
+    job.error = message;
+    job.syncVersion += 1;
+    await job.save();
+  }
+}
 
 /**
  * Is this error caused by running out of budget / rate limiting rather than a
@@ -120,95 +188,15 @@ export async function GET(request) {
         break;
       }
 
-      try {
-        const section = await CoursifySection.findOne({
-          _id: job.sectionId,
-          deletedAt: null,
-        }).lean();
-        if (!section) {
-          // Section was deleted out from under the job — drop it.
-          job.status = 'canceled';
-          job.error = 'Section no longer exists';
-          job.syncVersion += 1;
-          await job.save();
-          processed.push({ jobId: String(job._id), status: 'canceled' });
-          continue;
-        }
+      // Spawn the job asynchronously (fire-and-forget) — don't wait for it to complete
+      executeJobAsync(job).catch((err) => {
+        console.error(`[CronCoursifyGenerate] Unexpected error in async job ${job._id}:`, err);
+      });
 
-        const [course, mod] = await Promise.all([
-          CoursifyCourse.findById(job.courseId).select('title').lean(),
-          job.moduleId ? CoursifyModule.findById(job.moduleId).select('title').lean() : null,
-        ]);
-
-        const sectionConfig = await generateSection({
-          sectionName: section.title,
-          courseName: course?.title,
-          moduleName: mod?.title,
-          learningGoals: section.learningGoals || [],
-          isReferenceEnabled: job.isReferenceEnabled,
-          requestedAgent: 'flash', // Always Flash (free) — never Pro (paid)
-          isAuthenticated: false,
-        });
-
-        const result = await agentRegistry.execute(sectionConfig.agentId, {
-          topic: sectionConfig.topic,
-          isReferenceEnabled: sectionConfig.isReferenceEnabled,
-        });
-
-        const content = (result?.content || '').trim();
-        if (!content) {
-          throw new Error('Generation returned empty content');
-        }
-
-        await dbUpdateSection({
-          id: String(job.sectionId),
-          content,
-          status: 'needs_review',
-        });
-
-        job.status = 'done';
-        job.usage = result.usage || null;
-        job.error = '';
-        job.completedAt = new Date();
-        job.syncVersion += 1;
-        await job.save();
-
-        processed.push({
-          jobId: String(job._id),
-          sectionId: String(job.sectionId),
-          title: section.title,
-          status: 'done',
-        });
-
-        // Re-read the live balance after each spend so we stop right at the floor.
-        balance = await readBalance();
-      } catch (err) {
-        const message = err?.message || 'Generation failed';
-
-        if (isBudgetError(message)) {
-          // Not the job's fault — return it to the queue and stop for this hour.
-          job.status = 'queued';
-          job.attempts = Math.max(0, job.attempts - 1); // don't burn an attempt
-          job.error = message;
-          job.syncVersion += 1;
-          await job.save();
-          stopReason = 'budget';
-          processed.push({ jobId: String(job._id), status: 'requeued_budget' });
-          break;
-        }
-
-        const exhausted = job.attempts >= job.maxAttempts;
-        job.status = exhausted ? 'failed' : 'queued';
-        job.error = message;
-        job.syncVersion += 1;
-        await job.save();
-
-        processed.push({
-          jobId: String(job._id),
-          status: exhausted ? 'failed' : 'retry',
-          error: message,
-        });
-      }
+      processed.push({
+        jobId: String(job._id),
+        status: 'spawned',
+      });
     }
 
     const remaining = await CoursifyGenJob.countDocuments({ status: 'queued', deletedAt: null });
