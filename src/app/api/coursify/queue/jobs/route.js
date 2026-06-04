@@ -30,7 +30,9 @@ export async function GET(request) {
     const statusFilter = searchParams.get('status');
     const courseIdFilter = searchParams.get('courseId');
     const sortBy = searchParams.get('sort') || 'newest';
+    const page = Math.max(1, parseInt(searchParams.get('page')) || 1);
     const limit = Math.min(parseInt(searchParams.get('limit')) || 50, 200);
+    const skip = (page - 1) * limit;
 
     // Build query
     const query = { deletedAt: null };
@@ -55,45 +57,93 @@ export async function GET(request) {
         sort = { createdAt: -1 };
     }
 
+    // Get total counts and status counts
+    // For status counts, we only filter by courseId if present
+    const countMatch = { deletedAt: null };
+    if (courseIdFilter) countMatch.courseId = courseIdFilter;
+
+    const [sectionStatusCounts, externalStatusCounts] = await Promise.all([
+      CoursifyGenJob.aggregate([
+        { $match: countMatch },
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+      ]),
+      CoursifyExternalJob.aggregate([
+        { $match: countMatch },
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+      ]),
+    ]);
+
+    const statusCounts = {
+      queued: 0,
+      generating: 0,
+      done: 0,
+      failed: 0,
+      canceled: 0,
+    };
+
+    sectionStatusCounts.forEach((c) => {
+      if (statusCounts[c._id] !== undefined) statusCounts[c._id] += c.count;
+    });
+    externalStatusCounts.forEach((c) => {
+      if (statusCounts[c._id] !== undefined) statusCounts[c._id] += c.count;
+    });
+
+    const totalFiltered = statusFilter
+      ? statusCounts[statusFilter] || 0
+      : Object.values(statusCounts).reduce((a, b) => a + b, 0);
+
     // Fetch both section jobs and external topic jobs
+    // To properly paginate merged results, we need skip + limit from each
+    const fetchLimit = skip + limit;
+
     const [sectionJobs, externalJobs] = await Promise.all([
       CoursifyGenJob.find(query)
         .select(
           '_id courseId moduleId sectionId status agent attempts maxAttempts error usage createdAt updatedAt lastRunAt completedAt'
         )
         .sort(sort)
-        .limit(limit)
+        .limit(fetchLimit)
         .lean(),
       CoursifyExternalJob.find(query)
         .select(
           '_id topic clientId status agent attempts maxAttempts error usage resultSlug createdAt updatedAt lastRunAt completedAt'
         )
         .sort(sort)
-        .limit(limit)
+        .limit(fetchLimit)
         .lean(),
     ]);
 
-    // Merge and sort by createdAt
-    const allJobs = [
+    // Merge and sort
+    const allJobsMerged = [
       ...sectionJobs.map((j) => ({ ...j, jobType: 'section' })),
       ...externalJobs.map((j) => ({ ...j, jobType: 'external' })),
     ].sort((a, b) => {
       if (sortBy === 'oldest') {
         return new Date(a.createdAt) - new Date(b.createdAt);
       }
+      if (sortBy === 'status') {
+        if (a.status !== b.status) return a.status.localeCompare(b.status);
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      }
       return new Date(b.createdAt) - new Date(a.createdAt);
     });
 
-    if (allJobs.length === 0) {
+    // Apply pagination
+    const paginatedJobs = allJobsMerged.slice(skip, skip + limit);
+
+    if (paginatedJobs.length === 0 && page === 1) {
       return NextResponse.json({
         success: true,
         jobs: [],
         total: 0,
+        page: 1,
+        totalPages: 0,
+        statusCounts,
       });
     }
 
     // Fetch related docs for section jobs only
-    const sectionJobsInResults = allJobs.filter((j) => j.jobType === 'section');
+    const sectionJobsInResults = paginatedJobs.filter((j) => j.jobType === 'section');
     let sectionMap = {};
     let courseMap = {};
     let moduleMap = {};
@@ -122,8 +172,8 @@ export async function GET(request) {
       moduleMap = Object.fromEntries(modules.map((m) => [String(m._id), m]));
     }
 
-    // Enrich all jobs
-    const enriched = allJobs.map((job) => {
+    // Enrich paginated jobs
+    const enriched = paginatedJobs.map((job) => {
       if (job.jobType === 'section') {
         return {
           ...job,
@@ -149,7 +199,10 @@ export async function GET(request) {
     return NextResponse.json({
       success: true,
       jobs: enriched,
-      total: enriched.length,
+      total: totalFiltered,
+      page,
+      totalPages: Math.ceil(totalFiltered / limit),
+      statusCounts,
     });
   } catch (error) {
     console.error('[CoursifyQueueJobs:GET] Error:', error);
