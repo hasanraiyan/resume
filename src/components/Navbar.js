@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Script from 'next/script';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/custom-ui';
 import { useSiteContext } from '@/context/SiteContext';
-import AiSearchOverlay from '@/components/search/AiSearchOverlay';
 
 /**
  * \"Floating Pill\" Navbar
@@ -14,7 +14,6 @@ import AiSearchOverlay from '@/components/search/AiSearchOverlay';
  */
 export default function Navbar({ siteConfig }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const pathname = usePathname();
   const { initials, heroData } = useSiteContext();
 
@@ -142,7 +141,7 @@ export default function Navbar({ siteConfig }) {
 
           {/* Search Icon */}
           <button
-            onClick={() => setIsSearchOpen(true)}
+            id="searchWidgetTrigger"
             className="text-gray-500 hover:text-black transition-colors"
             aria-label="Search"
           >
@@ -178,7 +177,7 @@ export default function Navbar({ siteConfig }) {
 
         <div className="pointer-events-auto flex gap-3">
           <button
-            onClick={() => setIsSearchOpen(true)}
+            id="searchWidgetTriggerMobile"
             className="w-10 h-10 rounded-full flex items-center justify-center text-black bg-white shadow-md"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -231,7 +230,19 @@ export default function Navbar({ siteConfig }) {
         </div>
       </div>
 
-      <AiSearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      {/* Load Google Gen App Builder Client Script */}
+      <Script
+        src="https://cloud.google.com/ai/gen-app-builder/client?hl=en_US"
+        strategy="afterInteractive"
+      />
+      <gen-search-widget
+        configId="fe23bab7-1bc5-495f-86ad-4dd05e54700f"
+        triggerId="searchWidgetTrigger"
+      />
+      <gen-search-widget
+        configId="fe23bab7-1bc5-495f-86ad-4dd05e54700f"
+        triggerId="searchWidgetTriggerMobile"
+      />
     </>
   );
 }
