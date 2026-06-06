@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/custom-ui';
 import { useSiteContext } from '@/context/SiteContext';
-import SearchOverlay from '@/components/search/SearchOverlay';
+import AiSearchOverlay from '@/components/search/AiSearchOverlay';
 
 /**
  * \"Floating Pill\" Navbar
@@ -231,7 +231,7 @@ export default function Navbar({ siteConfig }) {
         </div>
       </div>
 
-      <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      <AiSearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </>
   );
 }
