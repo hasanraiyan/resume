@@ -33,7 +33,6 @@
 import dbConnect from '@/lib/dbConnect';
 import Project from '@/models/Project';
 import Article from '@/models/Article';
-import CoursifyCourse from '@/models/CoursifyCourse';
 import Fuse from 'fuse.js';
 import { Filter } from 'bad-words';
 
@@ -44,7 +43,7 @@ import { Filter } from 'bad-words';
  * @property {string} title - Title of the project or article
  * @property {string} slug - URL-friendly identifier
  * @property {string} excerpt - Brief description or excerpt
- * @property {'project'|'article'|'course'} type - Type of content
+ * @property {'project'|'article'} type - Type of content
  * @property {number} score - Relevance score (0-1, higher is better)
  * @property {string} [category] - Project category (for projects only)
  * @property {Array} [tags] - Associated tags
@@ -68,51 +67,8 @@ const FUSE_OPTIONS = {
   ],
 };
 
-/**
- * Performs a unified, fuzzy search across all projects and articles.
- *
- * This function serves as the single source of truth for search functionality
- * in the application. It combines data from both projects and articles, applies
- * intelligent fuzzy matching using Fuse.js, and returns formatted results with
- * relevance scoring and proper URL generation.
- *
- * Search Process:
- * 1. Validates query (minimum length, profanity check)
- * 2. Fetches all searchable content from database
- * 3. Applies fuzzy search with weighted scoring
- * 4. Formats results with URLs and metadata
- *
- * @async
- * @function performSearch
- * @param {string} query - The search query from the user (minimum 2 characters)
- * @param {boolean} isAuthenticated - Whether the user is authenticated (default: false)
- * @returns {Promise<SearchResult[]>} Promise that resolves to an array of formatted search results
- *
- * @example
- * ```js
- * // Basic search usage
- * const results = await performSearch('React');
- * console.log(`Found ${results.length} results`);
- *
- * // Process results by type
- * results.forEach(result => {
- *   console.log(`${result.type}: ${result.title} (${result.score})`);
- *   console.log(`URL: ${result.url}`);
- * });
- *
- * // Filter for specific content types
- * const projects = results.filter(r => r.type === 'project');
- * const articles = results.filter(r => r.type === 'article');
- *
- * // Handle empty results
- * if (results.length === 0) {
- *   console.log('No results found');
- * }
- * ```
- */
 export async function performSearch(query, isAuthenticated = false, type = null) {
   try {
-    // Instantiate and check for profanity
     const filter = new Filter();
     if (!query || query.length < 2 || filter.isProfane(query)) {
       return [];
@@ -120,7 +76,6 @@ export async function performSearch(query, isAuthenticated = false, type = null)
 
     await dbConnect();
 
-    // 1. Fetch all searchable content from the database
     const visibilityFilter = isAuthenticated
       ? { $in: ['public', 'private', 'unlisted'] }
       : 'public';
@@ -145,17 +100,7 @@ export async function performSearch(query, isAuthenticated = false, type = null)
       fetchers.push(Promise.resolve([]));
     }
 
-    if (!type || type === 'course') {
-      fetchers.push(
-        CoursifyCourse.find({ status: 'published', deletedAt: null })
-          .select('slug title description tags difficulty thumbnail')
-          .lean()
-      );
-    } else {
-      fetchers.push(Promise.resolve([]));
-    }
-
-    const [projectResults, articleResults, courseResults] = await Promise.all(fetchers);
+    const [projectResults, articleResults] = await Promise.all(fetchers);
 
     // 2. Prepare the data for Fuse.js
     const searchableData = [
@@ -164,11 +109,6 @@ export async function performSearch(query, isAuthenticated = false, type = null)
         ...article,
         type: 'article',
         description: article.excerpt, // Use 'excerpt' for consistent searching
-      })),
-      ...courseResults.map((course) => ({
-        ...course,
-        type: 'course',
-        description: course.description,
       })),
     ];
 
@@ -204,15 +144,12 @@ export async function performSearch(query, isAuthenticated = false, type = null)
       url:
         result.item.type === 'project'
           ? `/projects/${result.item.slug}`
-          : result.item.type === 'course'
-            ? `/coursify/${result.item.slug || result.item._id}`
-            : `/blog/${result.item.slug}`, // Add URL
+          : `/blog/${result.item.slug}`, // Add URL
     }));
 
     return results;
   } catch (error) {
     console.error('Unified Search Error:', error);
-    // Return an empty array on error to prevent crashes
     return [];
   }
 }
