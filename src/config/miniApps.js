@@ -38,7 +38,7 @@ export const MINI_APPS = [
     id: 'coursify',
     name: 'Coursify',
     tagline: 'AI-built courses — read, edit, and learn.',
-    href: '/apps/coursify',
+    href: 'https://coursify.hasanraiyan.me',
     category: 'Learning',
     iconSrc: '/images/apps/coursify.png',
   },

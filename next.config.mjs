@@ -68,6 +68,30 @@ const nextConfig = {
       bodySizeLimit: '10mb',
     },
   },
+  async redirects() {
+    return [
+      {
+        source: '/coursify/r/:slug',
+        destination: 'https://coursify.hasanraiyan.me/r/:slug',
+        permanent: true,
+      },
+      {
+        source: '/coursify',
+        destination: 'https://coursify.hasanraiyan.me',
+        permanent: true,
+      },
+      {
+        source: '/coursify/:path*',
+        destination: 'https://coursify.hasanraiyan.me/:path*',
+        permanent: true,
+      },
+      {
+        source: '/api/coursify/:path*',
+        destination: 'https://coursify.hasanraiyan.me/api/coursify/:path*',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
