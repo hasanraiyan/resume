@@ -29,8 +29,6 @@ import { getProjectSectionData } from '@/app/actions/projectSectionActions';
 import { getFeaturedProjects } from '@/app/actions/projectActions';
 import { getServiceSectionData } from '@/app/actions/serviceSectionActions';
 import { getSkillsSectionData } from '@/app/actions/skillsSectionActions';
-import { getFeaturedCourses } from '@/app/actions/coursifyActions';
-import FeaturedCourses from '@/components/FeaturedCourses';
 
 export default async function Home() {
   await dbConnect();
@@ -57,9 +55,6 @@ export default async function Home() {
   const technologies = await getAllTechnologies();
   const certifications = await getAllCertifications();
   const contactConfig = await getContactSectionData();
-
-  // Fetch featured courses
-  const { courses: featuredCourses } = await getFeaturedCourses(6);
 
   const [
     heroData,
@@ -101,7 +96,6 @@ export default async function Home() {
       />
       <Services services={services} section={serviceSectionData || {}} />
       <FeaturedWorks featuredProjects={featuredProjects} section={projectSection || {}} />
-      <FeaturedCourses courses={featuredCourses} />
       <div style={{ overflow: 'hidden', width: '100%' }}>
         <Stats statsData={statsData} />
       </div>

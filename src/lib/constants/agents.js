@@ -42,16 +42,6 @@ export const AGENT_IDS = {
   // Tools / Apps
   APP_BUILDER: 'app_builder',
 
-  // Coursify
-  COURSIFY_THUMBNAIL_GENERATOR: 'coursify_thumbnail_generator',
-  COURSIFY_CHAT: 'coursify_chat',
-  COURSIFY_SEARCH_FLASH: 'coursify_search_flash',
-  COURSIFY_SEARCH_PRO: 'coursify_search_pro',
-  COURSIFY_RESEARCH: 'coursify_research',
-  COURSIFY_SUMMARY: 'coursify_summary',
-  COURSIFY_MODULE_PLANNER: 'coursify_module_planner',
-  COURSIFY_SECTION_PLANNER: 'coursify_section_planner',
-
   // Integrations
 };
 
@@ -284,92 +274,6 @@ export const DEFAULT_AGENT_CONFIGS = {
     persona: `You are an elite App Builder agent. Your job is to generate complete, single-file HTML/JS/CSS applications. You must use modern CDNs like TailwindCSS for styling and ensure the app is fully functional and responsive. You work iteratively: first plan out the app structure, then generate the code, and finally review it for correctness.`,
     isActive: true,
   },
-  [AGENT_IDS.COURSIFY_CHAT]: {
-    name: 'Coursify Learning Assistant',
-    description: 'Conversational AI tutor for Coursify course readers',
-    type: AGENT_TYPES.CHAT,
-    category: AGENT_CATEGORIES.CONVERSATIONAL,
-    icon: 'BookOpen',
-    defaultModel: 'gpt-4o-mini',
-    defaultProvider: 'openai',
-    isActive: true,
-  },
-  [AGENT_IDS.COURSIFY_SEARCH_FLASH]: {
-    name: 'Coursify Search Flash',
-    description:
-      'Researches topics via internet search and generates structured course content (Flash Model)',
-    type: AGENT_TYPES.CONTENT,
-    category: AGENT_CATEGORIES.WRITING,
-    icon: 'Zap',
-    defaultModel: 'gemini-1.5-flash',
-    defaultProvider: 'google',
-    tools: ['tavily_search', 'youtube_search'],
-    isActive: true,
-  },
-  [AGENT_IDS.COURSIFY_SEARCH_PRO]: {
-    name: 'Coursify Search Pro',
-    description:
-      'Researches topics via internet search and generates structured course content (Pro Model)',
-    type: AGENT_TYPES.CONTENT,
-    category: AGENT_CATEGORIES.WRITING,
-    icon: 'Award',
-    defaultModel: 'gemini-1.5-pro',
-    defaultProvider: 'google',
-    tools: ['tavily_search', 'youtube_search'],
-    isActive: true,
-  },
-  [AGENT_IDS.COURSIFY_RESEARCH]: {
-    name: 'Coursify Research Engine',
-    description:
-      'Deterministic research agent with exact step execution (LangChain sequential pipeline)',
-    type: AGENT_TYPES.CONTENT,
-    category: AGENT_CATEGORIES.WRITING,
-    icon: 'Search',
-    defaultModel: 'gpt-4o',
-    defaultProvider: 'openai',
-    tools: ['tavily_search', 'youtube_search'],
-    isActive: true,
-  },
-  [AGENT_IDS.COURSIFY_SUMMARY]: {
-    name: 'Coursify Summary Engine',
-    description: 'Generates concise summaries of Coursify course content',
-    type: AGENT_TYPES.CONTENT,
-    category: AGENT_CATEGORIES.WRITING,
-    icon: 'FileText',
-    defaultModel: 'openai/gpt-oss-120b',
-    defaultProvider: 'groq',
-    isActive: true,
-  },
-  [AGENT_IDS.COURSIFY_MODULE_PLANNER]: {
-    name: 'Coursify AI Module Planner',
-    description: 'Parses raw syllabi and lecture plans to scaffold modules and sections',
-    type: AGENT_TYPES.CONTENT,
-    category: AGENT_CATEGORIES.WRITING,
-    icon: 'Sparkles',
-    defaultModel: 'gpt-4o-mini',
-    defaultProvider: 'openai',
-    isActive: true,
-  },
-  [AGENT_IDS.COURSIFY_SECTION_PLANNER]: {
-    name: 'Coursify AI Section Planner',
-    description: 'Parses raw lecture details and outlines to scaffold individual section metadata',
-    type: AGENT_TYPES.CONTENT,
-    category: AGENT_CATEGORIES.WRITING,
-    icon: 'Sparkles',
-    defaultModel: 'gpt-4o-mini',
-    defaultProvider: 'openai',
-    isActive: true,
-  },
-  [AGENT_IDS.COURSIFY_THUMBNAIL_GENERATOR]: {
-    name: 'Coursify Thumbnail Generator',
-    description: 'Generates course thumbnail images via Pollinations AI (gptimage-large)',
-    type: AGENT_TYPES.MEDIA,
-    category: AGENT_CATEGORIES.GENERATIVE_ART,
-    icon: 'Image',
-    defaultModel: 'gptimage-large',
-    defaultProvider: 'pollinations',
-    isActive: true,
-  },
   [AGENT_IDS.FINANCE_FLASH]: {
     name: 'Pocketly Flash',
     description: 'Fast personal finance assistant for Pocketly',
@@ -418,9 +322,6 @@ export const AGENT_TOOLS = {
   [AGENT_IDS.APP_BUILDER]: ['planning', 'html_generation', 'code_review'],
   [AGENT_IDS.FINANCE_FLASH]: ['conversation'],
   [AGENT_IDS.FINANCE_PRO]: ['conversation'],
-  [AGENT_IDS.COURSIFY_SEARCH_FLASH]: ['tavily_search', 'youtube_search'],
-  [AGENT_IDS.COURSIFY_SEARCH_PRO]: ['tavily_search', 'youtube_search'],
-  [AGENT_IDS.COURSIFY_RESEARCH]: ['tavily_search', 'youtube_search'],
 };
 
 /**
@@ -447,13 +348,6 @@ export const RATE_LIMIT_DEFAULTS = {
   [AGENT_IDS.APP_BUILDER]: { requests: 10, window: 60 },
   [AGENT_IDS.FINANCE_FLASH]: { requests: 20, window: 60 },
   [AGENT_IDS.FINANCE_PRO]: { requests: 10, window: 60 },
-  [AGENT_IDS.COURSIFY_THUMBNAIL_GENERATOR]: { requests: 10, window: 60 },
-  [AGENT_IDS.COURSIFY_CHAT]: { requests: 20, window: 60 },
-  [AGENT_IDS.COURSIFY_SEARCH_FLASH]: { requests: 10, window: 60 },
-  [AGENT_IDS.COURSIFY_SEARCH_PRO]: { requests: 5, window: 60 },
-  [AGENT_IDS.COURSIFY_RESEARCH]: { requests: 5, window: 60 },
-  [AGENT_IDS.COURSIFY_MODULE_PLANNER]: { requests: 10, window: 60 },
-  [AGENT_IDS.COURSIFY_SECTION_PLANNER]: { requests: 10, window: 60 },
 };
 
 /**

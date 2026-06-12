@@ -273,7 +273,7 @@ Same as web UI generation:
 
 ## Troubleshooting
 
-**401 Unauthorized**: Check your `COURSIFY_EXTERNAL_API_KEY`
+**401 Unauthorized**: Check your `COURSIFY_API_KEY` environment variable is set correctly
 
 **Job stuck in "queued"**: Waiting for next hourly cron run. Budget may also be depleted; check again in 1 hour.
 

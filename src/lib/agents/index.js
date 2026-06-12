@@ -39,14 +39,6 @@ import TelegramAgent from './ai/telegram-agent';
 import WhatsAppAgent from './ai/whatsapp-agent';
 import AppBuilderAgent from './ai/app-builder-agent-v2';
 import FinanceAssistantAgent from './ai/finance-assistant-agent';
-import CoursifyThumbnailAgent from './ai/coursify-thumbnail-agent';
-import CoursifyChatAgent from './ai/coursify-chat-agent';
-import CoursifySearchAgent from './ai/coursify-search-agent';
-import CoursifyResearchAgent from './ai/coursify-research-agent-langchain';
-import CoursifySummaryAgent from './ai/coursify-summary-agent';
-import CoursifyModulePlannerAgent from './ai/coursify-module-planner-agent';
-import CoursifySectionPlannerAgent from './ai/coursify-section-planner-agent';
-
 // Register agent classes into the registry
 console.log('[agents/index.js] Registering agents...');
 console.log('[agents/index.js] AppBuilderAgent:', typeof AppBuilderAgent, AppBuilderAgent?.name);
@@ -64,14 +56,6 @@ agentRegistry.register(AGENT_IDS.WHATSAPP_ASSISTANT, WhatsAppAgent);
 agentRegistry.register(AGENT_IDS.APP_BUILDER, AppBuilderAgent);
 agentRegistry.register(AGENT_IDS.FINANCE_FLASH, FinanceAssistantAgent);
 agentRegistry.register(AGENT_IDS.FINANCE_PRO, FinanceAssistantAgent);
-agentRegistry.register(AGENT_IDS.COURSIFY_THUMBNAIL_GENERATOR, CoursifyThumbnailAgent);
-agentRegistry.register(AGENT_IDS.COURSIFY_CHAT, CoursifyChatAgent);
-agentRegistry.register(AGENT_IDS.COURSIFY_SEARCH_FLASH, CoursifySearchAgent);
-agentRegistry.register(AGENT_IDS.COURSIFY_SEARCH_PRO, CoursifySearchAgent);
-agentRegistry.register(AGENT_IDS.COURSIFY_RESEARCH, CoursifyResearchAgent);
-agentRegistry.register(AGENT_IDS.COURSIFY_SUMMARY, CoursifySummaryAgent);
-agentRegistry.register(AGENT_IDS.COURSIFY_MODULE_PLANNER, CoursifyModulePlannerAgent);
-agentRegistry.register(AGENT_IDS.COURSIFY_SECTION_PLANNER, CoursifySectionPlannerAgent);
 console.log('[agents/index.js] Agents registered successfully');
 
 export {
@@ -86,13 +70,6 @@ export {
   WhatsAppAgent,
   AppBuilderAgent,
   FinanceAssistantAgent,
-  CoursifyThumbnailAgent,
-  CoursifyChatAgent,
-  CoursifySearchAgent,
-  CoursifyResearchAgent,
-  CoursifySummaryAgent,
-  CoursifyModulePlannerAgent,
-  CoursifySectionPlannerAgent,
 };
 
 export default agentRegistry;

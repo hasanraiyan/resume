@@ -45,7 +45,7 @@ export async function generateMetadata() {
   const keywords = siteConfig?.seo?.keywords || [];
 
   return {
-    metadataBase: new URL(getBaseUrl()),
+    metadataBase: new URL('https://hasanraiyan.me'),
     title: {
       default: `${ownerName} | ${defaultTitle}`,
       template: `%s | ${ownerName}`,
