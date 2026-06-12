@@ -72,7 +72,7 @@ const nextConfig = {
     return [
       {
         source: '/coursify/r/:slug',
-        destination: 'https://coursify.hasanraiyan.me/r/:slug',
+        destination: 'https://coursify.hasanraiyan.me/research/:slug',
         permanent: true,
       },
       {
@@ -82,7 +82,7 @@ const nextConfig = {
       },
       {
         source: '/coursify/:path*',
-        destination: 'https://coursify.hasanraiyan.me/:path*',
+        destination: 'https://coursify.hasanraiyan.me/course/:path*',
         permanent: true,
       },
       {
