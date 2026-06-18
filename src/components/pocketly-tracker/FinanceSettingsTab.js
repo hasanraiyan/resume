@@ -20,6 +20,12 @@ import QRCode from 'react-qr-code';
 import { useMoney } from '@/context/MoneyContext';
 import ExportModal from './ExportModal';
 
+const getConnectionLabel = (app) => {
+  if (app.channel === 'android') return 'Mobile';
+  if (app.channel === 'mcp') return 'MCP';
+  return app.channel?.toUpperCase() || 'App';
+};
+
 export default function FinanceSettingsTab() {
   const { clearFinanceData, fetchData, isSyncing, accounts, categories, stats } = useMoney();
   const [isClearing, setIsClearing] = useState(false);
