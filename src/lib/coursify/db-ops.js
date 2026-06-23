@@ -1,6 +1,6 @@
 /**
  * Coursify shared DB operations.
- * Both the MCP server (tools.js) and the Studio agent (coursify-studio-tools.js)
+ * Both the CLI tools and the Studio agent (coursify-studio-tools.js)
  * import from here so business logic lives in exactly one place.
  *
  * Every function throws on failure — callers format the error for their transport.

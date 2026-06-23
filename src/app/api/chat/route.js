@@ -27,7 +27,6 @@ export async function POST(request) {
       chatHistory = [],
       sessionId: providedSessionId,
       path = '/',
-      activeMCPs = [],
       agentId,
       topic,
     } = await request.json();
@@ -46,7 +45,6 @@ export async function POST(request) {
       chatHistory,
       sessionId,
       path,
-      activeMCPs,
       isAdmin,
       ...(topic && { topic }),
     };

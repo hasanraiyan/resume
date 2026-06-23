@@ -2,7 +2,7 @@
  * WhatsApp Assistant Agent
  *
  * Dedicated agent for handling WhatsApp interactions using LangGraph.
- * Pure React Agent base, entirely driven by UI configuration (Persona & MCP Tools).
+ * Pure React Agent base, entirely driven by UI configuration (Persona & Tools).
  */
 
 import { AGENT_IDS } from '@/lib/constants/agents';
@@ -33,10 +33,8 @@ class WhatsAppAgent extends BaseAgent {
       userMessage,
       chatHistory = [],
       sessionId,
-      activeMCPs: inputMCPs,
       isAdmin = false,
     } = input;
-    const activeMCPs = inputMCPs || this.config.activeMCPs || [];
 
     const startTime = Date.now();
     let toolsUsed = [];

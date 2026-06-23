@@ -66,7 +66,6 @@ export function useChatStreaming({ endpoint = '/api/chat', getExtraBody } = {}) 
     history,
     setMessages,
     setStatus,
-    activeMCPs = [],
     selectedAgentId,
   }) => {
     const analytics = getAnalytics();
@@ -103,7 +102,6 @@ export function useChatStreaming({ endpoint = '/api/chat', getExtraBody } = {}) 
         chatHistory,
         sessionId: analytics.sessionId,
         path: window.location.pathname,
-        activeMCPs: activeMCPs,
         agentId: selectedAgentId,
         ...extraBody,
       }),
@@ -366,7 +364,7 @@ export function useChatStreaming({ endpoint = '/api/chat', getExtraBody } = {}) 
   streamChatResponseRef.current = streamChatResponse;
 
   const send = useCallback(
-    async (content, activeQuote, activeMCPs, selectedAgentId, hidden = false) => {
+    async (content, activeQuote, selectedAgentId, hidden = false) => {
       if ((!content.trim() && !activeQuote) || isLoading) return;
 
       const currentQuote = activeQuote;
@@ -390,7 +388,6 @@ export function useChatStreaming({ endpoint = '/api/chat', getExtraBody } = {}) 
         await streamChatResponseRef.current({
           content: userMessage.content,
           history: messages,
-          activeMCPs,
           selectedAgentId,
           setMessages,
           setStatus: setStatusMessage,

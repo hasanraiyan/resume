@@ -65,7 +65,6 @@ export default function NewArticlePage() {
           topic: topic,
           agentId: AGENT_IDS.BLOG_WRITER,
           chatHistory: [],
-          activeMCPs: [],
         }),
         signal: abortController.signal,
       });
