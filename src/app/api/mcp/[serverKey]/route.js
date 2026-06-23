@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { getMcpServerDefinition } from '@/lib/mcp/factory';
-import { getMcpServerConfig } from '@/lib/mcp/config';
 import { handleMcpStreamableHttp, unauthorizedMcpResponse } from '@/lib/mcp/http';
 import { mcpOptionsResponse, withMcpCorsHeaders } from '@/lib/mcp/http-headers';
 
@@ -13,19 +12,6 @@ export async function GET(request, { params }) {
 
   if (!definition) {
     return withMcpCorsHeaders(NextResponse.json({ error: 'Unknown MCP server' }, { status: 404 }));
-  }
-
-  const config = await getMcpServerConfig(serverKey);
-  if (!config.isEnabled) {
-    return withMcpCorsHeaders(
-      NextResponse.json(
-        {
-          error: 'mcp_server_disabled',
-          error_description: `MCP server "${serverKey}" is disabled.`,
-        },
-        { status: 403 }
-      )
-    );
   }
 
   if (!request.headers.get('Authorization')) {
