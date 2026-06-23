@@ -97,8 +97,6 @@ export default function ChatTab() {
   const inputRef = useRef(null);
   const [isListening, setIsListening] = useState(false);
   const toggleListening = () => setIsListening((s) => !s);
-  const [activeMCPs, setActiveMCPs] = useState([]);
-  const [availableMCPs, setAvailableMCPs] = useState([]);
   const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState(null);
@@ -111,7 +109,6 @@ export default function ChatTab() {
     if (messages.length === 0) {
       setInputMessage('');
       setIsListening(false);
-      setActiveMCPs([]);
       setIsToolsMenuOpen(false);
       setIsModelSelectorOpen(false);
       setSelectedAgentId(null);
@@ -260,9 +257,6 @@ export default function ChatTab() {
       activeQuote={activeQuote}
       isListening={isListening}
       toggleListening={toggleListening}
-      activeMCPs={activeMCPs}
-      setActiveMCPs={setActiveMCPs}
-      availableMCPs={availableMCPs}
       isToolsMenuOpen={isToolsMenuOpen}
       setIsToolsMenuOpen={setIsToolsMenuOpen}
       isModelSelectorOpen={isModelSelectorOpen}

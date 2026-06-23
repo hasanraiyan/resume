@@ -22,7 +22,6 @@ import ExportModal from './ExportModal';
 
 const getConnectionLabel = (app) => {
   if (app.channel === 'android') return 'Mobile';
-  if (app.channel === 'mcp') return 'MCP';
   return app.channel?.toUpperCase() || 'App';
 };
 
@@ -416,9 +415,6 @@ export default function FinanceSettingsTab() {
               <div className="text-center py-8 border-2 border-dashed border-[#e5e3d8] rounded-xl bg-neutral-50/30">
                 <Plug className="w-8 h-8 text-[#7c8e88] mx-auto mb-2" />
                 <p className="text-sm text-[#7c8e88]">No connected apps yet</p>
-                <p className="text-xs text-[#a0a0a0] mt-1">
-                  Connect Pocketly to ChatGPT or Claude via MCP
-                </p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -480,13 +476,9 @@ export default function FinanceSettingsTab() {
                 <span className="text-sm text-[#7c8e88]">App</span>
                 <span className="text-sm font-bold text-[#1e3a34]">Pocketly</span>
               </div>
-              <div className="flex items-center justify-between py-2 border-b border-[#e5e3d8]/50">
+              <div className="flex items-center justify-between py-2">
                 <span className="text-sm text-[#7c8e88]">Storage</span>
                 <span className="text-sm font-bold text-[#1e3a34]">Server</span>
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <span className="text-sm text-[#7c8e88]">MCP Version</span>
-                <span className="text-sm font-bold text-[#1f644e]">2.0.0</span>
               </div>
             </div>
           </div>

@@ -1,7 +1,7 @@
 /**
  * Coursify Markdown Parser Utility
  *
- * Shared between Client (Studio, Reader) and Server (DB Operations, MCP).
+ * Shared between Client (Studio, Reader) and Server (DB Operations).
  */
 
 /**

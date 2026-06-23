@@ -218,7 +218,6 @@ export async function POST(request, { params }) {
         const stream = await agent.streamExecute({
           userMessage: userMessage,
           sessionId: `${platform}-${chatId}`, // Pass stable session ID for history
-          activeMCPs: agent.config.activeMCPs || [],
           memoryContext,
         });
 

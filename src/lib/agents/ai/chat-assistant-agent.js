@@ -2,7 +2,7 @@
  * Chat Assistant Agent
  *
  * Handles conversational AI interactions using LangGraph, including Tool integration
- * and Multi-Server MCP Client routing. Extends BaseAgent.
+ * and tool integration. Extends BaseAgent.
  */
 
 import { AGENT_IDS } from '@/lib/constants/agents';
@@ -91,7 +91,6 @@ class ChatAgent extends BaseAgent {
       chatHistory = [],
       sessionId,
       path = '/',
-      activeMCPs = [],
       selectedModel,
       isAdmin = false,
     } = input;
@@ -103,7 +102,6 @@ class ChatAgent extends BaseAgent {
     let toolsUsed = [];
     let assistantContent = '';
     let allTools = [...portfolioTools];
-    let mcpClient = null;
 
     const actualModel = {
       providerId: this.config.providerId,
@@ -240,10 +238,6 @@ class ChatAgent extends BaseAgent {
     } catch (error) {
       this.logger.error('Stream execution error:', error);
       throw error;
-    } finally {
-      if (mcpClient) {
-        // Cleanup if necessary
-      }
     }
 
     if (assistantContent?.trim()) {
