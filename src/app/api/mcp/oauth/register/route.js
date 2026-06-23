@@ -15,7 +15,9 @@ export async function POST(request) {
   const redirectUris = Array.isArray(body.redirect_uris) ? body.redirect_uris : [];
   const grantTypes = Array.isArray(body.grant_types) ? body.grant_types : ['authorization_code'];
   const responseTypes = Array.isArray(body.response_types) ? body.response_types : ['code'];
-  const tokenEndpointAuthMethod = body.token_endpoint_auth_method || 'none';
+  // Always use 'none' — our token endpoint only supports PKCE public clients.
+  // The actual security comes from code_verifier + code exchange, not client auth.
+  const tokenEndpointAuthMethod = 'none';
   const scope = body.scope || getAllSupportedScopes().join(' ');
 
   if (!redirectUris.length) {
@@ -33,19 +35,6 @@ export async function POST(request) {
         {
           error: 'invalid_client_metadata',
           error_description: 'Only authorization_code/code clients are supported.',
-        },
-        { status: 400 }
-      )
-    );
-  }
-
-  if (tokenEndpointAuthMethod !== 'none') {
-    return withMcpCorsHeaders(
-      NextResponse.json(
-        {
-          error: 'invalid_client_metadata',
-          error_description:
-            'Only public PKCE clients with token_endpoint_auth_method none are supported.',
         },
         { status: 400 }
       )
