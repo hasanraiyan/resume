@@ -34,31 +34,6 @@
  * @property {string} type - 'manual' | 'college'
  */
 
-/**
- * Get all working dates between startDate and endDate,
- * excluding weekly holidays and manual/college holidays.
- */
-export function getWorkingDates(semester, holidays) {
-  const dates = [];
-  const holidaySet = new Set(holidays.map((h) => h.date));
-  const weeklyHolidays = new Set(semester.weeklyHolidays || []);
-
-  const start = new Date(semester.startDate + 'T00:00:00');
-  const end = new Date(semester.endDate + 'T00:00:00');
-
-  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    const dayOfWeek = d.getDay();
-    const dateKey = formatDateKey(d);
-
-    if (weeklyHolidays.has(dayOfWeek)) continue;
-    if (holidaySet.has(dateKey)) continue;
-
-    dates.push(dateKey);
-  }
-
-  return dates;
-}
-
 function formatDateKey(date) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -69,32 +44,37 @@ function formatDateKey(date) {
 /**
  * Compute college-level attendance.
  *
- * Working Days = all non-holiday weekdays in semester (including future)
- * Days Attended = days where collegeStatus === 'present'
- * Days Absent = days where collegeStatus === 'absent'
- * Cancelled days (holiday/closed) are excluded.
+ * Working Days = all recorded days with present/absent status.
+ * Uses actual recorded days rather than semester date range,
+ * so it works even when semester start/end dates aren't set.
  */
 export function computeCollegeAttendance(semester, semesterDays, holidays) {
-  const workingDates = getWorkingDates(semester, holidays);
-  const totalWorkingDays = workingDates.length;
+  const allDates = Object.keys(semesterDays).sort();
+  const holidaySet = new Set((holidays || []).map((h) => h.date));
 
   let presentDays = 0;
   let absentDays = 0;
   let recordedDays = 0;
 
-  for (const date of workingDates) {
+  for (const date of allDates) {
     const day = semesterDays[date];
-    if (!day) continue; // not yet recorded — exclude from percentage
+    if (!day) continue;
+
+    // Skip holidays
+    if (holidaySet.has(date)) continue;
+
+    // Skip weekly holidays
+    const dayOfWeek = new Date(date + 'T00:00:00').getDay();
+    if ((semester.weeklyHolidays || []).includes(dayOfWeek)) continue;
 
     recordedDays++;
 
-    if (day.collegeStatus === 'present' || day.collegeStatus === 'absent') {
-      // Use the explicit college status
-      if (day.collegeStatus === 'present') presentDays++;
-      else absentDays++;
-    } else {
-      // holiday/closed — treated as non-working, don't count
+    if (day.collegeStatus === 'present') {
+      presentDays++;
+    } else if (day.collegeStatus === 'absent') {
+      absentDays++;
     }
+    // holiday/closed — don't count toward attendance
   }
 
   const total = presentDays + absentDays;
@@ -103,10 +83,10 @@ export function computeCollegeAttendance(semester, semesterDays, holidays) {
   return {
     presentDays,
     absentDays,
-    totalWorkingDays: total, // only days that are recorded
-    allWorkingDays: workingDates.length,
+    totalWorkingDays: total,
+    allWorkingDays: total,
     percentage: percentage !== null ? Math.round(percentage * 100) / 100 : null,
-    remainingDays: workingDates.filter((d) => !semesterDays[d]).length,
+    remainingDays: null, // null = unknown (semester dates not set)
   };
 }
 
@@ -123,16 +103,29 @@ export function computeSubjectAttendance(subject, semesterDays, semester) {
   let extra = 0;
   let totalClasses = 0;
 
-  const start = new Date(semester.startDate + 'T00:00:00');
-  const end = new Date(semester.endDate + 'T00:00:00');
+  const subjectIdStr = String(subject.id);
+  const allDates = Object.keys(semesterDays).sort();
 
-  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    const dateKey = formatDateKey(d);
+  if (allDates.length === 0) {
+    return {
+      present: 0,
+      absent: 0,
+      cancelled: 0,
+      extra: 0,
+      totalClasses: 0,
+      percentage: null,
+    };
+  }
+
+  // Use recorded day dates directly instead of iterating a date range,
+  // so the calculation still works when semester start/end dates are not set.
+  for (const dateKey of allDates) {
     const day = semesterDays[dateKey];
     if (!day?.lectures) continue;
 
     for (const lec of day.lectures) {
-      if (lec.subjectId !== subject.id) continue;
+      // Normalize both to strings for reliable comparison
+      if (String(lec.subjectId) !== subjectIdStr) continue;
 
       if (lec.status === 'present') {
         present++;
