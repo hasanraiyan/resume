@@ -10,22 +10,26 @@ import FluidCursorCanvas from './FluidCursorCanvas';
 import PortfolioLanding from './PortfolioLanding';
 import PortfolioChatView from './PortfolioChatView';
 
-// Anchored roughly at the FAB's position (bottom-4/6 right-4/6, ~14-16px circle)
-// so opening/closing reads as the button itself expanding to fill the screen.
+// scale + borderRadius are compositor-only (no repaint of the heavy WebGL/blur
+// children on every frame like clip-path was), anchored at the FAB's position
+// via transformOrigin so it reads as the button itself expanding to fill the screen.
 const revealVariants = {
   closed: {
-    clipPath: 'circle(0% at calc(100% - 3rem) calc(100% - 3rem))',
-    transition: { duration: 0.4, ease: [0.7, 0, 0.84, 0] },
+    scale: 0.001,
+    borderRadius: '50%',
+    transition: { duration: 0.35, ease: [0.7, 0, 0.84, 0] },
   },
   open: {
-    clipPath: 'circle(150% at calc(100% - 3rem) calc(100% - 3rem))',
-    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+    scale: 1,
+    borderRadius: '0%',
+    transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] },
   },
 };
 
 export default function PortfolioTakeover({ onClose, heroData, siteConfig }) {
   const [hasStartedChat, setHasStartedChat] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
+  const [revealComplete, setRevealComplete] = useState(false);
   const inputRef = useRef(null);
 
   const { messages, isLoading, statusMessage, send } = useChatStreaming();
@@ -65,13 +69,18 @@ export default function PortfolioTakeover({ onClose, heroData, siteConfig }) {
 
   return (
     <motion.div
-      className="fixed inset-0 z-[100] bg-black text-white overflow-hidden"
+      className="fixed inset-0 z-[100] bg-black text-white overflow-hidden origin-[calc(100%-2.75rem)_calc(100%-2.75rem)] sm:origin-[calc(100%-3.5rem)_calc(100%-3.5rem)]"
       variants={revealVariants}
       initial="closed"
       animate="open"
       exit="closed"
+      onAnimationComplete={(variant) => {
+        // Defer the WebGL shader compile/sim init until after the reveal
+        // finishes — doing it during the transition was what made it stutter.
+        if (variant === 'open') setRevealComplete(true);
+      }}
     >
-      <FluidCursorCanvas />
+      {revealComplete && <FluidCursorCanvas />}
 
       <button
         onClick={onClose}
