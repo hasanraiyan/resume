@@ -1,0 +1,410 @@
+'use client';
+
+import { useAttenda } from '@/context/AttendaContext';
+import { useEffect, useState, useCallback } from 'react';
+import { Check, X, Ban, Plus, Save, Calendar, Building2, BookOpen } from 'lucide-react';
+import AddExtraClassModal from '@/components/attenda/AddExtraClassModal';
+
+const COLLEGE_STATUSES = [
+  {
+    value: 'present',
+    label: 'Present',
+    icon: Check,
+    color: 'text-[#1f644e]',
+    bg: 'bg-[#1f644e]/10',
+  },
+  { value: 'absent', label: 'Absent', icon: X, color: 'text-[#c94c4c]', bg: 'bg-[#c94c4c]/10' },
+  {
+    value: 'holiday',
+    label: 'Holiday',
+    icon: Calendar,
+    color: 'text-[#4a86e8]',
+    bg: 'bg-[#4a86e8]/10',
+  },
+  {
+    value: 'closed',
+    label: 'College Closed',
+    icon: Building2,
+    color: 'text-[#7c8e88]',
+    bg: 'bg-[#7c8e88]/10',
+  },
+];
+
+const LECTURE_STATUSES = [
+  { value: 'present', label: 'Present', icon: Check, color: 'text-[#1f644e]' },
+  { value: 'absent', label: 'Absent', icon: X, color: 'text-[#c94c4c]' },
+  { value: 'cancelled', label: 'Cancelled', icon: Ban, color: 'text-[#7c8e88]' },
+];
+
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+export default function TodayTab() {
+  const { activeSemester, activeSemesterId, todaysLectures, getTodayStatus, saveToday, subjects } =
+    useAttenda();
+
+  const [collegeStatus, setCollegeStatus] = useState('present');
+  const [lectureStatuses, setLectureStatuses] = useState({});
+  const [extraLectures, setExtraLectures] = useState([]);
+  const [showExtraModal, setShowExtraModal] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+
+  const today = new Date();
+  const dateKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const dayName = DAYS[today.getDay()];
+  const dateStr = `${today.getDate()} ${MONTHS[today.getMonth()]}`;
+
+  // Was today already saved?
+  useEffect(() => {
+    const existing = getTodayStatus();
+    if (existing) {
+      setCollegeStatus(existing.collegeStatus || 'present');
+      setLectureStatuses(
+        (existing.lectures || []).reduce((acc, lec) => {
+          acc[lec.id] = lec.status;
+          return acc;
+        }, {})
+      );
+      setExtraLectures(existing.lectures?.filter((l) => l.isExtra) || []);
+      setIsSaved(true);
+    } else if (todaysLectures.length > 0) {
+      // Pre-fill present for scheduled lectures
+      const initial = {};
+      todaysLectures.forEach((lec) => {
+        initial[lec.id] = 'present';
+      });
+      setLectureStatuses(initial);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Pre-fill when timetable loads and no existing day saved
+  useEffect(() => {
+    if (!isSaved && todaysLectures.length > 0 && Object.keys(lectureStatuses).length === 0) {
+      const initial = {};
+      todaysLectures.forEach((lec) => {
+        initial[lec.id] = 'present';
+      });
+      setLectureStatuses(initial);
+    }
+  }, [todaysLectures, isSaved, lectureStatuses]);
+
+  // When collegeStatus changes from 'present' to 'absent', pre-fill all as absent
+  const handleCollegeStatus = useCallback(
+    (status) => {
+      setCollegeStatus(status);
+      if (status === 'absent') {
+        const absentStatuses = {};
+        todaysLectures.forEach((lec) => {
+          absentStatuses[lec.id] = 'absent';
+        });
+        extraLectures.forEach((lec) => {
+          absentStatuses[lec.id] = 'absent';
+        });
+        setLectureStatuses(absentStatuses);
+      } else if (status === 'present' && !isSaved) {
+        // Pre-fill present
+        const presentStatuses = {};
+        todaysLectures.forEach((lec) => {
+          presentStatuses[lec.id] = 'present';
+        });
+        extraLectures.forEach((lec) => {
+          presentStatuses[lec.id] = 'present';
+        });
+        setLectureStatuses(presentStatuses);
+      }
+    },
+    [todaysLectures, extraLectures, isSaved]
+  );
+
+  const toggleLectureStatus = useCallback((lectureId) => {
+    setLectureStatuses((prev) => {
+      const statusOrder = ['present', 'absent', 'cancelled'];
+      const current = prev[lectureId] || 'present';
+      const nextIdx = (statusOrder.indexOf(current) + 1) % statusOrder.length;
+      return { ...prev, [lectureId]: statusOrder[nextIdx] };
+    });
+  }, []);
+
+  const handleAddExtra = useCallback(
+    (subjectId, startTime, endTime) => {
+      const subject = subjects.find((s) => s.id === subjectId);
+      const newLecture = {
+        id: `extra_${Date.now()}`,
+        subjectId,
+        startTime,
+        endTime,
+        name: subject?.name || 'Extra Class',
+        subjectColor: subject?.color || '#4a86e8',
+        isExtra: true,
+        status: 'present',
+      };
+      setExtraLectures((prev) => [...prev, newLecture]);
+      setLectureStatuses((prev) => ({ ...prev, [newLecture.id]: 'present' }));
+      setShowExtraModal(false);
+    },
+    [subjects]
+  );
+
+  const handleSave = useCallback(() => {
+    // Build lectures array
+    const scheduled = todaysLectures.map((lec) => ({
+      id: lec.id,
+      subjectId: lec.subjectId,
+      status: lectureStatuses[lec.id] || 'present',
+      isExtra: false,
+      startTime: lec.startTime,
+      endTime: lec.endTime,
+    }));
+
+    const extra = extraLectures.map((lec) => ({
+      id: lec.id,
+      subjectId: lec.subjectId,
+      status: lectureStatuses[lec.id] || 'present',
+      isExtra: true,
+      startTime: lec.startTime,
+      endTime: lec.endTime,
+    }));
+
+    saveToday({
+      collegeStatus,
+      lectures: [...scheduled, ...extra],
+      notes: '',
+    });
+
+    setSaved(true);
+    setIsSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }, [todaysLectures, extraLectures, lectureStatuses, collegeStatus, saveToday]);
+
+  const isWeeklyHoliday = activeSemester?.weeklyHolidays?.includes(today.getDay());
+
+  // Don't show on holidays
+  if (isWeeklyHoliday && !isSaved) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] px-6 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-[#4a86e8]/10 flex items-center justify-center mb-4">
+          <Calendar className="w-8 h-8 text-[#4a86e8]" />
+        </div>
+        <p className="text-lg font-bold text-[#1e3a34]">It&apos;s {dayName}!</p>
+        <p className="text-sm text-[#7c8e88] mt-1">Weekly holiday — no classes today.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 lg:px-6 mb-6 pb-4 pt-6">
+      {/* Date Header */}
+      <div className="mb-6">
+        <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">{dayName}</p>
+        <h1 className="text-2xl font-bold text-[#1e3a34] mt-0.5">{dateStr}</h1>
+        <p className="text-sm text-[#7c8e88] mt-0.5">{activeSemester?.name}</p>
+      </div>
+
+      {/* Step 1: College Status */}
+      <div className="mb-6">
+        <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-3">College</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {COLLEGE_STATUSES.map((s) => {
+            const isActive = collegeStatus === s.value;
+            return (
+              <button
+                key={s.value}
+                onClick={() => handleCollegeStatus(s.value)}
+                disabled={isSaved}
+                className={`flex items-center gap-2 px-3 py-3 rounded-xl border text-sm font-bold transition-all cursor-pointer ${
+                  isActive
+                    ? `${s.bg} ${s.color} border-transparent`
+                    : 'bg-white border-[#e5e3d8] text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1e3a34]'
+                } ${isSaved ? 'opacity-70 cursor-not-allowed' : ''}`}
+              >
+                <s.icon className="w-4 h-4" />
+                {s.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Step 2: Lecture Statuses */}
+      {collegeStatus === 'present' && (todaysLectures.length > 0 || extraLectures.length > 0) && (
+        <div className="mb-6">
+          <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-3">
+            Today&apos;s Lectures
+          </p>
+          <div className="space-y-2">
+            {todaysLectures.map((lec) => {
+              const status = lectureStatuses[lec.id] || 'present';
+              const statusInfo = LECTURE_STATUSES.find((s) => s.value === status);
+              const StatusIcon = statusInfo?.icon || Check;
+              return (
+                <button
+                  key={lec.id}
+                  onClick={() => !isSaved && toggleLectureStatus(lec.id)}
+                  disabled={isSaved}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
+                    isSaved ? 'opacity-70 cursor-not-allowed' : 'hover:border-[#1f644e]'
+                  } ${
+                    status === 'present'
+                      ? 'bg-white border-[#e5e3d8]'
+                      : status === 'absent'
+                        ? 'bg-[#c94c4c]/5 border-[#c94c4c]/30'
+                        : 'bg-[#f0f5f2] border-[#e5e3d8]'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: lec.subjectColor }}
+                    />
+                    <div className="text-left">
+                      <p className="text-sm font-bold text-[#1e3a34]">{lec.subjectName}</p>
+                      <p className="text-xs text-[#7c8e88]">
+                        {lec.startTime} {lec.endTime ? `- ${lec.endTime}` : ''}
+                      </p>
+                    </div>
+                  </div>
+                  <div
+                    className={`flex items-center gap-1.5 text-sm font-bold ${statusInfo?.color}`}
+                  >
+                    <StatusIcon className="w-4 h-4" />
+                    <span>{statusInfo?.label || 'Present'}</span>
+                  </div>
+                </button>
+              );
+            })}
+            {extraLectures.map((lec) => {
+              const status = lectureStatuses[lec.id] || 'present';
+              const statusInfo = LECTURE_STATUSES.find((s) => s.value === status);
+              const StatusIcon = statusInfo?.icon || Check;
+              return (
+                <button
+                  key={lec.id}
+                  onClick={() => !isSaved && toggleLectureStatus(lec.id)}
+                  disabled={isSaved}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
+                    isSaved ? 'opacity-70 cursor-not-allowed' : 'hover:border-[#1f644e]'
+                  } ${
+                    status === 'present'
+                      ? 'bg-white border-[#e5e3d8]'
+                      : status === 'absent'
+                        ? 'bg-[#c94c4c]/5 border-[#c94c4c]/30'
+                        : 'bg-[#f0f5f2] border-[#e5e3d8]'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: lec.subjectColor || '#4a86e8' }}
+                    />
+                    <div className="text-left">
+                      <p className="text-sm font-bold text-[#1e3a34]">
+                        {lec.name || 'Extra Class'}
+                      </p>
+                      <p className="text-xs text-[#7c8e88]">
+                        {lec.startTime} {lec.endTime ? `- ${lec.endTime}` : ''}
+                        <span className="ml-1.5 text-[#4a86e8] font-bold">Extra</span>
+                      </p>
+                    </div>
+                  </div>
+                  <div
+                    className={`flex items-center gap-1.5 text-sm font-bold ${statusInfo?.color}`}
+                  >
+                    <StatusIcon className="w-4 h-4" />
+                    <span>{statusInfo?.label || 'Present'}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* College is absent - all lectures auto-absent */}
+      {collegeStatus === 'absent' && (
+        <div className="mb-6 p-4 rounded-xl bg-[#c94c4c]/5 border border-[#c94c4c]/20">
+          <div className="flex items-center gap-2">
+            <X className="w-5 h-5 text-[#c94c4c]" />
+            <p className="text-sm font-bold text-[#c94c4c]">
+              Marked as Absent — all lectures automatically marked absent
+            </p>
+          </div>
+          <p className="text-xs text-[#7c8e88] mt-1 ml-7">
+            You can still edit individual lectures below if needed.
+          </p>
+          {todaysLectures.length > 0 && (
+            <div className="mt-3 space-y-1.5">
+              {todaysLectures.map((lec) => {
+                const status = lectureStatuses[lec.id] || 'absent';
+                return (
+                  <button
+                    key={lec.id}
+                    onClick={() => toggleLectureStatus(lec.id)}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
+                      status === 'absent'
+                        ? 'bg-[#c94c4c]/10 text-[#c94c4c]'
+                        : status === 'cancelled'
+                          ? 'bg-[#7c8e88]/10 text-[#7c8e88]'
+                          : 'bg-[#1f644e]/10 text-[#1f644e]'
+                    }`}
+                  >
+                    <span className="font-medium">{lec.subjectName}</span>
+                    <span className="font-bold">
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Step 3: Add Extra Class */}
+      {!isSaved && (
+        <button
+          onClick={() => setShowExtraModal(true)}
+          className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-dashed border-[#e5e3d8] text-sm font-bold text-[#7c8e88] hover:border-[#1f644e] hover:text-[#1f644e] transition-all cursor-pointer mb-6"
+        >
+          <Plus className="w-4 h-4" />
+          Add Extra Class
+        </button>
+      )}
+
+      {/* Step 4: Save Button */}
+      {!isSaved && (
+        <button
+          onClick={handleSave}
+          className="w-full flex items-center justify-center gap-2 bg-[#1f644e] text-white px-6 py-3.5 rounded-xl text-sm font-bold hover:bg-[#17503e] transition-colors shadow-sm cursor-pointer"
+        >
+          <Save className="w-4 h-4" />
+          Save
+        </button>
+      )}
+
+      {/* Saved confirmation */}
+      {saved && (
+        <div className="mt-4 flex items-center justify-center gap-2 text-sm font-bold text-[#1f644e] animate-pulse">
+          <Check className="w-4 h-4" />
+          Saved!
+        </div>
+      )}
+
+      {isSaved && !saved && (
+        <div className="mt-4 flex items-center justify-center gap-2 text-sm font-medium text-[#7c8e88]">
+          <Check className="w-4 h-4" />
+          Today&apos;s attendance saved
+        </div>
+      )}
+
+      {/* Extra Class Modal */}
+      {showExtraModal && (
+        <AddExtraClassModal
+          subjects={subjects}
+          onAdd={handleAddExtra}
+          onClose={() => setShowExtraModal(false)}
+        />
+      )}
+    </div>
+  );
+}
