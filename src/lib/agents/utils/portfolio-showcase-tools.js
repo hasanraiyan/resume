@@ -41,16 +41,54 @@ export async function getShowcaseProfile() {
       .slice()
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
       .map((l) => ({ name: l.name, url: l.url, icon: l.icon }));
+    const resumeUrl = about?.resume?.url;
+    const resume =
+      resumeUrl && resumeUrl !== '#'
+        ? { text: about.resume.text || 'Download Resume', url: resumeUrl }
+        : null;
 
     if (!name) return { text: 'No profile information found.', data: null };
 
     return {
       text: `${name}${role ? `, ${role}` : ''}. ${bio}`,
-      data: { name, role, bio, avatarUrl, tags, socialLinks },
+      data: { name, role, bio, avatarUrl, tags, socialLinks, resume },
     };
   } catch (error) {
     console.error('[Portfolio Showcase Tools] getShowcaseProfile failed:', error);
     return { error: 'Failed to retrieve profile.', text: 'Failed to retrieve profile.' };
+  }
+}
+
+export async function getShowcaseResume() {
+  try {
+    await dbConnect();
+    const about = await AboutSection.getSettings();
+    const url = about?.resume?.url;
+
+    if (!url || url === '#') {
+      return { error: 'No resume is configured yet.', text: 'No resume is configured yet.' };
+    }
+
+    const text = about.resume.text || 'Download Resume';
+
+    // Hosts like UploadThing/Cloudinary often serve files with no extension in
+    // the URL path, so the frontend can't detect PDF-vs-image from the URL
+    // alone — resolve the real content type here instead.
+    let contentType = '';
+    try {
+      const headRes = await fetch(url, { method: 'HEAD' });
+      contentType = headRes.headers.get('content-type') || '';
+    } catch {
+      // Non-fatal — the frontend falls back to a plain download link.
+    }
+
+    return {
+      text: `Here's my resume: [${text}](${url})`,
+      data: { text, url, contentType },
+    };
+  } catch (error) {
+    console.error('[Portfolio Showcase Tools] getShowcaseResume failed:', error);
+    return { error: 'Failed to retrieve resume.', text: 'Failed to retrieve resume.' };
   }
 }
 
@@ -85,6 +123,7 @@ export async function getShowcaseProjects({ featured, category, limit = 12 } = {
       tags: (p.tags || []).map((t) => t.name || t),
       liveUrl: p.links?.live || '',
       githubUrl: p.links?.github || '',
+      projectUrl: `${baseUrl}/projects/${p.slug}`,
       featured: !!p.featured,
     }));
 
@@ -144,9 +183,17 @@ export async function getShowcaseArticles() {
       .map((a, i) => `${i + 1}. **[${a.title}](${baseUrl}/blog/${a.slug})** - ${a.excerpt || ''}`)
       .join('\n');
 
+    const items = articles.map((a) => ({
+      slug: a.slug,
+      title: a.title,
+      excerpt: a.excerpt || '',
+      coverImage: a.coverImage || '',
+      url: `${baseUrl}/blog/${a.slug}`,
+    }));
+
     return {
       text: `Here are the published articles:\n\n${markdownList}`,
-      data: articles,
+      data: items,
     };
   } catch (error) {
     console.error('[Portfolio Showcase Tools] getShowcaseArticles failed:', error);
@@ -207,56 +254,69 @@ export async function getShowcaseTechnologies() {
   }
 }
 
-export async function getShowcaseMilestones() {
+export async function getShowcaseAchievements() {
   try {
     await dbConnect();
-    const [achievements, certifications] = await Promise.all([
-      Achievement.find({ isActive: true }).sort({ displayOrder: 1 }).lean(),
-      Certification.find({ isActive: true }).sort({ displayOrder: 1 }).lean(),
-    ]);
+    const achievements = await Achievement.find({ isActive: true })
+      .sort({ displayOrder: 1 })
+      .lean();
 
-    const items = [
-      ...achievements.map((a) => ({
-        id: String(a._id),
-        kind: 'achievement',
-        title: a.title,
-        description: a.description,
-        date: a.createdAt,
-        issuer: null,
-        url: null,
-        src: a.src,
-        alt: a.alt,
-        displayOrder: a.displayOrder ?? 0,
-      })),
-      ...certifications.map((c) => ({
-        id: String(c._id),
-        kind: 'certification',
-        title: c.name,
-        description: `Issued by ${c.issuer}`,
-        date: c.date,
-        issuer: c.issuer,
-        url: c.url,
-        src: null,
-        alt: null,
-        iconType: c.iconType,
-        iconName: c.iconName,
-        displayOrder: c.displayOrder ?? 0,
-      })),
-    ].sort((x, y) => x.displayOrder - y.displayOrder);
+    if (achievements.length === 0) return { text: 'No achievements found.', data: [] };
 
-    if (items.length === 0) return { text: 'No achievements or certifications found.', data: [] };
+    const items = achievements.map((a) => ({
+      id: String(a._id),
+      kind: 'achievement',
+      title: a.title,
+      description: a.description,
+      src: a.src,
+      alt: a.alt,
+    }));
 
-    const summary = items
-      .map((it, i) => `${i + 1}. [${it.kind}] ${it.title}${it.date ? ` (${it.date})` : ''}`)
-      .join('\n');
+    const summary = items.map((it, i) => `${i + 1}. ${it.title}`).join('\n');
 
     return {
-      text: `Here are the milestones (achievements & certifications):\n\n${summary}`,
+      text: `Here are the achievements:\n\n${summary}`,
       data: items,
     };
   } catch (error) {
-    console.error('[Portfolio Showcase Tools] getShowcaseMilestones failed:', error);
-    return { error: 'Failed to retrieve milestones.', text: 'Failed to retrieve milestones.' };
+    console.error('[Portfolio Showcase Tools] getShowcaseAchievements failed:', error);
+    return { error: 'Failed to retrieve achievements.', text: 'Failed to retrieve achievements.' };
+  }
+}
+
+export async function getShowcaseCertifications() {
+  try {
+    await dbConnect();
+    const certifications = await Certification.find({ isActive: true })
+      .sort({ displayOrder: 1 })
+      .lean();
+
+    if (certifications.length === 0) return { text: 'No certifications found.', data: [] };
+
+    const items = certifications.map((c) => ({
+      id: String(c._id),
+      kind: 'certification',
+      title: c.name,
+      description: `Issued by ${c.issuer}`,
+      date: c.date,
+      issuer: c.issuer,
+      url: c.url,
+      iconType: c.iconType,
+      iconName: c.iconName,
+    }));
+
+    const summary = items.map((it, i) => `${i + 1}. ${it.title} (${it.date})`).join('\n');
+
+    return {
+      text: `Here are the certifications:\n\n${summary}`,
+      data: items,
+    };
+  } catch (error) {
+    console.error('[Portfolio Showcase Tools] getShowcaseCertifications failed:', error);
+    return {
+      error: 'Failed to retrieve certifications.',
+      text: 'Failed to retrieve certifications.',
+    };
   }
 }
 
@@ -304,6 +364,18 @@ export const portfolioShowcaseTools = [
       name: 'get_profile',
       description:
         "Get the portfolio owner's core identity: name, role, short bio, profile photo, and top skills. ALWAYS call this first when the user asks who you are, to tell them about yourself, or wants to know about the person behind this portfolio.",
+      schema: z.object({}),
+    }
+  ),
+  tool(
+    async () => {
+      const result = await getShowcaseResume();
+      return JSON.stringify(result);
+    },
+    {
+      name: 'get_resume',
+      description:
+        'Get the downloadable resume/CV link. Use whenever the user asks to see, view, download, or get your resume/CV.',
       schema: z.object({}),
     }
   ),
@@ -375,13 +447,25 @@ export const portfolioShowcaseTools = [
   ),
   tool(
     async () => {
-      const result = await getShowcaseMilestones();
+      const result = await getShowcaseAchievements();
       return JSON.stringify(result);
     },
     {
-      name: 'get_milestones',
+      name: 'get_achievements',
       description:
-        "Get a chronological list of achievements and certifications. Use for 'tell me about your experience', 'what have you achieved', or 'what certifications do you have'.",
+        "Get award/competition-style achievements with photos. Use for 'what have you achieved', 'tell me about your awards', or general 'experience' questions.",
+      schema: z.object({}),
+    }
+  ),
+  tool(
+    async () => {
+      const result = await getShowcaseCertifications();
+      return JSON.stringify(result);
+    },
+    {
+      name: 'get_certifications',
+      description:
+        "Get professional certifications (issuer, date, credential link). Use for 'what certifications do you have' or 'what courses have you completed'.",
       schema: z.object({}),
     }
   ),
@@ -458,6 +542,8 @@ export function getPortfolioToolStatusMessage(toolName) {
   switch (toolName) {
     case 'get_profile':
       return '👋 Loading profile...';
+    case 'get_resume':
+      return '📄 Loading resume...';
     case 'get_projects':
     case 'get_project_details':
       return '🎨 Loading projects...';
@@ -466,8 +552,10 @@ export function getPortfolioToolStatusMessage(toolName) {
       return '📚 Fetching articles...';
     case 'get_technologies':
       return '🛠️ Loading tech stack...';
-    case 'get_milestones':
+    case 'get_achievements':
       return '🏆 Loading achievements...';
+    case 'get_certifications':
+      return '📜 Loading certifications...';
     case 'get_testimonials':
       return '💬 Loading testimonials...';
     case 'search_portfolio':
@@ -493,13 +581,76 @@ export function buildPortfolioUiBlocks(toolName, output) {
   switch (toolName) {
     case 'get_profile':
       return [{ kind: 'profile_card', title: 'About', action: null, data: output.data }];
+    case 'get_resume':
+      return [{ kind: 'resume_card', title: 'Resume', action: null, data: output.data }];
+    case 'get_project_details': {
+      const p = output.data;
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+      return [
+        {
+          kind: 'project_detail',
+          title: p.title,
+          action: null,
+          data: {
+            slug: p.slug,
+            title: p.title,
+            category: p.category,
+            tagline: p.tagline,
+            description: p.description,
+            thumbnail: p.thumbnail,
+            tags: (p.tags || []).map((t) => t.name || t),
+            liveUrl: p.links?.live || '',
+            githubUrl: p.links?.github || '',
+            projectUrl: `${baseUrl}/projects/${p.slug}`,
+          },
+        },
+      ];
+    }
+    case 'get_article_details': {
+      const a = output.data;
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+      return [
+        {
+          kind: 'article_detail',
+          title: a.title,
+          action: null,
+          data: {
+            slug: a.slug,
+            title: a.title,
+            excerpt: a.excerpt,
+            coverImage: a.coverImage,
+            tags: a.tags || [],
+            url: `${baseUrl}/blog/${a.slug}`,
+          },
+        },
+      ];
+    }
     case 'get_projects':
       return output.data.length
         ? [
             {
               kind: 'project_carousel',
               title: 'Projects',
-              action: null,
+              action: {
+                type: 'link',
+                url: `${process.env.NEXT_PUBLIC_APP_URL || ''}/projects`,
+                label: 'See all projects',
+              },
+              data: { items: output.data },
+            },
+          ]
+        : [];
+    case 'get_articles':
+      return output.data.length
+        ? [
+            {
+              kind: 'article_carousel',
+              title: 'Articles',
+              action: {
+                type: 'link',
+                url: `${process.env.NEXT_PUBLIC_APP_URL || ''}/blog`,
+                label: 'See all articles',
+              },
               data: { items: output.data },
             },
           ]
@@ -515,12 +666,23 @@ export function buildPortfolioUiBlocks(toolName, output) {
             },
           ]
         : [];
-    case 'get_milestones':
+    case 'get_achievements':
       return output.data.length
         ? [
             {
-              kind: 'milestone_timeline',
-              title: 'Experience & Certifications',
+              kind: 'achievements_gallery',
+              title: 'Achievements',
+              action: null,
+              data: { items: output.data },
+            },
+          ]
+        : [];
+    case 'get_certifications':
+      return output.data.length
+        ? [
+            {
+              kind: 'certifications_list',
+              title: 'Certifications',
               action: null,
               data: { items: output.data },
             },

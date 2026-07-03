@@ -271,9 +271,15 @@ export function useChatStreaming({ endpoint = '/api/chat', getExtraBody } = {}) 
             // Carries the AIMessage's real tool_calls (id/name/args) so a later
             // ToolMessage's tool_call_id can be resolved when history is resent —
             // the 'status' event never actually carries this despite the dead
-            // `data.tool_calls` check above.
+            // `data.tool_calls` check above. A single turn can fire this more than
+            // once (sequential tool calls, e.g. resolve-a-slug-then-fetch-details) —
+            // accumulate across all of them, don't overwrite, or an earlier tool's
+            // ToolMessage ends up with no matching declaration on the next turn.
             if (data.tool_calls) {
-              assistantMessage.tool_calls = data.tool_calls;
+              assistantMessage.tool_calls = [
+                ...(assistantMessage.tool_calls || []),
+                ...data.tool_calls,
+              ];
 
               if (!messageAdded) {
                 setMessages((prev) => [
@@ -379,6 +385,31 @@ export function useChatStreaming({ endpoint = '/api/chat', getExtraBody } = {}) 
       } // end while
     } finally {
       setStatus('');
+      // Safety net: if the turn ends with no text content and no ui_blocks, the
+      // user sees nothing at all — even if a 'status' event already added the
+      // message (e.g. a tool ran but the model never produced a final reply),
+      // since this UI doesn't render tool_action steps on their own.
+      const isEmptyTurn =
+        !assistantMessage.content && (assistantMessage.uiBlocks || []).length === 0;
+      if (!messageAdded) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            ...assistantMessage,
+            content: "Sorry, I didn't catch that — could you try rephrasing?",
+            steps: [...assistantMessage.steps],
+          },
+        ]);
+        messageAdded = true;
+      } else if (isEmptyTurn) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMessage.id
+              ? { ...m, content: "Sorry, I didn't catch that — could you try rephrasing?" }
+              : m
+          )
+        );
+      }
       // ✅ Post-stream cleanup: Mark tool action as done (IF it's not a pending draft)
       if (activeToolMsgId !== null) {
         setMessages((prev) =>
