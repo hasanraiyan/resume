@@ -256,11 +256,16 @@ export default function ChatbotWidget() {
 
   // The takeover is rendered inside AnimatePresence below so its circle-collapse
   // exit animation can play; normalContent is whatever renders underneath/behind
-  // it (FAB / offline state / popover), computed the same way regardless.
-  let normalContent;
+  // it (FAB / offline state / popover). While the takeover is open it must be
+  // null, not just visually covered — otherwise the FAB is still in the DOM and
+  // reads as a second "AI agent" icon (e.g. during the reveal transition, or if
+  // z-stacking gets disturbed by some other fixed-position element).
+  let normalContent = null;
 
   // 1. FAB (closed state)
-  if (!isOpen) {
+  if (isTakeoverOpen && !isCoursify) {
+    normalContent = null;
+  } else if (!isOpen) {
     normalContent = (
       <>
         <ContextualAIButton

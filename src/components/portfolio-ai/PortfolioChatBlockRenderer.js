@@ -37,16 +37,29 @@ function ProfileCardBlock({ block }) {
         </div>
       </div>
       {data.bio && <p className="mt-4 text-white/70 text-sm leading-relaxed">{data.bio}</p>}
+      {data.tags?.length > 0 && (
+        <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {data.tags.map((tag) => (
+            <span
+              key={tag}
+              className="shrink-0 px-3 py-1 rounded-full text-xs font-medium bg-blue-600 text-white whitespace-nowrap"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
       {data.socialLinks?.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap gap-2">
           {data.socialLinks.map((link) => (
             <a
               key={link.name}
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3 py-1.5 rounded-full text-xs font-medium bg-white/10 hover:bg-white/20 text-white/80 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white/10 hover:bg-white/20 text-white/80 transition-colors"
             >
+              {link.icon && <i className={link.icon} />}
               {link.name}
             </a>
           ))}

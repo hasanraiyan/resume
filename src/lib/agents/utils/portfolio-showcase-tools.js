@@ -15,11 +15,44 @@ import Technology from '@/models/Technology';
 import Achievement from '@/models/Achievement';
 import Certification from '@/models/Certification';
 import Testimonial from '@/models/Testimonial';
+import HeroSection from '@/models/HeroSection';
+import AboutSection from '@/models/AboutSection';
 import { searchPortfolio, submitContactForm } from './chatbot-utils';
 
 // =================================================================================
 // TOOL EXECUTION FUNCTIONS
 // =================================================================================
+
+export async function getShowcaseProfile() {
+  try {
+    await dbConnect();
+    const [hero, about, technologies] = await Promise.all([
+      HeroSection.getSettings(),
+      AboutSection.getSettings(),
+      Technology.find({ isActive: true }).sort({ displayOrder: 1 }).lean(),
+    ]);
+
+    const name = hero?.introduction?.name || '';
+    const role = hero?.introduction?.role || '';
+    const bio = about?.bio?.paragraphs?.[0] || hero?.introduction?.text || '';
+    const avatarUrl = hero?.profile?.image?.url || '';
+    const tags = (technologies || []).map((t) => t.name);
+    const socialLinks = (hero?.socialLinks || [])
+      .slice()
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      .map((l) => ({ name: l.name, url: l.url, icon: l.icon }));
+
+    if (!name) return { text: 'No profile information found.', data: null };
+
+    return {
+      text: `${name}${role ? `, ${role}` : ''}. ${bio}`,
+      data: { name, role, bio, avatarUrl, tags, socialLinks },
+    };
+  } catch (error) {
+    console.error('[Portfolio Showcase Tools] getShowcaseProfile failed:', error);
+    return { error: 'Failed to retrieve profile.', text: 'Failed to retrieve profile.' };
+  }
+}
 
 export async function getShowcaseProjects({ featured, category, limit = 12 } = {}) {
   try {
@@ -263,6 +296,18 @@ export async function getShowcaseTestimonials() {
 
 export const portfolioShowcaseTools = [
   tool(
+    async () => {
+      const result = await getShowcaseProfile();
+      return JSON.stringify(result);
+    },
+    {
+      name: 'get_profile',
+      description:
+        "Get the portfolio owner's core identity: name, role, short bio, profile photo, and top skills. ALWAYS call this first when the user asks who you are, to tell them about yourself, or wants to know about the person behind this portfolio.",
+      schema: z.object({}),
+    }
+  ),
+  tool(
     async ({ featured, category, limit }) => {
       const result = await getShowcaseProjects({ featured, category, limit });
       return JSON.stringify(result);
@@ -411,6 +456,8 @@ export const portfolioShowcaseTools = [
 
 export function getPortfolioToolStatusMessage(toolName) {
   switch (toolName) {
+    case 'get_profile':
+      return '👋 Loading profile...';
     case 'get_projects':
     case 'get_project_details':
       return '🎨 Loading projects...';
@@ -444,6 +491,8 @@ export function buildPortfolioUiBlocks(toolName, output) {
   if (!output || output.error || !output.data) return [];
 
   switch (toolName) {
+    case 'get_profile':
+      return [{ kind: 'profile_card', title: 'About', action: null, data: output.data }];
     case 'get_projects':
       return output.data.length
         ? [

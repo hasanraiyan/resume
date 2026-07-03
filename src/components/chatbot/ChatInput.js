@@ -58,7 +58,8 @@ export default function ChatInput({
   const outerBg =
     customOuterBg || (isDarkTheme ? 'bg-transparent' : isGreenTheme ? 'bg-[#fcfbf5]' : 'bg-white');
   const innerBg =
-    customInnerBg || (isDarkTheme ? 'bg-white/[0.06]' : isGreenTheme ? 'bg-[#fcfbf5]' : 'bg-white');
+    customInnerBg ||
+    (isDarkTheme ? 'bg-white/[0.04] backdrop-blur-xl' : isGreenTheme ? 'bg-[#fcfbf5]' : 'bg-white');
   const borderColor = isDarkTheme
     ? 'border-white/10'
     : isGreenTheme
