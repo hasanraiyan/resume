@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { CornerDownRight, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePathname } from 'next/navigation';
 import getAnalytics from '@/lib/analytics';
+import { useSiteContext } from '@/context/SiteContext';
 
 // Hooks
 import { useChatbotSettings } from '@/hooks/chatbot/useChatbotSettings';
@@ -19,12 +21,15 @@ import ChatInput from './ChatInput';
 import FloatingActionButton from './FloatingActionButton';
 import ContextualAIButton from './ContextualAIButton';
 import OfflineState from './OfflineState';
+import PortfolioTakeover from '@/components/portfolio-ai/PortfolioTakeover';
 
 // No default prompts here - use database settings instead.
 
 export default function ChatbotWidget() {
   const pathname = usePathname();
+  const { heroData } = useSiteContext();
   const [isOpen, setIsOpen] = useState(false);
+  const [isTakeoverOpen, setIsTakeoverOpen] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
@@ -124,11 +129,17 @@ export default function ChatbotWidget() {
   }, [isOpen, isModelSelectorOpen]);
 
   const handleOpenChat = useCallback(async () => {
-    setIsOpen(true);
-    if (!settingsFetched) {
-      await fetchSettings();
+    // The full-screen takeover replaces the popover for the default portfolio
+    // experience. Coursify keeps its own dedicated popover chat, untouched.
+    if (isCoursifyPath) {
+      setIsOpen(true);
+      if (!settingsFetched) {
+        await fetchSettings();
+      }
+      return;
     }
-  }, [fetchSettings, settingsFetched]);
+    setIsTakeoverOpen(true);
+  }, [fetchSettings, settingsFetched, isCoursifyPath]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -243,9 +254,14 @@ export default function ChatbotWidget() {
 
   const isCoursify = pathname.startsWith('/coursify');
 
+  // The takeover is rendered inside AnimatePresence below so its circle-collapse
+  // exit animation can play; normalContent is whatever renders underneath/behind
+  // it (FAB / offline state / popover), computed the same way regardless.
+  let normalContent;
+
   // 1. FAB (closed state)
   if (!isOpen) {
-    return (
+    normalContent = (
       <>
         <ContextualAIButton
           selection={selection}
@@ -260,11 +276,9 @@ export default function ChatbotWidget() {
         />
       </>
     );
-  }
-
-  // 2. Offline state (Coursify has its own agent, not dependent on chatbot settings)
-  if (!isCoursify && settingsFetched && (!chatbotSettings || !chatbotSettings.isActive)) {
-    return (
+  } else if (!isCoursify && settingsFetched && (!chatbotSettings || !chatbotSettings.isActive)) {
+    // 2. Offline state (Coursify has its own agent, not dependent on chatbot settings)
+    normalContent = (
       <>
         <ContextualAIButton
           selection={selection}
@@ -274,96 +288,111 @@ export default function ChatbotWidget() {
         <OfflineState chatbotSettings={chatbotSettings} setIsOpen={setIsOpen} />
       </>
     );
-  }
+  } else {
+    // 3. Active Chat Window (popover)
+    normalContent = (
+      <>
+        <ContextualAIButton
+          selection={selection}
+          handleAskKiroContext={handleAskKiroContext}
+          chatbotSettings={chatbotSettings}
+        />
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 animate-in slide-in-from-bottom-4 duration-300 chatbot-widget-container">
+          <div
+            className={`backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl w-[calc(100vw-2rem)] sm:w-96 h-[80vh] max-h-[800px] sm:h-[40rem] flex flex-col ${isCoursify ? 'bg-[#fcfbf5]/95 border border-[#e5e3d8]' : 'bg-white/95 border border-white/20 shadow-black/10'}`}
+          >
+            <ChatHeader
+              chatbotSettings={chatbotSettings}
+              settingsFetched={settingsFetched}
+              clearChat={clearChat}
+              setIsOpen={setIsOpen}
+              isCoursify={isCoursify}
+            />
 
-  // 3. Active Chat Window
-  return (
-    <>
-      <ContextualAIButton
-        selection={selection}
-        handleAskKiroContext={handleAskKiroContext}
-        chatbotSettings={chatbotSettings}
-      />
-      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 animate-in slide-in-from-bottom-4 duration-300 chatbot-widget-container">
-        <div
-          className={`backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl w-[calc(100vw-2rem)] sm:w-96 h-[80vh] max-h-[800px] sm:h-[40rem] flex flex-col ${isCoursify ? 'bg-[#fcfbf5]/95 border border-[#e5e3d8]' : 'bg-white/95 border border-white/20 shadow-black/10'}`}
-        >
-          <ChatHeader
-            chatbotSettings={chatbotSettings}
-            settingsFetched={settingsFetched}
-            clearChat={clearChat}
-            setIsOpen={setIsOpen}
-            isCoursify={isCoursify}
-          />
+            <MessageList
+              messages={messages}
+              isLoading={isLoading}
+              messagesEndRef={messagesEndRef}
+              handleUIInteract={handleUIInteract}
+              handleLinkClick={handleLinkClick}
+              theme={isCoursify ? 'green' : 'default'}
+            />
 
-          <MessageList
-            messages={messages}
-            isLoading={isLoading}
-            messagesEndRef={messagesEndRef}
-            handleUIInteract={handleUIInteract}
-            handleLinkClick={handleLinkClick}
-            theme={isCoursify ? 'green' : 'default'}
-          />
-
-          {/* Suggested prompts / Active Quote */}
-          {!isLoading && (
-            <div
-              className={`border-t backdrop-blur-sm ${isCoursify ? 'border-[#e5e3d8] bg-[#fcfbf5]/80' : 'border-neutral-200/50 bg-white/80'}`}
-            >
-              {activeQuote ? (
-                <div className="px-3 sm:px-4 py-3 bg-neutral-50 animate-in slide-in-from-bottom-2 duration-300">
-                  <div className="flex items-start gap-2 group">
-                    <CornerDownRight className="w-3.5 h-3.5 text-neutral-400 mt-1 shrink-0" />
-                    <div className="flex-1 min-w-0 pr-6 relative">
-                      <p className="text-xs text-neutral-600 line-clamp-2 leading-relaxed italic border-l-2 border-neutral-300 pl-3">
-                        "{activeQuote.trim()}"
-                      </p>
-                      <button
-                        onClick={() => setActiveQuote('')}
-                        className="absolute -top-1 -right-1 p-1 rounded-full text-neutral-400 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
-                        title="Remove quote"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
+            {/* Suggested prompts / Active Quote */}
+            {!isLoading && (
+              <div
+                className={`border-t backdrop-blur-sm ${isCoursify ? 'border-[#e5e3d8] bg-[#fcfbf5]/80' : 'border-neutral-200/50 bg-white/80'}`}
+              >
+                {activeQuote ? (
+                  <div className="px-3 sm:px-4 py-3 bg-neutral-50 animate-in slide-in-from-bottom-2 duration-300">
+                    <div className="flex items-start gap-2 group">
+                      <CornerDownRight className="w-3.5 h-3.5 text-neutral-400 mt-1 shrink-0" />
+                      <div className="flex-1 min-w-0 pr-6 relative">
+                        <p className="text-xs text-neutral-600 line-clamp-2 leading-relaxed italic border-l-2 border-neutral-300 pl-3">
+                          "{activeQuote.trim()}"
+                        </p>
+                        <button
+                          onClick={() => setActiveQuote('')}
+                          className="absolute -top-1 -right-1 p-1 rounded-full text-neutral-400 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
+                          title="Remove quote"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ) : (
-                <div className="px-3 sm:px-4 py-2 flex items-center gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  {suggestedPrompts.map((prompt, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handlePromptClick(prompt.text)}
-                      className={`px-3 py-1.5 border rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 transition-colors duration-200 ${isCoursify ? 'bg-[#f0f5f2] hover:bg-[#e5e3d8] border-[#e5e3d8] text-[#1e3a34]' : 'bg-white hover:bg-neutral-100 border-neutral-200/80 text-neutral-700'}`}
-                    >
-                      {prompt.text}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                ) : (
+                  <div className="px-3 sm:px-4 py-2 flex items-center gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {suggestedPrompts.map((prompt, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handlePromptClick(prompt.text)}
+                        className={`px-3 py-1.5 border rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 transition-colors duration-200 ${isCoursify ? 'bg-[#f0f5f2] hover:bg-[#e5e3d8] border-[#e5e3d8] text-[#1e3a34]' : 'bg-white hover:bg-neutral-100 border-neutral-200/80 text-neutral-700'}`}
+                      >
+                        {prompt.text}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
-          <ChatInput
-            inputRef={inputRef}
-            inputMessage={inputMessage}
-            setInputMessage={setInputMessage}
-            isLoading={isLoading}
-            handleSubmit={handleSubmit}
-            activeQuote={activeQuote}
-            isListening={isListening}
-            toggleListening={toggleListening}
-            isModelSelectorOpen={isModelSelectorOpen}
-            setIsModelSelectorOpen={setIsModelSelectorOpen}
-            chatbotSettings={chatbotSettings}
-            selectedAgentId={selectedAgentId}
-            setSelectedAgentId={setSelectedAgentId}
-            showModelSelector={!isCoursify}
-            theme={isCoursify ? 'green' : 'default'}
-            setIsToolsMenuOpen={setIsToolsMenuOpen}
-          />
+            <ChatInput
+              inputRef={inputRef}
+              inputMessage={inputMessage}
+              setInputMessage={setInputMessage}
+              isLoading={isLoading}
+              handleSubmit={handleSubmit}
+              activeQuote={activeQuote}
+              isListening={isListening}
+              toggleListening={toggleListening}
+              isModelSelectorOpen={isModelSelectorOpen}
+              setIsModelSelectorOpen={setIsModelSelectorOpen}
+              chatbotSettings={chatbotSettings}
+              selectedAgentId={selectedAgentId}
+              setSelectedAgentId={setSelectedAgentId}
+              showModelSelector={!isCoursify}
+              theme={isCoursify ? 'green' : 'default'}
+              setIsToolsMenuOpen={setIsToolsMenuOpen}
+            />
+          </div>
         </div>
-      </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {normalContent}
+      <AnimatePresence>
+        {!isCoursify && isTakeoverOpen && (
+          <PortfolioTakeover
+            key="takeover"
+            onClose={() => setIsTakeoverOpen(false)}
+            heroData={heroData}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }

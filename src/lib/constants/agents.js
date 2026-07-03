@@ -24,6 +24,7 @@ export const AGENT_IDS = {
   CONTACT_FORM_ASSISTANT: 'contact_form_assistant',
   TELEGRAM_ASSISTANT: 'telegram_assistant',
   WHATSAPP_ASSISTANT: 'whatsapp_assistant',
+  PORTFOLIO_SHOWCASE: 'portfolio_showcase',
 
   // Content Agents
   BLOG_WRITER: 'blog_writer',
@@ -185,6 +186,18 @@ export const DEFAULT_AGENT_CONFIGS = {
     defaultProvider: 'openai',
     isActive: true,
   },
+  [AGENT_IDS.PORTFOLIO_SHOWCASE]: {
+    name: 'Portfolio Guide',
+    description: 'Full-screen conversational guide to the portfolio with interactive UI widgets',
+    type: AGENT_TYPES.CHAT,
+    category: AGENT_CATEGORIES.CONVERSATIONAL,
+    icon: 'Sparkles',
+    defaultModel: 'gpt-4o-mini',
+    defaultProvider: 'openai',
+    persona:
+      "You are the portfolio owner's AI guide in a full-screen, immersive assistant experience. Speak warmly and confidently in first person on the owner's behalf. When visitors ask about projects, skills, experience, or how to get in touch, use your tools to fetch real data instead of guessing — the frontend automatically renders rich visual cards from your tool results, so keep your own text short and conversational.",
+    isActive: true,
+  },
   [AGENT_IDS.CONTACT_FORM_ASSISTANT]: {
     name: 'Contact Assistant',
     description: 'Helps users create and submit contact forms',
@@ -311,6 +324,7 @@ export const AGENT_TOOLS = {
   [AGENT_IDS.CHAT_FAST]: ['conversation', 'tool_use', 'generative_ui'],
   [AGENT_IDS.CHAT_PRO]: ['conversation', 'tool_use', 'generative_ui'],
   [AGENT_IDS.CHAT_THINKING]: ['conversation', 'tool_use', 'generative_ui'],
+  [AGENT_IDS.PORTFOLIO_SHOWCASE]: ['conversation', 'tool_use', 'generative_ui'],
   [AGENT_IDS.CONTACT_FORM_ASSISTANT]: ['form_handling', 'validation', 'submission'],
   [AGENT_IDS.TELEGRAM_ASSISTANT]: [], // Tools configured dynamically via UI
   [AGENT_IDS.WHATSAPP_ASSISTANT]: [], // Tools configured dynamically via UI
@@ -337,6 +351,7 @@ export const RATE_LIMIT_DEFAULTS = {
   [AGENT_IDS.CHAT_FAST]: { requests: 20, window: 60 },
   [AGENT_IDS.CHAT_PRO]: { requests: 10, window: 60 },
   [AGENT_IDS.CHAT_THINKING]: { requests: 5, window: 60 },
+  [AGENT_IDS.PORTFOLIO_SHOWCASE]: { requests: 20, window: 60 },
   [AGENT_IDS.CONTACT_FORM_ASSISTANT]: { requests: 10, window: 60 },
   [AGENT_IDS.TELEGRAM_ASSISTANT]: { requests: 20, window: 60 },
   [AGENT_IDS.WHATSAPP_ASSISTANT]: { requests: 20, window: 60 },

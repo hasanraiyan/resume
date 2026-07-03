@@ -23,9 +23,9 @@ export async function getCoreIdentity() {
       return { name: '', role: '', introduction: '' };
     }
     return {
-      name: heroSection.name || '',
-      role: heroSection.role || '',
-      introduction: heroSection.introduction || '',
+      name: heroSection.introduction?.name || '',
+      role: heroSection.introduction?.role || '',
+      introduction: heroSection.introduction?.text || '',
     };
   } catch (error) {
     console.error('Error fetching core identity:', error);
@@ -41,7 +41,7 @@ export async function getAboutSummary() {
     await dbConnect();
     const aboutSection = await AboutSection.findOne({});
     if (!aboutSection) return '';
-    return aboutSection.bio || '';
+    return (aboutSection.bio?.paragraphs || []).join(' ');
   } catch (error) {
     console.error('Error fetching about summary:', error);
     return '';
@@ -54,7 +54,9 @@ export async function getAboutSummary() {
 export async function getProjectOverview() {
   try {
     await dbConnect();
-    const projects = await Project.find({}).limit(20).lean();
+    const projects = await Project.find({ status: 'published', visibility: 'public' })
+      .limit(20)
+      .lean();
     if (!projects || projects.length === 0) return '';
     const projectSummaries = projects.map((project) => {
       return `${project.title} - ${project.category} project${project.description ? ': ' + project.description.substring(0, 100) + '...' : ''}`;

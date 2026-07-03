@@ -116,6 +116,7 @@ export function useChatStreaming({ endpoint = '/api/chat', getExtraBody } = {}) 
       role: 'assistant',
       content: '',
       steps: [], // interleaved list of tool actions and UI blocks
+      uiBlocks: [], // generative UI widgets (e.g. project_carousel, skills_grid)
       timestamp: new Date(),
       agentId: selectedAgentId, // Track which agent is responding
     };
@@ -266,6 +267,52 @@ export function useChatStreaming({ endpoint = '/api/chat', getExtraBody } = {}) 
                 hidden: true,
               },
             ]);
+          } else if (data.type === 'metadata') {
+            // Carries the AIMessage's real tool_calls (id/name/args) so a later
+            // ToolMessage's tool_call_id can be resolved when history is resent —
+            // the 'status' event never actually carries this despite the dead
+            // `data.tool_calls` check above.
+            if (data.tool_calls) {
+              assistantMessage.tool_calls = data.tool_calls;
+
+              if (!messageAdded) {
+                setMessages((prev) => [
+                  ...prev,
+                  { ...assistantMessage, steps: [...assistantMessage.steps] },
+                ]);
+                messageAdded = true;
+              } else {
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantMessage.id
+                      ? { ...m, tool_calls: assistantMessage.tool_calls }
+                      : m
+                  )
+                );
+              }
+            }
+          } else if (data.type === 'ui_block') {
+            assistantMessage.uiBlocks = [...assistantMessage.uiBlocks, data.block];
+
+            if (!messageAdded) {
+              setMessages((prev) => [
+                ...prev,
+                {
+                  ...assistantMessage,
+                  steps: [...assistantMessage.steps],
+                  uiBlocks: [...assistantMessage.uiBlocks],
+                },
+              ]);
+              messageAdded = true;
+            } else {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantMessage.id
+                    ? { ...m, uiBlocks: [...assistantMessage.uiBlocks] }
+                    : m
+                )
+              );
+            }
           } else if (data.type === 'content') {
             setStatus('');
 

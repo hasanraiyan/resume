@@ -216,11 +216,15 @@ class ChatAgent extends BaseAgent {
           yield { type: 'status', message: statusMsg };
         } else if (type === 'on_tool_end' && name !== 'agent') {
           const output = data.output;
+          // The ToolMessage's own tool_call_id is what the originating AIMessage
+          // declared — event.run_id is an unrelated LangSmith run id and must not
+          // be used here, or history replay on the next turn fails to resolve it.
           yield {
             type: 'tool_result',
-            tool_call_id: event.run_id,
+            tool_call_id: output?.tool_call_id || event.run_id,
             name: name,
-            content: typeof output === 'string' ? output : JSON.stringify(output),
+            content:
+              typeof output === 'string' ? output : (output?.content ?? JSON.stringify(output)),
           };
           toolsUsed.push({ name, arguments: data.input, result: output, iteration: 1 });
         } else if (type === 'on_chat_model_end') {

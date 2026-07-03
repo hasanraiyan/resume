@@ -42,6 +42,7 @@ export default function ChatInput({
   placeholder,
 }) {
   const isGreenTheme = theme === 'green';
+  const isDarkTheme = theme === 'dark';
   // default to showing the mode toggle whenever chat mode handlers exist,
   // but let parents explicitly disable it via the prop
   const shouldShowModeToggle = showModeToggle ?? typeof setChatMode === 'function';
@@ -54,16 +55,30 @@ export default function ChatInput({
   const [isModeMenuOpen, setIsModeMenuOpen] = useState(false);
   const currentMode = modeOptions.find((option) => option.id === chatMode) || modeOptions[0];
 
-  const outerBg = customOuterBg || (isGreenTheme ? 'bg-[#fcfbf5]' : 'bg-white');
-  const innerBg = customInnerBg || (isGreenTheme ? 'bg-[#fcfbf5]' : 'bg-white');
-  const borderColor = isGreenTheme ? 'border-[#e5e3d8]' : 'border-neutral-200/80';
-  const focusBorder = isGreenTheme
-    ? 'focus-within:border-[#1f644e]/50'
-    : 'focus-within:border-black/50';
-  const textColor = isGreenTheme ? 'text-[#1e3a34]' : 'text-neutral-900';
-  const placeholderColor = isGreenTheme
-    ? 'placeholder:text-[#5c6e68]'
-    : 'placeholder:text-neutral-500';
+  const outerBg =
+    customOuterBg || (isDarkTheme ? 'bg-transparent' : isGreenTheme ? 'bg-[#fcfbf5]' : 'bg-white');
+  const innerBg =
+    customInnerBg || (isDarkTheme ? 'bg-white/[0.06]' : isGreenTheme ? 'bg-[#fcfbf5]' : 'bg-white');
+  const borderColor = isDarkTheme
+    ? 'border-white/10'
+    : isGreenTheme
+      ? 'border-[#e5e3d8]'
+      : 'border-neutral-200/80';
+  const focusBorder = isDarkTheme
+    ? 'focus-within:border-blue-500/50'
+    : isGreenTheme
+      ? 'focus-within:border-[#1f644e]/50'
+      : 'focus-within:border-black/50';
+  const textColor = isDarkTheme
+    ? 'text-white'
+    : isGreenTheme
+      ? 'text-[#1e3a34]'
+      : 'text-neutral-900';
+  const placeholderColor = isDarkTheme
+    ? 'placeholder:text-white/30'
+    : isGreenTheme
+      ? 'placeholder:text-[#5c6e68]'
+      : 'placeholder:text-neutral-500';
   const warningBg = isGreenTheme ? 'bg-[#fef3c7]' : 'bg-amber-50';
   const warningText = isGreenTheme ? 'text-[#92400e]' : 'text-amber-700';
   const warningBorder = isGreenTheme ? 'border-[#fcd34d]' : 'border-amber-200';
@@ -73,7 +88,7 @@ export default function ChatInput({
       className={`${customPadding} ${showTopBorder ? `border-t ${borderColor}` : ''} ${outerBg} shrink-0`}
     >
       <div
-        className={`rounded-3xl border ${borderColor} ${innerBg} ${focusBorder} focus-within:ring-1 ${isGreenTheme ? 'focus-within:ring-[#1f644e]/20' : 'focus-within:ring-black/20'} transition-all flex flex-col`}
+        className={`rounded-3xl border ${borderColor} ${innerBg} ${focusBorder} focus-within:ring-1 ${isDarkTheme ? 'focus-within:ring-blue-500/20' : isGreenTheme ? 'focus-within:ring-[#1f644e]/20' : 'focus-within:ring-black/20'} transition-all flex flex-col`}
       >
         {uploadedImages.length > 0 && (
           <div className="mx-4 mt-2 flex flex-wrap gap-2">
@@ -423,7 +438,7 @@ export default function ChatInput({
                 type="button"
                 onClick={handleSubmit}
                 disabled={isLoading}
-                className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${isGreenTheme ? 'bg-[#1f644e] text-white hover:bg-[#1a5542]' : 'bg-black text-white hover:opacity-90'} active:scale-95`}
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${isDarkTheme ? 'bg-blue-500 text-white hover:bg-blue-600' : isGreenTheme ? 'bg-[#1f644e] text-white hover:bg-[#1a5542]' : 'bg-black text-white hover:opacity-90'} active:scale-95`}
               >
                 <Send className="w-3.5 h-3.5" />
               </button>
