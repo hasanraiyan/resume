@@ -90,6 +90,38 @@ export default function Navbar({ siteConfig }) {
     }
   }, [isMenuOpen]);
 
+  // TEMP DEBUG: trace whether the Google search widget's custom element ever
+  // registers itself, so we can tell apart "script never loaded" vs "script
+  // loaded but widget backend/config is broken".
+  useEffect(() => {
+    console.log('[SearchWidget] checking for gen-search-widget registration...');
+    let attempts = 0;
+    const interval = setInterval(() => {
+      attempts++;
+      const defined =
+        typeof window !== 'undefined' &&
+        window.customElements &&
+        window.customElements.get('gen-search-widget');
+      console.log(
+        `[SearchWidget] attempt ${attempts}: customElements.get('gen-search-widget') =`,
+        defined
+      );
+      const el = document.getElementById('searchWidgetTrigger');
+      console.log('[SearchWidget] trigger button in DOM:', el);
+      if (defined || attempts >= 10) {
+        clearInterval(interval);
+        if (!defined) {
+          console.warn(
+            '[SearchWidget] gen-search-widget never registered after 10 attempts — the Google script did not define the custom element.'
+          );
+        } else {
+          console.log('[SearchWidget] gen-search-widget IS registered.');
+        }
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <>
       {/* Subtle indicator dot when navbar is hidden */}
@@ -142,8 +174,9 @@ export default function Navbar({ siteConfig }) {
           {/* Search Icon */}
           <button
             id="searchWidgetTrigger"
-            className="text-gray-500 hover:text-black transition-colors"
+            className="text-gray-500 hover:text-black transition-colors cursor-pointer"
             aria-label="Search"
+            onClick={() => console.log('[SearchWidget] desktop trigger button clicked')}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -178,7 +211,9 @@ export default function Navbar({ siteConfig }) {
         <div className="pointer-events-auto flex gap-3">
           <button
             id="searchWidgetTriggerMobile"
-            className="w-10 h-10 rounded-full flex items-center justify-center text-black bg-white shadow-md"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-black bg-white shadow-md cursor-pointer"
+            aria-label="Search"
+            onClick={() => console.log('[SearchWidget] mobile trigger button clicked')}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -234,6 +269,9 @@ export default function Navbar({ siteConfig }) {
       <Script
         src="https://cloud.google.com/ai/gen-app-builder/client?hl=en_US"
         strategy="afterInteractive"
+        onLoad={() => console.log('[SearchWidget] Google client script onLoad fired')}
+        onError={(e) => console.error('[SearchWidget] Google client script failed to load:', e)}
+        onReady={() => console.log('[SearchWidget] Google client script onReady fired')}
       />
       <gen-search-widget
         configId="fe23bab7-1bc5-495f-86ad-4dd05e54700f"
