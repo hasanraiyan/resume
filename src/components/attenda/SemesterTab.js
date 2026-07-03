@@ -14,6 +14,7 @@ import {
   ChevronRight,
   MoreVertical,
   X,
+  RotateCcw,
 } from 'lucide-react';
 import SemesterModal from '@/components/attenda/SemesterModal';
 import SubjectModal from '@/components/attenda/SubjectModal';
@@ -54,6 +55,7 @@ export default function SemesterTab() {
     removeSemester,
     exportBackup,
     importBackup,
+    resetAttendance,
   } = useAttenda();
 
   const [showEditSemesterModal, setShowEditSemesterModal] = useState(false);
@@ -431,6 +433,21 @@ export default function SemesterTab() {
         >
           <Plus className="w-3.5 h-3.5" />
           Add Semester
+        </button>
+        <button
+          onClick={() => {
+            if (
+              confirm(
+                'Reset all attendance for this semester? Subjects, timetable, and holidays will be kept.'
+              )
+            ) {
+              resetAttendance();
+            }
+          }}
+          className="flex items-center gap-1.5 px-4 py-2 border border-[#c94c4c] text-[#c94c4c] text-xs font-bold rounded-xl hover:bg-[#c94c4c] hover:text-white transition-colors cursor-pointer"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          Reset Attendance
         </button>
         <button
           onClick={exportBackup}

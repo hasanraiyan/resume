@@ -140,3 +140,14 @@ export async function deleteHoliday(id) {
   params.set('id', id);
   await fetch(`/api/attenda/holidays?${params}`, { method: 'DELETE' }).then(readJson);
 }
+
+// --- Reset ---
+
+export async function resetAttendance(semesterId) {
+  const result = await fetch('/api/attenda/reset', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ semesterId }),
+  }).then(readJson);
+  return result;
+}
