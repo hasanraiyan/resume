@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { AttendaProvider, useAttenda } from '@/context/AttendaContext';
 import AppLayout from '@/components/layout/AppLayout';
+import AdminGuard from '@/components/AdminGuard';
+import SessionProvider from '@/components/SessionProvider';
 import { CalendarDays, CheckCircle2, BarChart3, Settings } from 'lucide-react';
 import TodayTab from '@/components/attenda/TodayTab';
 import CalendarTab from '@/components/attenda/CalendarTab';
@@ -92,8 +94,12 @@ function AttendaContent() {
 
 export default function AttendaPage() {
   return (
-    <AttendaProvider>
-      <AttendaContent />
-    </AttendaProvider>
+    <SessionProvider>
+      <AdminGuard appName="Attenda">
+        <AttendaProvider>
+          <AttendaContent />
+        </AttendaProvider>
+      </AdminGuard>
+    </SessionProvider>
   );
 }
