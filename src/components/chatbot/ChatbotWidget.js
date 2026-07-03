@@ -132,7 +132,7 @@ export default function ChatbotWidget() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    send(inputMessage, activeQuote, [], selectedAgentId);
+    send(inputMessage, activeQuote, selectedAgentId);
     setInputMessage('');
     setActiveQuote('');
     if (inputRef.current) {
@@ -141,7 +141,7 @@ export default function ChatbotWidget() {
   };
 
   const handlePromptClick = (text) => {
-    send(text, activeQuote, [], selectedAgentId);
+    send(text, activeQuote, selectedAgentId);
     setActiveQuote('');
   };
 
@@ -207,7 +207,7 @@ export default function ChatbotWidget() {
     }
 
     if (prompt) {
-      send(prompt, activeQuote, [], selectedAgentId, true);
+      send(prompt, activeQuote, selectedAgentId, true);
     }
   };
 
