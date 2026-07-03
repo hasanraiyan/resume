@@ -528,6 +528,20 @@ export function AttendaProvider({ children }) {
     [state.holidays]
   );
 
+  // --- Reset Attendance ---
+  const resetAttendance = useCallback(async () => {
+    if (!state.activeSemesterId) return;
+    try {
+      await api.resetAttendance(state.activeSemesterId);
+      // Clear local days state
+      dispatch({ type: ACTIONS.SET_DAYS, payload: {} });
+      dispatch({ type: ACTIONS.SET_TODAY_STATUS, payload: null });
+    } catch (error) {
+      console.error('Failed to reset attendance:', error);
+      throw error;
+    }
+  }, [state.activeSemesterId]);
+
   // --- Computed values ---
   const activeSemester = useMemo(() => {
     if (!state.activeSemesterId) return null;
@@ -614,6 +628,9 @@ export function AttendaProvider({ children }) {
       addHolidayToSemester,
       removeHolidayFromSemester,
 
+      // Reset
+      resetAttendance,
+
       // Backup
       exportBackup: storageExportBackup,
       importBackup: storageImportBackup,
@@ -643,6 +660,7 @@ export function AttendaProvider({ children }) {
       getHolidaysForSemester,
       addHolidayToSemester,
       removeHolidayFromSemester,
+      resetAttendance,
     ]
   );
 

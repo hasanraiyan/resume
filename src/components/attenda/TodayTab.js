@@ -1,9 +1,10 @@
 'use client';
 
 import { useAttenda } from '@/context/AttendaContext';
-import { useEffect, useState, useCallback } from 'react';
-import { Check, X, Ban, Plus, Save, Calendar, Building2, BookOpen } from 'lucide-react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { Check, X, Ban, Plus, Save, Calendar, Building2, Edit3, AlertCircle } from 'lucide-react';
 import AddExtraClassModal from '@/components/attenda/AddExtraClassModal';
+import DayDetailModal from '@/components/attenda/DayDetailModal';
 
 const COLLEGE_STATUSES = [
   {
@@ -40,18 +41,31 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export default function TodayTab() {
-  const { activeSemester, activeSemesterId, todaysLectures, getTodayStatus, saveToday, subjects } =
-    useAttenda();
+  const {
+    activeSemester,
+    activeSemesterId,
+    todaysLectures,
+    getTodayStatus,
+    getSavedDay,
+    saveToday,
+    saveDayRecord,
+    allDays,
+    subjects,
+  } = useAttenda();
 
   const [collegeStatus, setCollegeStatus] = useState('present');
   const [lectureStatuses, setLectureStatuses] = useState({});
   const [extraLectures, setExtraLectures] = useState([]);
   const [showExtraModal, setShowExtraModal] = useState(false);
+  const [showMissedDayModal, setShowMissedDayModal] = useState(false);
+  const [missedDayDate, setMissedDayDate] = useState(null);
   const [saved, setSaved] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
   const today = new Date();
-  const dateKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const formatDateKey = (date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  const dateKey = formatDateKey(today);
   const dayName = DAYS[today.getDay()];
   const dateStr = `${today.getDate()} ${MONTHS[today.getMonth()]}`;
 
@@ -382,27 +396,83 @@ export default function TodayTab() {
         </button>
       )}
 
-      {/* Saved confirmation */}
-      {saved && (
-        <div className="mt-4 flex items-center justify-center gap-2 text-sm font-bold text-[#1f644e] animate-pulse">
-          <Check className="w-4 h-4" />
-          Saved!
+      {/* Saved confirmation + Edit button */}
+      {isSaved && (
+        <div className="mt-4 space-y-3">
+          {saved && (
+            <div className="flex items-center justify-center gap-2 text-sm font-bold text-[#1f644e] animate-pulse">
+              <Check className="w-4 h-4" />
+              Saved!
+            </div>
+          )}
+
+          {!saved && (
+            <div className="flex items-center justify-center gap-2 text-sm font-medium text-[#7c8e88]">
+              <Check className="w-4 h-4" />
+              Today&apos;s attendance saved
+            </div>
+          )}
+
+          <button
+            onClick={() => {
+              setIsSaved(false);
+              setSaved(false);
+            }}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-[#e5e3d8] text-sm font-bold text-[#1e3a34] rounded-xl hover:bg-[#f0f5f2] transition-all cursor-pointer"
+          >
+            <Edit3 className="w-4 h-4" />
+            Edit Today&apos;s Attendance
+          </button>
         </div>
       )}
 
-      {isSaved && !saved && (
-        <div className="mt-4 flex items-center justify-center gap-2 text-sm font-medium text-[#7c8e88]">
-          <Check className="w-4 h-4" />
-          Today&apos;s attendance saved
+      {/* Missed Days Banner */}
+      {missedDays.length > 0 && !isSaved && (
+        <div className="mt-6 p-3 rounded-xl bg-[#fef2f2] border border-[#c94c4c]/20">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-[#c94c4c] mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-[#c94c4c]">Missed attendance</p>
+              <div className="mt-1.5 space-y-1">
+                {missedDays.map((dateKey) => {
+                  const d = new Date(dateKey + 'T00:00:00');
+                  const label = `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+                  return (
+                    <button
+                      key={dateKey}
+                      onClick={() => handleOpenMissedDay(dateKey)}
+                      className="block w-full text-left text-xs text-[#7c8e88] hover:text-[#1e3a34] hover:bg-[#fcfbf5] px-2 py-1 rounded-lg transition-colors cursor-pointer"
+                    >
+                      {label} — tap to mark now
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Extra Class Modal */}
+      {/* Modals */}
       {showExtraModal && (
         <AddExtraClassModal
           subjects={subjects}
           onAdd={handleAddExtra}
           onClose={() => setShowExtraModal(false)}
+        />
+      )}
+
+      {showMissedDayModal && missedDayDate && (
+        <DayDetailModal
+          dateKey={missedDayDate}
+          day={getSavedDay(missedDayDate)}
+          subjects={subjects}
+          activeSemester={activeSemester}
+          onSave={handleSaveMissedDay}
+          onClose={() => {
+            setShowMissedDayModal(false);
+            setMissedDayDate(null);
+          }}
         />
       )}
     </div>
