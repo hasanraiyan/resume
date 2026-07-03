@@ -14,7 +14,7 @@ const DEFAULT_STATE = {
 let _cache = null;
 
 function generateId() {
-  return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  return `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function loadRaw() {
