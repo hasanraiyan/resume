@@ -297,7 +297,7 @@ export default function AnalyticsTab() {
             Start logging your attendance to see analytics
           </p>
           <p className="text-xs text-[#b0bfba] mt-1">
-            Go to the Today tab to mark your daily attendance
+            Go to the Calendar tab to mark your daily attendance
           </p>
         </div>
       )}
