@@ -87,6 +87,27 @@ An AI-native course authoring platform powered by the Model Context Protocol.
 
 ---
 
+## 🔌 Model Context Protocol (MCP)
+
+The platform hosts multiple MCP servers that expose system tools to AI clients (e.g., Claude Desktop, Cursor, ChatGPT Connectors) via HTTP POST.
+
+### Connection Endpoints
+
+Both MCP routes utilize a dynamic transport segment. For HTTP JSON-RPC connections, configure the servers using the `/mcp` suffix:
+
+- **Pocketly MCP**: `http://localhost:3000/api/pocketly-mcp/mcp`
+- **Attenda MCP**: `http://localhost:3000/api/attenda-mcp/mcp`
+
+### Authentication
+
+Both servers are protected by shared OAuth 2.1 + PKCE authorization:
+
+- **Authorization Discovery**: `http://localhost:3000/.well-known/oauth-authorization-server`
+- **Token Endpoint**: `http://localhost:3000/api/mcp-oauth/token`
+- **Scopes**: `pocketly-mcp` or `attenda-mcp`
+
+---
+
 ## 🛠️ Tech Stack
 
 - **Framework:** Next.js 15 (App Router), React 19
