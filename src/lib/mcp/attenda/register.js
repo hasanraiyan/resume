@@ -111,6 +111,22 @@ const subjectManageSchema = {
   isActive: optionalBoolean.describe(
     'Whether this subject is currently being tracked (default true on create).'
   ),
+  subjects: z
+    .array(
+      z.object({
+        name: z.string().min(1).describe('Subject name, e.g. "Operating Systems".'),
+        facultyName: optionalString,
+        color: optionalString.describe('Hex color (default #4a86e8).'),
+        credits: optionalNumber,
+        requiredAttendance: optionalNumber,
+        isActive: optionalBoolean,
+      })
+    )
+    .optional()
+    .describe(
+      'Bulk-create multiple subjects at once (requires `semesterId`). Use this instead of ' +
+        "one call per subject when setting up all of a semester's subjects — one call instead of many."
+    ),
 };
 
 // --- Day/Lecture Schemas ---
@@ -148,6 +164,23 @@ const dayManageSchema = {
         'this saves attendance instead of just reading it — requires `date`.'
     ),
   notes: optionalString,
+  days: z
+    .array(
+      z.object({
+        date: z.string().min(1).describe('Date in YYYY-MM-DD format.'),
+        collegeStatus: z
+          .enum(['present', 'absent', 'holiday', 'closed'])
+          .optional()
+          .describe('Defaults to "present".'),
+        lectures: z.array(lectureSchema).optional(),
+        notes: optionalString,
+      })
+    )
+    .optional()
+    .describe(
+      'Bulk-save multiple attendance days at once (requires `semesterId`) — for backfilling ' +
+        'several missed days in one call instead of one manage_days call per day.'
+    ),
 };
 
 // --- Timetable Schema ---
@@ -230,9 +263,11 @@ export function registerAttendaMcp(server) {
     {
       title: 'Manage Subjects',
       description:
-        'List, create, update, or delete subjects — all in one tool.\n' +
+        'List, create (one or bulk), update, or delete subjects — all in one tool.\n' +
         'No `id`, with `semesterId` only → list subjects for that semester.\n' +
-        'No `id`, with `semesterId` + `name` → create a new subject.\n' +
+        'No `id`, with `semesterId` + `name` → create a single new subject.\n' +
+        'No `id`, with `semesterId` + `subjects` → bulk-create every subject in one call ' +
+        "(use this when setting up a whole semester's subjects instead of looping).\n" +
         '`id` (+ any other fields) → update just those fields.\n' +
         '`id` + `delete: true` → permanently delete the subject. Cannot be undone.',
       inputSchema: subjectManageSchema,
@@ -246,7 +281,7 @@ export function registerAttendaMcp(server) {
       _meta: toolMeta(),
     },
     async (args) => {
-      const { semesterId, id, delete: shouldDelete, ...fields } = args;
+      const { semesterId, id, delete: shouldDelete, subjects: bulkSubjects, ...fields } = args;
 
       if (shouldDelete) {
         if (!id) throw new Error('id is required to delete a subject');
@@ -257,6 +292,14 @@ export function registerAttendaMcp(server) {
       if (id) {
         const subject = await data.updateSubject(id, fields);
         return result({ subject }, `Updated subject "${subject.name}" (id: ${subject.id}).`);
+      }
+
+      if (semesterId && bulkSubjects) {
+        const subjects = await data.createSubjects(semesterId, bulkSubjects);
+        return result(
+          { subjects },
+          `Created ${subjects.length} subject(s).\n${formatSubjects(subjects)}`
+        );
       }
 
       if (semesterId && fields.name) {
@@ -287,14 +330,25 @@ export function registerAttendaMcp(server) {
         'No `date` → list every recorded day, most recent first.\n' +
         '`date` alone (no `collegeStatus`/`lectures`) → look up attendance for that one day.\n' +
         '`date` + `collegeStatus` and/or `lectures` → save/overwrite attendance for that day ' +
-        '(creates it if it does not exist yet).',
+        '(creates it if it does not exist yet).\n' +
+        '`days` → bulk-save multiple days in one call (e.g. backfilling a week of missed ' +
+        'attendance) instead of one call per day.',
       inputSchema: dayManageSchema,
       outputSchema: { days: z.array(z.any()).optional(), day: z.any().optional() },
       annotations: writeAnnotations(),
       _meta: toolMeta(),
     },
     async (args) => {
-      const { semesterId, date, collegeStatus, lectures, notes } = args;
+      const { semesterId, date, collegeStatus, lectures, notes, days: bulkDays } = args;
+
+      if (bulkDays) {
+        const saved = await data.saveDays(semesterId, bulkDays);
+        return result(
+          { days: saved },
+          `Saved attendance for ${saved.length} day(s).\n${formatDays(saved)}`
+        );
+      }
+
       const isSave = collegeStatus !== undefined || lectures !== undefined;
 
       if (isSave) {
@@ -410,18 +464,39 @@ export function registerAttendaMcp(server) {
     {
       title: 'Update Timetable',
       description:
-        'Replace the lecture slots for one day of the week, then return the full updated timetable.',
+        'Replace the lecture slots for one or more days of the week, then return the full ' +
+        'updated timetable. Pass `days` to bulk-update the whole week in one call (e.g. setting ' +
+        'up every weekday at once) instead of one call per day — do NOT loop this tool.',
       inputSchema: {
         semesterId: z.string().min(1),
         dayOfWeek: z
           .number()
           .min(0)
           .max(6)
-          .describe('Day of week to update (0=Sunday..6=Saturday).'),
+          .optional()
+          .describe(
+            'Day of week to update (0=Sunday..6=Saturday). Used together with `slots` for a ' +
+              'single-day update; omit both and use `days` instead for a bulk update.'
+          ),
         slots: z
           .array(timetableSlotSchema)
+          .optional()
           .describe(
             'Complete list of lecture slots for `dayOfWeek`, replacing whatever was there before.'
+          ),
+        days: z
+          .array(
+            z.object({
+              dayOfWeek: z.number().min(0).max(6).describe('0=Sunday..6=Saturday.'),
+              slots: z
+                .array(timetableSlotSchema)
+                .describe('Complete list of slots for this day, replacing whatever was there.'),
+            })
+          )
+          .optional()
+          .describe(
+            "Bulk-update multiple days at once — e.g. the whole week's timetable in one call. " +
+              'When provided, `dayOfWeek`/`slots` are ignored.'
           ),
       },
       outputSchema: { timetable: z.any() },
@@ -429,13 +504,24 @@ export function registerAttendaMcp(server) {
       _meta: toolMeta(),
     },
     async (args) => {
-      await data.updateTimetableSlots(args.semesterId, args.dayOfWeek, args.slots);
+      let summary;
+      if (args.days) {
+        await data.updateTimetableDays(args.semesterId, args.days);
+        const dayNames = args.days.map((d) => DAY_NAMES[d.dayOfWeek]).join(', ');
+        summary = `Updated ${args.days.length} day(s): ${dayNames}.`;
+      } else {
+        if (args.dayOfWeek === undefined || !args.slots) {
+          throw new Error('Provide dayOfWeek + slots, or days, to update the timetable');
+        }
+        await data.updateTimetableSlots(args.semesterId, args.dayOfWeek, args.slots);
+        summary = `Updated ${DAY_NAMES[args.dayOfWeek]} with ${args.slots.length} slot(s).`;
+      }
+
       const timetable = await data.getTimetable(args.semesterId);
       const dayCount = (timetable.days || []).length;
       return result(
         { timetable },
-        `Updated ${DAY_NAMES[args.dayOfWeek]} with ${args.slots.length} slot(s). ` +
-          `Timetable has ${dayCount} day(s) with scheduled lectures.\n${formatTimetable(timetable)}`
+        `${summary} Timetable has ${dayCount} day(s) with scheduled lectures.\n${formatTimetable(timetable)}`
       );
     }
   );
@@ -457,7 +543,9 @@ export function registerAttendaMcp(server) {
         '— re-creating a range is safe to repeat, it corrects existing entries instead of duplicating them.\n' +
         'action="list": needs `semesterId`.\n' +
         'action="create": needs `semesterId` and `name`, plus either `date` (single day) or ' +
-        '`startDate`+`endDate` (inclusive range).\n' +
+        '`startDate`+`endDate` (inclusive range). To create several DIFFERENT holidays (own ' +
+        'name/date each) in one call — e.g. importing a whole festival calendar — pass ' +
+        '`holidays` instead and omit `name`/`date`.\n' +
         'action="delete": needs `semesterId` plus one of `id`, `date`, or `startDate`+`endDate`.',
       inputSchema: {
         action: z.enum(['list', 'create', 'delete']).describe('Which operation to perform.'),
@@ -472,13 +560,27 @@ export function registerAttendaMcp(server) {
         ),
         endDate: optionalString.describe('End of the inclusive date range. Used with `startDate`.'),
         name: optionalString.describe(
-          'Holiday name, e.g. "Winter Break". Required when action is "create".'
+          'Holiday name, e.g. "Winter Break". Required when action is "create" (unless using `holidays`).'
         ),
         type: z.enum(['manual', 'college']).optional().describe('Defaults to "manual".'),
         id: optionalString.describe(
           'Holiday ID (from action="list") to remove. Only needed if you already have it — ' +
             '`date`/`startDate`+`endDate` are usually simpler.'
         ),
+        holidays: z
+          .array(
+            z.object({
+              date: z.string().min(1).describe('Date in YYYY-MM-DD format.'),
+              name: z.string().min(1).describe('Holiday name, e.g. "Diwali".'),
+              type: z.enum(['manual', 'college']).optional().describe('Defaults to "manual".'),
+            })
+          )
+          .optional()
+          .describe(
+            'Bulk-create several distinct holidays at once for action="create" (requires ' +
+              "`semesterId`) — e.g. a whole semester's festival calendar in one call instead of " +
+              'one per holiday. For one name spanning a continuous range, use `startDate`+`endDate` instead.'
+          ),
       },
       outputSchema: {
         holiday: z.any().optional(),
@@ -529,8 +631,20 @@ export function registerAttendaMcp(server) {
         throw new Error('Provide id, date, or startDate(+endDate) to delete a holiday');
       }
 
-      if (!args.semesterId || !args.name) {
-        throw new Error('semesterId and name are required to create a holiday');
+      if (!args.semesterId) {
+        throw new Error('semesterId is required to create a holiday');
+      }
+      if (args.holidays) {
+        const holidays = await data.createHolidays(args.semesterId, args.holidays);
+        return result(
+          { holidays },
+          `Added ${holidays.length} holiday(s).\n${formatHolidays(holidays)}`
+        );
+      }
+      if (!args.name) {
+        throw new Error(
+          'name is required to create a holiday (or pass `holidays` for bulk create)'
+        );
       }
       if (args.startDate) {
         const endDate = args.endDate || args.startDate;
@@ -562,14 +676,19 @@ export function registerAttendaMcp(server) {
     {
       title: 'Manage Syllabus',
       description:
-        'All-in-one tool to manage a subject syllabus — list, add/delete modules, add/delete ' +
-        'topics, and update topic statuses. Use `action` to pick the operation. You do NOT need ' +
-        'to call action="list" between steps just to learn a module\'s ID — `moduleSearch` ' +
-        'accepts the module title directly (e.g. the exact string you passed to add_module).\n' +
+        'All-in-one tool to manage a subject syllabus — list, bulk-set the whole thing, ' +
+        'add/delete modules, add/delete topics, and update topic statuses. Use `action` to pick ' +
+        'the operation. You do NOT need to call action="list" between steps just to learn a ' +
+        "module's ID — `moduleSearch` accepts the module title directly (e.g. the exact string " +
+        'you passed to add_module).\n' +
         '\n' +
         'action="list": get the syllabus and completion stats (requires `subjectId`).\n' +
-        'action="add_module": adds a new top-level module (requires `subjectId`, `title`).\n' +
-        'action="add_topic": adds a topic inside a module (requires `subjectId`, `moduleSearch`, `title`).\n' +
+        'action="set": replace the ENTIRE syllabus in one call — pass every module and its ' +
+        'topics via `modules` (requires `subjectId`, `modules`). Use this instead of looping ' +
+        'add_module/add_topic one at a time when building out or overwriting a whole syllabus ' +
+        '(e.g. from a course outline) — it is one call instead of dozens.\n' +
+        'action="add_module": adds a single new top-level module (requires `subjectId`, `title`).\n' +
+        'action="add_topic": adds a single topic inside a module (requires `subjectId`, `moduleSearch`, `title`).\n' +
         'action="update_topic": changes a topic completion status (requires `subjectId`, `topicSearch`, `status`).\n' +
         'action="delete_module": removes a module and all its topics (requires `subjectId`, `moduleSearch`).\n' +
         'action="delete_topic": removes a single topic from a module (requires `subjectId`, `moduleSearch`, `topicSearch`).',
@@ -577,6 +696,7 @@ export function registerAttendaMcp(server) {
         action: z
           .enum([
             'list',
+            'set',
             'add_module',
             'add_topic',
             'update_topic',
@@ -585,6 +705,29 @@ export function registerAttendaMcp(server) {
           ])
           .describe('Which syllabus operation to perform.'),
         subjectId: z.string().min(1).describe('Subject ID.'),
+        modules: z
+          .array(
+            z.object({
+              title: z.string().min(1).describe('Module title, e.g. "Unit 1: Introduction".'),
+              topics: z
+                .array(
+                  z.object({
+                    title: z.string().min(1).describe('Topic title.'),
+                    status: z
+                      .enum(['not_started', 'in_progress', 'completed'])
+                      .optional()
+                      .describe('Defaults to "not_started".'),
+                  })
+                )
+                .optional()
+                .describe('Topics within this module, in order.'),
+            })
+          )
+          .optional()
+          .describe(
+            'Required for action="set". The complete list of modules (each with its topics) ' +
+              'to replace the syllabus with — this REPLACES everything currently there.'
+          ),
         moduleSearch: optionalString.describe(
           'Module ID OR a case-insensitive title substring (required for add_topic, ' +
             'delete_topic, delete_module). You can pass the same title you used in add_module — ' +
@@ -611,12 +754,23 @@ export function registerAttendaMcp(server) {
       _meta: toolMeta(),
     },
     async (args) => {
-      const { action, subjectId, moduleSearch, title, topicSearch, status } = args;
+      const { action, subjectId, modules, moduleSearch, title, topicSearch, status } = args;
 
       switch (action) {
         case 'list': {
           const dataRes = await data.getSyllabus(subjectId);
           return result(dataRes, formatSyllabus(dataRes));
+        }
+
+        case 'set': {
+          if (!modules) throw new Error('modules is required for set');
+          const dataRes = await data.setSyllabus(subjectId, modules);
+          const topicCount = dataRes.syllabus.reduce((n, m) => n + m.topics.length, 0);
+          return result(
+            dataRes,
+            `Set syllabus for "${dataRes.subjectName}": ${dataRes.syllabus.length} module(s), ${topicCount} topic(s).` +
+              `\n${formatSyllabus(dataRes)}`
+          );
         }
 
         case 'add_module': {

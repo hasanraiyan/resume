@@ -106,6 +106,23 @@ export async function createSubject(data) {
   return serializeDoc(doc.toObject());
 }
 
+// Bulk-creates multiple subjects in one call instead of one create per subject.
+export async function createSubjects(semesterId, subjects) {
+  await dbConnect();
+  const docs = await AttendaSubject.insertMany(
+    (subjects || []).map((s) => ({
+      semesterId,
+      name: s.name || 'Untitled',
+      facultyName: s.facultyName || '',
+      color: s.color || '#4a86e8',
+      credits: s.credits ?? null,
+      requiredAttendance: s.requiredAttendance ?? 75,
+      isActive: s.isActive ?? true,
+    }))
+  );
+  return docs.map((doc) => serializeSubject(doc.toObject()));
+}
+
 export async function updateSubject(id, updates) {
   await dbConnect();
   const doc = await AttendaSubject.findOneAndUpdate({ _id: id, deletedAt: null }, updates, {
@@ -143,9 +160,15 @@ export async function listDays(semesterId) {
 
 export async function saveDay(data) {
   await dbConnect();
+  // Match by (date, semesterId) alone — that pair is globally unique (see
+  // the model's unique index), so there's only ever one document for it,
+  // soft-deleted or not. Matching only { deletedAt: null } would miss a
+  // soft-deleted row (e.g. from a reset) and collide with its still-live
+  // unique key when Mongo tries to insert a "new" one instead.
   const doc = await AttendaDay.findOneAndUpdate(
-    { date: data.date, semesterId: data.semesterId, deletedAt: null },
+    { date: data.date, semesterId: data.semesterId },
     {
+      deletedAt: null,
       collegeStatus: data.collegeStatus || 'present',
       lectures: (data.lectures || []).map((lec) => ({
         subjectId: lec.subjectId,
@@ -159,6 +182,16 @@ export async function saveDay(data) {
     { upsert: true, new: true }
   ).lean();
   return serializeDoc(doc);
+}
+
+// Bulk-saves multiple attendance days in one call — for backfilling several
+// missed days at once instead of one manage_days call per day.
+export async function saveDays(semesterId, days) {
+  const saved = [];
+  for (const d of days || []) {
+    saved.push(await saveDay({ ...d, semesterId }));
+  }
+  return saved;
 }
 
 // --- Timetable ---
@@ -223,6 +256,35 @@ export async function updateTimetableSlots(semesterId, dayOfWeek, slots) {
   return serializeDoc(timetable.toObject());
 }
 
+// Bulk-updates multiple days of the week in one call — e.g. setting up a
+// whole week's timetable instead of one updateTimetableSlots call per day.
+export async function updateTimetableDays(semesterId, days) {
+  await dbConnect();
+  const timetable = await AttendaTimetable.findOneAndUpdate(
+    { semesterId, deletedAt: null },
+    {},
+    { upsert: true, new: true }
+  );
+
+  for (const { dayOfWeek, slots } of days || []) {
+    const dayIndex = timetable.days.findIndex((d) => d.dayOfWeek === dayOfWeek);
+    const newSlots = (slots || []).map((slot) => ({
+      subjectId: slot.subjectId,
+      startTime: slot.startTime || '',
+      endTime: slot.endTime || '',
+    }));
+
+    if (dayIndex >= 0) {
+      timetable.days[dayIndex].slots = newSlots;
+    } else {
+      timetable.days.push({ dayOfWeek, slots: newSlots });
+    }
+  }
+
+  await timetable.save();
+  return serializeDoc(timetable.toObject());
+}
+
 // --- Holidays ---
 
 const MAX_HOLIDAY_RANGE_DAYS = 366;
@@ -269,6 +331,23 @@ export async function createHoliday(data) {
     type: data.type || 'manual',
   });
   return serializeDoc(doc.toObject());
+}
+
+// Bulk-creates several distinct holidays (different dates/names) in one call
+// — e.g. importing a semester's whole festival calendar — instead of one
+// createHoliday call per holiday. For a single name spanning many
+// consecutive days, use createHolidayRange instead.
+export async function createHolidays(semesterId, holidays) {
+  await dbConnect();
+  const docs = await AttendaHoliday.insertMany(
+    (holidays || []).map((h) => ({
+      semesterId,
+      date: h.date,
+      name: h.name || 'Holiday',
+      type: h.type || 'manual',
+    }))
+  );
+  return docs.map((doc) => serializeDoc(doc.toObject()));
 }
 
 // Creates (or corrects) a holiday across an inclusive date range in one call.
@@ -523,6 +602,27 @@ export async function updateSyllabusTopic(subjectId, topicSearch, status) {
 
   foundTopic.status = status;
   foundTopic.completedAt = status === 'completed' ? new Date() : null;
+
+  await subject.save();
+  return getSyllabus(subjectId);
+}
+
+// Replaces the entire syllabus in one write — lets a caller build out (or
+// overwrite) every module and topic in a single call instead of one
+// add_module + one add_topic per topic.
+export async function setSyllabus(subjectId, modules) {
+  await dbConnect();
+  const subject = await AttendaSubject.findOne({ _id: subjectId, deletedAt: null });
+  if (!subject) throw new Error('Subject not found');
+
+  subject.syllabus = (modules || []).map((mod) => ({
+    title: mod.title,
+    topics: (mod.topics || []).map((t) => ({
+      title: t.title,
+      status: t.status || 'not_started',
+      completedAt: t.status === 'completed' ? new Date() : null,
+    })),
+  }));
 
   await subject.save();
   return getSyllabus(subjectId);
