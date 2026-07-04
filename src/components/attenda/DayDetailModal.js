@@ -40,6 +40,12 @@ export default function DayDetailModal({
     return semWeeklyHolidays.has(dayOfWeek);
   }, [activeSemester, dayOfWeek]);
 
+  const isFuture = useMemo(() => {
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    return dateObj > todayStart;
+  }, [dateObj]);
+
   const defaultCollegeStatus = isDeclaredHoliday
     ? 'holiday'
     : isWeeklyHoliday
@@ -82,6 +88,7 @@ export default function DayDetailModal({
   const dateStr = `${dateObj.getDate()} ${MONTHS[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
 
   const toggleLecture = (lectureId) => {
+    if (isFuture) return;
     setLectureStatuses((prev) => {
       const order = ['present', 'absent', 'cancelled'];
       const current = prev[lectureId] || 'present';
@@ -91,6 +98,7 @@ export default function DayDetailModal({
   };
 
   const handleSave = () => {
+    if (isFuture) return;
     setIsSaving(true);
     const lectures = activeLectures.map((lec) => ({
       ...lec,
@@ -133,6 +141,16 @@ export default function DayDetailModal({
             </button>
           </div>
 
+          {/* Future Date Disclaimer */}
+          {isFuture && (
+            <div className="mb-4 p-3 rounded-xl bg-[#4a86e8]/5 border border-[#4a86e8]/10 text-left flex items-start gap-2.5">
+              <div className="text-xs text-[#4a86e8] font-bold">
+                This is a future date. You can view the scheduled classes below, but attendance
+                cannot be marked yet.
+              </div>
+            </div>
+          )}
+
           {/* College Status */}
           <div className="mb-4">
             <p className="text-xs font-bold text-[#7c8e88] mb-2">College</p>
@@ -141,6 +159,7 @@ export default function DayDetailModal({
                 <button
                   key={s.value}
                   onClick={() => {
+                    if (isFuture) return;
                     setCollegeStatus(s.value);
                     if (s.value === 'holiday' || s.value === 'closed') {
                       const cancelled = {};
@@ -162,10 +181,14 @@ export default function DayDetailModal({
                       setLectureStatuses(present);
                     }
                   }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    collegeStatus === s.value
-                      ? 'bg-[#1f644e] text-white'
-                      : 'bg-[#f0f5f2] text-[#7c8e88] hover:bg-[#e5e3d8]'
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    isFuture
+                      ? collegeStatus === s.value
+                        ? 'bg-[#1f644e]/30 text-white/70 cursor-not-allowed'
+                        : 'bg-[#f0f5f2]/50 text-[#7c8e88]/50 cursor-not-allowed'
+                      : collegeStatus === s.value
+                        ? 'bg-[#1f644e] text-white cursor-pointer'
+                        : 'bg-[#f0f5f2] text-[#7c8e88] hover:bg-[#e5e3d8] cursor-pointer'
                   }`}
                 >
                   {s.label}
@@ -186,14 +209,19 @@ export default function DayDetailModal({
                     <button
                       key={lec.id}
                       onClick={() => toggleLecture(lec.id)}
-                      disabled={collegeStatus === 'holiday' || collegeStatus === 'closed'}
+                      disabled={
+                        isFuture || collegeStatus === 'holiday' || collegeStatus === 'closed'
+                      }
                       className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-sm transition-all ${
-                        collegeStatus === 'holiday' || collegeStatus === 'closed'
-                          ? 'bg-[#f0f5f2] border-[#e5e3d8] opacity-75 cursor-not-allowed'
-                          : 'cursor-pointer'
+                        isFuture
+                          ? 'bg-[#fcfbf5]/50 border-neutral-100 cursor-default'
+                          : collegeStatus === 'holiday' || collegeStatus === 'closed'
+                            ? 'bg-[#f0f5f2] border-[#e5e3d8] opacity-75 cursor-not-allowed'
+                            : 'cursor-pointer'
                       } ${
                         status === 'present'
-                          ? 'bg-white border-[#e5e3d8] hover:border-[#1f644e]'
+                          ? 'bg-white border-[#e5e3d8]' +
+                            (isFuture ? '' : ' hover:border-[#1f644e]')
                           : status === 'absent'
                             ? 'bg-[#c94c4c]/5 border-[#c94c4c]/30'
                             : 'bg-[#f0f5f2] border-[#e5e3d8]'
@@ -242,19 +270,30 @@ export default function DayDetailModal({
 
           {/* Actions */}
           <div className="flex gap-2 justify-end pt-2">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-bold text-[#7c8e88] hover:bg-[#f0f5f2] rounded-xl transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="px-5 py-2 text-sm font-bold bg-[#1f644e] text-white rounded-xl hover:bg-[#17503e] disabled:opacity-50 transition-colors cursor-pointer"
-            >
-              {isSaving ? 'Saving...' : 'Save'}
-            </button>
+            {isFuture ? (
+              <button
+                onClick={onClose}
+                className="px-5 py-2 text-sm font-bold bg-[#1f644e] text-white rounded-xl hover:bg-[#17503e] transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 text-sm font-bold text-[#7c8e88] hover:bg-[#f0f5f2] rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="px-5 py-2 text-sm font-bold bg-[#1f644e] text-white rounded-xl hover:bg-[#17503e] disabled:opacity-50 transition-colors cursor-pointer"
+                >
+                  {isSaving ? 'Saving...' : 'Save'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

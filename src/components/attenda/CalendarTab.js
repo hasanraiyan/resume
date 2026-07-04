@@ -360,7 +360,7 @@ export default function CalendarTab() {
             <button
               key={idx}
               onClick={() => {
-                if (isCurrentMonth && !isFuture) {
+                if (isCurrentMonth) {
                   openDay(cell.dateKey);
                 }
               }}
