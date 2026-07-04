@@ -8,6 +8,8 @@ const optionalString = z.string().optional();
 const optionalNumber = z.number().optional();
 const optionalBoolean = z.boolean().optional();
 
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
 function readAnnotations() {
   return { readOnlyHint: true, idempotentHint: true, openWorldHint: false };
 }
@@ -21,6 +23,9 @@ function writeAnnotations() {
   };
 }
 
+// Used by tools that fold a destructive action (delete) into an otherwise
+// non-destructive one via an `action` param. MCP annotations are per-tool,
+// not per-call, so we report the worst case across all actions the tool can take.
 function deleteAnnotations() {
   return {
     readOnlyHint: false,
@@ -44,87 +49,79 @@ function result(structuredContent, text) {
 
 // --- Semester Schemas ---
 
-const semesterCreateSchema = {
-  name: z.string().min(1).describe('Semester name (e.g. "Semester VI")'),
-  startDate: optionalString.describe('Start date in YYYY-MM-DD format'),
-  endDate: optionalString.describe('End date in YYYY-MM-DD format'),
-  requiredAttendance: optionalNumber.describe('Required attendance percentage (default 75)'),
+const semesterSaveSchema = {
+  id: optionalString.describe(
+    'Semester ID to update. Omit this entirely to create a new semester instead — in that case `name` is required.'
+  ),
+  name: optionalString.describe(
+    'Semester name, e.g. "Semester VI". Required when creating; when updating, only pass it if you want to rename.'
+  ),
+  startDate: optionalString.describe('Start date in YYYY-MM-DD format.'),
+  endDate: optionalString.describe('End date in YYYY-MM-DD format.'),
+  requiredAttendance: optionalNumber.describe(
+    'Minimum required attendance percentage (default 75 on create).'
+  ),
   weeklyHolidays: z
     .array(z.number().min(0).max(6))
     .optional()
-    .describe('Days of week that are holidays (0=Sunday, 6=Saturday)'),
-  institutionName: optionalString.describe('College/institution name'),
-};
-
-const semesterUpdateSchema = {
-  id: z.string().min(1).describe('Semester ID'),
-  name: optionalString,
-  startDate: optionalString,
-  endDate: optionalString,
-  requiredAttendance: optionalNumber,
-  weeklyHolidays: z.array(z.number().min(0).max(6)).optional(),
-  institutionName: optionalString,
-  notes: optionalString,
+    .describe('Days of week that are always off, 0=Sunday..6=Saturday (default [0] on create).'),
+  institutionName: optionalString.describe('College/institution name.'),
+  notes: optionalString.describe('Free-form notes about this semester.'),
 };
 
 // --- Subject Schemas ---
 
-const subjectCreateSchema = {
-  semesterId: z.string().min(1).describe('Semester ID'),
-  name: z.string().min(1).describe('Subject name (e.g. "Operating Systems")'),
-  facultyName: optionalString.describe('Faculty/teacher name'),
-  color: optionalString.describe('Hex color (default #4a86e8)'),
-  credits: optionalNumber.describe('Credit value'),
-  requiredAttendance: optionalNumber.describe('Required attendance % for this subject'),
-  isActive: optionalBoolean.describe('Whether this subject is currently active'),
-};
-
-const subjectUpdateSchema = {
-  id: z.string().min(1),
-  name: optionalString,
-  facultyName: optionalString,
-  color: optionalString,
-  credits: optionalNumber,
-  requiredAttendance: optionalNumber,
-  isActive: optionalBoolean,
+const subjectSaveSchema = {
+  id: optionalString.describe(
+    'Subject ID to update. Omit this entirely to create a new subject instead — in that case `semesterId` and `name` are required.'
+  ),
+  semesterId: optionalString.describe('Semester this subject belongs to. Required when creating.'),
+  name: optionalString.describe('Subject name, e.g. "Operating Systems". Required when creating.'),
+  facultyName: optionalString.describe('Faculty/teacher name.'),
+  color: optionalString.describe('Hex color used in the UI (default #4a86e8 on create).'),
+  credits: optionalNumber.describe('Credit value.'),
+  requiredAttendance: optionalNumber.describe(
+    'Required attendance % for this subject specifically, overriding the semester default.'
+  ),
+  isActive: optionalBoolean.describe(
+    'Whether this subject is currently being tracked (default true on create).'
+  ),
 };
 
 // --- Day/Lecture Schemas ---
 
 const lectureSchema = z.object({
-  subjectId: z.string().describe('Subject ID'),
+  subjectId: z.string().describe('Subject ID this lecture is for.'),
   status: z
     .enum(['present', 'absent', 'cancelled', 'didnt-happen', 'holiday', 'college-closed'])
-    .default('present'),
-  isExtra: z.boolean().default(false),
+    .default('present')
+    .describe('Attendance outcome for this specific lecture.'),
+  isExtra: z.boolean().default(false).describe('True if this lecture was not on the timetable.'),
   startTime: z.string().default(''),
   endTime: z.string().default(''),
 });
 
 const saveDaySchema = {
-  date: z.string().min(1).describe('Date in YYYY-MM-DD format'),
-  semesterId: z.string().min(1),
-  collegeStatus: z.enum(['present', 'absent', 'holiday', 'closed']).default('present'),
-  lectures: z.array(lectureSchema).default([]),
+  date: z.string().min(1).describe('Date in YYYY-MM-DD format.'),
+  semesterId: z.string().min(1).describe('Semester this attendance record belongs to.'),
+  collegeStatus: z
+    .enum(['present', 'absent', 'holiday', 'closed'])
+    .default('present')
+    .describe('Whether the college was open/attended at all that day.'),
+  lectures: z
+    .array(lectureSchema)
+    .default([])
+    .describe('Per-lecture attendance for the day. Replaces any existing lectures for this date.'),
   notes: optionalString,
 };
 
 // --- Timetable Schema ---
 
 const timetableSlotSchema = z.object({
-  subjectId: z.string().min(1),
+  subjectId: z.string().min(1).describe('Subject to schedule in this slot.'),
   startTime: z.string().default(''),
   endTime: z.string().default(''),
 });
-
-// --- Holiday Schema ---
-
-const holidayCreateSchema = {
-  semesterId: z.string().min(1),
-  date: z.string().min(1).describe('Date in YYYY-MM-DD format'),
-  name: z.string().min(1).describe('Holiday name (e.g. "Durga Puja")'),
-  type: z.enum(['manual', 'college']).default('manual'),
-};
 
 // --- Tool Registration ---
 
@@ -136,13 +133,33 @@ export function registerAttendaMcp(server) {
     'list_semesters',
     {
       title: 'List Semesters',
-      description: 'List all semesters in the Attenda attendance tracker.',
-      inputSchema: {},
-      outputSchema: { semesters: z.array(z.any()) },
+      description:
+        'List every semester (id + name only), or pass `id` to fetch one semester in full ' +
+        'detail — including attendance stats and bunk-safety predictions. Always call this ' +
+        'first (without `id`) to discover which semesterId to use in other tools.',
+      inputSchema: {
+        id: optionalString.describe(
+          'Semester ID for full detail. Omit to get the lightweight list of all semesters instead.'
+        ),
+      },
+      outputSchema: {
+        semesters: z.array(z.any()).optional(),
+        semester: z.any().optional(),
+        stats: z.any().optional(),
+        predictions: z.any().optional(),
+      },
       annotations: readAnnotations(),
       _meta: toolMeta(),
     },
-    async () => {
+    async (args) => {
+      if (args.id) {
+        const semester = await data.getSemester(args.id);
+        const { stats, predictions } = await data.getCollegeStats(args.id);
+        return result(
+          { semester, stats, predictions },
+          `Loaded semester "${semester.name}" (${stats.percentage ?? 'N/A'}% attendance).`
+        );
+      }
       const semesters = await data.listSemesters();
       const names = semesters.map((s) => `"${s.name}" (${s.id})`).join(', ');
       return result({ semesters }, `Found ${semesters.length} semester(s): ${names || 'none'}.`);
@@ -151,54 +168,29 @@ export function registerAttendaMcp(server) {
 
   registerAppTool(
     server,
-    'get_semester',
+    'save_semester',
     {
-      title: 'Get Semester',
-      description: 'Get a specific semester by ID with attendance stats and predictions.',
-      inputSchema: { id: z.string().min(1) },
-      outputSchema: { semester: z.any(), stats: z.any(), predictions: z.any() },
-      annotations: readAnnotations(),
-      _meta: toolMeta(),
-    },
-    async (args) => {
-      const semester = await data.getSemester(args.id);
-      const { stats, predictions } = await data.getCollegeStats(args.id);
-      return result({ semester, stats, predictions }, `Loaded semester "${semester.name}".`);
-    }
-  );
-
-  registerAppTool(
-    server,
-    'create_semester',
-    {
-      title: 'Create Semester',
-      description: 'Create a new academic semester in the Attenda attendance tracker.',
-      inputSchema: semesterCreateSchema,
+      title: 'Save Semester',
+      description:
+        'Create a new semester or update an existing one in one tool. Omit `id` to create ' +
+        '(requires `name`). Pass `id` to update — only the fields you include are changed, ' +
+        'everything else is left as-is.',
+      inputSchema: semesterSaveSchema,
       outputSchema: { semester: z.any() },
       annotations: writeAnnotations(),
       _meta: toolMeta(),
     },
     async (args) => {
-      const semester = await data.createSemester(args);
+      const { id, ...fields } = args;
+      if (id) {
+        const semester = await data.updateSemester(id, fields);
+        return result({ semester }, `Updated semester "${semester.name}".`);
+      }
+      if (!fields.name) {
+        throw new Error('name is required to create a semester');
+      }
+      const semester = await data.createSemester(fields);
       return result({ semester }, `Created semester "${semester.name}".`);
-    }
-  );
-
-  registerAppTool(
-    server,
-    'update_semester',
-    {
-      title: 'Update Semester',
-      description: 'Update an existing semester by ID.',
-      inputSchema: semesterUpdateSchema,
-      outputSchema: { semester: z.any() },
-      annotations: writeAnnotations(),
-      _meta: toolMeta(),
-    },
-    async (args) => {
-      const { id, ...updates } = args;
-      const semester = await data.updateSemester(id, updates);
-      return result({ semester }, `Updated semester "${semester.name}".`);
     }
   );
 
@@ -207,8 +199,10 @@ export function registerAttendaMcp(server) {
     'delete_semester',
     {
       title: 'Delete Semester',
-      description: 'Soft-delete a semester and all its related data (subjects, days, holidays).',
-      inputSchema: { id: z.string().min(1) },
+      description:
+        'Permanently remove a semester and everything under it (subjects, attendance days, ' +
+        'timetable, holidays). This cannot be undone from this tool — confirm with the user first.',
+      inputSchema: { id: z.string().min(1).describe('Semester ID to delete.') },
       outputSchema: { success: z.boolean(), id: z.string() },
       annotations: deleteAnnotations(),
       _meta: toolMeta(),
@@ -226,8 +220,9 @@ export function registerAttendaMcp(server) {
     'list_subjects',
     {
       title: 'List Subjects',
-      description: 'List all subjects for a given semester.',
-      inputSchema: { semesterId: z.string().min(1) },
+      description:
+        'List all subjects tracked under a semester. Call list_semesters first to get a semesterId.',
+      inputSchema: { semesterId: z.string().min(1).describe('Semester to list subjects for.') },
       outputSchema: { subjects: z.array(z.any()) },
       annotations: readAnnotations(),
       _meta: toolMeta(),
@@ -240,36 +235,29 @@ export function registerAttendaMcp(server) {
 
   registerAppTool(
     server,
-    'create_subject',
+    'save_subject',
     {
-      title: 'Create Subject',
-      description: 'Create a new subject under a semester.',
-      inputSchema: subjectCreateSchema,
+      title: 'Save Subject',
+      description:
+        'Create a new subject or update an existing one in one tool. Omit `id` to create ' +
+        '(requires `semesterId` and `name`). Pass `id` to update — only the fields you include ' +
+        'are changed.',
+      inputSchema: subjectSaveSchema,
       outputSchema: { subject: z.any() },
       annotations: writeAnnotations(),
       _meta: toolMeta(),
     },
     async (args) => {
-      const subject = await data.createSubject(args);
+      const { id, ...fields } = args;
+      if (id) {
+        const subject = await data.updateSubject(id, fields);
+        return result({ subject }, `Updated subject "${subject.name}".`);
+      }
+      if (!fields.semesterId || !fields.name) {
+        throw new Error('semesterId and name are required to create a subject');
+      }
+      const subject = await data.createSubject(fields);
       return result({ subject }, `Created subject "${subject.name}".`);
-    }
-  );
-
-  registerAppTool(
-    server,
-    'update_subject',
-    {
-      title: 'Update Subject',
-      description: 'Update an existing subject by ID.',
-      inputSchema: subjectUpdateSchema,
-      outputSchema: { subject: z.any() },
-      annotations: writeAnnotations(),
-      _meta: toolMeta(),
-    },
-    async (args) => {
-      const { id, ...updates } = args;
-      const subject = await data.updateSubject(id, updates);
-      return result({ subject }, `Updated subject "${subject.name}".`);
     }
   );
 
@@ -278,8 +266,8 @@ export function registerAttendaMcp(server) {
     'delete_subject',
     {
       title: 'Delete Subject',
-      description: 'Soft-delete a subject by ID.',
-      inputSchema: { id: z.string().min(1) },
+      description: 'Permanently remove a subject by ID. This cannot be undone from this tool.',
+      inputSchema: { id: z.string().min(1).describe('Subject ID to delete.') },
       outputSchema: { success: z.boolean(), id: z.string() },
       annotations: deleteAnnotations(),
       _meta: toolMeta(),
@@ -297,35 +285,29 @@ export function registerAttendaMcp(server) {
     'list_days',
     {
       title: 'List Days',
-      description: 'List all recorded attendance days for a semester.',
-      inputSchema: { semesterId: z.string().min(1) },
+      description:
+        'List recorded attendance days for a semester. Pass `date` to look up one specific day ' +
+        'instead — the result is still an array, with at most one item.',
+      inputSchema: {
+        semesterId: z.string().min(1),
+        date: optionalString.describe(
+          'Specific date (YYYY-MM-DD) to look up. Omit to list every recorded day, most recent first.'
+        ),
+      },
       outputSchema: { days: z.array(z.any()) },
       annotations: readAnnotations(),
       _meta: toolMeta(),
     },
     async (args) => {
+      if (args.date) {
+        const day = await data.getDay(args.date, args.semesterId);
+        return result(
+          { days: day ? [day] : [] },
+          day ? `Loaded attendance for ${args.date}.` : `No record for ${args.date}.`
+        );
+      }
       const days = await data.listDays(args.semesterId);
       return result({ days }, `Found ${days.length} recorded day(s).`);
-    }
-  );
-
-  registerAppTool(
-    server,
-    'get_day',
-    {
-      title: 'Get Day',
-      description: 'Get attendance for a specific date in a semester.',
-      inputSchema: { date: z.string().min(1), semesterId: z.string().min(1) },
-      outputSchema: { day: z.any().nullable() },
-      annotations: readAnnotations(),
-      _meta: toolMeta(),
-    },
-    async (args) => {
-      const day = await data.getDay(args.date, args.semesterId);
-      return result(
-        { day },
-        day ? `Loaded attendance for ${args.date}.` : `No record for ${args.date}.`
-      );
     }
   );
 
@@ -335,7 +317,9 @@ export function registerAttendaMcp(server) {
     {
       title: 'Save Day',
       description:
-        'Save or update attendance for a specific date. Lectures can include scheduled or extra classes.',
+        'Record or overwrite attendance for one date (creates it if it does not exist yet). ' +
+        'The `lectures` array replaces any previously saved lectures for that date — include ' +
+        'every lecture for the day, not just the ones you are changing.',
       inputSchema: saveDaySchema,
       outputSchema: { day: z.any() },
       annotations: writeAnnotations(),
@@ -355,16 +339,24 @@ export function registerAttendaMcp(server) {
 
   registerAppTool(
     server,
-    'get_attendance',
+    'get_overview',
     {
-      title: 'Get Attendance',
+      title: 'Get Overview',
       description:
-        'Get college-level and per-subject attendance stats, predictions, and safe bunk info.',
-      inputSchema: { semesterId: z.string().min(1) },
+        'The go-to tool for "how am I doing" questions: college-level and per-subject ' +
+        'attendance stats, safe-bunk predictions, AND the class schedule for a given date ' +
+        '(defaults to today) — all in one call, instead of fetching stats and schedule separately.',
+      inputSchema: {
+        semesterId: z.string().min(1),
+        date: optionalString.describe(
+          'Date (YYYY-MM-DD) to include the schedule for. Defaults to today.'
+        ),
+      },
       outputSchema: {
         collegeStats: z.any(),
         collegePredictions: z.any(),
         subjects: z.array(z.any()),
+        schedule: z.any(),
       },
       annotations: readAnnotations(),
       _meta: toolMeta(),
@@ -372,6 +364,7 @@ export function registerAttendaMcp(server) {
     async (args) => {
       const { stats, predictions } = await data.getCollegeStats(args.semesterId);
       const subjects = await data.getSubjectStats(args.semesterId);
+      const schedule = await data.getSchedule(args.semesterId, args.date);
 
       let text = `College attendance: ${stats.percentage ?? 'N/A'}%`;
       if (predictions) {
@@ -379,49 +372,17 @@ export function registerAttendaMcp(server) {
       }
       text += `. ${subjects.length} subject(s) tracked.`;
 
-      return result({ collegeStats: stats, collegePredictions: predictions, subjects }, text);
-    }
-  );
-
-  registerAppTool(
-    server,
-    'get_schedule',
-    {
-      title: 'Get Schedule',
-      description:
-        'Get scheduled lectures for any date (defaults to today) based on the timetable, holidays, and weekly offs.',
-      inputSchema: {
-        semesterId: z.string().min(1).describe('Semester ID'),
-        date: z.string().optional().describe('Date in YYYY-MM-DD format (defaults to today)'),
-      },
-      outputSchema: {
-        date: z.string(),
-        isHoliday: z.boolean(),
-        holidayName: z.string().nullable(),
-        isWeeklyHoliday: z.boolean(),
-        lectures: z.array(z.any()),
-      },
-      annotations: readAnnotations(),
-      _meta: toolMeta(),
-    },
-    async (args) => {
-      const schedule = await data.getSchedule(args.semesterId, args.date);
       if (schedule.isHoliday) {
-        return result(
-          schedule,
-          `Schedule for ${schedule.date}: Declared Holiday — "${schedule.holidayName}".`
-        );
+        text += ` ${schedule.date} is a declared holiday ("${schedule.holidayName}").`;
+      } else if (schedule.isWeeklyHoliday) {
+        text += ` ${schedule.date} is a weekly off.`;
+      } else {
+        text += ` ${schedule.lectures.length} lecture(s) scheduled on ${schedule.date}.`;
       }
-      if (schedule.isWeeklyHoliday) {
-        return result(schedule, `Schedule for ${schedule.date}: Weekly Holiday (Off).`);
-      }
-      if (schedule.lectures.length === 0) {
-        return result(schedule, `Schedule for ${schedule.date}: No lectures scheduled.`);
-      }
-      const names = schedule.lectures.map((l) => `${l.startTime} ${l.subjectName}`).join(', ');
+
       return result(
-        schedule,
-        `Schedule for ${schedule.date}: ${schedule.lectures.length} lecture(s) — ${names}.`
+        { collegeStats: stats, collegePredictions: predictions, subjects, schedule },
+        text
       );
     }
   );
@@ -433,52 +394,42 @@ export function registerAttendaMcp(server) {
     'get_timetable',
     {
       title: 'Get Timetable',
-      description: 'Get the weekly timetable for a semester.',
-      inputSchema: { semesterId: z.string().min(1) },
-      outputSchema: { timetable: z.any() },
-      annotations: readAnnotations(),
-      _meta: toolMeta(),
-    },
-    async (args) => {
-      const timetable = await data.getTimetable(args.semesterId);
-      const dayCount = (timetable.days || []).length;
-      return result({ timetable }, `Timetable has ${dayCount} day(s) with scheduled lectures.`);
-    }
-  );
-
-  registerAppTool(
-    server,
-    'update_timetable',
-    {
-      title: 'Update Timetable',
-      description: 'Update the timetable slots for a specific day of the week.',
+      description:
+        "Get the weekly timetable for a semester. To change a day's lecture slots, also pass " +
+        '`dayOfWeek` and `slots` — that day is updated first (replacing its slots entirely), ' +
+        'then the full updated timetable is returned.',
       inputSchema: {
         semesterId: z.string().min(1),
-        dayOfWeek: z.number().min(0).max(6).describe('Day of week (0=Sunday, 6=Saturday)'),
-        slots: z.array(timetableSlotSchema).describe('Array of lecture slots for this day'),
+        dayOfWeek: z
+          .number()
+          .min(0)
+          .max(6)
+          .optional()
+          .describe(
+            'Day of week to update (0=Sunday..6=Saturday). Must be provided together with `slots`.'
+          ),
+        slots: z
+          .array(timetableSlotSchema)
+          .optional()
+          .describe(
+            'New complete list of lecture slots for `dayOfWeek`, replacing whatever was there before.'
+          ),
       },
       outputSchema: { timetable: z.any() },
       annotations: writeAnnotations(),
       _meta: toolMeta(),
     },
     async (args) => {
-      const timetable = await data.updateTimetableSlots(
-        args.semesterId,
-        args.dayOfWeek,
-        args.slots
-      );
-      const dayNames = [
-        'Sunday',
-        'Monday',
-        'Tuesday',
-        'Wednesday',
-        'Thursday',
-        'Friday',
-        'Saturday',
-      ];
+      let updateSummary = '';
+      if (args.dayOfWeek !== undefined && args.slots !== undefined) {
+        await data.updateTimetableSlots(args.semesterId, args.dayOfWeek, args.slots);
+        updateSummary = ` Updated ${DAY_NAMES[args.dayOfWeek]} with ${args.slots.length} slot(s).`;
+      }
+      const timetable = await data.getTimetable(args.semesterId);
+      const dayCount = (timetable.days || []).length;
       return result(
         { timetable },
-        `Updated timetable for ${dayNames[args.dayOfWeek]} with ${args.slots.length} slot(s).`
+        `Timetable has ${dayCount} day(s) with scheduled lectures.${updateSummary}`
       );
     }
   );
@@ -490,7 +441,7 @@ export function registerAttendaMcp(server) {
     'list_holidays',
     {
       title: 'List Holidays',
-      description: 'List all holidays for a semester.',
+      description: 'List all holidays declared for a semester.',
       inputSchema: { semesterId: z.string().min(1) },
       outputSchema: { holidays: z.array(z.any()) },
       annotations: readAnnotations(),
@@ -504,35 +455,44 @@ export function registerAttendaMcp(server) {
 
   registerAppTool(
     server,
-    'create_holiday',
+    'manage_holidays',
     {
-      title: 'Create Holiday',
-      description: 'Add a holiday (college closed, festival, etc.) to a semester.',
-      inputSchema: holidayCreateSchema,
-      outputSchema: { holiday: z.any() },
-      annotations: writeAnnotations(),
-      _meta: toolMeta(),
-    },
-    async (args) => {
-      const holiday = await data.createHoliday(args);
-      return result({ holiday }, `Added holiday "${holiday.name}" on ${holiday.date}.`);
-    }
-  );
-
-  registerAppTool(
-    server,
-    'delete_holiday',
-    {
-      title: 'Delete Holiday',
-      description: 'Remove a holiday by ID.',
-      inputSchema: { id: z.string().min(1) },
-      outputSchema: { success: z.boolean(), id: z.string() },
+      title: 'Manage Holidays',
+      description:
+        'Add or remove a holiday for a semester, chosen via `action`. ' +
+        'action="create" needs `semesterId`, `date`, and `name`. ' +
+        'action="delete" needs `id` (the holiday\'s own ID, from list_holidays).',
+      inputSchema: {
+        action: z.enum(['create', 'delete']).describe('Which operation to perform.'),
+        semesterId: optionalString.describe('Required when action is "create".'),
+        date: optionalString.describe(
+          'Date in YYYY-MM-DD format. Required when action is "create".'
+        ),
+        name: optionalString.describe(
+          'Holiday name, e.g. "Durga Puja". Required when action is "create".'
+        ),
+        type: z.enum(['manual', 'college']).optional().describe('Defaults to "manual".'),
+        id: optionalString.describe('Holiday ID to remove. Required when action is "delete".'),
+      },
+      outputSchema: {
+        holiday: z.any().optional(),
+        success: z.boolean().optional(),
+        id: z.string().optional(),
+      },
       annotations: deleteAnnotations(),
       _meta: toolMeta(),
     },
     async (args) => {
-      const result2 = await data.deleteHoliday(args.id);
-      return result(result2, `Deleted holiday ${args.id}.`);
+      if (args.action === 'delete') {
+        if (!args.id) throw new Error('id is required to delete a holiday');
+        const result2 = await data.deleteHoliday(args.id);
+        return result(result2, `Deleted holiday ${args.id}.`);
+      }
+      if (!args.semesterId || !args.date || !args.name) {
+        throw new Error('semesterId, date, and name are required to create a holiday');
+      }
+      const holiday = await data.createHoliday(args);
+      return result({ holiday }, `Added holiday "${holiday.name}" on ${holiday.date}.`);
     }
   );
 }
