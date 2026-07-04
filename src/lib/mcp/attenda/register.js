@@ -570,4 +570,99 @@ export function registerAttendaMcp(server) {
       return result({ holiday }, `Added holiday "${holiday.name}" on ${holiday.date}.`);
     }
   );
+
+  // --- Syllabus ---
+
+  registerAppTool(
+    server,
+    'get_syllabus',
+    {
+      title: 'Get Syllabus',
+      description: 'Get the syllabus topics list and completion statistics for a subject.',
+      inputSchema: {
+        subjectId: z.string().min(1).describe('Subject ID'),
+      },
+      outputSchema: {
+        subjectName: z.string(),
+        syllabus: z.array(z.any()),
+        stats: z.object({
+          total: z.number(),
+          completed: z.number(),
+          inProgress: z.number(),
+          percentage: z.number(),
+        }),
+      },
+      annotations: readAnnotations(),
+      _meta: toolMeta(),
+    },
+    async (args) => {
+      const dataRes = await data.getSyllabus(args.subjectId);
+      return result(
+        dataRes,
+        `Syllabus for "${dataRes.subjectName}": ${dataRes.stats.percentage}% complete (${dataRes.stats.completed}/${dataRes.stats.total} topics).`
+      );
+    }
+  );
+
+  registerAppTool(
+    server,
+    'update_syllabus_topic',
+    {
+      title: 'Update Syllabus Topic',
+      description: 'Update the completion status of a syllabus topic.',
+      inputSchema: {
+        subjectId: z.string().min(1).describe('Subject ID'),
+        topicSearch: z
+          .string()
+          .min(1)
+          .describe(
+            'The exact topic ID or a case-insensitive search string matching the topic title.'
+          ),
+        status: z
+          .enum(['not_started', 'in_progress', 'completed'])
+          .describe('The target completion status.'),
+      },
+      outputSchema: {
+        subjectName: z.string(),
+        syllabus: z.array(z.any()),
+        stats: z.any(),
+      },
+      annotations: writeAnnotations(),
+      _meta: toolMeta(),
+    },
+    async (args) => {
+      const dataRes = await data.updateSyllabusTopic(args.subjectId, args.topicSearch, args.status);
+      return result(
+        dataRes,
+        `Updated topic status to "${args.status}" in "${dataRes.subjectName}". New progress: ${dataRes.stats.percentage}%.`
+      );
+    }
+  );
+
+  registerAppTool(
+    server,
+    'add_syllabus_topic',
+    {
+      title: 'Add Syllabus Topic',
+      description: 'Add a new topic/chapter/module to the syllabus of a subject.',
+      inputSchema: {
+        subjectId: z.string().min(1).describe('Subject ID'),
+        title: z.string().min(1).describe('Title of the topic (e.g. "Chapter 3: File Systems").'),
+      },
+      outputSchema: {
+        subjectName: z.string(),
+        syllabus: z.array(z.any()),
+        stats: z.any(),
+      },
+      annotations: writeAnnotations(),
+      _meta: toolMeta(),
+    },
+    async (args) => {
+      const dataRes = await data.addSyllabusTopic(args.subjectId, args.title);
+      return result(
+        dataRes,
+        `Added topic "${args.title}" to "${dataRes.subjectName}". Total topics: ${dataRes.stats.total}.`
+      );
+    }
+  );
 }

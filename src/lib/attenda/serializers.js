@@ -18,6 +18,16 @@ export function serializeSubject(doc) {
   const obj = { ...doc };
   obj.id = obj._id?.toString();
   obj.semesterId = obj.semesterId?.toString();
+  if (obj.syllabus) {
+    obj.syllabus = obj.syllabus.map((item) => ({
+      ...item,
+      id: item._id?.toString() || item.id,
+      _id: undefined,
+      completedAt: item.completedAt ? new Date(item.completedAt).toISOString() : null,
+    }));
+  } else {
+    obj.syllabus = [];
+  }
   delete obj.__v;
   delete obj.deletedAt;
   delete obj.syncVersion;

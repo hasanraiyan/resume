@@ -21,16 +21,22 @@ export async function PUT(request, { params }) {
       );
     }
 
+    const updateFields = {
+      name: body.name,
+      facultyName: body.facultyName,
+      color: body.color,
+      credits: body.credits,
+      requiredAttendance: body.requiredAttendance,
+      isActive: body.isActive,
+    };
+
+    if (body.syllabus !== undefined) {
+      updateFields.syllabus = body.syllabus;
+    }
+
     const subject = await AttendaSubject.findOneAndUpdate(
       { _id: id, deletedAt: null },
-      {
-        name: body.name,
-        facultyName: body.facultyName,
-        color: body.color,
-        credits: body.credits,
-        requiredAttendance: body.requiredAttendance,
-        isActive: body.isActive,
-      },
+      updateFields,
       { new: true }
     ).lean();
 

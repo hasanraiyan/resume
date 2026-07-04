@@ -441,3 +441,69 @@ export async function getSchedule(semesterId, dateString) {
     lectures,
   };
 }
+
+// --- Syllabus ---
+
+export async function getSyllabus(subjectId) {
+  await dbConnect();
+  const subject = await AttendaSubject.findOne({ _id: subjectId, deletedAt: null }).lean();
+  if (!subject) throw new Error('Subject not found');
+
+  const syllabus = subject.syllabus || [];
+  const total = syllabus.length;
+  const completed = syllabus.filter((t) => t.status === 'completed').length;
+  const inProgress = syllabus.filter((t) => t.status === 'in_progress').length;
+  const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  const serializedSyllabus = syllabus.map((t) => ({
+    id: t._id?.toString() || t.id,
+    title: t.title,
+    status: t.status,
+    completedAt: t.completedAt ? new Date(t.completedAt).toISOString() : null,
+  }));
+
+  return {
+    subjectName: subject.name,
+    syllabus: serializedSyllabus,
+    stats: { total, completed, inProgress, percentage },
+  };
+}
+
+export async function updateSyllabusTopic(subjectId, topicSearch, status) {
+  await dbConnect();
+  const subject = await AttendaSubject.findOne({ _id: subjectId, deletedAt: null });
+  if (!subject) throw new Error('Subject not found');
+
+  // Find topic by ID or case-insensitive name match
+  let topic = subject.syllabus.find(
+    (t) => t._id?.toString() === topicSearch || t.id === topicSearch
+  );
+  if (!topic) {
+    // Try matching by name
+    topic = subject.syllabus.find((t) => t.title.toLowerCase().includes(topicSearch.toLowerCase()));
+  }
+
+  if (!topic) throw new Error(`Topic "${topicSearch}" not found in syllabus`);
+
+  topic.status = status;
+  topic.completedAt = status === 'completed' ? new Date() : null;
+
+  await subject.save();
+  return getSyllabus(subjectId);
+}
+
+export async function addSyllabusTopic(subjectId, title) {
+  await dbConnect();
+  const subject = await AttendaSubject.findOne({ _id: subjectId, deletedAt: null });
+  if (!subject) throw new Error('Subject not found');
+
+  // Check if topic already exists
+  if (subject.syllabus.some((t) => t.title.toLowerCase() === title.toLowerCase())) {
+    throw new Error(`Topic "${title}" already exists in syllabus`);
+  }
+
+  subject.syllabus.push({ title, status: 'not_started' });
+  await subject.save();
+
+  return getSyllabus(subjectId);
+}

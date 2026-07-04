@@ -61,6 +61,7 @@ export async function POST(request) {
       credits: body.credits ?? null,
       requiredAttendance: body.requiredAttendance ?? 75,
       isActive: body.isActive ?? true,
+      syllabus: body.syllabus || [],
     });
     return NextResponse.json({
       success: true,

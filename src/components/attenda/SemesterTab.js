@@ -16,6 +16,9 @@ import {
   MoreVertical,
   X,
   RotateCcw,
+  ChevronDown,
+  ChevronUp,
+  Check,
 } from 'lucide-react';
 import SemesterModal from '@/components/attenda/SemesterModal';
 import SubjectModal from '@/components/attenda/SubjectModal';
@@ -66,6 +69,7 @@ export default function SemesterTab() {
   const [editingSubject, setEditingSubject] = useState(null);
   const [activeSubTab, setActiveSubTab] = useState('subjects'); // subjects | timetable | holidays | settings
   const [expandedDay, setExpandedDay] = useState(null);
+  const [expandedSubjectId, setExpandedSubjectId] = useState(null);
   const [timetableDay, setTimetableDay] = useState(null);
   const [newSlot, setNewSlot] = useState({ subjectId: '', startTime: '09:00', endTime: '10:00' });
 
@@ -113,47 +117,228 @@ export default function SemesterTab() {
           <p className="text-xs text-[#b0bfba] mt-1">Add your first subject to get started</p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {subjects.map((subject) => (
-            <div
-              key={subject.id}
-              className="flex items-center justify-between p-3 rounded-xl border border-[#e5e3d8] bg-white"
-            >
-              <div className="flex items-center gap-3">
+        <div className="space-y-3">
+          {subjects.map((subject) => {
+            const isExpanded = expandedSubjectId === subject.id;
+            const syllabus = subject.syllabus || [];
+            const totalTopics = syllabus.length;
+            const completedTopics = syllabus.filter((t) => t.status === 'completed').length;
+            const completionRate =
+              totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
+
+            return (
+              <div
+                key={subject.id}
+                className="rounded-xl border border-[#e5e3d8] bg-white overflow-hidden transition-all duration-200"
+              >
+                {/* Subject Row Header */}
                 <div
-                  className="w-3 h-3 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: subject.color }}
-                />
-                <div>
-                  <p className="text-sm font-bold text-[#1e3a34]">{subject.name}</p>
-                  <p className="text-xs text-[#7c8e88]">
-                    {subject.facultyName && `${subject.facultyName} · `}
-                    {subject.requiredAttendance}% required
-                    {subject.credits ? ` · ${subject.credits} credits` : ''}
-                  </p>
+                  onClick={() => setExpandedSubjectId(isExpanded ? null : subject.id)}
+                  className="flex items-center justify-between p-3 cursor-pointer hover:bg-[#fcfbf5] transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div
+                      className="w-3 h-3 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: subject.color }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-bold text-[#1e3a34] truncate">{subject.name}</p>
+                        {totalTopics > 0 && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#f0f5f2] text-[#1f644e] font-semibold">
+                            {completionRate}% syllabus
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-[#7c8e88] truncate">
+                        {subject.facultyName && `${subject.facultyName} · `}
+                        {subject.requiredAttendance}% required
+                        {subject.credits ? ` · ${subject.credits} credits` : ''}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => {
+                        setEditingSubject(subject);
+                        setShowSubjectModal(true);
+                      }}
+                      className="p-1.5 rounded-lg hover:bg-[#f0f5f2] transition-colors cursor-pointer"
+                      title="Edit Subject"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-[#7c8e88]" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm(`Delete "${subject.name}"?`)) removeSubject(subject.id);
+                      }}
+                      className="p-1.5 rounded-lg hover:bg-[#fef2f2] transition-colors cursor-pointer"
+                      title="Delete Subject"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-[#c94c4c]" />
+                    </button>
+                    <button
+                      onClick={() => setExpandedSubjectId(isExpanded ? null : subject.id)}
+                      className="p-1.5 rounded-lg hover:bg-[#f0f5f2] transition-colors cursor-pointer"
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="w-4 h-4 text-[#7c8e88]" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-[#7c8e88]" />
+                      )}
+                    </button>
+                  </div>
                 </div>
+
+                {/* Expanded Syllabus Details */}
+                {isExpanded && (
+                  <div className="border-t border-[#e5e3d8]/60 bg-[#fcfbf5]/40 p-4 animate-in slide-in-from-top-1 duration-150">
+                    {/* Progress bar */}
+                    <div className="mb-4">
+                      <div className="flex justify-between items-center text-xs font-bold text-[#7c8e88] mb-1.5">
+                        <span>Syllabus Completion</span>
+                        <span className="text-[#1e3a34]">
+                          {completedTopics} of {totalTopics} chapters ({completionRate}%)
+                        </span>
+                      </div>
+                      <div className="w-full h-2 bg-[#e5e3d8]/40 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-[#1f644e] to-[#2ecc71] transition-all duration-300 rounded-full"
+                          style={{ width: `${completionRate}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Syllabus Topics */}
+                    <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                      {syllabus.length === 0 ? (
+                        <div className="text-center py-6 text-xs text-[#7c8e88] italic bg-white/40 rounded-xl border border-dashed border-[#e5e3d8]">
+                          No topics added to syllabus yet.
+                        </div>
+                      ) : (
+                        syllabus.map((topic, tIdx) => {
+                          const statusColors = {
+                            not_started:
+                              'text-[#7c8e88] border-[#e5e3d8] bg-white hover:bg-neutral-50',
+                            in_progress:
+                              'text-amber-600 border-amber-200 bg-amber-50/50 hover:bg-amber-50',
+                            completed:
+                              'text-[#1f644e] border-[#1f644e]/20 bg-[#1f644e]/5 hover:bg-[#1f644e]/10',
+                          };
+
+                          return (
+                            <div
+                              key={topic.id || tIdx}
+                              className={`flex items-center justify-between p-2.5 rounded-xl border text-xs transition-all ${statusColors[topic.status] || statusColors.not_started}`}
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                {/* Status toggle checkbox */}
+                                <button
+                                  onClick={() => {
+                                    const nextStatusMap = {
+                                      not_started: 'in_progress',
+                                      in_progress: 'completed',
+                                      completed: 'not_started',
+                                    };
+                                    const nextStatus = nextStatusMap[topic.status] || 'not_started';
+                                    const newSyllabus = syllabus.map((t, idx) => {
+                                      if (
+                                        t.id === topic.id ||
+                                        (t.id === undefined && idx === tIdx)
+                                      ) {
+                                        return {
+                                          ...t,
+                                          status: nextStatus,
+                                          completedAt:
+                                            nextStatus === 'completed'
+                                              ? new Date().toISOString()
+                                              : null,
+                                        };
+                                      }
+                                      return t;
+                                    });
+                                    editSubject(subject.id, { syllabus: newSyllabus });
+                                  }}
+                                  className="focus:outline-none cursor-pointer shrink-0"
+                                >
+                                  {topic.status === 'not_started' && (
+                                    <div className="w-4.5 h-4.5 rounded-full border-2 border-[#7c8e88]/40 hover:border-[#1f644e] transition-colors" />
+                                  )}
+                                  {topic.status === 'in_progress' && (
+                                    <div className="w-4.5 h-4.5 rounded-full border-2 border-amber-400 bg-amber-50 flex items-center justify-center">
+                                      <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                                    </div>
+                                  )}
+                                  {topic.status === 'completed' && (
+                                    <div className="w-4.5 h-4.5 rounded-full bg-[#1f644e] text-white flex items-center justify-center">
+                                      <Check className="w-3 h-3 stroke-[3]" />
+                                    </div>
+                                  )}
+                                </button>
+
+                                <span
+                                  className={`font-medium min-w-0 truncate ${topic.status === 'completed' ? 'line-through opacity-60' : ''}`}
+                                >
+                                  {topic.title}
+                                </span>
+                              </div>
+
+                              <button
+                                onClick={() => {
+                                  const newSyllabus = syllabus.filter(
+                                    (t, idx) => t.id !== topic.id && idx !== tIdx
+                                  );
+                                  editSubject(subject.id, { syllabus: newSyllabus });
+                                }}
+                                className="p-1 rounded-lg hover:bg-[#fef2f2] hover:text-[#c94c4c] transition-colors cursor-pointer shrink-0 ml-2"
+                                title="Delete Topic"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* Inline Add Topic Input */}
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        const input = e.target.elements.topicTitle;
+                        const title = input.value.trim();
+                        if (!title) return;
+
+                        const newTopic = {
+                          title,
+                          status: 'not_started',
+                        };
+                        const newSyllabus = [...syllabus, newTopic];
+                        editSubject(subject.id, { syllabus: newSyllabus });
+                        input.value = '';
+                      }}
+                      className="mt-3.5 flex gap-2"
+                    >
+                      <input
+                        name="topicTitle"
+                        type="text"
+                        placeholder="Add new topic (e.g. Chapter 2: Memory Management)..."
+                        className="flex-1 px-3.5 py-2 text-xs rounded-xl border border-[#e5e3d8] bg-white outline-none focus:border-[#1f644e] focus:ring-2 focus:ring-[#1f644e]/10 text-[#1e3a34]"
+                      />
+                      <button
+                        type="submit"
+                        className="px-3.5 py-2 text-xs font-bold bg-[#1f644e] text-white rounded-xl hover:bg-[#17503e] transition-colors flex items-center gap-1 cursor-pointer shrink-0"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add</span>
+                      </button>
+                    </form>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => {
-                    setEditingSubject(subject);
-                    setShowSubjectModal(true);
-                  }}
-                  className="p-1.5 rounded-lg hover:bg-[#f0f5f2] transition-colors cursor-pointer"
-                >
-                  <Edit3 className="w-3.5 h-3.5 text-[#7c8e88]" />
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm(`Delete "${subject.name}"?`)) removeSubject(subject.id);
-                  }}
-                  className="p-1.5 rounded-lg hover:bg-[#fef2f2] transition-colors cursor-pointer"
-                >
-                  <Trash2 className="w-3.5 h-3.5 text-[#c94c4c]" />
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
