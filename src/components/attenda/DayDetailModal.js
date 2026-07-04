@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { X, Check, Ban } from 'lucide-react';
 import { useAttenda } from '@/context/AttendaContext';
+import { formatTime12H } from '@/utils/string';
 
 const COLLEGE_STATUSES = [
   { value: 'present', label: 'Present', color: 'text-[#1f644e]' },
@@ -229,8 +230,8 @@ export default function DayDetailModal({
                             {subject?.name || 'Unknown Subject'}
                           </p>
                           <p className="text-xs text-[#7c8e88]">
-                            {lec.startTime}
-                            {lec.endTime ? ` - ${lec.endTime}` : ''}
+                            {formatTime12H(lec.startTime)}
+                            {lec.endTime ? ` - ${formatTime12H(lec.endTime)}` : ''}
                             {lec.isExtra && (
                               <span className="ml-1.5 text-[#4a86e8] font-bold">Extra</span>
                             )}

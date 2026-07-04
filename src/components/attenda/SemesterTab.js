@@ -2,6 +2,7 @@
 
 import { useAttenda } from '@/context/AttendaContext';
 import { useState } from 'react';
+import { formatTime12H } from '@/utils/string';
 import {
   Plus,
   Edit3,
@@ -219,7 +220,7 @@ export default function SemesterTab() {
                             {sub?.name || 'Unknown'}
                           </span>
                           <span className="text-xs text-[#7c8e88]">
-                            {slot.startTime} - {slot.endTime}
+                            {formatTime12H(slot.startTime)} - {formatTime12H(slot.endTime)}
                           </span>
                         </div>
                         <button

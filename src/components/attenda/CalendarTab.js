@@ -2,6 +2,7 @@
 
 import { useAttenda } from '@/context/AttendaContext';
 import { useState, useMemo } from 'react';
+import { formatTime12H } from '@/utils/string';
 import {
   ChevronLeft,
   ChevronRight,
@@ -438,7 +439,7 @@ export default function CalendarTab() {
                               {lec.subjectName}
                             </p>
                             <p className="text-[9px] text-[#7c8e88] leading-none mt-0.5">
-                              {lec.startTime} - {lec.endTime}
+                              {formatTime12H(lec.startTime)} - {formatTime12H(lec.endTime)}
                             </p>
                           </div>
                         </div>

@@ -2,6 +2,7 @@
 
 import { useAttenda } from '@/context/AttendaContext';
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import { formatTime12H } from '@/utils/string';
 import { Check, X, Ban, Plus, Save, Calendar, Building2, Edit3, AlertCircle } from 'lucide-react';
 import AddExtraClassModal from '@/components/attenda/AddExtraClassModal';
 import DayDetailModal from '@/components/attenda/DayDetailModal';
@@ -338,7 +339,8 @@ export default function TodayTab() {
                       <div className="text-left">
                         <p className="text-sm font-bold text-[#1e3a34]">{lec.subjectName}</p>
                         <p className="text-xs text-[#7c8e88]">
-                          {lec.startTime} {lec.endTime ? `- ${lec.endTime}` : ''}
+                          {formatTime12H(lec.startTime)}{' '}
+                          {lec.endTime ? `- ${formatTime12H(lec.endTime)}` : ''}
                         </p>
                       </div>
                     </div>
@@ -380,7 +382,8 @@ export default function TodayTab() {
                           {lec.name || 'Extra Class'}
                         </p>
                         <p className="text-xs text-[#7c8e88]">
-                          {lec.startTime} {lec.endTime ? `- ${lec.endTime}` : ''}
+                          {formatTime12H(lec.startTime)}{' '}
+                          {lec.endTime ? `- ${formatTime12H(lec.endTime)}` : ''}
                           <span className="ml-1.5 text-[#4a86e8] font-bold">Extra</span>
                         </p>
                       </div>
