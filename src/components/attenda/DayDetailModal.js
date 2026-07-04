@@ -141,16 +141,6 @@ export default function DayDetailModal({
             </button>
           </div>
 
-          {/* Future Date Disclaimer */}
-          {isFuture && (
-            <div className="mb-4 p-3 rounded-xl bg-[#4a86e8]/5 border border-[#4a86e8]/10 text-left flex items-start gap-2.5">
-              <div className="text-xs text-[#4a86e8] font-bold">
-                This is a future date. You can view the scheduled classes below, but attendance
-                cannot be marked yet.
-              </div>
-            </div>
-          )}
-
           {/* College Status */}
           <div className="mb-4">
             <p className="text-xs font-bold text-[#7c8e88] mb-2">College</p>

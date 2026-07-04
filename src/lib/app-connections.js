@@ -5,6 +5,8 @@ import AppConnection from '@/models/AppConnection';
 
 const MOBILE_TOKEN_TYPE = 'app_connection_mobile';
 const ACCESS_TOKEN_TYPE = 'app_connection_access';
+const MCP_ACCESS_TOKEN_TYPE = 'app_connection_mcp_access';
+const MCP_REFRESH_TOKEN_TYPE = 'app_connection_mcp_refresh';
 const OWNER_FALLBACK = 'admin';
 
 function getJwtSecret() {
@@ -201,4 +203,44 @@ export async function verifyAppConnectionToken(token, options = {}) {
 
 export async function verifyMobileSessionToken(token) {
   return verifyAppConnectionToken(token, { allowedTypes: [MOBILE_TOKEN_TYPE] });
+}
+
+export async function createMcpAccessToken(connection, expiresIn = '1h') {
+  return new SignJWT({
+    role: 'admin',
+    type: MCP_ACCESS_TOKEN_TYPE,
+    ownerId: connection.ownerId,
+    connectionId: connection._id.toString(),
+    appKey: connection.appKey,
+    scope: connection.scope,
+    resource: connection.resource,
+    clientId: connection.clientId,
+  })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(expiresIn)
+    .sign(getJwtSecret());
+}
+
+export async function createMcpRefreshToken(connection, expiresIn = '30d') {
+  return new SignJWT({
+    role: 'admin',
+    type: MCP_REFRESH_TOKEN_TYPE,
+    ownerId: connection.ownerId,
+    connectionId: connection._id.toString(),
+    appKey: connection.appKey,
+    clientId: connection.clientId,
+  })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(expiresIn)
+    .sign(getJwtSecret());
+}
+
+export async function verifyMcpAccessToken(token, options = {}) {
+  return verifyAppConnectionToken(token, { ...options, allowedTypes: [MCP_ACCESS_TOKEN_TYPE] });
+}
+
+export async function verifyMcpRefreshToken(token, options = {}) {
+  return verifyAppConnectionToken(token, { ...options, allowedTypes: [MCP_REFRESH_TOKEN_TYPE] });
 }

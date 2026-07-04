@@ -385,22 +385,44 @@ export function registerAttendaMcp(server) {
 
   registerAppTool(
     server,
-    'get_todays_schedule',
+    'get_schedule',
     {
-      title: "Get Today's Schedule",
-      description: "Get today's scheduled lectures based on the weekly timetable.",
-      inputSchema: { semesterId: z.string().min(1) },
-      outputSchema: { lectures: z.array(z.any()) },
+      title: 'Get Schedule',
+      description:
+        'Get scheduled lectures for any date (defaults to today) based on the timetable, holidays, and weekly offs.',
+      inputSchema: {
+        semesterId: z.string().min(1).describe('Semester ID'),
+        date: z.string().optional().describe('Date in YYYY-MM-DD format (defaults to today)'),
+      },
+      outputSchema: {
+        date: z.string(),
+        isHoliday: z.boolean(),
+        holidayName: z.string().nullable(),
+        isWeeklyHoliday: z.boolean(),
+        lectures: z.array(z.any()),
+      },
       annotations: readAnnotations(),
       _meta: toolMeta(),
     },
     async (args) => {
-      const lectures = await data.getTodaysSchedule(args.semesterId);
-      if (lectures.length === 0) {
-        return result({ lectures }, 'No lectures scheduled for today.');
+      const schedule = await data.getSchedule(args.semesterId, args.date);
+      if (schedule.isHoliday) {
+        return result(
+          schedule,
+          `Schedule for ${schedule.date}: Declared Holiday — "${schedule.holidayName}".`
+        );
       }
-      const names = lectures.map((l) => `${l.startTime} ${l.subjectName}`).join(', ');
-      return result({ lectures }, `Today's schedule: ${lectures.length} lecture(s) — ${names}.`);
+      if (schedule.isWeeklyHoliday) {
+        return result(schedule, `Schedule for ${schedule.date}: Weekly Holiday (Off).`);
+      }
+      if (schedule.lectures.length === 0) {
+        return result(schedule, `Schedule for ${schedule.date}: No lectures scheduled.`);
+      }
+      const names = schedule.lectures.map((l) => `${l.startTime} ${l.subjectName}`).join(', ');
+      return result(
+        schedule,
+        `Schedule for ${schedule.date}: ${schedule.lectures.length} lecture(s) — ${names}.`
+      );
     }
   );
 

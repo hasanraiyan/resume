@@ -265,28 +265,84 @@ export async function getSubjectStats(semesterId) {
     });
 }
 
-export async function getTodaysSchedule(semesterId) {
+export async function getSchedule(semesterId, dateString) {
   await dbConnect();
+
+  let targetDateStr = dateString;
+  if (!targetDateStr) {
+    const today = new Date();
+    const y = today.getFullYear();
+    const m = String(today.getMonth() + 1).padStart(2, '0');
+    const d = String(today.getDate()).padStart(2, '0');
+    targetDateStr = `${y}-${m}-${d}`;
+  }
+
+  const dateObj = new Date(targetDateStr + 'T00:00:00');
+  const dayOfWeek = dateObj.getDay();
+
+  const semester = await AttendaSemester.findOne({ _id: semesterId, deletedAt: null }).lean();
+  if (!semester) throw new Error('Semester not found');
+
+  // Check declared holiday
+  const holiday = await AttendaHoliday.findOne({
+    semesterId,
+    date: targetDateStr,
+    deletedAt: null,
+  }).lean();
+  if (holiday) {
+    return {
+      date: targetDateStr,
+      isHoliday: true,
+      holidayName: holiday.name,
+      isWeeklyHoliday: false,
+      lectures: [],
+    };
+  }
+
+  // Check weekly holiday
+  const isWeeklyHoliday = semester.weeklyHolidays?.includes(dayOfWeek);
+  if (isWeeklyHoliday) {
+    return {
+      date: targetDateStr,
+      isHoliday: false,
+      holidayName: null,
+      isWeeklyHoliday: true,
+      lectures: [],
+    };
+  }
+
+  // Fetch timetable and subjects
   const subjects = await AttendaSubject.find({
     semesterId,
     deletedAt: null,
     isActive: true,
   }).lean();
-  const timetable = await AttendaTimetable.findOne({ semesterId, deletedAt: null }).lean();
-  const tt = timetable
-    ? {
-        semesterId: timetable.semesterId?.toString(),
-        days:
-          timetable.days?.map((d) => ({
-            dayOfWeek: d.dayOfWeek,
-            slots: d.slots.map((s) => ({
-              ...s,
-              id: s._id?.toString(),
-              subjectId: s.subjectId?.toString(),
-            })),
-          })) || [],
-      }
-    : { semesterId, days: [] };
 
-  return getTodaysLectures(tt, subjects.map(serializeDoc));
+  const timetable = await AttendaTimetable.findOne({ semesterId, deletedAt: null }).lean();
+  const daysSlots = timetable?.days?.find((d) => d.dayOfWeek === dayOfWeek)?.slots || [];
+
+  const lectures = daysSlots
+    .map((slot) => {
+      const sub = subjects.find((s) => s._id.toString() === slot.subjectId?.toString());
+      return sub
+        ? {
+            id: slot._id?.toString(),
+            subjectId: slot.subjectId?.toString(),
+            subjectName: sub.name,
+            subjectColor: sub.color,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+          }
+        : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+
+  return {
+    date: targetDateStr,
+    isHoliday: false,
+    holidayName: null,
+    isWeeklyHoliday: false,
+    lectures,
+  };
 }
