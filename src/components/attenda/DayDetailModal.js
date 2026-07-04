@@ -57,19 +57,17 @@ export default function DayDetailModal({
 
   const activeLectures = day?.lectures || defaultLectures;
 
-  const [collegeStatus, setCollegeStatus] = useState(day?.collegeStatus || defaultCollegeStatus);
-  const [lectureStatuses, setLectureStatuses] = useState({});
+  const [collegeStatus, setCollegeStatus] = useState(
+    () => day?.collegeStatus || defaultCollegeStatus
+  );
+  const [lectureStatuses, setLectureStatuses] = useState(() => {
+    const statuses = {};
+    activeLectures.forEach((lec) => {
+      statuses[lec.id] = lec.status;
+    });
+    return statuses;
+  });
   const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    if (activeLectures) {
-      const statuses = {};
-      activeLectures.forEach((lec) => {
-        statuses[lec.id] = lec.status;
-      });
-      setLectureStatuses(statuses);
-    }
-  }, [day, defaultLectures]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const dayName = DAY_NAMES[dateObj.getDay()];
   const dateStr = `${dateObj.getDate()} ${MONTHS[dateObj.getMonth()]} ${dateObj.getFullYear()}`;

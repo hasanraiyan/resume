@@ -214,11 +214,11 @@ export default function CalendarTab() {
             <button
               key={idx}
               onClick={() => {
-                if (cell.isCurrentMonth) {
+                if (cell.isCurrentMonth && !cell.isFuture) {
                   openDay(cell.dateKey);
                 }
               }}
-              disabled={!cell.isCurrentMonth}
+              disabled={!cell.isCurrentMonth || cell.isFuture}
               className={`relative flex flex-col items-center justify-between p-2 rounded-2xl aspect-square text-sm transition-all hover:scale-105 border cursor-pointer
                 ${
                   cell.isToday
@@ -236,7 +236,7 @@ export default function CalendarTab() {
                         : isHoliday
                           ? 'bg-neutral-50/50 border-transparent text-[#b0bfba]'
                           : 'bg-white border-[#e5e3d8]/80 text-[#1e3a34] hover:bg-[#fcfbf5] hover:border-[#1f644e]'
-                } ${cell.isCurrentMonth ? '' : 'opacity-20 pointer-events-none'}
+                } ${cell.isCurrentMonth && !cell.isFuture ? '' : 'opacity-20 pointer-events-none'}
               `}
             >
               <div className="w-full flex justify-between items-start">
