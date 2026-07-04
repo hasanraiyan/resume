@@ -299,9 +299,7 @@ class BaseAgent {
       throw new Error(`Agent ${this.agentId} is currently inactive.`);
     }
 
-    if (!this.isInitialized) {
-      await this.initialize();
-    }
+    await this.initialize();
 
     this.logger.info('Executing agent with input:', this._sanitizeLog(input));
     this.lastExecutedAt = new Date();
@@ -381,9 +379,7 @@ class BaseAgent {
       throw new Error(`Agent ${this.agentId} is currently inactive.`);
     }
 
-    if (!this.isInitialized) {
-      await this.initialize();
-    }
+    await this.initialize();
 
     this.logger.info('Executing agent stream with input:', this._sanitizeLog(input));
     this.lastExecutedAt = new Date();
@@ -674,7 +670,7 @@ class BaseAgent {
    */
   async _resolveChatProvider(providerId = '') {
     // Ensure we have basic config first, but initialize handles its own TTL now
-    if (!this.isInitialized) await this.initialize();
+    await this.initialize();
 
     const requestedProviderId =
       providerId || this.config.providerId || this.config.defaultProvider || '';
@@ -753,7 +749,7 @@ class BaseAgent {
    * @returns {Promise<ChatOpenAI|ChatGoogle>}
    */
   async createChatModel(overrides = {}) {
-    if (!this.isInitialized) await this.initialize();
+    await this.initialize();
 
     const provider = overrides.provider || (await this._resolveChatProvider(overrides.providerId));
     const modelName = overrides.model || this.config.model || provider?.model || '';
@@ -776,7 +772,7 @@ class BaseAgent {
    * @returns {Promise<ChatOpenAI|ChatGoogle>}
    */
   async createSummaryChatModel(overrides = {}) {
-    if (!this.isInitialized) await this.initialize();
+    await this.initialize();
 
     const summaryProviderId = overrides.providerId ?? this.config.summaryProviderId ?? '';
     const provider = overrides.provider || (await this._resolveChatProvider(summaryProviderId));
@@ -800,7 +796,7 @@ class BaseAgent {
    * @returns {Promise<OpenAIEmbeddings|GoogleGenerativeAIEmbeddings>}
    */
   async createEmbeddings(overrides = {}) {
-    if (!this.isInitialized) await this.initialize();
+    await this.initialize();
 
     const provider = this.config.provider;
     if (!provider) throw new Error(`No provider resolved for agent ${this.agentId}`);
@@ -843,7 +839,7 @@ class BaseAgent {
    * @returns {Promise<{client: GoogleGenAI, modelName: string}>}
    */
   async createGoogleGenAI(overrides = {}) {
-    if (!this.isInitialized) await this.initialize();
+    await this.initialize();
 
     const provider = this.config.provider;
     if (!provider) throw new Error(`No provider resolved for agent ${this.agentId}`);
