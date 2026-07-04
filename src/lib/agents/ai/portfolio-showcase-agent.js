@@ -19,9 +19,33 @@ import {
   buildPortfolioUiBlocks,
 } from '../utils/portfolio-showcase-tools';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
-import { HumanMessage } from '@langchain/core/messages';
+import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 import { mapHistoryEntryToMessages } from '../utils/history-mapping';
 import { getCheckpointer } from '../utils/checkpointer';
+
+const POST_TOOL_BREVITY_REMINDER = new SystemMessage(
+  'A visual card was just rendered below for the data above. Reply in ONE short, conversational ' +
+    'sentence only — no lists, no restating titles, links, dates, tags, or descriptions the card ' +
+    'already shows.'
+);
+
+/**
+ * Dynamic `prompt` for createReactAgent: injects a stronger brevity reminder
+ * right after a tool result, since that's exactly when models are tempted to
+ * narrate the data a UI card is about to render — a static system message
+ * alone isn't enough to stop it.
+ */
+function buildPortfolioPrompt(systemContent) {
+  const baseSystem = new SystemMessage(systemContent);
+  return (state) => {
+    const { messages } = state;
+    const lastMessage = messages[messages.length - 1];
+    const justRanTool = lastMessage?._getType?.() === 'tool';
+    return justRanTool
+      ? [baseSystem, POST_TOOL_BREVITY_REMINDER, ...messages]
+      : [baseSystem, ...messages];
+  };
+}
 
 export function buildPortfolioSystemMessage(context, path, persona) {
   const { coreIdentity, aboutSummary } = context || {};
@@ -39,7 +63,7 @@ ${aboutSummary ? `ABOUT: ${aboutSummary}` : ''}
 CRITICAL INSTRUCTIONS:
 1. You are replying to the visitor, not continuing or finishing their sentence. Never echo, extend, or restate the user's own message back to them as if it were your answer — always produce a distinct, new response in your own voice that actually addresses what they asked.
 2. Do not make up projects, skills, or achievements. Always call a tool before making factual claims.
-3. When a tool call succeeds, the frontend automatically renders a rich visual card below your message — so keep your own reply short (1-3 sentences) and conversational, don't re-list the data the card already shows.
+3. When a tool call succeeds, the frontend automatically renders a rich visual card below your message with the titles, images, links, and details already on it. Your own reply must be AT MOST ONE short, conversational sentence — e.g. "Here's my top project — check it out below!" Never write a list, never restate names/dates/links/descriptions the card already shows, and never describe the card itself.
 4. If the user asks who you are, to introduce yourself, to tell them about yourself, or about the person behind this portfolio, ALWAYS call get_profile first — never answer from memory.
 5. get_project_details and get_article_details need an exact slug, which you usually won't have yet. If the user names a project/article by title (not slug) and you don't already know its slug from earlier tool results in this conversation, call get_projects/get_articles or search_portfolio FIRST to resolve the slug, THEN call get_project_details/get_article_details. Never skip straight to a guessed slug, and never respond with silence or an empty message — if you can't resolve something, say so in plain text.
 6. If the user asks to see, view, or download the resume/CV, call get_resume — don't assume it's already shown just because you called get_profile earlier.
@@ -100,7 +124,7 @@ class PortfolioShowcaseAgent extends BaseAgent {
         llm,
         tools: finalTools,
         checkpointer,
-        prompt: systemMessage.content,
+        prompt: buildPortfolioPrompt(systemMessage.content),
       });
 
       const threadConfig = { configurable: { thread_id: sessionId } };

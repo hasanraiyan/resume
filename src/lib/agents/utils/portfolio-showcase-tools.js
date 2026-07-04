@@ -50,7 +50,7 @@ export async function getShowcaseProfile() {
     if (!name) return { text: 'No profile information found.', data: null };
 
     return {
-      text: `${name}${role ? `, ${role}` : ''}. ${bio}`,
+      text: `Profile card shown below for ${name}${role ? `, ${role}` : ''}.`,
       data: { name, role, bio, avatarUrl, tags, socialLinks, resume },
     };
   } catch (error) {
@@ -83,7 +83,7 @@ export async function getShowcaseResume() {
     }
 
     return {
-      text: `Here's my resume: [${text}](${url})`,
+      text: 'Resume card shown below.',
       data: { text, url, contentType },
     };
   } catch (error) {
@@ -108,12 +108,6 @@ export async function getShowcaseProjects({ featured, category, limit = 12 } = {
     if (projects.length === 0) return { text: 'No published projects found.', data: [] };
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || '';
-    const markdownList = projects
-      .map(
-        (p, i) =>
-          `${i + 1}. **[${p.title}](${baseUrl}/projects/${p.slug})** - ${p.tagline || p.description || ''}`
-      )
-      .join('\n');
 
     const items = projects.map((p) => ({
       slug: p.slug,
@@ -128,7 +122,7 @@ export async function getShowcaseProjects({ featured, category, limit = 12 } = {
     }));
 
     return {
-      text: `Here are the published projects:\n\n${markdownList}\n\nUse getProjectDetails with a specific slug for more.`,
+      text: `${projects.length} project(s) shown in the carousel below. Call get_project_details with a slug from this data for more.`,
       data: items,
     };
   } catch (error) {
@@ -147,16 +141,8 @@ export async function getShowcaseProjectDetails(slug) {
     }).lean();
     if (!project) return { error: 'Project not found.', text: 'That project could not be found.' };
 
-    const tags = project.tags?.map((t) => t.name || t).join(', ') || 'No tags';
-    const liveUrl = project.links?.live ? `[View Live Demo](${project.links.live}) 🔗` : '';
-    const githubUrl = project.links?.github
-      ? `[GitHub Repository](${project.links.github}) 💻`
-      : '';
-    const links = [liveUrl, githubUrl].filter(Boolean).join(' | ');
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || '';
-
     return {
-      text: `**${project.title}**\n\n**Category:** ${project.category || 'Not specified'}\n**Tagline:** ${project.tagline || ''}\n\n**Description:**\n${project.description || ''}\n\n**Tags:** ${tags}\n\n**Links:** ${links || 'No external links'}\n\n**[View Project →](${baseUrl}/projects/${project.slug})**`,
+      text: `"${project.title}" details shown in the card below.`,
       data: project,
     };
   } catch (error) {
@@ -179,10 +165,6 @@ export async function getShowcaseArticles() {
     if (articles.length === 0) return { text: 'No published articles found.', data: [] };
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || '';
-    const markdownList = articles
-      .map((a, i) => `${i + 1}. **[${a.title}](${baseUrl}/blog/${a.slug})** - ${a.excerpt || ''}`)
-      .join('\n');
-
     const items = articles.map((a) => ({
       slug: a.slug,
       title: a.title,
@@ -192,7 +174,7 @@ export async function getShowcaseArticles() {
     }));
 
     return {
-      text: `Here are the published articles:\n\n${markdownList}`,
+      text: `${articles.length} article(s) shown in the carousel below. Call get_article_details with a slug from this data for more.`,
       data: items,
     };
   } catch (error) {
@@ -211,16 +193,8 @@ export async function getShowcaseArticleDetails(slug) {
     }).lean();
     if (!article) return { error: 'Article not found.', text: 'That article could not be found.' };
 
-    const tags = article.tags?.join(', ') || 'No tags';
-    const contentPreview =
-      article.content?.length > 3000
-        ? article.content.substring(0, 3000) +
-          '\n\n*[Content truncated — read the full article at the link below.]*'
-        : article.content;
-
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || '';
     return {
-      text: `**${article.title}**\n\n${contentPreview}\n\n**Tags:** ${tags}\n\n**[Read Full Article →](${baseUrl}/blog/${article.slug})**`,
+      text: `"${article.title}" shown in the card below. Its full content is in this tool's data for your own reference — give a 1-2 sentence takeaway, don't reproduce the article text.`,
       data: article,
     };
   } catch (error) {
@@ -245,7 +219,7 @@ export async function getShowcaseTechnologies() {
     }));
 
     return {
-      text: `Tech stack: ${technologies.map((t) => t.name).join(', ')}.`,
+      text: `Tech stack shown in the grid below (${technologies.length} item(s)).`,
       data: items,
     };
   } catch (error) {
@@ -272,10 +246,8 @@ export async function getShowcaseAchievements() {
       alt: a.alt,
     }));
 
-    const summary = items.map((it, i) => `${i + 1}. ${it.title}`).join('\n');
-
     return {
-      text: `Here are the achievements:\n\n${summary}`,
+      text: `${items.length} achievement(s) shown below.`,
       data: items,
     };
   } catch (error) {
@@ -305,10 +277,8 @@ export async function getShowcaseCertifications() {
       iconName: c.iconName,
     }));
 
-    const summary = items.map((it, i) => `${i + 1}. ${it.title} (${it.date})`).join('\n');
-
     return {
-      text: `Here are the certifications:\n\n${summary}`,
+      text: `${items.length} certification(s) shown below.`,
       data: items,
     };
   } catch (error) {
@@ -328,10 +298,6 @@ export async function getShowcaseTestimonials() {
       .lean();
     if (testimonials.length === 0) return { text: 'No testimonials found.', data: [] };
 
-    const summary = testimonials
-      .map((t, i) => `${i + 1}. ${t.name} (${t.company}): "${t.content}"`)
-      .join('\n');
-
     const items = testimonials.map((t) => ({
       name: t.name,
       company: t.company,
@@ -341,7 +307,7 @@ export async function getShowcaseTestimonials() {
     }));
 
     return {
-      text: `Here's what people say:\n\n${summary}`,
+      text: `${items.length} testimonial(s) shown below.`,
       data: items,
     };
   } catch (error) {
