@@ -56,7 +56,11 @@ export default function PortfolioTakeover({ onClose, heroData, siteConfig }) {
     // between clip-paths with a different text structure, it just snaps.
     closing: {
       clipPath: `circle(0% at calc(100% - ${fabOffset}) calc(100% - ${fabOffset}))`,
-      transition: { duration: 2, ease: [0.7, 0, 0.84, 0] },
+      // easeOutExpo (same curve as `open`) — fast right out of the click, easing
+      // off near the end. The old slow-start ease-in curve combined with the
+      // 200%-radius overshoot meant the shrink was imperceptible for a big chunk
+      // of the duration, which read as "closing takes a while to start."
+      transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] },
     },
   };
 
