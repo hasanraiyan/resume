@@ -5,21 +5,19 @@ import { AttendaProvider, useAttenda } from '@/context/AttendaContext';
 import AppLayout from '@/components/layout/AppLayout';
 import AdminGuard from '@/components/AdminGuard';
 import SessionProvider from '@/components/SessionProvider';
-import { CalendarDays, CheckCircle2, BarChart3, Settings } from 'lucide-react';
-import TodayTab from '@/components/attenda/TodayTab';
+import { CalendarDays, BarChart3, Settings } from 'lucide-react';
 import CalendarTab from '@/components/attenda/CalendarTab';
 import AnalyticsTab from '@/components/attenda/AnalyticsTab';
 import SemesterTab from '@/components/attenda/SemesterTab';
 
 const tabs = [
-  { id: 'today', label: 'Today', icon: CheckCircle2 },
   { id: 'calendar', label: 'Calendar', icon: CalendarDays },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'semester', label: 'Semester', icon: Settings },
 ];
 
 function AttendaContent() {
-  const [activeTab, setActiveTab] = useState('today');
+  const [activeTab, setActiveTab] = useState('calendar');
   const { activeSemester, isLoading, isInitialized, addSemester } = useAttenda();
 
   // Override activeTab tracking via AppLayout — we manage our own
@@ -59,8 +57,6 @@ function AttendaContent() {
     }
 
     switch (activeTab) {
-      case 'today':
-        return <TodayTab />;
       case 'calendar':
         return <CalendarTab />;
       case 'analytics':
@@ -68,12 +64,11 @@ function AttendaContent() {
       case 'semester':
         return <SemesterTab />;
       default:
-        return <TodayTab />;
+        return <CalendarTab />;
     }
   };
 
   const tabTitles = {
-    today: 'Today',
     calendar: 'Calendar',
     analytics: 'Analytics',
     semester: 'Semester',

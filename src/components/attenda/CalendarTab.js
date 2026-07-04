@@ -2,7 +2,15 @@
 
 import { useAttenda } from '@/context/AttendaContext';
 import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Check, X, Calendar, Building2 } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  X,
+  Calendar,
+  Building2,
+  AlertCircle,
+} from 'lucide-react';
 import DayDetailModal from '@/components/attenda/DayDetailModal';
 
 const MONTHS = [
@@ -64,6 +72,50 @@ export default function CalendarTab() {
     });
     return map;
   }, [holidays]);
+
+  // Holidays set for quick lookup
+  const holidaysSet = useMemo(() => {
+    return new Set((holidays || []).map((h) => h.date));
+  }, [holidays]);
+
+  // Format date helper function
+  const formatDateKey = (date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+  // Compute missed days: past weekdays without attendance records
+  const missedDays = useMemo(() => {
+    if (!activeSemester?.startDate) return [];
+
+    const today = new Date();
+    const startDate = new Date(activeSemester.startDate + 'T00:00:00');
+    const semWeeklyHolidays = activeSemester.weeklyHolidays || [];
+
+    const result = [];
+    const current = new Date(startDate);
+
+    // Normalize today to start of day for comparison
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+    while (current < todayStart) {
+      const dk = formatDateKey(current);
+      const dayOfWeek = current.getDay();
+
+      // Skip weekly holidays
+      if (!semWeeklyHolidays.includes(dayOfWeek)) {
+        // Skip declared holidays
+        if (!holidaysSet.has(dk)) {
+          // Skip days that already have a record
+          if (!allDays[dk]) {
+            result.push(dk);
+          }
+        }
+      }
+
+      current.setDate(current.getDate() + 1);
+    }
+
+    return result;
+  }, [activeSemester, allDays, holidaysSet]);
 
   // Generate calendar grid
   const calendarDays = useMemo(() => {
@@ -173,6 +225,36 @@ export default function CalendarTab() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 lg:px-6 mb-6 pb-4 pt-6">
+      {/* Missed Days Banner */}
+      {missedDays.length > 0 && (
+        <div className="mb-6 p-4 rounded-2xl bg-[#c94c4c]/5 border border-[#c94c4c]/20 animate-in fade-in duration-300">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="w-5 h-5 text-[#c94c4c] mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-[#c94c4c]">Missed attendance records</p>
+              <p className="text-xs text-[#7c8e88] mt-0.5">
+                You haven&apos;t marked attendance for the following college days:
+              </p>
+              <div className="mt-2.5 flex flex-wrap gap-1.5">
+                {missedDays.map((dateKey) => {
+                  const d = new Date(dateKey + 'T00:00:00');
+                  const label = `${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3)}`;
+                  return (
+                    <button
+                      key={dateKey}
+                      onClick={() => openDay(dateKey)}
+                      className="px-2.5 py-1 text-xs font-bold bg-white hover:bg-[#fcfbf5] border border-[#e5e3d8] hover:border-[#1f644e] text-[#1e3a34] rounded-lg transition-all cursor-pointer"
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Month Navigation */}
       <div className="flex items-center justify-between mb-6">
         <button
@@ -209,35 +291,56 @@ export default function CalendarTab() {
           const dayRecord = allDays[cell.dateKey];
           const hasData = !!dayRecord;
           const isHoliday = cell.isWeeklyHoliday;
+          const isFuture = cell.isFuture;
+          const isCurrentMonth = cell.isCurrentMonth;
+
+          let cellClass = '';
+          if (cell.isToday) {
+            cellClass =
+              'bg-gradient-to-br from-[#1f644e] to-[#17503e] text-white font-bold border-transparent shadow-md shadow-[#1f644e]/20 ring-2 ring-[#1f644e]/20 ring-offset-2';
+          } else if (!isCurrentMonth) {
+            cellClass =
+              'bg-neutral-50/20 border-transparent text-neutral-300 opacity-25 pointer-events-none';
+          } else if (isFuture) {
+            cellClass = cell.declaredHoliday
+              ? 'bg-[#4a86e8]/5 border-[#4a86e8]/20 text-[#4a86e8]/60 pointer-events-none font-semibold'
+              : isHoliday
+                ? 'bg-neutral-50/50 border-transparent text-[#7c8e88]/40 pointer-events-none'
+                : 'bg-[#fafafa] border-[#f0f0f0] text-neutral-400/80 pointer-events-none';
+          } else if (hasData) {
+            if (dayRecord.collegeStatus === 'present') {
+              cellClass =
+                'bg-[#1f644e]/10 border-[#1f644e]/30 text-[#1f644e] hover:bg-[#1f644e]/20 font-bold';
+            } else if (dayRecord.collegeStatus === 'absent') {
+              cellClass =
+                'bg-[#c94c4c]/10 border-[#c94c4c]/30 text-[#c94c4c] hover:bg-[#c94c4c]/20 font-bold';
+            } else if (dayRecord.collegeStatus === 'holiday') {
+              cellClass =
+                'bg-[#4a86e8]/10 border-[#4a86e8]/30 text-[#4a86e8] hover:bg-[#4a86e8]/20 font-bold';
+            } else {
+              cellClass = 'bg-neutral-100 border-[#e5e3d8] text-[#1e3a34] hover:bg-neutral-200';
+            }
+          } else if (cell.declaredHoliday) {
+            cellClass =
+              'bg-[#4a86e8]/10 border-[#4a86e8]/30 text-[#4a86e8] hover:bg-[#4a86e8]/20 font-semibold';
+          } else if (isHoliday) {
+            cellClass =
+              'bg-neutral-100/50 border-transparent text-[#7c8e88] hover:bg-[#f0f5f2] hover:border-[#1f644e]';
+          } else {
+            cellClass =
+              'bg-white border-[#e5e3d8] text-[#1e3a34] hover:bg-[#fcfbf5] hover:border-[#1f644e]';
+          }
 
           return (
             <button
               key={idx}
               onClick={() => {
-                if (cell.isCurrentMonth && !cell.isFuture) {
+                if (isCurrentMonth && !isFuture) {
                   openDay(cell.dateKey);
                 }
               }}
-              disabled={!cell.isCurrentMonth || cell.isFuture}
-              className={`relative flex flex-col items-center justify-between p-2 rounded-2xl aspect-square text-sm transition-all hover:scale-105 border cursor-pointer
-                ${
-                  cell.isToday
-                    ? 'bg-gradient-to-br from-[#1f644e] to-[#17503e] text-white font-bold border-transparent shadow-md shadow-[#1f644e]/20 ring-2 ring-[#1f644e]/20 ring-offset-2'
-                    : hasData
-                      ? dayRecord.collegeStatus === 'present'
-                        ? 'bg-[#1f644e]/5 border-[#1f644e]/20 text-[#1f644e] hover:bg-[#1f644e]/10'
-                        : dayRecord.collegeStatus === 'absent'
-                          ? 'bg-[#c94c4c]/5 border-[#c94c4c]/20 text-[#c94c4c] hover:bg-[#c94c4c]/10'
-                          : dayRecord.collegeStatus === 'holiday'
-                            ? 'bg-[#4a86e8]/5 border-[#4a86e8]/20 text-[#4a86e8] hover:bg-[#4a86e8]/10'
-                            : 'bg-neutral-50 border-[#e5e3d8] text-[#7c8e88] hover:bg-neutral-100'
-                      : cell.declaredHoliday
-                        ? 'bg-[#4a86e8]/5 border-[#4a86e8]/20 text-[#4a86e8] hover:bg-[#4a86e8]/10 font-semibold'
-                        : isHoliday
-                          ? 'bg-neutral-50/50 border-transparent text-[#b0bfba]'
-                          : 'bg-white border-[#e5e3d8]/80 text-[#1e3a34] hover:bg-[#fcfbf5] hover:border-[#1f644e]'
-                } ${cell.isCurrentMonth && !cell.isFuture ? '' : 'opacity-20 pointer-events-none'}
-              `}
+              disabled={!isCurrentMonth || isFuture}
+              className={`relative flex flex-col items-center justify-between p-2 rounded-2xl aspect-square text-sm transition-all hover:scale-105 border cursor-pointer ${cellClass}`}
             >
               <div className="w-full flex justify-between items-start">
                 <span className="text-xs font-bold leading-none">{cell.day}</span>
@@ -259,7 +362,7 @@ export default function CalendarTab() {
                   </span>
                 )}
                 {!hasData && cell.declaredHoliday && (
-                  <Calendar className="w-3 h-3 text-[#4a86e8]/70 animate-pulse" />
+                  <Calendar className="w-3 h-3 text-[#4a86e8]/70" />
                 )}
               </div>
 
