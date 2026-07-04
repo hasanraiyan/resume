@@ -165,8 +165,36 @@ export async function saveDay(data) {
 export async function getTimetable(semesterId) {
   await dbConnect();
   const doc = await AttendaTimetable.findOne({ semesterId, deletedAt: null }).lean();
+
+  const subjects = await AttendaSubject.find({ semesterId, deletedAt: null }).lean();
+  const subjectMap = {};
+  subjects.forEach((s) => {
+    subjectMap[s._id.toString()] = s;
+  });
+
+  const enrichSlots = (slots) =>
+    (slots || []).map((slot) => {
+      const subject = subjectMap[slot.subjectId?.toString()];
+      return {
+        id: slot._id?.toString(),
+        subjectId: slot.subjectId?.toString(),
+        subjectName: subject?.name || 'Unknown Subject',
+        facultyName: subject?.facultyName || '',
+        subjectColor: subject?.color || '',
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+      };
+    });
+
   if (!doc) return { semesterId, days: [] };
-  return serializeDoc(doc);
+
+  return {
+    ...serializeDoc(doc),
+    days: (doc.days || []).map((d) => ({
+      dayOfWeek: d.dayOfWeek,
+      slots: enrichSlots(d.slots),
+    })),
+  };
 }
 
 export async function updateTimetableSlots(semesterId, dayOfWeek, slots) {

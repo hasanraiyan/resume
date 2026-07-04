@@ -122,7 +122,12 @@ export function formatTimetable(timetable) {
     .sort((a, b) => a.dayOfWeek - b.dayOfWeek)
     .map((d) => {
       const slots = (d.slots || [])
-        .map((s) => `${s.startTime || '?'}–${s.endTime || '?'}`)
+        .map((s) => {
+          const time = `${s.startTime || '?'}–${s.endTime || '?'}`;
+          const subject = s.subjectName || s.subjectId || 'Unknown Subject';
+          const faculty = s.facultyName ? ` (${s.facultyName})` : '';
+          return `${time} ${subject}${faculty}`;
+        })
         .join(', ');
       return `${DAY_NAMES[d.dayOfWeek]}: ${slots || '(no slots)'}`;
     });
