@@ -475,24 +475,42 @@ export function registerAttendaMcp(server) {
     {
       title: 'Manage Holidays',
       description:
-        'Add or remove a holiday for a semester, chosen via `action`. ' +
-        'action="create" needs `semesterId`, `date`, and `name`. ' +
-        'action="delete" needs `id` (the holiday\'s own ID, from list_holidays).',
+        'Add or remove holidays for a semester, chosen via `action`. Supports single days AND ' +
+        'multi-day ranges (e.g. "Winter Break") in one call — never loop calling this once per day. ' +
+        'Deleting does NOT require an ID: match by `date` or `startDate`+`endDate` instead, or use ' +
+        '`id` from list_holidays if you already have it. ' +
+        'To fix a wrong range (e.g. it should only cover part of what was entered), delete the ' +
+        'incorrect dates with action="delete" and (re)create the correct range with action="create" ' +
+        '— re-creating a range is safe to repeat, it corrects existing entries instead of duplicating them.\n' +
+        'action="create": needs `semesterId` and `name`, plus either `date` (single day) or ' +
+        '`startDate`+`endDate` (inclusive range).\n' +
+        'action="delete": needs `semesterId` plus one of `id`, `date`, or `startDate`+`endDate`.',
       inputSchema: {
         action: z.enum(['create', 'delete']).describe('Which operation to perform.'),
-        semesterId: optionalString.describe('Required when action is "create".'),
+        semesterId: optionalString.describe('Required for both actions.'),
         date: optionalString.describe(
-          'Date in YYYY-MM-DD format. Required when action is "create".'
+          'Single date (YYYY-MM-DD). For "create": one day off. For "delete": removes the ' +
+            'holiday on this date directly, no id needed.'
         ),
+        startDate: optionalString.describe(
+          'Start of an inclusive date range (YYYY-MM-DD). Combine with `endDate` for multi-day ' +
+            'holidays like "Winter Break" — this creates/deletes every day in the range in one call.'
+        ),
+        endDate: optionalString.describe('End of the inclusive date range. Used with `startDate`.'),
         name: optionalString.describe(
-          'Holiday name, e.g. "Durga Puja". Required when action is "create".'
+          'Holiday name, e.g. "Winter Break". Required when action is "create".'
         ),
         type: z.enum(['manual', 'college']).optional().describe('Defaults to "manual".'),
-        id: optionalString.describe('Holiday ID to remove. Required when action is "delete".'),
+        id: optionalString.describe(
+          'Holiday ID (from list_holidays) to remove. Only needed if you already have it — ' +
+            '`date`/`startDate`+`endDate` are usually simpler.'
+        ),
       },
       outputSchema: {
         holiday: z.any().optional(),
+        holidays: z.array(z.any()).optional(),
         success: z.boolean().optional(),
+        count: z.number().optional(),
         id: z.string().optional(),
       },
       annotations: deleteAnnotations(),
@@ -500,12 +518,53 @@ export function registerAttendaMcp(server) {
     },
     async (args) => {
       if (args.action === 'delete') {
-        if (!args.id) throw new Error('id is required to delete a holiday');
-        const result2 = await data.deleteHoliday(args.id);
-        return result(result2, `Deleted holiday ${args.id}.`);
+        if (args.id) {
+          const result2 = await data.deleteHoliday(args.id);
+          return result(result2, `Deleted holiday ${args.id}.`);
+        }
+        if (!args.semesterId) {
+          throw new Error('semesterId is required to delete by date');
+        }
+        if (args.startDate) {
+          const res = await data.deleteHolidaysByDateRange(
+            args.semesterId,
+            args.startDate,
+            args.endDate || args.startDate
+          );
+          return result(
+            res,
+            `Deleted ${res.count} holiday(s) from ${args.startDate} to ${args.endDate || args.startDate}.`
+          );
+        }
+        if (args.date) {
+          const res = await data.deleteHolidayByDate(args.semesterId, args.date);
+          return result(
+            res,
+            res.success ? `Deleted holiday on ${args.date}.` : `No holiday found on ${args.date}.`
+          );
+        }
+        throw new Error('Provide id, date, or startDate(+endDate) to delete a holiday');
       }
-      if (!args.semesterId || !args.date || !args.name) {
-        throw new Error('semesterId, date, and name are required to create a holiday');
+
+      if (!args.semesterId || !args.name) {
+        throw new Error('semesterId and name are required to create a holiday');
+      }
+      if (args.startDate) {
+        const endDate = args.endDate || args.startDate;
+        const holidays = await data.createHolidayRange({
+          semesterId: args.semesterId,
+          startDate: args.startDate,
+          endDate,
+          name: args.name,
+          type: args.type,
+        });
+        return result(
+          { holidays },
+          `Added "${args.name}" from ${args.startDate} to ${endDate} (${holidays.length} day(s)).`
+        );
+      }
+      if (!args.date) {
+        throw new Error('Provide date, or startDate(+endDate), to create a holiday');
       }
       const holiday = await data.createHoliday(args);
       return result({ holiday }, `Added holiday "${holiday.name}" on ${holiday.date}.`);

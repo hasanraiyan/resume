@@ -224,6 +224,35 @@ export async function updateTimetableSlots(semesterId, dayOfWeek, slots) {
 
 // --- Holidays ---
 
+const MAX_HOLIDAY_RANGE_DAYS = 366;
+
+// Inclusive list of YYYY-MM-DD strings between startDate and endDate (or just
+// [startDate] if endDate is omitted). Multi-day holidays (e.g. "Winter Break")
+// are stored as one document per date, so ranges fan out into one op per day.
+function enumerateDates(startDate, endDate) {
+  const end = endDate || startDate;
+  const dates = [];
+  const cur = new Date(startDate + 'T00:00:00');
+  const last = new Date(end + 'T00:00:00');
+  if (Number.isNaN(cur.getTime()) || Number.isNaN(last.getTime())) {
+    throw new Error('Invalid date(s); expected YYYY-MM-DD');
+  }
+  if (last < cur) {
+    throw new Error('endDate must be on or after startDate');
+  }
+  while (cur <= last) {
+    if (dates.length >= MAX_HOLIDAY_RANGE_DAYS) {
+      throw new Error(`Date range too large (max ${MAX_HOLIDAY_RANGE_DAYS} days)`);
+    }
+    const y = cur.getFullYear();
+    const m = String(cur.getMonth() + 1).padStart(2, '0');
+    const d = String(cur.getDate()).padStart(2, '0');
+    dates.push(`${y}-${m}-${d}`);
+    cur.setDate(cur.getDate() + 1);
+  }
+  return dates;
+}
+
 export async function listHolidays(semesterId) {
   await dbConnect();
   const docs = await AttendaHoliday.find({ semesterId, deletedAt: null }).sort({ date: 1 }).lean();
@@ -241,6 +270,24 @@ export async function createHoliday(data) {
   return serializeDoc(doc.toObject());
 }
 
+// Creates (or corrects) a holiday across an inclusive date range in one call.
+// Upserts per-date so re-running with a fixed range fixes names/types instead
+// of creating duplicates for dates already marked off.
+export async function createHolidayRange({ semesterId, startDate, endDate, name, type }) {
+  await dbConnect();
+  const dates = enumerateDates(startDate, endDate);
+  const docs = await Promise.all(
+    dates.map((date) =>
+      AttendaHoliday.findOneAndUpdate(
+        { semesterId, date, deletedAt: null },
+        { semesterId, date, name: name || 'Holiday', type: type || 'manual', deletedAt: null },
+        { upsert: true, new: true }
+      ).lean()
+    )
+  );
+  return docs.map(serializeDoc);
+}
+
 export async function deleteHoliday(id) {
   await dbConnect();
   const doc = await AttendaHoliday.findOneAndUpdate(
@@ -249,7 +296,27 @@ export async function deleteHoliday(id) {
     { new: true }
   );
   if (!doc) throw new Error('Holiday not found');
-  return { success: true, id };
+  return { success: true, count: 1 };
+}
+
+export async function deleteHolidayByDate(semesterId, date) {
+  await dbConnect();
+  const doc = await AttendaHoliday.findOneAndUpdate(
+    { semesterId, date, deletedAt: null },
+    { deletedAt: new Date() },
+    { new: true }
+  );
+  return { success: !!doc, count: doc ? 1 : 0 };
+}
+
+export async function deleteHolidaysByDateRange(semesterId, startDate, endDate) {
+  await dbConnect();
+  const dates = enumerateDates(startDate, endDate);
+  const res = await AttendaHoliday.updateMany(
+    { semesterId, date: { $in: dates }, deletedAt: null },
+    { deletedAt: new Date() }
+  );
+  return { success: true, count: res.modifiedCount || 0 };
 }
 
 // --- Analytics / Computed ---

@@ -135,7 +135,9 @@ export function formatTimetable(timetable) {
 }
 
 export function formatHolidays(holidays) {
-  return holidays.map((h) => `${h.date} — ${h.name}${h.type ? ` (${h.type})` : ''}`).join('\n');
+  return holidays
+    .map((h) => `${h.date} — ${h.name}${h.type ? ` (${h.type})` : ''} [id: ${h.id}]`)
+    .join('\n');
 }
 
 export function formatSubjectStats(subjects) {
