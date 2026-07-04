@@ -59,4 +59,12 @@ export const MINI_APPS = [
     category: 'Productivity',
     iconSrc: '/images/apps/kanban.png',
   },
+  {
+    id: 'attenda',
+    name: 'Attenda',
+    tagline: 'Track your college attendance. Mark days, view analytics, predict safe bunks.',
+    href: '/apps/attenda',
+    category: 'Productivity',
+    iconSrc: '/images/apps/attenda.png',
+  },
 ];
