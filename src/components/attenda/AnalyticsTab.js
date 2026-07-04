@@ -101,9 +101,13 @@ export default function AnalyticsTab() {
               </p>
             </div>
             <div className="text-center p-2 bg-[#fcfbf5] rounded-lg">
-              <p className="text-lg font-bold text-[#1e3a34]">{stats?.remainingDays ?? 0}</p>
+              <p className="text-lg font-bold text-[#1e3a34]">
+                {stats?.remainingDays !== null && stats?.remainingDays !== undefined
+                  ? stats.remainingDays
+                  : '—'}
+              </p>
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
-                Remaining
+                Remaining Days
               </p>
             </div>
             <div className="text-center p-2 bg-[#fcfbf5] rounded-lg">
@@ -258,9 +262,13 @@ export default function AnalyticsTab() {
             </p>
           </div>
           <div className="text-center">
-            <p className="text-xl font-bold text-[#1e3a34]">{stats?.totalWorkingDays ?? 0}</p>
+            <p className="text-xl font-bold text-[#1e3a34]">
+              {stats?.remainingDays !== null && stats?.remainingDays !== undefined
+                ? `${stats.presentDays + stats.absentDays} / ${stats.presentDays + stats.absentDays + stats.remainingDays}`
+                : (stats?.totalWorkingDays ?? 0)}
+            </p>
             <p className="text-[10px] font-bold uppercase tracking-wider text-[#7c8e88]">
-              Days Logged
+              Total / Remaining
             </p>
           </div>
           <div className="text-center">

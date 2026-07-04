@@ -80,13 +80,41 @@ export function computeCollegeAttendance(semester, semesterDays, holidays) {
   const total = presentDays + absentDays;
   const percentage = total > 0 ? (presentDays / total) * 100 : null;
 
+  // Calculate remaining working days if semester has an end date
+  let remainingDays = null;
+  if (semester.endDate) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const end = new Date(semester.endDate + 'T00:00:00');
+    const weeklyHolidays = semester.weeklyHolidays || [];
+
+    if (end >= today) {
+      let count = 0;
+      const current = new Date(today);
+      while (current <= end) {
+        const dayOfWeek = current.getDay();
+        if (!weeklyHolidays.includes(dayOfWeek)) {
+          const dk = formatDateKey(current);
+          // Skip declared holidays
+          if (!holidaySet.has(dk)) {
+            count++;
+          }
+        }
+        current.setDate(current.getDate() + 1);
+      }
+      remainingDays = count;
+    } else {
+      remainingDays = 0;
+    }
+  }
+
   return {
     presentDays,
     absentDays,
     totalWorkingDays: total,
     allWorkingDays: total,
     percentage: percentage !== null ? Math.round(percentage * 100) / 100 : null,
-    remainingDays: null, // null = unknown (semester dates not set)
+    remainingDays,
   };
 }
 
