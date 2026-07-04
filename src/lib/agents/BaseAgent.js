@@ -774,10 +774,10 @@ class BaseAgent {
   async createSummaryChatModel(overrides = {}) {
     await this.initialize();
 
-    const summaryProviderId = overrides.providerId ?? this.config.summaryProviderId ?? '';
+    const summaryProviderId = overrides.providerId || this.config.summaryProviderId || '';
     const provider = overrides.provider || (await this._resolveChatProvider(summaryProviderId));
     const modelName =
-      overrides.model ?? this.config.summaryModel ?? this.config.model ?? provider?.model ?? '';
+      overrides.model || this.config.summaryModel || this.config.model || provider?.model || '';
     const temperature = overrides.temperature ?? this.config.temperature ?? 0.7;
     const maxTokens = overrides.maxTokens ?? this.config.maxTokens;
 

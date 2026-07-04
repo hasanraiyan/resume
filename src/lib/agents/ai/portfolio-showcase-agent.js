@@ -74,6 +74,34 @@ PAGE CONTEXT: The user is on "${path || '/'}".`,
   };
 }
 
+/**
+ * Suggests 2-3 short follow-up questions after a reply, written from the visitor's
+ * point of view, so the chat can offer tappable next-steps. Runs as a lightweight
+ * second call on the summary model — failures here must never break the main reply.
+ */
+async function generateFollowUpQuestions(llm, { userMessage, assistantContent, path }) {
+  if (!assistantContent?.trim()) return [];
+
+  try {
+    const prompt = `You are suggesting follow-up questions for a visitor chatting with a portfolio AI guide on page "${path || '/'}".
+
+Visitor asked: "${userMessage}"
+Guide replied: "${assistantContent}"
+
+Suggest exactly 3 short, natural follow-up questions this visitor might ask next, written in the visitor's own voice (first person, e.g. "What tech did you use?"). Keep each under 8 words. Don't repeat the question just asked. Respond with ONLY a JSON array of 3 strings — no markdown, no extra text.`;
+
+    const response = await llm.invoke([new HumanMessage(prompt)]);
+    const text = typeof response?.content === 'string' ? response.content : '';
+    const match = text.match(/\[[\s\S]*\]/);
+    const parsed = match ? JSON.parse(match[0]) : null;
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.filter((q) => typeof q === 'string' && q.trim()).slice(0, 3);
+  } catch {
+    return [];
+  }
+}
+
 class PortfolioShowcaseAgent extends BaseAgent {
   constructor(agentId = AGENT_IDS.PORTFOLIO_SHOWCASE, config = {}) {
     super(agentId, config);
@@ -205,6 +233,18 @@ class PortfolioShowcaseAgent extends BaseAgent {
             }));
             yield { type: 'metadata', tool_calls: formattedCalls };
           }
+        }
+      }
+
+      if (assistantContent?.trim()) {
+        const followUpLlm = await this.createSummaryChatModel({ temperature: 0.4 });
+        const questions = await generateFollowUpQuestions(followUpLlm, {
+          userMessage,
+          assistantContent,
+          path,
+        });
+        if (questions.length > 0) {
+          yield { type: 'follow_up_questions', questions };
         }
       }
     } catch (error) {

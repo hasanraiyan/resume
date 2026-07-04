@@ -113,6 +113,7 @@ export function useChatStreaming({ endpoint = '/api/chat', getExtraBody } = {}) 
       content: '',
       steps: [], // interleaved list of tool actions and UI blocks
       uiBlocks: [], // generative UI widgets (e.g. project_carousel, skills_grid)
+      followUpQuestions: [], // suggested next questions shown as chips below the reply
       timestamp: new Date(),
       agentId: selectedAgentId, // Track which agent is responding
     };
@@ -311,6 +312,28 @@ export function useChatStreaming({ endpoint = '/api/chat', getExtraBody } = {}) 
                 prev.map((m) =>
                   m.id === assistantMessage.id
                     ? { ...m, uiBlocks: [...assistantMessage.uiBlocks] }
+                    : m
+                )
+              );
+            }
+          } else if (data.type === 'follow_up_questions') {
+            assistantMessage.followUpQuestions = data.questions || [];
+
+            if (!messageAdded) {
+              setMessages((prev) => [
+                ...prev,
+                {
+                  ...assistantMessage,
+                  steps: [...assistantMessage.steps],
+                  uiBlocks: [...assistantMessage.uiBlocks],
+                },
+              ]);
+              messageAdded = true;
+            } else {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantMessage.id
+                    ? { ...m, followUpQuestions: assistantMessage.followUpQuestions }
                     : m
                 )
               );
