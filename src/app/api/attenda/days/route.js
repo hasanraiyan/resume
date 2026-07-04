@@ -62,10 +62,16 @@ export async function POST(request) {
       );
     }
 
-    // Upsert: find by date + semesterId, or create
+    // Upsert by (date, semesterId) — this pair is globally unique (see the
+    // model's unique index), so there is only ever one document for it, soft
+    // -deleted or not. Match regardless of deletedAt and revive it as part of
+    // the update; matching only { deletedAt: null } would miss a
+    // soft-deleted row (e.g. from Reset Attendance) and collide with its
+    // still-live unique key when Mongo tries to insert a "new" one instead.
     const day = await AttendaDay.findOneAndUpdate(
-      { date: body.date, semesterId: body.semesterId, deletedAt: null },
+      { date: body.date, semesterId: body.semesterId },
       {
+        deletedAt: null,
         collegeStatus: body.collegeStatus || 'present',
         lectures: (body.lectures || []).map((lec) => ({
           subjectId: lec.subjectId,
