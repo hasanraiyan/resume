@@ -1,7 +1,6 @@
-'use client';
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { X, Check, Ban } from 'lucide-react';
+import { useAttenda } from '@/context/AttendaContext';
 
 const COLLEGE_STATUSES = [
   { value: 'present', label: 'Present', color: 'text-[#1f644e]' },
@@ -27,21 +26,51 @@ export default function DayDetailModal({
   onSave,
   onClose,
 }) {
-  const [collegeStatus, setCollegeStatus] = useState(day?.collegeStatus || 'present');
+  const { getTimetableForSemester, holidays } = useAttenda();
+
+  const isDeclaredHoliday = useMemo(() => {
+    return holidays?.some((h) => h.date === dateKey);
+  }, [holidays, dateKey]);
+
+  const defaultCollegeStatus = isDeclaredHoliday ? 'holiday' : 'present';
+
+  const dateObj = new Date(dateKey + 'T00:00:00');
+  const dayOfWeek = dateObj.getDay();
+
+  const timetable = getTimetableForSemester();
+  const slots = timetable?.slots?.[dayOfWeek] || [];
+
+  // Map slots to lectures format
+  const defaultLectures = useMemo(() => {
+    return slots.map((slot) => {
+      const sub = subjects.find((s) => s.id === slot.subjectId);
+      return {
+        id: slot.id || `slot_${slot.subjectId}_${slot.startTime}`,
+        subjectId: slot.subjectId,
+        status: 'present',
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        isExtra: false,
+      };
+    });
+  }, [slots, subjects]);
+
+  const activeLectures = day?.lectures || defaultLectures;
+
+  const [collegeStatus, setCollegeStatus] = useState(day?.collegeStatus || defaultCollegeStatus);
   const [lectureStatuses, setLectureStatuses] = useState({});
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (day?.lectures) {
+    if (activeLectures) {
       const statuses = {};
-      day.lectures.forEach((lec) => {
+      activeLectures.forEach((lec) => {
         statuses[lec.id] = lec.status;
       });
       setLectureStatuses(statuses);
     }
-  }, [day]);
+  }, [day, defaultLectures]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const dateObj = new Date(dateKey + 'T00:00:00');
   const dayName = DAY_NAMES[dateObj.getDay()];
   const dateStr = `${dateObj.getDate()} ${MONTHS[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
 
@@ -56,7 +85,7 @@ export default function DayDetailModal({
 
   const handleSave = () => {
     setIsSaving(true);
-    const lectures = (day?.lectures || []).map((lec) => ({
+    const lectures = activeLectures.map((lec) => ({
       ...lec,
       status: lectureStatuses[lec.id] || 'present',
     }));
@@ -118,11 +147,11 @@ export default function DayDetailModal({
           </div>
 
           {/* Lectures */}
-          {day?.lectures && day.lectures.length > 0 && (
+          {activeLectures && activeLectures.length > 0 && (
             <div className="mb-4">
               <p className="text-xs font-bold text-[#7c8e88] mb-2">Lectures</p>
               <div className="space-y-1.5">
-                {day.lectures.map((lec) => {
+                {activeLectures.map((lec) => {
                   const status = lectureStatuses[lec.id] || 'present';
                   const subject = subjects.find((s) => s.id === lec.subjectId);
                   return (
@@ -172,9 +201,9 @@ export default function DayDetailModal({
             </div>
           )}
 
-          {(!day?.lectures || day.lectures.length === 0) && (
+          {(!activeLectures || activeLectures.length === 0) && (
             <div className="mb-4 p-4 rounded-xl bg-[#fcfbf5] text-center">
-              <p className="text-sm text-[#7c8e88]">No lectures recorded for this day</p>
+              <p className="text-sm text-[#7c8e88]">No lectures scheduled for this day</p>
             </div>
           )}
 
