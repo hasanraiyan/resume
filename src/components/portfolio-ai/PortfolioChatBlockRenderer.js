@@ -31,7 +31,7 @@ function renderTechIcon(iconType, iconName, className = 'w-4 h-4') {
 function ProfileCardBlock({ block }) {
   const data = block.data || {};
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-5 shadow-lg">
+    <div>
       <div className="flex items-start gap-4">
         <div className="w-16 h-16 shrink-0 rounded-2xl overflow-hidden bg-white/10 border border-white/10 flex items-center justify-center text-white/60 text-xl font-bold">
           {data.avatarUrl ? (
@@ -102,7 +102,7 @@ function ResumeCardBlock({ block }) {
     : /\.(png|jpe?g|webp|gif|avif)(\?|$)/i.test(data.url);
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-5 shadow-lg">
+    <div>
       <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 shrink-0 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center">
           <Download className="w-5 h-5" />
@@ -143,9 +143,9 @@ function ProjectDetailBlock({ block }) {
   const data = block.data || {};
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl overflow-hidden shadow-lg">
+    <div>
       {data.thumbnail && (
-        <div className="relative h-40 w-full">
+        <div className="relative h-40 w-full rounded-2xl overflow-hidden">
           <img
             src={data.thumbnail}
             alt={data.title}
@@ -154,7 +154,7 @@ function ProjectDetailBlock({ block }) {
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
         </div>
       )}
-      <div className="p-5">
+      <div className={data.thumbnail ? 'mt-4' : ''}>
         {data.category && (
           <p className="text-white/40 text-xs font-semibold uppercase tracking-wide mb-1">
             {data.category}
@@ -218,9 +218,9 @@ function ArticleDetailBlock({ block }) {
   const data = block.data || {};
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl overflow-hidden shadow-lg">
+    <div>
       {data.coverImage && (
-        <div className="relative h-32 w-full">
+        <div className="relative h-32 w-full rounded-2xl overflow-hidden">
           <img
             src={data.coverImage}
             alt={data.title}
@@ -229,7 +229,7 @@ function ArticleDetailBlock({ block }) {
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
         </div>
       )}
-      <div className="p-5">
+      <div className={data.coverImage ? 'mt-4' : ''}>
         <p className="text-white text-lg font-bold mb-1">{data.title}</p>
         {data.excerpt && (
           <p className="text-white/60 text-sm leading-relaxed mb-3">{data.excerpt}</p>
@@ -266,8 +266,8 @@ function ProjectCarouselBlock({ block }) {
   if (items.length === 0) return null;
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-4 shadow-lg">
-      <p className="text-white text-sm font-semibold mb-3 px-1">{block.title || 'Projects'}</p>
+    <div>
+      <p className="text-white text-sm font-semibold mb-3">{block.title || 'Projects'}</p>
       <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {items.map((item) => (
           <div
@@ -351,8 +351,8 @@ function ArticleCarouselBlock({ block }) {
   if (items.length === 0) return null;
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-4 shadow-lg">
-      <p className="text-white text-sm font-semibold mb-3 px-1">{block.title || 'Articles'}</p>
+    <div>
+      <p className="text-white text-sm font-semibold mb-3">{block.title || 'Articles'}</p>
       <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {items.map((item) => (
           <a
@@ -405,7 +405,7 @@ function SkillsGridBlock({ block }) {
   if (items.length === 0) return null;
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-5 shadow-lg">
+    <div>
       <p className="text-white text-sm font-semibold mb-3">{block.title || 'Skills'}</p>
       <div className="flex flex-wrap gap-2">
         {items.map((item) => (
@@ -491,8 +491,8 @@ function AchievementsGalleryBlock({ block }) {
   if (items.length === 0) return null;
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-4 shadow-lg">
-      <p className="text-white text-sm font-semibold mb-3 px-1">{block.title || 'Achievements'}</p>
+    <div>
+      <p className="text-white text-sm font-semibold mb-3">{block.title || 'Achievements'}</p>
       <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {items.map((item) => (
           <AchievementPhotoCard key={item.id} item={item} />
@@ -507,10 +507,8 @@ function CertificationsListBlock({ block }) {
   if (items.length === 0) return null;
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-4 shadow-lg">
-      <p className="text-white text-sm font-semibold mb-3 px-1">
-        {block.title || 'Certifications'}
-      </p>
+    <div>
+      <p className="text-white text-sm font-semibold mb-3">{block.title || 'Certifications'}</p>
       <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {items.map((item) => (
           <CertificationCard key={item.id} item={item} />
@@ -525,8 +523,8 @@ function TestimonialsBlock({ block }) {
   if (items.length === 0) return null;
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-4 shadow-lg">
-      <p className="text-white text-sm font-semibold mb-3 px-1">{block.title || 'Testimonials'}</p>
+    <div>
+      <p className="text-white text-sm font-semibold mb-3">{block.title || 'Testimonials'}</p>
       <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {items.map((item, i) => (
           <div
@@ -565,7 +563,7 @@ function TestimonialsBlock({ block }) {
 function ContactCardBlock({ block }) {
   const data = block.data || {};
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-5 shadow-lg">
+    <div>
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center">
           {data.success ? <CheckCircle2 className="w-5 h-5" /> : <Mail className="w-5 h-5" />}
