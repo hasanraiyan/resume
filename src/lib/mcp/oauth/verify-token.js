@@ -3,9 +3,9 @@ import { getMcpResourceConfig } from './resources';
 
 /**
  * Builds a `verifyToken` function for `withMcpAuth` (mcp-handler) that accepts
- * either a static API key (back-compat for clients like Claude Desktop/Cursor
- * that are configured with a fixed bearer token) or an OAuth access token
- * issued by the shared `/api/mcp-oauth` authorization server.
+ * an OAuth access token issued by the shared `/api/mcp-oauth` authorization
+ * server. Also checks the `auth`/`token` query params for clients that can't
+ * send a custom Authorization header.
  */
 export function createMcpTokenVerifier(resourceKey) {
   const resourceConfig = getMcpResourceConfig(resourceKey);
@@ -26,14 +26,6 @@ export function createMcpTokenVerifier(resourceKey) {
     }
 
     if (!token) return undefined;
-
-    const apiKey = resourceConfig.apiKeyEnvVar
-      ? process.env[resourceConfig.apiKeyEnvVar]
-      : undefined;
-
-    if (apiKey && token === apiKey) {
-      return { token, clientId: `${resourceKey}-static-client`, scopes: [resourceConfig.scope] };
-    }
 
     const result = await verifyMcpAccessToken(token, { appKey: resourceConfig.appKey });
     if (!result) return undefined;

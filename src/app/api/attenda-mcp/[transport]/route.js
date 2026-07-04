@@ -7,11 +7,8 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 /**
- * Auth for Attenda MCP. Accepts either:
- *   1. The static ATTENDA_MCP_API_KEY as a bearer token or `auth`/`token` query
- *      param (Claude Desktop, Cursor, other fixed-token clients).
- *   2. An OAuth 2.1 + PKCE access token issued by the shared authorization
- *      server at /api/mcp-oauth (ChatGPT connectors and other OAuth clients).
+ * Auth for Attenda MCP: OAuth 2.1 + PKCE access tokens issued by the shared
+ * authorization server at /api/mcp-oauth. No static API key fallback.
  */
 const verifyToken = createMcpTokenVerifier('attenda-mcp');
 

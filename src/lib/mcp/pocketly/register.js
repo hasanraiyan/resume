@@ -28,6 +28,13 @@ import {
   updatePocketlyBudget,
   updatePocketlyTransaction,
 } from './data';
+import {
+  formatAccounts,
+  formatCategories,
+  formatBudgets,
+  formatTransactions,
+  formatAnalysis,
+} from './formatters';
 
 export const POCKETLY_WIDGET_URI = 'ui://pocketly/dashboard-v4.html';
 const WIDGET_UI_META = {
@@ -237,9 +244,15 @@ export function registerPocketlyMcp(server) {
         endDate: args.endDate || getDefaultPeriod().endDate,
       };
       const bootstrap = await getPocketlyBootstrap(period);
+      const lines = [
+        `Accounts:\n${formatAccounts(bootstrap.accounts)}`,
+        `\nCategories:\n${formatCategories(bootstrap.categories)}`,
+        `\nBudgets:\n${formatBudgets(bootstrap.budgets)}`,
+        `\nTransactions (${bootstrap.transactions.length}):\n${formatTransactions(bootstrap.transactions)}`,
+      ];
       return result(
         { ...bootstrap, activeTab: args.activeTab || 'accounts' },
-        `Opened Pocketly with ${bootstrap.transactions.length} transactions for the selected period.`
+        `Opened Pocketly.\n${lines.join('\n')}`
       );
     }
   );
@@ -269,10 +282,13 @@ export function registerPocketlyMcp(server) {
     },
     async (args = {}) => {
       const bootstrap = await getPocketlyBootstrap(args);
-      return result(
-        bootstrap,
-        `Loaded ${bootstrap.accounts.length} accounts, ${bootstrap.categories.length} categories, and ${bootstrap.transactions.length} transactions.`
-      );
+      const lines = [
+        `Accounts (${bootstrap.accounts.length}):\n${formatAccounts(bootstrap.accounts)}`,
+        `\nCategories (${bootstrap.categories.length}):\n${formatCategories(bootstrap.categories)}`,
+        `\nBudgets (${bootstrap.budgets.length}):\n${formatBudgets(bootstrap.budgets)}`,
+        `\nTransactions (${bootstrap.transactions.length}):\n${formatTransactions(bootstrap.transactions)}`,
+      ];
+      return result(bootstrap, lines.join('\n'));
     }
   );
 
@@ -297,7 +313,10 @@ export function registerPocketlyMcp(server) {
           account.ignored ? sum : sum + (account.currentBalance ?? account.balance ?? 0),
         0
       );
-      return result({ accounts, totalAccountBalance }, `Loaded ${accounts.length} accounts.`);
+      return result(
+        { accounts, totalAccountBalance },
+        `Loaded ${accounts.length} accounts (Total: ₹${Number(totalAccountBalance).toFixed(2)}).\n${formatAccounts(accounts)}`
+      );
     }
   );
 
@@ -321,7 +340,10 @@ export function registerPocketlyMcp(server) {
       const filtered = args.type
         ? categories.filter((category) => category.type === args.type)
         : categories;
-      return result({ categories: filtered }, `Loaded ${filtered.length} categories.`);
+      return result(
+        { categories: filtered },
+        `Loaded ${filtered.length} categories.\n${formatCategories(filtered)}`
+      );
     }
   );
 
@@ -340,7 +362,7 @@ export function registerPocketlyMcp(server) {
     },
     async () => {
       const budgets = await getBudgets();
-      return result({ budgets }, `Loaded ${budgets.length} budgets.`);
+      return result({ budgets }, `Loaded ${budgets.length} budgets.\n${formatBudgets(budgets)}`);
     }
   );
 
@@ -359,7 +381,10 @@ export function registerPocketlyMcp(server) {
     },
     async (args = {}) => {
       const transactions = await listPocketlyTransactions(args);
-      return result({ transactions }, `Loaded ${transactions.length} transactions.`);
+      return result(
+        { transactions },
+        `Loaded ${transactions.length} transactions.\n${formatTransactions(transactions)}`
+      );
     }
   );
 
@@ -382,7 +407,10 @@ export function registerPocketlyMcp(server) {
     },
     async (args = {}) => {
       const transactions = await searchPocketlyTransactions(args);
-      return result({ transactions }, `Found ${transactions.length} matching transactions.`);
+      return result(
+        { transactions },
+        `Found ${transactions.length} matching transactions.\n${formatTransactions(transactions)}`
+      );
     }
   );
 
@@ -405,10 +433,7 @@ export function registerPocketlyMcp(server) {
     },
     async (args = {}) => {
       const analysis = await getPocketlyAnalysis(args);
-      return result(
-        { analysis },
-        `Loaded analysis with net flow ${analysis.netFlow} and total balance ${analysis.totalAccountBalance}.`
-      );
+      return result({ analysis }, `Loaded analysis.\n${formatAnalysis(analysis)}`);
     }
   );
 
