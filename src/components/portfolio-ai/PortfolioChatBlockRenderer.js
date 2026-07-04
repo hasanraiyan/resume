@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { fas } from '@fortawesome/free-solid-svg-icons';
 import { fab } from '@fortawesome/free-brands-svg-icons';
@@ -30,16 +32,37 @@ function renderTechIcon(iconType, iconName, className = 'w-4 h-4') {
 
 function ProfileCardBlock({ block }) {
   const data = block.data || {};
+  const [isZoomed, setIsZoomed] = useState(false);
+
+  // Close on Escape key press
+  useEffect(() => {
+    if (!isZoomed) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setIsZoomed(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isZoomed]);
+
   return (
     <div>
       <div className="flex items-start gap-4">
-        <div className="w-16 h-16 shrink-0 rounded-2xl overflow-hidden bg-white/10 border border-white/10 flex items-center justify-center text-white/60 text-xl font-bold">
-          {data.avatarUrl ? (
+        {data.avatarUrl ? (
+          <button
+            onClick={() => setIsZoomed(true)}
+            className="w-16 h-16 shrink-0 rounded-2xl overflow-hidden bg-white/10 border border-white/10 flex items-center justify-center text-white/60 hover:border-white/30 transition-all cursor-zoom-in relative group"
+            aria-label="Zoom profile picture"
+          >
             <img src={data.avatarUrl} alt={data.name} className="w-full h-full object-cover" />
-          ) : (
-            (data.name || '?').charAt(0)
-          )}
-        </div>
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+              <LucideIcons.ZoomIn className="w-4 h-4 text-white" />
+            </div>
+          </button>
+        ) : (
+          <div className="w-16 h-16 shrink-0 rounded-2xl overflow-hidden bg-white/10 border border-white/10 flex items-center justify-center text-white/60 text-xl font-bold">
+            {(data.name || '?').charAt(0)}
+          </div>
+        )}
         <div className="min-w-0">
           <p className="text-white text-lg font-bold truncate">{data.name}</p>
           {data.role && <p className="text-white/50 text-sm">{data.role}</p>}
@@ -86,6 +109,42 @@ function ProfileCardBlock({ block }) {
           {data.resume.text || 'Download Resume'}
         </a>
       )}
+
+      {/* Lightbox / Zoomed image modal */}
+      <AnimatePresence>
+        {isZoomed && data.avatarUrl && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsZoomed(false)}
+            className="fixed inset-0 z-[200] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out"
+          >
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              className="relative max-w-full max-h-[85vh] flex flex-col items-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setIsZoomed(false)}
+                className="absolute -top-12 right-0 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer"
+                aria-label="Close zoomed view"
+              >
+                <LucideIcons.X className="w-4 h-4" />
+              </button>
+              <img
+                src={data.avatarUrl}
+                alt={data.name}
+                className="max-w-[90vw] sm:max-w-md md:max-w-lg max-h-[70vh] rounded-3xl object-contain border border-white/10 shadow-2xl"
+              />
+              <p className="text-white/60 text-sm font-medium mt-3">{data.name}</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -10,6 +10,7 @@ export default function VoiceInputControl({
   onTranscript,
   continuous = false,
   lang = 'en-US',
+  theme = 'default',
 }) {
   const recognitionRef = useRef(null);
   const isInitializedRef = useRef(false);
@@ -95,22 +96,56 @@ export default function VoiceInputControl({
     };
   }, [isListening, initRecognition, toggleListening]);
 
+  const isGreenTheme = theme === 'green';
+  const isDarkTheme = theme === 'dark';
+
+  let buttonColors = '';
+  if (isListening) {
+    if (isDarkTheme) {
+      buttonColors = 'bg-blue-500 text-white hover:bg-blue-600';
+    } else if (isGreenTheme) {
+      buttonColors = 'bg-[#1f644e]/10 text-[#1f644e] hover:bg-[#1f644e]/20';
+    } else {
+      buttonColors = 'bg-blue-100 text-blue-600 hover:bg-blue-200';
+    }
+  } else {
+    if (isDarkTheme) {
+      buttonColors = 'bg-white/10 text-white/80 hover:bg-white/20';
+    } else if (isGreenTheme) {
+      buttonColors = 'bg-[#f0f2eb] text-[#1e3a34] hover:bg-[#e5e7de]';
+    } else {
+      buttonColors = 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200';
+    }
+  }
+
   return (
     <div className="relative flex items-center justify-center w-8 h-8">
-      {isListening && <div className="absolute inset-0 rounded-full bg-blue-500/20 animate-ping" />}
+      {isListening && (
+        <div
+          className={`absolute inset-0 rounded-full animate-ping ${
+            isDarkTheme ? 'bg-blue-500/30' : isGreenTheme ? 'bg-[#1f644e]/20' : 'bg-blue-500/20'
+          }`}
+        />
+      )}
       <button
         type="button"
         onClick={toggleListening}
         disabled={isLoading}
-        className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-95 ${
-          isListening
-            ? 'bg-blue-100 text-blue-600'
-            : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-        } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+        className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-95 ${buttonColors} ${
+          isLoading ? 'opacity-50 cursor-not-allowed' : ''
+        }`}
         title={isListening ? 'Listening... Click to stop' : 'Voice Input'}
       >
         {isLoading ? (
-          <span className="w-3.5 h-3.5 border-2 border-neutral-400/40 border-t-neutral-600 rounded-full animate-spin" />
+          <span
+            className={`w-3.5 h-3.5 border-2 rounded-full animate-spin ${
+              isDarkTheme
+                ? 'border-white/20 border-t-white'
+                : isGreenTheme
+                  ? 'border-[#1f644e]/20 border-t-[#1f644e]'
+                  : 'border-neutral-400/40 border-t-neutral-600'
+            }`}
+          />
         ) : isListening ? (
           <MicOff className="w-4 h-4" />
         ) : (

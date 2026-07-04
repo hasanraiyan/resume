@@ -456,6 +456,7 @@ export default function ChatInput({
                 isLoading={isLoading}
                 onTranscript={setInputMessage}
                 continuous={false}
+                theme={theme}
               />
             )}
           </div>

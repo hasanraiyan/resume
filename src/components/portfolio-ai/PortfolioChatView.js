@@ -32,19 +32,23 @@ export default function PortfolioChatView({
     (m) => !m.hidden && m.role !== 'tool' && m.role !== 'tool_action'
   );
 
+  const lastMessage = visibleMessages[visibleMessages.length - 1];
+  const showFollowUps =
+    lastMessage &&
+    lastMessage.role === 'assistant' &&
+    !isLoading &&
+    lastMessage.followUpQuestions?.length > 0;
+
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex-1 overflow-y-auto px-2 sm:px-6 py-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div className="max-w-2xl mx-auto flex flex-col gap-4">
-          {visibleMessages.map((message, index) => {
+          {visibleMessages.map((message) => {
             const isUser = message.role === 'user';
-            const isLastMessage = index === visibleMessages.length - 1;
-            const showFollowUps =
-              !isUser && isLastMessage && !isLoading && message.followUpQuestions?.length > 0;
             return (
               <div key={message.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
                 <div
-                  className={`flex gap-2.5 max-w-[85%] min-w-0 ${isUser ? 'flex-row-reverse' : ''}`}
+                  className={`flex gap-2.5 max-w-[96%] sm:max-w-[85%] min-w-0 ${isUser ? 'flex-row-reverse' : ''}`}
                 >
                   <div className="w-7 h-7 shrink-0 rounded-full bg-white/10 flex items-center justify-center text-white/70">
                     {isUser ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
@@ -68,19 +72,6 @@ export default function PortfolioChatView({
                             key={`${message.id}-${block.kind}-${i}`}
                             block={block}
                           />
-                        ))}
-                      </div>
-                    )}
-                    {showFollowUps && (
-                      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                        {message.followUpQuestions.map((question) => (
-                          <button
-                            key={question}
-                            onClick={() => onQuery(question)}
-                            className="shrink-0 px-3.5 py-2 rounded-full text-xs font-medium bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-white/70 hover:text-white/90 transition-colors whitespace-nowrap cursor-pointer"
-                          >
-                            {question}
-                          </button>
                         ))}
                       </div>
                     )}
@@ -120,7 +111,20 @@ export default function PortfolioChatView({
         </div>
       </div>
 
-      <div className="max-w-2xl w-full mx-auto px-4 pb-4 sm:pb-6">
+      <div className="max-w-2xl w-full mx-auto px-2 pb-4 sm:pb-6 flex flex-col gap-3">
+        {showFollowUps && (
+          <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {lastMessage.followUpQuestions.map((question) => (
+              <button
+                key={question}
+                onClick={() => onQuery(question)}
+                className="shrink-0 px-3.5 py-2 rounded-full text-xs font-medium bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-white/70 hover:text-white/90 transition-colors whitespace-nowrap cursor-pointer"
+              >
+                {question}
+              </button>
+            ))}
+          </div>
+        )}
         <ChatInput
           inputRef={inputRef}
           inputMessage={inputMessage}
