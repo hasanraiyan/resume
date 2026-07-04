@@ -107,7 +107,8 @@ export default function TodayTab() {
     return result;
   }, [activeSemester, allDays, holidaysSet]);
 
-  // Was today already saved?
+  // Was today already saved? Sync with context changes (e.g. saved from Calendar tab).
+  // Only re-run when context data changes — NOT on isSaved changes (to avoid overriding Edit).
   useEffect(() => {
     const existing = getTodayStatus();
     if (existing) {
@@ -128,7 +129,7 @@ export default function TodayTab() {
       });
       setLectureStatuses(initial);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [getTodayStatus, todaysLectures]);
 
   // Pre-fill when timetable loads and no existing day saved
   useEffect(() => {
