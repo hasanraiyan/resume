@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import dbConnect from '@/lib/dbConnect';
 import AttendaDay from '@/models/AttendaDay';
 import { requireAdminAuth } from '@/lib/money-auth';
@@ -6,7 +7,7 @@ import { serializeDay } from '@/lib/attenda/serializers';
 
 export async function GET(request) {
   const auth = await requireAdminAuth(request);
-  if (typeof auth !== 'object') return auth;
+  if (auth instanceof NextResponse) return auth;
 
   try {
     await dbConnect();
@@ -15,6 +16,13 @@ export async function GET(request) {
     const date = searchParams.get('date');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+
+    if (semesterId && !mongoose.Types.ObjectId.isValid(semesterId)) {
+      return NextResponse.json({
+        success: true,
+        days: [],
+      });
+    }
 
     const query = { deletedAt: null };
     if (semesterId) query.semesterId = semesterId;
@@ -41,11 +49,18 @@ export async function GET(request) {
 
 export async function POST(request) {
   const auth = await requireAdminAuth(request);
-  if (typeof auth !== 'object') return auth;
+  if (auth instanceof NextResponse) return auth;
 
   try {
     await dbConnect();
     const body = await request.json();
+
+    if (!body.semesterId || !mongoose.Types.ObjectId.isValid(body.semesterId)) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid or missing semesterId' },
+        { status: 400 }
+      );
+    }
 
     // Upsert: find by date + semesterId, or create
     const day = await AttendaDay.findOneAndUpdate(

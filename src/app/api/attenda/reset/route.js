@@ -1,19 +1,20 @@
 import { NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import dbConnect from '@/lib/dbConnect';
 import AttendaDay from '@/models/AttendaDay';
 import { requireAdminAuth } from '@/lib/money-auth';
 
 export async function POST(request) {
   const auth = await requireAdminAuth(request);
-  if (typeof auth !== 'object') return auth;
+  if (auth instanceof NextResponse) return auth;
 
   try {
     await dbConnect();
     const { semesterId } = await request.json();
 
-    if (!semesterId) {
+    if (!semesterId || !mongoose.Types.ObjectId.isValid(semesterId)) {
       return NextResponse.json(
-        { success: false, message: 'semesterId is required' },
+        { success: false, message: 'Invalid or missing semesterId' },
         { status: 400 }
       );
     }

@@ -7,7 +7,7 @@ import { serializeSemester } from '@/lib/attenda/serializers';
 
 export async function GET(request) {
   const auth = await requireAdminAuth(request);
-  if (typeof auth !== 'object') return auth;
+  if (auth instanceof NextResponse) return auth;
 
   try {
     await dbConnect();
@@ -29,7 +29,7 @@ export async function GET(request) {
 
 export async function POST(request) {
   const auth = await requireAdminAuth(request);
-  if (typeof auth !== 'object') return auth;
+  if (auth instanceof NextResponse) return auth;
 
   try {
     await dbConnect();

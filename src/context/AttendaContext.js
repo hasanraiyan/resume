@@ -153,12 +153,141 @@ export function AttendaProvider({ children }) {
     }
   }, []);
 
+  // Sync local offline data to server to reconcile ID mismatches
+  const syncLocalStorageToServer = useCallback(async () => {
+    const store = loadAll();
+    const localSemesters = store.semesters || [];
+    const localSemestersToSync = localSemesters.filter(
+      (s) => s.id && String(s.id).startsWith('local_')
+    );
+
+    if (localSemestersToSync.length === 0) return;
+
+    console.log('Syncing local semesters to server:', localSemestersToSync);
+
+    for (const localSem of localSemestersToSync) {
+      try {
+        // 1. Create semester on server
+        const serverSem = await api.createSemester({
+          name: localSem.name,
+          startDate: localSem.startDate,
+          endDate: localSem.endDate,
+          requiredAttendance: localSem.requiredAttendance,
+          weeklyHolidays: localSem.weeklyHolidays,
+          institutionName: localSem.institutionName,
+          notes: localSem.notes,
+        });
+
+        const oldSemId = localSem.id;
+        const newSemId = serverSem.id;
+
+        // 2. Sync subjects
+        const localSubjects = (store.subjects || []).filter((s) => s.semesterId === oldSemId);
+        const subjectIdMap = {};
+        for (const localSubj of localSubjects) {
+          const serverSubj = await api.createSubject({
+            semesterId: newSemId,
+            name: localSubj.name,
+            facultyName: localSubj.facultyName,
+            color: localSubj.color,
+            credits: localSubj.credits,
+            requiredAttendance: localSubj.requiredAttendance,
+            isActive: localSubj.isActive,
+          });
+          subjectIdMap[localSubj.id] = serverSubj.id;
+        }
+
+        // 3. Sync timetable
+        const localTimetable = store.timetables?.[oldSemId];
+        if (localTimetable && localTimetable.slots) {
+          for (const dayOfWeek of Object.keys(localTimetable.slots)) {
+            const slots = localTimetable.slots[dayOfWeek] || [];
+            const mappedSlots = slots
+              .map((s) => ({
+                subjectId: subjectIdMap[s.subjectId] || s.subjectId,
+                startTime: s.startTime,
+                endTime: s.endTime,
+              }))
+              .filter((s) => s.subjectId && !String(s.subjectId).startsWith('local_'));
+
+            if (mappedSlots.length > 0) {
+              await api.updateTimetable({
+                semesterId: newSemId,
+                dayOfWeek: parseInt(dayOfWeek, 10),
+                slots: mappedSlots,
+              });
+            }
+          }
+        }
+
+        // 4. Sync holidays
+        const localHolidays = (store.holidays || []).filter((h) => h.semesterId === oldSemId);
+        for (const localHoliday of localHolidays) {
+          await api.createHoliday({
+            semesterId: newSemId,
+            date: localHoliday.date,
+            name: localHoliday.name,
+            type: localHoliday.type,
+          });
+        }
+
+        // 5. Sync days (attendance records)
+        const localDays = Object.values(store.days || {}).filter((d) => d.semesterId === oldSemId);
+        for (const localDay of localDays) {
+          const mappedLectures = (localDay.lectures || [])
+            .map((lec) => ({
+              subjectId: subjectIdMap[lec.subjectId] || lec.subjectId,
+              status: lec.status,
+              isExtra: lec.isExtra,
+              startTime: lec.startTime,
+              endTime: lec.endTime,
+            }))
+            .filter((lec) => lec.subjectId && !String(lec.subjectId).startsWith('local_'));
+
+          await api.saveDay({
+            semesterId: newSemId,
+            date: localDay.date,
+            collegeStatus: localDay.collegeStatus,
+            lectures: mappedLectures,
+            notes: localDay.notes,
+          });
+        }
+
+        // Update active semester in localStorage if it was the old one
+        try {
+          const storedActive = localStorage.getItem('attenda_active_semester');
+          if (storedActive === oldSemId) {
+            localStorage.setItem('attenda_active_semester', newSemId);
+          }
+        } catch {}
+
+        // Clean up local storage for this semester
+        store.semesters = store.semesters.filter((s) => s.id !== oldSemId);
+        store.subjects = store.subjects.filter((s) => s.semesterId !== oldSemId);
+        if (store.timetables) delete store.timetables[oldSemId];
+        store.holidays = store.holidays.filter((h) => h.semesterId !== oldSemId);
+        Object.keys(store.days || {}).forEach((date) => {
+          if (store.days[date]?.semesterId === oldSemId) {
+            delete store.days[date];
+          }
+        });
+
+        persist();
+      } catch (err) {
+        console.error(`Failed to sync local semester ${localSem.name}:`, err);
+      }
+    }
+  }, []);
+
   // Initialize: load semesters from server, pick active
   useEffect(() => {
     const init = async () => {
       dispatch({ type: ACTIONS.SET_LOADING, payload: true });
 
-      // First, try localStorage for instant load
+      // First sync any local offline data to server to reconcile ID mismatches
+      await syncLocalStorageToServer();
+
+      // Now load semesters from local storage (which might have been updated by sync)
       const store = loadAll();
       const localSemesters = store?.semesters || [];
       let activeId = null;

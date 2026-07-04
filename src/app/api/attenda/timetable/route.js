@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import dbConnect from '@/lib/dbConnect';
 import AttendaTimetable from '@/models/AttendaTimetable';
 import { requireAdminAuth } from '@/lib/money-auth';
@@ -6,16 +7,16 @@ import { serializeTimetable } from '@/lib/attenda/serializers';
 
 export async function GET(request) {
   const auth = await requireAdminAuth(request);
-  if (typeof auth !== 'object') return auth;
+  if (auth instanceof NextResponse) return auth;
 
   try {
     await dbConnect();
     const { searchParams } = new URL(request.url);
     const semesterId = searchParams.get('semesterId');
 
-    if (!semesterId) {
+    if (!semesterId || !mongoose.Types.ObjectId.isValid(semesterId)) {
       return NextResponse.json(
-        { success: false, message: 'semesterId is required' },
+        { success: false, message: 'Invalid or missing semesterId' },
         { status: 400 }
       );
     }
@@ -40,16 +41,16 @@ export async function GET(request) {
 
 export async function PUT(request) {
   const auth = await requireAdminAuth(request);
-  if (typeof auth !== 'object') return auth;
+  if (auth instanceof NextResponse) return auth;
 
   try {
     await dbConnect();
     const body = await request.json();
     const { semesterId, dayOfWeek, slots } = body;
 
-    if (!semesterId) {
+    if (!semesterId || !mongoose.Types.ObjectId.isValid(semesterId)) {
       return NextResponse.json(
-        { success: false, message: 'semesterId is required' },
+        { success: false, message: 'Invalid or missing semesterId' },
         { status: 400 }
       );
     }

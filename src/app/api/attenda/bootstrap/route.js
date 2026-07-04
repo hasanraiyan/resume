@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import dbConnect from '@/lib/dbConnect';
 import AttendaSemester from '@/models/AttendaSemester';
 import AttendaSubject from '@/models/AttendaSubject';
@@ -16,20 +17,21 @@ import {
 
 export async function GET(request) {
   const auth = await requireAdminAuth(request);
-  if (typeof auth !== 'object') return auth;
+  if (auth instanceof NextResponse) return auth;
 
   try {
     await dbConnect();
 
     const { searchParams } = new URL(request.url);
     const semesterId = searchParams.get('semesterId');
+    const isValidSemesterId = semesterId && mongoose.Types.ObjectId.isValid(semesterId);
 
     const semesterQuery = { deletedAt: null };
     const subjectQuery = { deletedAt: null };
     const dayQuery = { deletedAt: null };
     const holidayQuery = { deletedAt: null };
 
-    if (semesterId) {
+    if (isValidSemesterId) {
       subjectQuery.semesterId = semesterId;
       dayQuery.semesterId = semesterId;
       holidayQuery.semesterId = semesterId;
@@ -37,12 +39,10 @@ export async function GET(request) {
 
     const [semesters, subjects, days, timetables, holidays] = await Promise.all([
       AttendaSemester.find(semesterQuery).sort({ createdAt: -1 }).lean(),
-      AttendaSubject.find(subjectQuery).lean(),
-      AttendaDay.find(dayQuery).lean(),
-      AttendaTimetable.find(
-        semesterId ? { semesterId, deletedAt: null } : { deletedAt: null }
-      ).lean(),
-      AttendaHoliday.find(holidayQuery).lean(),
+      isValidSemesterId ? AttendaSubject.find(subjectQuery).lean() : [],
+      isValidSemesterId ? AttendaDay.find(dayQuery).lean() : [],
+      isValidSemesterId ? AttendaTimetable.find({ semesterId, deletedAt: null }).lean() : [],
+      isValidSemesterId ? AttendaHoliday.find(holidayQuery).lean() : [],
     ]);
 
     return NextResponse.json({

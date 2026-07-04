@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import dbConnect from '@/lib/dbConnect';
 import AttendaSemester from '@/models/AttendaSemester';
 import AttendaSubject from '@/models/AttendaSubject';
@@ -10,12 +11,19 @@ import { serializeSemester } from '@/lib/attenda/serializers';
 
 export async function PUT(request, { params }) {
   const auth = await requireAdminAuth(request);
-  if (typeof auth !== 'object') return auth;
+  if (auth instanceof NextResponse) return auth;
 
   try {
     await dbConnect();
     const { id } = await params;
     const body = await request.json();
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid or missing semester ID' },
+        { status: 400 }
+      );
+    }
 
     const semester = await AttendaSemester.findOneAndUpdate(
       { _id: id, deletedAt: null },
@@ -47,11 +55,18 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   const auth = await requireAdminAuth(request);
-  if (typeof auth !== 'object') return auth;
+  if (auth instanceof NextResponse) return auth;
 
   try {
     await dbConnect();
     const { id } = await params;
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid or missing semester ID' },
+        { status: 400 }
+      );
+    }
 
     const semester = await AttendaSemester.findOneAndUpdate(
       { _id: id, deletedAt: null },
