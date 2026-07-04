@@ -82,6 +82,7 @@ function prettyKey(key) {
 
 export function formatSemester(semester, stats, predictions) {
   const lines = [
+    `ID: ${semester.id}`,
     `Name: ${semester.name}`,
     `Institution: ${semester.institutionName || 'N/A'}`,
     `Period: ${semester.startDate || '?'} – ${semester.endDate || '?'}`,

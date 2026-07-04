@@ -201,7 +201,7 @@ export function registerAttendaMcp(server) {
         const hasUpdateFields = Object.values(fields).some((v) => v !== undefined);
         if (hasUpdateFields) {
           const semester = await data.updateSemester(id, fields);
-          return result({ semester }, `Updated semester "${semester.name}".`);
+          return result({ semester }, `Updated semester "${semester.name}" (id: ${semester.id}).`);
         }
         const semester = await data.getSemester(id);
         const { stats, predictions } = await data.getCollegeStats(id);
@@ -213,7 +213,7 @@ export function registerAttendaMcp(server) {
 
       if (fields.name) {
         const semester = await data.createSemester(fields);
-        return result({ semester }, `Created semester "${semester.name}".`);
+        return result({ semester }, `Created semester "${semester.name}" (id: ${semester.id}).`);
       }
 
       const semesters = await data.listSemesters();
@@ -256,12 +256,12 @@ export function registerAttendaMcp(server) {
 
       if (id) {
         const subject = await data.updateSubject(id, fields);
-        return result({ subject }, `Updated subject "${subject.name}".`);
+        return result({ subject }, `Updated subject "${subject.name}" (id: ${subject.id}).`);
       }
 
       if (semesterId && fields.name) {
         const subject = await data.createSubject({ semesterId, ...fields });
-        return result({ subject }, `Created subject "${subject.name}".`);
+        return result({ subject }, `Created subject "${subject.name}" (id: ${subject.id}).`);
       }
 
       if (!semesterId) {
