@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import getAnalytics from '@/lib/analytics';
+import { AGENT_IDS } from '@/lib/constants/agents';
 
 function parseToolFromStatus(statusMsg) {
   if (!statusMsg) return null;
@@ -69,29 +70,24 @@ export function useChatStreaming({ endpoint = '/api/chat', getExtraBody } = {}) 
     selectedAgentId,
   }) => {
     const analytics = getAnalytics();
-    console.log('[useChatStreaming] Raw history:', history);
 
-    const chatHistory = history
-      .filter((msg) => {
-        const isValid = msg && msg.role !== 'system' && msg.role !== 'tool_action';
-        console.log('[useChatStreaming] Filter check:', { msg: msg?.role, isValid });
-        return isValid;
-      })
-      .map((msg) => {
-        if (!msg) {
-          console.log('[useChatStreaming] NULL message encountered!');
-          return null;
-        }
-        const m = { role: msg.role, content: msg.content };
-        if (msg.tool_calls) m.tool_calls = msg.tool_calls;
-        if (msg.tool_call_id) m.tool_call_id = msg.tool_call_id;
-        if (msg.name) m.name = msg.name;
-        console.log('[useChatStreaming] Mapped message:', m);
-        return m;
-      })
-      .filter(Boolean);
-
-    console.log('[useChatStreaming] Final chatHistory to send:', chatHistory);
+    // The portfolio showcase agent keeps conversation state server-side via a
+    // LangGraph checkpointer keyed on sessionId, so it only needs the latest
+    // message — resending the whole transcript every turn is unnecessary.
+    const chatHistory =
+      selectedAgentId === AGENT_IDS.PORTFOLIO_SHOWCASE
+        ? []
+        : history
+            .filter((msg) => msg && msg.role !== 'system' && msg.role !== 'tool_action')
+            .map((msg) => {
+              if (!msg) return null;
+              const m = { role: msg.role, content: msg.content };
+              if (msg.tool_calls) m.tool_calls = msg.tool_calls;
+              if (msg.tool_call_id) m.tool_call_id = msg.tool_call_id;
+              if (msg.name) m.name = msg.name;
+              return m;
+            })
+            .filter(Boolean);
 
     const extraBody = typeof getExtraBody === 'function' ? getExtraBody() : {};
     const response = await fetch(endpoint, {

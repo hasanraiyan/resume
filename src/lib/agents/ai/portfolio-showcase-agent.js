@@ -19,8 +19,9 @@ import {
   buildPortfolioUiBlocks,
 } from '../utils/portfolio-showcase-tools';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
-import { HumanMessage, SystemMessage } from '@langchain/core/messages';
+import { HumanMessage } from '@langchain/core/messages';
 import { mapHistoryEntryToMessages } from '../utils/history-mapping';
+import { getCheckpointer } from '../utils/checkpointer';
 
 export function buildPortfolioSystemMessage(context, path, persona) {
   const { coreIdentity, aboutSummary } = context || {};
@@ -36,13 +37,14 @@ ${coreIdentity?.introduction ? `INTRODUCTION: ${coreIdentity.introduction}` : ''
 ${aboutSummary ? `ABOUT: ${aboutSummary}` : ''}
 
 CRITICAL INSTRUCTIONS:
-1. Do not make up projects, skills, or achievements. Always call a tool before making factual claims.
-2. When a tool call succeeds, the frontend automatically renders a rich visual card below your message — so keep your own reply short (1-3 sentences) and conversational, don't re-list the data the card already shows.
-3. If the user asks who you are, to introduce yourself, to tell them about yourself, or about the person behind this portfolio, ALWAYS call get_profile first — never answer from memory.
-4. get_project_details and get_article_details need an exact slug, which you usually won't have yet. If the user names a project/article by title (not slug) and you don't already know its slug from earlier tool results in this conversation, call get_projects/get_articles or search_portfolio FIRST to resolve the slug, THEN call get_project_details/get_article_details. Never skip straight to a guessed slug, and never respond with silence or an empty message — if you can't resolve something, say so in plain text.
-5. If the user asks to see, view, or download the resume/CV, call get_resume — don't assume it's already shown just because you called get_profile earlier.
-6. Only call submit_contact_form once you have collected the visitor's name, email, project type, and message.
-5. Be warm, confident, and helpful — you're speaking on ${name}'s behalf to a visitor exploring this full-screen assistant.
+1. You are replying to the visitor, not continuing or finishing their sentence. Never echo, extend, or restate the user's own message back to them as if it were your answer — always produce a distinct, new response in your own voice that actually addresses what they asked.
+2. Do not make up projects, skills, or achievements. Always call a tool before making factual claims.
+3. When a tool call succeeds, the frontend automatically renders a rich visual card below your message — so keep your own reply short (1-3 sentences) and conversational, don't re-list the data the card already shows.
+4. If the user asks who you are, to introduce yourself, to tell them about yourself, or about the person behind this portfolio, ALWAYS call get_profile first — never answer from memory.
+5. get_project_details and get_article_details need an exact slug, which you usually won't have yet. If the user names a project/article by title (not slug) and you don't already know its slug from earlier tool results in this conversation, call get_projects/get_articles or search_portfolio FIRST to resolve the slug, THEN call get_project_details/get_article_details. Never skip straight to a guessed slug, and never respond with silence or an empty message — if you can't resolve something, say so in plain text.
+6. If the user asks to see, view, or download the resume/CV, call get_resume — don't assume it's already shown just because you called get_profile earlier.
+7. Only call submit_contact_form once you have collected the visitor's name, email, project type, and message.
+8. Be warm, confident, and helpful — you're speaking on ${name}'s behalf to a visitor exploring this full-screen assistant.
 
 PAGE CONTEXT: The user is on "${path || '/'}".`,
   };
@@ -84,24 +86,48 @@ class PortfolioShowcaseAgent extends BaseAgent {
       }
 
       const llm = await this.createChatModel();
+      const checkpointer = await getCheckpointer();
 
       const systemMessage = buildPortfolioSystemMessage(context, path, this.config.persona);
-
-      const filteredHistory = chatHistory.filter((msg) => msg && msg.role);
-      const messages = [
-        new SystemMessage({ content: systemMessage.content }),
-        ...filteredHistory.flatMap((msg) =>
-          mapHistoryEntryToMessages(msg, { logger: this.logger })
-        ),
-        new HumanMessage({ content: userMessage }),
-      ];
 
       const finalTools =
         this.config.provider?.supportsTools !== false ? portfolioShowcaseTools : [];
 
-      const agent = createReactAgent({ llm, tools: finalTools });
+      // `prompt` is re-applied fresh on every call and is never written into
+      // checkpointed state, so re-using the same thread_id across turns can't
+      // duplicate or stale out the system message.
+      const agent = createReactAgent({
+        llm,
+        tools: finalTools,
+        checkpointer,
+        prompt: systemMessage.content,
+      });
 
-      const eventStream = await agent.streamEvents({ messages }, { version: 'v2' });
+      const threadConfig = { configurable: { thread_id: sessionId } };
+      const priorState = await agent.getState(threadConfig);
+      const hasPriorState = priorState?.values?.messages?.length > 0;
+
+      // Once a thread has checkpointed state, the caller only needs to send
+      // the new message — history lives server-side. `chatHistory` is only
+      // consulted to seed a brand-new thread (e.g. older clients that still
+      // send it on the first turn).
+      let inputMessages;
+      if (!hasPriorState) {
+        const filteredHistory = chatHistory.filter((msg) => msg && msg.role);
+        inputMessages = [
+          ...filteredHistory.flatMap((msg) =>
+            mapHistoryEntryToMessages(msg, { logger: this.logger })
+          ),
+          new HumanMessage({ content: userMessage }),
+        ];
+      } else {
+        inputMessages = [new HumanMessage({ content: userMessage })];
+      }
+
+      const eventStream = await agent.streamEvents(
+        { messages: inputMessages },
+        { ...threadConfig, version: 'v2' }
+      );
 
       for await (const event of eventStream) {
         const { event: type, data, name } = event;
