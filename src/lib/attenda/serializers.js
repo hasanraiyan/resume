@@ -19,11 +19,15 @@ export function serializeSubject(doc) {
   obj.id = obj._id?.toString();
   obj.semesterId = obj.semesterId?.toString();
   if (obj.syllabus) {
-    obj.syllabus = obj.syllabus.map((item) => ({
-      ...item,
-      id: item._id?.toString() || item.id,
-      _id: undefined,
-      completedAt: item.completedAt ? new Date(item.completedAt).toISOString() : null,
+    obj.syllabus = obj.syllabus.map((mod) => ({
+      id: mod._id?.toString() || mod.id,
+      title: mod.title,
+      topics: (mod.topics || []).map((topic) => ({
+        id: topic._id?.toString() || topic.id,
+        title: topic.title,
+        status: topic.status || 'not_started',
+        completedAt: topic.completedAt ? new Date(topic.completedAt).toISOString() : null,
+      })),
     }));
   } else {
     obj.syllabus = [];

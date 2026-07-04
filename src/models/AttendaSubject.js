@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const SyllabusItemSchema = new mongoose.Schema({
+const TopicSchema = new mongoose.Schema({
   title: { type: String, required: true },
   status: {
     type: String,
@@ -8,6 +8,11 @@ const SyllabusItemSchema = new mongoose.Schema({
     default: 'not_started',
   },
   completedAt: { type: Date, default: null },
+});
+
+const ModuleSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  topics: { type: [TopicSchema], default: [] },
 });
 
 const AttendaSubjectSchema = new mongoose.Schema(
@@ -19,7 +24,7 @@ const AttendaSubjectSchema = new mongoose.Schema(
     credits: { type: Number, default: null },
     requiredAttendance: { type: Number, default: 75 },
     isActive: { type: Boolean, default: true },
-    syllabus: { type: [SyllabusItemSchema], default: [] },
+    syllabus: { type: [ModuleSchema], default: [] },
     deletedAt: { type: Date, default: null },
     syncVersion: { type: Number, default: 1 },
   },

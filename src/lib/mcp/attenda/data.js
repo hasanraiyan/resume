@@ -10,6 +10,7 @@ import {
   getTodaysLectures,
 } from '@/lib/attenda/calculations';
 import { generateCollegePredictions, generateSubjectPredictions } from '@/lib/attenda/predictions';
+import { serializeSubject } from '@/lib/attenda/serializers';
 
 function serializeDoc(doc) {
   if (!doc) return null;
@@ -88,7 +89,7 @@ export async function deleteSemester(id) {
 export async function listSubjects(semesterId) {
   await dbConnect();
   const docs = await AttendaSubject.find({ semesterId, deletedAt: null }).sort({ name: 1 }).lean();
-  return docs.map(serializeDoc);
+  return docs.map(serializeSubject);
 }
 
 export async function createSubject(data) {
@@ -450,17 +451,32 @@ export async function getSyllabus(subjectId) {
   if (!subject) throw new Error('Subject not found');
 
   const syllabus = subject.syllabus || [];
-  const total = syllabus.length;
-  const completed = syllabus.filter((t) => t.status === 'completed').length;
-  const inProgress = syllabus.filter((t) => t.status === 'in_progress').length;
-  const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+  let total = 0;
+  let completed = 0;
+  let inProgress = 0;
 
-  const serializedSyllabus = syllabus.map((t) => ({
-    id: t._id?.toString() || t.id,
-    title: t.title,
-    status: t.status,
-    completedAt: t.completedAt ? new Date(t.completedAt).toISOString() : null,
-  }));
+  const serializedSyllabus = syllabus.map((mod) => {
+    const serializedTopics = (mod.topics || []).map((t) => {
+      total++;
+      if (t.status === 'completed') completed++;
+      else if (t.status === 'in_progress') inProgress++;
+
+      return {
+        id: t._id?.toString() || t.id,
+        title: t.title,
+        status: t.status || 'not_started',
+        completedAt: t.completedAt ? new Date(t.completedAt).toISOString() : null,
+      };
+    });
+
+    return {
+      id: mod._id?.toString() || mod.id,
+      title: mod.title,
+      topics: serializedTopics,
+    };
+  });
+
+  const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   return {
     subjectName: subject.name,
@@ -474,36 +490,98 @@ export async function updateSyllabusTopic(subjectId, topicSearch, status) {
   const subject = await AttendaSubject.findOne({ _id: subjectId, deletedAt: null });
   if (!subject) throw new Error('Subject not found');
 
-  // Find topic by ID or case-insensitive name match
-  let topic = subject.syllabus.find(
-    (t) => t._id?.toString() === topicSearch || t.id === topicSearch
-  );
-  if (!topic) {
-    // Try matching by name
-    topic = subject.syllabus.find((t) => t.title.toLowerCase().includes(topicSearch.toLowerCase()));
+  let foundTopic = null;
+  // Search for the topic across all modules
+  for (const mod of subject.syllabus) {
+    let topic = mod.topics.find((t) => t._id?.toString() === topicSearch || t.id === topicSearch);
+    if (!topic) {
+      // Fallback: match by title substring
+      topic = mod.topics.find((t) => t.title.toLowerCase().includes(topicSearch.toLowerCase()));
+    }
+    if (topic) {
+      foundTopic = topic;
+      break;
+    }
   }
 
-  if (!topic) throw new Error(`Topic "${topicSearch}" not found in syllabus`);
+  if (!foundTopic) throw new Error(`Topic "${topicSearch}" not found in syllabus`);
 
-  topic.status = status;
-  topic.completedAt = status === 'completed' ? new Date() : null;
+  foundTopic.status = status;
+  foundTopic.completedAt = status === 'completed' ? new Date() : null;
 
   await subject.save();
   return getSyllabus(subjectId);
 }
 
-export async function addSyllabusTopic(subjectId, title) {
+export async function addSyllabusModule(subjectId, title) {
   await dbConnect();
   const subject = await AttendaSubject.findOne({ _id: subjectId, deletedAt: null });
   if (!subject) throw new Error('Subject not found');
 
-  // Check if topic already exists
-  if (subject.syllabus.some((t) => t.title.toLowerCase() === title.toLowerCase())) {
-    throw new Error(`Topic "${title}" already exists in syllabus`);
+  if (subject.syllabus.some((m) => m.title.toLowerCase() === title.toLowerCase())) {
+    throw new Error(`Module "${title}" already exists`);
   }
 
-  subject.syllabus.push({ title, status: 'not_started' });
+  subject.syllabus.push({ title, topics: [] });
   await subject.save();
+  return getSyllabus(subjectId);
+}
 
+export async function addSyllabusTopic(subjectId, moduleId, title) {
+  await dbConnect();
+  const subject = await AttendaSubject.findOne({ _id: subjectId, deletedAt: null });
+  if (!subject) throw new Error('Subject not found');
+
+  const mod = subject.syllabus.find((m) => m._id?.toString() === moduleId || m.id === moduleId);
+  if (!mod) throw new Error('Module not found');
+
+  if (mod.topics.some((t) => t.title.toLowerCase() === title.toLowerCase())) {
+    throw new Error(`Topic "${title}" already exists in this module`);
+  }
+
+  mod.topics.push({ title, status: 'not_started' });
+  await subject.save();
+  return getSyllabus(subjectId);
+}
+
+export async function deleteSyllabusModule(subjectId, moduleId) {
+  await dbConnect();
+  const subject = await AttendaSubject.findOne({ _id: subjectId, deletedAt: null });
+  if (!subject) throw new Error('Subject not found');
+
+  const idx = subject.syllabus.findIndex(
+    (m) => m._id?.toString() === moduleId || m.id === moduleId
+  );
+  if (idx === -1) throw new Error('Module not found');
+
+  subject.syllabus.splice(idx, 1);
+  await subject.save();
+  return getSyllabus(subjectId);
+}
+
+export async function deleteSyllabusTopic(subjectId, moduleId, topicSearch) {
+  await dbConnect();
+  const subject = await AttendaSubject.findOne({ _id: subjectId, deletedAt: null });
+  if (!subject) throw new Error('Subject not found');
+
+  const mod = subject.syllabus.find((m) => m._id?.toString() === moduleId || m.id === moduleId);
+  if (!mod) throw new Error('Module not found');
+
+  // Find topic by ID or title match
+  const tIdx = mod.topics.findIndex(
+    (t) => t._id?.toString() === topicSearch || t.id === topicSearch
+  );
+  if (tIdx === -1) {
+    // Fallback: match by title substring
+    const titleIdx = mod.topics.findIndex((t) =>
+      t.title.toLowerCase().includes(topicSearch.toLowerCase())
+    );
+    if (titleIdx === -1) throw new Error(`Topic "${topicSearch}" not found`);
+    mod.topics.splice(titleIdx, 1);
+  } else {
+    mod.topics.splice(tIdx, 1);
+  }
+
+  await subject.save();
   return getSyllabus(subjectId);
 }

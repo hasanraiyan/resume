@@ -8,6 +8,7 @@ import {
   formatTimetable,
   formatHolidays,
   formatSubjectStats,
+  formatSyllabus,
 } from './formatters';
 
 // --- Helpers ---
@@ -597,72 +598,117 @@ export function registerAttendaMcp(server) {
     },
     async (args) => {
       const dataRes = await data.getSyllabus(args.subjectId);
-      return result(
-        dataRes,
-        `Syllabus for "${dataRes.subjectName}": ${dataRes.stats.percentage}% complete (${dataRes.stats.completed}/${dataRes.stats.total} topics).`
-      );
+      return result(dataRes, formatSyllabus(dataRes));
     }
   );
 
   registerAppTool(
     server,
-    'update_syllabus_topic',
+    'manage_syllabus',
     {
-      title: 'Update Syllabus Topic',
-      description: 'Update the completion status of a syllabus topic.',
+      title: 'Manage Syllabus',
+      description:
+        'All-in-one tool to manage a subject syllabus — add/delete modules, add/delete topics, ' +
+        'and update topic statuses. Use `action` to pick the operation.\n' +
+        '\n' +
+        'action="add_module": adds a new top-level module (requires `subjectId`, `title`).\n' +
+        'action="add_topic": adds a topic inside a module (requires `subjectId`, `moduleId`, `title`).\n' +
+        'action="update_topic": changes a topic completion status (requires `subjectId`, `topicSearch`, `status`).\n' +
+        '  `topicSearch` can be a topic ID or a case-insensitive title substring — searches across all modules.\n' +
+        'action="delete_module": removes a module and all its topics (requires `subjectId`, `moduleId`).\n' +
+        'action="delete_topic": removes a single topic from a module (requires `subjectId`, `moduleId`, `topicSearch`).\n' +
+        '\n' +
+        'Call get_syllabus first to get subjectId, module IDs, and current progress.',
       inputSchema: {
-        subjectId: z.string().min(1).describe('Subject ID'),
-        topicSearch: z
-          .string()
-          .min(1)
-          .describe(
-            'The exact topic ID or a case-insensitive search string matching the topic title.'
-          ),
+        action: z
+          .enum(['add_module', 'add_topic', 'update_topic', 'delete_module', 'delete_topic'])
+          .describe('Which syllabus operation to perform.'),
+        subjectId: z.string().min(1).describe('Subject ID.'),
+        moduleId: optionalString.describe(
+          'Module ID (required for add_topic, delete_topic, delete_module).' +
+            ' Get it from get_syllabus output.'
+        ),
+        title: optionalString.describe(
+          'Title for the module or topic being created (required for add_module and add_topic).'
+        ),
+        topicSearch: optionalString.describe(
+          'Topic ID or title substring to match (required for update_topic and delete_topic).' +
+            ' Searches across all modules in the subject.'
+        ),
         status: z
           .enum(['not_started', 'in_progress', 'completed'])
-          .describe('The target completion status.'),
+          .optional()
+          .describe('Target completion status (required for update_topic).'),
       },
       outputSchema: {
         subjectName: z.string(),
         syllabus: z.array(z.any()),
         stats: z.any(),
       },
-      annotations: writeAnnotations(),
+      annotations: deleteAnnotations(),
       _meta: toolMeta(),
     },
     async (args) => {
-      const dataRes = await data.updateSyllabusTopic(args.subjectId, args.topicSearch, args.status);
-      return result(
-        dataRes,
-        `Updated topic status to "${args.status}" in "${dataRes.subjectName}". New progress: ${dataRes.stats.percentage}%.`
-      );
-    }
-  );
+      const { action, subjectId, moduleId, title, topicSearch, status } = args;
 
-  registerAppTool(
-    server,
-    'add_syllabus_topic',
-    {
-      title: 'Add Syllabus Topic',
-      description: 'Add a new topic/chapter/module to the syllabus of a subject.',
-      inputSchema: {
-        subjectId: z.string().min(1).describe('Subject ID'),
-        title: z.string().min(1).describe('Title of the topic (e.g. "Chapter 3: File Systems").'),
-      },
-      outputSchema: {
-        subjectName: z.string(),
-        syllabus: z.array(z.any()),
-        stats: z.any(),
-      },
-      annotations: writeAnnotations(),
-      _meta: toolMeta(),
-    },
-    async (args) => {
-      const dataRes = await data.addSyllabusTopic(args.subjectId, args.title);
-      return result(
-        dataRes,
-        `Added topic "${args.title}" to "${dataRes.subjectName}". Total topics: ${dataRes.stats.total}.`
-      );
+      switch (action) {
+        case 'add_module': {
+          if (!title) throw new Error('title is required for add_module');
+          const dataRes = await data.addSyllabusModule(subjectId, title);
+          return result(
+            dataRes,
+            `Added module "${title}" to "${dataRes.subjectName}". Total modules: ${dataRes.syllabus.length}.` +
+              `\n${formatSyllabus(dataRes)}`
+          );
+        }
+
+        case 'add_topic': {
+          if (!moduleId || !title) throw new Error('moduleId and title are required for add_topic');
+          const dataRes = await data.addSyllabusTopic(subjectId, moduleId, title);
+          return result(
+            dataRes,
+            `Added topic "${title}" to "${dataRes.subjectName}". Total topics: ${dataRes.stats.total}.` +
+              `\n${formatSyllabus(dataRes)}`
+          );
+        }
+
+        case 'update_topic': {
+          if (!topicSearch || !status) {
+            throw new Error('topicSearch and status are required for update_topic');
+          }
+          const dataRes = await data.updateSyllabusTopic(subjectId, topicSearch, status);
+          return result(
+            dataRes,
+            `Updated topic status to "${status}" in "${dataRes.subjectName}". New progress: ${dataRes.stats.percentage}%.` +
+              `\n${formatSyllabus(dataRes)}`
+          );
+        }
+
+        case 'delete_module': {
+          if (!moduleId) throw new Error('moduleId is required for delete_module');
+          const dataRes = await data.deleteSyllabusModule(subjectId, moduleId);
+          return result(
+            dataRes,
+            `Deleted module from "${dataRes.subjectName}". Remaining modules: ${dataRes.syllabus.length}.` +
+              `\n${formatSyllabus(dataRes)}`
+          );
+        }
+
+        case 'delete_topic': {
+          if (!moduleId || !topicSearch) {
+            throw new Error('moduleId and topicSearch are required for delete_topic');
+          }
+          const dataRes = await data.deleteSyllabusTopic(subjectId, moduleId, topicSearch);
+          return result(
+            dataRes,
+            `Deleted topic from "${dataRes.subjectName}". New progress: ${dataRes.stats.percentage}%.` +
+              `\n${formatSyllabus(dataRes)}`
+          );
+        }
+
+        default:
+          throw new Error(`Unknown action: ${action}`);
+      }
     }
   );
 }

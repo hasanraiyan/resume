@@ -99,7 +99,7 @@ export function formatSemester(semester, stats, predictions) {
 export function formatSubjects(subjects) {
   return subjects
     .map((s) => {
-      const parts = [s.name];
+      const parts = [`[${s.id || s._id}] ${s.name}`];
       if (s.facultyName) parts.push(`(${s.facultyName})`);
       if (s.isActive === false) parts.push('[inactive]');
       return parts.join(' ');
@@ -148,4 +148,34 @@ export function formatSubjectStats(subjects) {
       return `${s.subject.name}: ${pct}% (safe bunks: ${sb})`;
     })
     .join('\n');
+}
+
+const STATUS_ICONS = {
+  not_started: '○',
+  in_progress: '◐',
+  completed: '●',
+};
+
+export function formatSyllabus(syllabusData) {
+  const { subjectName, syllabus, stats } = syllabusData;
+  const lines = [`📘 ${subjectName}`];
+  lines.push(`   ${stats.percentage}% complete (${stats.completed}/${stats.total} topics)\n`);
+
+  if (syllabus.length === 0) {
+    lines.push('   No modules added yet.');
+    return lines.join('\n');
+  }
+
+  syllabus.forEach((mod, i) => {
+    const modDone = mod.topics.filter((t) => t.status === 'completed').length;
+    const modTotal = mod.topics.length;
+    lines.push(`  ${i + 1}. 📂 ${mod.title} [${modDone}/${modTotal}]`);
+
+    mod.topics.forEach((topic, j) => {
+      const icon = STATUS_ICONS[topic.status] || '○';
+      lines.push(`     ${j + 1}. ${icon} ${topic.title}`);
+    });
+  });
+
+  return lines.join('\n');
 }
