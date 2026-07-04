@@ -1,6 +1,14 @@
 import { registerAppTool } from '@modelcontextprotocol/ext-apps/server';
 import { z } from 'zod';
 import * as data from './data';
+import {
+  formatSemester,
+  formatSubjects,
+  formatDays,
+  formatTimetable,
+  formatHolidays,
+  formatSubjectStats,
+} from './formatters';
 
 // --- Helpers ---
 
@@ -157,7 +165,7 @@ export function registerAttendaMcp(server) {
         const { stats, predictions } = await data.getCollegeStats(args.id);
         return result(
           { semester, stats, predictions },
-          `Loaded semester "${semester.name}" (${stats.percentage ?? 'N/A'}% attendance).`
+          `Loaded semester "${semester.name}".\n${formatSemester(semester, stats, predictions)}`
         );
       }
       const semesters = await data.listSemesters();
@@ -229,7 +237,10 @@ export function registerAttendaMcp(server) {
     },
     async (args) => {
       const subjects = await data.listSubjects(args.semesterId);
-      return result({ subjects }, `Found ${subjects.length} subject(s).`);
+      return result(
+        { subjects },
+        `Found ${subjects.length} subject(s).\n${formatSubjects(subjects)}`
+      );
     }
   );
 
@@ -301,13 +312,11 @@ export function registerAttendaMcp(server) {
     async (args) => {
       if (args.date) {
         const day = await data.getDay(args.date, args.semesterId);
-        return result(
-          { days: day ? [day] : [] },
-          day ? `Loaded attendance for ${args.date}.` : `No record for ${args.date}.`
-        );
+        if (!day) return result({ days: [] }, `No record for ${args.date}.`);
+        return result({ days: [day] }, `Loaded attendance for ${args.date}.\n${formatDays([day])}`);
       }
       const days = await data.listDays(args.semesterId);
-      return result({ days }, `Found ${days.length} recorded day(s).`);
+      return result({ days }, `Found ${days.length} recorded day(s).\n${formatDays(days)}`);
     }
   );
 
@@ -372,12 +381,16 @@ export function registerAttendaMcp(server) {
       }
       text += `. ${subjects.length} subject(s) tracked.`;
 
+      if (subjects.length > 0) {
+        text += `\n${formatSubjectStats(subjects)}`;
+      }
+
       if (schedule.isHoliday) {
-        text += ` ${schedule.date} is a declared holiday ("${schedule.holidayName}").`;
+        text += `\n${schedule.date} is a declared holiday ("${schedule.holidayName}").`;
       } else if (schedule.isWeeklyHoliday) {
-        text += ` ${schedule.date} is a weekly off.`;
+        text += `\n${schedule.date} is a weekly off.`;
       } else {
-        text += ` ${schedule.lectures.length} lecture(s) scheduled on ${schedule.date}.`;
+        text += `\n${schedule.lectures.length} lecture(s) scheduled on ${schedule.date}.`;
       }
 
       return result(
@@ -429,7 +442,7 @@ export function registerAttendaMcp(server) {
       const dayCount = (timetable.days || []).length;
       return result(
         { timetable },
-        `Timetable has ${dayCount} day(s) with scheduled lectures.${updateSummary}`
+        `Timetable has ${dayCount} day(s) with scheduled lectures.${updateSummary}\n${formatTimetable(timetable)}`
       );
     }
   );
@@ -449,7 +462,10 @@ export function registerAttendaMcp(server) {
     },
     async (args) => {
       const holidays = await data.listHolidays(args.semesterId);
-      return result({ holidays }, `Found ${holidays.length} holiday(s).`);
+      return result(
+        { holidays },
+        `Found ${holidays.length} holiday(s).\n${formatHolidays(holidays)}`
+      );
     }
   );
 
