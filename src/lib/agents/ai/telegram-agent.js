@@ -14,14 +14,9 @@ import { StateGraph, START, END, Annotation, messagesStateReducer } from '@langc
 import { ToolNode } from '@langchain/langgraph/prebuilt';
 import { MongoDBSaver } from '@langchain/langgraph-checkpoint-mongodb';
 import mongoose from 'mongoose';
-import {
-  HumanMessage,
-  SystemMessage,
-  AIMessage,
-  ToolMessage,
-  RemoveMessage,
-} from '@langchain/core/messages';
+import { HumanMessage, SystemMessage, RemoveMessage } from '@langchain/core/messages';
 import LongTermMemoryService from '../memory/LongTermMemoryService';
+import { mapHistoryEntryToMessages } from '../utils/history-mapping';
 
 const StateAnnotation = Annotation.Root({
   messages: Annotation({
@@ -116,13 +111,7 @@ class TelegramAgent extends BaseAgent {
   }
 
   async *_onStreamExecute(input) {
-    const {
-      userMessage,
-      chatHistory = [],
-      sessionId,
-      isAdmin = false,
-      memoryContext = {},
-    } = input;
+    const { userMessage, chatHistory = [], sessionId, isAdmin = false, memoryContext = {} } = input;
     const resolvedMemoryContext = {
       platform: 'telegram',
       ...memoryContext,
@@ -153,44 +142,12 @@ class TelegramAgent extends BaseAgent {
       const persona = this.config.persona || 'You are a helpful assistant on Telegram.';
 
       const filteredHistory = chatHistory.filter((msg) => msg && msg.role);
-      const mappedHistory = filteredHistory.map((msg, idx) => {
-        const id = msg.id || `historic-${idx}-${Math.random()}`;
-        if (msg.role === 'user') return new HumanMessage({ content: msg.content || '', id });
-        if (msg.role === 'assistant') {
-          const params = { content: msg.content || '', id };
-          if (msg.tool_calls && Array.isArray(msg.tool_calls)) {
-            params.tool_calls = msg.tool_calls.map((tc) => {
-              let parsedArgs = {};
-              try {
-                parsedArgs =
-                  typeof tc.function.arguments === 'string'
-                    ? JSON.parse(tc.function.arguments)
-                    : tc.function.arguments;
-              } catch (e) {
-                this.logger.error('Failed to parse tool arguments in chat history:', e);
-              }
-              return {
-                id: tc.id || `unknown-id-${Math.random()}`,
-                name: tc.function.name || 'unknown_function',
-                args: parsedArgs,
-              };
-            });
-          }
-          return new AIMessage(params);
-        }
-        if (msg.role === 'tool') {
-          return new ToolMessage({
-            content:
-              typeof msg.content === 'string'
-                ? msg.content
-                : JSON.stringify(msg.content) || 'No content',
-            name: msg.name || 'unknown',
-            tool_call_id: msg.tool_call_id || 'unknown-id',
-            id,
-          });
-        }
-        return new SystemMessage({ content: msg.content || '', id });
-      });
+      const mappedHistory = filteredHistory.flatMap((msg, idx) =>
+        mapHistoryEntryToMessages(msg, {
+          logger: this.logger,
+          idPrefix: msg.id || `historic-${idx}-${Math.random()}`,
+        })
+      );
 
       const finalTools = this.config.provider?.supportsTools !== false ? allTools : [];
 

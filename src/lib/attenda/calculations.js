@@ -175,8 +175,8 @@ export function getRequiredAttendance(subjectOrSemester) {
  */
 export function getTodaysLectures(timetable, subjects) {
   const today = new Date().getDay();
-  const slots = timetable?.slots?.[today] || [];
-  return slots
+  const todaySlots = timetable?.days?.find((d) => d.dayOfWeek === today)?.slots || [];
+  return todaySlots
     .map((slot) => {
       const subject = subjects.find((s) => s.id === slot.subjectId);
       return subject ? { ...slot, subjectName: subject.name, subjectColor: subject.color } : null;

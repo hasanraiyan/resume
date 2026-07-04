@@ -30,6 +30,10 @@ function deleteAnnotations() {
   };
 }
 
+function toolMeta() {
+  return { ui: { visibility: ['model', 'app'] } };
+}
+
 function result(structuredContent, text) {
   return {
     structuredContent,
@@ -89,7 +93,9 @@ const subjectUpdateSchema = {
 
 const lectureSchema = z.object({
   subjectId: z.string().describe('Subject ID'),
-  status: z.enum(['present', 'absent', 'cancelled', 'didnt-happen']).default('present'),
+  status: z
+    .enum(['present', 'absent', 'cancelled', 'didnt-happen', 'holiday', 'college-closed'])
+    .default('present'),
   isExtra: z.boolean().default(false),
   startTime: z.string().default(''),
   endTime: z.string().default(''),
@@ -134,10 +140,12 @@ export function registerAttendaMcp(server) {
       inputSchema: {},
       outputSchema: { semesters: z.array(z.any()) },
       annotations: readAnnotations(),
+      _meta: toolMeta(),
     },
     async () => {
       const semesters = await data.listSemesters();
-      return result({ semesters }, `Found ${semesters.length} semester(s).`);
+      const names = semesters.map((s) => `"${s.name}" (${s.id})`).join(', ');
+      return result({ semesters }, `Found ${semesters.length} semester(s): ${names || 'none'}.`);
     }
   );
 
@@ -150,6 +158,7 @@ export function registerAttendaMcp(server) {
       inputSchema: { id: z.string().min(1) },
       outputSchema: { semester: z.any(), stats: z.any(), predictions: z.any() },
       annotations: readAnnotations(),
+      _meta: toolMeta(),
     },
     async (args) => {
       const semester = await data.getSemester(args.id);
@@ -167,6 +176,7 @@ export function registerAttendaMcp(server) {
       inputSchema: semesterCreateSchema,
       outputSchema: { semester: z.any() },
       annotations: writeAnnotations(),
+      _meta: toolMeta(),
     },
     async (args) => {
       const semester = await data.createSemester(args);
@@ -183,6 +193,7 @@ export function registerAttendaMcp(server) {
       inputSchema: semesterUpdateSchema,
       outputSchema: { semester: z.any() },
       annotations: writeAnnotations(),
+      _meta: toolMeta(),
     },
     async (args) => {
       const { id, ...updates } = args;
@@ -200,6 +211,7 @@ export function registerAttendaMcp(server) {
       inputSchema: { id: z.string().min(1) },
       outputSchema: { success: z.boolean(), id: z.string() },
       annotations: deleteAnnotations(),
+      _meta: toolMeta(),
     },
     async (args) => {
       const result2 = await data.deleteSemester(args.id);
@@ -218,6 +230,7 @@ export function registerAttendaMcp(server) {
       inputSchema: { semesterId: z.string().min(1) },
       outputSchema: { subjects: z.array(z.any()) },
       annotations: readAnnotations(),
+      _meta: toolMeta(),
     },
     async (args) => {
       const subjects = await data.listSubjects(args.semesterId);
@@ -234,6 +247,7 @@ export function registerAttendaMcp(server) {
       inputSchema: subjectCreateSchema,
       outputSchema: { subject: z.any() },
       annotations: writeAnnotations(),
+      _meta: toolMeta(),
     },
     async (args) => {
       const subject = await data.createSubject(args);
@@ -250,6 +264,7 @@ export function registerAttendaMcp(server) {
       inputSchema: subjectUpdateSchema,
       outputSchema: { subject: z.any() },
       annotations: writeAnnotations(),
+      _meta: toolMeta(),
     },
     async (args) => {
       const { id, ...updates } = args;
@@ -267,6 +282,7 @@ export function registerAttendaMcp(server) {
       inputSchema: { id: z.string().min(1) },
       outputSchema: { success: z.boolean(), id: z.string() },
       annotations: deleteAnnotations(),
+      _meta: toolMeta(),
     },
     async (args) => {
       const result2 = await data.deleteSubject(args.id);
@@ -278,6 +294,23 @@ export function registerAttendaMcp(server) {
 
   registerAppTool(
     server,
+    'list_days',
+    {
+      title: 'List Days',
+      description: 'List all recorded attendance days for a semester.',
+      inputSchema: { semesterId: z.string().min(1) },
+      outputSchema: { days: z.array(z.any()) },
+      annotations: readAnnotations(),
+      _meta: toolMeta(),
+    },
+    async (args) => {
+      const days = await data.listDays(args.semesterId);
+      return result({ days }, `Found ${days.length} recorded day(s).`);
+    }
+  );
+
+  registerAppTool(
+    server,
     'get_day',
     {
       title: 'Get Day',
@@ -285,6 +318,7 @@ export function registerAttendaMcp(server) {
       inputSchema: { date: z.string().min(1), semesterId: z.string().min(1) },
       outputSchema: { day: z.any().nullable() },
       annotations: readAnnotations(),
+      _meta: toolMeta(),
     },
     async (args) => {
       const day = await data.getDay(args.date, args.semesterId);
@@ -305,6 +339,7 @@ export function registerAttendaMcp(server) {
       inputSchema: saveDaySchema,
       outputSchema: { day: z.any() },
       annotations: writeAnnotations(),
+      _meta: toolMeta(),
     },
     async (args) => {
       const day = await data.saveDay(args);
@@ -332,6 +367,7 @@ export function registerAttendaMcp(server) {
         subjects: z.array(z.any()),
       },
       annotations: readAnnotations(),
+      _meta: toolMeta(),
     },
     async (args) => {
       const { stats, predictions } = await data.getCollegeStats(args.semesterId);
@@ -356,6 +392,7 @@ export function registerAttendaMcp(server) {
       inputSchema: { semesterId: z.string().min(1) },
       outputSchema: { lectures: z.array(z.any()) },
       annotations: readAnnotations(),
+      _meta: toolMeta(),
     },
     async (args) => {
       const lectures = await data.getTodaysSchedule(args.semesterId);
@@ -378,6 +415,7 @@ export function registerAttendaMcp(server) {
       inputSchema: { semesterId: z.string().min(1) },
       outputSchema: { timetable: z.any() },
       annotations: readAnnotations(),
+      _meta: toolMeta(),
     },
     async (args) => {
       const timetable = await data.getTimetable(args.semesterId);
@@ -399,6 +437,7 @@ export function registerAttendaMcp(server) {
       },
       outputSchema: { timetable: z.any() },
       annotations: writeAnnotations(),
+      _meta: toolMeta(),
     },
     async (args) => {
       const timetable = await data.updateTimetableSlots(
@@ -433,6 +472,7 @@ export function registerAttendaMcp(server) {
       inputSchema: { semesterId: z.string().min(1) },
       outputSchema: { holidays: z.array(z.any()) },
       annotations: readAnnotations(),
+      _meta: toolMeta(),
     },
     async (args) => {
       const holidays = await data.listHolidays(args.semesterId);
@@ -449,6 +489,7 @@ export function registerAttendaMcp(server) {
       inputSchema: holidayCreateSchema,
       outputSchema: { holiday: z.any() },
       annotations: writeAnnotations(),
+      _meta: toolMeta(),
     },
     async (args) => {
       const holiday = await data.createHoliday(args);
@@ -465,6 +506,7 @@ export function registerAttendaMcp(server) {
       inputSchema: { id: z.string().min(1) },
       outputSchema: { success: z.boolean(), id: z.string() },
       annotations: deleteAnnotations(),
+      _meta: toolMeta(),
     },
     async (args) => {
       const result2 = await data.deleteHoliday(args.id);

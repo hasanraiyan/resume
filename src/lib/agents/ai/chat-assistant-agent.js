@@ -20,13 +20,8 @@ import {
   createSkillAdminTools,
 } from '../utils/skill-tools';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
-import {
-  AIMessage,
-  AIMessageChunk,
-  HumanMessage,
-  SystemMessage,
-  ToolMessage,
-} from '@langchain/core/messages';
+import { AIMessageChunk, HumanMessage, SystemMessage } from '@langchain/core/messages';
+import { mapHistoryEntryToMessages } from '../utils/history-mapping';
 
 // System message builder moved to a static or instance method if preferred,
 // but keeping it as a standalone function for now.
@@ -143,42 +138,9 @@ class ChatAgent extends BaseAgent {
       const filteredHistory = chatHistory.filter((msg) => msg && msg.role);
       const messages = [
         ...systemMessages.map((msg) => new SystemMessage({ content: msg.content || '' })),
-        ...filteredHistory.map((msg) => {
-          if (msg.role === 'user') return new HumanMessage({ content: msg.content || '' });
-          if (msg.role === 'assistant') {
-            const params = { content: msg.content || '' };
-            if (msg.tool_calls && Array.isArray(msg.tool_calls)) {
-              params.tool_calls = msg.tool_calls.map((tc) => {
-                let parsedArgs = {};
-                try {
-                  parsedArgs =
-                    typeof tc.function.arguments === 'string'
-                      ? JSON.parse(tc.function.arguments)
-                      : tc.function.arguments;
-                } catch (e) {
-                  this.logger.error('Failed to parse tool arguments in chat history:', e);
-                }
-                return {
-                  id: tc.id || `unknown-id-${Math.random()}`,
-                  name: tc.function.name || 'unknown_function',
-                  args: parsedArgs,
-                };
-              });
-            }
-            return new AIMessage(params);
-          }
-          if (msg.role === 'tool') {
-            return new ToolMessage({
-              content:
-                typeof msg.content === 'string'
-                  ? msg.content
-                  : JSON.stringify(msg.content) || 'No content',
-              name: msg.name || 'unknown',
-              tool_call_id: msg.tool_call_id || 'unknown-id',
-            });
-          }
-          return new SystemMessage({ content: msg.content || '' });
-        }),
+        ...filteredHistory.flatMap((msg) =>
+          mapHistoryEntryToMessages(msg, { logger: this.logger })
+        ),
         new HumanMessage({ content: userMessage }),
       ];
 

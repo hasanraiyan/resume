@@ -7,24 +7,32 @@ export const maxDuration = 60;
 
 /**
  * API key verification for Attenda MCP.
- * Reads the bearer token from the Authorization header and compares
- * it against the ATTENDA_MCP_API_KEY environment variable.
+ * Checks auth in this order:
+ *   1. Bearer token from Authorization header (Claude Desktop, Cursor)
+ *   2. `auth` query parameter — e.g. ?auth=YOUR_KEY  (ChatGPT apps, URL-only clients)
+ *   3. `token` query parameter — e.g. ?token=YOUR_KEY (alternative)
  */
 async function verifyToken(request, bearerToken) {
-  if (!bearerToken) {
-    // Allow requests that already have a valid NextAuth session (web app use)
-    // but require the API key for external MCP clients
-    return undefined;
-  }
-
   const apiKey = process.env.ATTENDA_MCP_API_KEY;
   if (!apiKey) {
     console.error('ATTENDA_MCP_API_KEY is not configured');
     return undefined;
   }
 
+  // 1. Check Authorization header (Bearer token)
   if (bearerToken === apiKey) {
     return { token: bearerToken, clientId: 'attenda-mcp-client' };
+  }
+
+  // 2. Check query parameters (for clients that can't send custom headers)
+  try {
+    const url = new URL(request.url);
+    const queryAuth = url.searchParams.get('auth') || url.searchParams.get('token');
+    if (queryAuth === apiKey) {
+      return { token: queryAuth, clientId: 'attenda-mcp-client', source: 'query' };
+    }
+  } catch {
+    // Ignore URL parsing errors
   }
 
   return undefined;

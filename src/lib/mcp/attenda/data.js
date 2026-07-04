@@ -276,7 +276,6 @@ export async function getTodaysSchedule(semesterId) {
   const tt = timetable
     ? {
         semesterId: timetable.semesterId?.toString(),
-        slots: {},
         days:
           timetable.days?.map((d) => ({
             dayOfWeek: d.dayOfWeek,
@@ -287,7 +286,7 @@ export async function getTodaysSchedule(semesterId) {
             })),
           })) || [],
       }
-    : { semesterId, slots: {}, days: [] };
+    : { semesterId, days: [] };
 
   return getTodaysLectures(tt, subjects.map(serializeDoc));
 }

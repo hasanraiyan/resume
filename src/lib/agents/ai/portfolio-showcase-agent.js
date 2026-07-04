@@ -19,7 +19,8 @@ import {
   buildPortfolioUiBlocks,
 } from '../utils/portfolio-showcase-tools';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
-import { AIMessage, HumanMessage, SystemMessage, ToolMessage } from '@langchain/core/messages';
+import { HumanMessage, SystemMessage } from '@langchain/core/messages';
+import { mapHistoryEntryToMessages } from '../utils/history-mapping';
 
 export function buildPortfolioSystemMessage(context, path, persona) {
   const { coreIdentity, aboutSummary } = context || {};
@@ -89,42 +90,9 @@ class PortfolioShowcaseAgent extends BaseAgent {
       const filteredHistory = chatHistory.filter((msg) => msg && msg.role);
       const messages = [
         new SystemMessage({ content: systemMessage.content }),
-        ...filteredHistory.map((msg) => {
-          if (msg.role === 'user') return new HumanMessage({ content: msg.content || '' });
-          if (msg.role === 'assistant') {
-            const params = { content: msg.content || '' };
-            if (msg.tool_calls && Array.isArray(msg.tool_calls)) {
-              params.tool_calls = msg.tool_calls.map((tc) => {
-                let parsedArgs = {};
-                try {
-                  parsedArgs =
-                    typeof tc.function.arguments === 'string'
-                      ? JSON.parse(tc.function.arguments)
-                      : tc.function.arguments;
-                } catch (e) {
-                  this.logger.error('Failed to parse tool arguments in chat history:', e);
-                }
-                return {
-                  id: tc.id || `unknown-id-${Math.random()}`,
-                  name: tc.function.name || 'unknown_function',
-                  args: parsedArgs,
-                };
-              });
-            }
-            return new AIMessage(params);
-          }
-          if (msg.role === 'tool') {
-            return new ToolMessage({
-              content:
-                typeof msg.content === 'string'
-                  ? msg.content
-                  : JSON.stringify(msg.content) || 'No content',
-              name: msg.name || 'unknown',
-              tool_call_id: msg.tool_call_id || 'unknown-id',
-            });
-          }
-          return new SystemMessage({ content: msg.content || '' });
-        }),
+        ...filteredHistory.flatMap((msg) =>
+          mapHistoryEntryToMessages(msg, { logger: this.logger })
+        ),
         new HumanMessage({ content: userMessage }),
       ];
 
