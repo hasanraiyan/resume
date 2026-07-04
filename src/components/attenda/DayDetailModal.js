@@ -28,14 +28,23 @@ export default function DayDetailModal({
 }) {
   const { getTimetableForSemester, holidays } = useAttenda();
 
+  const dateObj = new Date(dateKey + 'T00:00:00');
+  const dayOfWeek = dateObj.getDay();
+
   const isDeclaredHoliday = useMemo(() => {
     return holidays?.some((h) => h.date === dateKey);
   }, [holidays, dateKey]);
 
-  const defaultCollegeStatus = isDeclaredHoliday ? 'holiday' : 'present';
+  const isWeeklyHoliday = useMemo(() => {
+    const semWeeklyHolidays = new Set(activeSemester?.weeklyHolidays || []);
+    return semWeeklyHolidays.has(dayOfWeek);
+  }, [activeSemester, dayOfWeek]);
 
-  const dateObj = new Date(dateKey + 'T00:00:00');
-  const dayOfWeek = dateObj.getDay();
+  const defaultCollegeStatus = isDeclaredHoliday
+    ? 'holiday'
+    : isWeeklyHoliday
+      ? 'closed'
+      : 'present';
 
   const timetable = getTimetableForSemester();
   const slots = timetable?.slots?.[dayOfWeek] || [];

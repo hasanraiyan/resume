@@ -383,6 +383,11 @@ export default function CalendarTab() {
                     {cell.declaredHoliday.name}
                   </span>
                 )}
+                {!hasData && !cell.declaredHoliday && isHoliday && (
+                  <span className="text-[9px] font-semibold text-[#7c8e88]/60 truncate max-w-full leading-none">
+                    Off
+                  </span>
+                )}
               </div>
             </button>
           );
