@@ -131,7 +131,28 @@ export default function DayDetailModal({
               {COLLEGE_STATUSES.map((s) => (
                 <button
                   key={s.value}
-                  onClick={() => setCollegeStatus(s.value)}
+                  onClick={() => {
+                    setCollegeStatus(s.value);
+                    if (s.value === 'holiday' || s.value === 'closed') {
+                      const cancelled = {};
+                      activeLectures.forEach((l) => {
+                        cancelled[l.id] = 'cancelled';
+                      });
+                      setLectureStatuses(cancelled);
+                    } else if (s.value === 'absent') {
+                      const absent = {};
+                      activeLectures.forEach((l) => {
+                        absent[l.id] = 'absent';
+                      });
+                      setLectureStatuses(absent);
+                    } else if (s.value === 'present') {
+                      const present = {};
+                      activeLectures.forEach((l) => {
+                        present[l.id] = 'present';
+                      });
+                      setLectureStatuses(present);
+                    }
+                  }}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     collegeStatus === s.value
                       ? 'bg-[#1f644e] text-white'
@@ -156,7 +177,12 @@ export default function DayDetailModal({
                     <button
                       key={lec.id}
                       onClick={() => toggleLecture(lec.id)}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-sm transition-all cursor-pointer ${
+                      disabled={collegeStatus === 'holiday' || collegeStatus === 'closed'}
+                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-sm transition-all ${
+                        collegeStatus === 'holiday' || collegeStatus === 'closed'
+                          ? 'bg-[#f0f5f2] border-[#e5e3d8] opacity-75 cursor-not-allowed'
+                          : 'cursor-pointer'
+                      } ${
                         status === 'present'
                           ? 'bg-white border-[#e5e3d8] hover:border-[#1f644e]'
                           : status === 'absent'
