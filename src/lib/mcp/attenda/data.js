@@ -361,17 +361,19 @@ export async function getSubjectStats(semesterId) {
     });
 }
 
+// The MCP server runs on Vercel, whose serverless clock is UTC — computing
+// "today" via new Date().getFullYear()/getMonth()/getDate() there gives the
+// UTC calendar date, which lags a full day behind IST between midnight and
+// 5:30am. This app is for an India-based student, so "today" is pinned to
+// Asia/Kolkata explicitly rather than the server's local time.
+function getTodayIST() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+}
+
 export async function getSchedule(semesterId, dateString) {
   await dbConnect();
 
-  let targetDateStr = dateString;
-  if (!targetDateStr) {
-    const today = new Date();
-    const y = today.getFullYear();
-    const m = String(today.getMonth() + 1).padStart(2, '0');
-    const d = String(today.getDate()).padStart(2, '0');
-    targetDateStr = `${y}-${m}-${d}`;
-  }
+  const targetDateStr = dateString || getTodayIST();
 
   const dateObj = new Date(targetDateStr + 'T00:00:00');
   const dayOfWeek = dateObj.getDay();

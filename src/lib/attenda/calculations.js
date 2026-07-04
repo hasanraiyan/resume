@@ -83,8 +83,13 @@ export function computeCollegeAttendance(semester, semesterDays, holidays) {
   // Calculate remaining working days if semester has an end date
   let remainingDays = null;
   if (semester.endDate) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Anchor "today" to IST rather than the runtime's local time — on
+    // Vercel that's UTC, which lags a full calendar day behind IST between
+    // midnight and 5:30am and would throw this off by one day.
+    const todayIST = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(
+      new Date()
+    );
+    const today = new Date(todayIST + 'T00:00:00');
     const end = new Date(semester.endDate + 'T00:00:00');
     const weeklyHolidays = semester.weeklyHolidays || [];
 
