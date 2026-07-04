@@ -614,11 +614,16 @@ export function AttendaProvider({ children }) {
       dispatch({ type: ACTIONS.SET_TIMETABLE, payload: updated });
 
       try {
-        await api.updateTimetable({
+        const saved = await api.updateTimetable({
           semesterId: state.activeSemesterId,
           dayOfWeek,
           slots,
         });
+        // Sync back the server-assigned slot IDs — the optimistic update above
+        // has no IDs (they don't exist until the server creates them), so
+        // without this every slot in this day would compare as id===undefined
+        // on the next delete and all get removed together.
+        dispatch({ type: ACTIONS.SET_TIMETABLE, payload: saved });
       } catch (error) {
         console.error('Failed to update timetable:', error);
         dispatch({ type: ACTIONS.SET_TIMETABLE, payload: originalTimetable });

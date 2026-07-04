@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Toaster } from 'sonner';
 import { AttendaProvider, useAttenda } from '@/context/AttendaContext';
 import AppLayout from '@/components/layout/AppLayout';
 import AdminGuard from '@/components/AdminGuard';
@@ -9,6 +10,7 @@ import { CalendarDays, CheckCircle2, BarChart3, Settings } from 'lucide-react';
 import CalendarTab from '@/components/attenda/CalendarTab';
 import AnalyticsTab from '@/components/attenda/AnalyticsTab';
 import SemesterTab from '@/components/attenda/SemesterTab';
+import SemesterModal from '@/components/attenda/SemesterModal';
 
 const tabs = [
   { id: 'calendar', label: 'Calendar', icon: CalendarDays },
@@ -18,6 +20,7 @@ const tabs = [
 
 function AttendaContent() {
   const [activeTab, setActiveTab] = useState('calendar');
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const { activeSemester, isLoading, isInitialized, addSemester } = useAttenda();
 
   // Override activeTab tracking via AppLayout — we manage our own
@@ -41,17 +44,22 @@ function AttendaContent() {
             Track your college attendance effortlessly. Start by creating your first semester.
           </p>
           <button
-            onClick={() => {
-              const name = prompt('Enter semester name (e.g., "Semester VI"):');
-              if (name?.trim()) {
-                addSemester({ name: name.trim() });
-                setActiveTab('semester');
-              }
-            }}
+            onClick={() => setShowOnboardingModal(true)}
             className="bg-[#1f644e] text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-[#17503e] transition-colors shadow-sm"
           >
             Create Your First Semester
           </button>
+          {showOnboardingModal && (
+            <SemesterModal
+              semester={null}
+              onSave={(data) => {
+                addSemester(data);
+                setShowOnboardingModal(false);
+                setActiveTab('semester');
+              }}
+              onClose={() => setShowOnboardingModal(false)}
+            />
+          )}
         </div>
       );
     }
@@ -75,15 +83,18 @@ function AttendaContent() {
   };
 
   return (
-    <AppLayout
-      appName="Attenda"
-      tabs={tabs}
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-      tabTitles={tabTitles}
-    >
-      {renderTab()}
-    </AppLayout>
+    <>
+      <Toaster position="top-center" richColors />
+      <AppLayout
+        appName="Attenda"
+        tabs={tabs}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        tabTitles={tabTitles}
+      >
+        {renderTab()}
+      </AppLayout>
+    </>
   );
 }
 

@@ -2,6 +2,7 @@
 
 import { useAttenda } from '@/context/AttendaContext';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { formatTime12H } from '@/utils/string';
 import {
   Plus,
@@ -23,6 +24,7 @@ import {
 import SemesterModal from '@/components/attenda/SemesterModal';
 import SubjectModal from '@/components/attenda/SubjectModal';
 import HolidayModal from '@/components/attenda/HolidayModal';
+import ConfirmDialog from '@/components/attenda/ConfirmDialog';
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const TIME_SLOTS = [
@@ -67,6 +69,9 @@ export default function SemesterTab() {
   const [showSubjectModal, setShowSubjectModal] = useState(false);
   const [showHolidayModal, setShowHolidayModal] = useState(false);
   const [editingSubject, setEditingSubject] = useState(null);
+  const [confirmingSubjectDelete, setConfirmingSubjectDelete] = useState(null);
+  const [showConfirmSemesterDelete, setShowConfirmSemesterDelete] = useState(false);
+  const [showConfirmReset, setShowConfirmReset] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState('subjects'); // subjects | timetable | holidays | settings
   const [expandedDay, setExpandedDay] = useState(null);
   const [expandedSubjectId, setExpandedSubjectId] = useState(null);
@@ -85,10 +90,10 @@ export default function SemesterTab() {
       if (!file) return;
       const text = await file.text();
       try {
-        importBackup(text);
-        window.location.reload();
+        await importBackup(text);
+        toast.success('Backup imported');
       } catch (err) {
-        alert('Import failed: ' + err.message);
+        toast.error('Import failed: ' + err.message);
       }
     };
     input.click();
@@ -172,9 +177,7 @@ export default function SemesterTab() {
                       <Edit3 className="w-3.5 h-3.5 text-[#7c8e88]" />
                     </button>
                     <button
-                      onClick={() => {
-                        if (confirm(`Delete "${subject.name}"?`)) removeSubject(subject.id);
-                      }}
+                      onClick={() => setConfirmingSubjectDelete(subject)}
                       className="p-1.5 rounded-lg hover:bg-[#fef2f2] transition-colors cursor-pointer"
                       title="Delete Subject"
                     >
@@ -692,14 +695,7 @@ export default function SemesterTab() {
           Edit Semester
         </button>
         <button
-          onClick={() => {
-            if (
-              semesters.length > 1 &&
-              confirm(`Delete "${activeSemester?.name}"? This cannot be undone.`)
-            ) {
-              removeSemester(activeSemesterId);
-            }
-          }}
+          onClick={() => setShowConfirmSemesterDelete(true)}
           disabled={semesters.length <= 1}
           className="flex items-center gap-1.5 px-4 py-2 border border-[#c94c4c] text-[#c94c4c] text-xs font-bold rounded-xl hover:bg-[#c94c4c] hover:text-white transition-colors disabled:opacity-50 cursor-pointer"
         >
@@ -719,15 +715,7 @@ export default function SemesterTab() {
           Add Semester
         </button>
         <button
-          onClick={() => {
-            if (
-              confirm(
-                'Reset all attendance for this semester? Subjects, timetable, and holidays will be kept.'
-              )
-            ) {
-              resetAttendance();
-            }
-          }}
+          onClick={() => setShowConfirmReset(true)}
           className="flex items-center gap-1.5 px-4 py-2 border border-[#c94c4c] text-[#c94c4c] text-xs font-bold rounded-xl hover:bg-[#c94c4c] hover:text-white transition-colors cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5" />
@@ -824,6 +812,31 @@ export default function SemesterTab() {
             setShowHolidayModal(false);
           }}
           onClose={() => setShowHolidayModal(false)}
+        />
+      )}
+      {confirmingSubjectDelete && (
+        <ConfirmDialog
+          title={`Delete "${confirmingSubjectDelete.name}"?`}
+          message="This cannot be undone."
+          onConfirm={() => removeSubject(confirmingSubjectDelete.id)}
+          onClose={() => setConfirmingSubjectDelete(null)}
+        />
+      )}
+      {showConfirmSemesterDelete && (
+        <ConfirmDialog
+          title={`Delete "${activeSemester?.name}"?`}
+          message="This cannot be undone."
+          onConfirm={() => removeSemester(activeSemesterId)}
+          onClose={() => setShowConfirmSemesterDelete(false)}
+        />
+      )}
+      {showConfirmReset && (
+        <ConfirmDialog
+          title="Reset all attendance?"
+          message="Subjects, timetable, and holidays will be kept."
+          confirmLabel="Reset"
+          onConfirm={() => resetAttendance()}
+          onClose={() => setShowConfirmReset(false)}
         />
       )}
     </div>
