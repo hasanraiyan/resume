@@ -5,7 +5,7 @@ import { AttendaProvider, useAttenda } from '@/context/AttendaContext';
 import AppLayout from '@/components/layout/AppLayout';
 import AdminGuard from '@/components/AdminGuard';
 import SessionProvider from '@/components/SessionProvider';
-import { CalendarDays, BarChart3, Settings } from 'lucide-react';
+import { CalendarDays, CheckCircle2, BarChart3, Settings } from 'lucide-react';
 import CalendarTab from '@/components/attenda/CalendarTab';
 import AnalyticsTab from '@/components/attenda/AnalyticsTab';
 import SemesterTab from '@/components/attenda/SemesterTab';

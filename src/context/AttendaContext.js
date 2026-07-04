@@ -189,6 +189,12 @@ export function AttendaProvider({ children }) {
   useEffect(() => {
     if (!state.activeSemesterId) return;
 
+    // Immediately clear stale data for the previous semester
+    dispatch({ type: ACTIONS.SET_SUBJECTS, payload: [] });
+    dispatch({ type: ACTIONS.SET_DAYS, payload: {} });
+    dispatch({ type: ACTIONS.SET_TIMETABLE, payload: null });
+    dispatch({ type: ACTIONS.SET_HOLIDAYS, payload: [] });
+
     const refresh = async () => {
       try {
         const [subjects, days, timetable, holidays] = await Promise.all([
@@ -422,7 +428,7 @@ export function AttendaProvider({ children }) {
 
   // --- Timetable ---
   const getTimetableForSemester = useCallback(() => {
-    if (state.timetable) {
+    if (state.timetable && String(state.timetable.semesterId) === String(state.activeSemesterId)) {
       // Convert from server format (days array) to client format (slots map)
       const slots = {};
       (state.timetable.days || []).forEach((day) => {
@@ -448,7 +454,10 @@ export function AttendaProvider({ children }) {
   const updateTimetableSlots = useCallback(
     async (dayOfWeek, slots) => {
       // Optimistic local update
-      if (state.timetable) {
+      if (
+        state.timetable &&
+        String(state.timetable.semesterId) === String(state.activeSemesterId)
+      ) {
         const updated = { ...state.timetable };
         const dayIndex = (updated.days || []).findIndex((d) => d.dayOfWeek === dayOfWeek);
         const newSlots = slots.map((s) => ({
