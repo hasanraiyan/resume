@@ -10,37 +10,46 @@ import FluidCursorCanvas from './FluidCursorCanvas';
 import PortfolioLanding from './PortfolioLanding';
 import PortfolioChatView from './PortfolioChatView';
 
-// scale + borderRadius are compositor-only (no repaint of the heavy WebGL/blur
-// children on every frame like clip-path was), anchored at the FAB's position
-// via transformOrigin so it reads as the button itself expanding to fill the screen.
-const revealVariants = {
-  closed: {
-    scale: 0.001,
-    borderRadius: '50%',
-    transition: { duration: 0.35, ease: [0.7, 0, 0.84, 0] },
-  },
-  open: {
-    scale: 1,
-    borderRadius: '0%',
-    transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] },
-  },
-};
-
 export default function PortfolioTakeover({ onClose, heroData, siteConfig }) {
   const [hasStartedChat, setHasStartedChat] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const [revealComplete, setRevealComplete] = useState(false);
   const inputRef = useRef(null);
-  const isPresent = useIsPresent();
+  // Read once at mount (this component only ever mounts client-side, after the
+  // FAB click that opens it — never during SSR) instead of via useEffect, so the
+  // very first "closed" frame already has the right circle center and doesn't
+  // pop to a different position after paint.
+  const [fabOffset] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(min-width: 640px)').matches
+      ? '3.5rem'
+      : '2.75rem'
+  );
 
+  // clip-path: circle() defines a true circle regardless of the container's aspect
+  // ratio — scale + borderRadius was tried first, but a fixed inset-0 div is
+  // screen-shaped (not square), so borderRadius: 50% on it draws an ellipse
+  // stretched to the screen's proportions, not a circle. The center must be a
+  // literal calc() value (not a CSS var) — Framer Motion can't interpolate a
+  // custom-property reference, so the whole clip-path just snapped instantly
+  // instead of animating when one was used.
+  const revealVariants = {
+    closed: {
+      clipPath: `circle(0% at calc(100% - ${fabOffset}) calc(100% - ${fabOffset}))`,
+      transition: { duration: 0.2, ease: [0.7, 0, 0.84, 0] },
+    },
+    open: {
+      clipPath: `circle(200% at calc(100% - ${fabOffset}) calc(100% - ${fabOffset}))`,
+      transition: { duration: 1.5, ease: [0.16, 1, 0.3, 1] },
+    },
+  };
+
+  const isPresent = useIsPresent();
   const { messages, isLoading, statusMessage, send } = useChatStreaming();
   const { isListening, toggleListening } = useVoiceRecognition(
     inputMessage,
     setInputMessage,
     inputRef
   );
-
-  const isTransitioned = revealComplete && isPresent;
 
   // Auto-focus input when the opening animation finishes or view switches
   useEffect(() => {
@@ -79,8 +88,7 @@ export default function PortfolioTakeover({ onClose, heroData, siteConfig }) {
 
   return (
     <motion.div
-      className="fixed inset-0 z-[100] bg-black text-white overflow-hidden origin-[calc(100%-2.75rem)_calc(100%-2.75rem)] sm:origin-[calc(100%-3.5rem)_calc(100%-3.5rem)]"
-      style={{ transform: isTransitioned ? 'none' : undefined }}
+      className="fixed inset-0 z-[100] bg-black text-white overflow-hidden"
       variants={revealVariants}
       initial="closed"
       animate="open"
@@ -91,7 +99,10 @@ export default function PortfolioTakeover({ onClose, heroData, siteConfig }) {
         if (variant === 'open') setRevealComplete(true);
       }}
     >
-      {revealComplete && <FluidCursorCanvas />}
+      {/* Unmount immediately once closing starts (isPresent flips before the exit
+          animation plays) — leaving the WebGL sim running while the clip-path
+          shrinks around it is what caused the flicker on close. */}
+      {revealComplete && isPresent && <FluidCursorCanvas />}
 
       <button
         onClick={onClose}
