@@ -178,7 +178,14 @@ export default function SemesterTab() {
               className="rounded-xl border border-[#e5e3d8] bg-white overflow-hidden"
             >
               <button
-                onClick={() => setExpandedDay(isExpanded ? null : dayIdx)}
+                onClick={() => {
+                  if (isExpanded) {
+                    setExpandedDay(null);
+                  } else {
+                    setExpandedDay(dayIdx);
+                    setNewSlot({ subjectId: '', startTime: '09:00', endTime: '10:00' });
+                  }
+                }}
                 className="w-full flex items-center justify-between p-3 text-left cursor-pointer hover:bg-[#fcfbf5] transition-colors"
               >
                 <span className="text-sm font-bold text-[#1e3a34]">{dayName}</span>
@@ -272,6 +279,7 @@ export default function SemesterTab() {
                           },
                         ];
                         updateTimetableSlots(dayIdx, updatedSlots);
+                        setNewSlot({ subjectId: '', startTime: '09:00', endTime: '10:00' });
                       }}
                       disabled={!newSlot.subjectId}
                       className="p-1.5 bg-[#1f644e] text-white rounded-lg hover:bg-[#17503e] transition-colors disabled:opacity-50 cursor-pointer"
