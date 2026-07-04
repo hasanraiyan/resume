@@ -445,6 +445,19 @@ export async function getSchedule(semesterId, dateString) {
 
 // --- Syllabus ---
 
+// Modules are matched by exact ID first, falling back to a case-insensitive
+// title substring — same convention as topicSearch — so callers don't have to
+// round-trip through getSyllabus just to learn a module's ObjectId.
+function findModule(subject, moduleSearch) {
+  let mod = subject.syllabus.find(
+    (m) => m._id?.toString() === moduleSearch || m.id === moduleSearch
+  );
+  if (!mod) {
+    mod = subject.syllabus.find((m) => m.title.toLowerCase().includes(moduleSearch.toLowerCase()));
+  }
+  return mod;
+}
+
 export async function getSyllabus(subjectId) {
   await dbConnect();
   const subject = await AttendaSubject.findOne({ _id: subjectId, deletedAt: null }).lean();
@@ -527,13 +540,13 @@ export async function addSyllabusModule(subjectId, title) {
   return getSyllabus(subjectId);
 }
 
-export async function addSyllabusTopic(subjectId, moduleId, title) {
+export async function addSyllabusTopic(subjectId, moduleSearch, title) {
   await dbConnect();
   const subject = await AttendaSubject.findOne({ _id: subjectId, deletedAt: null });
   if (!subject) throw new Error('Subject not found');
 
-  const mod = subject.syllabus.find((m) => m._id?.toString() === moduleId || m.id === moduleId);
-  if (!mod) throw new Error('Module not found');
+  const mod = findModule(subject, moduleSearch);
+  if (!mod) throw new Error(`Module "${moduleSearch}" not found`);
 
   if (mod.topics.some((t) => t.title.toLowerCase() === title.toLowerCase())) {
     throw new Error(`Topic "${title}" already exists in this module`);
@@ -544,28 +557,26 @@ export async function addSyllabusTopic(subjectId, moduleId, title) {
   return getSyllabus(subjectId);
 }
 
-export async function deleteSyllabusModule(subjectId, moduleId) {
+export async function deleteSyllabusModule(subjectId, moduleSearch) {
   await dbConnect();
   const subject = await AttendaSubject.findOne({ _id: subjectId, deletedAt: null });
   if (!subject) throw new Error('Subject not found');
 
-  const idx = subject.syllabus.findIndex(
-    (m) => m._id?.toString() === moduleId || m.id === moduleId
-  );
-  if (idx === -1) throw new Error('Module not found');
+  const mod = findModule(subject, moduleSearch);
+  if (!mod) throw new Error(`Module "${moduleSearch}" not found`);
 
-  subject.syllabus.splice(idx, 1);
+  subject.syllabus.pull({ _id: mod._id });
   await subject.save();
   return getSyllabus(subjectId);
 }
 
-export async function deleteSyllabusTopic(subjectId, moduleId, topicSearch) {
+export async function deleteSyllabusTopic(subjectId, moduleSearch, topicSearch) {
   await dbConnect();
   const subject = await AttendaSubject.findOne({ _id: subjectId, deletedAt: null });
   if (!subject) throw new Error('Subject not found');
 
-  const mod = subject.syllabus.find((m) => m._id?.toString() === moduleId || m.id === moduleId);
-  if (!mod) throw new Error('Module not found');
+  const mod = findModule(subject, moduleSearch);
+  if (!mod) throw new Error(`Module "${moduleSearch}" not found`);
 
   // Find topic by ID or title match
   const tIdx = mod.topics.findIndex(

@@ -169,11 +169,11 @@ export function formatSyllabus(syllabusData) {
   syllabus.forEach((mod, i) => {
     const modDone = mod.topics.filter((t) => t.status === 'completed').length;
     const modTotal = mod.topics.length;
-    lines.push(`  ${i + 1}. 📂 ${mod.title} [${modDone}/${modTotal}]`);
+    lines.push(`  ${i + 1}. 📂 ${mod.title} [${modDone}/${modTotal}] [id: ${mod.id}]`);
 
     mod.topics.forEach((topic, j) => {
       const icon = STATUS_ICONS[topic.status] || '○';
-      lines.push(`     ${j + 1}. ${icon} ${topic.title}`);
+      lines.push(`     ${j + 1}. ${icon} ${topic.title} [id: ${topic.id}]`);
     });
   });
 

@@ -563,16 +563,16 @@ export function registerAttendaMcp(server) {
       title: 'Manage Syllabus',
       description:
         'All-in-one tool to manage a subject syllabus — list, add/delete modules, add/delete ' +
-        'topics, and update topic statuses. Use `action` to pick the operation.\n' +
+        'topics, and update topic statuses. Use `action` to pick the operation. You do NOT need ' +
+        'to call action="list" between steps just to learn a module\'s ID — `moduleSearch` ' +
+        'accepts the module title directly (e.g. the exact string you passed to add_module).\n' +
         '\n' +
-        'action="list": get the syllabus and completion stats (requires `subjectId`). Call this ' +
-        'first to get module IDs and current progress.\n' +
+        'action="list": get the syllabus and completion stats (requires `subjectId`).\n' +
         'action="add_module": adds a new top-level module (requires `subjectId`, `title`).\n' +
-        'action="add_topic": adds a topic inside a module (requires `subjectId`, `moduleId`, `title`).\n' +
+        'action="add_topic": adds a topic inside a module (requires `subjectId`, `moduleSearch`, `title`).\n' +
         'action="update_topic": changes a topic completion status (requires `subjectId`, `topicSearch`, `status`).\n' +
-        '  `topicSearch` can be a topic ID or a case-insensitive title substring — searches across all modules.\n' +
-        'action="delete_module": removes a module and all its topics (requires `subjectId`, `moduleId`).\n' +
-        'action="delete_topic": removes a single topic from a module (requires `subjectId`, `moduleId`, `topicSearch`).',
+        'action="delete_module": removes a module and all its topics (requires `subjectId`, `moduleSearch`).\n' +
+        'action="delete_topic": removes a single topic from a module (requires `subjectId`, `moduleSearch`, `topicSearch`).',
       inputSchema: {
         action: z
           .enum([
@@ -585,9 +585,10 @@ export function registerAttendaMcp(server) {
           ])
           .describe('Which syllabus operation to perform.'),
         subjectId: z.string().min(1).describe('Subject ID.'),
-        moduleId: optionalString.describe(
-          'Module ID (required for add_topic, delete_topic, delete_module).' +
-            ' Get it from action="list" output.'
+        moduleSearch: optionalString.describe(
+          'Module ID OR a case-insensitive title substring (required for add_topic, ' +
+            'delete_topic, delete_module). You can pass the same title you used in add_module — ' +
+            'no need to fetch the ID first.'
         ),
         title: optionalString.describe(
           'Title for the module or topic being created (required for add_module and add_topic).'
@@ -610,7 +611,7 @@ export function registerAttendaMcp(server) {
       _meta: toolMeta(),
     },
     async (args) => {
-      const { action, subjectId, moduleId, title, topicSearch, status } = args;
+      const { action, subjectId, moduleSearch, title, topicSearch, status } = args;
 
       switch (action) {
         case 'list': {
@@ -629,8 +630,10 @@ export function registerAttendaMcp(server) {
         }
 
         case 'add_topic': {
-          if (!moduleId || !title) throw new Error('moduleId and title are required for add_topic');
-          const dataRes = await data.addSyllabusTopic(subjectId, moduleId, title);
+          if (!moduleSearch || !title) {
+            throw new Error('moduleSearch and title are required for add_topic');
+          }
+          const dataRes = await data.addSyllabusTopic(subjectId, moduleSearch, title);
           return result(
             dataRes,
             `Added topic "${title}" to "${dataRes.subjectName}". Total topics: ${dataRes.stats.total}.` +
@@ -651,8 +654,8 @@ export function registerAttendaMcp(server) {
         }
 
         case 'delete_module': {
-          if (!moduleId) throw new Error('moduleId is required for delete_module');
-          const dataRes = await data.deleteSyllabusModule(subjectId, moduleId);
+          if (!moduleSearch) throw new Error('moduleSearch is required for delete_module');
+          const dataRes = await data.deleteSyllabusModule(subjectId, moduleSearch);
           return result(
             dataRes,
             `Deleted module from "${dataRes.subjectName}". Remaining modules: ${dataRes.syllabus.length}.` +
@@ -661,10 +664,10 @@ export function registerAttendaMcp(server) {
         }
 
         case 'delete_topic': {
-          if (!moduleId || !topicSearch) {
-            throw new Error('moduleId and topicSearch are required for delete_topic');
+          if (!moduleSearch || !topicSearch) {
+            throw new Error('moduleSearch and topicSearch are required for delete_topic');
           }
-          const dataRes = await data.deleteSyllabusTopic(subjectId, moduleId, topicSearch);
+          const dataRes = await data.deleteSyllabusTopic(subjectId, moduleSearch, topicSearch);
           return result(
             dataRes,
             `Deleted topic from "${dataRes.subjectName}". New progress: ${dataRes.stats.percentage}%.` +
