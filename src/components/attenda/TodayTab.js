@@ -51,6 +51,7 @@ export default function TodayTab() {
     saveDayRecord,
     allDays,
     subjects,
+    holidays,
   } = useAttenda();
 
   const [collegeStatus, setCollegeStatus] = useState('present');
@@ -68,6 +69,43 @@ export default function TodayTab() {
   const dateKey = formatDateKey(today);
   const dayName = DAYS[today.getDay()];
   const dateStr = `${today.getDate()} ${MONTHS[today.getMonth()]}`;
+
+  // Holidays set for quick lookup
+  const holidaysSet = useMemo(() => {
+    return new Set((holidays || []).map((h) => h.date));
+  }, [holidays]);
+
+  // Compute missed days: past weekdays without attendance records
+  const missedDays = useMemo(() => {
+    if (!activeSemester?.startDate) return [];
+
+    const today = new Date();
+    const startDate = new Date(activeSemester.startDate + 'T00:00:00');
+    const weeklyHolidays = activeSemester.weeklyHolidays || [];
+
+    const result = [];
+    const current = new Date(startDate);
+
+    while (current < today) {
+      const dk = formatDateKey(current);
+      const dayOfWeek = current.getDay();
+
+      // Skip weekly holidays (e.g. Sunday)
+      if (!weeklyHolidays.includes(dayOfWeek)) {
+        // Skip declared holidays
+        if (!holidaysSet.has(dk)) {
+          // Skip days that already have a record
+          if (!allDays[dk]) {
+            result.push(dk);
+          }
+        }
+      }
+
+      current.setDate(current.getDate() + 1);
+    }
+
+    return result;
+  }, [activeSemester, allDays, holidaysSet]);
 
   // Was today already saved?
   useEffect(() => {
@@ -190,6 +228,20 @@ export default function TodayTab() {
     setIsSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }, [todaysLectures, extraLectures, lectureStatuses, collegeStatus, saveToday]);
+
+  const handleOpenMissedDay = useCallback((dateKey) => {
+    setMissedDayDate(dateKey);
+    setShowMissedDayModal(true);
+  }, []);
+
+  const handleSaveMissedDay = useCallback(
+    (dateKey, dayData) => {
+      saveDayRecord(dateKey, dayData);
+      setShowMissedDayModal(false);
+      setMissedDayDate(null);
+    },
+    [saveDayRecord]
+  );
 
   const isWeeklyHoliday = activeSemester?.weeklyHolidays?.includes(today.getDay());
 
