@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Send, ChevronDown } from 'lucide-react';
 import ModelSelector from './ModelSelector';
 import VoiceInputControl from './VoiceInputControl';
@@ -54,6 +54,15 @@ export default function ChatInput({
   ];
   const [isModeMenuOpen, setIsModeMenuOpen] = useState(false);
   const currentMode = modeOptions.find((option) => option.id === chatMode) || modeOptions[0];
+
+  // Auto-resize the textarea based on the content length
+  useEffect(() => {
+    const el = inputRef?.current;
+    if (el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+    }
+  }, [inputMessage, inputRef]);
 
   const outerBg =
     customOuterBg || (isDarkTheme ? 'bg-transparent' : isGreenTheme ? 'bg-[#fcfbf5]' : 'bg-white');
@@ -120,8 +129,6 @@ export default function ChatInput({
           value={inputMessage}
           onChange={(e) => {
             setInputMessage(e.target.value);
-            e.target.style.height = 'auto';
-            e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px';
           }}
           onPaste={(e) => {
             if (!onImagesSelected) return;
@@ -164,7 +171,6 @@ export default function ChatInput({
           rows={1}
           disabled={isLoading}
           className={`w-full resize-none bg-transparent px-3.5 pt-2.5 pb-1.5 sm:px-4 sm:pt-3 sm:pb-2 text-[13px] leading-relaxed outline-none ${placeholderColor} disabled:opacity-50 max-h-40 overflow-hidden ${textColor} [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}
-          style={{ height: '40px' }}
         />
 
         <div className="flex justify-between items-center gap-1.5 px-3.5 pb-2 sm:px-4 sm:pb-3 mt-auto">

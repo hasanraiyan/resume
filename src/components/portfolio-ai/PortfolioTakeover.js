@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useIsPresent } from 'framer-motion';
 import { X } from 'lucide-react';
 import { AGENT_IDS } from '@/lib/constants/agents';
 import { useChatStreaming } from '@/hooks/chatbot/useChatStreaming';
@@ -31,6 +31,7 @@ export default function PortfolioTakeover({ onClose, heroData, siteConfig }) {
   const [inputMessage, setInputMessage] = useState('');
   const [revealComplete, setRevealComplete] = useState(false);
   const inputRef = useRef(null);
+  const isPresent = useIsPresent();
 
   const { messages, isLoading, statusMessage, send } = useChatStreaming();
   const { isListening, toggleListening } = useVoiceRecognition(
@@ -38,6 +39,15 @@ export default function PortfolioTakeover({ onClose, heroData, siteConfig }) {
     setInputMessage,
     inputRef
   );
+
+  const isTransitioned = revealComplete && isPresent;
+
+  // Auto-focus input when the opening animation finishes or view switches
+  useEffect(() => {
+    if (revealComplete) {
+      inputRef.current?.focus();
+    }
+  }, [revealComplete, hasStartedChat]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -70,6 +80,7 @@ export default function PortfolioTakeover({ onClose, heroData, siteConfig }) {
   return (
     <motion.div
       className="fixed inset-0 z-[100] bg-black text-white overflow-hidden origin-[calc(100%-2.75rem)_calc(100%-2.75rem)] sm:origin-[calc(100%-3.5rem)_calc(100%-3.5rem)]"
+      style={{ transform: isTransitioned ? 'none' : undefined }}
       variants={revealVariants}
       initial="closed"
       animate="open"
