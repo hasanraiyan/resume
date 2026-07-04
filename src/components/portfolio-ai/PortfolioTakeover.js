@@ -35,11 +35,28 @@ export default function PortfolioTakeover({ onClose, heroData, siteConfig }) {
   const revealVariants = {
     closed: {
       clipPath: `circle(0% at calc(100% - ${fabOffset}) calc(100% - ${fabOffset}))`,
-      transition: { duration: 0.2, ease: [0.7, 0, 0.84, 0] },
+      transition: { duration: 1.5, ease: [0.16, 1, 0.3, 1] },
     },
     open: {
       clipPath: `circle(200% at calc(100% - ${fabOffset}) calc(100% - ${fabOffset}))`,
       transition: { duration: 1.5, ease: [0.16, 1, 0.3, 1] },
+    },
+    // Exit plays as two steps (see `exit={['closingStart', 'closing']}` below).
+    // Step 1 snaps the circle's center from the FAB to the top-left corner with
+    // zero-duration transition — invisible, since radius 200% fully covers the
+    // screen from either corner. Step 2 is the actual visible animation: shrink
+    // to nothing while drifting back toward the FAB, so it reads as closing
+    // top-left → bottom-right instead of collapsing back in place.
+    closingStart: {
+      clipPath: `circle(200% at calc(0% - 0rem) calc(0% - 0rem))`,
+      transition: { duration: 0 },
+    },
+    // Must keep the exact same "calc(N% - Nrem)" shape as `closingStart` (only
+    // the numbers differ) — Framer Motion's interpolator can't smoothly animate
+    // between clip-paths with a different text structure, it just snaps.
+    closing: {
+      clipPath: `circle(0% at calc(100% - ${fabOffset}) calc(100% - ${fabOffset}))`,
+      transition: { duration: 2, ease: [0.7, 0, 0.84, 0] },
     },
   };
 
@@ -92,7 +109,7 @@ export default function PortfolioTakeover({ onClose, heroData, siteConfig }) {
       variants={revealVariants}
       initial="closed"
       animate="open"
-      exit="closed"
+      exit={['closingStart', 'closing']}
       onAnimationComplete={(variant) => {
         // Defer the WebGL shader compile/sim init until after the reveal
         // finishes — doing it during the transition was what made it stutter.
