@@ -3,28 +3,7 @@
 
 import { createContext, useContext, useReducer, useEffect, useCallback, useMemo } from 'react';
 import * as api from '@/lib/attenda/api';
-import {
-  loadAll,
-  persist,
-  getSemesters,
-  getSemester,
-  createSemester as storageCreateSemester,
-  updateSemester as storageUpdateSemester,
-  deleteSemester as storageDeleteSemester,
-  getSubjects as storageGetSubjects,
-  createSubject as storageCreateSubject,
-  updateSubject as storageUpdateSubject,
-  deleteSubject as storageDeleteSubject,
-  getTimetable as storageGetTimetable,
-  setTimetableSlots as storageSetTimetableSlots,
-  getDay,
-  saveDay as storageSaveDay,
-  getHolidays as storageGetHolidays,
-  addHoliday as storageAddHoliday,
-  removeHoliday as storageRemoveHoliday,
-  exportBackup as storageExportBackup,
-  importBackup as storageImportBackup,
-} from '@/lib/attenda/storage';
+import { loadAll, persist, importBackup as storageImportBackup } from '@/lib/attenda/storage';
 import {
   computeCollegeAttendance,
   computeSubjectAttendance,
@@ -46,12 +25,6 @@ const ACTIONS = {
   SET_TIMETABLE: 'SET_TIMETABLE',
   SET_HOLIDAYS: 'SET_HOLIDAYS',
   SET_TODAY_STATUS: 'SET_TODAY_STATUS',
-  ADD_SEMESTER: 'ADD_SEMESTER',
-  UPDATE_SEMESTER: 'UPDATE_SEMESTER',
-  REMOVE_SEMESTER: 'REMOVE_SEMESTER',
-  ADD_SUBJECT: 'ADD_SUBJECT',
-  UPDATE_SUBJECT: 'UPDATE_SUBJECT',
-  REMOVE_SUBJECT: 'REMOVE_SUBJECT',
   SET_BOOTSTRAP_LOADING: 'SET_BOOTSTRAP_LOADING',
 };
 
@@ -127,24 +100,25 @@ export function AttendaProvider({ children }) {
       dispatch({ type: ACTIONS.SET_TIMETABLE, payload: data.timetables?.[0] || null });
       dispatch({ type: ACTIONS.SET_HOLIDAYS, payload: data.holidays || [] });
 
-      // Lightweight localStorage cache: just store semester names for offline onboarding
-      const store = loadAll();
-      if (data.semesters && data.semesters.length > 0) {
-        store.semesters = data.semesters;
-        persist();
+      // Automatically select active semester if not set or invalid
+      let finalActiveId = semesterId;
+      if (!finalActiveId && data.semesters && data.semesters.length > 0) {
+        finalActiveId = data.semesters[0].id;
+      }
+
+      if (finalActiveId) {
+        dispatch({ type: ACTIONS.SET_ACTIVE_SEMESTER, payload: finalActiveId });
+        try {
+          localStorage.setItem('attenda_active_semester', finalActiveId);
+        } catch {}
       }
 
       return data;
     } catch (error) {
       console.error('Failed to bootstrap Attenda:', error);
-      // On error, fall back to localStorage cache
-      const store = loadAll();
-      dispatch({ type: ACTIONS.SET_SEMESTERS, payload: store?.semesters || [] });
-      dispatch({ type: ACTIONS.SET_SUBJECTS, payload: [] });
-      dispatch({ type: ACTIONS.SET_DAYS, payload: {} });
       dispatch({
         type: ACTIONS.SET_ERROR,
-        payload: 'Failed to load from server. Using local data.',
+        payload: 'Failed to load from server.',
       });
     } finally {
       dispatch({ type: ACTIONS.SET_BOOTSTRAP_LOADING, payload: false });
@@ -287,36 +261,20 @@ export function AttendaProvider({ children }) {
       // First sync any local offline data to server to reconcile ID mismatches
       await syncLocalStorageToServer();
 
-      // Now load semesters from local storage (which might have been updated by sync)
-      const store = loadAll();
-      const localSemesters = store?.semesters || [];
       let activeId = null;
       try {
-        const stored = localStorage.getItem('attenda_active_semester');
-        if (stored && localSemesters.some((s) => s.id === stored)) {
-          activeId = stored;
-        }
+        activeId = localStorage.getItem('attenda_active_semester');
       } catch {}
-      if (!activeId && localSemesters.length > 0) {
-        activeId = localSemesters[localSemesters.length - 1].id;
-      }
-
-      if (localSemesters.length > 0) {
-        dispatch({ type: ACTIONS.SET_SEMESTERS, payload: localSemesters });
-        const subjs = storageGetSubjects(activeId);
-        dispatch({ type: ACTIONS.SET_SUBJECTS, payload: subjs });
-        dispatch({ type: ACTIONS.SET_ACTIVE_SEMESTER, payload: activeId });
-      }
 
       // Then bootstrap from server
       await bootstrap(activeId);
     };
     init();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [bootstrap, syncLocalStorageToServer]);
 
   // When activeSemesterId changes, refetch subjects and days
   useEffect(() => {
-    if (!state.activeSemesterId) return;
+    if (!state.activeSemesterId || state.activeSemesterId.startsWith('temp_')) return;
 
     // Immediately clear stale data for the previous semester
     dispatch({ type: ACTIONS.SET_SUBJECTS, payload: [] });
@@ -344,13 +302,10 @@ export function AttendaProvider({ children }) {
         dispatch({ type: ACTIONS.SET_HOLIDAYS, payload: holidays || [] });
       } catch (error) {
         console.error('Failed to refresh semester data:', error);
-        // Fall back to localStorage
-        const subjs = storageGetSubjects(state.activeSemesterId);
-        dispatch({ type: ACTIONS.SET_SUBJECTS, payload: subjs });
       }
     };
     refresh();
-  }, [state.activeSemesterId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state.activeSemesterId]);
 
   // --- Semester operations ---
   const setActiveSemester = useCallback((id) => {
@@ -362,109 +317,161 @@ export function AttendaProvider({ children }) {
 
   const addSemester = useCallback(
     async (data) => {
+      const tempId = `temp_${Date.now()}`;
+      const tempSemester = {
+        id: tempId,
+        name: data.name || 'Untitled Semester',
+        startDate: data.startDate || '',
+        endDate: data.endDate || '',
+        requiredAttendance: data.requiredAttendance ?? 75,
+        weeklyHolidays: data.weeklyHolidays || [0],
+        institutionName: data.institutionName || '',
+        notes: data.notes || '',
+      };
+
+      dispatch({ type: ACTIONS.SET_SEMESTERS, payload: [tempSemester, ...state.semesters] });
+      dispatch({ type: ACTIONS.SET_ACTIVE_SEMESTER, payload: tempId });
+
       try {
         const semester = await api.createSemester(data);
-        // Refresh bootstrap
-        await bootstrap(semester.id);
+        dispatch({
+          type: ACTIONS.SET_SEMESTERS,
+          payload: [semester, ...state.semesters.filter((s) => s.id !== tempId)],
+        });
         dispatch({ type: ACTIONS.SET_ACTIVE_SEMESTER, payload: semester.id });
         try {
           localStorage.setItem('attenda_active_semester', semester.id);
         } catch {}
+        await bootstrap(semester.id);
         return semester;
       } catch (error) {
         console.error('Failed to create semester:', error);
-        // Fallback: localStorage
-        const sem = storageCreateSemester(data);
-        const semesters = getSemesters();
-        dispatch({ type: ACTIONS.SET_SEMESTERS, payload: semesters });
-        dispatch({ type: ACTIONS.SET_ACTIVE_SEMESTER, payload: sem.id });
-        return sem;
+        dispatch({
+          type: ACTIONS.SET_SEMESTERS,
+          payload: state.semesters.filter((s) => s.id !== tempId),
+        });
+        const prevActive = state.semesters[0]?.id || null;
+        dispatch({ type: ACTIONS.SET_ACTIVE_SEMESTER, payload: prevActive });
+        throw error;
       }
     },
-    [bootstrap]
+    [state.semesters, bootstrap]
   );
 
   const editSemester = useCallback(
     async (id, updates) => {
+      const originalSemesters = [...state.semesters];
+      const updatedSemesters = state.semesters.map((s) => (s.id === id ? { ...s, ...updates } : s));
+      dispatch({ type: ACTIONS.SET_SEMESTERS, payload: updatedSemesters });
+
       try {
         await api.updateSemester(id, updates);
-        await bootstrap(state.activeSemesterId);
       } catch (error) {
         console.error('Failed to update semester:', error);
-        storageUpdateSemester(id, updates);
-        const semesters = getSemesters();
-        dispatch({ type: ACTIONS.SET_SEMESTERS, payload: semesters });
+        dispatch({ type: ACTIONS.SET_SEMESTERS, payload: originalSemesters });
+        throw error;
       }
     },
-    [state.activeSemesterId, bootstrap]
+    [state.semesters]
   );
 
   const removeSemester = useCallback(
     async (id) => {
+      const originalSemesters = [...state.semesters];
+      const originalActiveId = state.activeSemesterId;
+
+      const updatedSemesters = state.semesters.filter((s) => s.id !== id);
+      dispatch({ type: ACTIONS.SET_SEMESTERS, payload: updatedSemesters });
+
+      if (state.activeSemesterId === id) {
+        const newActive =
+          updatedSemesters.length > 0 ? updatedSemesters[updatedSemesters.length - 1].id : null;
+        dispatch({ type: ACTIONS.SET_ACTIVE_SEMESTER, payload: newActive });
+        try {
+          if (newActive) localStorage.setItem('attenda_active_semester', newActive);
+          else localStorage.removeItem('attenda_active_semester');
+        } catch {}
+      }
+
       try {
         await api.deleteSemester(id);
-        await bootstrap();
       } catch (error) {
         console.error('Failed to delete semester:', error);
-        storageDeleteSemester(id);
-        const semesters = getSemesters();
-        dispatch({ type: ACTIONS.SET_SEMESTERS, payload: semesters });
-        if (state.activeSemesterId === id) {
-          const newActive = semesters.length > 0 ? semesters[semesters.length - 1].id : null;
-          dispatch({ type: ACTIONS.SET_ACTIVE_SEMESTER, payload: newActive });
-        }
+        dispatch({ type: ACTIONS.SET_SEMESTERS, payload: originalSemesters });
+        dispatch({ type: ACTIONS.SET_ACTIVE_SEMESTER, payload: originalActiveId });
+        try {
+          if (originalActiveId) localStorage.setItem('attenda_active_semester', originalActiveId);
+        } catch {}
+        throw error;
       }
     },
-    [state.activeSemesterId, bootstrap]
+    [state.semesters, state.activeSemesterId]
   );
 
   // --- Subject operations ---
   const addSubject = useCallback(
     async (data) => {
+      const tempId = `temp_${Date.now()}`;
+      const tempSubject = {
+        id: tempId,
+        semesterId: state.activeSemesterId,
+        name: data.name || 'Untitled',
+        facultyName: data.facultyName || '',
+        color: data.color || '#4a86e8',
+        credits: data.credits ?? null,
+        requiredAttendance: data.requiredAttendance ?? 75,
+        isActive: data.isActive ?? true,
+      };
+
+      const originalSubjects = [...state.subjects];
+      dispatch({ type: ACTIONS.SET_SUBJECTS, payload: [...state.subjects, tempSubject] });
+
       try {
-        await api.createSubject(data);
-        const subjects = await api.fetchSubjects(state.activeSemesterId);
-        dispatch({ type: ACTIONS.SET_SUBJECTS, payload: subjects || [] });
+        const created = await api.createSubject(data);
+        dispatch({
+          type: ACTIONS.SET_SUBJECTS,
+          payload: [...originalSubjects, created],
+        });
       } catch (error) {
         console.error('Failed to create subject:', error);
-        storageCreateSubject(data);
-        const subjects = storageGetSubjects(state.activeSemesterId);
-        dispatch({ type: ACTIONS.SET_SUBJECTS, payload: subjects });
+        dispatch({ type: ACTIONS.SET_SUBJECTS, payload: originalSubjects });
+        throw error;
       }
     },
-    [state.activeSemesterId]
+    [state.subjects, state.activeSemesterId]
   );
 
   const editSubject = useCallback(
     async (id, updates) => {
+      const originalSubjects = [...state.subjects];
+      const updated = state.subjects.map((s) => (s.id === id ? { ...s, ...updates } : s));
+      dispatch({ type: ACTIONS.SET_SUBJECTS, payload: updated });
+
       try {
         await api.updateSubject(id, updates);
-        const subjects = await api.fetchSubjects(state.activeSemesterId);
-        dispatch({ type: ACTIONS.SET_SUBJECTS, payload: subjects || [] });
       } catch (error) {
         console.error('Failed to update subject:', error);
-        storageUpdateSubject(id, updates);
-        const subjects = storageGetSubjects(state.activeSemesterId);
-        dispatch({ type: ACTIONS.SET_SUBJECTS, payload: subjects });
+        dispatch({ type: ACTIONS.SET_SUBJECTS, payload: originalSubjects });
+        throw error;
       }
     },
-    [state.activeSemesterId]
+    [state.subjects]
   );
 
   const removeSubject = useCallback(
     async (id) => {
+      const originalSubjects = [...state.subjects];
+      dispatch({ type: ACTIONS.SET_SUBJECTS, payload: state.subjects.filter((s) => s.id !== id) });
+
       try {
         await api.deleteSubject(id);
-        const subjects = await api.fetchSubjects(state.activeSemesterId);
-        dispatch({ type: ACTIONS.SET_SUBJECTS, payload: subjects || [] });
       } catch (error) {
         console.error('Failed to delete subject:', error);
-        storageDeleteSubject(id);
-        const subjects = storageGetSubjects(state.activeSemesterId);
-        dispatch({ type: ACTIONS.SET_SUBJECTS, payload: subjects });
+        dispatch({ type: ACTIONS.SET_SUBJECTS, payload: originalSubjects });
+        throw error;
       }
     },
-    [state.activeSemesterId]
+    [state.subjects]
   );
 
   // --- Today operations ---
@@ -475,7 +482,7 @@ export function AttendaProvider({ children }) {
     const d = String(today.getDate()).padStart(2, '0');
     const dateKey = `${y}-${m}-${d}`;
 
-    const existing = state.allDays[dateKey] || getDay(dateKey);
+    const existing = state.allDays[dateKey];
     if (existing && String(existing.semesterId) !== String(state.activeSemesterId)) {
       return null;
     }
@@ -496,39 +503,38 @@ export function AttendaProvider({ children }) {
         date: dateKey,
       };
 
+      const originalTodayStatus = state.todayStatus;
+      const originalAllDays = { ...state.allDays };
+
       // Optimistic update
       dispatch({
         type: ACTIONS.SET_TODAY_STATUS,
         payload: { ...payload, date: dateKey },
       });
-
-      // Update local days map
-      const updatedDays = { ...state.allDays, [dateKey]: { ...payload } };
-      dispatch({ type: ACTIONS.SET_DAYS, payload: updatedDays });
+      dispatch({
+        type: ACTIONS.SET_DAYS,
+        payload: { ...state.allDays, [dateKey]: { ...payload, date: dateKey } },
+      });
 
       try {
         const saved = await api.saveDay(payload);
-        // Update with server response
-        const finalDays = { ...state.allDays, [dateKey]: saved };
-        dispatch({ type: ACTIONS.SET_DAYS, payload: finalDays });
         dispatch({ type: ACTIONS.SET_TODAY_STATUS, payload: saved });
-        // Also cache in localStorage
-        storageSaveDay(dateKey, saved);
+        dispatch({ type: ACTIONS.SET_DAYS, payload: { ...state.allDays, [dateKey]: saved } });
         return saved;
       } catch (error) {
         console.error('Failed to save attendance:', error);
-        // Fallback to localStorage
-        storageSaveDay(dateKey, payload);
-        return payload;
+        dispatch({ type: ACTIONS.SET_TODAY_STATUS, payload: originalTodayStatus });
+        dispatch({ type: ACTIONS.SET_DAYS, payload: originalAllDays });
+        throw error;
       }
     },
-    [state.activeSemesterId, state.allDays]
+    [state.activeSemesterId, state.allDays, state.todayStatus]
   );
 
   // --- Day operations ---
   const getSavedDay = useCallback(
     (dateKey) => {
-      const d = state.allDays[dateKey] || getDay(dateKey) || null;
+      const d = state.allDays[dateKey] || null;
       if (d && String(d.semesterId) !== String(state.activeSemesterId)) {
         return null;
       }
@@ -545,18 +551,22 @@ export function AttendaProvider({ children }) {
         date: dateKey,
       };
 
-      // Optimistic update
-      const updatedDays = { ...state.allDays, [dateKey]: payload };
-      dispatch({ type: ACTIONS.SET_DAYS, payload: updatedDays });
+      const originalAllDays = { ...state.allDays };
+      dispatch({
+        type: ACTIONS.SET_DAYS,
+        payload: { ...state.allDays, [dateKey]: payload },
+      });
 
       try {
         const saved = await api.saveDay(payload);
-        const finalDays = { ...state.allDays, [dateKey]: saved };
-        dispatch({ type: ACTIONS.SET_DAYS, payload: finalDays });
-        storageSaveDay(dateKey, saved);
+        dispatch({
+          type: ACTIONS.SET_DAYS,
+          payload: { ...state.allDays, [dateKey]: saved },
+        });
       } catch (error) {
         console.error('Failed to save day:', error);
-        storageSaveDay(dateKey, payload);
+        dispatch({ type: ACTIONS.SET_DAYS, payload: originalAllDays });
+        throw error;
       }
     },
     [state.activeSemesterId, state.allDays]
@@ -565,7 +575,6 @@ export function AttendaProvider({ children }) {
   // --- Timetable ---
   const getTimetableForSemester = useCallback(() => {
     if (state.timetable && String(state.timetable.semesterId) === String(state.activeSemesterId)) {
-      // Convert from server format (days array) to client format (slots map)
       const slots = {};
       (state.timetable.days || []).forEach((day) => {
         slots[day.dayOfWeek] = (day.slots || []).map((slot) => ({
@@ -580,41 +589,30 @@ export function AttendaProvider({ children }) {
         slots,
       };
     }
-    // Fallback to localStorage
-    if (state.activeSemesterId) {
-      return storageGetTimetable(state.activeSemesterId);
-    }
-    return { semesterId: null, slots: {} };
+    return { semesterId: state.activeSemesterId, slots: {} };
   }, [state.activeSemesterId, state.timetable]);
 
   const updateTimetableSlots = useCallback(
     async (dayOfWeek, slots) => {
-      // Optimistic local update
-      if (
-        state.timetable &&
-        String(state.timetable.semesterId) === String(state.activeSemesterId)
-      ) {
-        const updated = { ...state.timetable };
-        const dayIndex = (updated.days || []).findIndex((d) => d.dayOfWeek === dayOfWeek);
-        const newSlots = slots.map((s) => ({
-          subjectId: s.subjectId,
-          startTime: s.startTime,
-          endTime: s.endTime,
-        }));
-        if (dayIndex >= 0) {
-          updated.days[dayIndex].slots = newSlots;
-        } else {
-          updated.days = [...(updated.days || []), { dayOfWeek, slots: newSlots }];
-        }
-        dispatch({ type: ACTIONS.SET_TIMETABLE, payload: updated });
+      if (!state.timetable) return;
+
+      const originalTimetable = { ...state.timetable };
+      const updated = { ...state.timetable };
+      const dayIndex = (updated.days || []).findIndex((d) => d.dayOfWeek === dayOfWeek);
+      const newSlots = slots.map((s) => ({
+        subjectId: s.subjectId,
+        startTime: s.startTime,
+        endTime: s.endTime,
+      }));
+
+      if (dayIndex >= 0) {
+        updated.days[dayIndex].slots = newSlots;
+      } else {
+        updated.days = [...(updated.days || []), { dayOfWeek, slots: newSlots }];
       }
 
-      // Also update localStorage
-      if (state.activeSemesterId) {
-        storageSetTimetableSlots(state.activeSemesterId, dayOfWeek, slots);
-      }
+      dispatch({ type: ACTIONS.SET_TIMETABLE, payload: updated });
 
-      // Sync to server
       try {
         await api.updateTimetable({
           semesterId: state.activeSemesterId,
@@ -623,6 +621,8 @@ export function AttendaProvider({ children }) {
         });
       } catch (error) {
         console.error('Failed to update timetable:', error);
+        dispatch({ type: ACTIONS.SET_TIMETABLE, payload: originalTimetable });
+        throw error;
       }
     },
     [state.activeSemesterId, state.timetable]
@@ -635,21 +635,31 @@ export function AttendaProvider({ children }) {
 
   const addHolidayToSemester = useCallback(
     async (data) => {
+      const tempHoliday = {
+        id: `temp_${Date.now()}`,
+        semesterId: state.activeSemesterId,
+        date: data.date,
+        name: data.name || 'Holiday',
+        type: data.type || 'manual',
+      };
+
+      const originalHolidays = [...state.holidays];
+      dispatch({ type: ACTIONS.SET_HOLIDAYS, payload: [...state.holidays, tempHoliday] });
+
       try {
         const holiday = await api.createHoliday({
           ...data,
           semesterId: state.activeSemesterId,
         });
-        const updated = [...(state.holidays || []), holiday];
-        dispatch({ type: ACTIONS.SET_HOLIDAYS, payload: updated });
+        dispatch({
+          type: ACTIONS.SET_HOLIDAYS,
+          payload: [...originalHolidays, holiday],
+        });
         return holiday;
       } catch (error) {
         console.error('Failed to add holiday:', error);
-        // Fallback
-        const local = storageAddHoliday({ ...data, semesterId: state.activeSemesterId });
-        const updated = [...(state.holidays || []), local];
-        dispatch({ type: ACTIONS.SET_HOLIDAYS, payload: updated });
-        return local;
+        dispatch({ type: ACTIONS.SET_HOLIDAYS, payload: originalHolidays });
+        throw error;
       }
     },
     [state.activeSemesterId, state.holidays]
@@ -657,18 +667,19 @@ export function AttendaProvider({ children }) {
 
   const removeHolidayFromSemester = useCallback(
     async (id) => {
-      // Try server delete first (server IDs are MongoDB ObjectIds, local IDs have 'local_' prefix)
-      const isServerId = id && !id.startsWith('local_');
-      if (isServerId) {
-        try {
-          await api.deleteHoliday(id);
-        } catch (error) {
-          console.error('Failed to delete holiday from server:', error);
-        }
+      const originalHolidays = [...state.holidays];
+      dispatch({
+        type: ACTIONS.SET_HOLIDAYS,
+        payload: state.holidays.filter((h) => h.id !== id && h._id?.toString() !== id),
+      });
+
+      try {
+        await api.deleteHoliday(id);
+      } catch (error) {
+        console.error('Failed to delete holiday:', error);
+        dispatch({ type: ACTIONS.SET_HOLIDAYS, payload: originalHolidays });
+        throw error;
       }
-      storageRemoveHoliday(id);
-      const updated = (state.holidays || []).filter((h) => h.id !== id && h._id?.toString() !== id);
-      dispatch({ type: ACTIONS.SET_HOLIDAYS, payload: updated });
     },
     [state.holidays]
   );
@@ -678,7 +689,6 @@ export function AttendaProvider({ children }) {
     if (!state.activeSemesterId) return;
     try {
       await api.resetAttendance(state.activeSemesterId);
-      // Clear local days state
       dispatch({ type: ACTIONS.SET_DAYS, payload: {} });
       dispatch({ type: ACTIONS.SET_TODAY_STATUS, payload: null });
     } catch (error) {
@@ -690,10 +700,7 @@ export function AttendaProvider({ children }) {
   // --- Computed values ---
   const activeSemester = useMemo(() => {
     if (!state.activeSemesterId) return null;
-    // Try state first (server data), then localStorage
-    const fromState = state.semesters.find((s) => s.id === state.activeSemesterId);
-    if (fromState) return fromState;
-    return getSemester(state.activeSemesterId);
+    return state.semesters.find((s) => s.id === state.activeSemesterId) || null;
   }, [state.activeSemesterId, state.semesters]);
 
   const allDays = state.allDays || {};
@@ -776,9 +783,32 @@ export function AttendaProvider({ children }) {
       // Reset
       resetAttendance,
 
-      // Backup
-      exportBackup: storageExportBackup,
-      importBackup: storageImportBackup,
+      // Backup Export / Import
+      exportBackup: () => {
+        const data = {
+          semesters: state.semesters,
+          subjects: state.subjects,
+          days: state.allDays,
+          timetable: state.timetable,
+          holidays: state.holidays,
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `attenda-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      importBackup: async (jsonData) => {
+        try {
+          storageImportBackup(jsonData);
+          await syncLocalStorageToServer();
+          await bootstrap(state.activeSemesterId);
+        } catch (e) {
+          throw new Error('Invalid backup file: ' + e.message);
+        }
+      },
     }),
     [
       state,
@@ -806,6 +836,8 @@ export function AttendaProvider({ children }) {
       addHolidayToSemester,
       removeHolidayFromSemester,
       resetAttendance,
+      syncLocalStorageToServer,
+      bootstrap,
     ]
   );
 
