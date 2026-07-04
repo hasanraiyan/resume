@@ -36,7 +36,15 @@ const LECTURE_STATUS_DOTS = {
 };
 
 export default function CalendarTab() {
-  const { allDays, activeSemester, getSavedDay, saveDayRecord, subjects, holidays } = useAttenda();
+  const {
+    allDays,
+    activeSemester,
+    getSavedDay,
+    saveDayRecord,
+    subjects,
+    holidays,
+    getTimetableForSemester,
+  } = useAttenda();
 
   const today = new Date();
   const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
@@ -120,6 +128,7 @@ export default function CalendarTab() {
   // Generate calendar grid
   const calendarDays = useMemo(() => {
     const days = [];
+    const timetable = getTimetableForSemester();
 
     // Previous month overflow
     for (let i = firstDay - 1; i >= 0; i--) {
@@ -138,6 +147,7 @@ export default function CalendarTab() {
         declaredHoliday: declaredHolidaysMap[dateKey],
         dateKey,
         dayOfWeek: new Date(y, m, date).getDay(),
+        lectures: [],
       });
     }
 
@@ -146,6 +156,17 @@ export default function CalendarTab() {
       const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       const dateObj = new Date(year, month, d);
       const dayOfWeek = dateObj.getDay();
+      const slots = timetable?.slots?.[dayOfWeek] || [];
+      const cellLectures = slots.map((slot) => {
+        const sub = subjects.find((s) => s.id === slot.subjectId);
+        return {
+          subjectName: sub?.name || 'Unknown Subject',
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          color: sub?.color || '#4a86e8',
+        };
+      });
+
       days.push({
         day: d,
         month,
@@ -158,6 +179,7 @@ export default function CalendarTab() {
         declaredHoliday: declaredHolidaysMap[dateKey],
         dateKey,
         dayOfWeek,
+        lectures: cellLectures,
       });
     }
 
@@ -178,6 +200,7 @@ export default function CalendarTab() {
         declaredHoliday: declaredHolidaysMap[dateKey],
         dateKey,
         dayOfWeek: new Date(y, m, d).getDay(),
+        lectures: [],
       });
     }
 
@@ -191,6 +214,8 @@ export default function CalendarTab() {
     today,
     weeklyHolidays,
     declaredHolidaysMap,
+    subjects,
+    getTimetableForSemester,
   ]);
 
   // Compute month stats
@@ -303,10 +328,10 @@ export default function CalendarTab() {
               'bg-neutral-50/20 border-transparent text-neutral-300 opacity-25 pointer-events-none';
           } else if (isFuture) {
             cellClass = cell.declaredHoliday
-              ? 'bg-[#4a86e8]/5 border-[#4a86e8]/20 text-[#4a86e8]/60 pointer-events-none font-semibold'
+              ? 'bg-[#4a86e8]/5 border-[#4a86e8]/20 text-[#4a86e8]/60 cursor-default font-semibold'
               : isHoliday
-                ? 'bg-neutral-50/50 border-transparent text-[#7c8e88]/40 pointer-events-none'
-                : 'bg-[#fafafa] border-[#f0f0f0] text-neutral-400/80 pointer-events-none';
+                ? 'bg-neutral-50/50 border-transparent text-[#7c8e88]/40 cursor-default'
+                : 'bg-[#fafafa] border-[#f0f0f0] text-neutral-400/80 cursor-default';
           } else if (hasData) {
             if (dayRecord.collegeStatus === 'present') {
               cellClass =
@@ -339,8 +364,8 @@ export default function CalendarTab() {
                   openDay(cell.dateKey);
                 }
               }}
-              disabled={!isCurrentMonth || isFuture}
-              className={`relative flex flex-col items-center justify-between p-2 rounded-2xl aspect-square text-sm transition-all hover:scale-105 border cursor-pointer ${cellClass}`}
+              disabled={!isCurrentMonth}
+              className={`group relative flex flex-col items-center justify-between p-2 rounded-2xl aspect-square text-sm transition-all hover:scale-105 border ${cellClass}`}
             >
               <div className="w-full flex justify-between items-start">
                 <span className="text-xs font-bold leading-none">{cell.day}</span>
@@ -389,6 +414,44 @@ export default function CalendarTab() {
                   </span>
                 )}
               </div>
+
+              {/* Hover schedule tooltip for future days */}
+              {isFuture && isCurrentMonth && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-white border border-[#e5e3d8] rounded-xl shadow-xl p-3 text-left hidden group-hover:block z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#7c8e88] mb-1.5">
+                    {cell.declaredHoliday ? 'Holiday Schedule' : 'Scheduled Classes'}
+                  </p>
+                  {cell.declaredHoliday ? (
+                    <div className="text-xs font-bold text-[#4a86e8]">
+                      {cell.declaredHoliday.name}
+                    </div>
+                  ) : cell.lectures && cell.lectures.length > 0 ? (
+                    <div className="space-y-1.5">
+                      {cell.lectures.map((lec, lIdx) => (
+                        <div key={lIdx} className="flex items-center gap-2">
+                          <div
+                            className="w-1.5 h-1.5 rounded-full shrink-0"
+                            style={{ backgroundColor: lec.color }}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-[#1e3a34] truncate leading-none">
+                              {lec.subjectName}
+                            </p>
+                            <p className="text-[9px] text-[#7c8e88] leading-none mt-0.5">
+                              {lec.startTime} - {lec.endTime}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-[10px] text-[#7c8e88]">No classes scheduled</div>
+                  )}
+                  {/* Tooltip arrow */}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-white" />
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-[#e5e3d8] -z-10 mt-[1px]" />
+                </div>
+              )}
             </button>
           );
         })}
