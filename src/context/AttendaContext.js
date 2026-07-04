@@ -347,8 +347,11 @@ export function AttendaProvider({ children }) {
     const dateKey = `${y}-${m}-${d}`;
 
     const existing = state.allDays[dateKey] || getDay(dateKey);
+    if (existing && String(existing.semesterId) !== String(state.activeSemesterId)) {
+      return null;
+    }
     return existing || null;
-  }, [state.allDays]);
+  }, [state.activeSemesterId, state.allDays]);
 
   const saveToday = useCallback(
     async (dayData) => {
@@ -396,9 +399,13 @@ export function AttendaProvider({ children }) {
   // --- Day operations ---
   const getSavedDay = useCallback(
     (dateKey) => {
-      return state.allDays[dateKey] || getDay(dateKey) || null;
+      const d = state.allDays[dateKey] || getDay(dateKey) || null;
+      if (d && String(d.semesterId) !== String(state.activeSemesterId)) {
+        return null;
+      }
+      return d;
     },
-    [state.allDays]
+    [state.activeSemesterId, state.allDays]
   );
 
   const saveDayRecord = useCallback(
