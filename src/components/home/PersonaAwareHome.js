@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Marquee from '@/components/Marquee';
+import ClientMarquee from './ClientMarquee';
 import About from '@/components/About';
 import Skills from '@/components/Skills';
 import Achievements from '@/components/Achievements';
@@ -72,7 +72,7 @@ export default function PersonaAwareHome({
         onPersonaChange={handlePersonaChange}
       />
       <AudienceProofBar persona={persona} />
-      <Marquee />
+      <ClientMarquee services={services} />
 
       {activePersona === PERSONA_KEYS.business ? (
         <>
