@@ -19,6 +19,7 @@ import {
 } from '@fortawesome/free-brands-svg-icons';
 import { faCode, faDatabase, faServer, faShieldAlt } from '@fortawesome/free-solid-svg-icons';
 import { Database, Code, Server, Zap, Settings, Layers } from 'lucide-react';
+import { useRole } from '@/context/RoleContext';
 import { useLoadingStatus } from '@/context/LoadingContext';
 
 /** Icon mappings for dynamic rendering */
@@ -67,6 +68,7 @@ function renderIcon(iconType, iconName, size = 16) {
  */
 export default function Skills({ technologies = [], certifications = [], section = {} }) {
   const { registerComponent, markComponentAsLoaded } = useLoadingStatus();
+  const { isBusiness } = useRole();
 
   useEffect(() => {
     registerComponent('Skills');
@@ -77,6 +79,48 @@ export default function Skills({ technologies = [], certifications = [], section
   // The seeding script put the first 9 into 'skills' (0-8) and the rest into 'technologies' (9+).
   const coreSkills = technologies.filter((t) => t.displayOrder < 9);
   const techStack = technologies.filter((t) => t.displayOrder >= 9);
+
+  // Business owner: show solution categories instead of raw tech skills
+  const businessSolutions = isBusiness
+    ? [
+        {
+          category: 'Web Development',
+          description:
+            'Custom websites, SaaS platforms, and web applications built with modern frameworks for performance and SEO.',
+          icon: 'fas fa-globe',
+        },
+        {
+          category: 'Mobile Apps',
+          description:
+            'Cross-platform iOS & Android apps with React Native — fast development, native feel.',
+          icon: 'fas fa-mobile-alt',
+        },
+        {
+          category: 'AI & Automation',
+          description:
+            'LLM integration, chatbots, automated workflows, and intelligent data processing.',
+          icon: 'fas fa-robot',
+        },
+        {
+          category: 'Backend & APIs',
+          description:
+            'Scalable server architecture, RESTful APIs, database design, and cloud deployment.',
+          icon: 'fas fa-server',
+        },
+        {
+          category: 'MVP & Prototyping',
+          description:
+            'Rapid prototyping from concept to launch — validate your idea fast with a functional MVP.',
+          icon: 'fas fa-flask',
+        },
+        {
+          category: 'Maintenance & Support',
+          description:
+            'Ongoing maintenance, feature updates, performance optimization, and 24/7 support.',
+          icon: 'fas fa-tools',
+        },
+      ]
+    : [];
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -106,23 +150,49 @@ export default function Skills({ technologies = [], certifications = [], section
     return () => clearTimeout(timer);
   }, []);
 
-  if (!coreSkills.length && !techStack.length && !certifications.length) {
+  if (
+    !coreSkills.length &&
+    !techStack.length &&
+    !certifications.length &&
+    !businessSolutions.length
+  ) {
     return null;
   }
 
   return (
     <Section
       id="skills"
-      title={section.title || 'Technical Skills'}
+      title={section.title || (isBusiness ? 'Solutions I Deliver' : 'Technical Skills')}
       description={
-        section.description || 'The technology stack and tools I use to bring ideas to life'
+        section.description ||
+        (isBusiness
+          ? 'Practical solutions for your business needs'
+          : 'The technology stack and tools I use to bring ideas to life')
       }
       centered={true}
-      className="bg-neutral-50"
+      className={isBusiness ? 'bg-white' : 'bg-neutral-50'}
     >
       <div className="space-y-12">
-        {/* Skills and Technology Stack in one row on xl */}
-        {(coreSkills.length > 0 || techStack.length > 0) && (
+        {/* Business owner: show solutions grid instead of tech skills */}
+        {isBusiness && businessSolutions.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {businessSolutions.map((sol, idx) => (
+              <div
+                key={idx}
+                className="p-6 bg-white rounded-xl border border-gray-200 hover:border-emerald-300 hover:shadow-md transition-all duration-300"
+              >
+                <div className="text-2xl text-emerald-600 mb-3">
+                  <i className={sol.icon}></i>
+                </div>
+                <h3 className="text-lg font-bold mb-2">{sol.category}</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">{sol.description}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Developer: show tech skills */}
+        {!isBusiness && (coreSkills.length > 0 || techStack.length > 0) && (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-8">
             {/* Skills */}
             {coreSkills.length > 0 && (

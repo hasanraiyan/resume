@@ -13,6 +13,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Autoplay } from 'swiper/modules';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Section, Button } from '@/components/custom-ui';
+import { useRole } from '@/context/RoleContext';
 import { useLoadingStatus } from '@/context/LoadingContext';
 import Link from 'next/link';
 
@@ -30,6 +31,7 @@ import 'swiper/css/pagination';
 const FeaturedWorks = ({ featuredProjects = [], section = {} }) => {
   const swiperRef = useRef(null);
   const { registerComponent, markComponentAsLoaded } = useLoadingStatus();
+  const { isBusiness } = useRole();
 
   // Helper function to truncate text
   const truncateText = (text, maxLength = 80) => {
@@ -90,14 +92,21 @@ const FeaturedWorks = ({ featuredProjects = [], section = {} }) => {
     };
   }, []);
 
+  const sectionTitle = isBusiness
+    ? section.businessTitle || 'Case Studies & Success Stories'
+    : section.title || 'Featured Works';
+  const sectionDescription = isBusiness
+    ? section.businessDescription || 'Real projects that delivered real results for real clients'
+    : section.description || 'A curated selection of my best projects';
+
   const handlePrev = () => swiperRef.current?.slidePrev();
   const handleNext = () => swiperRef.current?.slideNext();
 
   return (
     <Section
       id="work"
-      title={section.title || 'Featured Works'}
-      description={section.description || 'A curated selection of my best projects'}
+      title={sectionTitle}
+      description={sectionDescription}
       className="p-0 m-0"
       centered={true}
     >

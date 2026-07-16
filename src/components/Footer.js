@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSiteContext } from '@/context/SiteContext'; // Import the context hook
+import { useRole } from '@/context/RoleContext';
 import NewsletterForm from './NewsletterForm';
 
 /**
@@ -23,6 +24,7 @@ import NewsletterForm from './NewsletterForm';
 export default function Footer({ siteConfig }) {
   const pathname = usePathname();
   const { heroData, initials } = useSiteContext(); // Use context to get dynamic data
+  const { role, toggleRole, isDeveloper, isBusiness } = useRole();
 
   // Check if we're on a blog page
   const isBlogPage = pathname?.startsWith('/blog');
@@ -78,6 +80,20 @@ export default function Footer({ siteConfig }) {
           <Link href={logo.link} className="text-xl sm:text-2xl font-bold hover-target">
             {logo.text}
           </Link>
+
+          {/* Role Switcher (footer) */}
+          {role && (
+            <button
+              onClick={toggleRole}
+              className="flex items-center gap-2 text-xs uppercase tracking-wider font-medium text-gray-500 hover:text-black transition-colors cursor-pointer"
+              aria-label={`Switch to ${isDeveloper ? 'business owner' : 'developer'} view`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${isDeveloper ? 'bg-blue-500' : 'bg-emerald-500'}`}
+              ></span>
+              Viewing as {isDeveloper ? 'Developer' : 'Business Owner'} — Switch
+            </button>
+          )}
 
           {/* Social Links & Admin */}
           <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-7">

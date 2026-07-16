@@ -16,6 +16,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Button, Badge } from '@/components/custom-ui';
 import { useSiteContext } from '@/context/SiteContext';
+import { useRole } from '@/context/RoleContext';
 /**
  * Default hero data structure used as fallback when API data is unavailable.
  * Provides complete default configuration for all hero section elements.
@@ -159,6 +160,7 @@ const defaultHeroData = {
 export default function Hero({ data }) {
   // Use data prop if provided, otherwise fallback to context or defaults
   const { heroData: siteHeroData } = useSiteContext();
+  const { isDeveloper, isBusiness } = useRole();
 
   // Initialise from props, then context, then defaults
   const [heroData, setHeroData] = useState(data || siteHeroData || defaultHeroData);
@@ -243,6 +245,43 @@ export default function Hero({ data }) {
     };
   }, []);
 
+  // Business owner hero content
+  const businessHero = {
+    badge: { text: isBusiness ? 'DIGITAL SOLUTIONS PARTNER' : heroData.badge.text },
+    heading: {
+      line1: 'Building',
+      line2: isBusiness ? 'Digital Solutions' : 'Digital',
+      line3: isBusiness ? 'That Drive Growth' : 'Excellence',
+    },
+    introduction: {
+      text: isBusiness
+        ? 'I help businesses and startups turn ideas into powerful digital products. From web platforms to mobile apps — I deliver reliable, scalable solutions that solve real problems and drive measurable results.'
+        : heroData.introduction.text,
+    },
+    cta: {
+      primary: { text: isBusiness ? 'See My Work' : heroData.cta.primary.text, link: '#work' },
+      secondary: {
+        text: isBusiness ? 'Discuss Your Project' : heroData.cta.secondary.text,
+        link: '#contact',
+      },
+    },
+  };
+
+  // Decide which content to use
+  const activeBadge = isBusiness ? businessHero.badge.text : heroData.badge.text;
+  const activeHeading = {
+    line1: isBusiness ? businessHero.heading.line1 : heroData.heading.line1,
+    line2: isBusiness ? businessHero.heading.line2 : heroData.heading.line2,
+    line3: isBusiness ? businessHero.heading.line3 : heroData.heading.line3,
+  };
+  const activeIntro = isBusiness ? businessHero.introduction.text : heroData.introduction.text;
+  const activeCtaPrimaryText = isBusiness
+    ? businessHero.cta.primary.text
+    : heroData.cta.primary.text;
+  const activeCtaSecondaryText = isBusiness
+    ? businessHero.cta.secondary.text
+    : heroData.cta.secondary.text;
+
   return (
     <section id="home" className="min-h-screen pt-10 md:p-0 flex items-center w-full">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-8 sm:py-16">
@@ -251,19 +290,21 @@ export default function Hero({ data }) {
           <div className="order-2 lg:order-1">
             {/* Badge */}
             <div className="mb-4 sm:mb-5">
-              <Badge variant="category">{heroData.badge.text}</Badge>
+              <Badge variant={isBusiness ? 'category' : 'category'}>{activeBadge}</Badge>
             </div>
 
             {/* Main Heading */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-5 leading-none">
-              {heroData.heading.line1}
-              <span className="block text-stroke">{heroData.heading.line2}</span>
-              {heroData.heading.line3}
+              {activeHeading.line1}
+              <span className={`block ${isBusiness ? '' : 'text-stroke'}`}>
+                {activeHeading.line2}
+              </span>
+              {activeHeading.line3}
             </h1>
 
             {/* Introduction */}
             <p className="text-base sm:text-lg text-gray-600 mb-8 sm:mb-10 max-w-lg text-justify leading-relaxed">
-              {heroData.introduction.text}
+              {activeIntro}
             </p>
 
             {/* CTA Buttons */}
@@ -273,14 +314,14 @@ export default function Hero({ data }) {
                 variant="primary"
                 className="px-6 sm:px-7 py-3 sm:py-3.5 text-center"
               >
-                {heroData.cta.primary.text}
+                {activeCtaPrimaryText}
               </Button>
               <Button
                 href={heroData.cta.secondary.link}
                 variant="secondary"
                 className="px-6 sm:px-7 py-3 sm:py-3.5 text-center"
               >
-                {heroData.cta.secondary.text}
+                {activeCtaSecondaryText}
               </Button>
             </div>
 

@@ -5,6 +5,7 @@ import { InlineWidget } from 'react-calendly';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Section, Input } from '@/components/custom-ui';
+import { useRole } from '@/context/RoleContext';
 import CustomDropdownMinimal from './CustomDropdown';
 import ActionButton from '@/components/admin/ActionButton';
 import { createContactSubmission } from '@/app/actions/contactActions';
@@ -103,14 +104,40 @@ const contactData = {
  * @param {Object} props.config - Contact section configuration from CMS
  */
 export default function Contact({ config }) {
+  const { isBusiness } = useRole();
+
+  // Business owner heading
+  const businessHeading = {
+    title: 'Ready to Build?',
+    subtitle: "Let's Talk",
+    description:
+      'Tell me about your business challenge and I will show you how technology can solve it. Free consultation, no obligation.',
+  };
+
+  // Business-friendly project type options
+  const businessProjectOptions = [
+    { value: 'web-app', label: 'Build a Web App' },
+    { value: 'mobile-app', label: 'Create a Mobile App' },
+    { value: 'ai-integration', label: 'AI & Automation' },
+    { value: 'mvp', label: 'MVP / Prototype' },
+    { value: 'ecommerce', label: 'E-commerce Platform' },
+    { value: 'consulting', label: 'Technical Consultation' },
+    { value: 'redesign', label: 'Website Redesign' },
+    { value: 'maintenance', label: 'Maintenance & Support' },
+    { value: 'other', label: 'Something Else' },
+  ];
+
   // Merge CMS config with default structure
   const activeConfig = {
     ...contactData,
     heading: {
       ...contactData.heading,
-      title: config?.title || contactData.heading.title,
-      subtitle: config?.subtitle || contactData.heading.subtitle,
-      description: config?.description || contactData.heading.description,
+      title: config?.title || (isBusiness ? businessHeading.title : contactData.heading.title),
+      subtitle:
+        config?.subtitle || (isBusiness ? businessHeading.subtitle : contactData.heading.subtitle),
+      description:
+        config?.description ||
+        (isBusiness ? businessHeading.description : contactData.heading.description),
     },
     calendlyUrl: config?.calendlyUrl || 'https://calendly.com/raiyanhasan2006/30min',
     messages: {
@@ -118,6 +145,15 @@ export default function Contact({ config }) {
       error: config?.errorMessage || contactData.messages.error,
     },
   };
+
+  // Use business-friendly options when in business mode
+  if (isBusiness) {
+    const projectField = activeConfig.form.fields.find((f) => f.name === 'projectType');
+    if (projectField) {
+      projectField.options = businessProjectOptions;
+      projectField.defaultValue = 'web-app';
+    }
+  }
 
   const initialFormData = activeConfig.form.fields.reduce((acc, field) => {
     acc[field.name] = field.defaultValue || '';

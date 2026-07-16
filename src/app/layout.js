@@ -12,6 +12,7 @@ import { getBaseUrl } from '@/lib/baseUrl';
 import { getInitials } from '@/utils/string';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { RoleProvider } from '@/context/RoleContext';
 
 // (Font definitions remain the same)
 
@@ -159,13 +160,15 @@ export default async function RootLayout({ children }) {
       <body className="bg-gray-50">
         <SessionProvider>
           <AnalyticsProvider>
-            <SiteProvider value={{ heroData: serializedHeroData, initials }}>
-              {children}
-              <ChatbotWidget />
-              <PWAManager />
-              <Analytics />
-              <SpeedInsights />
-            </SiteProvider>
+            <RoleProvider>
+              <SiteProvider value={{ heroData: serializedHeroData, initials }}>
+                {children}
+                <ChatbotWidget />
+                <PWAManager />
+                <Analytics />
+                <SpeedInsights />
+              </SiteProvider>
+            </RoleProvider>
           </AnalyticsProvider>
         </SessionProvider>
       </body>

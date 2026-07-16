@@ -12,6 +12,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Autoplay } from 'swiper/modules';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Section } from '@/components/custom-ui';
+import { useRole } from '@/context/RoleContext';
 import { useLoadingStatus } from '@/context/LoadingContext';
 import TestimonialCard from '@/components/testimonials/TestimonialCard';
 
@@ -86,6 +87,7 @@ const TestimonialsCarousel = ({ testimonials = [] }) => {
 
 const Testimonials = ({ testimonials = [], section = {} }) => {
   const { registerComponent, markComponentAsLoaded } = useLoadingStatus();
+  const { isBusiness } = useRole();
 
   useEffect(() => {
     registerComponent('Testimonials');
@@ -127,15 +129,31 @@ const Testimonials = ({ testimonials = [], section = {} }) => {
     return null;
   }
 
+  // Business owner: optional social proof banner above the carousel
+  const BusinessProofBanner = isBusiness ? (
+    <div className="max-w-2xl mx-auto mb-8 p-4 bg-white rounded-xl border border-emerald-100 text-center">
+      <p className="text-sm text-emerald-700 font-medium">
+        ⭐ Trusted by startups, educators, and business owners — {testimonials.length} client{'('}s
+        {')'} recommend working with me
+      </p>
+    </div>
+  ) : null;
+
   return (
     <Section
       id="testimonials-section"
-      title={section.title || 'Client Testimonials'}
-      description={section.description || 'What my clients say about working with me'}
+      title={section.title || (isBusiness ? 'What Clients Say' : 'Client Testimonials')}
+      description={
+        section.description ||
+        (isBusiness
+          ? 'Real feedback from real people I have worked with'
+          : 'What my clients say about working with me')
+      }
       centered={true}
-      className="py-16 sm:py-20 md:py-24 bg-neutral-50"
+      className={`py-16 sm:py-20 md:py-24 ${isBusiness ? 'bg-white' : 'bg-neutral-50'}`}
     >
       <div className="max-w-7xl mx-auto px-4">
+        {BusinessProofBanner}
         <TestimonialsCarousel testimonials={testimonials} />
       </div>
     </Section>

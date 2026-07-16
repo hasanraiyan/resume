@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/custom-ui';
 import { useSiteContext } from '@/context/SiteContext';
+import { useRole } from '@/context/RoleContext';
 
 /**
  * \"Floating Pill\" Navbar
@@ -15,6 +16,7 @@ export default function Navbar({ siteConfig }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
   const { initials, heroData } = useSiteContext();
+  const { role, toggleRole, isDeveloper, isBusiness } = useRole();
 
   // Use siteConfig for navigation, branding, and CTA, otherwise fallback
   const logo = {
@@ -135,6 +137,23 @@ export default function Navbar({ siteConfig }) {
               </Link>
             ))}
           </div>
+
+          <span className="w-px h-4 bg-black/10 mx-2"></span>
+
+          {/* Role Switcher */}
+          {role && (
+            <button
+              onClick={toggleRole}
+              className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-bold text-gray-500 hover:text-black transition-colors cursor-pointer"
+              aria-label={`Switch to ${isDeveloper ? 'business owner' : 'developer'} view`}
+              title={`Currently viewing as ${isDeveloper ? 'Developer' : 'Business Owner'}. Click to switch.`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${isDeveloper ? 'bg-blue-500' : 'bg-emerald-500'}`}
+              ></span>
+              {isDeveloper ? 'Dev' : 'Biz'}
+            </button>
+          )}
 
           <span className="w-px h-4 bg-black/10 mx-2"></span>
 

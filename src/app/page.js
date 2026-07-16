@@ -1,3 +1,4 @@
+import RoleGate from '@/components/RoleGate';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Marquee from '@/components/Marquee';
@@ -79,33 +80,36 @@ export default async function Home() {
   ]);
 
   return (
-    <HomepageLoaderManager>
-      <Navbar siteConfig={siteConfig} />
-      <Hero data={heroData} />
-      <Marquee />
-      <About aboutData={aboutData} />
-      <Skills
-        technologies={technologies}
-        certifications={certifications}
-        section={skillsSectionData || {}}
-      />
-      <Achievements
-        achievements={achievementsData?.achievements || []}
-        certifications={achievementsData?.certifications || []}
-        section={achievementsData?.section || {}}
-      />
-      <Services services={services} section={serviceSectionData || {}} />
-      <FeaturedWorks featuredProjects={featuredProjects} section={projectSection || {}} />
-      <div style={{ overflow: 'hidden', width: '100%' }}>
-        <Stats statsData={statsData} />
-      </div>
+    <>
+      <RoleGate />
+      <HomepageLoaderManager>
+        <Navbar siteConfig={siteConfig} />
+        <Hero data={heroData} />
+        <Marquee />
+        <About aboutData={aboutData} />
+        <Skills
+          technologies={technologies}
+          certifications={certifications}
+          section={skillsSectionData || {}}
+        />
+        <Achievements
+          achievements={achievementsData?.achievements || []}
+          certifications={achievementsData?.certifications || []}
+          section={achievementsData?.section || {}}
+        />
+        <Services services={services} section={serviceSectionData || {}} />
+        <FeaturedWorks featuredProjects={featuredProjects} section={projectSection || {}} />
+        <div style={{ overflow: 'hidden', width: '100%' }}>
+          <Stats statsData={statsData} />
+        </div>
 
-      <Testimonials
-        testimonials={testimonialsData?.testimonials || []}
-        section={testimonialsData?.section || {}}
-      />
-      <Contact config={contactConfig} />
-      <Footer siteConfig={siteConfig} />
-    </HomepageLoaderManager>
+        <Testimonials
+          testimonials={testimonialsData?.testimonials || []}
+          section={testimonialsData?.section || {}}
+        />
+        <Contact config={contactConfig} />
+        <Footer siteConfig={siteConfig} />
+      </HomepageLoaderManager>
+    </>
   );
 }

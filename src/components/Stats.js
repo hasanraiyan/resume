@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useRole } from '@/context/RoleContext';
 import { SkeletonLoader } from './Skeleton';
 
 /**
@@ -18,6 +19,7 @@ import { SkeletonLoader } from './Skeleton';
 export default function Stats({ statsData: initialData }) {
   const [statsData, setStatsData] = useState(initialData || null);
   const [loading, setLoading] = useState(!initialData);
+  const { isBusiness } = useRole();
 
   useEffect(() => {
     if (initialData) {
@@ -108,7 +110,9 @@ export default function Stats({ statsData: initialData }) {
   }
 
   return (
-    <section className="stats-section py-12 sm:py-16 md:py-20 bg-black text-white">
+    <section
+      className={`stats-section py-12 sm:py-16 md:py-20 ${isBusiness ? 'bg-emerald-900' : 'bg-black'} text-white`}
+    >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-12">
         {/* Simple flexbox layout that centers everything perfectly */}
         <div className="flex justify-center items-start gap-6 sm:gap-8">

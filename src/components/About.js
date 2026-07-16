@@ -11,6 +11,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Section, Card, Button } from '@/components/custom-ui';
 import { useLoadingStatus } from '@/context/LoadingContext';
+import { useRole } from '@/context/RoleContext';
 import { SkeletonLoader, SkeletonItem } from './Skeleton';
 
 /**
@@ -62,6 +63,7 @@ const About = ({ aboutData: initialData }) => {
   const [aboutData, setAboutData] = useState(initialData || null);
   const [loading, setLoading] = useState(!initialData);
   const { registerComponent, markComponentAsLoaded } = useLoadingStatus();
+  const { isBusiness, isDeveloper } = useRole();
 
   useEffect(() => {
     // Register this component as "loading" when it mounts
@@ -156,6 +158,36 @@ const About = ({ aboutData: initialData }) => {
     };
   }, [loading, aboutData]);
 
+  // Determine which features to show based on role
+  const features = isBusiness
+    ? aboutData.businessFeatures || [
+        {
+          id: 'biz-1',
+          icon: 'fas fa-rocket',
+          title: 'Reliable Delivery',
+          description: 'On-time, on-budget project delivery with clear communication throughout.',
+        },
+        {
+          id: 'biz-2',
+          icon: 'fas fa-chart-line',
+          title: 'Results-Driven',
+          description: 'Focused on solutions that move the needle for your business goals.',
+        },
+        {
+          id: 'biz-3',
+          icon: 'fas fa-handshake',
+          title: 'Long-Term Partner',
+          description: 'Building lasting relationships with ongoing support and maintenance.',
+        },
+        {
+          id: 'biz-4',
+          icon: 'fas fa-shield-alt',
+          title: 'Quality Assured',
+          description: 'Robust testing, clean architecture, and scalable code you can trust.',
+        },
+      ]
+    : aboutData.features || [];
+
   if (loading || !aboutData) {
     return (
       <Section id="about" title="About Me" className="py-16 sm:py-20 md:py-24">
@@ -213,8 +245,13 @@ const About = ({ aboutData: initialData }) => {
 
         {/* Right Column - Features Grid */}
         <div className="grid grid-cols-2 gap-4 sm:gap-6">
-          {aboutData.features?.map((feature) => (
-            <Card key={feature.id} variant="elevated" interactive={true} className="p-4 sm:p-6">
+          {features?.map((feature) => (
+            <Card
+              key={feature.id}
+              variant="elevated"
+              interactive={true}
+              className={`p-4 sm:p-6 ${isBusiness ? 'border-emerald-100 hover:border-emerald-300' : ''}`}
+            >
               <div className="text-2xl sm:text-3xl mb-2 sm:mb-3">
                 <i className={feature.icon}></i>
               </div>
