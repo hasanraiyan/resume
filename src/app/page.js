@@ -1,14 +1,5 @@
 import Navbar from '@/components/Navbar';
-import Hero from '@/components/Hero';
-import Marquee from '@/components/Marquee';
-import About from '@/components/About';
-import Skills from '@/components/Skills';
-import Achievements from '@/components/Achievements';
-import Services from '@/components/Services';
-import FeaturedWorks from '@/components/FeaturedWorks';
-import Stats from '@/components/Stats';
-import Testimonials from '@/components/Testimonials';
-import Contact from '@/components/Contact';
+import PersonaAwareHome from '@/components/home/PersonaAwareHome';
 import Footer from '@/components/Footer';
 import HomepageLoaderManager from '@/components/HomepageLoaderManager';
 import dbConnect from '@/lib/dbConnect';
@@ -26,7 +17,6 @@ import { getStatsData } from '@/app/actions/statsActions';
 import { getAchievementsData } from '@/app/actions/achievementActions';
 import { getTestimonialsData } from '@/app/actions/testimonialActions';
 import { getProjectSectionData } from '@/app/actions/projectSectionActions';
-import { getFeaturedProjects } from '@/app/actions/projectActions';
 import { getServiceSectionData } from '@/app/actions/serviceSectionActions';
 import { getSkillsSectionData } from '@/app/actions/skillsSectionActions';
 
@@ -45,8 +35,8 @@ export default async function Home() {
   // Serialize all ObjectIds recursively for client components
   const featuredProjects = serializeProjects(featuredProjectsData);
 
-  // Fetch latest articles
-  const { success: articlesSuccess, articles: latestArticles } = await getLatestArticles(3);
+  // Fetch latest articles for the developer homepage view
+  const { articles: latestArticles } = await getLatestArticles(3);
 
   // Fetch active services
   const services = await getActiveServices();
@@ -81,30 +71,22 @@ export default async function Home() {
   return (
     <HomepageLoaderManager>
       <Navbar siteConfig={siteConfig} />
-      <Hero data={heroData} />
-      <Marquee />
-      <About aboutData={aboutData} />
-      <Skills
+      <PersonaAwareHome
+        heroData={heroData}
+        aboutData={aboutData}
         technologies={technologies}
         certifications={certifications}
-        section={skillsSectionData || {}}
+        achievementsData={achievementsData}
+        services={services}
+        serviceSectionData={serviceSectionData}
+        featuredProjects={featuredProjects}
+        projectSection={projectSection}
+        statsData={statsData}
+        testimonialsData={testimonialsData}
+        contactConfig={contactConfig}
+        latestArticles={latestArticles}
+        skillsSectionData={skillsSectionData}
       />
-      <Achievements
-        achievements={achievementsData?.achievements || []}
-        certifications={achievementsData?.certifications || []}
-        section={achievementsData?.section || {}}
-      />
-      <Services services={services} section={serviceSectionData || {}} />
-      <FeaturedWorks featuredProjects={featuredProjects} section={projectSection || {}} />
-      <div style={{ overflow: 'hidden', width: '100%' }}>
-        <Stats statsData={statsData} />
-      </div>
-
-      <Testimonials
-        testimonials={testimonialsData?.testimonials || []}
-        section={testimonialsData?.section || {}}
-      />
-      <Contact config={contactConfig} />
       <Footer siteConfig={siteConfig} />
     </HomepageLoaderManager>
   );
