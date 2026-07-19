@@ -60,4 +60,12 @@ export const MINI_APPS = [
     category: 'Productivity',
     iconSrc: '/images/apps/attenda.png',
   },
+  {
+    id: 'vizulizer',
+    name: 'VizuLizer Pro',
+    tagline: 'Local-first professional audio-to-video waveform generator for creators.',
+    href: '/apps/vizulizer',
+    category: 'Video',
+    iconSrc: '/images/apps/vizulizer.png',
+  },
 ];
