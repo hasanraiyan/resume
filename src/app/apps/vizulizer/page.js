@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import SessionProvider from '@/components/SessionProvider';
-import AdminGuard from '@/components/AdminGuard';
 import AppLayout from '@/components/layout/AppLayout';
 import {
   Upload,
@@ -1591,9 +1590,7 @@ function VizulizerContent() {
 export default function VizulizerPage() {
   return (
     <SessionProvider>
-      <AdminGuard appName="VizuLizer Pro">
-        <VizulizerContent />
-      </AdminGuard>
+      <VizulizerContent />
     </SessionProvider>
   );
 }
