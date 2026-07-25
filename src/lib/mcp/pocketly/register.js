@@ -9,6 +9,24 @@ function readAnnotations() {
   return { readOnlyHint: true, idempotentHint: true, openWorldHint: false };
 }
 
+function writeAnnotations() {
+  return {
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: false,
+  };
+}
+
+function deleteAnnotations() {
+  return {
+    readOnlyHint: false,
+    destructiveHint: true,
+    idempotentHint: false,
+    openWorldHint: false,
+  };
+}
+
 function toolMeta() {
   return { ui: { visibility: ['model', 'app'] } };
 }
@@ -627,6 +645,236 @@ export function registerPocketlyMcp(server) {
         },
         text
       );
+    }
+  );
+
+  // ==================== MANAGE TRANSACTIONS ====================
+
+  registerAppTool(
+    server,
+    'manage_transactions',
+    {
+      title: 'Manage Transactions',
+      description:
+        'All-in-one tool to create, update, or delete transactions. Use `action` to pick ' +
+        'the operation.\n' +
+        '\n' +
+        'action="create": creates a new transaction. Requires type, amount, accountId, ' +
+        'and categoryId (for income/expense) or toAccountId (for transfers). ' +
+        'Use get_accounts and get_categories to resolve IDs first.\n' +
+        '\n' +
+        'action="update": updates an existing transaction. Requires transactionId. ' +
+        'Pass only the fields you want to change. Use confirmed=true to execute; ' +
+        'start with confirmed=false to review changes.\n' +
+        '\n' +
+        'action="delete": soft-deletes a transaction. Requires transactionId and confirmed=true. ' +
+        'Start with confirmed=false to confirm with the user ex&#39;plicitly before deleting. ' +
+        'This cannot be undone.',
+      inputSchema: {
+        action: z
+          .enum(['create', 'update', 'delete'])
+          .describe(
+            'Which operation to perform. "create" for new transactions, "update" to change ' +
+              'an existing one, "delete" to remove one.'
+          ),
+
+        // Create fields
+        type: z
+          .enum(['income', 'expense', 'transfer'])
+          .optional()
+          .describe('Transaction type. Required for create.'),
+        amount: z
+          .number()
+          .positive()
+          .optional()
+          .describe('Transaction amount in INR. Must be a positive number. Required for create.'),
+        description: z
+          .string()
+          .optional()
+          .describe('Short description or payee name for the transaction.'),
+        accountId: z
+          .string()
+          .optional()
+          .describe(
+            'Source account MongoDB ID. Must be resolved from get_accounts first. Required for create.'
+          ),
+        categoryId: z
+          .string()
+          .nullable()
+          .optional()
+          .describe(
+            'Category MongoDB ID. Required for income/expense (non-transfer). ' +
+              'Must be resolved from get_categories first. Set to null for transfers.'
+          ),
+        toAccountId: z
+          .string()
+          .nullable()
+          .optional()
+          .describe(
+            'Destination account MongoDB ID. Required only for transfers. ' +
+              'Must be resolved from get_accounts first. Set to null for income/expense.'
+          ),
+        date: z
+          .string()
+          .optional()
+          .describe(
+            'Transaction date in YYYY-MM-DD format. Defaults to today if not provided on create.'
+          ),
+        note: z
+          .string()
+          .optional()
+          .describe('Optional private note for the transaction.'),
+
+        // Update / Delete fields
+        transactionId: z
+          .string()
+          .optional()
+          .describe(
+            'MongoDB ID of the transaction to update or delete. Required for update and delete actions.'
+          ),
+        confirmed: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe(
+            'Must be set to true to execute update or delete operations. ' +
+              'Start with false (or omit) to get a preview of what will change. ' +
+              'Always confirm with the user ex&#39;plicitly before setting to true.'
+          ),
+      },
+      outputSchema: {
+        success: z.boolean().optional(),
+        transaction: z.any().optional(),
+        requiresConfirmation: z.boolean().optional(),
+        preview: z.any().optional(),
+        error: z.string().optional(),
+      },
+      annotations: deleteAnnotations(),
+      _meta: toolMeta(),
+    },
+    async (args) => {
+      const {
+        action,
+        type,
+        amount,
+        description,
+        accountId,
+        categoryId,
+        toAccountId,
+        date,
+        note,
+        transactionId,
+        confirmed,
+      } = args;
+
+      if (action === 'create') {
+        // Validate required fields
+        if (!type) throw new Error('type is required for create');
+        if (!amount) throw new Error('amount is required for create');
+        if (!accountId) throw new Error('accountId is required for create');
+
+        if (type === 'transfer') {
+          if (!toAccountId) throw new Error('toAccountId is required for transfers');
+        } else {
+          if (!categoryId) throw new Error('categoryId is required for income/expense');
+        }
+
+        const payload = {
+          type,
+          amount,
+          description: description || '',
+          account: accountId,
+          category: type === 'transfer' ? null : categoryId,
+          toAccount: type === 'transfer' ? toAccountId : null,
+          date: date || new Date().toISOString().split('T')[0],
+          note: note || '',
+        };
+
+        const transaction = await service.createTransaction(payload);
+
+        return result(
+          { success: true, transaction },
+          `✅ Created ${transaction.type}: ${formatCurrency(transaction.amount)} ` +
+            `— ${transaction.description || '(no description)'} ` +
+            `(id: \`${transaction.id}\`)`
+        );
+      }
+
+      if (action === 'update') {
+        if (!transactionId) throw new Error('transactionId is required for update');
+
+        // Build patch from provided fields
+        const patch = {};
+        if (description !== undefined) patch.description = description;
+        if (amount !== undefined) patch.amount = amount;
+        if (date !== undefined) patch.date = new Date(date);
+        if (categoryId !== undefined) patch.category = categoryId;
+        if (accountId !== undefined) patch.account = accountId;
+        if (note !== undefined) patch.note = note;
+
+        if (Object.keys(patch).length === 0) {
+          throw new Error('No fields to update provided');
+        }
+
+        if (!confirmed) {
+          return result(
+            {
+              requiresConfirmation: true,
+              preview: {
+                action: 'update_transaction',
+                transactionId,
+                changes: patch,
+              },
+            },
+            `**Update Preview** — transaction \`${transactionId}\`\n\n` +
+              `Proposed changes:\n` +
+              Object.entries(patch)
+                .map(
+                  ([key, val]) =>
+                    `  • **${key}**: ${val instanceof Date ? val.toISOString().split('T')[0] : typeof val === 'number' ? formatCurrency(val) : val}`
+                )
+                .join('\n') +
+              `\n\n_Call again with confirmed=true to apply these changes._`
+          );
+        }
+
+        const updated = await service.updateTransaction(transactionId, patch);
+
+        return result(
+          { success: true, transaction: updated },
+          `✅ Updated transaction \`${transactionId}\`: ` +
+            `${updated.description || '(no description)'} — ${formatCurrency(updated.amount)}`
+        );
+      }
+
+      if (action === 'delete') {
+        if (!transactionId) throw new Error('transactionId is required for delete');
+
+        if (!confirmed) {
+          return result(
+            {
+              requiresConfirmation: true,
+              preview: {
+                action: 'delete_transaction',
+                transactionId,
+              },
+            },
+            `⚠️ **Confirm deletion** of transaction \`${transactionId}\`\n\n` +
+              `This action cannot be undone. Call again with confirmed=true to proceed.`
+          );
+        }
+
+        const success = await service.deleteTransaction(transactionId);
+
+        return result(
+          { success },
+          success
+            ? `✅ Deleted transaction \`${transactionId}\``
+            : `❌ Transaction \`${transactionId}\` not found or already deleted`
+        );
+      }
+
+      throw new Error(`Unknown action: ${action}`);
     }
   );
 }
