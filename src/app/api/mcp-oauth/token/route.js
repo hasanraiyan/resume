@@ -13,13 +13,18 @@ import { resolveResourceKeyFromUrl, getMcpResourceConfig } from '@/lib/mcp/oauth
 const ACCESS_TOKEN_TTL_SECONDS = 60 * 60; // 1h
 
 async function readParams(request) {
-  const contentType = request.headers.get('content-type') || '';
-  if (contentType.includes('application/json')) {
-    const body = await request.json().catch(() => ({}));
-    return new URLSearchParams(body);
+  const text = await request.text();
+  // Try JSON first
+  if (text.startsWith('{') || text.startsWith('[')) {
+    try {
+      const body = JSON.parse(text);
+      return new URLSearchParams(body);
+    } catch {
+      // fall through to URL-encoded parse
+    }
   }
-  const formData = await request.formData();
-  return new URLSearchParams(formData);
+  // Default: URL-encoded form data (standard OAuth)
+  return new URLSearchParams(text);
 }
 
 function errorResponse(error, description, status = 400) {
