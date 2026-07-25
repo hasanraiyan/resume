@@ -1,6 +1,7 @@
 import { registerAppTool } from '@modelcontextprotocol/ext-apps/server';
 import { z } from 'zod';
 import * as service from '@/lib/apps/pocketly/service/service';
+import { computeAnalysis } from '@/lib/finance-analysis';
 
 // --- Helpers ---
 
@@ -387,6 +388,242 @@ export function registerPocketlyMcp(server) {
           totalIncome,
           totalExpense,
           filters,
+        },
+        text
+      );
+    }
+  );
+
+  // ==================== ANALYSIS ====================
+
+  registerAppTool(
+    server,
+    'get_analysis',
+    {
+      title: 'Get Analysis',
+      description:
+        'Comprehensive financial analysis for a given period. Returns total income, total ' +
+        'expense, net balance, a breakdown of spending/income by category (with counts), ' +
+        'daily cash flow data for trend visualization, and per-account activity summaries. ' +
+        'Use this when the user asks for a deep-dive into their finances, spending patterns, ' +
+        'or wants to understand where their money is going.',
+      inputSchema: {
+        startDate: z
+          .string()
+          .optional()
+          .describe(
+            'Start date in YYYY-MM-DD format. Filters the analysis to transactions from this ' +
+              'date onwards. Omit for an all-time analysis.'
+          ),
+        endDate: z
+          .string()
+          .optional()
+          .describe(
+            'End date in YYYY-MM-DD format. Filters the analysis to transactions up to this ' +
+              'date. Omit for an all-time analysis.'
+          ),
+      },
+      outputSchema: {
+        totalIncome: z.number(),
+        totalExpense: z.number(),
+        netBalance: z.number(),
+        categoryBreakdown: z.array(z.any()),
+        dailyFlow: z.array(z.any()),
+        accountAnalysis: z.array(z.any()),
+      },
+      annotations: readAnnotations(),
+      _meta: toolMeta(),
+    },
+    async (args) => {
+      const { startDate, endDate } = args;
+
+      const [transactions, categories, accounts] = await Promise.all([
+        service.getTransactions(),
+        service.getCategories(),
+        service.getAccounts({ includeBalances: true }),
+      ]);
+
+      const analysis = computeAnalysis({ transactions, categories, accounts, startDate, endDate });
+
+      // Build text output
+      const periodLabel =
+        startDate && endDate
+          ? `from ${startDate} to ${endDate}`
+          : 'all time';
+
+      let text = `📈 **Financial Analysis (${periodLabel})**\n\n`;
+      text += `**Summary**\n`;
+      text += `  • Income: ${formatCurrency(analysis.totalIncome)}\n`;
+      text += `  • Expense: ${formatCurrency(analysis.totalExpense)}\n`;
+      text += `  • Net: ${formatCurrency(analysis.netBalance)}\n\n`;
+
+      // Top categories
+      const topExpense = analysis.categoryBreakdown
+        .filter((c) => c.type === 'expense')
+        .slice(0, 8);
+      const topIncome = analysis.categoryBreakdown
+        .filter((c) => c.type === 'income')
+        .slice(0, 5);
+
+      if (topExpense.length > 0) {
+        text += `**Top Expense Categories**\n`;
+        topExpense.forEach(
+          (c) =>
+            (text += `  • ${c.name}: ${formatCurrency(c.total)} (${c.count} txns)\n`)
+        );
+        text += '\n';
+      }
+
+      if (topIncome.length > 0) {
+        text += `**Top Income Categories**\n`;
+        topIncome.forEach(
+          (c) =>
+            (text += `  • ${c.name}: ${formatCurrency(c.total)} (${c.count} txns)\n`)
+        );
+        text += '\n';
+      }
+
+      // Daily flow summary
+      const flowEntries = analysis.dailyFlow || [];
+      const totalExpenseDays = flowEntries.filter((d) => d.type === 'expense').length;
+      const totalIncomeDays = flowEntries.filter((d) => d.type === 'income').length;
+
+      if (flowEntries.length > 0) {
+        text += `**Daily Flow** — ${totalExpenseDays} expense day(s), ${totalIncomeDays} income day(s)\n`;
+        // Show last 7 days as a mini summary
+        const recent = flowEntries.slice(-7);
+        recent.forEach(
+          (d) =>
+            (text += `  • ${d.date}: ${d.type === 'expense' ? '-' : '+'}${formatCurrency(d.total)}\n`)
+        );
+        text += '\n';
+      }
+
+      // Account activity
+      const accountSummary = analysis.accountAnalysis || [];
+      if (accountSummary.length > 0) {
+        text += `**Account Activity**\n`;
+        const byAccount = new Map();
+        accountSummary.forEach((a) => {
+          const existing = byAccount.get(a.accountId) || { name: a.name, expense: 0, income: 0 };
+          if (a.type === 'expense') existing.expense += a.total;
+          if (a.type === 'income') existing.income += a.total;
+          byAccount.set(a.accountId, existing);
+        });
+        byAccount.forEach((acc) => {
+          text += `  • ${acc.name}: expense ${formatCurrency(acc.expense)}, income ${formatCurrency(acc.income)}\n`;
+        });
+      }
+
+      return result(
+        {
+          totalIncome: analysis.totalIncome,
+          totalExpense: analysis.totalExpense,
+          netBalance: analysis.netBalance,
+          categoryBreakdown: analysis.categoryBreakdown,
+          dailyFlow: analysis.dailyFlow,
+          accountAnalysis: analysis.accountAnalysis,
+        },
+        text
+      );
+    }
+  );
+
+  // ==================== BUDGETS ====================
+
+  registerAppTool(
+    server,
+    'get_budgets',
+    {
+      title: 'Get Budgets',
+      description:
+        'Lists all budget limits with their category, amount, and period type (weekly, monthly, ' +
+        'yearly). This tool reports the budget TARGET amounts, not the actual spent amounts. ' +
+        'To check actual spending against a budget, call get_transactions with the category ID ' +
+        'and the date range from the budget\'s periodStart field. Use this tool when the user ' +
+        'asks about their budget setup or spending limits.',
+      inputSchema: {
+        period: z
+          .enum(['monthly', 'weekly', 'yearly'])
+          .optional()
+          .describe(
+            'Filter budgets by their period type. Omit to return all budgets regardless of period.'
+          ),
+      },
+      outputSchema: {
+        budgets: z.array(z.any()),
+        totalBudgeted: z.number(),
+      },
+      annotations: readAnnotations(),
+      _meta: toolMeta(),
+    },
+    async (args) => {
+      const { period } = args;
+
+      const budgets = await service.getBudgets();
+
+      const now = new Date();
+      const enrichedBudgets = budgets
+        .filter((b) => !period || b.period === period)
+        .map((budget) => {
+          const periodStart = new Date(now);
+          if (budget.period === 'monthly') {
+            periodStart.setDate(1);
+            periodStart.setHours(0, 0, 0, 0);
+          } else if (budget.period === 'weekly') {
+            const day = periodStart.getDay();
+            const diff = periodStart.getDate() - day + (day === 0 ? -6 : 1);
+            periodStart.setDate(diff);
+            periodStart.setHours(0, 0, 0, 0);
+          } else {
+            periodStart.setMonth(0, 1);
+            periodStart.setHours(0, 0, 0, 0);
+          }
+
+          return {
+            ...budget,
+            categoryName: budget.category?.name || 'Unknown Category',
+            categoryIcon: budget.category?.icon || 'tag',
+            categoryColor: budget.category?.color || '#1f644e',
+            periodStart: periodStart.toISOString().split('T')[0],
+            periodEnd: budget.period === 'monthly'
+              ? new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]
+              : budget.period === 'weekly'
+                ? new Date(periodStart.getTime() + 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+                : `${now.getFullYear()}-12-31`,
+          };
+        });
+
+      enrichedBudgets.sort((a, b) => a.categoryName.localeCompare(b.categoryName));
+
+      const totalBudgeted = enrichedBudgets.reduce((sum, b) => sum + (b.amount || 0), 0);
+
+      const budgetLines = enrichedBudgets
+        .map((b) => {
+          const periodLabel =
+            b.period === 'monthly'
+              ? `monthly (${b.periodStart} to ${b.periodEnd})`
+              : b.period === 'weekly'
+                ? `weekly (${b.periodStart} to ${b.periodEnd})`
+                : `yearly (${b.periodStart} to ${b.periodEnd})`;
+          return (
+            `  • **${b.categoryName}**: ${formatCurrency(b.amount)} ${periodLabel}` +
+            ` | category: \`${b.category?._id || b.category?.id || b.category}\`` +
+            ` | id: \`${b.id}\``
+          );
+        })
+        .join('\n');
+
+      let text = `**Budgets (${enrichedBudgets.length})**\n\n`;
+      text += `${budgetLines || '  _(no budgets set)_'}\n\n`;
+      text += `**Total Budgeted:** ${formatCurrency(totalBudgeted)}\n\n`;
+      text += `_To check actual spending against a budget, call get_transactions with the budget's `;
+      text += `category ID and its startDate/endDate range._`;
+
+      return result(
+        {
+          budgets: enrichedBudgets,
+          totalBudgeted,
         },
         text
       );
