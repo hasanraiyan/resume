@@ -877,4 +877,385 @@ export function registerPocketlyMcp(server) {
       throw new Error(`Unknown action: ${action}`);
     }
   );
+
+  // ==================== MANAGE ACCOUNTS ====================
+
+  registerAppTool(
+    server,
+    'manage_accounts',
+    {
+      title: 'Manage Accounts',
+      description:
+        'All-in-one tool to create, update, or delete accounts. Use `action` to pick the ' +
+        'operation.\n' +
+        'action="create": creates a new account. Requires name. Optional: icon, initialBalance.\n' +
+        'action="update": updates an existing account. Requires accountId. Pass only the ' +
+        'fields you want to change.\n' +
+        'action="delete": soft-deletes an account. Requires accountId and confirmed=true. ' +
+        'Cannot be undone.',
+      inputSchema: {
+        action: z
+          .enum(['create', 'update', 'delete'])
+          .describe('Which operation to perform.'),
+        accountId: z
+          .string()
+          .optional()
+          .describe(
+            'Account MongoDB ID. Required for update and delete actions. ' +
+              'Use get_accounts to resolve the ID first.'
+          ),
+        name: z.string().optional().describe('Account name. Required for create.'),
+        icon: z
+          .string()
+          .optional()
+          .describe(
+            'Icon identifier for the account (e.g. "wallet", "bank", "credit-card", "piggy-bank"). Default "wallet".'
+          ),
+        initialBalance: z
+          .number()
+          .optional()
+          .describe(
+            'Starting balance of the account in INR. Default 0. Cannot be changed after transactions exist (creates balance discrepancies).'
+          ),
+        confirmed: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe(
+            'Must be set to true to execute delete. Start with false to get a preview.'
+          ),
+      },
+      outputSchema: {
+        success: z.boolean().optional(),
+        account: z.any().optional(),
+        requiresConfirmation: z.boolean().optional(),
+      },
+      annotations: deleteAnnotations(),
+      _meta: toolMeta(),
+    },
+    async (args) => {
+      const { action, accountId, name, icon, initialBalance, confirmed } = args;
+
+      if (action === 'create') {
+        if (!name) throw new Error('name is required for create');
+
+        const payload = {
+          name,
+          icon: icon || 'wallet',
+          initialBalance: initialBalance ?? 0,
+        };
+
+        const account = await service.createAccount(payload);
+
+        return result(
+          { success: true, account },
+          `✅ Created account "${account.name}" with ${formatCurrency(account.initialBalance)} initial balance (id: \`${account.id}\`)`
+        );
+      }
+
+      if (action === 'update') {
+        if (!accountId) throw new Error('accountId is required for update');
+
+        const patch = {};
+        if (name !== undefined) patch.name = name;
+        if (icon !== undefined) patch.icon = icon;
+        if (initialBalance !== undefined) patch.initialBalance = initialBalance;
+
+        if (Object.keys(patch).length === 0) {
+          throw new Error('No fields to update provided');
+        }
+
+        const account = await service.updateAccount(accountId, patch);
+
+        return result(
+          { success: true, account },
+          `✅ Updated account "${account.name}" (id: \`${account.id}\`)`
+        );
+      }
+
+      if (action === 'delete') {
+        if (!accountId) throw new Error('accountId is required for delete');
+
+        if (!confirmed) {
+          return result(
+            {
+              requiresConfirmation: true,
+              preview: { action: 'delete_account', accountId },
+            },
+            `⚠️ **Confirm deletion** of account \`${accountId}\`\n\n` +
+              `This will soft-delete the account. Call again with confirmed=true to proceed.`
+          );
+        }
+
+        const success = await service.deleteAccount(accountId);
+
+        return result(
+          { success },
+          success
+            ? `✅ Deleted account \`${accountId}\``
+            : `❌ Account \`${accountId}\` not found or already deleted`
+        );
+      }
+
+      throw new Error(`Unknown action: ${action}`);
+    }
+  );
+
+  // ==================== MANAGE CATEGORIES ====================
+
+  registerAppTool(
+    server,
+    'manage_categories',
+    {
+      title: 'Manage Categories',
+      description:
+        'All-in-one tool to create, update, or delete categories. Use `action` to pick the ' +
+        'operation.\n' +
+        'action="create": creates a new category. Requires name and type. Optional: icon, color.\n' +
+        'action="update": updates an existing category. Requires categoryId. Pass only the ' +
+        'fields you want to change.\n' +
+        'action="delete": soft-deletes a category. Requires categoryId and confirmed=true. ' +
+        'Cannot be undone.',
+      inputSchema: {
+        action: z
+          .enum(['create', 'update', 'delete'])
+          .describe('Which operation to perform.'),
+        categoryId: z
+          .string()
+          .optional()
+          .describe(
+            'Category MongoDB ID. Required for update and delete actions. ' +
+              'Use get_categories to resolve the ID first.'
+          ),
+        name: z.string().optional().describe('Category name. Required for create.'),
+        type: z
+          .enum(['income', 'expense'])
+          .optional()
+          .describe('Category type. Required for create.'),
+        icon: z
+          .string()
+          .optional()
+          .describe(
+            'Icon identifier for the category (e.g. "food", "utensils", "shopping-bag", "car"). Default "tag".'
+          ),
+        color: z
+          .string()
+          .optional()
+          .describe('Hex color or Tailwind class for the category (e.g. "#1f644e" or "bg-emerald-700").'),
+        confirmed: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe(
+            'Must be set to true to execute delete. Start with false to get a preview.'
+          ),
+      },
+      outputSchema: {
+        success: z.boolean().optional(),
+        category: z.any().optional(),
+        requiresConfirmation: z.boolean().optional(),
+      },
+      annotations: deleteAnnotations(),
+      _meta: toolMeta(),
+    },
+    async (args) => {
+      const { action, categoryId, name, type, icon, color, confirmed } = args;
+
+      if (action === 'create') {
+        if (!name) throw new Error('name is required for create');
+        if (!type) throw new Error('type is required for create');
+
+        const payload = {
+          name,
+          type,
+          icon: icon || 'tag',
+          color: color || '#000000',
+        };
+
+        const category = await service.createCategory(payload);
+
+        return result(
+          { success: true, category },
+          `✅ Created ${category.type} category "${category.name}" (id: \`${category.id}\`)`
+        );
+      }
+
+      if (action === 'update') {
+        if (!categoryId) throw new Error('categoryId is required for update');
+
+        const patch = {};
+        if (name !== undefined) patch.name = name;
+        if (icon !== undefined) patch.icon = icon;
+        if (color !== undefined) patch.color = color;
+
+        if (Object.keys(patch).length === 0) {
+          throw new Error('No fields to update provided');
+        }
+
+        const category = await service.updateCategory(categoryId, patch);
+
+        return result(
+          { success: true, category },
+          `✅ Updated category "${category.name}" (id: \`${category.id}\`)`
+        );
+      }
+
+      if (action === 'delete') {
+        if (!categoryId) throw new Error('categoryId is required for delete');
+
+        if (!confirmed) {
+          return result(
+            {
+              requiresConfirmation: true,
+              preview: { action: 'delete_category', categoryId },
+            },
+            `⚠️ **Confirm deletion** of category \`${categoryId}\`\n\n` +
+              `This will soft-delete the category. Call again with confirmed=true to proceed.`
+          );
+        }
+
+        const success = await service.deleteCategory(categoryId);
+
+        return result(
+          { success },
+          success
+            ? `✅ Deleted category \`${categoryId}\``
+            : `❌ Category \`${categoryId}\` not found or already deleted`
+        );
+      }
+
+      throw new Error(`Unknown action: ${action}`);
+    }
+  );
+
+  // ==================== MANAGE BUDGETS ====================
+
+  registerAppTool(
+    server,
+    'manage_budgets',
+    {
+      title: 'Manage Budgets',
+      description:
+        'All-in-one tool to create, update, or delete budgets. Use `action` to pick the ' +
+        'operation.\n' +
+        'action="create": creates a new budget. Requires categoryId, amount, and period.\n' +
+        'action="update": updates an existing budget. Requires budgetId. Pass only the ' +
+        'fields you want to change.\n' +
+        'action="delete": deletes a budget. Requires budgetId and confirmed=true. ' +
+        'Cannot be undone.',
+      inputSchema: {
+        action: z
+          .enum(['create', 'update', 'delete'])
+          .describe('Which operation to perform.'),
+        budgetId: z
+          .string()
+          .optional()
+          .describe(
+            'Budget MongoDB ID. Required for update and delete actions. ' +
+              'Use get_budgets to resolve the ID first.'
+          ),
+        categoryId: z
+          .string()
+          .optional()
+          .describe(
+            'Category MongoDB ID for this budget. Required for create. ' +
+              'Use get_categories to resolve the ID first.'
+          ),
+        amount: z
+          .number()
+          .positive()
+          .optional()
+          .describe('Budget limit amount in INR. Must be a positive number. Required for create.'),
+        period: z
+          .enum(['weekly', 'monthly', 'yearly'])
+          .optional()
+          .describe(
+            'Budget period. Required for create. Default "monthly".' +
+              'Options: "weekly", "monthly", "yearly".'
+          ),
+        confirmed: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe(
+            'Must be set to true to execute delete. Start with false to get a preview.'
+          ),
+      },
+      outputSchema: {
+        success: z.boolean().optional(),
+        budget: z.any().optional(),
+        requiresConfirmation: z.boolean().optional(),
+      },
+      annotations: deleteAnnotations(),
+      _meta: toolMeta(),
+    },
+    async (args) => {
+      const { action, budgetId, categoryId, amount, period, confirmed } = args;
+
+      if (action === 'create') {
+        if (!categoryId) throw new Error('categoryId is required for create');
+        if (!amount) throw new Error('amount is required for create');
+
+        const payload = {
+          category: categoryId,
+          amount,
+          period: period || 'monthly',
+        };
+
+        const budget = await service.createBudget(payload);
+
+        return result(
+          { success: true, budget },
+          `✅ Created ${budget.period} budget of ${formatCurrency(budget.amount)} ` +
+            `for category "${budget.category?.name || 'Unknown'}" (id: \`${budget.id}\`)`
+        );
+      }
+
+      if (action === 'update') {
+        if (!budgetId) throw new Error('budgetId is required for update');
+
+        const patch = {};
+        if (categoryId !== undefined) patch.category = categoryId;
+        if (amount !== undefined) patch.amount = amount;
+        if (period !== undefined) patch.period = period;
+
+        if (Object.keys(patch).length === 0) {
+          throw new Error('No fields to update provided');
+        }
+
+        const budget = await service.updateBudget(budgetId, patch);
+
+        return result(
+          { success: true, budget },
+          `✅ Updated budget \`${budgetId}\`: ${formatCurrency(budget.amount)} ${budget.period} (category: "${budget.category?.name || 'Unknown'}")`
+        );
+      }
+
+      if (action === 'delete') {
+        if (!budgetId) throw new Error('budgetId is required for delete');
+
+        if (!confirmed) {
+          return result(
+            {
+              requiresConfirmation: true,
+              preview: { action: 'delete_budget', budgetId },
+            },
+            `⚠️ **Confirm deletion** of budget \`${budgetId}\`\n\n` +
+              `This cannot be undone. Call again with confirmed=true to proceed.`
+          );
+        }
+
+        const success = await service.deleteBudget(budgetId);
+
+        return result(
+          { success },
+          success
+            ? `✅ Deleted budget \`${budgetId}\``
+            : `❌ Budget \`${budgetId}\` not found or already deleted`
+        );
+      }
+
+      throw new Error(`Unknown action: ${action}`);
+    }
+  );
 }
