@@ -33,6 +33,10 @@ export default withAuth(
        */
       authorized: ({ token, req }) => {
         const path = req.nextUrl.pathname;
+        // Let VizuLizer Pro be accessible to everyone without login
+        if (path.startsWith('/apps/vizulizer')) {
+          return true;
+        }
         // Check if user has admin role for admin routes and apps
         if (path.startsWith('/admin') || path.startsWith('/apps')) {
           return token?.role === 'admin';
