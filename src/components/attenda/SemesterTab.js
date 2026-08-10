@@ -20,12 +20,14 @@ import {
   ChevronDown,
   ChevronUp,
   Check,
+  Sparkles,
 } from 'lucide-react';
 import SemesterModal from '@/components/attenda/SemesterModal';
 import SubjectModal from '@/components/attenda/SubjectModal';
 import HolidayModal from '@/components/attenda/HolidayModal';
 import ConfirmDialog from '@/components/attenda/ConfirmDialog';
 
+const COURSIFY_AI_URL = 'https://coursify.hasanraiyan.me';
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const TIME_SLOTS = [
   '08:00',
@@ -329,6 +331,16 @@ export default function SemesterTab() {
                                           </span>
                                         </div>
 
+                                        <a
+                                          href={`${COURSIFY_AI_URL}/?search_ai=${encodeURIComponent(`Explain ${topic.title} (${subject.name})`)}&send=true`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          title={`Ask AI about "${topic.title}"`}
+                                          className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold text-white bg-gradient-to-r from-[#1f644e] to-[#2ecc71] hover:opacity-90 hover:shadow-md transition-all cursor-pointer shrink-0 ml-1"
+                                        >
+                                          <Sparkles className="w-3 h-3" />
+                                          <span>Ask AI</span>
+                                        </a>
                                         <button
                                           onClick={() => {
                                             const newSyllabus = syllabus.map((m) => {
