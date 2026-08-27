@@ -44,9 +44,5 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: [
-    '/admin/((?!api|_next/static|_next/image|favicon.ico).*)',
-    '/apps/:path*',
-    '/api/pocketly/:path*',
-  ],
+  matcher: ['/admin/((?!api|_next/static|_next/image|favicon.ico).*)', '/apps/:path*'],
 };

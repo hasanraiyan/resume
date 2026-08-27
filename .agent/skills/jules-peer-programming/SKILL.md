@@ -33,29 +33,29 @@ A high-quality issue body should include:
 ```markdown
 ## Objective
 
-Add a new utility function to compute average transaction value in the Pocketly finance app.
+Add a new utility function to compute average link stats in the SnapLinks app.
 
 ## Context
 
-In `src/lib/money-account-summary.js`, we have functions for computing account balances and summaries. We need to expose a new metric for the user dashboard: average transaction size over the last 30 days.
+In `src/lib/snaplinks/stats.js`, we have functions for computing link stats. We need to expose a new metric for the user dashboard: average clicks over the last 30 days.
 
 ## Requirements
 
-- Create a function `computeAverageTransactionSize(transactions, days)` in `src/lib/money-account-summary.js`.
-- It should filter transactions within the last `days` parameter (default 30).
-- Exclude deleted transactions (`deletedAt` not null).
+- Create a function `computeAverageClicks(links, days)` in `src/lib/snaplinks/stats.js`.
+- It should filter links within the last `days` parameter (default 30).
+- Exclude deleted links (`deletedAt` not null).
 - Return a number rounded to 2 decimal places.
 
 ## Implementation Details
 
 - Import or use existing date helper functions if needed.
 - Export the new function.
-- Integrate it into the `/api/money/analysis` route so the frontend can query it.
+- Integrate it into the `/api/snaplinks/analytics` route so the frontend can query it.
 
 ## Acceptance Criteria
 
-- calling the API returns `{ averageTransactionSize: 123.45 }` inside the response payload.
-- Zero division is handled gracefully (returns `0` if no transactions).
+- calling the API returns `{ averageClicks: 123.45 }` inside the response payload.
+- Zero division is handled gracefully (returns `0` if no links).
 ```
 
 ---
@@ -85,7 +85,7 @@ To create the issue, use the `gh issue create` command. You can pass the body di
 #### Method A: Direct Command Line (For shorter descriptions)
 
 ```bash
-gh issue create --title "Feature: Add average transaction size to Pocketly analysis" --body "Please implement a utility to calculate the average transaction size over the last 30 days in src/lib/money-account-summary.js and expose it in the API." --label "jules"
+gh issue create --title "Feature: Add average clicks to SnapLinks analytics" --body "Please implement a utility to calculate the average clicks over the last 30 days in src/lib/snaplinks/stats.js and expose it in the API." --label "jules"
 ```
 
 #### Method B: From a File (Recommended for detailed specs)
@@ -93,7 +93,7 @@ gh issue create --title "Feature: Add average transaction size to Pocketly analy
 If you wrote your issue draft in `issue_draft.md`:
 
 ```bash
-gh issue create --title "Feature: Add average transaction size to Pocketly analysis" --body-file issue_draft.md --label "jules"
+gh issue create --title "Feature: Add average clicks to SnapLinks analytics" --body-file issue_draft.md --label "jules"
 ```
 
 ---

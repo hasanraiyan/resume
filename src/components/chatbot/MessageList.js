@@ -1,7 +1,6 @@
 import { User, Bot } from 'lucide-react';
 import StepHistory from './StepHistory';
 import MdContent from './MdContent';
-import FinanceChatBlockRenderer from '@/components/pocketly-tracker/FinanceChatBlockRenderer';
 
 export default function MessageList({
   messages,
@@ -170,22 +169,6 @@ export default function MessageList({
               {/* Show tool history for agents */}
               {isAssistant && message.steps?.length > 0 && (
                 <StepHistory steps={message.steps} onInteract={handleUIInteract} />
-              )}
-
-              {isAssistant && message.uiBlocks?.length > 0 && (
-                <div className="mt-3 flex min-w-0 w-full max-w-full self-stretch flex-col gap-3 overflow-x-hidden">
-                  {message.uiBlocks.map((block, blockIndex) => {
-                    return (
-                      <FinanceChatBlockRenderer
-                        key={`${message.id}-block-${block.kind}-${blockIndex}`}
-                        block={block}
-                        onInteract={handleUIInteract}
-                        answeredBlockIds={answeredBlockIds}
-                        markBlockAsAnswered={markBlockAsAnswered}
-                      />
-                    );
-                  })}
-                </div>
               )}
 
               {isEmptyStreamingPlaceholder ? (

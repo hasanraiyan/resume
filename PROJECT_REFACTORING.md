@@ -71,20 +71,18 @@ index.js       - Single export point
 ```javascript
 // Route-specific middleware types
 createAdminMiddleware    - Full admin access with rate limiting
-createMoneyMiddleware    - Pocketly finance routes
 createMcpMiddleware      - OAuth and MCP server routes
 createPublicMiddleware   - Public routes with rate limiting
 ```
 
 ### Route Categories
 
-| Category       | Routes     | Middleware               | Authentication              |
-| -------------- | ---------- | ------------------------ | --------------------------- |
-| Admin Routes   | 39 routes  | `createAdminMiddleware`  | Admin role required         |
-| Money/Pocketly | 14 routes  | `createMoneyMiddleware`  | Flexible (admin/mobile/web) |
-| Public Content | 20 routes  | `createPublicMiddleware` | Optional/public             |
-| MCP OAuth      | 3 routes   | `createMcpMiddleware`    | OAuth flow                  |
-| Other          | 109 routes | Various                  | Route-specific              |
+| Category       | Routes     | Middleware               | Authentication      |
+| -------------- | ---------- | ------------------------ | ------------------- |
+| Admin Routes   | 39 routes  | `createAdminMiddleware`  | Admin role required |
+| Public Content | 20 routes  | `createPublicMiddleware` | Optional/public     |
+| MCP OAuth      | 3 routes   | `createMcpMiddleware`    | OAuth flow          |
+| Other          | 109 routes | Various                  | Route-specific      |
 
 ## Implementation Plan
 
@@ -183,7 +181,7 @@ function refactorRoute(routePath) {
 1. **Critical Routes** - Authentication, health checks
 2. **Admin Routes** - All `/api/admin/*` routes
 3. **Public Routes** - Homepage, blog, contact forms
-4. **App Routes** - Pocketly routes
+4. **App Routes** - App-specific routes (e.g., SnapLinks)
 5. **Integration Routes** - MCP, OAuth, external APIs
 
 #### Step 3.3: Manual Refactoring Process

@@ -1,11 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import {
-  getSessionOwnerId,
-  revokeAppConnection,
-  revokeAppConnectionsByFilter,
-} from '@/lib/app-connections';
+import { getSessionOwnerId, revokeAppConnection } from '@/lib/app-connections';
 
 /**
  * DELETE /api/user/connected-apps/:id
@@ -30,16 +26,6 @@ export async function DELETE(_request, { params }) {
 
     if (!updated) {
       return NextResponse.json({ error: 'Connection not found' }, { status: 404 });
-    }
-
-    if (updated.channel === 'android' && updated.appKey === 'pocketly') {
-      await revokeAppConnectionsByFilter({
-        ownerId: getSessionOwnerId(session),
-        filter: {
-          appKey: 'pocketly',
-          channel: 'android',
-        },
-      });
     }
 
     return NextResponse.json({ success: true, message: 'Access revoked' });

@@ -6,7 +6,7 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-Latest-47A248?style=flat-square&logo=mongodb)](https://www.mongodb.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-A modern, high-performance full-stack portfolio and productivity ecosystem built with **Next.js 15** and **React 19**. This platform isn't just a resume; it's a comprehensive suite featuring an advanced multi-agent AI system, built-in applications (Pocketly and SnapLinks), privacy-focused analytics, and a powerful Admin CMS.
+A modern, high-performance full-stack portfolio and productivity ecosystem built with **Next.js 15** and **React 19**. This platform isn't just a resume; it's a comprehensive suite featuring an advanced multi-agent AI system, built-in applications (SnapLinks), privacy-focused analytics, and a powerful Admin CMS.
 
 ---
 
@@ -51,16 +51,6 @@ Leveraging LangChain and multi-provider support (OpenAI, Google Gemini), the pla
 ---
 
 ## 💼 Built-in Applications
-
-### 💰 Pocketly Tracker
-
-A comprehensive finance management tool integrated directly into your dashboard.
-
-- Track accounts, transactions, and budgets.
-- AI-driven finance insights and chat.
-- Visual reports and categorization.
-
-![Pocketly](./public/images/apps/pocketly.png)
 
 ### 🔗 SnapLinks
 

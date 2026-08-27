@@ -19,14 +19,6 @@ export const MINI_APPS = [
     iconSrc: '/images/apps/Snaplinks.png',
   },
   {
-    id: 'pocketly',
-    name: 'Pocketly',
-    tagline: 'Personal finance and expense tracker workspace.',
-    href: '/apps/pocketly',
-    category: 'Finance',
-    iconSrc: '/images/apps/pocketly.png',
-  },
-  {
     id: 'drively',
     name: 'Drively',
     tagline: 'Private cloud storage for your personal files.',

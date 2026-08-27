@@ -10,12 +10,6 @@ export const MCP_OAUTH_RESOURCES = {
     scope: 'attenda-mcp',
     displayName: 'Attenda MCP',
   },
-  'pocketly-mcp': {
-    path: '/api/pocketly-mcp',
-    appKey: 'pocketly-mcp',
-    scope: 'pocketly-mcp',
-    displayName: 'Pocketly MCP',
-  },
 };
 
 export function getMcpResourceConfig(key) {

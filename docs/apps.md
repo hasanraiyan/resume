@@ -10,11 +10,9 @@ A subscription and recurring-bills tracker.
 - Show upcoming renewal dates
 - Calculate monthly and yearly recurring spend
 - Send or surface reminders before renewals
-- Optionally sync payments into Pocketly
 
 ### Why it fits
 
-- Pocketly manages general finances
 - SnapLinks manages links and analytics
 - Renewly adds another focused management app with strong tracking value
 
@@ -70,10 +68,8 @@ A lightweight client and invoice tracker.
 - Track invoices, payments, due dates, and follow-ups
 - Show revenue summaries and unpaid amounts
 - Track project status and delivery progress
-- Optionally connect incoming payments to Pocketly
 
 ### Why it fits
 
-- It complements Pocketly well
 - It is useful for freelance and agency-style work
 - It turns the app collection into a more business-oriented suite

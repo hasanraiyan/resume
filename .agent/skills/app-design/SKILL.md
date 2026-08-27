@@ -1,6 +1,6 @@
 ---
 name: app-design
-description: Design patterns and UI conventions for creating apps in src/app/apps/. Covers colors, layout, dropdowns, modals, skeletons, file uploads, and rename flows learned from Pocketly and Drively.
+description: Design patterns and UI conventions for creating apps in src/app/apps/. Covers colors, layout, dropdowns, modals, skeletons, file uploads, and rename flows learned from Drively.
 ---
 
 # App Design Skill

@@ -1,6 +1,6 @@
 # Apps Design Guide
 
-This document captures the design patterns from the Pocketly finance tracker app. Use this guide when creating new apps in the `src/app/apps/` directory.
+This document captures the design patterns from the built-in apps in this portfolio. Use this guide when creating new apps in the `src/app/apps/` directory.
 
 ## 1. Typography
 
@@ -288,7 +288,7 @@ export default function AppPage() {
             borderRadius: '8px', // matches design
             animationSpeed: 2, // 2-second cycle
             exceptTags: ['img', 'button', 'svg'], // keep interactive elements visible
-            background: '#e5e3d8', // Pocketly skeleton color
+            background: '#e5e3d8', // skeleton color
           }}
         >
           <AppContent />

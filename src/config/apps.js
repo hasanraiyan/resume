@@ -1,4 +1,4 @@
-// Central registry for suite apps (SnapLinks, Pocketly)
+// Central registry for suite apps
 
 export const MINI_APPS = [
   {
@@ -8,13 +8,5 @@ export const MINI_APPS = [
     href: '/snaplinks',
     category: 'Links',
     iconSrc: '/images/apps/Snaplinks.png',
-  },
-  {
-    id: 'pocketly',
-    name: 'Pocketly',
-    tagline: 'Personal finance and expense tracker.',
-    href: '/pocketly',
-    category: 'Finance',
-    iconSrc: '/images/apps/pocketly.png',
   },
 ];
