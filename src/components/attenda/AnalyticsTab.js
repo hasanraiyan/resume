@@ -2,6 +2,7 @@
 
 import { useAttenda } from '@/context/AttendaContext';
 import { useState, useMemo } from 'react';
+import { predictAfterMissing, predictAfterAttending } from '@/lib/attenda/predictions';
 import {
   TrendingUp,
   TrendingDown,
@@ -14,6 +15,8 @@ import {
   FileText,
 } from 'lucide-react';
 
+const PREVIEW_DAY_OPTIONS = [1, 2, 5, 10];
+
 export default function AnalyticsTab() {
   const {
     collegeStats,
@@ -25,10 +28,28 @@ export default function AnalyticsTab() {
   } = useAttenda();
 
   const [highlightSubject, setHighlightSubject] = useState(null);
+  const [previewDays, setPreviewDays] = useState(5);
 
   const stats = collegeStats;
   const preds = collegePredictions;
   const isAtRisk = preds?.isAtRisk;
+
+  // Recompute skip/attend previews for the currently selected day count
+  const ifSkipPreview = useMemo(() => {
+    if (!stats || stats.percentage === null) return null;
+    return predictAfterMissing(
+      { present: stats.presentDays, totalClasses: stats.totalWorkingDays },
+      previewDays
+    );
+  }, [stats, previewDays]);
+
+  const ifAttendPreview = useMemo(() => {
+    if (!stats || stats.percentage === null) return null;
+    return predictAfterAttending(
+      { present: stats.presentDays, totalClasses: stats.totalWorkingDays },
+      previewDays
+    );
+  }, [stats, previewDays]);
 
   // Sort subjects by percentage
   const sortedSubjects = useMemo(() => {
@@ -36,11 +57,20 @@ export default function AnalyticsTab() {
       .map((s) => ({
         ...s,
         pred: subjectPredictions[s.subject.id] || null,
+        skipPreview:
+          s.stats.percentage !== null
+            ? predictAfterMissing(s.stats, previewDays)
+            : null,
+        attendPreview:
+          s.stats.percentage !== null
+            ? predictAfterAttending(s.stats, previewDays)
+            : null,
       }))
       .sort((a, b) => (a.stats.percentage ?? 0) - (b.stats.percentage ?? 0));
-  }, [subjectStats, subjectPredictions]);
+  }, [subjectStats, subjectPredictions, previewDays]);
 
   const attendanceRate = stats?.percentage ?? null;
+  const dayLabel = (n) => (n === 1 ? 'day' : 'days');
 
   return (
     <div className="max-w-3xl mx-auto px-4 lg:px-6 mb-6 pb-4 pt-6">
@@ -123,25 +153,49 @@ export default function AnalyticsTab() {
       {/* Predictions */}
       {preds && attendanceRate !== null && (
         <div className="mb-6">
-          <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-3">
-            Predictions
-          </p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
+              Predictions
+            </p>
+            <div className="flex items-center gap-1 bg-[#f0f5f2] rounded-lg p-1">
+              {PREVIEW_DAY_OPTIONS.map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setPreviewDays(n)}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-colors ${
+                    previewDays === n
+                      ? 'bg-[#1f644e] text-white'
+                      : 'text-[#7c8e88] hover:text-[#1e3a34]'
+                  }`}
+                >
+                  {n}d
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="rounded-xl border border-[#e5e3d8] bg-white p-4">
               <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-1">
-                If you skip tomorrow
+                {previewDays === 1
+                  ? 'If you skip tomorrow'
+                  : `If you skip next ${previewDays} ${dayLabel(previewDays)}`}
               </p>
               <p
-                className={`text-xl font-bold ${preds.ifSkipTomorrow < (activeSemester?.requiredAttendance ?? 75) ? 'text-[#c94c4c]' : 'text-[#1e3a34]'}`}
+                className={`text-xl font-bold ${ifSkipPreview !== null && ifSkipPreview < (activeSemester?.requiredAttendance ?? 75) ? 'text-[#c94c4c]' : 'text-[#1e3a34]'}`}
               >
-                {preds.ifSkipTomorrow}%
+                {ifSkipPreview !== null ? `${ifSkipPreview}%` : '—'}
               </p>
             </div>
             <div className="rounded-xl border border-[#e5e3d8] bg-white p-4">
               <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-1">
-                If you attend next 5
+                {previewDays === 1
+                  ? 'If you attend tomorrow'
+                  : `If you attend next ${previewDays} ${dayLabel(previewDays)}`}
               </p>
-              <p className="text-xl font-bold text-[#1f644e]">{preds.ifAttendWeek}%</p>
+              <p className="text-xl font-bold text-[#1f644e]">
+                {ifAttendPreview !== null ? `${ifAttendPreview}%` : '—'}
+              </p>
             </div>
             <div className="rounded-xl border border-[#e5e3d8] bg-white p-4">
               <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-1">
@@ -159,7 +213,7 @@ export default function AnalyticsTab() {
       <div className="mb-6">
         <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-3">Subjects</p>
         <div className="space-y-2">
-          {sortedSubjects.map(({ subject, stats: s, pred }) => {
+          {sortedSubjects.map(({ subject, stats: s, pred, skipPreview, attendPreview }) => {
             const target = subject.requiredAttendance ?? 75;
             const belowTarget = s.percentage !== null && s.percentage < target;
             const isHighlighted = highlightSubject === subject.id;
@@ -229,12 +283,12 @@ export default function AnalyticsTab() {
                 {/* Predictions row */}
                 {pred && s.percentage !== null && (
                   <div className="mt-2 flex items-center gap-3 text-[11px]">
-                    <span
-                      className={pred.ifSkipNext < target ? 'text-[#c94c4c]' : 'text-[#7c8e88]'}
-                    >
-                      Skip next: {pred.ifSkipNext}%
+                    <span className={skipPreview < target ? 'text-[#c94c4c]' : 'text-[#7c8e88]'}>
+                      Skip {previewDays}: {skipPreview}%
                     </span>
-                    <span className="text-[#1f644e]">+5 classes: {pred.ifAttendNext}%</span>
+                    <span className="text-[#1f644e]">
+                      +{previewDays}: {attendPreview}%
+                    </span>
                     <span className="text-[#7c8e88]">Safe bunks: {pred.safeBunks}</span>
                   </div>
                 )}
