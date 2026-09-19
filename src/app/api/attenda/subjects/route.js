@@ -6,7 +6,7 @@ import { requireAdminAuth } from '@/lib/money-auth';
 import { serializeSubject } from '@/lib/attenda/serializers';
 
 export async function GET(request) {
-  const auth = await requireAdminAuth(request);
+  const auth = await requireAdminAuth(request, { scope: 'attenda' });
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -39,7 +39,7 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const auth = await requireAdminAuth(request);
+  const auth = await requireAdminAuth(request, { scope: 'attenda' });
   if (auth instanceof NextResponse) return auth;
 
   try {

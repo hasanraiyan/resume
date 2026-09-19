@@ -26,6 +26,7 @@ import SemesterModal from '@/components/attenda/SemesterModal';
 import SubjectModal from '@/components/attenda/SubjectModal';
 import HolidayModal from '@/components/attenda/HolidayModal';
 import ConfirmDialog from '@/components/attenda/ConfirmDialog';
+import LinkedDevicesCard from '@/components/attenda/LinkedDevicesCard';
 
 const COURSIFY_AI_URL = 'https://coursify.hasanraiyan.me';
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -647,6 +648,9 @@ export default function SemesterTab() {
   const renderSettings = () => (
     <div>
       <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88] mb-4">Settings</p>
+
+      {/* Linked Devices Panel */}
+      <LinkedDevicesCard />
 
       {/* Semester selector */}
       {semesters.length > 1 && (

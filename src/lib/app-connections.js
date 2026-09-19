@@ -37,7 +37,9 @@ export function normalizeScopes(scope = '') {
 }
 
 export function hasRequiredScopes(grantedScope = '', requiredScopes = []) {
+  if (!requiredScopes || requiredScopes.length === 0) return true;
   const granted = new Set(normalizeScopes(grantedScope));
+  if (granted.has('*') || granted.has('admin')) return true;
   return requiredScopes.every((scope) => granted.has(scope));
 }
 
@@ -201,8 +203,8 @@ export async function verifyAppConnectionToken(token, options = {}) {
   }
 }
 
-export async function verifyMobileSessionToken(token) {
-  return verifyAppConnectionToken(token, { allowedTypes: [MOBILE_TOKEN_TYPE] });
+export async function verifyMobileSessionToken(token, options = {}) {
+  return verifyAppConnectionToken(token, { allowedTypes: [MOBILE_TOKEN_TYPE], ...options });
 }
 
 export async function createMcpAccessToken(connection, expiresIn = '1h') {

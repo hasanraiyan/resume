@@ -6,7 +6,7 @@ import { requireAdminAuth } from '@/lib/money-auth';
 import { serializeSubject } from '@/lib/attenda/serializers';
 
 export async function PUT(request, { params }) {
-  const auth = await requireAdminAuth(request);
+  const auth = await requireAdminAuth(request, { scope: 'attenda' });
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -55,7 +55,7 @@ export async function PUT(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-  const auth = await requireAdminAuth(request);
+  const auth = await requireAdminAuth(request, { scope: 'attenda' });
   if (auth instanceof NextResponse) return auth;
 
   try {

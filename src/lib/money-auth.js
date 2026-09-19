@@ -3,12 +3,16 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { NextResponse } from 'next/server';
 import { markConnectionUsed, verifyMobileSessionToken } from '@/lib/app-connections';
 
-export async function requireAdminAuth(request) {
+export async function requireAdminAuth(request, options = {}) {
   // Strategy 1: Bearer token (mobile app)
   const authHeader = request?.headers?.get?.('Authorization');
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.slice(7);
-    const mobileAuth = await verifyMobileSessionToken(token);
+    const requiredScopes = options.requiredScopes || (options.scope ? [options.scope] : ['admin']);
+    const mobileAuth = await verifyMobileSessionToken(token, {
+      ...options,
+      requiredScopes,
+    });
 
     if (mobileAuth) {
       markConnectionUsed(mobileAuth.connection._id).catch(() => {});
@@ -17,6 +21,7 @@ export async function requireAdminAuth(request) {
         ownerId: mobileAuth.ownerId,
         connectionId: mobileAuth.connection._id.toString(),
         source: 'mobile',
+        connection: mobileAuth.connection,
       };
     }
   }
