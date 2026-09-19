@@ -81,20 +81,6 @@ export default function Footer({ siteConfig }) {
             {logo.text}
           </Link>
 
-          {/* Role Switcher (footer) */}
-          {role && (
-            <button
-              onClick={toggleRole}
-              className="flex items-center gap-2 text-xs uppercase tracking-wider font-medium text-gray-500 hover:text-black transition-colors cursor-pointer"
-              aria-label={`Switch to ${isDeveloper ? 'business owner' : 'developer'} view`}
-            >
-              <span
-                className={`w-2 h-2 rounded-full ${isDeveloper ? 'bg-blue-500' : 'bg-emerald-500'}`}
-              ></span>
-              Viewing as {isDeveloper ? 'Developer' : 'Business Owner'} — Switch
-            </button>
-          )}
-
           {/* Social Links & Admin */}
           <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-7">
             {socialLinks.map((social) => (

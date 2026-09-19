@@ -250,8 +250,8 @@ export default function Hero({ data }) {
     badge: { text: isBusiness ? 'DIGITAL SOLUTIONS PARTNER' : heroData.badge.text },
     heading: {
       line1: 'Building',
-      line2: isBusiness ? 'Digital Solutions' : 'Digital',
-      line3: isBusiness ? 'That Drive Growth' : 'Excellence',
+      line2: 'Digital',
+      line3: isBusiness ? 'Growth' : 'Excellence',
     },
     introduction: {
       text: isBusiness
@@ -296,9 +296,7 @@ export default function Hero({ data }) {
             {/* Main Heading */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-5 leading-none">
               {activeHeading.line1}
-              <span className={`block ${isBusiness ? '' : 'text-stroke'}`}>
-                {activeHeading.line2}
-              </span>
+              <span className="block text-stroke">{activeHeading.line2}</span>
               {activeHeading.line3}
             </h1>
 
