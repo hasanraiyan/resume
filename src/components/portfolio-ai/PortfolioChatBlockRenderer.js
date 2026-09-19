@@ -45,7 +45,7 @@ function ProfileCardBlock({ block }) {
   }, [isZoomed]);
 
   return (
-    <div>
+    <div className="rounded-3xl border border-white/15 bg-[#18181b] p-5 shadow-lg">
       <div className="flex items-start gap-4">
         {data.avatarUrl ? (
           <button
@@ -105,12 +105,12 @@ function ProfileCardBlock({ block }) {
           download
           className="mt-4 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors"
         >
-          <Download className="w-4 h-4" />
+          <LucideIcons.Download className="w-4 h-4" />
           {data.resume.text || 'Download Resume'}
         </a>
       )}
 
-      {/* Lightbox / Zoomed image modal */}
+      {/* Zoom Modal */}
       <AnimatePresence>
         {isZoomed && data.avatarUrl && (
           <motion.div
@@ -121,26 +121,21 @@ function ProfileCardBlock({ block }) {
             className="fixed inset-0 z-[200] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out"
           >
             <motion.div
-              initial={{ scale: 0.95 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.95 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-              className="relative max-w-full max-h-[85vh] flex flex-col items-center"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="relative max-w-sm w-full aspect-square rounded-3xl overflow-hidden border border-white/20 shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
+              <img src={data.avatarUrl} alt={data.name} className="w-full h-full object-cover" />
               <button
                 onClick={() => setIsZoomed(false)}
                 className="absolute -top-12 right-0 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer"
-                aria-label="Close zoomed view"
+                aria-label="Close"
               >
                 <LucideIcons.X className="w-4 h-4" />
               </button>
-              <img
-                src={data.avatarUrl}
-                alt={data.name}
-                className="max-w-[90vw] sm:max-w-md md:max-w-lg max-h-[70vh] rounded-3xl object-contain border border-white/10 shadow-2xl"
-              />
-              <p className="text-white/60 text-sm font-medium mt-3">{data.name}</p>
             </motion.div>
           </motion.div>
         )}
@@ -161,7 +156,7 @@ function ResumeCardBlock({ block }) {
     : /\.(png|jpe?g|webp|gif|avif)(\?|$)/i.test(data.url);
 
   return (
-    <div>
+    <div className="rounded-3xl border border-white/15 bg-[#18181b] p-5 shadow-lg">
       <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 shrink-0 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center">
           <Download className="w-5 h-5" />
@@ -464,13 +459,13 @@ function SkillsGridBlock({ block }) {
   if (items.length === 0) return null;
 
   return (
-    <div>
+    <div className="rounded-3xl border border-white/15 bg-[#18181b] p-5 shadow-lg">
       <p className="text-white text-sm font-semibold mb-3">{block.title || 'Skills'}</p>
       <div className="flex flex-wrap gap-2">
         {items.map((item) => (
           <div
             key={item.name}
-            className="flex items-center gap-2 px-3 py-2 rounded-full bg-white/10 text-white/80 text-xs font-medium"
+            className="flex items-center gap-2 px-3 py-2 rounded-full bg-white/10 text-white/90 text-xs font-medium"
           >
             <span className="text-white/60">
               {renderTechIcon(item.iconType, item.iconName, 'w-3.5 h-3.5')}
@@ -510,7 +505,7 @@ function CertificationCard({ item }) {
     item.date && (typeof item.date === 'string' ? item.date : new Date(item.date).getFullYear());
 
   return (
-    <div className="shrink-0 w-64 snap-start rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-5 shadow-lg transition-colors hover:border-white/20">
+    <div className="shrink-0 w-64 snap-start rounded-3xl border border-white/15 bg-[#18181b] p-5 shadow-lg transition-colors hover:border-white/30">
       <div className="flex items-start justify-between gap-3 mb-3">
         {dateLabel ? (
           <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-blue-600 text-white shadow-sm">
@@ -588,7 +583,7 @@ function TestimonialsBlock({ block }) {
         {items.map((item, i) => (
           <div
             key={`${item.name}-${i}`}
-            className="shrink-0 w-64 rounded-2xl bg-white/5 border border-white/10 p-4 snap-start"
+            className="shrink-0 w-64 rounded-2xl bg-[#18181b] border border-white/15 p-4 snap-start shadow-md"
           >
             <div className="flex items-center gap-1 mb-2">
               {Array.from({ length: 5 }).map((_, idx) => (
@@ -622,7 +617,7 @@ function TestimonialsBlock({ block }) {
 function ContactCardBlock({ block }) {
   const data = block.data || {};
   return (
-    <div>
+    <div className="rounded-3xl border border-white/15 bg-[#18181b] p-5 shadow-lg">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center">
           {data.success ? <CheckCircle2 className="w-5 h-5" /> : <Mail className="w-5 h-5" />}

@@ -41,7 +41,7 @@ export default function PortfolioChatView({
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <div className="flex-1 overflow-y-auto px-2 sm:px-6 py-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex-1 overflow-y-auto px-2 sm:px-6 py-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden bg-black/40 sm:bg-transparent">
         <div className="max-w-2xl mx-auto flex flex-col gap-4">
           {visibleMessages.map((message) => {
             const isUser = message.role === 'user';
@@ -59,10 +59,14 @@ export default function PortfolioChatView({
                         className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
                           isUser
                             ? 'bg-blue-600 text-white rounded-tr-sm'
-                            : 'bg-white/[0.06] backdrop-blur-xl border border-white/10 text-white/90 rounded-tl-sm'
+                            : 'bg-[#18181b] border border-white/15 text-neutral-100 shadow-xl rounded-tl-sm'
                         }`}
                       >
-                        {isUser ? message.content : <MdContent content={message.content} />}
+                        {isUser ? (
+                          message.content
+                        ) : (
+                          <MdContent content={message.content} isDark={true} />
+                        )}
                       </div>
                     )}
                     {message.uiBlocks?.length > 0 && (
@@ -87,21 +91,21 @@ export default function PortfolioChatView({
                 <div className="w-7 h-7 shrink-0 rounded-full bg-white/10 flex items-center justify-center text-white/70">
                   <Bot className="w-3.5 h-3.5" />
                 </div>
-                <div className="px-4 py-3 rounded-2xl bg-white/[0.06] border border-white/10 flex items-center gap-1.5">
+                <div className="px-4 py-3 rounded-2xl bg-[#18181b] border border-white/15 flex items-center gap-1.5 shadow-md">
                   <div
-                    className="w-1.5 h-1.5 bg-white/50 rounded-full animate-bounce"
+                    className="w-1.5 h-1.5 bg-white/70 rounded-full animate-bounce"
                     style={{ animationDelay: '0ms' }}
                   />
                   <div
-                    className="w-1.5 h-1.5 bg-white/50 rounded-full animate-bounce"
+                    className="w-1.5 h-1.5 bg-white/70 rounded-full animate-bounce"
                     style={{ animationDelay: '150ms' }}
                   />
                   <div
-                    className="w-1.5 h-1.5 bg-white/50 rounded-full animate-bounce"
+                    className="w-1.5 h-1.5 bg-white/70 rounded-full animate-bounce"
                     style={{ animationDelay: '300ms' }}
                   />
                   {statusMessage && (
-                    <span className="ml-1.5 text-white/40 text-xs">{statusMessage}</span>
+                    <span className="ml-1.5 text-white/60 text-xs">{statusMessage}</span>
                   )}
                 </div>
               </div>
@@ -118,7 +122,7 @@ export default function PortfolioChatView({
               <button
                 key={question}
                 onClick={() => onQuery(question)}
-                className="shrink-0 px-3.5 py-2 rounded-full text-xs font-medium bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-white/70 hover:text-white/90 transition-colors whitespace-nowrap cursor-pointer"
+                className="shrink-0 px-3.5 py-2 rounded-full text-xs font-medium bg-[#18181b] hover:bg-[#27272a] border border-white/15 text-white/90 hover:text-white transition-colors whitespace-nowrap cursor-pointer shadow-sm"
               >
                 {question}
               </button>
@@ -136,6 +140,7 @@ export default function PortfolioChatView({
           toggleListening={toggleListening}
           showModelSelector={false}
           theme="dark"
+          customInnerBg="bg-[#18181b] border border-white/15"
           showTopBorder={false}
           placeholder="Ask a follow-up..."
         />
