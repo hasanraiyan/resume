@@ -2,6 +2,14 @@
 
 export const MINI_APPS = [
   {
+    id: 'projecttime',
+    name: 'ProjectTime',
+    tagline: 'Project & time tracking system with real-time timer, estimates, and reports.',
+    href: '/apps/projecttime',
+    category: 'Productivity',
+    iconSrc: '/images/apps/projecttime.png',
+  },
+  {
     id: 'recall',
     name: 'ReCall',
     tagline: 'Your external memory. Throw in anything instantly, retrieve by thought.',
@@ -43,7 +51,6 @@ export const MINI_APPS = [
     iconSrc:
       'https://res.cloudinary.com/djkpavwmp/image/upload/v1762069094/portfolio_assets/ckfre3frqkzgatpgmzu1.jpg', // Placeholder for now
   },
-
   {
     id: 'attenda',
     name: 'Attenda',
