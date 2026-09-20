@@ -57,14 +57,9 @@ export default function AnalyticsTab() {
       .map((s) => ({
         ...s,
         pred: subjectPredictions[s.subject.id] || null,
-        skipPreview:
-          s.stats.percentage !== null
-            ? predictAfterMissing(s.stats, previewDays)
-            : null,
+        skipPreview: s.stats.percentage !== null ? predictAfterMissing(s.stats, previewDays) : null,
         attendPreview:
-          s.stats.percentage !== null
-            ? predictAfterAttending(s.stats, previewDays)
-            : null,
+          s.stats.percentage !== null ? predictAfterAttending(s.stats, previewDays) : null,
       }))
       .sort((a, b) => (a.stats.percentage ?? 0) - (b.stats.percentage ?? 0));
   }, [subjectStats, subjectPredictions, previewDays]);
@@ -154,9 +149,7 @@ export default function AnalyticsTab() {
       {preds && attendanceRate !== null && (
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">
-              Predictions
-            </p>
+            <p className="text-xs font-bold uppercase tracking-wider text-[#7c8e88]">Predictions</p>
             <div className="flex items-center gap-1 bg-[#f0f5f2] rounded-lg p-1">
               {PREVIEW_DAY_OPTIONS.map((n) => (
                 <button
