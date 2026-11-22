@@ -1,0 +1,16 @@
+# Added by Fixa (https://fixa.dev). Delete this file to take "Ask Fixa" off New issue.
+name: "Ask Fixa"
+description: "Hand a bug or a change to Fixa, an AI engineer. It opens a pull request."
+labels: ["fixa"]
+body:
+  - type: textarea
+    id: task
+    attributes:
+      label: "What should Fixa do?"
+      description: "A bug to fix or a change to make, the way you would tell a teammate. Fixa reads the code, makes the change, runs the tests and opens a pull request."
+      placeholder: "Signing in does nothing on Safari. Fix it and add a test."
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: "Fixa starts as soon as someone with write access files this. Otherwise a maintainer starts it from the issue. Reply on the issue to give Fixa more to do."
